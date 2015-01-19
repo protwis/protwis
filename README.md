@@ -11,12 +11,13 @@ INSTALLATION
 The system is based on **[Django][1] 1.7** and **[Python][2] 3**
 
 On Ubuntu 14.04 you will need the following packages:
-- postgresql (install with apt)
-- postgresql-contrib (install with apt)
-- python3-psycopg2 (install with apt)
-- python3-pip (install with apt)
-- django (install with pip3)
-- django-tastypie (install with pip3)
+
+* postgresql (install with apt)
+* postgresql-contrib (install with apt)
+* python3-psycopg2 (install with apt)
+* python3-pip (install with apt)
+* django (install with pip3)
+* django-tastypie (install with pip3)
 
 Clone this repository:
 
