@@ -1,0 +1,13 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+    <ul>
+        <li>{{ protein.family }}</li>
+        <li>{{ protein.species }}</li>
+        <li>{{ protein.source }}</li>
+        <li>{{ protein.accession  }}</li>
+        <li>{{ protein.entry_name }}</li>
+        <li>{{ protein.name }}</li>
+        <li>{{ protein.sequence }}</li>
+    </ul>
+{% endblock %}

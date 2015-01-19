@@ -1,0 +1,83 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+    <div class="row">
+        
+        <!-- News FIXME get this data from DB -->
+        <div class='col-md-4 well'>
+            <h4>Latest <a href='<?php echo Yii::app()->request->baseUrl; ?>/about/news'>News</a></h4>
+            <ul>
+                <li>An <a href="http://dx.doi.org/10.1016/j.tips.2014.11.001">article</a>
+                describing <a href='<?php echo Yii::app()->request->baseUrl; ?>/docs/numbering'>generic GPCR
+                numbering schemes</a> published in <em>Trends in Pharmacological Sciences</em>.</li>
+                <li>A new version of GPCRDB launched.</li>
+                <li>An <a href="http://dx.doi.org/10.1016/j.ymeth.2014.09.009">article</a>
+                describing <a href='<?php echo Yii::app()->request->baseUrl; ?>/docs/fragments'>crystal structure
+                pharmacophores</a> published in <em>Methods</em>.</li>
+                <li>A <a href="<?php echo Yii::app()->request->baseUrl;
+                ?>/about/poster">poster</a> describing GPCRDB presented at the GLISTEN conference in Budapest, Hungary.
+                </li>
+                <li>GPCRDB presented at the <a href="http://wcp2014.org/">World Congress of
+                Pharmacology</a> in Cape Town, South Africa.</li>
+                <li>GPCRDB <a href="http://dx.doi.org/10.1093/nar/gkt1255">published</a> in <em>Nucleic Acids Res.</em>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Carousel -->
+        <div class='col-md-8'>
+            <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
+                <!-- Indicators -->
+                <ol class="carousel-indicators">
+                    <li data-target="#carousel-example-generic" data-slide-to="0" class="active"></li>
+                    <li data-target="#carousel-example-generic" data-slide-to="1"></li>
+                    <li data-target="#carousel-example-generic" data-slide-to="2"></li>
+                    <li data-target="#carousel-example-generic" data-slide-to="3"></li>
+                </ol>
+
+                <!-- Wrapper for slides -->
+                <div class="carousel-inner" role="listbox">
+                <div class="item active">
+                    <img src="{% static 'home/carousel/diagrams.png' %}" alt="...">
+                    <div class="carousel-caption">
+                        <h2>Build diagrams</h2>
+                        <p>Get helix box and/or snake plot diagrams with custom coloring for you publications.</p>
+                    </div>
+                </div>
+                <div class="item">
+                    <img src="{% static 'home/carousel/alignments.png' %}" alt="...">
+                    <div class="carousel-caption">
+                        <h2>Build alignments</h2>
+                        <p>Select proteins to align individually or by family. Choose custom sequence segements to include in your alignment.</p>
+                    </div>
+                </div>
+                <div class="item">
+                    <img src="{% static 'home/carousel/trees.png' %}" alt="...">
+                    <div class="carousel-caption">
+                        <h2>Build phylogenetic trees</h2>
+                        <p>Customise the sequence segments to use for generating the trees.</p>
+                    </div>
+                </div>
+                <div class="item">
+                    <img src="{% static 'home/carousel/sequencemotifs.png' %}" alt="...">
+                    <div class="carousel-caption">
+                        <h2>Search for sequence motifs</h2>
+                        <p>Predict off-targets by specifying sequence motifs that include residue positions and binding features.</p>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <a class="left carousel-control" href="#carousel-example-generic" role="button" data-slide="prev">
+                    <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+                    <span class="sr-only">Previous</span>
+                </a>
+                <a class="right carousel-control" href="#carousel-example-generic" role="button" data-slide="next">
+                    <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                    <span class="sr-only">Next</span>
+                </a>
+            </div>
+        </div>
+
+    </div>
+{% endblock %}

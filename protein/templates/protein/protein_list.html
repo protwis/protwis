@@ -1,0 +1,9 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+    <ul>
+    {% for protein in protein_list %}
+        <li><a href="/protein/{{ protein.entry_name }}">{{ protein.name }}</a></li>
+    {% endfor %}
+    </ul>
+{% endblock %}
