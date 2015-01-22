@@ -26,7 +26,7 @@ Clone this repository:
 
 Copy the example settings file and name it `settings.py`:
 
-    mv protwis/settings_example.py protwis/settings.py
+    cp protwis/settings_example.py protwis/settings.py
 
 Create a postgresql user and database (both called gpcrdb in this example):
 
