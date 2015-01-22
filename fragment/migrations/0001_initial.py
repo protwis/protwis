@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
         ('residue', '0002_auto_20150121_1621'),
         ('ligand', '0001_initial'),
         ('protein', '0002_auto_20150121_1621'),
-        ('crystalstructure', '0001_initial'),
+        ('structure', '0001_initial'),
     ]
 
     operations = [
@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(serialize=False, primary_key=True, verbose_name='ID', auto_created=True)),
                 ('filename', models.CharField(max_length=50)),
-                ('crystalstructure', models.ForeignKey(to='crystalstructure.CrystalStructure')),
+                ('structure', models.ForeignKey(to='structure.Structure')),
             ],
             options={
                 'db_table': 'fragment',

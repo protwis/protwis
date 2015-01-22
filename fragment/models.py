@@ -3,7 +3,7 @@ from django.db import models
 class Fragment(models.Model):
     residue = models.ForeignKey('residue.Residue')
     protein = models.ForeignKey('protein.Protein')
-    crystalstructure = models.ForeignKey('crystalstructure.Crystalstructure')
+    structure = models.ForeignKey('structure.Structure')
     ligand = models.ForeignKey('ligand.Ligand')
     interaction = models.ForeignKey('Interaction')
     filename = models.CharField(max_length=50)
