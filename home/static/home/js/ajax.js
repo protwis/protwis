@@ -8,7 +8,7 @@ function AddToSelection(selection_type, selection_subtype, selection_id) {
         },
         'type': 'GET',
         'success': function(data) {
-            $("#selected-data").html(data);
+            $("#selection").html(data);
         }
     });
 }
@@ -18,7 +18,7 @@ function ClearSelection() {
         'url': '/common/clearselection',
         'type': 'GET',
         'success': function(data) {
-            $("#selected-data").html(data);
+            $("#selection").html(data);
         }
     });
 }

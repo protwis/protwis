@@ -11,6 +11,8 @@ import inspect
 
 
 class AbsTargetSelection(generic.TemplateView):
+    """An abstract class for the target selection page used in many apps. To use it in another app, create a class 
+    based view for that app that extends this class"""
     template_name = 'common/targetselection.html'
 
     step = 1
@@ -22,8 +24,8 @@ class AbsTargetSelection(generic.TemplateView):
     ps = Protein.objects.all()
 
     def get_context_data(self, **kwargs):
-        # get context from parent class (really only relevant for child classes of this class, as TemplateView does
-        # not have any context variables)
+        """get context from parent class (really only relevant for child classes of this class, as TemplateView does
+        not have any context variables)"""
         context = super().get_context_data(**kwargs)
 
         # get attributes of this class and add them to the context
@@ -68,7 +70,7 @@ def AddToSelection(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
     
-    return render(request, 'common/selected_data.html', selection.render())
+    return render(request, 'common/selection.html', selection.render())
 
 def ClearSelection(request):
     # create a blank selection
@@ -80,4 +82,4 @@ def ClearSelection(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
     
-    return render(request, 'common/selected_data.html', selection.render())
+    return render(request, 'common/selection.html', selection.render())
