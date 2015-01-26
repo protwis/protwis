@@ -1,0 +1,52 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+    <div class='row'>
+        
+        <!-- description boxes -->
+        <div class='col-md-4'>
+
+            <!-- main description -->
+            <div class='col-md-12 well'>
+                <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
+                <h4>{{ title }}</h4>
+                {{ description|linebreaks }}
+            </div>
+
+            <!-- link to docs -->
+            <div class='col-md-12 well'>
+                <p>For more information on this tool, see the <a href="{{ docs }}">docs</a>.</p>
+            </div>
+        </div>
+        
+        <!-- selection boxes -->
+        <div class='col-md-4'>
+            <!-- protein search -->
+            <div class='col-md-12 well'>
+                <h4>Search</h4>
+                <input type='text' class='form-control'>
+            </div>
+            <!-- family tree -->
+            <div class='col-md-12 well'>
+                <h4>Browse by family</h4>
+                <ul>
+                {% for pf in pfs %}
+                    <li><a href="#" onclick="AddToSelection('target', 'family', '{{ pf.slug }}')">{{ pf.name }}</a></li>
+                {% endfor %}
+                </ul>
+                <ul>
+                {% for p in ps %}
+                    <li><a href="#" onclick="AddToSelection('target', 'protein', '{{ p.entry_name }}')">{{ p.name }}</a></li>
+                {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- show the selection -->
+        <div class='col-md-4'>
+            <div class='col-md-12 well' id='selected-data'>
+                FIXME include the current selection
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,3 +1,7 @@
 from django.shortcuts import render
 
-# Create your views here.
+from protein.views import TargetSelection as BaseTargetSelection
+
+
+class TargetSelection(BaseTargetSelection):
+    pass
