@@ -31,10 +31,9 @@ def AddToSelection(request):
     if simple_selection:
         selection.importer(simple_selection)
 
-    # add the selected item to the selection (if it's not already selected)
+    # add the selected item to the selection
     sel_type = getattr(selection, selection_type)
-    if not selection_object in sel_type:
-        selection.add(selection_type, selection_subtype, selection_object)
+    selection.add(selection_type, selection_subtype, selection_object)
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
