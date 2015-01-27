@@ -1,13 +1,24 @@
-{% if target %}
-<div class='col-md-12 well'>
-    <p>
-        <a href="#" onclick="ClearSelection()">Clear</a></li>
-    </p>
-    <h4>Selected targets</h4>
-    <ul>
-    {% for selection in target %}
-        <li>{{ selection.item.name }} ({{ selection.type_title }})</li>
-    {% endfor %}
-    </ul>
-</div>
-{% endif %}
+{% for type, selected_items in selection.items %}
+    {% if type == selection_type %}
+    <div class='col-md-12 well'>
+        <p>
+            <span class="selection-heading-text">Selected {{ selection_type }}</span>
+            {% if selected_items|length > 0 %}
+            <button onclick="ClearSelection('{{ selection_type }}')" class="btn btn-danger btn-xs">
+                <span class="glyphicon glyphicon-remove"></span> Clear
+            </button>
+            {% endif %}
+        </p>
+        {% for selected_item in selected_items %}
+            <div>{{ selected_item.item.name|safe }} ({{ selected_item.type_title }}) <button 
+            onclick="RemoveFromSelection('{{ selection_type }}', '{{ selected_item.type }}',
+            {{ selected_item.item.id }})" class="btn btn-danger btn-xs">
+            <span class="glyphicon glyphicon-remove"></span>
+            </button>
+            </div>
+        {% empty %}
+            None
+        {% endfor %}
+    </div>
+    {% endif %}
+{% endfor %}

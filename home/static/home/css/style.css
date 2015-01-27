@@ -16,3 +16,14 @@ h1, h2, h3, h4 { margin-top: 0px; }
 }
 
 .well { padding-bottom: 10px; }
+
+.selection-heading
+{
+    height:40px;
+}
+.selection-heading-text
+{
+    font-size:18px;
+    font-weight:bold;
+    vertical-align:middle;
+}

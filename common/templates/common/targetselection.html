@@ -8,43 +8,70 @@
 
             <!-- main description -->
             <div class='col-md-12 well'>
+                {% if step and number_of_steps %}
                 <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
+                {% endif %}
                 <h4>{{ title }}</h4>
                 {{ description|linebreaks }}
             </div>
 
             <!-- link to docs -->
+            {% if docs %}
             <div class='col-md-12 well'>
                 <p>For more information on this tool, see the <a href="{{ docs }}">docs</a>.</p>
             </div>
+            {% endif %}
         </div>
         
         <!-- selection boxes -->
         <div class='col-md-4'>
             <!-- protein search -->
+            {% if search %}
             <div class='col-md-12 well'>
                 <h4>Search</h4>
                 <input type='text' class='form-control'>
             </div>
+            {% endif %}
+
             <!-- family tree -->
+            {% if family_tree %}
             <div class='col-md-12 well'>
                 <h4>Browse by family</h4>
                 <ul>
                 {% for pf in pfs %}
-                    <li><a href="#" onclick="AddToSelection('target', 'family', '{{ pf.slug }}')">{{ pf.name }}</a></li>
+                <li>
+                    <a href="#" onclick="AddToSelection('targets', 'family', '{{ pf.id }}')">{{ pf.name|safe }}</a>
+                </li>
                 {% endfor %}
                 </ul>
                 <ul>
                 {% for p in ps %}
-                    <li><a href="#" onclick="AddToSelection('target', 'protein', '{{ p.entry_name }}')">{{ p.name }}</a></li>
+                <li>
+                    <a href="#" onclick="AddToSelection('targets', 'protein', '{{ p.id }}')">{{ p.name|safe }}</a>
+                </li>
                 {% endfor %}
                 </ul>
             </div>
+            {% endif %}
         </div>
         
-        <!-- show the selection -->
-        <div class='col-md-4' id='selection'>
-            FIXME include the current selection
+        <!-- button(s) -->
+        {% if buttons %}
+        <div class='col-md-4' id='selection-buttons'>
+            {% include 'common/selection_buttons.html' %}
         </div>
+        {% endif %}
+
+        <!-- show the selection -->
+        {% for selection_box, include in selection_boxes.items %}
+            {% if include %}
+            <div class='col-md-4' id='selection-{{ selection_box }}'>
+            {% with selection_type=selection_box %}
+                {% include 'common/selection.html' %}
+            {% endwith %}
+            </div>
+            {% endif %}
+        {% endfor %}
+
     </div>
 {% endblock %}

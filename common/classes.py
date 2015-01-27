@@ -2,8 +2,8 @@ class SimpleSelection:
     """A class representing the proteins and segments a user has selected. Can be serialized and stored in session"""
     def __init__(self):
         self.reference = []
-        self.target = []
-        self.segment = []
+        self.targets = []
+        self.segments = []
 
     def __str__(self):
         return str(self.__dict__)
@@ -15,20 +15,25 @@ class Selection(SimpleSelection):
     def importer(self, simple_selection):
         """Imports a SimpleSelection object into Selection"""
         self.reference = simple_selection.reference
-        self.target = simple_selection.target
-        self.segment = simple_selection.segment
+        self.targets = simple_selection.targets
+        self.segments = simple_selection.segments
 
     def exporter(self):
         """Exports the attributes of Selection to a SimpleSelection object, and returns it"""
         ss = SimpleSelection()
         ss.reference = self.reference
-        ss.target = self.target
-        ss.segment = self.segment
+        ss.targets = self.targets
+        ss.segments = self.segments
         return ss
 
     def add(self, selection_type, selection_subtype, selection_object):
         """Adds a selection item (protein, family, sequence segment etc.) to the selection"""
-        selection = getattr(self, selection_type)
+        # only one reference can be selected at a time, clear the selection
+        if selection_type == 'reference':
+            selection = []
+        # for other types, add the selected item
+        else:
+            selection = getattr(self, selection_type)
 
         # check whether the selected item is already in the selection
         if not selection_object in selection:
@@ -36,18 +41,27 @@ class Selection(SimpleSelection):
             selection.append(selection_object)
             setattr(self, selection_type, selection)
 
-    def delete(self, selection_type, selection_subtype, selection_id):
-        pass
+    def remove(self, selection_type, selection_subtype, selection_id):
+        """Removes a selection item (protein, family, sequence segment etc.) from the selection"""
+        selection = getattr(self, selection_type)
+        updated_selection = []
+
+        # loop through selected objects and remove the one that matches the subtype and ID
+        for selection_object in selection:
+            if not (selection_object.type == selection_subtype and selection_object.item.id == int(selection_id)):
+                updated_selection.append(selection_object)
+        setattr(self, selection_type, updated_selection)
 
     def expand(self):
         pass
 
-    def render(self):
-        """Returns the attributes of Selection in a dictionary for rendering in templates"""
+    def render(self, selection_type):
+        """Returns the selected attribute of Selection in a dictionary for rendering in templates"""
         return {
-            'reference': self.reference,
-            'target': self.target,
-            'segment': self.segment,
+            'selection': {
+                selection_type: getattr(self, selection_type),
+            },
+            'selection_type': selection_type,
         }
 
 
