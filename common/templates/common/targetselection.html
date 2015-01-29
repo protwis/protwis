@@ -37,22 +37,9 @@
             {% if family_tree %}
             <div class='col-md-12 well'>
                 <h4>Browse by family</h4>
-                <ul>
-                {% for pf in pfs %}
-                <li>
-                    <a href="#" onclick="AddToSelection('targets', 'family', '{{ pf.id }}')">{{ pf.name|safe }}</a>
-                </li>
-                {% endfor %}
-                </ul>
-                <ul>
-                {% for p in ps %}
-                <li>
-                    <a href="#" onclick="AddToSelection('targets', 'protein', '{{ p.id }}')">{{ p.name|safe }}</a>
-                </li>
-                {% endfor %}
-                </ul>
-            </div>
+                {% include 'common/selection_tree.html' %}
             {% endif %}
+            </div>
         </div>
         
         <!-- button(s) -->
@@ -67,7 +54,7 @@
             {% if include %}
             <div class='col-md-4' id='selection-{{ selection_box }}'>
             {% with selection_type=selection_box %}
-                {% include 'common/selection.html' %}
+                {% include 'common/selection_lists.html' %}
             {% endwith %}
             </div>
             {% endif %}

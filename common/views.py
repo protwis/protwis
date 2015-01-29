@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from django.shortcuts import render
-from django.views import generic
+from django.views.generic import TemplateView
 
 from common.classes import SimpleSelection
 from common.classes import Selection
@@ -9,9 +9,10 @@ from protein.models import Protein
 from protein.models import ProteinFamily
 
 import inspect
+from collections import OrderedDict
 
 
-class AbsTargetSelection(generic.TemplateView):
+class AbsTargetSelection(TemplateView):
     """An abstract class for the target selection page used in many apps. To use it in another app, create a class 
     based view for that app that extends this class"""
     template_name = 'common/targetselection.html'
@@ -29,16 +30,22 @@ class AbsTargetSelection(generic.TemplateView):
             'label': 'Continue to next step',
             'url': '/protein/segmentselection',
             'color': 'success',
-        }
+        },
     }
-    selection_boxes = {
-        'reference': False,
-        'targets': True,
-        'segments': False,
-    }
+    # OrderedDict to preserve the order of the boxes
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
 
-    pfs = ProteinFamily.objects.all()
-    ps = Protein.objects.all()
+    ppf = ProteinFamily.objects.get(slug='000')
+    pfs = ProteinFamily.objects.order_by('id').filter(parent=ppf.id) # FIXME move order_by to model
+    ps = Protein.objects.filter(family=ppf)
+    tree_indent_level = []
+    action = 'expand'
+    # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+    del ppf
 
 
     def get_context_data(self, **kwargs):
@@ -58,7 +65,7 @@ class AbsTargetSelection(generic.TemplateView):
         context['selection'] = {}
         for selection_box, include in self.selection_boxes.items():
             if include:
-                context['selection'][selection_box] = selection.render(selection_box)['selection'][selection_box]
+                context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
 
         # get attributes of this class and add them to the context
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
@@ -102,7 +109,7 @@ def AddToSelection(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
     
-    return render(request, 'common/selection.html', selection.render(selection_type))
+    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
 def RemoveFromSelection(request):
     """Removes one selected item from the session"""
@@ -128,7 +135,7 @@ def RemoveFromSelection(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
     
-    return render(request, 'common/selection.html', selection.render(selection_type))
+    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
 def ClearSelection(request):
     """Clears all selected items of the selected type from the session"""
@@ -141,4 +148,35 @@ def ClearSelection(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
     
-    return render(request, 'common/selection.html', selection.render(selection_type))
+    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+
+def ToggleFamilyTreeNode(request):
+    """WRITEME"""
+    action = request.GET['action']
+    node_id = request.GET['node_id']
+    parent_tree_indent_level = int(request.GET['tree_indent_level'])
+    tree_indent_level = []
+    for i in range(parent_tree_indent_level+1):
+        tree_indent_level.append(0)
+    # if action == 'collapse':
+    #     del tree_indent_level[-1]
+    parent_tree_indent_level = tree_indent_level[:]
+    del parent_tree_indent_level[-1]
+
+    ppf = ProteinFamily.objects.get(pk=node_id)
+    if action == 'expand':
+        pfs = ProteinFamily.objects.order_by('id').filter(parent=node_id) # FIXME move order_by to model
+        ps = Protein.objects.order_by('id').filter(family=ppf)
+        action = 'collapse'
+    else:
+        pfs = ps = {}
+        action = 'expand'
+    
+    return render(request, 'common/selection_tree.html', {
+        'action': action,
+        'ppf': ppf,
+        'pfs': pfs,
+        'ps': ps,
+        'parent_tree_indent_level': parent_tree_indent_level,
+        'tree_indent_level': tree_indent_level,
+    })

@@ -55,7 +55,7 @@ class Selection(SimpleSelection):
     def expand(self):
         pass
 
-    def render(self, selection_type):
+    def dict(self, selection_type):
         """Returns the selected attribute of Selection in a dictionary for rendering in templates"""
         return {
             'selection': {

@@ -1,7 +1,9 @@
+<div class="col-md-12 well text-center">
 {% for button_name, button in buttons.items %}
-<div class='col-md-12 well text-center'>
-    <button onclick="" class="btn btn-{{ button.color }} btn-lg btn-block">
+    <form action="{{ button.url }}" type="GET">
+    <button type="submit" class="btn btn-{{ button.color }} btn-lg btn-block">
         {{ button.label }}
     </button>
-</div>
+    </form>
 {% endfor %}
+</div>
