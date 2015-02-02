@@ -40,6 +40,9 @@ class Residue(models.Model):
         }
         return amino_acids[self.amino_acid]
 
+    class Meta():
+        db_table = 'residue'
+
 
 class ResidueSet(models.Model):
     residue = models.ManyToManyField('Residue')
@@ -48,9 +51,15 @@ class ResidueSet(models.Model):
     def __str__(self):
         return self.name
 
-
+    class Meta():
+        db_table = 'residue_set'
+    
+    
 class ResidueNumber(models.Model):
     generic_number = models.CharField(max_length=10)
 
     def __str__(self):
         return self.generic_number
+    
+    class Meta():
+        db_table = 'residue_number'
