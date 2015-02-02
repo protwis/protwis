@@ -18,7 +18,6 @@ On Ubuntu 14.04 you will need the following packages:
 * python3-pip (install with apt)
 * django (install with pip3)
 * django-tastypie (install with pip3)
-* biopython (install with pip3)
 
 Clone this repository:
 
@@ -27,7 +26,7 @@ Clone this repository:
 
 Copy the example settings file and name it `settings.py`:
 
-    mv protwis/settings_example.py protwis/settings.py
+    cp protwis/settings_example.py protwis/settings.py
 
 Create a postgresql user and database (both called gpcrdb in this example):
 
