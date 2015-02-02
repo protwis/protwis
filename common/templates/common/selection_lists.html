@@ -1,24 +1,30 @@
 {% for type, selected_items in selection.items %}
     {% if type == selection_type %}
-    <div class='col-md-12 well'>
-        <p>
-            <span class="selection-heading-text">Selected {{ selection_type }}</span>
-            {% if selected_items|length > 0 %}
-            <button onclick="ClearSelection('{{ selection_type }}')" class="btn btn-danger btn-xs">
-                <span class="glyphicon glyphicon-remove"></span> Clear
-            </button>
-            {% endif %}
-        </p>
+    <p>
+        <span class="selection-heading-text">Selected {{ selection_type }}</span>
+        {% if selected_items|length > 0 %}
+        <a onclick="ClearSelection('{{ selection_type }}')" class="btn btn-danger btn-xs">
+            <span class="glyphicon glyphicon-remove"></span> Clear
+        </a>
+        {% endif %}
+    </p>
         {% for selected_item in selected_items %}
-            <div>{{ selected_item.item.name|safe }} ({{ selected_item.type_title }}) <button 
+        <div>
+            {% if selection_type == 'segments' %}
+                {{ selected_item.item.slug|safe }}
+            {% else %}
+                {{ selected_item.item.name|safe }}
+            {% endif %}
+
+            ({{ selected_item.type_title }})
+            <a 
             onclick="RemoveFromSelection('{{ selection_type }}', '{{ selected_item.type }}',
             {{ selected_item.item.id }})" class="btn btn-danger btn-xs">
-            <span class="glyphicon glyphicon-remove"></span>
-            </button>
-            </div>
+                <span class="glyphicon glyphicon-remove"></span>
+            </a>
+        </div>
         {% empty %}
-            None
+        None
         {% endfor %}
-    </div>
     {% endif %}
 {% endfor %}
