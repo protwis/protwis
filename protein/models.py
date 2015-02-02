@@ -12,6 +12,9 @@ class Protein(models.Model):
 
     def __str__(self):
         return self.entry_name
+    
+    class Meta():
+        db_table = 'protein'
 
 
 class Gene(models.Model):
@@ -25,6 +28,7 @@ class Gene(models.Model):
 
     class Meta():
         ordering = ('position', )
+        db_table = 'gene'
 
 
 class Species(models.Model):
@@ -33,6 +37,10 @@ class Species(models.Model):
 
     def __str__(self):
         return self.latin_name
+
+    class Meta():
+        
+        db_table = 'species'
 
 
 class ProteinAlias(models.Model):
@@ -45,6 +53,7 @@ class ProteinAlias(models.Model):
 
     class Meta():
         ordering = ('position', )
+        db_table = 'protein_alias'
 
 
 class ProteinSet(models.Model):
@@ -53,6 +62,9 @@ class ProteinSet(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta():
+        db_table = 'protein_set'
 
 
 class ProteinSegment(models.Model):
@@ -66,6 +78,7 @@ class ProteinSegment(models.Model):
 
     class Meta():
         ordering = ('position', )
+        db_table = 'protein_segment'
 
 
 class ProteinSource(models.Model):
@@ -73,6 +86,9 @@ class ProteinSource(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta():
+        db_table = 'protein_source'
 
 
 class ProteinFamily(models.Model):
@@ -83,6 +99,9 @@ class ProteinFamily(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta():
+        db_table = 'protein_family'
+
 
 class ProteinResource(models.Model):
     name = models.CharField(max_length=200)
@@ -90,6 +109,9 @@ class ProteinResource(models.Model):
 
     def __str__(self):
         return self.name
+    
+    class Meta():
+        db_table = 'protein_reosurce'
 
 
 class ProteinLinks(models.Model):
@@ -98,3 +120,6 @@ class ProteinLinks(models.Model):
 
     def __str__(self):
         return self.url
+    
+    class Meta():
+        db_table = 'protein_links'
