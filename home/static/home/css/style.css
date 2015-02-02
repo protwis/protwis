@@ -1,5 +1,29 @@
 body { padding-top: 70px; }
 
+h1, h2, h3, h4 { margin-top: 0px; }
+
 .carousel-caption { color: #000000; }
 
 .main-logo { height:20px;width:20px; }
+
+.dropdown-menu > li.disabled.nav-header > a {
+    cursor: default;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.well { padding-bottom: 10px; }
+
+.selection-heading
+{
+    height:40px;
+}
+.selection-heading-text
+{
+    font-size:18px;
+    font-weight:bold;
+    vertical-align:middle;
+}

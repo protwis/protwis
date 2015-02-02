@@ -7,7 +7,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}{% endblock %}{{ site_title }}</title>
+    <title>{% block title %}{% endblock %}</title>
 
     <!-- Bootstrap -->
     <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
@@ -33,5 +33,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+    <!-- Include custom ajax functions -->
+    <script src="{% static 'home/js/ajax.js' %}"></script>
   </body>
 </html>

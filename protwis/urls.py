@@ -23,6 +23,8 @@ elif settings.SITE_NAME == 'kinase':
 urlpatterns = patterns('',
     url(r'^$', include('home.urls')),
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^common/', include('common.urls')),
     url(r'^api/', include(rest_api.urls)),
     url(r'^protein/', include('protein.urls')),
+    url(r'^residue/', include('residue.urls')),
 )

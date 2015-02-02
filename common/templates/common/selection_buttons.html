@@ -1,0 +1,7 @@
+<div class="col-md-12 well text-center">
+{% for button_name, button in buttons.items %}
+    <a href="{{ button.url }}" class="btn btn-{{ button.color }} btn-lg btn-block">
+        {{ button.label }}
+    </a>
+{% endfor %}
+</div>

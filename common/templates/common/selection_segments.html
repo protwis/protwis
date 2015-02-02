@@ -1,0 +1,6 @@
+{% for s in ss %}
+    <a href="javascript:void(0)" onclick="AddToSelection('segments', '{{ s.category }}', '{{ s.id }}')"
+    class="btn btn-primary btn-sm">
+        {{ s.slug }}
+    </a>
+{% endfor %}
