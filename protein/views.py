@@ -16,11 +16,3 @@ class IndexView(generic.ListView):
 class DetailView(generic.DetailView):
     model = Protein
     slug_field = 'entry_name'
-
-
-class TargetSelection(AbsTargetSelection):
-    pass
-
-
-class SegmentSelection(AbsSegmentSelection):
-    pass

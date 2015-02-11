@@ -27,4 +27,6 @@ urlpatterns = patterns('',
     url(r'^api/', include(rest_api.urls)),
     url(r'^protein/', include('protein.urls')),
     url(r'^residue/', include('residue.urls')),
+    url(r'^alignment/', include('alignment.urls')),
+    url(r'^similaritysearch/', include('similaritysearch.urls')),
 )

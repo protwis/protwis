@@ -4,16 +4,21 @@
             &nbsp;
         {% endfor %}
     <a href="javascript:void(0)"
-    onclick="ToggleFamilyTreeNode('{{ action }}', '{{ ppf.id }}', {{ parent_tree_indent_level|length }})">
+    onclick="ToggleFamilyTreeNode('{{ action }}', '{{ type_of_selection }}', '{{ ppf.id }}', {{ parent_tree_indent_level|length }})">
         {% if action == 'expand' %}
             <span class="glyphicon glyphicon-plus"></span>
         {% elif action == 'collapse' %}
             <span class="glyphicon glyphicon-minus"></span>
         {% endif %}
     </a>
-    <a href="javascript:void(0)" onclick="AddToSelection('targets', 'family', '{{ ppf.id }}')">
+    {% if type_of_selection == 'targets' %}
+    <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ ppf.id }}')">
+    {% endif %}
         {{ ppf.name|safe }}
-    </a><br />
+    {% if type_of_selection == 'targets' %}
+    </a>
+    {% endif %}
+    <br />
 </div>
 {% endif %}
 {% for pf in pfs %}
@@ -22,12 +27,17 @@
         &nbsp;
     {% endfor %}
     <a href="javascript:void(0)"
-    onclick="ToggleFamilyTreeNode('expand', '{{ pf.id }}', {{ tree_indent_level|length }})">
+    onclick="ToggleFamilyTreeNode('expand', '{{ type_of_selection }}', '{{ pf.id }}', {{ tree_indent_level|length }})">
         <span class="glyphicon glyphicon-plus"></span>
     </a>
-    <a href="javascript:void(0)" onclick="AddToSelection('targets', 'family', '{{ pf.id }}')">
+    {% if type_of_selection == 'targets' %}
+    <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ pf.id }}')">
+    {% endif %}
         {{ pf.name|safe }}
-    </a><br />
+    {% if type_of_selection == 'targets' %}
+    </a>
+    {% endif %}
+    <br />
 </div>
 {% endfor %}
 
@@ -36,7 +46,7 @@
         &nbsp;
     {% endfor %}
 <span class="glyphicon glyphicon-arrow-right"></span>
-<a href="javascript:void(0)" onclick="AddToSelection('targets', 'protein', '{{ p.id }}')">
+<a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'protein', '{{ p.id }}')">
     {{ p.name|safe }}
 </a><br />
 <div id="{{ p.id }}"></div>

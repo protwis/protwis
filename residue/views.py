@@ -1,7 +1,7 @@
 from django.shortcuts import render
 
-from protein.views import TargetSelection as BaseTargetSelection
+from common.views import AbsTargetSelection
 
 
-class TargetSelection(BaseTargetSelection):
+class TargetSelection(AbsTargetSelection):
     pass
