@@ -27,18 +27,20 @@ class DetailView(generic.DetailView):
 
 def SelectionAutocomplete(request):
     if request.is_ajax():
-        q = request.GET.get('term', '')
+        q = request.GET.get('term')
+        type_of_selection = request.GET.get('type_of_selection')
         results = []
 
-        # find protein families
-        pfs = ProteinFamily.objects.filter(name__icontains=q).exclude(slug='000')[:10]
-        for pf in pfs:
-            pf_json = {}
-            pf_json['id'] = pf.id
-            pf_json['label'] = pf.name
-            pf_json['type'] = 'family'
-            pf_json['category'] = 'Target families'
-            results.append(pf_json)
+        if type_of_selection == 'targets':
+            # find protein families
+            pfs = ProteinFamily.objects.filter(name__icontains=q).exclude(slug='000')[:10]
+            for pf in pfs:
+                pf_json = {}
+                pf_json['id'] = pf.id
+                pf_json['label'] = pf.name
+                pf_json['type'] = 'family'
+                pf_json['category'] = 'Target families'
+                results.append(pf_json)
         
         # find proteins
         ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q))[:10]

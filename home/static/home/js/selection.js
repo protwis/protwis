@@ -22,7 +22,7 @@ $.widget( "custom.catcomplete", $.ui.autocomplete, {
 
 $(function() {
   $("#selection-autocomplete").catcomplete({
-    source: "/protein/autocomplete",
+    source: "/protein/autocomplete?type_of_selection=" + type_of_selection,
     minLength: 2,
     autoFocus: true,
     delay: 500,
