@@ -1,4 +1,5 @@
 {% extends "home/base.html" %}
+{% load staticfiles %}
 
 {% block content %}
     <div class="row">
@@ -27,11 +28,13 @@
         <!-- selection boxes -->
         <div class="col-md-4">
 
-            <!-- protein search -->
+            <!-- target search -->
             {% if search %}
             <div class="col-md-12 well">
                 <h4>Search</h4>
-                <input type="text" class="form-control">
+                <div class="ui-widget">
+                    <input id="selection-autocomplete" size="30">
+                </div>
             </div>
             {% endif %}
 
@@ -69,4 +72,10 @@
         </div>
 
     </div>
+{% endblock %}
+{% block addon_js %}
+    <script type="text/javascript">
+        var type_of_selection = '{{ type_of_selection }}';
+    </script>
+    <script src="{% static 'home/js/selection.js' %}"></script>
 {% endblock %}

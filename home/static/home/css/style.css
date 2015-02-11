@@ -21,9 +21,17 @@ h1, h2, h3, h4 { margin-top: 0px; }
 {
     height:40px;
 }
+
 .selection-heading-text
 {
     font-size:18px;
     font-weight:bold;
     vertical-align:middle;
+}
+
+.ui-autocomplete-category {
+    font-weight: bold;
+    padding: .2em .4em;
+    margin: .2em 0 .2em;
+    line-height: 1.5;
 }
