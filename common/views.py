@@ -1,6 +1,8 @@
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView
+import autocomplete_light
+autocomplete_light.autodiscover()
 
 from common.classes import SimpleSelection
 from common.classes import Selection
@@ -18,19 +20,19 @@ class AbsTargetSelection(TemplateView):
     based view for that app that extends this class"""
     template_name = 'common/targetselection.html'
 
-    allow_multiple = True
+    type_of_selection = 'targets'
     step = 1
     number_of_steps = 2
     title = 'SELECT TARGETS'
-    description = 'Select receptors by searching or browsing in the middle column. You can select entire receptor families or individual receptors.\n\nSelected receptors will appear in the right column, where you can edit the list.\n\nOnce you have selected all your receptors, click the green button.'
-    docs = '/docs/protein'
+    description = 'Select targets by searching or browsing in the middle column. You can select entire target families or individual targets.\n\nSelected targets will appear in the right column, where you can edit the list.\n\nOnce you have selected all your targets, click the green button.'
+    docs = False
     filters = True
     search = True
     family_tree = True
     buttons = {
         'continue': {
             'label': 'Continue to next step',
-            'url': '/protein/segmentselection',
+            'url': '#',
             'color': 'success',
         },
     }
@@ -48,7 +50,6 @@ class AbsTargetSelection(TemplateView):
     action = 'expand'
     # remove the parent family (for all other families than the root of the tree, the parent should be shown)
     del ppf
-
 
     def get_context_data(self, **kwargs):
         """get context from parent class (really only relevant for child classes of this class, as TemplateView does
@@ -75,6 +76,18 @@ class AbsTargetSelection(TemplateView):
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
         return context
+
+class AbsReferenceSelection(AbsTargetSelection):
+    type_of_selection = 'reference'
+    step = 1
+    number_of_steps = 3
+    title = 'SELECT A REFERENCE TARGET'
+    description = 'Select a reference target by searching or browsing in the right column.\n\nThe reference will be compared to the targets you select later in the workflow.\n\nOnce you have selected your reference target, click the green button.'
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
 
 class AbsSegmentSelection(TemplateView):
     """An abstract class for the segment selection page used in many apps. To use it in another app, create a class 
@@ -211,6 +224,7 @@ def ClearSelection(request):
 def ToggleFamilyTreeNode(request):
     """WRITEME"""
     action = request.GET['action']
+    type_of_selection = request.GET['type_of_selection']
     node_id = request.GET['node_id']
     parent_tree_indent_level = int(request.GET['tree_indent_level'])
     tree_indent_level = []
@@ -232,6 +246,7 @@ def ToggleFamilyTreeNode(request):
     
     return render(request, 'common/selection_tree.html', {
         'action': action,
+        'type_of_selection': type_of_selection,
         'ppf': ppf,
         'pfs': pfs,
         'ps': ps,

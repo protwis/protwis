@@ -41,11 +41,12 @@ function ClearSelection(selection_type) {
     });
 }
 
-function ToggleFamilyTreeNode(action, node_id, tree_indent_level) {
+function ToggleFamilyTreeNode(action, type_of_selection, node_id, tree_indent_level) {
     $.ajax({
         'url': '/common/togglefamilytreenode',
         'data': {
             action: action,
+            type_of_selection: type_of_selection,
             node_id: node_id,
             tree_indent_level: tree_indent_level
         },
