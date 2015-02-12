@@ -47,7 +47,7 @@
     {% endfor %}
 <span class="glyphicon glyphicon-arrow-right"></span>
 <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'protein', '{{ p.id }}')">
-    {{ p.name|safe }}
+    {{ p.name|safe }} [{{ p.species.common_name|safe }}]
 </a><br />
 <div id="{{ p.id }}"></div>
 {% endfor %}
