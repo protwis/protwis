@@ -16,7 +16,7 @@ from collections import OrderedDict
 class AbsTargetSelection(TemplateView):
     """An abstract class for the target selection page used in many apps. To use it in another app, create a class 
     based view for that app that extends this class"""
-    template_name = 'common/targetselection.html'
+    template_name = 'common\\targetselection.html'
 
     type_of_selection = 'targets'
     step = 1

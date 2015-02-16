@@ -5,11 +5,7 @@ class Residue(models.Model):
     protein = models.ForeignKey('protein.Protein')
     protein_segment = models.ForeignKey('protein.ProteinSegment', null=True)
     sequence_number = models.SmallIntegerField()
-    generic_number = models.CharField(max_length=10, blank=True)
-    generic_number_alt = models.CharField(max_length=10, blank=True)
-    generic_number_alt2 = models.CharField(max_length=10, blank=True)
-    generic_number_alt3 = models.CharField(max_length=10, blank=True)
-    generic_number_alt4 = models.CharField(max_length=10, blank=True)
+    generic_number = models.ManyToManyField('ResidueGenericNumber')
     amino_acid = models.CharField(max_length=1)
 
     def __str__(self):
@@ -55,11 +51,31 @@ class ResidueSet(models.Model):
         db_table = 'residue_set'
     
     
-class ResidueNumber(models.Model):
-    generic_number = models.CharField(max_length=10)
+class ResidueGenericNumber(models.Model):
+    label = models.CharField(max_length=10)
+    scheme = models.ForeignKey('ResidueNumberingScheme')
 
     def __str__(self):
         return self.generic_number
     
     class Meta():
-        db_table = 'residue_number'
+        db_table = 'residue_generic_number'
+
+
+class ResidueNumberingScheme(models.Model):
+
+    #oli->gpcrdb->b-w->b-s
+    #NUMBERING_SCHEMES = (
+    #    ('bw', 'Ballesteros-Weinstein'),
+    #    ('gpcrdb', 'GPCRdb generic'),
+    #    ('oli', "Oliveira"),
+    #    ('baldwin', "Baldwin-Schwartz")
+    #)
+    slug = models.SlugField(max_length=20)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'residue_numbering_scheme'
