@@ -49,9 +49,10 @@ class Command(BaseCommand):
         
         tables_to_truncate = [
             #Following the changes in the models - SM
-            'residue',
+            'residue_generic_number',
             'residue_set',
-            'generic_number'
+            'residue',
+                
         ]
 
         for table in tables_to_truncate:
@@ -66,7 +67,7 @@ class Command(BaseCommand):
             self.logger.info('USING DATA FROM OLD GPCRB')
             if len(ResidueNumberingScheme.objects.all()) == 0:
                 self.add_numbering_schemes()
-                #just a shortcut to prevent gazilion of subqueries
+            #just a shortcut to prevent gazilion of subqueries
             oliveira_id = ResidueNumberingScheme.objects.get(slug='oliveira')
             bw_id = ResidueNumberingScheme.objects.get(slug='bw')
             gpcrdb_id = ResidueNumberingScheme.objects.get(slug='gpcrdb')
