@@ -56,10 +56,10 @@ class ResidueGenericNumber(models.Model):
     scheme = models.ForeignKey('ResidueNumberingScheme')
 
     def __str__(self):
-        return self.generic_number
+        return self.label
     
     class Meta():
-        db_table = 'residue_generic_number'
+        db_table = 'generic_number'
 
 
 class ResidueNumberingScheme(models.Model):
