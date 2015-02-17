@@ -3,9 +3,9 @@ from django.db import models
 class Fragment(models.Model):
     residue = models.ForeignKey('residue.Residue')
     protein = models.ForeignKey('protein.Protein')
-    structure = models.ForeignKey('structure.Structure')
-    ligand = models.ForeignKey('ligand.Ligand')
-    interaction = models.ForeignKey('Interaction')
+    structure = models.ForeignKey('structure.Structure', null=True)
+    ligand = models.ForeignKey('ligand.Ligand', null=True)
+    interaction = models.ForeignKey('Interaction', null=True)
     filename = models.CharField(max_length=50)
     
     def __str__(self):
