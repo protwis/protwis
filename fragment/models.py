@@ -6,7 +6,6 @@ class Fragment(models.Model):
     structure = models.ForeignKey('structure.Structure', null=True)
     ligand = models.ForeignKey('ligand.Ligand', null=True)
     interaction = models.ForeignKey('Interaction', null=True)
-    filename = models.CharField(max_length=50)
     
     def __str__(self):
         return self.filename
