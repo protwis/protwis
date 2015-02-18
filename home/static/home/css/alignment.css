@@ -1,0 +1,130 @@
+.ali-td
+{
+    padding: 0px 4px 0px 4px;
+    font-size: 10px;
+    white-space: nowrap;
+    height: 25px;
+    border: 1px solid black;
+}
+.ali-td-space
+{
+    width: 20px;
+}
+.ali-td-segment-title
+{
+    font-size: 12px;
+    font-weight: bold;
+    height: 20px;
+}
+.ali-td-generic-num
+{
+    padding: 0px 1px 0px 1px;
+    font-size: 8px;
+    white-space: nowrap;
+    height: 40px;
+    line-height: 12px;
+    text-align: left;
+}
+.ali-td-generic-num-low
+{
+    height: 30px;
+}
+.ali-td-generic-num-tiny
+{
+    font-size: 5px;
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
+}
+.ali-td-generic-num-grey
+{
+    color: #DDDDDD;
+}
+.ali-td-generic-num-red
+{
+    color: #FF0000;
+}
+.ali-td-generic-num-left-border
+{
+    border-left: 1px solid #000000;
+}
+.ali-td-stat-summary
+{
+    padding: 0px 1px 0px 1px;
+    font-size: 7px;
+    white-space: nowrap;
+    height: 25px;
+}
+.ali-td-header-row
+{
+    font-size: 12px;
+    font-weight: bold;
+    height:25px;
+    white-space: nowrap;
+}
+.ali-td-first-col
+{
+    text-align: right;
+    padding-right: 10px;
+}
+.ali-td-consensus
+{
+    font-size: 12px;
+    font-weight: bold;
+}
+.ali-td-padding-gap
+{
+    background-color: #DDDDDD;
+}
+.align-right
+{
+    text-align: right;
+}
+.align-center
+{
+    text-align: center;
+}
+.ali-residue
+{
+    text-align: center;
+    width: 10px;
+}
+.ali-residue-top-border
+{
+    border-top: 1px solid #000000;
+}
+.ali-residue-bottom-border
+{
+    border-bottom: 1px solid #000000;
+}
+.stat-text, .stat-text:hover
+{
+    color: #000000;
+    text-decoration: none;
+}
+.ali-first-col-div
+{
+    overflow-x:scroll;
+}
+.ali-main-div
+{
+    overflow-x:scroll;
+    overflow-y:auto;
+}
+.ali-scroll-div
+{
+    overflow-x:scroll;
+    overflow-y:hidden;
+    height:16px;
+}
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track
+{
+    background: rgba(255,255,255,0);
+}
+::-webkit-scrollbar-thumb
+{
+    background: rgba(6,128,202,1); 
+}

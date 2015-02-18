@@ -2,9 +2,9 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView
 
-from common.classes import SimpleSelection
-from common.classes import Selection
-from common.classes import SelectionItem
+from common.selection import SimpleSelection
+from common.selection import Selection
+from common.selection import SelectionItem
 from protein.models import Protein
 from protein.models import ProteinFamily
 from protein.models import ProteinSegment
@@ -172,7 +172,6 @@ def AddToSelection(request):
         selection.importer(simple_selection)
 
     # add the selected item to the selection
-    sel_type = getattr(selection, selection_type)
     selection.add(selection_type, selection_subtype, selection_object)
 
     # export simple selection that can be serialized
@@ -198,7 +197,6 @@ def RemoveFromSelection(request):
         selection.importer(simple_selection)
 
     # remove the selected item to the selection
-    sel_type = getattr(selection, selection_type)
     selection.remove(selection_type, selection_subtype, selection_id)
 
     # export simple selection that can be serialized

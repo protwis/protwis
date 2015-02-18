@@ -52,9 +52,6 @@ class Selection(SimpleSelection):
                 updated_selection.append(selection_object)
         setattr(self, selection_type, updated_selection)
 
-    def expand(self):
-        pass
-
     def dict(self, selection_type):
         """Returns the selected attribute of Selection in a dictionary for rendering in templates"""
         return {
