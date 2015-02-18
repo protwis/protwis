@@ -1,5 +1,8 @@
+from django.shortcuts import render
+
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
+from common.alignment import Alignment
 
 from collections import OrderedDict
 
@@ -34,7 +37,24 @@ class SegmentSelection(AbsSegmentSelection):
     buttons = {
         'continue': {
             'label': 'Show alignment',
-            'url': '/alignment/results',
+            'url': '/alignment/render',
             'color': 'success',
         },
     }
+
+
+def render_alignment(request):
+    # get the user selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create an alignment object
+    a = Alignment()
+
+    # load data from selection into the alignment
+    a.load_proteins_from_selection(simple_selection)
+    a.load_positions_from_selection(simple_selection)
+
+    # build the alignment data matrix
+    a.build_alignment_matrix()
+
+    return render(request, 'alignment/alignment.html', {'a': a})
