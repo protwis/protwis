@@ -3,7 +3,7 @@ from django.db import models
 class Structure(models.Model):
     protein_class = models.ForeignKey('protein.ProteinFamily')
     receptor = models.ForeignKey('protein.Protein')
-    structure_type = models.CharField(max_length=20, null=True)
+    structure_type = models.ForeignKey('StructureType')
     pdb_code = models.CharField(max_length=4)
     preferred_chain = models.CharField(max_length=20)
     resolution = models.DecimalField(max_digits=5, decimal_places=3)
@@ -23,4 +23,11 @@ class Structure(models.Model):
     
     class Meta():
         db_table = 'structure'
-    
+
+
+class StructureType(models.Model):
+    slug = models.CharField(max_length=20)
+    description = models.TextField()
+
+    class Meta():
+        db_table = "structure_type"
