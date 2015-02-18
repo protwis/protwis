@@ -1,4 +1,5 @@
 {% extends "home/base.html" %}
+{% load staticfiles %}
 
 {% block content %}
     <div class="row">
@@ -61,4 +62,7 @@
         </div>
 
     </div>
+{% endblock %}
+{% block addon_js %}
+    <script src="{% static 'home/js/selection.js' %}"></script>
 {% endblock %}
