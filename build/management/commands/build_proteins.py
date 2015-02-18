@@ -55,18 +55,18 @@ class Command(BaseCommand):
         cursor = connection.cursor()
         
         tables_to_truncate = [
-            'protein_proteinalias',
-            'protein_proteinfamily',
-            'protein_proteinlinks',
-            'protein_proteinresource',
-            'protein_proteinsegment',
-            'protein_proteinset',
+            'protein_alias',
+            'protein_family',
+            'protein_links',
+            'protein_reosurce', # ಠ_ಠ
+            'protein_segment',
+            'protein_set',
             'protein_proteinset_protein',
-            'protein_proteinsource',
-            'protein_gene',
-            'protein_gene_protein',
-            'protein_species',
-            'protein_protein',
+            'protein_source',
+            'gene',
+            'protein_gene_proteins',
+            'species',
+            'protein',
         ]
 
         for table in tables_to_truncate:

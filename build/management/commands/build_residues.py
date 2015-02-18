@@ -17,7 +17,8 @@ class Command(BaseCommand):
 
     logger = logging.getLogger(__name__)
 
-    generic_numbers_source_file = settings.BASE_DIR + '\data\generic_residue_numbers_dump.csv'
+    #generic_numbers_source_file = settings.BASE_DIR + '\data\generic_residue_numbers_dump.csv'
+    generic_numbers_source_file = settings.DATA_DIR + '/residue_data/generic_residue_numbers_dump.csv'
     help = 'Creates residues from protein records, if the file {} is found, the generic numbers are also added (if present)'.format(generic_numbers_source_file)
     #option_list = BaseCommand.option_list + (
     #    make_option('--update-generic-numbers',

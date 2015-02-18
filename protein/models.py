@@ -38,8 +38,7 @@ class Species(models.Model):
     def __str__(self):
         return self.latin_name
 
-    class Meta():
-        
+    class Meta():     
         db_table = 'species'
 
 
@@ -111,7 +110,7 @@ class ProteinResource(models.Model):
         return self.name
     
     class Meta():
-        db_table = 'protein_reosurce'
+        db_table = 'protein_resource'
 
 
 class ProteinLinks(models.Model):
