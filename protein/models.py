@@ -9,6 +9,7 @@ class Protein(models.Model):
     entry_name = models.SlugField(max_length=100, unique=True)
     name = models.CharField(max_length=200)
     sequence = models.TextField()
+    web_link = models.ManyToManyField('common.WebLink')
 
     def __str__(self):
         return self.entry_name
@@ -111,14 +112,3 @@ class ProteinResource(models.Model):
     
     class Meta():
         db_table = 'protein_resource'
-
-
-class ProteinLinks(models.Model):
-    resource = models.ForeignKey('ProteinResource')
-    url = models.TextField()
-
-    def __str__(self):
-        return self.url
-    
-    class Meta():
-        db_table = 'protein_links'
