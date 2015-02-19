@@ -2,9 +2,9 @@ from django.db import models
 
 class Ligand(models.Model):
     name = models.CharField(max_length=50)
-    role = models.ForeignKey('LigandRole')
+    role = models.ForeignKey('LigandRole', null=True)
     xray_name = models.CharField(max_length=3, null=True) #residue name from pdb file
-    smiles = models.TextField()
+    smiles = models.TextField(null=True)
     
     class Meta():
         db_table = 'ligand'

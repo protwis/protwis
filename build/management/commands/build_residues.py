@@ -3,6 +3,7 @@ from django.conf import settings
 from django.db import connection
 
 from protein.models import Protein
+from protein.models import ProteinSegment
 from residue.models import Residue
 from residue.models import ResidueGenericNumber
 from residue.models import ResidueNumberingScheme
@@ -30,12 +31,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
+        #FIXME: Not needed when allowing multiple input files
         # delete any existing residue data
-        try:
-            self.truncate_residue_tables()
-        except Exception as msg:
-            print(msg)
-            self.logger.error(msg)
+        #try:
+        #    self.truncate_residue_tables()
+        #except Exception as msg:
+        #    print(msg)
+        #    self.logger.error(msg)
 
         # create residue records for all proteins
         try:
@@ -60,7 +62,6 @@ class Command(BaseCommand):
 
     def create_residues(self, args):
         self.logger.info('CREATING RESIDUES')  
-        print(args)
         for arg in args:
             residue_data = {}
             if os.path.exists(os.sep.join([self.generic_numbers_source_dir, arg])):
@@ -82,14 +83,7 @@ class Command(BaseCommand):
                     r = Residue()
                     r.protein = protein
                     r.sequence_number = i+1
-                    r.amino_acid = aa
-                    #try:
-                    #    r.save()
-                    #    self.logger.info('Created residue {:n}{!s}for protein {!s}'.format(i, aa, protein.name))
-                    #except Exception as msg:
-                    #    print(msg)
-                    #    self.logger.error('Failed to create residue {:n}{!s}for protein {!s}'.format(i, aa, protein.name))
-
+                    r.amino_acid = aa  
                     generic_numbers = []
                 
                     if protein.entry_name in residue_data.keys():  
@@ -102,6 +96,8 @@ class Command(BaseCommand):
                   
                         for res_record in residue_data[protein.entry_name]:
                             if int(res_record[0]) == r.sequence_number and res_record[1] == r.three_letter():
+                                r.protein_segment = ProteinSegment.objects.get(slug=res_record[6])
+
                                 try:
                                     oliveira = ResidueGenericNumber.objects.get(label=res_record[2], scheme=oliveira_id)
                                 except ResidueGenericNumber.DoesNotExist as e:
@@ -142,11 +138,11 @@ class Command(BaseCommand):
         residue_data_fh = open(file_name, 'r')
 
         for line in residue_data_fh:
-            id,num,oli,gpcrdb,bw,bs,res_name,prot_name,sec_str_id = [x.strip('"') for x in line.split(',')]
+            id,num,oli,gpcrdb,bw,bs,res_name,prot_name,sec_str_name = [x.strip('"') for x in line.split(',')]
             #the data will be in dict of lists
             if prot_name not in residue_data.keys():
                 residue_data[prot_name] = []
-            residue_data[prot_name].append([num, res_name, oli, gpcrdb, bw, bs])
+            residue_data[prot_name].append([num, res_name, oli, gpcrdb, bw, bs, sec_str_name])
 
         print('done')
         return residue_data
