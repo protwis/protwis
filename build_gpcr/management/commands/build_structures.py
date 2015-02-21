@@ -4,6 +4,7 @@ from django.db import connection
 
 from protein.models import Protein
 from residue.models import Residue
+from publication.models import Publication
 from common.models import WebLink, WebResource
 from structure.models import Structure, StructureType
 
@@ -50,11 +51,22 @@ class Command(BaseCommand):
                         s.structure_type = StructureType.objects.get(slug='x-ray')
                     except StructureType.DoesNotExist as msg:
                         print(msg)
-                        xray = StructureType(slug='x-ray', name='X-Ray crystallography')
+                        xray = StructureType(slug='x-ray', name='X-Ray Diffraction')
                         xray.save()
                         s.structure_type = xray
+                    try:
+                        s.publication = Publication.objects.get(weblink.index=structure[5])
+                    except:
+                        p = Publication()
+                        p.update_from_pubmed_data(index=structure[5])
+                        p.save()
+                        s.publication = p
 
-
+                    try:
+                        s.save()
+                    except Exception as e:
+                        print(e)
+                        self.logger.error("Failed to save the structure {}".format(structure[1]))
     def parse_csv_data(self, file_name):
         print('Reading up the structures from file {}'.format(file_name))
         structures_fh = open(file_name, 'r')
