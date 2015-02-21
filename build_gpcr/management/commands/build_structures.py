@@ -55,7 +55,7 @@ class Command(BaseCommand):
                         xray.save()
                         s.structure_type = xray
                     try:
-                        s.publication = Publication.objects.get(weblink.index=structure[5])
+                        s.publication = Publication.objects.get(weblink__index=structure[5])
                     except:
                         p = Publication()
                         p.update_from_pubmed_data(index=structure[5])
