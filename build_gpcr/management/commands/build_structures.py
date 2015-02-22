@@ -20,9 +20,24 @@ class Command(BaseCommand):
     help = 'Creates structures from .csv formatted data strored in the directory {}'.format(structure_build_data_dir)
 
     def handle(self, *args, **options):
+        # delete any existing protein data
+        try:
+            self.truncate_structure_tables()
+        except Exception as msg:
+            # print(msg)
+            self.logger.error(msg)
+        self.create_structures(args)
+    
+    def truncate_structure_tables(self):
+        cursor = connection.cursor()
         
+        tables_to_truncate = [
+            #Following the changes in the models - SM
+            'structure',                
+        ]
 
-        pass
+        for table in tables_to_truncate:
+            cursor.execute("TRUNCATE TABLE {!s} CASCADE".format(table))
 
     def create_structures(self, args):
         self.logger.info('BUILDING UP STRUCTURE RECORDS')
