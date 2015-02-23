@@ -1,18 +1,20 @@
 {% if ppf %}
 <div id="{{ ppf.id }}">
     {% for i in parent_tree_indent_level %}
-            &nbsp;
+            &nbsp;&nbsp
         {% endfor %}
     <a href="javascript:void(0)"
-    onclick="ToggleFamilyTreeNode('{{ action }}', '{{ type_of_selection }}', '{{ ppf.id }}', {{ parent_tree_indent_level|length }})">
+    onclick="ToggleFamilyTreeNode('{{ action }}', '{{ type_of_selection }}', '{{ ppf.id }}',
+        {{ parent_tree_indent_level|length }})" class='btn btn-default btn-xs'>
         {% if action == 'expand' %}
-            <span class="glyphicon glyphicon-plus"></span>
+            <span class="glyphicon glyphicon-folder-close"></span>
         {% elif action == 'collapse' %}
-            <span class="glyphicon glyphicon-minus"></span>
+            <span class="glyphicon glyphicon-folder-open"></span>
         {% endif %}
     </a>
     {% if type_of_selection == 'targets' %}
-    <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ ppf.id }}')">
+    <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ ppf.id }}')"
+        class="target-selection">
     {% endif %}
         {{ ppf.name|safe }}
     {% if type_of_selection == 'targets' %}
@@ -24,14 +26,16 @@
 {% for pf in pfs %}
 <div id="{{ pf.id }}">
     {% for i in tree_indent_level %}
-        &nbsp;
+        &nbsp;&nbsp
     {% endfor %}
     <a href="javascript:void(0)"
-    onclick="ToggleFamilyTreeNode('expand', '{{ type_of_selection }}', '{{ pf.id }}', {{ tree_indent_level|length }})">
-        <span class="glyphicon glyphicon-plus"></span>
+    onclick="ToggleFamilyTreeNode('expand', '{{ type_of_selection }}', '{{ pf.id }}', {{ tree_indent_level|length }})"
+        class='btn btn-default btn-xs'>
+        <span class="glyphicon glyphicon-folder-close"></span>
     </a>
     {% if type_of_selection == 'targets' %}
-    <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ pf.id }}')">
+    <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ pf.id }}')"
+        class="target-selection">
     {% endif %}
         {{ pf.name|safe }}
     {% if type_of_selection == 'targets' %}
@@ -43,10 +47,11 @@
 
 {% for p in ps %}
     {% for i in tree_indent_level %}
-        &nbsp;
+        &nbsp;&nbsp
     {% endfor %}
-<span class="glyphicon glyphicon-arrow-right"></span>
-<a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'protein', '{{ p.id }}')">
+<span class="glyphicon glyphicon-record"></span>
+<a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'protein', '{{ p.id }}')"
+    class="target-selection">
     {{ p.name|safe }} [{{ p.species.common_name|safe }}]
 </a><br />
 <div id="{{ p.id }}"></div>

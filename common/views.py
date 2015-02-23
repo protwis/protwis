@@ -8,6 +8,8 @@ from common.selection import SelectionItem
 from protein.models import Protein
 from protein.models import ProteinFamily
 from protein.models import ProteinSegment
+from protein.models import Species
+from protein.models import ProteinSource
 
 import inspect
 from collections import OrderedDict
@@ -41,6 +43,7 @@ class AbsTargetSelection(TemplateView):
         ('segments', False),
     ])
 
+    # proteins and families
     ppf = ProteinFamily.objects.get(slug='000')
     pfs = ProteinFamily.objects.order_by('id').filter(parent=ppf.id) # FIXME move order_by to model
     ps = Protein.objects.filter(family=ppf)
@@ -48,6 +51,9 @@ class AbsTargetSelection(TemplateView):
     action = 'expand'
     # remove the parent family (for all other families than the root of the tree, the parent should be shown)
     del ppf
+
+    # species
+    sps = Species.objects.all()
 
     def get_context_data(self, **kwargs):
         """get context from parent class (really only relevant for child classes of this class, as TemplateView does
@@ -67,6 +73,10 @@ class AbsTargetSelection(TemplateView):
         for selection_box, include in self.selection_boxes.items():
             if include:
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
+
+        if self.filters:
+            context['selection']['species'] = selection.species
+            context['selection']['annotation'] = selection.annotation
 
         # get attributes of this class and add them to the context
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
@@ -211,9 +221,19 @@ def ClearSelection(request):
     """Clears all selected items of the selected type from the session"""
     selection_type = request.GET['selection_type']
     
-    # create empty selections
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
     selection = Selection()
-    simple_selection = SimpleSelection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # remove the selected item to the selection
+    selection.clear(selection_type)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
 
     # add simple selection to session
     request.session['selection'] = simple_selection
@@ -221,7 +241,7 @@ def ClearSelection(request):
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
 def ToggleFamilyTreeNode(request):
-    """WRITEME"""
+    """Opens/closes a node in the family selection tree"""
     action = request.GET['action']
     type_of_selection = request.GET['type_of_selection']
     node_id = request.GET['node_id']
@@ -229,15 +249,32 @@ def ToggleFamilyTreeNode(request):
     tree_indent_level = []
     for i in range(parent_tree_indent_level+1):
         tree_indent_level.append(0)
-    # if action == 'collapse':
-    #     del tree_indent_level[-1]
     parent_tree_indent_level = tree_indent_level[:]
     del parent_tree_indent_level[-1]
+
+    # session
+    simple_selection = request.session.get('selection')
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
 
     ppf = ProteinFamily.objects.get(pk=node_id)
     if action == 'expand':
         pfs = ProteinFamily.objects.order_by('id').filter(parent=node_id) # FIXME move order_by to model
-        ps = Protein.objects.order_by('id').filter(family=ppf)
+
+        # species filter
+        species_list = []
+        for species in selection.species:
+            species_list.append(species.item)
+
+        # annotation filter
+        protein_source_list = []
+        for protein_source in selection.annotation:
+            protein_source_list.append(protein_source.item)
+
+        ps = Protein.objects.order_by('id').filter(family=ppf,
+            species__in=(species_list),
+            source__in=(protein_source_list))
         action = 'collapse'
     else:
         pfs = ps = {}
@@ -252,3 +289,112 @@ def ToggleFamilyTreeNode(request):
         'parent_tree_indent_level': parent_tree_indent_level,
         'tree_indent_level': tree_indent_level,
     })
+
+def SelectionAnnotation(request):
+    """Updates the selected level of annotation"""
+    protein_source = request.GET['protein_source']
+    
+    if protein_source == 'All':
+        pss = ProteinSource.objects.all()
+    else:
+        pss = ProteinSource.objects.filter(name=protein_source)
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # reset the annotation selection
+    selection.clear('annotation')
+
+    # add the selected items to the selection
+    for ps in pss:
+        selection_object = SelectionItem('annotation', ps)
+        selection.add('annotation', 'annotation', selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+    
+    return render(request, 'common/selection_filters_annotation.html', selection.dict('annotation'))
+
+def SelectionSpeciesPredefined(request):
+    """Updates the selected species to predefined sets (Human and all)"""
+    species = request.GET['species']
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+    
+    all_sps = Species.objects.all()
+    sps = False
+    if species == 'All':
+        sps = all_sps
+    elif species:
+        sps = Species.objects.filter(common_name=species)
+    elif not selection.species:
+        sps = Species.objects.filter(common_name='Human') # if nothing is selected, select human
+
+    if sps:
+        # reset the species selection
+        selection.clear('species')
+
+        # add the selected items to the selection
+        for sp in sps:
+            selection_object = SelectionItem('species', sp)
+            selection.add('species', 'species', selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # add all species objects to context (for comparison to selected species)
+    context = selection.dict('species')
+    context['sps'] = all_sps
+    
+    return render(request, 'common/selection_filters_species.html', context)
+
+def SelectionSpeciesToggle(request):
+    """Updates the selected species arbitrary selections"""
+    species_id = request.GET['species_id']
+
+    all_sps = Species.objects.all()
+    sps = Species.objects.filter(pk=species_id)
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # add the selected items to the selection
+    for sp in sps:
+        exists = selection.remove('species', 'species', species_id)
+        if not exists:
+            selection_object = SelectionItem('species', sp)
+            selection.add('species', 'species', selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # add all species objects to context (for comparison to selected species)
+    context = selection.dict('species')
+    context['sps'] = Species.objects.all()
+    
+    return render(request, 'common/selection_filters_species_selector.html', context)
