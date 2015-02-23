@@ -3,6 +3,7 @@ from django.conf import settings
 from django.db import connection
 
 from protein.models import Protein
+from protein.models import ProteinSegment
 from residue.models import Residue
 from residue.models import ResidueGenericNumber
 from residue.models import ResidueNumberingScheme
@@ -19,23 +20,27 @@ class Command(BaseCommand):
     #avoiding pathing shenanigans
     generic_numbers_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data'])
     help = 'Creates residues from protein records from the filenames specifeid as arguments. The files are looked up in the directory {}'.format(generic_numbers_source_dir)
-    #option_list = BaseCommand.option_list + (
+    option_list = BaseCommand.option_list + (
+        make_option('--purge_tables',
+                    action='store_true',
+                    dest='purge',
+                    default=False,
+                    help='Truncate all the associated tables before inserting new records'),
     #    make_option('--update-generic-numbers',
     #                action='store_true',
     #                dest='generic',
     #                default=False,
     #                help='Update the residue records with generic numbers extracted from the old gpcrdb'),
-    #    )
+        )
     
 
     def handle(self, *args, **options):
-
-        # delete any existing residue data
-        try:
-            self.truncate_residue_tables()
-        except Exception as msg:
-            print(msg)
-            self.logger.error(msg)
+        if options['purge']:
+            try:
+                self.truncate_residue_tables()
+            except Exception as msg:
+                print(msg)
+                self.logger.error(msg)
 
         # create residue records for all proteins
         try:
@@ -60,7 +65,6 @@ class Command(BaseCommand):
 
     def create_residues(self, args):
         self.logger.info('CREATING RESIDUES')  
-        print(args)
         for arg in args:
             residue_data = {}
             if os.path.exists(os.sep.join([self.generic_numbers_source_dir, arg])):
@@ -82,14 +86,7 @@ class Command(BaseCommand):
                     r = Residue()
                     r.protein = protein
                     r.sequence_number = i+1
-                    r.amino_acid = aa
-                    #try:
-                    #    r.save()
-                    #    self.logger.info('Created residue {:n}{!s}for protein {!s}'.format(i, aa, protein.name))
-                    #except Exception as msg:
-                    #    print(msg)
-                    #    self.logger.error('Failed to create residue {:n}{!s}for protein {!s}'.format(i, aa, protein.name))
-
+                    r.amino_acid = aa  
                     generic_numbers = []
                 
                     if protein.entry_name in residue_data.keys():  
@@ -102,6 +99,8 @@ class Command(BaseCommand):
                   
                         for res_record in residue_data[protein.entry_name]:
                             if int(res_record[0]) == r.sequence_number and res_record[1] == r.three_letter():
+                                r.protein_segment = ProteinSegment.objects.get(slug=res_record[6])
+
                                 try:
                                     oliveira = ResidueGenericNumber.objects.get(label=res_record[2], scheme=oliveira_id)
                                 except ResidueGenericNumber.DoesNotExist as e:
@@ -142,22 +141,18 @@ class Command(BaseCommand):
         residue_data_fh = open(file_name, 'r')
 
         for line in residue_data_fh:
-            id,num,oli,gpcrdb,bw,bs,res_name,prot_name,sec_str_id = [x.strip('"') for x in line.split(',')]
+            id,num,oli,gpcrdb,bw,bs,res_name,prot_name,sec_str_name = [x.strip('"') for x in line.split(',')]
             #the data will be in dict of lists
             if prot_name not in residue_data.keys():
                 residue_data[prot_name] = []
-            residue_data[prot_name].append([num, res_name, oli, gpcrdb, bw, bs])
+            residue_data[prot_name].append([num, res_name, oli, gpcrdb, bw, bs, sec_str_name])
 
         print('done')
         return residue_data
 
     def add_numbering_schemes(self):
         #FIXME temporary workaround, will be (?) in a separate file
-        rns = ResidueNumberingScheme(slug="oliveira", name="Oliveira")
-        rns.save()
-        rns = ResidueNumberingScheme(slug="bw", name="Ballesteros-Weinstein")
-        rns.save()
-        rns = ResidueNumberingScheme(slug="gpcrdb", name="GPCRdb generic")
-        rns.save()
-        rns = ResidueNumberingScheme(slug="baldwin", name="Baldwin-Schwartz")
-        rns.save()
+        rns = ResidueNumberingScheme.objects.create(slug="oliveira", name="Oliveira")
+        rns = ResidueNumberingScheme.objects.create(slug="bw", name="Ballesteros-Weinstein")
+        rns = ResidueNumberingScheme.objects.create(slug="gpcrdb", name="GPCRdb generic")
+        rns = ResidueNumberingScheme.objects.create(slug="baldwin", name="Baldwin-Schwartz")
