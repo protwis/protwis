@@ -23,13 +23,6 @@ class Command(BaseCommand):
     segment_source_file = settings.DATA_DIR + '/protein_data/segments.txt'
 
     def handle(self, *args, **options):
-        # delete any existing protein data
-        try:
-            self.truncate_protein_tables()
-        except Exception as msg:
-            # print(msg)
-            self.logger.error(msg)
-
         # create parent protein family, 000
         try:
             self.create_parent_protein_family()
@@ -50,27 +43,6 @@ class Command(BaseCommand):
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
-
-    def truncate_protein_tables(self):
-        cursor = connection.cursor()
-        
-        tables_to_truncate = [
-            'protein_alias',
-            'protein_family',
-            'protein_links',
-            'protein_reosurce', # ಠ_ಠ
-            'protein_segment',
-            'protein_set',
-            'protein_proteinset_protein',
-            'protein_source',
-            'gene',
-            'protein_gene_proteins',
-            'species',
-            'protein',
-        ]
-
-        for table in tables_to_truncate:
-            cursor.execute("TRUNCATE TABLE " + table + " CASCADE")
 
     def create_parent_protein_family(self):
         pf = ProteinFamily()
