@@ -11,7 +11,7 @@ class WebResource(models.Model):
     #Example: 'http://www.ncbi.nlm.nih.gov/pubmed/$index'
 
     def __str__(self):
-        return self.name
+        return self.url
     
     class Meta():
         db_table = 'web_resource'
