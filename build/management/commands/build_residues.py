@@ -20,24 +20,27 @@ class Command(BaseCommand):
     #avoiding pathing shenanigans
     generic_numbers_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data'])
     help = 'Creates residues from protein records from the filenames specifeid as arguments. The files are looked up in the directory {}'.format(generic_numbers_source_dir)
-    #option_list = BaseCommand.option_list + (
+    option_list = BaseCommand.option_list + (
+        make_option('--purge_tables',
+                    action='store_true',
+                    dest='purge',
+                    default=False,
+                    help='Truncate all the associated tables before inserting new records'),
     #    make_option('--update-generic-numbers',
     #                action='store_true',
     #                dest='generic',
     #                default=False,
     #                help='Update the residue records with generic numbers extracted from the old gpcrdb'),
-    #    )
+        )
     
 
     def handle(self, *args, **options):
-
-        #FIXME: Not needed when allowing multiple input files
-        # delete any existing residue data
-        #try:
-        #    self.truncate_residue_tables()
-        #except Exception as msg:
-        #    print(msg)
-        #    self.logger.error(msg)
+        if options['purge']:
+            try:
+                self.truncate_residue_tables()
+            except Exception as msg:
+                print(msg)
+                self.logger.error(msg)
 
         # create residue records for all proteins
         try:
@@ -149,11 +152,7 @@ class Command(BaseCommand):
 
     def add_numbering_schemes(self):
         #FIXME temporary workaround, will be (?) in a separate file
-        rns = ResidueNumberingScheme(slug="oliveira", name="Oliveira")
-        rns.save()
-        rns = ResidueNumberingScheme(slug="bw", name="Ballesteros-Weinstein")
-        rns.save()
-        rns = ResidueNumberingScheme(slug="gpcrdb", name="GPCRdb generic")
-        rns.save()
-        rns = ResidueNumberingScheme(slug="baldwin", name="Baldwin-Schwartz")
-        rns.save()
+        rns = ResidueNumberingScheme.objects.create(slug="oliveira", name="Oliveira")
+        rns = ResidueNumberingScheme.objects.create(slug="bw", name="Ballesteros-Weinstein")
+        rns = ResidueNumberingScheme.objects.create(slug="gpcrdb", name="GPCRdb generic")
+        rns = ResidueNumberingScheme.objects.create(slug="baldwin", name="Baldwin-Schwartz")
