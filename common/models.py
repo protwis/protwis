@@ -3,7 +3,7 @@ from string import Template
 
 
 class WebResource(models.Model):
-    slug = models.CharField(max_lenght=20)
+    slug = models.CharField(max_length=20)
     name = models.CharField(max_length=200, default='')
     url = models.TextField()
     #url should be a string template, so it can be automaticaly filled with index in proper place
@@ -11,7 +11,7 @@ class WebResource(models.Model):
     #Example: 'http://www.ncbi.nlm.nih.gov/pubmed/$index'
 
     def __str__(self):
-        return self.name
+        return self.url
     
     class Meta():
         db_table = 'web_resource'

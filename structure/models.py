@@ -23,7 +23,7 @@ class StructureType(models.Model):
     class Meta():
         db_table = "structure_type"
 
-class StructureStabilizingAgnet(models.Model):
+class StructureStabilizingAgent(models.Model):
     slug = models.CharField(max_length=20)
 
     class Meta():
