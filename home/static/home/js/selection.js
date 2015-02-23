@@ -56,3 +56,42 @@ function ToggleFamilyTreeNode(action, type_of_selection, node_id, tree_indent_le
         }
     });
 }
+
+function SelectionAnnotation(protein_source) {
+    $.ajax({
+        'url': '/common/selectionannotation',
+        'data': {
+            protein_source: protein_source
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#filters-annotation").html(data);
+        }
+    });
+}
+
+function SelectionSpeciesPredefined(species) {
+    $.ajax({
+        'url': '/common/selectionspeciespredefined',
+        'data': {
+            species: species
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#filters-species").html(data);
+        }
+    });
+}
+
+function SelectionSpeciesToggle(species_id) {
+    $.ajax({
+        'url': '/common/selectionspeciestoggle',
+        'data': {
+            species_id: species_id
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#filters-species-selector").html(data);
+        }
+    });
+}

@@ -101,14 +101,3 @@ class ProteinFamily(models.Model):
 
     class Meta():
         db_table = 'protein_family'
-
-
-class ProteinResource(models.Model):
-    name = models.CharField(max_length=200)
-    url = models.TextField()
-
-    def __str__(self):
-        return self.name
-    
-    class Meta():
-        db_table = 'protein_resource'

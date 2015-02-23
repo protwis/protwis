@@ -21,7 +21,7 @@
                 {% for p in a.proteins %}
                 <tr>
                     <td class="ali-td ali-td-first-col">
-                        <a href='#'>{{ p.name|safe }}</a>
+                        <a href='#'>{{ p.name|safe }} [{{ p.species.common_name }}]</a>
                     </td>
                 </tr>
                 {% endfor %}

@@ -3,6 +3,7 @@ from protein.models import Protein
 
 from collections import OrderedDict
 
+
 class Alignment:
     """A class representing a protein sequence alignment, with or without a reference sequence"""
     def __init__(self):
@@ -29,7 +30,19 @@ class Alignment:
             if target.type == 'protein':
                 self.proteins.append(target.item)
             elif target.type == 'family':
-                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug)
+                # species filter
+                species_list = []
+                for species in selection.species:
+                    species_list.append(species.item)
+
+                # annotation filter
+                protein_source_list = []
+                for protein_source in selection.annotation:
+                    protein_source_list.append(protein_source.item)
+                    
+                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                    species__in=(species_list),
+                    source__in=(protein_source_list))
                 for fp in family_proteins:
                     self.proteins.append(fp)
 

@@ -1,9 +1,23 @@
+from protein.models import Species
+from protein.models import ProteinSource
+
+
 class SimpleSelection:
     """A class representing the proteins and segments a user has selected. Can be serialized and stored in session"""
     def __init__(self):
         self.reference = []
         self.targets = []
         self.segments = []
+
+        # species
+        sp = Species.objects.get(common_name='Human') # Default species selection is human only
+        o = SelectionItem('species', sp)
+        self.species = [o]
+
+        # annotation
+        ps = ProteinSource.objects.get(name='SWISSPROT') # Default protein source is SWISSPROT
+        o = SelectionItem('protein_source', ps)
+        self.annotation = [o]
 
     def __str__(self):
         return str(self.__dict__)
@@ -17,6 +31,8 @@ class Selection(SimpleSelection):
         self.reference = simple_selection.reference
         self.targets = simple_selection.targets
         self.segments = simple_selection.segments
+        self.species = simple_selection.species
+        self.annotation = simple_selection.annotation
 
     def exporter(self):
         """Exports the attributes of Selection to a SimpleSelection object, and returns it"""
@@ -24,6 +40,8 @@ class Selection(SimpleSelection):
         ss.reference = self.reference
         ss.targets = self.targets
         ss.segments = self.segments
+        ss.species = self.species
+        ss.annotation = self.annotation
         return ss
 
     def add(self, selection_type, selection_subtype, selection_object):
@@ -45,12 +63,21 @@ class Selection(SimpleSelection):
         """Removes a selection item (protein, family, sequence segment etc.) from the selection"""
         selection = getattr(self, selection_type)
         updated_selection = []
+        deleted = False
 
         # loop through selected objects and remove the one that matches the subtype and ID
         for selection_object in selection:
             if not (selection_object.type == selection_subtype and selection_object.item.id == int(selection_id)):
                 updated_selection.append(selection_object)
+            else:
+                deleted = True
         setattr(self, selection_type, updated_selection)
+
+        return deleted
+
+    def clear(self, selection_type):
+        """Clears a section of the selection (e.g. targets)"""
+        setattr(self, selection_type, [])
 
     def dict(self, selection_type):
         """Returns the selected attribute of Selection in a dictionary for rendering in templates"""

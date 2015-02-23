@@ -29,9 +29,35 @@ h1, h2, h3, h4 { margin-top: 0px; }
     vertical-align:middle;
 }
 
+.selection-tree-box {
+    width: 330px;
+    height: 350px;
+    overflow-x: scroll;
+}
+
+.target-selection
+{
+    padding: 0px 0px 0px 0px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
 .ui-autocomplete-category {
     font-weight: bold;
     padding: .2em .4em;
     margin: .2em 0 .2em;
     line-height: 1.5;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track
+{
+    background: rgba(255,255,255,0);
+}
+::-webkit-scrollbar-thumb
+{
+    background: rgba(6,128,202,1); 
 }

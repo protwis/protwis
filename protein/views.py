@@ -7,6 +7,7 @@ from protein.models import Protein
 from protein.models import ProteinAlias
 from protein.models import Gene
 from protein.models import ProteinFamily
+from common.selection import Selection
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
 
@@ -31,6 +32,22 @@ def SelectionAutocomplete(request):
         type_of_selection = request.GET.get('type_of_selection')
         results = []
 
+        # session
+        simple_selection = request.session.get('selection')
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+
+        # species filter
+        species_list = []
+        for species in selection.species:
+            species_list.append(species.item)
+
+        # annotation filter
+        protein_source_list = []
+        for protein_source in selection.annotation:
+            protein_source_list.append(protein_source.item)
+
         if type_of_selection == 'targets':
             # find protein families
             pfs = ProteinFamily.objects.filter(name__icontains=q).exclude(slug='000')[:10]
@@ -43,7 +60,9 @@ def SelectionAutocomplete(request):
                 results.append(pf_json)
         
         # find proteins
-        ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q))[:10]
+        ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q),
+            species__in=(species_list),
+            source__in=(protein_source_list))[:10]
         for p in ps:
             p_json = {}
             p_json['id'] = p.id
@@ -53,7 +72,9 @@ def SelectionAutocomplete(request):
             results.append(p_json)
 
         # find protein aliases
-        pas = ProteinAlias.objects.select_related('protein').filter(name__icontains=q)[:10]
+        pas = ProteinAlias.objects.select_related('protein').filter(name__icontains=q,
+            protein__species__in=(species_list),
+            protein__source__in=(protein_source_list))[:10]
         for pa in pas:
             pa_json = {}
             pa_json['id'] = pa.protein.id
