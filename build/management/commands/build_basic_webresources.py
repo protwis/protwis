@@ -26,7 +26,7 @@ class Command(BaseCommand):
         except WebResource.DoesNotExist:
             try:
                 wr = WebResources.objects.create(slug='pdb', name='Protein Data Bank', link='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
-                self.logger.info("pubmed record succesfully created")
+                self.logger.info("pdb record succesfully created")
             except msg:
                 print(msg)
                 self.logger.error("Couldn't create a record for pubmed")
@@ -36,14 +36,8 @@ class Command(BaseCommand):
         except WebResource.DoesNotExist:
             try:
                 wr = WebResources.objects.create(slug='iuphar', name='IUPHAR Guide to pharmacology', link='http://www.guidetopharmacology.org/GRAC/ObjectDisplayForward?objectId=$index&familyId=$family&familyType=GPCR')
-                self.logger.info("pubmed record succesfully created")
+                self.logger.info("iuphar record succesfully created")
             except msg:
                 print(msg)
                 self.logger.error("Couldn't create a record for pubmed")
         
-
-
-
-
-
-

@@ -141,7 +141,7 @@ class Command(BaseCommand):
         residue_data_fh = open(file_name, 'r')
 
         for line in residue_data_fh:
-            id,num,oli,gpcrdb,bw,bs,res_name,prot_name,sec_str_name = [x.strip('"') for x in line.split(',')]
+            id,num,res_name,family,oli,gpcrdb,bw,bs,prot_name,sec_str_name = [x.strip('"') for x in line.split(',')]
             #the data will be in dict of lists
             if prot_name not in residue_data.keys():
                 residue_data[prot_name] = []
