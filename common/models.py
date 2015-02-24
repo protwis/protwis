@@ -3,7 +3,7 @@ from string import Template
 
 
 class WebResource(models.Model):
-    slug = models.CharField(max_length=20)
+    slug = models.SlugField(max_length=20)
     name = models.CharField(max_length=200, default='')
     url = models.TextField()
     #url should be a string template, so it can be automaticaly filled with index in proper place
