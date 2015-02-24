@@ -7,9 +7,9 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('residue', '0002_auto_20150121_1621'),
+        ('residue', '0002_residuegenericnumber_protein_segment'),
         ('ligand', '0001_initial'),
-        ('protein', '0002_auto_20150121_1621'),
+        ('protein', '0002_auto_20150219_1527'),
         ('structure', '0001_initial'),
     ]
 
