@@ -15,9 +15,9 @@ class Command(BaseCommand):
             wr = WebResource.objects.get(slug='pubmed', name='NCBI PubMed')
         except WebResource.DoesNotExist:
             try:
-                wr = WebResources.objects.create(slug='pubmed', name='NCBI PubMed', link='http://www.ncbi.nlm.nih.gov/pubmed/$index')
+                wr = WebResource.objects.create(slug='pubmed', name='NCBI PubMed', url='http://www.ncbi.nlm.nih.gov/pubmed/$index')
                 self.logger.info("pubmed record succesfully created")
-            except msg:
+            except Exception as msg:
                 print(msg)
                 self.logger.error("Couldn't create a record for pubmed")
         #pdb
@@ -25,9 +25,9 @@ class Command(BaseCommand):
             wr = WebResource.objects.get(slug='pdb', name='Protein Data Bank')
         except WebResource.DoesNotExist:
             try:
-                wr = WebResources.objects.create(slug='pdb', name='Protein Data Bank', link='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
+                wr = WebResource.objects.create(slug='pdb', name='Protein Data Bank', url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
                 self.logger.info("pdb record succesfully created")
-            except msg:
+            except Exception as msg:
                 print(msg)
                 self.logger.error("Couldn't create a record for pubmed")
         #iuphar guidetopahrmacology
@@ -35,9 +35,9 @@ class Command(BaseCommand):
             wr = WebResource.objects.get(slug='iuphar', name='IUPHAR Guide to pharmacology')
         except WebResource.DoesNotExist:
             try:
-                wr = WebResources.objects.create(slug='iuphar', name='IUPHAR Guide to pharmacology', link='http://www.guidetopharmacology.org/GRAC/ObjectDisplayForward?objectId=$index&familyId=$family&familyType=GPCR')
+                wr = WebResource.objects.create(slug='iuphar', name='IUPHAR Guide to pharmacology', url='http://www.guidetopharmacology.org/GRAC/ObjectDisplayForward?objectId=$index&familyId=$family&familyType=GPCR')
                 self.logger.info("iuphar record succesfully created")
-            except msg:
+            except Exception as msg:
                 print(msg)
                 self.logger.error("Couldn't create a record for pubmed")
-        
+        self.logger.info("DONE")
