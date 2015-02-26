@@ -4,7 +4,7 @@ import logging
 class Command(BaseCommand):
     
     table_population_order = {
-        'web_resources': 'build_basic_resources',
+        'web_resources': 'build_basic_webresources',
         'publication': 'build_publications',
         'ligand': 'build_ligands',
         'protein': 'build_proteins',

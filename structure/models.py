@@ -17,14 +17,14 @@ class Structure(models.Model):
 
 
 class StructureType(models.Model):
-    slug = models.CharField(max_length=20)
+    slug = models.SlugField(max_length=20)
     description = models.TextField()
 
     class Meta():
         db_table = "structure_type"
 
 class StructureStabilizingAgent(models.Model):
-    slug = models.CharField(max_length=20)
+    slug = models.SlugField(max_length=20)
 
     class Meta():
         db_table = "structure_stabilizing_agent"

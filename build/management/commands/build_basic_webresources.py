@@ -16,7 +16,7 @@ class Command(BaseCommand):
         except WebResource.DoesNotExist:
             try:
                 wr = WebResource.objects.create(slug='pubmed', name='NCBI PubMed', url='http://www.ncbi.nlm.nih.gov/pubmed/$index')
-                self.logger.info("pubmed record succesfully created")
+                self.logger.info("pubmed record successfully created")
             except Exception as msg:
                 print(msg)
                 self.logger.error("Couldn't create a record for pubmed")
@@ -26,18 +26,18 @@ class Command(BaseCommand):
         except WebResource.DoesNotExist:
             try:
                 wr = WebResource.objects.create(slug='pdb', name='Protein Data Bank', url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
-                self.logger.info("pdb record succesfully created")
+                self.logger.info("pdb record successfully created")
             except Exception as msg:
                 print(msg)
-                self.logger.error("Couldn't create a record for pubmed")
+                self.logger.error("Couldn't create a record for pdb")
         #iuphar guidetopahrmacology
         try:
             wr = WebResource.objects.get(slug='iuphar', name='IUPHAR Guide to pharmacology')
         except WebResource.DoesNotExist:
             try:
                 wr = WebResource.objects.create(slug='iuphar', name='IUPHAR Guide to pharmacology', url='http://www.guidetopharmacology.org/GRAC/ObjectDisplayForward?objectId=$index&familyId=$family&familyType=GPCR')
-                self.logger.info("iuphar record succesfully created")
+                self.logger.info("iuphar record successfully created")
             except Exception as msg:
                 print(msg)
-                self.logger.error("Couldn't create a record for pubmed")
+                self.logger.error("Couldn't create a record for iuphar")
         self.logger.info("DONE")

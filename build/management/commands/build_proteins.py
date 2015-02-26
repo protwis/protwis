@@ -12,6 +12,7 @@ from protein.models import ProteinSource
 
 import logging
 import shlex
+import os
 
 
 class Command(BaseCommand):
@@ -19,8 +20,8 @@ class Command(BaseCommand):
 
     logger = logging.getLogger(__name__)
 
-    protein_source_file = settings.DATA_DIR + '/protein_data/proteins_and_families.txt'
-    segment_source_file = settings.DATA_DIR + '/protein_data/segments.txt'
+    protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'proteins_and_families.txt'])
+    segment_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'segments.txt'])
 
     def handle(self, *args, **options):
         # create parent protein family, 000

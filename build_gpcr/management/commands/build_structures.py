@@ -9,6 +9,7 @@ from common.models import WebLink, WebResource
 from structure.models import Structure, StructureType
 
 from optparse import make_option
+from datetime import datetime
 import logging, os
 
 
@@ -43,16 +44,18 @@ class Command(BaseCommand):
         self.logger.info('BUILDING UP STRUCTURE RECORDS')
         for arg in args:
             structures = []
-            if os.path.exists(os.sep.join([self.generic_numbers_source_dir, arg])):
-                structures = self.parse_csv_data(os.sep.join([self.generic_numbers_source_dir, arg]))
+            if os.path.exists(os.sep.join([self.structure_build_data_dir, arg])):
+                structures = self.parse_csv_data(os.sep.join([self.structure_build_data_dir, arg]))
                 self.logger.info('USING DATA FROM {} FILE'.format(arg))
 
                 for structure in structures:
                     s = Structure() 
                     s.resolution = structure[2]
-                    s.pdb_publication_date = structure[6]
+                    s.pdb_publication_date = "{!s}".format(datetime.strptime(structure[6], "%Y-%m-%d %H:%M:%S").date())
+                    print("{!s}".format(datetime.strptime(structure[6], "%Y-%m-%d %H:%M:%S").date()))
                     s.preferred_chain = structure[7]
-                    s.save()
+                    #s.save()
+                    print(structure[0])
                     s.protein = Protein.objects.get(entry_name=structure[0])
 
                     #We assume that the proper web resources are defined already
