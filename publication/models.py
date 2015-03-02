@@ -35,7 +35,8 @@ class Publication(models.Model):
                 j.save()
                 self.journal = j
             self.citation = "{}({}):{}".format(record['VI'], record['IP'], record['PG'])
-
+        except Exception as msg:
+            print(msg)
 
 class PublicationJournal(models.Model):
     slug = models.CharField(max_length=30, null=True)

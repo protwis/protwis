@@ -7,37 +7,68 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ligand', '0001_initial'),
-        ('protein', '0002_auto_20150219_1527'),
+        ('common', '0002_auto_20150224_0901'),
+        ('ligand', '0002_auto_20150225_1441'),
+        ('protein', '0003_delete_proteinresource'),
     ]
 
     operations = [
         migrations.CreateModel(
             name='Structure',
             fields=[
-                ('id', models.AutoField(serialize=False, primary_key=True, verbose_name='ID', auto_created=True)),
-                ('pdb_code', models.CharField(max_length=4)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('preferred_chain', models.CharField(max_length=20)),
-                ('resolution', models.DecimalField(max_digits=5, decimal_places=3)),
-                ('pmid', models.CharField(max_length=20)),
-                ('publication_date', models.DateField()),
-                ('n_terminus', models.TextField()),
-                ('icl1', models.TextField()),
-                ('ecl1', models.TextField()),
-                ('icl2', models.TextField()),
-                ('ecl2_1', models.TextField()),
-                ('ecl2_2', models.TextField()),
-                ('icl3', models.TextField()),
-                ('ecl3', models.TextField()),
-                ('c_terminus', models.TextField()),
-                ('endogenous_ligand', models.ForeignKey(null=True, related_name='endogenous_ligand', to='ligand.Ligand')),
-                ('protein_class', models.ForeignKey(to='protein.ProteinFamily')),
-                ('receptor', models.ForeignKey(to='protein.Protein')),
-                ('xray_ligand', models.ForeignKey(null=True, related_name='xray_ligand', to='ligand.Ligand')),
+                ('resolution', models.DecimalField(decimal_places=3, max_digits=5)),
+                ('publication', models.CharField(max_length=20)),
+                ('pdb_publication_date', models.DateField()),
+                ('endogenous_ligand', models.ForeignKey(related_name='endogenous_ligand', null=True, to='ligand.Ligand')),
+                ('pdb_code', models.ForeignKey(to='common.WebLink')),
+                ('protein', models.ForeignKey(to='protein.Protein')),
             ],
             options={
                 'db_table': 'structure',
             },
             bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='StructureStabilizingAgent',
+            fields=[
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
+                ('slug', models.SlugField(max_length=20)),
+            ],
+            options={
+                'db_table': 'structure_stabilizing_agent',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='StructureType',
+            fields=[
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
+                ('slug', models.SlugField(max_length=20)),
+                ('description', models.TextField()),
+            ],
+            options={
+                'db_table': 'structure_type',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.AddField(
+            model_name='structure',
+            name='stabilizing_agents',
+            field=models.ManyToManyField(null=True, to='structure.StructureStabilizingAgent'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='structure',
+            name='structure_type',
+            field=models.ForeignKey(to='structure.StructureType'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='structure',
+            name='xray_ligand',
+            field=models.ForeignKey(related_name='xray_ligand', null=True, to='ligand.Ligand'),
+            preserve_default=True,
         ),
     ]
