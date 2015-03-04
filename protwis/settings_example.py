@@ -44,9 +44,12 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'tastypie',
+    'common',
     'home',
     'protein',
     'residue',
+    'alignment',
+    'similaritysearch',
     'build_' + SITE_NAME,
 )
 
@@ -100,6 +103,10 @@ STATIC_URL = '/static/'
 # Templates
 
 TEMPLATE_DIRS = [os.path.join(BASE_DIR, 'templates')]
+
+# Serializer
+
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 # Logging
 
