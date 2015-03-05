@@ -74,9 +74,9 @@ WSGI_APPLICATION = 'protwis.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'gpcrdb',
-        'USER': 'gpcrdb',
-        'PASSWORD': 'gpcrdb',
+        'NAME': 'protwis',
+        'USER': 'protwis',
+        'PASSWORD': 'protwis',
         'HOST': 'localhost',
     }
 }
