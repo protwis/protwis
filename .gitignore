@@ -1,3 +1,4 @@
 *.pyc
 *.log
 protwis/settings.py
+env
