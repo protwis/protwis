@@ -1,101 +1,12 @@
-from subprocess import Popen, PIPE
-from StringIO import StringIO
-from Bio.Blast import NCBIXML
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.PDB import *
 from Bio.PDB.PDBIO import Select
 
+from common import BlastSearch, MappedResidue
+
 import Bio.PDB.Polypeptide as polypeptide
-import os, sys, urllib
-
-
-
-#==============================================================================
-# I have put it into separate class for the sake of future uses
-class blast_search(object):
-  
-    def __init__ (self, blast_path = 'blastp', blastdb = '../protected/data/gpcrs_iuphar_blastdb', top_results = 1):
-  
-        self.blast_path = blast_path
-        self.blastdb = blastdb
-        #typicaly top scored result is enough, but for sequences with missing residues it is better to use more results to avoid getting sequence of e.g. different species
-        self.top_results = top_results
-      
-    #takes Bio.Seq sequence as an input and returns a list of tuples with the alignments 
-    def run (self, input_seq):
-    
-        output = []
-        
-        #invoking blast with default settings
-        blast = Popen('%s -db %s -outfmt 5' %(self.blast_path, self.blastdb), universal_newlines=True, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        blast_out, blast_err = blast.communicate(input=input_seq.seq)
-        #print blast_err
-        result = NCBIXML.parse(StringIO(blast_out)).next()
-        
-        for aln in result.alignments[:self.top_results]:
-            seq_id = aln.hit_id.split("|")
-            #first condition is for working with "default" databases, where SwissProt ids come with some junk
-            if 'sp' in seq_id:
-                upid = seq_id[seq_id.index('sp')+1]
-            else:
-                #0 or 1, the index actualy depends on blast version used
-                upid = seq_id[0]
-                
-            if upid is None:
-                continue
-            
-            #print len(aln.hsps)
-
-            #output.append(((SeqRecord(Seq(aln.hsps[0].sbjct), id=upid), aln.hsps[0].sbjct_start), (SeqRecord(Seq(aln.hsps[0].query), id='pdb'), aln.hsps[0].query_start)))
-            output.append((upid, aln))
-        return output
-  
-      
-    def run_online (self, input_seq = ''):
-        #TODO
-        pass
-
-#==============================================================================
-
-#stores information about alignments and b-w numbers
-class mapped_residue(object):
-  
-    def __init__(self, res_num, res_name):
-          
-        self.number = res_num
-        self.name = res_name
-        self.pos_in_aln = 0
-        self.mapping = {}
-        self.bw = 0.
-        self.gpcrdb = 0.
-          
-      
-    def add_mapping(self, uprot_code, uprot_num):
-    
-        self.mapping[uprot_code] = uprot_num
-  
-  
-    def add_bw_number(self, bw_number=''):
-    
-        self.bw = bw_number
-
-
-    def add_gpcrdb_number(self, gpcrdb_number=''):
-        #PDB format does not allow fractional part longer than 2 digits
-        #so numbers x.xx1 are negative
-        if len(gpcrdb_number) > 4:
-          self.gpcrdb = '-' + gpcrdb_number.replace('x', '.')
-        else:
-          self.gpcrdb = gpcrdb_number.replace('x', '.')
-    
-    
-    def get_mapping(self, uprot_code):
-    
-        if self.mapping.has_key(uprot_code):
-            return self.mapping[uprot_code]
-    
-        return 0
+import os
 
 
 #==============================================================================
@@ -108,21 +19,16 @@ class generic_numbering(object):
     
         self.pdb_file = filename
         
-        #dictionary of 'mapped_residue' object storing information about alignments and bw numbers
+        #dictionary of 'MappedResidue' object storing information about alignments and bw numbers
         self.residues = {}
         self.pdb_seq = {} #Seq('')
         #list of uniprot ids returned from blast
         self.up_id_list = []
         #setup for local blast search
-        self.blast = blast_search()
+        self.blast = BlastSearch()
         
         self.parse_pdb()
         
-        if local_gpcrdb:
-            self.gpcrdb = gpcrdb_connection()
-        else:
-            self.gpcrdb = None	
-
 
     def parse_pdb (self):
         #extracting sequence and preparing dictionary of residues
@@ -140,7 +46,7 @@ class generic_numbering(object):
                 else:
                     if res.resname not in self.residue_list:
                         continue
-                    self.residues[chain.id][res.id[1]] = mapped_residue(res.id[1], polypeptide.three_to_one(res.resname))
+                    self.residues[chain.id][res.id[1]] = MappedResidue(res.id[1], polypeptide.three_to_one(res.resname))
     
             self.pdb_seq[chain.id].seq = ''.join([self.residues[chain.id][x].name for x in sorted(self.residues[chain.id].keys())])
             
@@ -194,13 +100,7 @@ class generic_numbering(object):
             subj_counter += 1
             tmp_seq.pop(0)
             q_seq.pop(0)        
-    
-    def fetch_gpcrdb_residues (self, rec_id):
-    
-        #get the residue objects from gpcrdb
-        GPCRDBClient = client.Client("http://www.gpcr.org/7tm/webservice/?wsdl")
-        return GPCRDBClient.service.getResidues(rec_id)
-        
+            
     
     def get_annotated_structure(self, gpcrdb=True, bw=False):
     
@@ -228,9 +128,9 @@ class generic_numbering(object):
         for chain in pdb_struct[0]:
             for residue in chain:
                 if self.residues[chain.id].has_key(residue.id[1]):
-                    if self.residues[chain.id][residue.id[1]].gpcrdb != 0. and gpcrdb:
+                    if self.residues[chain.id][residue.id[1]].gpcrdb != 0.:
                         residue["CA"].set_bfactor(float(self.residues[chain.id][residue.id[1]].gpcrdb))
-                    if self.residues[chain.id][residue.id[1]].bw != 0. and bw:
+                    if self.residues[chain.id][residue.id[1]].bw != 0.:
                         residue["N"].set_bfactor(float(self.residues[chain.id][residue.id[1]].bw))
                     r = self.residues[chain.id][residue.id[1]]
         #get the basename, extension and export the pdb structure with b-w numbers
@@ -255,18 +155,6 @@ class generic_numbering(object):
                     continue
                 for hsps in alignment[1].hsps:
                     self.map_blast_seq(alignment[0], hsps, chain)
-            
-
-            #now get the list of residues from gpcrdb
-                    if self.gpcrdb is not None:
-                        residues = self.gpcrdb.get_protein_residues(self.get_uniprot_entry_name(alignment[0]))
-                    else:
-                        residues = self.fetch_gpcrdb_residues(self.get_uniprot_entry_name(alignment[0]))
-                    #for residue in residues:
-                        #try:
-                            #print "%s\t%s" %(residue['residueNumber'],residue["residueNumberFamilyAlternate"])
-                        #except:
-                            #pass
                     #now kiss
                     for res_num in self.residues[chain].keys():
                         for residue in residues:
