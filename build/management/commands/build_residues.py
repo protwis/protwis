@@ -54,7 +54,7 @@ class Command(BaseCommand):
         
         tables_to_truncate = [
             #Following the changes in the models - SM
-            'residue_generic_number',
+            'generic_number',
             'residue_set',
             'residue',
                 
@@ -86,7 +86,7 @@ class Command(BaseCommand):
                     r = Residue()
                     r.protein = protein
                     r.sequence_number = i+1
-                    r.amino_acid = aa  
+                    r.amino_acid = aa
                     generic_numbers = []
                 
                     if protein.entry_name in residue_data.keys():  
@@ -105,24 +105,28 @@ class Command(BaseCommand):
                                     oliveira = ResidueGenericNumber.objects.get(label=res_record[2], scheme=oliveira_id)
                                 except ResidueGenericNumber.DoesNotExist as e:
                                     oliveira = ResidueGenericNumber(label=res_record[2], scheme=oliveira_id)
+                                    oliveira.protein_segment = r.protein_segment
                                     oliveira.save()
                                 r.generic_number.add(oliveira)
                                 try:
                                     bw = ResidueGenericNumber.objects.get(label=res_record[3], scheme=bw_id)
                                 except ResidueGenericNumber.DoesNotExist as e:
                                     bw = ResidueGenericNumber(label=res_record[3], scheme=bw_id)
+                                    bw.protein_segment = r.protein_segment
                                     bw.save()
                                 r.generic_number.add(bw)
                                 try:
                                     gpcrdb = ResidueGenericNumber.objects.get(label=res_record[4], scheme=gpcrdb_id)
                                 except ResidueGenericNumber.DoesNotExist as e:
                                     gpcrdb = ResidueGenericNumber(label=res_record[4], scheme=gpcrdb_id)
+                                    gpcrdb.protein_segment = r.protein_segment
                                     gpcrdb.save()
                                 r.generic_number.add(gpcrdb)
                                 try:
                                     baldwin = ResidueGenericNumber.objects.get(label=res_record[5], scheme=baldwin_id)
                                 except ResidueGenericNumber.DoesNotExist as e:
                                     baldwin = ResidueGenericNumber(label=res_record[5], scheme=baldwin_id)
+                                    baldwin.protein_segment = r.protein_segment
                                     baldwin.save()
                                 r.generic_number.add(baldwin)
 
@@ -154,5 +158,5 @@ class Command(BaseCommand):
         #FIXME temporary workaround, will be (?) in a separate file
         rns = ResidueNumberingScheme.objects.create(slug="oliveira", name="Oliveira")
         rns = ResidueNumberingScheme.objects.create(slug="bw", name="Ballesteros-Weinstein")
-        rns = ResidueNumberingScheme.objects.create(slug="gpcrdb", name="GPCRdb generic")
+        rns = ResidueNumberingScheme.objects.create(slug="gpcrdb", name="GPCRdb")
         rns = ResidueNumberingScheme.objects.create(slug="baldwin", name="Baldwin-Schwartz")
