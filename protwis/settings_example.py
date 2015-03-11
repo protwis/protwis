@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 SITE_NAME = 'gpcr' # used for site specific files
 SITE_TITLE = 'GPCRDB' # for display in templates
 ANALYTICS_KEY = ''
-DATA_DIR = '/vagrant/data/protwis/' + SITE_NAME
+DATA_DIR = '/var/www/data/protwis/' + SITE_NAME
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
