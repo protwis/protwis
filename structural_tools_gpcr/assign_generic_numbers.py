@@ -2,8 +2,8 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.PDB import *
 from Bio.PDB.PDBIO import Select
-
-from common import BlastSearch, MappedResidue
+from residue.models import Residue
+from structural_tools_gpcr.common import BlastSearch, MappedResidue
 
 import Bio.PDB.Polypeptide as polypeptide
 import os
@@ -157,12 +157,11 @@ class generic_numbering(object):
                     self.map_blast_seq(alignment[0], hsps, chain)
                     #now kiss
                     for res_num in self.residues[chain].keys():
-                        for residue in residues:
-                            if self.gpcrdb is not None:
-                                if self.residues[chain][res_num].get_mapping(alignment[0]) == int(residue['residuenumber']) and residue["residuenumberfamilyalternate"] != 'None':
+                        self.residues[chain][res_num].add_gpcrdb_number(Residue.objects.get(sequence_number=self.residues[chain][res_num].get_mapping(alignment[0]), ))
+                            if self.residues[chain][res_num].get_mapping(alignment[0]) == int(residue['residuenumber']) and residue["residuenumberfamilyalternate"] != 'None':
                                     self.residues[chain][res_num].add_gpcrdb_number(residue["residuenumberfamilyalternate"])
                                     #print residue["residuenumberfamilyalternate"]
-                                if self.residues[chain][res_num].get_mapping(alignment[0]) == int(residue['residuenumber']) and residue["residuenumberfamilyalternate2"] != 'None':
+                                if  == int(residue['residuenumber']) and residue["residuenumberfamilyalternate2"] != 'None':
                                     self.residues[chain][res_num].add_bw_number(residue["residuenumberfamilyalternate2"])
 
                             else:

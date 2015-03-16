@@ -1,16 +1,19 @@
 from subprocess import Popen, PIPE
-from StringIO import StringIO
+from io import StringIO
 from Bio.Blast import NCBIXML
 
+from django.conf import settings
+import os,sys,tempfile
 
 #==============================================================================
 # I have put it into separate class for the sake of future uses
 class BlastSearch(object):
   
-    def __init__ (self, blast_path = 'blastp', blastdb = '../protected/data/gpcrs_iuphar_blastdb', top_results = 1):
+    def __init__ (self, blast_path = 'blastp', blastdb =  os.sep.join([settings.DATA_DIR, 'blast', 'gpcrdb_blastdb']), top_results = 1):
   
         self.blast_path = blast_path
         self.blastdb = blastdb
+        print(blastdb)
         #typicaly top scored result is enough, but for sequences with missing residues it is better to use more results to avoid getting sequence of e.g. different species
         self.top_results = top_results
       
@@ -18,12 +21,19 @@ class BlastSearch(object):
     def run (self, input_seq):
     
         output = []
-        
-        #invoking blast with default settings
-        blast = Popen('%s -db %s -outfmt 5' %(self.blast_path, self.blastdb), universal_newlines=True, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        blast_out, blast_err = blast.communicate(input=input_seq.seq)
-        #print blast_err
-        result = NCBIXML.parse(StringIO(blast_out)).next()
+        #Windows has problems with Popen and PIPE
+        if sys.platform == 'win32':
+            tmp = tempfile.NamedTemporaryFile()
+            tmp.write(bytes(input_seq.seq+'\n', 'latin1'))
+            tmp.seek(0)
+            blast = Popen('%s -db %s -outfmt 5' %(self.blast_path, self.blastdb), universal_newlines=True, shell=True, stdin=tmp, stdout=PIPE, stderr=PIPE)
+            (blast_out, blast_err) = blast.communicate()
+        else:
+        #Rest of the world:
+            blast = Popen('%s -db %s -outfmt 5' %(self.blast_path, self.blastdb), universal_newlines=True, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            (blast_out, blast_err) = blast.communicate(input=input_seq.seq)
+        result = NCBIXML.parse(blast_out).next()
+        print(result)
         
         for aln in result.alignments[:self.top_results]:
             seq_id = aln.hit_id.split("|")
@@ -32,14 +42,10 @@ class BlastSearch(object):
                 upid = seq_id[seq_id.index('sp')+1]
             else:
                 #0 or 1, the index actualy depends on blast version used
-                upid = seq_id[0]
-                
+                upid = seq_id[0]                
             if upid is None:
                 continue
-            
-            #print len(aln.hsps)
 
-            #output.append(((SeqRecord(Seq(aln.hsps[0].sbjct), id=upid), aln.hsps[0].sbjct_start), (SeqRecord(Seq(aln.hsps[0].query), id='pdb'), aln.hsps[0].query_start)))
             output.append((upid, aln))
         return output
   

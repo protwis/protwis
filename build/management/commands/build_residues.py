@@ -2,11 +2,8 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
 
-from protein.models import Protein
-from protein.models import ProteinSegment
-from residue.models import Residue
-from residue.models import ResidueGenericNumber
-from residue.models import ResidueNumberingScheme
+from protein.models import Protein, ProteinSegment
+from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme
 
 from optparse import make_option
 import logging, os
