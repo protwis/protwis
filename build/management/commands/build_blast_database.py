@@ -15,12 +15,14 @@ class Command(BaseCommand):
 
     logger = logging.getLogger(__name__)
     
-    blast_database_dir = os.sep.join([settings.DATA_DIR, 'blast'])
+    #The command puts blastdb in the first directory from common static directories
+    blast_database_dir = os.sep.join([settings.STATICFILES_DIRS[0], 'blast'])
     help = 'Generates Blast database from sequences deposited within protwis dataset. The sequences are indexed by Protein.Id to speed up searching and make querying easier.'
 
     def handle(self, *args, **options):
 
         sequences = []
+        print(self.blast_database_dir)
         print('Fetching sequence data and saving it into temp file')
         self.logger.info('Attempting to fetch protein objects...')
         try:
