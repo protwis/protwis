@@ -64,7 +64,7 @@ class Command(BaseCommand):
             cursor.execute("TRUNCATE TABLE {!s} CASCADE".format(table))
 
     def create_residues(self, args):
-        self.logger.info('CREATING RESIDUES')  
+        self.logger.info('CREATING RESIDUES')
         for arg in args:
             residue_data = {}
             if os.path.exists(os.sep.join([self.generic_numbers_source_dir, arg])):
@@ -89,7 +89,7 @@ class Command(BaseCommand):
                     r.amino_acid = aa
                     generic_numbers = []
                 
-                    if protein.entry_name in residue_data.keys():  
+                    if protein.entry_name in residue_data.keys():
                         try:
                             r.save()
                             self.logger.info('Created residue {:n}{!s}for protein {!s}'.format(i, aa, protein.name))
@@ -145,7 +145,7 @@ class Command(BaseCommand):
         residue_data_fh = open(file_name, 'r')
 
         for line in residue_data_fh:
-            id,num,res_name,family,oli,gpcrdb,bw,bs,prot_name,sec_str_name = [x.strip().strip('"') for x in line.split(',')] #double strip due to some weird bug...
+            id,num,res_name,oli,gpcrdb,bw,bw2,bs,prot_name,sec_str_name = [x.strip().strip('"') for x in line.split(',')] #double strip due to some weird bug...
             #the data will be in dict of lists
             if prot_name not in residue_data.keys():
                 residue_data[prot_name] = []
