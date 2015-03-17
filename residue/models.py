@@ -4,8 +4,10 @@ from django.db import models
 class Residue(models.Model):
     protein = models.ForeignKey('protein.Protein')
     protein_segment = models.ForeignKey('protein.ProteinSegment', null=True)
+    generic_number = models.ForeignKey('ResidueGenericNumber', related_name='compare')
+    display_generic_number = models.ForeignKey('ResidueGenericNumber', related_name='display')
+    alternative_generic_number = models.ManyToManyField('ResidueGenericNumber', related_name='alternative')
     sequence_number = models.SmallIntegerField()
-    generic_number = models.ManyToManyField('ResidueGenericNumber')
     amino_acid = models.CharField(max_length=1)
 
     def __str__(self):

@@ -70,13 +70,14 @@ class Command(BaseCommand):
             if os.path.exists(os.sep.join([self.generic_numbers_source_dir, arg])):
                 residue_data = self.parse_residue_data_file(os.sep.join([self.generic_numbers_source_dir, arg]))
                 self.logger.info('USING DATA FROM OLD GPCRB')
-                if len(ResidueNumberingScheme.objects.all()) == 0:
-                    self.add_numbering_schemes()
                 #just a shortcut to prevent gazilion of subqueries
-                oliveira_id = ResidueNumberingScheme.objects.get(slug='oliveira')
-                bw_id = ResidueNumberingScheme.objects.get(slug='bw')
-                gpcrdb_id = ResidueNumberingScheme.objects.get(slug='gpcrdb')
-                baldwin_id = ResidueNumberingScheme.objects.get(slug='baldwin')
+                gpcrdb_a_id = ResidueNumberingScheme.objects.get(slug='GPCRdb(A)')
+                gpcrdb_b_id = ResidueNumberingScheme.objects.get(slug='GPCRdb(B)')
+                gpcrdb_c_id = ResidueNumberingScheme.objects.get(slug='GPCRdb(C)')
+                gpcrdb_f_id = ResidueNumberingScheme.objects.get(slug='GPCRdb(F)')
+                bw_id = ResidueNumberingScheme.objects.get(slug='BW')
+                oliveira_id = ResidueNumberingScheme.objects.get(slug='Oliveira')
+                baldwin_id = ResidueNumberingScheme.objects.get(slug='BS')
             else:
                 print("Can't find {!s}".format(os.sep.join([self.generic_numbers_source_dir, arg])))
             proteins = Protein.objects.all()
@@ -153,10 +154,3 @@ class Command(BaseCommand):
 
         print('done')
         return residue_data
-
-    def add_numbering_schemes(self):
-        #FIXME temporary workaround, will be (?) in a separate file
-        rns = ResidueNumberingScheme.objects.create(slug="oliveira", name="Oliveira")
-        rns = ResidueNumberingScheme.objects.create(slug="bw", name="Ballesteros-Weinstein")
-        rns = ResidueNumberingScheme.objects.create(slug="gpcrdb", name="GPCRdb")
-        rns = ResidueNumberingScheme.objects.create(slug="baldwin", name="Baldwin-Schwartz")

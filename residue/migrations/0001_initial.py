@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Residue',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(verbose_name='ID', auto_created=True, serialize=False, primary_key=True)),
                 ('sequence_number', models.SmallIntegerField()),
                 ('amino_acid', models.CharField(max_length=1)),
             ],
@@ -26,8 +26,9 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ResidueGenericNumber',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(verbose_name='ID', auto_created=True, serialize=False, primary_key=True)),
                 ('label', models.CharField(max_length=10)),
+                ('protein_segment', models.ForeignKey(to='protein.ProteinSegment', null=True)),
             ],
             options={
                 'db_table': 'generic_number',
@@ -37,7 +38,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ResidueNumberingScheme',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(verbose_name='ID', auto_created=True, serialize=False, primary_key=True)),
                 ('slug', models.SlugField(max_length=20)),
                 ('name', models.CharField(max_length=100)),
             ],
@@ -49,7 +50,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ResidueSet',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(verbose_name='ID', auto_created=True, serialize=False, primary_key=True)),
                 ('name', models.CharField(max_length=50)),
                 ('residue', models.ManyToManyField(to='residue.Residue')),
             ],
@@ -66,8 +67,20 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='residue',
+            name='alternative_generic_number',
+            field=models.ManyToManyField(related_name='alternative', to='residue.ResidueGenericNumber'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='residue',
+            name='display_generic_number',
+            field=models.ForeignKey(to='residue.ResidueGenericNumber', related_name='display'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='residue',
             name='generic_number',
-            field=models.ManyToManyField(to='residue.ResidueGenericNumber'),
+            field=models.ForeignKey(to='residue.ResidueGenericNumber', related_name='compare'),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -79,7 +92,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='residue',
             name='protein_segment',
-            field=models.ForeignKey(null=True, to='protein.ProteinSegment'),
+            field=models.ForeignKey(to='protein.ProteinSegment', null=True),
             preserve_default=True,
         ),
     ]
