@@ -9,7 +9,7 @@ import os,sys,tempfile
 # I have put it into separate class for the sake of future uses
 class BlastSearch(object):
   
-    def __init__ (self, blast_path = 'blastp', blastdb =  os.sep.join([settings.DATA_DIR, 'blast', 'gpcrdb_blastdb']), top_results = 1):
+    def __init__ (self, blast_path = 'blastp', blastdb = os.sep.join([settings.DATA_DIR, 'blast', 'protwis_blastdb']), top_results = 1):
   
         self.blast_path = blast_path
         self.blastdb = blastdb
