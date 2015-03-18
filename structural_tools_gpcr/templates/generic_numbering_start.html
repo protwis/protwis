@@ -1,0 +1,45 @@
+﻿{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+    <div class="row">
+
+        <!-- description boxes -->
+        <div class="col-md-4">
+
+            <!-- main description -->
+            <div class="col-md-12 well">
+                {% if step and number_of_steps %}
+                <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
+                {% endif %}
+                <h4>{{ title }}</h4>
+                {{ description|linebreaks }}
+            </div>
+
+            <!-- link to docs -->
+            {% if docs %}
+            <div class="col-md-12 well">
+                <p>For more information on this tool, see the <a href="{{ docs }}">docs</a>.</p>
+            </div>
+            {% endif %}
+
+        </div>
+        <div class='col-md-4'>
+            <div class='row-fluid well selection-box'>
+                <div class='selection-heading'>
+                    <span class='selection-heading-text'>Select file to upload</span>
+                </div>
+                <div style="width:370px;height:350px;">
+                    <br />
+                    <form id="pdbform" action="AssignGenericNumbers" method="post" enctype="multipart/form-data">
+                        <input type="file" name="file" id="file" />
+                        <br />
+                        <br />
+                        <!--                    Select a numbering scheme to use: <br />
+                                          <input type="checkbox" name="scheme[]" value="gpcrdb" checked> GPCRdb <br />
+                                          <input type="checkbox" name="scheme[]" value="bw"> Class specific <br />-->
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endblock %}

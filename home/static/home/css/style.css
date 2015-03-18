@@ -17,6 +17,11 @@ h1, h2, h3, h4 { margin-top: 0px; }
 
 .well { padding-bottom: 10px; }
 
+.selection-box
+{
+    box-sizing: border-box;
+}
+
 .selection-heading
 {
     height:40px;
