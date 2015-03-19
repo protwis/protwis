@@ -154,7 +154,6 @@ class Command(BaseCommand):
                                     def_gpcrdb_res_pos = split_gpcrdb[1]
 
                                     for scheme_name, scheme in schemes.items():
-                                        print(scheme_name)
                                         # class specific sequence based number
                                         if scheme['type'] == 'sequence':
                                             # is this number in the scheme defined for this protein?
@@ -176,7 +175,6 @@ class Command(BaseCommand):
                                                 seq_based.protein_segment = r.protein_segment
                                                 seq_based.save()
                                             r.alternative_generic_number.add(seq_based)
-                                            print("Added alternative number " + label)            
                                             
                                             # display number
                                             if scheme_name == schemes[protein.residue_numbering_scheme.slug]['seq_based']:
@@ -191,7 +189,6 @@ class Command(BaseCommand):
                                                     display.protein_segment = r.protein_segment
                                                     display.save()
                                                 r.display_generic_number = display
-                                                print("Added display number " + display_label)
                                         # class specific gpcrdb number
                                         elif scheme['type'] == 'structure':
                                             if scheme_name == protein.residue_numbering_scheme.slug:
@@ -211,7 +208,6 @@ class Command(BaseCommand):
                                                 gpcrdb.protein_segment = r.protein_segment
                                                 gpcrdb.save()
                                             r.alternative_generic_number.add(gpcrdb)
-                                            print("Added class specific gpcrdb number " + label)
                         try:
                             r.save()
                             self.logger.info('Added generic numbers for residue {:n}{!s}for protein {!s}'.format(i, aa, protein.name))
