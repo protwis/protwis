@@ -23,8 +23,8 @@ class Command(BaseCommand):
 
     protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'proteins_and_families.txt'])
     segment_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'segments.txt'])
-    residue_number_scheme_source_file = os.sep.join([settings.DATA_DIR, 'residue_data',
-        'generic_numbering_schemes.txt'])
+    residue_number_scheme_source_file = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers',
+        'schemes.txt'])
 
     def handle(self, *args, **options):
         # create parent protein family, 000
@@ -96,7 +96,8 @@ class Command(BaseCommand):
                 # create scheme
                 s = ResidueNumberingScheme()
                 s.slug = split_row[0]
-                s.name = split_row[1]
+                s.short_name = split_row[1]
+                s.name = split_row[2]
 
                 try:
                     s.save()
