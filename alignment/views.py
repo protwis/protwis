@@ -1,8 +1,10 @@
 from django.shortcuts import render
+from django.conf import settings
 
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
-from common.alignment import Alignment
+# from common.alignment_SITE_NAME import Alignment
+Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from collections import OrderedDict
 
@@ -56,5 +58,8 @@ def render_alignment(request):
 
     # build the alignment data matrix
     a.build_alignment_matrix()
+
+    # remove empty columns from the matrix
+    a.clear_empty_positions()
 
     return render(request, 'alignment/alignment.html', {'a': a})

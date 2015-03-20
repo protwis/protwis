@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='WebLink',
             fields=[
-                ('id', models.AutoField(serialize=False, verbose_name='ID', primary_key=True, auto_created=True)),
+                ('id', models.AutoField(verbose_name='ID', auto_created=True, serialize=False, primary_key=True)),
                 ('index', models.TextField()),
             ],
             options={
@@ -24,8 +24,9 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='WebResource',
             fields=[
-                ('id', models.AutoField(serialize=False, verbose_name='ID', primary_key=True, auto_created=True)),
-                ('name', models.CharField(max_length=200)),
+                ('id', models.AutoField(verbose_name='ID', auto_created=True, serialize=False, primary_key=True)),
+                ('slug', models.SlugField(max_length=20)),
+                ('name', models.CharField(default='', max_length=200)),
                 ('url', models.TextField()),
             ],
             options={

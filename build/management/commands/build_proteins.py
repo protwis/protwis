@@ -9,6 +9,7 @@ from protein.models import ProteinSegment
 from protein.models import Species
 from protein.models import Gene
 from protein.models import ProteinSource
+from residue.models import ResidueNumberingScheme
 
 import logging
 import shlex
@@ -22,6 +23,8 @@ class Command(BaseCommand):
 
     protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'proteins_and_families.txt'])
     segment_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'segments.txt'])
+    residue_number_scheme_source_file = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers',
+        'schemes.txt'])
 
     def handle(self, *args, **options):
         # create parent protein family, 000
@@ -34,6 +37,13 @@ class Command(BaseCommand):
         # create protein segments
         try:
             self.create_protein_segments()
+        except Exception as msg:
+            print(msg)
+            self.logger.error(msg)
+
+        # create residue numbering schemes
+        try:
+            self.create_residue_numbering_schemes()
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
@@ -75,6 +85,28 @@ class Command(BaseCommand):
 
         self.logger.info('COMPLETED CREATING PROTEIN SEGMENTS')
 
+    def create_residue_numbering_schemes(self):
+        self.logger.info('Parsing file ' + self.residue_number_scheme_source_file)
+        self.logger.info('CREATING RESIDUE NUMBERING SCHEMES')
+
+        with open(self.residue_number_scheme_source_file, "r", encoding='UTF-8') as residue_number_scheme_source_file:
+            for row in residue_number_scheme_source_file:
+                split_row = shlex.split(row)
+
+                # create scheme
+                s = ResidueNumberingScheme()
+                s.slug = split_row[0]
+                s.short_name = split_row[1]
+                s.name = split_row[2]
+
+                try:
+                    s.save()
+                    self.logger.info('Created residue numbering scheme ' + s.name)
+                except:
+                    self.logger.error('Failed creating residue numbering scheme ' + s.name)
+                    continue
+
+        self.logger.info('COMPLETED CREATING RESIDUE NUMBERING SCHEMES')
 
     def create_proteins_and_families(self):
         self.logger.info('Parsing file ' + self.protein_source_file)
@@ -86,6 +118,7 @@ class Command(BaseCommand):
             last_indent = 0
             level_family_counter = [0]
             parent_family = [0]
+            residue_numbering_scheme = False
 
             for row in protein_file:
                 # determine the level of indent
@@ -117,7 +150,21 @@ class Command(BaseCommand):
                     family_name = split_row[4]
                     create_protein = True
                 else: # family row
-                    family_name = row.strip()
+                    # check for residue numbering scheme
+                    split_row = row.strip().split('|')
+                    if len(split_row) > 1:
+                        try:
+                            rns = split_row[1].strip()
+                            residue_numbering_scheme = ResidueNumberingScheme.objects.get(slug=rns)
+                        except:
+                            # abort if residue numbering scheme is not found in db
+                            raise Exception('Residue numbering scheme ' + rns + ' not found, aborting')
+                    else:
+                        if not residue_numbering_scheme:
+                            # abort if no residue numbering scheme is specified in the protein source file
+                            raise Exception('No residue numbering scheme specified in source data, aborting')
+
+                    family_name = split_row[0].strip()
 
                     # create the protein family
                     created_family = self.create_protein_family(family_name, indent, parent_family,
@@ -198,6 +245,7 @@ class Command(BaseCommand):
                         p.family = pf
                         p.species = species
                         p.source = source
+                        p.residue_numbering_scheme = residue_numbering_scheme
                         p.accession = protein_accession
                         p.entry_name = up['entry_name']
                         p.name = protein_name
