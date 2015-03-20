@@ -28,12 +28,13 @@
         {% include "upload_file_form.html" %}
         </div>
 
-        <!-- button(s) -->
-        {% if buttons %}
-        <div id="selection-buttons">
-            {% include 'common/selection_buttons.html' %}
+        <div class="col-md-4">
+            <!-- button(s) -->
+            {% if buttons %}
+            <div id="selection-buttons">
+                {% include 'common/selection_buttons.html' %}
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
 
-
-    {% endblock %}
+{% endblock %}
