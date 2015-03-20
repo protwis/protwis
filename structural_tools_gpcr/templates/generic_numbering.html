@@ -24,7 +24,16 @@
             {% endif %}
 
         </div>
+        <div id="upload-file-form">
         {% include "upload_file_form.html" %}
+        </div>
+
+        <!-- button(s) -->
+        {% if buttons %}
+        <div id="selection-buttons">
+            {% include 'common/selection_buttons.html' %}
+        </div>
+        {% endif %}
 
 
     {% endblock %}
