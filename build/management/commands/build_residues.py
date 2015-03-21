@@ -2,11 +2,8 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
 
-from protein.models import Protein
-from protein.models import ProteinSegment
-from residue.models import Residue
-from residue.models import ResidueGenericNumber
-from residue.models import ResidueNumberingScheme
+from protein.models import Protein, ProteinSegment
+from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme
 
 from optparse import make_option
 import logging, os
@@ -81,15 +78,15 @@ class Command(BaseCommand):
                         'type': 'structure',
                         'seq_based': 'bw',
                     },
-                    'gpcrdba': {
+                    'gpcrdbb': {
                         'type': 'structure',
                         'seq_based': 'woot',
                     },
-                    'gpcrdba': {
+                    'gpcrdbc': {
                         'type': 'structure',
                         'seq_based': 'pin',
                     },
-                    'gpcrdba': {
+                    'gpcrdbf': {
                         'type': 'structure',
                         'seq_based': 'wang',
                     },
