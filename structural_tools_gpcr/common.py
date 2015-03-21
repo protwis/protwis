@@ -68,11 +68,7 @@ class MappedResidue(object):
         self.bw = 0.
         self.gpcrdb = 0.
           
-      
-    def add_mapping(self, uprot_code, uprot_num):
-    
-        self.mapping[uprot_code] = uprot_num
-  
+       
   
     def add_bw_number(self, bw_number=''):
     
@@ -86,11 +82,3 @@ class MappedResidue(object):
           self.gpcrdb = '-' + gpcrdb_number.replace('x', '.')
         else:
           self.gpcrdb = gpcrdb_number.replace('x', '.')
-    
-    
-    def get_mapping(self, uprot_code):
-    
-        if self.mapping.has_key(uprot_code):
-            return self.mapping[uprot_code]
-    
-        return 0

@@ -78,15 +78,15 @@ class Command(BaseCommand):
                         'type': 'structure',
                         'seq_based': 'bw',
                     },
-                    'gpcrdba': {
+                    'gpcrdbb': {
                         'type': 'structure',
                         'seq_based': 'woot',
                     },
-                    'gpcrdba': {
+                    'gpcrdbc': {
                         'type': 'structure',
                         'seq_based': 'pin',
                     },
-                    'gpcrdba': {
+                    'gpcrdbf': {
                         'type': 'structure',
                         'seq_based': 'wang',
                     },
