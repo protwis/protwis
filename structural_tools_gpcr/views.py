@@ -26,7 +26,8 @@ class GenericNumberingStart(TemplateView):
     form_code = forms.Form()
     form_code.fields = upload_form_data
     form_id = 'gn_pdb_file'
-    url = ''
+    url = '/structural_tools_gpcr/gn_results'
+    mid_section = "upload_file_form.html"
 
     #Buttons
     buttons = {
@@ -50,4 +51,8 @@ class GenericNumberingStart(TemplateView):
 
 #Class rendering results from generic numbers assignment
 class GenericNumberingResults(TemplateView):
+    template_name='generic_numbering.html'
+
+    mid_section = 'gn_results.html'
+    #Left panel - blank
     pass    
