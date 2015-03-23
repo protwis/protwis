@@ -73,7 +73,6 @@ class Command(BaseCommand):
                 # fetch schemes and conversion tables
                 schemes = {
                     'gpcrdb': {'type': False},
-                    'gpcrdb_display': {'type': False},
                     'gpcrdba': {
                         'type': 'structure',
                         'seq_based': 'bw',
@@ -97,8 +96,9 @@ class Command(BaseCommand):
                 }
                 for scheme_name, scheme in schemes.items():
                     schemes[scheme_name]['obj'] = ResidueNumberingScheme.objects.get(slug=scheme_name)
-                    if scheme['type']:
-                        with open(os.sep.join([self.generic_numbers_source_dir, 'mapping_' + scheme_name + '.txt']), "r", encoding='UTF-8') as scheme_table_file:
+                    mapping_file = os.sep.join([self.generic_numbers_source_dir, 'mapping_' + scheme_name + '.txt'])
+                    if os.path.isfile(mapping_file):
+                        with open(mapping_file, "r", encoding='UTF-8') as scheme_table_file:
                             schemes[scheme_name]['table'] = {}
                             for row in scheme_table_file:
                                 split_row = shlex.split(row)
@@ -121,90 +121,109 @@ class Command(BaseCommand):
                             self.logger.info('Created residue {:n}{!s} for protein {!s}'.format(i, aa, protein.name))
                         except Exception as msg:
                             print(msg)
-                            self.logger.error('Failed to create residue {:n}{!s} for protein {!s}'.format(i, aa, protein.name))
+                            self.logger.error('Failed to create residue {:n}{!s} for protein {!s}'.format(i, aa,
+                                protein.name))
                   
                         for res_record in residue_data[protein.entry_name]:
                             if int(res_record[0]) == r.sequence_number and res_record[1] == r.three_letter():
-                                dump_gpcrdb = res_record[3]
+                                # separate bulge number (1241 - > 124 + 1)
+                                bulge_prime = ''
+                                dump_oliveira = str(res_record[2])
+                                if len(dump_oliveira) == 4:
+                                    bulge_prime = dump_oliveira[3]
+                                    dump_oliveira = dump_oliveira[:3]
+                                dump_gpcrdb = res_record[3][:4]
                                 dump_seq_based = res_record[4]
                                 dump_segment = res_record[6]
                                 r.protein_segment = ProteinSegment.objects.get(slug=dump_segment)
 
                                 # default gpcrdb number
                                 def_gpcrdb = False
-                                for d, c in schemes[protein.residue_numbering_scheme.slug]['table'].items():
-                                    if c == dump_gpcrdb:
-                                        try:
-                                            def_gpcrdb = ResidueGenericNumber.objects.get(label=d,
-                                                scheme=schemes[settings.DEFAULT_NUMBERING_SCHEME]['obj'])
-                                        except ResidueGenericNumber.DoesNotExist as e:
-                                            def_gpcrdb = ResidueGenericNumber()
-                                            def_gpcrdb.label = d
-                                            def_gpcrdb.scheme = schemes[settings.DEFAULT_NUMBERING_SCHEME]['obj']
-                                            def_gpcrdb.protein_segment = r.protein_segment
-                                            def_gpcrdb.save()
-                                            self.logger.info('Created generic number {:s} in numbering scheme {:s}'.format(d, schemes[settings.DEFAULT_NUMBERING_SCHEME]['obj'].short_name))
-                                        r.generic_number = def_gpcrdb
-                                        break
+                                if dump_oliveira in schemes[settings.DEFAULT_NUMBERING_SCHEME]['table']:
+                                    default_label = schemes[settings.DEFAULT_NUMBERING_SCHEME]['table'][dump_oliveira] + bulge_prime
+                                    try:
+                                        def_gpcrdb = ResidueGenericNumber.objects.get(label=default_label,
+                                            scheme=schemes[settings.DEFAULT_NUMBERING_SCHEME]['obj'])
+                                    except ResidueGenericNumber.DoesNotExist as e:
+                                        def_gpcrdb = ResidueGenericNumber()
+                                        def_gpcrdb.label = default_label
+                                        def_gpcrdb.scheme = schemes[settings.DEFAULT_NUMBERING_SCHEME]['obj']
+                                        def_gpcrdb.protein_segment = r.protein_segment
+                                        def_gpcrdb.save()
+                                        self.logger.info('Created generic number {:s} in numbering scheme {:s}'
+                                            .format(default_label,
+                                            schemes[settings.DEFAULT_NUMBERING_SCHEME]['obj'].short_name))
+                                
+                                # if default number was found/added successfully, process the alternative numbers
                                 if def_gpcrdb:
-                                    split_gpcrdb = def_gpcrdb.label.split('x')
-                                    def_gpcrdb_res_pos = split_gpcrdb[1]
+                                    # add default generic number to residue record
+                                    r.generic_number = def_gpcrdb
 
+                                    # dict of sequence-based numbers, for use in structure-based numbers (5.46x461)
+                                    seq_based_labels = {}
+
+                                    # sequence-based schemes first (the sequence-based numbers are needed for the
+                                    # structure based schemes)
                                     for scheme_name, scheme in schemes.items():
-                                        # class specific sequence based number
                                         if scheme['type'] == 'sequence':
                                             # is this number in the scheme defined for this protein?
                                             if scheme_name == schemes[protein.residue_numbering_scheme.slug]['seq_based']:
-                                                label = dump_seq_based
+                                                seq_based_label = dump_seq_based
                                             # if not convert the number to the correct scheme
                                             else:
                                                 for d, c in schemes[schemes[protein.residue_numbering_scheme.slug]['seq_based']]['table'].items():
                                                     if c == dump_seq_based:
-                                                        label = scheme['table'][d]
+                                                        seq_based_label = scheme['table'][d]
                                                         break
+
+                                            # fetch/insert the number
                                             try:
-                                                seq_based = ResidueGenericNumber.objects.get(label=label,
+                                                seq_based = ResidueGenericNumber.objects.get(label=seq_based_label,
                                                     scheme=scheme['obj'])
                                             except ResidueGenericNumber.DoesNotExist as e:
                                                 seq_based = ResidueGenericNumber()
-                                                seq_based.label = label
+                                                seq_based.label = seq_based_label
                                                 seq_based.scheme = scheme['obj']
                                                 seq_based.protein_segment = r.protein_segment
                                                 seq_based.save()
                                             r.alternative_generic_number.add(seq_based)
+
+                                            # add added number to the dict for later use
+                                            seq_based_labels[scheme_name] = seq_based_label
                                             
-                                            # display number
-                                            if scheme_name == schemes[protein.residue_numbering_scheme.slug]['seq_based']:
-                                                display_label = seq_based.label + 'x' + def_gpcrdb_res_pos
-                                                try:
-                                                    display = ResidueGenericNumber.objects.get(label=display_label,
-                                                        scheme=schemes['gpcrdb_display']['obj'])
-                                                except ResidueGenericNumber.DoesNotExist as e:
-                                                    display = ResidueGenericNumber()
-                                                    display.label = display_label
-                                                    display.scheme = schemes['gpcrdb_display']['obj']
-                                                    display.protein_segment = r.protein_segment
-                                                    display.save()
-                                                r.display_generic_number = display
-                                        # class specific gpcrdb number
-                                        elif scheme['type'] == 'structure':
+                                    # structure-based numbers
+                                    for scheme_name, scheme in schemes.items():
+                                        if scheme['type'] == 'structure':
+                                            # is this number in the scheme defined for this protein?
                                             if scheme_name == protein.residue_numbering_scheme.slug:
-                                                label = dump_gpcrdb
+                                                struct_based_label = dump_gpcrdb + bulge_prime
+                                            # if not convert the number to the correct scheme
                                             else:
                                                 for d, c in schemes[protein.residue_numbering_scheme.slug]['table'].items():
                                                     if c == dump_gpcrdb:
-                                                        label = scheme['table'][d]
+                                                        struct_based_label = scheme['table'][d] + bulge_prime
                                                         break
+
+                                            # add the sequence-based label (5x461 -> 5.46x461)
+                                            split_struct_based_label = struct_based_label.split('x')
+                                            struct_based_label = seq_based_labels[scheme['seq_based']] + 'x' + split_struct_based_label[1]
+
+                                            # fetch/insert the number
                                             try:
-                                                gpcrdb = ResidueGenericNumber.objects.get(label=label,
-                                                    scheme=scheme['obj'])
+                                                struct_based = ResidueGenericNumber.objects.get(
+                                                    label=struct_based_label, scheme=scheme['obj'])
                                             except ResidueGenericNumber.DoesNotExist as e:
-                                                gpcrdb = ResidueGenericNumber()
-                                                gpcrdb.label = label
-                                                gpcrdb.scheme = scheme['obj']
-                                                gpcrdb.protein_segment = r.protein_segment
-                                                gpcrdb.save()
-                                            r.alternative_generic_number.add(gpcrdb)
+                                                struct_based = ResidueGenericNumber()
+                                                struct_based.label = struct_based_label
+                                                struct_based.scheme = scheme['obj']
+                                                struct_based.protein_segment = r.protein_segment
+                                                struct_based.save()
+                                            
+                                            # add to residue as a display number or alternative number?
+                                            if scheme_name == protein.residue_numbering_scheme.slug:
+                                                r.display_generic_number = struct_based
+                                            else:
+                                                r.alternative_generic_number.add(struct_based)
                         try:
                             r.save()
                             self.logger.info('Added generic numbers for residue {:n}{!s}for protein {!s}'.format(i, aa, protein.name))
