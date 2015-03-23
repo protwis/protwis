@@ -1,5 +1,4 @@
 from django.conf.urls import patterns, url
-
 from structural_tools_gpcr.views import GenericNumberingStart, GenericNumberingResults
 
 

@@ -1,0 +1,11 @@
+﻿{% block gn_results %}
+    <h4>Results for your query: </h4>
+    <div class='row-fluid well well-small selection-box'>
+        {% if debug_data %}
+            {{ debug_data }}
+        {% endif %}
+        {% for result in results %}
+            {{ result }}
+        {% endfor %}
+    </div>
+{% endblock %}
