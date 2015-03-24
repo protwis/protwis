@@ -1,5 +1,5 @@
 from subprocess import Popen, PIPE
-from io import StringIO
+#from io import StringIO
 from Bio.Blast import NCBIXML
 
 from django.conf import settings

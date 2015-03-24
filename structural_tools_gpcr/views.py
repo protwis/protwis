@@ -2,12 +2,12 @@ from django.views.generic import TemplateView
 from django import forms
 from django.shortcuts import render
 from django.core.context_processors import csrf
-
-
+import structural_tools_gpcr.assign_generic_numbers as gn
 import inspect
 
 #Class for starting page of generic numbers assignment
 class GenericNumberingStart(TemplateView):
+
     template_name = 'common_structural_tools.html'
     
     #Left panel
@@ -40,7 +40,9 @@ class GenericNumberingStart(TemplateView):
             },
         }
 
+
     def get_context_data(self, **kwargs):
+
         context = super(GenericNumberingStart, self).get_context_data(**kwargs)
         # get attributes of this class and add them to the context
         context['form_code'] = str(self.form_code)
@@ -50,8 +52,10 @@ class GenericNumberingStart(TemplateView):
                 context[a[0]] = a[1]
         return context
 
+
 #Class rendering results from generic numbers assignment
 class GenericNumberingResults(TemplateView):
+
     template_name='common_structural_tools.html'
 
     #Left panel - blank
@@ -59,10 +63,13 @@ class GenericNumberingResults(TemplateView):
     mid_section = 'gn_results.html'
     #Buttons - none
 
+
     def post(self, request, *args, **kwargs):
 
-        self.results = request.FILES['pdb_file']
+        #generic_numbering = gn.GenericNumbering(request.FILES['pdb_file'])
+        #out_struct = generic_numbering.assign_generic_numbers()
 
+        self.results = request.FILES['pdb_file'].name
         context =  super(GenericNumberingResults, self).get_context_data(**kwargs)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
@@ -70,13 +77,10 @@ class GenericNumberingResults(TemplateView):
                 context[a[0]] = a[1]
         return render(request, self.template_name, context)
 
-    def get_context_data(self, **kwargs):
-        context =  super(GenericNumberingResults, self).get_context_data(**kwargs)
 
-        #if self.request.method == 'POST':
-        #    pdb_upload = kwargs['pdb_file']
-        #context['misc_data'] = kwargs['pdb_file']
-        context['misc_data'] = kwargs
+    def get_context_data(self, **kwargs):
+
+        context =  super(GenericNumberingResults, self).get_context_data(**kwargs)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
