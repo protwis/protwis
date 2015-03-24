@@ -1,5 +1,6 @@
 from django.views.generic import TemplateView
 from django import forms
+from django.shortcuts import render
 from django.core.context_processors import csrf
 
 
@@ -58,13 +59,24 @@ class GenericNumberingResults(TemplateView):
     mid_section = 'gn_results.html'
     #Buttons - none
 
+    def post(self, request, *args, **kwargs):
+
+        self.results = request.FILES['pdb_file']
+
+        context =  super(GenericNumberingResults, self).get_context_data(**kwargs)
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+        return render(request, self.template_name, context)
+
     def get_context_data(self, **kwargs):
-        context =  csrf(super(GenericNumberingResults, self).get_context_data(**kwargs))
+        context =  super(GenericNumberingResults, self).get_context_data(**kwargs)
 
-        if self.request.method == 'POST':
-            pdb_upload = kwargs['pdb_file']
-        context['debug_data'] = kwargs['pdb_file']
-
+        #if self.request.method == 'POST':
+        #    pdb_upload = kwargs['pdb_file']
+        #context['misc_data'] = kwargs['pdb_file']
+        context['misc_data'] = kwargs
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
