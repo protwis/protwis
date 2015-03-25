@@ -1,5 +1,5 @@
 from subprocess import Popen, PIPE
-#from io import StringIO
+from io import StringIO
 from Bio.Blast import NCBIXML
 
 from django.conf import settings
@@ -9,7 +9,7 @@ import os,sys,tempfile
 # I have put it into separate class for the sake of future uses
 class BlastSearch(object):
   
-    def __init__ (self, blast_path = 'blastp', blastdb = os.sep.join([settings.DATA_DIR, 'blast', 'protwis_blastdb']), top_results = 1):
+    def __init__ (self, blast_path = 'blastp', blastdb = os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']), top_results = 1):
   
         self.blast_path = blast_path
         self.blastdb = blastdb
@@ -32,7 +32,10 @@ class BlastSearch(object):
         #Rest of the world:
             blast = Popen('%s -db %s -outfmt 5' %(self.blast_path, self.blastdb), universal_newlines=True, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate(input=input_seq.seq)
-        result = NCBIXML.parse(blast_out).next()
+        if len(blast_err) != 0:
+            print(blast_err)
+
+        result = NCBIXML.read(StringIO(blast_out))
         print(result)
         
         for aln in result.alignments[:self.top_results]:
@@ -46,13 +49,8 @@ class BlastSearch(object):
             if upid is None:
                 continue
 
-            output.append((upid, aln))
+                output.append((upid, aln))
         return output
-  
-      
-    def run_online (self, input_seq = ''):
-        #TODO
-        pass
 
 #==============================================================================
 
@@ -76,6 +74,7 @@ class MappedResidue(object):
 
 
     def add_gpcrdb_number(self, gpcrdb_number=''):
+
         #PDB format does not allow fractional part longer than 2 digits
         #so numbers x.xx1 are negative
         if len(gpcrdb_number) > 4:

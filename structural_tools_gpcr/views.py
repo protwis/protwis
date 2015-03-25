@@ -4,15 +4,18 @@ from django.shortcuts import render
 from django.core.context_processors import csrf
 import structural_tools_gpcr.assign_generic_numbers as gn
 import inspect
+from io import StringIO
 
+
+#===================Assignment of generic numbers==============================
 #Class for starting page of generic numbers assignment
-class GenericNumberingStart(TemplateView):
+class GenericNumberingIndex(TemplateView):
 
     template_name = 'common_structural_tools.html'
     
     #Left panel
     step = 1
-    number_of_steps = 2
+    number_of_steps = 1
     title = "UPLOAD A PDB FILE"
     description = """
     Upload a pdb file you want to be annotated with generic numbers. Note that "CA" atoms will be assigned a number in GPCRdb notation, and "N" atoms will be annotated with Ballesteros-Weinstein scheme.
@@ -43,7 +46,7 @@ class GenericNumberingStart(TemplateView):
 
     def get_context_data(self, **kwargs):
 
-        context = super(GenericNumberingStart, self).get_context_data(**kwargs)
+        context = super(GenericNumberingIndex, self).get_context_data(**kwargs)
         # get attributes of this class and add them to the context
         context['form_code'] = str(self.form_code)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
@@ -66,10 +69,11 @@ class GenericNumberingResults(TemplateView):
 
     def post(self, request, *args, **kwargs):
 
-        #generic_numbering = gn.GenericNumbering(request.FILES['pdb_file'])
-        #out_struct = generic_numbering.assign_generic_numbers()
+        filename = request.FILES['pdb_file'].name
+        generic_numbering = gn.GenericNumbering(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8')))
+        out_struct = generic_numbering.assign_generic_numbers()
+        self.results = out_struct
 
-        self.results = request.FILES['pdb_file'].name
         context =  super(GenericNumberingResults, self).get_context_data(**kwargs)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
@@ -86,3 +90,13 @@ class GenericNumberingResults(TemplateView):
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
         return context
+
+#==============================================================================
+
+#========================Superposition of structures===========================
+#Class for starting page of superposition workflow
+class SuperpositionWorkflowIndex(TemplateView):
+    
+    template_name = "common_structural_tools.html"
+
+    pass

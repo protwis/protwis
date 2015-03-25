@@ -15,14 +15,11 @@ class GenericNumbering(object):
     
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
   
-    def __init__ (self, pdb_file):
+    def __init__ (self, pdb_file=None, pdb_filename=None):
     
         #pdb_file can be either a name/path or a handle to an open file
         self.pdb_file = pdb_file
-        if type(pdb_file) is str:
-            self.pdb_filename = pdb_file
-        else:
-            self.pdb_filename = pdb_file.name
+        self.pdb_filename = pdb_filename
         
         #dictionary of 'MappedResidue' object storing information about alignments and bw numbers
         self.residues = {}
@@ -32,15 +29,23 @@ class GenericNumbering(object):
         #setup for local blast search
         self.blast = BlastSearch()
         
-        self.pdb_structure = self.parse_pdb()
+        if self.pdb_file is not None or self.pdb_filename is not None:
+            self.pdb_structure = self.parse_pdb()
         
 
     def parse_pdb (self):
 
+        pdb_struct = None
+        #checking for file handle or file name to parse
+        if self.pdb_file:
+            pdb_struct = PDBParser().get_structure('ref', self.pdb_file)[0]
+        elif self.pdb_filename:
+            pdb_struct = PDBParser().get_structure('ref', self.pdb_file)[0]
+        else:
+            return None
+
         #extracting sequence and preparing dictionary of residues
         #bio.pdb reads pdb in the following cascade: model->chain->residue->atom
-        pdb_struct = PDBParser().get_structure('ref', self.pdb_file)[0]
-    
         for chain in pdb_struct:
             self.residues[chain.id] = {}
             self.pdb_seq[chain.id] = Seq('')
@@ -113,27 +118,24 @@ class GenericNumbering(object):
     
     def get_annotated_structure(self):
     
-        #pdb_struct = PDBParser().get_structure(os.path.splitext(os.path.basename(self.pdb_file))[0], self.pdb_file)
         for chain in self.pdb_structure:
             for residue in chain:
-                if self.residues[chain.id].has_key(residue.id[1]):
+                if residue.id[1] in self.residues[chain.id].keys():
                     if self.residues[chain.id][residue.id[1]].gpcrdb != 0.:
                         residue["CA"].set_bfactor(float(self.residues[chain.id][residue.id[1]].gpcrdb))
                     if self.residues[chain.id][residue.id[1]].bw != 0.:
                         residue["N"].set_bfactor(float(self.residues[chain.id][residue.id[1]].bw))
       
-        return pdb_struct
+        return self.pdb_structure
   
   
 
     def save_gn_to_pdb(self):
     
-        #replace bfactor field of CA atoms with b-w numbers and save structure to file
-        #file name has '_GPCRDB' added before the extension
-        #pdb_struct = PDBParser().get_structure(os.path.splitext(os.path.basename(self.pdb_file))[0], self.pdb_file)
+        #replace bfactor field of CA atoms with b-w numbers and return filehandle with the structure written
         for chain in self.pdb_structure:
             for residue in chain:
-                if self.residues[chain.id].has_key(residue.id[1]):
+                if residue.id[1] in self.residues[chain.id].keys():
                     if self.residues[chain.id][residue.id[1]].gpcrdb != 0.:
                         residue["CA"].set_bfactor(float(self.residues[chain.id][residue.id[1]].gpcrdb))
                     if self.residues[chain.id][residue.id[1]].bw != 0.:
@@ -161,5 +163,4 @@ class GenericNumbering(object):
                     continue
                 for hsps in alignment[1].hsps:
                     self.map_blast_seq(alignment[0], hsps, chain)
-                    #now kiss
         return self.get_annotated_structure()
