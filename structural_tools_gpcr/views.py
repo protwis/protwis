@@ -1,10 +1,12 @@
 from django.views.generic import TemplateView
+from django.http import HttpResponse
 from django import forms
 from django.shortcuts import render
 from django.core.context_processors import csrf
 import structural_tools_gpcr.assign_generic_numbers as gn
-import inspect
+import inspect, os
 from io import StringIO
+from Bio.PDB import PDBIO
 
 
 #===================Assignment of generic numbers==============================
@@ -38,7 +40,6 @@ class GenericNumberingIndex(TemplateView):
     buttons = {
         'continue' : {
             'label' : 'Assign generic numbers',
-            #'url' : '',#'/structural_tools_gpcr/gn_results',
             'color' : 'success',
             },
         }
@@ -53,6 +54,7 @@ class GenericNumberingIndex(TemplateView):
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
+
         return context
 
 
@@ -69,16 +71,21 @@ class GenericNumberingResults(TemplateView):
 
     def post(self, request, *args, **kwargs):
 
-        filename = request.FILES['pdb_file'].name
         generic_numbering = gn.GenericNumbering(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8')))
         out_struct = generic_numbering.assign_generic_numbers()
-        self.results = out_struct
+        out_stream = StringIO()
+        io = PDBIO()
+        io.set_structure(out_struct)
+        io.save(out_stream)
+        request.session['outfile'] = { request.FILES['pdb_file'].name : out_stream, }
+        self.input_file = request.FILES['pdb_file'].name
 
         context =  super(GenericNumberingResults, self).get_context_data(**kwargs)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
+
         return render(request, self.template_name, context)
 
 
@@ -89,6 +96,7 @@ class GenericNumberingResults(TemplateView):
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
+
         return context
 
 #==============================================================================
@@ -100,3 +108,17 @@ class SuperpositionWorkflowIndex(TemplateView):
     template_name = "common_structural_tools.html"
 
     pass
+
+
+#==============================================================================
+
+def ServeOutfile(request, outfile):
+    
+    root, ext = os.path.splitext(outfile)
+    out_stream = request.session['outfile'][outfile]
+
+    response = HttpResponse(mimetype="chemical/x-pdb")
+    response['Content-Disposition'] = 'attachment; filename="{}_GPCRDB.pdb"'.format(root)
+    response.write(out_stream.get_value())
+
+    return response

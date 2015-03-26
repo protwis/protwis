@@ -1,11 +1,23 @@
 ﻿{% block gn_results %}
     <h4>Results for your query: </h4>
     <div class='row-fluid well well-small selection-box'>
-        {% if misc_data %}
-            {{ misc_data }}
+        {% if success %}
+            Generic residue numbers assigned successfully.
+        {% else %}
+            Failed to assign generic numers for {{ input_file }}
         {% endif %}
-        {% for result in results %}
-            {{ result }}
-        {% endfor %}
     </div>
-{% endblock %}
+    <br />
+    <hr />
+    <div>
+        <a class="btn btn-small" href="/output/{{ outfile }}">
+            <i class="icon-download"></i>
+        </a>
+    </div>
+    <br />
+    <hr />
+    Download the visualization scripts:
+    <a class="btn btn-small" href="/static/pymol_view_generic_numbers.pml">
+        <i class="icon-download"></i>
+    </a>
+   {% endblock %}
