@@ -26,14 +26,14 @@ class GenericNumberingIndex(TemplateView):
         """
 
     #Input file form data
-    header = "Upload your pdb file"
+    header = "Upload your pdb file:"
     upload_form_data = {
         "pdb_file": forms.FileField(),
         }
     form_code = forms.Form()
     form_code.fields = upload_form_data
     form_id = 'gn_pdb_file'
-    url = '/structural_tools_gpcr/gn_results'
+    url = '/structural_tools_gpcr/generic_numbering_results'
     mid_section = "upload_file_form.html"
 
     #Buttons
@@ -77,8 +77,13 @@ class GenericNumberingResults(TemplateView):
         io = PDBIO()
         io.set_structure(out_struct)
         io.save(out_stream)
-        request.session['outfile'] = { request.FILES['pdb_file'].name : out_stream, }
-        self.input_file = request.FILES['pdb_file'].name
+        if len(out_stream.getvalue()) > 0:
+            request.session['outfile'] = { request.FILES['pdb_file'].name : out_stream, }
+            self.input_file = request.FILES['pdb_file'].name
+            self.success = True
+            self.outfile = request.FILES['pdb_file'].name
+        else:
+            self.success = False
 
         context =  super(GenericNumberingResults, self).get_context_data(**kwargs)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
@@ -107,18 +112,59 @@ class SuperpositionWorkflowIndex(TemplateView):
     
     template_name = "common_structural_tools.html"
 
-    pass
+    #Left panel
+    step = 1
+    number_of_steps = 2
+    title = "UPLOAD YOUR FILES"
+    description = """
+    Upload a pdb file for reference structure, and one or more files that will be superposed. You can also select the structures from crystal structure browser.
+
+    Once you have uploaded/selected all your targets, click the green button.
+    """
+
+    header = "Upload or select your structures:"
+    upload_form_data = {
+        'ref_file' : forms.FileField(label="Reference structure"),
+        'alt_files[]' : forms.FileField(label="Structure(s) to superpose"),
+        }
+    form_code = forms.Form()
+    form_code.fields = upload_form_data
+    form_id = 'superpose_files'
+    url = '/structural_tools_gpcr/superpose_results'
+    mid_section = 'upload_file_form.html'
+
+    #Buttons
+    buttons = {
+        'continue' : {
+            'label' : 'Superpose structures',
+            'color' : 'success',
+            }
+        }
+
+
+    def get_context_data(self, **kwargs):
+
+        context = super(SuperpositionWorkflowIndex, self).get_context_data(**kwargs)
+        # get attributes of this class and add them to the context
+        context['form_code'] = str(self.form_code)
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+
+        return context
 
 
 #==============================================================================
 
-def ServeOutfile(request, outfile):
+def ServePdbOutfile(request, outfile):
     
     root, ext = os.path.splitext(outfile)
     out_stream = request.session['outfile'][outfile]
+    print(request.session['outfile'][outfile])
 
-    response = HttpResponse(mimetype="chemical/x-pdb")
+    response = HttpResponse(content_type="chemical/x-pdb")
     response['Content-Disposition'] = 'attachment; filename="{}_GPCRDB.pdb"'.format(root)
-    response.write(out_stream.get_value())
+    response.write(out_stream.getvalue())
 
     return response

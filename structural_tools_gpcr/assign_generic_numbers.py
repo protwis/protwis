@@ -6,13 +6,15 @@ from residue.models import Residue
 from structural_tools_gpcr.common import BlastSearch, MappedResidue
 
 import Bio.PDB.Polypeptide as polypeptide
-import os
+import os,logging
 
 
 #==============================================================================
-
+#Class for annotating the pdb structures with generic numbers
 class GenericNumbering(object):
     
+    logger = logging.getLogger("structural_tools_gpcr")
+
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
   
     def __init__ (self, pdb_file=None, pdb_filename=None):
@@ -83,8 +85,8 @@ class GenericNumbering(object):
         subj_counter = hsps.sbjct_start	
         q_counter = hsps.query_start
         
-        #print "%s\n%s" %(hsps.query, hsps.sbjct)
-        #print "%i\t%i" %(hsps.query_start, hsps.sbjct_start)
+        self.logger.info("{}\n{}".format(hsps.query, hsps.sbjct))
+        self.logger.info("{:d}\t{:d}".format(hsps.query_start, hsps.sbjct_start))
 
         while tmp_seq:
             #skipping position if there is a gap in either of sequences
@@ -102,11 +104,14 @@ class GenericNumbering(object):
                 #print "Query and temp match %i:%s %i %s" %(q_counter,q_seq[0],subj_counter,tmp_seq[0])
                 resn = self.locate_res_by_pos(chain, q_counter)
                 if resn != 0:
-                    db_res = Residue.objects.get(protein=prot_id, sequence_number=subj_counter)
-                    #FIXME: querying ManyToMany field
-                    self.residues[chain][resn].add_bw_number(db_res.alternative_generic_number(slug='bw'))
-                    self.residues[chain][resn].add_bw_number(db_res.alternative_generic_number(slug='gpcrdb'))
-
+                    try:
+                        db_res = Residue.objects.get(protein=prot_id, sequence_number=subj_counter)
+                        #FIXME: querying ManyToMany field
+                        self.residues[chain][resn].add_bw_number(db_res.alternative_generic_number(slug='bw'))
+                        self.residues[chain][resn].add_gpcrdb_number(db_res.alternative_generic_number(slug='gpcrdb'))
+                        self.logger.info(db_res.alternative_generic_number(slug='gpcrdb'))
+                    except Exception as e:
+                        self.logger.warning("Could not find residue {} in the database.".format(subj_counter))
                     
                     if prot_id not in self.prot_id_list:
                         self.prot_id_list.append(prot_id)
@@ -129,7 +134,6 @@ class GenericNumbering(object):
         return self.pdb_structure
   
   
-
     def save_gn_to_pdb(self):
     
         #replace bfactor field of CA atoms with b-w numbers and return filehandle with the structure written
@@ -146,8 +150,7 @@ class GenericNumbering(object):
         io=PDBIO()
         io.set_structure(pdb_struct)
         io.save("%s_GPCRDB%s" %(root, ext))
-        
-    
+           
     
     def assign_generic_numbers(self):
         
