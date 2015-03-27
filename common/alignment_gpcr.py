@@ -55,14 +55,14 @@ class Alignment(GenericAlignment):
         formatted_gn = '<b>{:s}</b><br />'.format(helix_num)
         
         # sequence-based number
-        seq_class = ''
+        seq_class = 'ali-td-generic-num-normal'
+        # smaller font size if there are more than one sequence-based numbers
+        if len(seq_num) > 2:
+            seq_class = 'ali-td-generic-num-tiny'
         # color number red if it differs from the structure-based number
         if seq_num != str_num:
-            seq_class += 'ali-td-generic-num-red'
-            # smaller font size if there are more than one sequence-based numbers
-            if len(seq_num) > 2:
-                seq_class += ' ali-td-generic-num-tiny'
-        formatted_gn += '<span class="{:s}">.{:s}</span><br />'.format(seq_class, seq_num)
+            seq_class += ' ali-td-generic-num-red'
+        formatted_gn += '<span class="{:s}">.{:s}<br /></span>'.format(seq_class, seq_num)
         
         # structure-based number
         formatted_gn += 'x{:s}'.format(str_num)
