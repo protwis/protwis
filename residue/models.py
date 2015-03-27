@@ -66,14 +66,6 @@ class ResidueGenericNumber(models.Model):
 
 
 class ResidueNumberingScheme(models.Model):
-
-    #oli->gpcrdb->b-w->b-s
-    #NUMBERING_SCHEMES = (
-    #    ('bw', 'Ballesteros-Weinstein'),
-    #    ('gpcrdb', 'GPCRdb generic'),
-    #    ('oli', "Oliveira"),
-    #    ('baldwin', "Baldwin-Schwartz")
-    #)
     slug = models.SlugField(max_length=20)
     short_name = models.CharField(max_length=20)
     name = models.CharField(max_length=100)
