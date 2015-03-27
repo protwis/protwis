@@ -47,6 +47,24 @@ class Alignment(GenericAlignment):
         """Format a generic number for display in alignment viewer"""
         split_gn = generic_number.split("x")
         split_gn_helix = split_gn[0].split('.')
-        formatted_gn = '<b>{:s}</b><br />.{:s}<br />x{:s}'.format(split_gn_helix[0], split_gn_helix[1], split_gn[1])
+        helix_num = split_gn_helix[0]
+        seq_num = split_gn_helix[1]
+        str_num = split_gn[1]
+
+        # helix number
+        formatted_gn = '<b>{:s}</b><br />'.format(helix_num)
+        
+        # sequence-based number
+        seq_class = ''
+        # color number red if it differs from the structure-based number
+        if seq_num != str_num:
+            seq_class += 'ali-td-generic-num-red'
+            # smaller font size if there are more than one sequence-based numbers
+            if len(seq_num) > 2:
+                seq_class += ' ali-td-generic-num-tiny'
+        formatted_gn += '<span class="{:s}">.{:s}</span><br />'.format(seq_class, seq_num)
+        
+        # structure-based number
+        formatted_gn += 'x{:s}'.format(str_num)
         
         return formatted_gn
