@@ -31,3 +31,9 @@ urlpatterns = patterns('',
     url(r'^similaritysearch/', include('similaritysearch.urls')),
     url(r'^structural_tools_gpcr/', include('structural_tools_gpcr.urls')),
 )
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += patterns('',
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    )
