@@ -15,9 +15,11 @@
                 <tr>
                     <td class="ali-td ali-td-first-col"></td>
                 </tr>
+                {% for ns in a.numbering_schemes %}
                 <tr>
-                    <td class="ali-td-generic-num ali-td-first-col">Class A</td>
+                    <td class="ali-td-generic-num ali-td-first-col">{{ ns.1 }}</td>
                 </tr>
+                {% endfor %}
                 {% for p in a.proteins %}
                 <tr>
                     <td class="ali-td ali-td-first-col">
@@ -34,20 +36,22 @@
                 <!-- segment title line -->
                 <tr>
                     {% for s, num in a.segments.items %}
-                    <td class="ali-td ali-residue" colspan="{{ num|length }}"><b>{{ s }}</b></td>
+                    <td class="ali-td ali-td-segment-title" colspan="{{ num|length }}">{{ s }}</td>
                     <td class="ali-td">&nbsp;</td>
                     {% endfor %}
                 </tr>
                 
                 <!-- generic number lines -->
+                {% for ns, segments in a.generic_numbers.items %}
                 <tr>
-                   {% for s, num in a.segments.items %}
+                    {% for s, num in segments.items %}
                         {% for n, dn in num.items %}
                             <td class="ali-td-generic-num">{{ dn|safe }}</td>
                         {% endfor %}
                         <td class="ali-td">&nbsp;</td>
                     {% endfor %}
                 </tr>
+                {% endfor %}
                 
                 <!-- sequence lines -->
                 {% for row in a.matrix %}

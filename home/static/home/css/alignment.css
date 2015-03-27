@@ -4,7 +4,6 @@
     font-size: 10px;
     white-space: nowrap;
     height: 25px;
-    border: 1px solid black;
 }
 .ali-td-space
 {
@@ -212,7 +211,7 @@
     background-color: #FFFFFF;
     color: #000000;
 }
-.res-color-~ {
-    background-color: #DDDDDD;
+.res-color-_ {
+    background-color: #EDEDED;
     color: #000000;
 }

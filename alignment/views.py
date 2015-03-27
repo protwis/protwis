@@ -59,7 +59,4 @@ def render_alignment(request):
     # build the alignment data matrix
     a.build_alignment_matrix()
 
-    # remove empty columns from the matrix
-    a.clear_empty_positions()
-
     return render(request, 'alignment/alignment.html', {'a': a})
