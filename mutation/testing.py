@@ -1,6 +1,9 @@
 
 import xlrd
 
+import json
+import urllib.request
+#env/bin/python3 -m pip install xlrd
 
 from mutation.models import *
 from datetime import datetime
@@ -39,6 +42,7 @@ def loaddatafromexcel(excelpath):
 				#print('	', cell_type, ':', cell_value)
 				temprow.append(cell_value)
 			temp.append(temprow)
+			#if curr_row>10: break
 		return temp
 
 def analyse_rows(rows):
@@ -46,7 +50,7 @@ def analyse_rows(rows):
 	for r in rows:
 		d = {}
 		d['reference'] = r[0]
-		d['protein'] = r[1].replace("__","_")
+		d['protein'] = r[1].replace("__","_").lower()
 		d['mutation_pos'] = r[2]
 		d['mutation_from'] = r[3]
 		d['mutation_to'] = r[4]
@@ -73,6 +77,11 @@ def analyse_rows(rows):
 		d['opt_agonist'] = r[27]
 
 
+
+		if isinstance(d['ligand_id'], float): d['ligand_id'] = int(d['ligand_id'])
+		if isinstance(d['mutation_pos'], float): d['mutation_pos'] = int(d['mutation_pos'])
+
+
 		temp.append(d)
 	return temp
 
@@ -96,7 +105,6 @@ def insert_raw(r):
 	exp_mu_effect_sign=r['exp_mu_effect_sign'], 
 	exp_mu_effect_value=r['exp_mu_value_raw'], #
 	exp_mu_effect_qual=r['exp_mu_effect_qual'], 
-	#r['exp_mu_effect_ligand_prop'],
 	exp_mu_effect_ligand_prop=r['exp_mu_effect_ligand_prop'], 
 	exp_mu_ligand_ref=r['exp_mu_ligand_ref'], 
 	opt_type=r['opt_type'], 
@@ -110,8 +118,70 @@ def insert_raw(r):
 	added_date=datetime.now()
 	)
 
-	raw_id = obj.id
+	raw_id = obj
 
 	return raw_id
 
+
+def check_reference(r):
+	
+	ref=MutationRefs.objects.filter(reference=r)
+
+
+	if ref.exists():
+		ref=MutationRefs.objects.get(reference=r)
+		#return ref.id
+		return ref
+	else:
+		url = "http://search.crossref.org/dois?q="+r
+		
+		response = urllib.request.urlopen(url)
+
+		j = json.loads(response.read().decode('utf-8'))
+
+		if len(j)>0:
+			j = j[0]
+			e = MutationRefs(ref_type='DOI', link=j['doi'], title=j['title'], citation= j['fullCitation'], year= j['year'], reference=r)
+			e.save()
+
+			#return e.id
+			return e
+		else:
+			return 0
+
+def get_ligand(r):
+	
+	check=MutationLigand.objects.filter(idtype=r['ligand_type'], idid=r['ligand_id'])
+
+
+	if check.exists():
+		check=MutationLigand.objects.get(idtype=r['ligand_type'], idid=r['ligand_id'])
+		return check
+	else:
+
+		if r['ligand_type'] == 'PubChem CID':
+			#https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/57328469/property/IUPACName,CanonicalSMILES,IsomericSMILES/JSON
+			url = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/"+str(int(r['ligand_id']))+"/property/IUPACName,CanonicalSMILES,IsomericSMILES/JSON";
+			response = urllib.request.urlopen(url)
+			j = json.loads(response.read().decode('utf-8'))
+
+			if j['PropertyTable']['Properties'][0]['CID']:
+				smiles = j['PropertyTable']['Properties'][0]['CanonicalSMILES'];
+			else:
+				smiles = r['ligand_id']
+
+			e = MutationLigand(idtype=r['ligand_type'], idid=r['ligand_id'], name=r['ligand_name'], longseq= smiles)
+			e.save()
+			return e
+		elif r['ligand_type'] == 'SMILES':
+			e = MutationLigand(idtype=r['ligand_type'], idid=r['ligand_id'], name=r['ligand_name'], longseq=r['ligand_id'])
+			e.save()
+			return e
+		else:
+			return 0
+
+
+		#$q = "INSERT INTO ligands (idtype,name,idid,longseq) VALUES ('$ligand_type','$ligand_name','$ligand_id','$smiles')";
+
+		
 
