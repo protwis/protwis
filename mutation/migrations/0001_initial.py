@@ -6,9 +6,7 @@ from django.db import models, migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('residue', '0002_residuegenericnumber_protein_segment'),
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
