@@ -6,7 +6,10 @@ from django.db import models, migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = []
+    dependencies = [
+        ('protein', '0002_auto_20150316_1232'),
+        ('residue', '0004_auto_20150327_1120'),
+    ]
 
     operations = [
         migrations.CreateModel(
