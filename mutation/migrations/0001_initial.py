@@ -7,7 +7,6 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('protein', '0003_delete_proteinresource'),
         ('residue', '0002_residuegenericnumber_protein_segment'),
     ]
 
