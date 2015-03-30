@@ -6,11 +6,7 @@ from django.db import models, migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('common', '0002_auto_20150224_0901'),
-        ('ligand', '0002_auto_20150225_1441'),
-        ('protein', '0003_delete_proteinresource'),
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
