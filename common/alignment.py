@@ -98,7 +98,7 @@ class Alignment:
 
                 # fetch all residues for this segment. Prefetch the generic numbers (a lot faster)
                 rs = Residue.objects.filter(generic_number__scheme=self.default_numbering_scheme,
-                    generic_number__label__in=positions, protein=p).prefetch_related('generic_number', 'display_generic_number', 'alternative_generic_number__scheme')
+                    generic_number__label__in=positions, protein=p).prefetch_related('generic_number', 'display_generic_number__scheme', 'alternative_generic_number__scheme')
 
                 # create a dict of residues with their generic number as key for easy lookup
                 res = {}
@@ -129,7 +129,7 @@ class Alignment:
                                         break
 
                         # append the residue to the matrix
-                        s.append([pos, r.display_generic_number.label, r.amino_acid])
+                        s.append([pos, r.display_generic_number.label, r.amino_acid, r.display_generic_number.scheme.short_name])
                         first_residue_found = True
 
                         # reset gap counter
