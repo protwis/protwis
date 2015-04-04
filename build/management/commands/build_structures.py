@@ -15,7 +15,7 @@ import logging, os
 class Command(BaseCommand):
 
     logger = logging.getLogger(__name__)
-    structure_build_data_dir = os.sep.join([settings.STATICFILES_DIRS[0], 'structure_data'])
+    structure_build_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data'])
 
     csv_fields = {
         'id' : 0, 
@@ -124,8 +124,6 @@ class Command(BaseCommand):
         structures_fh = open(file_name, 'r')
         structures = []
         for line in structures_fh:
-            #The fileds in the csv I use are:
-            #id, prot_name, class, pdb_code, endogenous_ligand, resolution, x-ray_ligand, ligand_function, chain, pubmed_id, date, G_protein, stabilizing_agent, n-term, icl1, ecl1, icl2, ecl2.1, ecl2.2, icl3, ecl3m c-term
             structures.append([x.strip().strip('"') for x in line.split(';')])
         print('Done. {:n} structure records parsed'.format(len(structures)))
         return structures
