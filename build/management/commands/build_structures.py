@@ -5,7 +5,8 @@ from django.db import connection
 from protein.models import Protein
 from residue.models import Residue
 from common.models import WebLink, WebResource, Publication
-from structure.models import Structure, StructureType
+from structure.models import Structure, StructureType, StructureStabilizingAgent
+from ligand.models import Ligand
 
 from optparse import make_option
 from datetime import datetime
@@ -78,7 +79,7 @@ class Command(BaseCommand):
                     s.pdb_publication_date = "{!s}".format(datetime.strptime(structure[self.csv_fields['date']], "%Y-%m-%d %H:%M:%S").date())
                     s.preferred_chain = structure[self.csv_fields['chain']]
                     try:
-                        s.protein = Protein.objects.get(entry_name=structure[self.csv_fields['pdb_code']])
+                        s.protein = Protein.objects.get(entry_name=structure[self.csv_fields['prot_name']])
                     except Protein.DoesNotExist:
                         print("Failed to save the structure {} Protein {} does not exist.".format(structure[self.csv_fields['pdb_code']], structure[self.csv_fields['prot_name']]))
                         self.logger.error("Failed to save the structure {} Protein {} does not exist.".format(structure[self.csv_fields['pdb_code']], structure[self.csv_fields['prot_name']]))
@@ -111,6 +112,24 @@ class Command(BaseCommand):
                         p.update_from_pubmed_data(index=structure[self.csv_fields['pubmed_id']])
                         p.save()
                         s.publication = p
+                    try:
+                        s.stabilizing_agents = StructureStabilizingAgent.get(slug=self.csv_fields['stabilizing_agent'])
+                    except StructureStabilizingAgent.DoesNotExist as e:
+                        sa = StructureStabilizingAgent(slug=self.csv_fields['stabilizing_agent'])
+                        sa.save()
+                        s.stabilizing_agents = sa
+                    try:
+                        s.xray_ligand = Ligand.objects.get(name=self.csv_fields['xray_ligand'])
+                    except Ligand.DoesNotExist as e:
+                        l = Ligand(name=self.csv_fields['xray_ligand'])
+                        try:
+                            l.role = LigandRole.objects.get(role=self.csv_fields['ligand_role'])
+                        except LigandRole.DoesNotExist as ee:
+                            r = LigandRole(role=self.csv_fields['ligand_role'])
+                            r.save()
+                            l.role = r
+                    try:
+                        s.endogenous_ligand = Ligand.objects.get(name=self.csv_fields['endogenous_ligand'])
 
                     try:
                         s.save()
