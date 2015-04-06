@@ -68,6 +68,7 @@ class Command(BaseCommand):
     def create_structures(self, args):
         self.logger.info('BUILDING UP STRUCTURE RECORDS')
         for arg in args:
+            print(arg)
             structures = []
             if os.path.exists(os.sep.join([self.structure_build_data_dir, arg])):
                 structures = self.parse_csv_data(os.sep.join([self.structure_build_data_dir, arg]))
@@ -130,7 +131,15 @@ class Command(BaseCommand):
                             l.role = r
                     try:
                         s.endogenous_ligand = Ligand.objects.get(name=self.csv_fields['endogenous_ligand'])
-
+                    except Ligand.DoesNotExist as e:
+                        l = Ligand(name=self.csv_fields['endogenous_ligand'])
+                        try:
+                            #Are the endogenous ligands always agonists?
+                            l.role = LigandRole.objects.get(role='Agonist')
+                        except LigandRole.DoesNotExist as ee:
+                            r = LigandRole(role='Agonist')
+                            r.save()
+                            l.role = r
                     try:
                         s.save()
                     except Exception as e:
@@ -143,6 +152,6 @@ class Command(BaseCommand):
         structures_fh = open(file_name, 'r')
         structures = []
         for line in structures_fh:
-            structures.append([x.strip().strip('"') for x in line.split(';')])
+            structures.append([x.strip().strip('"') for x in line.split(',')])
         print('Done. {:n} structure records parsed'.format(len(structures)))
         return structures
