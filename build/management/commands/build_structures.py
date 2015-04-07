@@ -6,7 +6,7 @@ from protein.models import Protein
 from residue.models import Residue
 from common.models import WebLink, WebResource, Publication
 from structure.models import Structure, StructureType, StructureStabilizingAgent
-from ligand.models import Ligand
+from ligand.models import Ligand, LigandRole
 
 from optparse import make_option
 from datetime import datetime
@@ -25,8 +25,8 @@ class Command(BaseCommand):
         'pdb_code' : 3, 
         'endogenous_ligand' :4, 
         'resolution' : 5, 
-        'x-ray_ligand' : 6, 
-        'ligand_function' : 7, 
+        'xray_ligand' : 6, 
+        'ligand_role' : 7, 
         'chain' : 8, 
         'pubmed_id' : 9, 
         'date' : 10, 
@@ -75,6 +75,9 @@ class Command(BaseCommand):
                 self.logger.info('USING DATA FROM {} FILE'.format(arg))
 
                 for structure in structures:
+                    if len(Structure.objects.filter(pdb_code__index=structure[self.csv_fields['pdb_code']])) != 0:
+                        print('juz jest')
+                        continue
                     s = Structure() 
                     s.resolution = structure[self.csv_fields['resolution']]
                     s.pdb_publication_date = "{!s}".format(datetime.strptime(structure[self.csv_fields['date']], "%Y-%m-%d %H:%M:%S").date())
@@ -89,9 +92,13 @@ class Command(BaseCommand):
                     try:
                         s.pdb_code = WebLink.objects.get(index=structure[self.csv_fields['pdb_code']])
                     except WebLink.DoesNotExist:
-                        code = WebLink(index=structure[self.csv_fields['pdb_code']], web_resource = WebResource.objects.get(slug='pdb'))
-                        code.save()
-                        s.pdb_code = code
+                        try:
+                            code = WebLink(index=structure[self.csv_fields['pdb_code']], web_resource = WebResource.objects.get(slug='pdb'))
+                            code.save()
+                            s.pdb_code = code
+                        except WebResource.DoesNotExist as e:
+                            print('Could not find WebResource "pdb". Have you run build_basic_webresources command?')
+                            break
                     #FIXME: Temporary, since at first we are just using crystals
                     try:
                         s.structure_type = StructureType.objects.get(slug='x-ray')
@@ -102,7 +109,7 @@ class Command(BaseCommand):
                         s.structure_type = xray
                     try:
                         s.publication = Publication.objects.get(web_link__index=structure[self.csv_fields['pubmed_id']])
-                    except:
+                    except Publication.DoesNotExist as e:
                         p = Publication()
                         try:
                             p.web_link = WebLink.objects.get(index=structure[self.csv_fields['pubmed_id']], web_resource__slug='pubmed')
@@ -114,25 +121,22 @@ class Command(BaseCommand):
                         p.save()
                         s.publication = p
                     try:
-                        s.stabilizing_agents = StructureStabilizingAgent.get(slug=self.csv_fields['stabilizing_agent'])
-                    except StructureStabilizingAgent.DoesNotExist as e:
-                        sa = StructureStabilizingAgent(slug=self.csv_fields['stabilizing_agent'])
-                        sa.save()
-                        s.stabilizing_agents = sa
-                    try:
                         s.xray_ligand = Ligand.objects.get(name=self.csv_fields['xray_ligand'])
                     except Ligand.DoesNotExist as e:
                         l = Ligand(name=self.csv_fields['xray_ligand'])
+                        #l.save()
                         try:
                             l.role = LigandRole.objects.get(role=self.csv_fields['ligand_role'])
                         except LigandRole.DoesNotExist as ee:
                             r = LigandRole(role=self.csv_fields['ligand_role'])
                             r.save()
                             l.role = r
+                        l.save()
                     try:
                         s.endogenous_ligand = Ligand.objects.get(name=self.csv_fields['endogenous_ligand'])
                     except Ligand.DoesNotExist as e:
                         l = Ligand(name=self.csv_fields['endogenous_ligand'])
+                        #l.save()
                         try:
                             #Are the endogenous ligands always agonists?
                             l.role = LigandRole.objects.get(role='Agonist')
@@ -140,8 +144,18 @@ class Command(BaseCommand):
                             r = LigandRole(role='Agonist')
                             r.save()
                             l.role = r
+                        l.save()
                     try:
                         s.save()
+                        try:
+                            s.stabilizing_agents.add(StructureStabilizingAgent.objects.get(slug=self.csv_fields['stabilizing_agent']))
+                        except StructureStabilizingAgent.DoesNotExist as e:
+                            print('dodaje recznie')
+                            sa = StructureStabilizingAgent()
+                            sa.slug=self.csv_fields['stabilizing_agent']
+                            sa.save()
+                            s.stabilizing_agents = sa
+                            s.save()
                     except Exception as e:
                         print(e)
                         self.logger.error("Failed to save the structure {}".format(structure[self.csv_fields['pdb_code']]))
@@ -152,6 +166,7 @@ class Command(BaseCommand):
         structures_fh = open(file_name, 'r')
         structures = []
         for line in structures_fh:
-            structures.append([x.strip().strip('"') for x in line.split(',')])
+            structures.append([x.strip().strip('"') for x in line.split('\t')])
         print('Done. {:n} structure records parsed'.format(len(structures)))
+
         return structures

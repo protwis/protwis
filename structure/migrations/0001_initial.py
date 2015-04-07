@@ -7,23 +7,23 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('protein', '0002_auto_20150316_1232'),
-        ('common', '0002_auto_20150328_1656'),
         ('ligand', '0002_auto_20150225_1441'),
+        ('common', '0002_auto_20150328_1656'),
+        ('protein', '0002_auto_20150316_1232'),
     ]
 
     operations = [
         migrations.CreateModel(
             name='Structure',
             fields=[
-                ('id', models.AutoField(serialize=False, primary_key=True, verbose_name='ID', auto_created=True)),
+                ('id', models.AutoField(serialize=False, primary_key=True, auto_created=True, verbose_name='ID')),
                 ('preferred_chain', models.CharField(max_length=20)),
                 ('resolution', models.DecimalField(decimal_places=3, max_digits=5)),
-                ('publication', models.CharField(max_length=20)),
                 ('pdb_publication_date', models.DateField()),
-                ('endogenous_ligand', models.ForeignKey(null=True, related_name='endogenous_ligand', to='ligand.Ligand')),
+                ('endogenous_ligand', models.ForeignKey(related_name='endogenous_ligand', null=True, to='ligand.Ligand')),
                 ('pdb_code', models.ForeignKey(to='common.WebLink')),
                 ('protein', models.ForeignKey(to='protein.Protein')),
+                ('publication', models.ForeignKey(to='common.Publication')),
             ],
             options={
                 'db_table': 'structure',
@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='StructureStabilizingAgent',
             fields=[
-                ('id', models.AutoField(serialize=False, primary_key=True, verbose_name='ID', auto_created=True)),
+                ('id', models.AutoField(serialize=False, primary_key=True, auto_created=True, verbose_name='ID')),
                 ('slug', models.SlugField(max_length=20)),
             ],
             options={
@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='StructureType',
             fields=[
-                ('id', models.AutoField(serialize=False, primary_key=True, verbose_name='ID', auto_created=True)),
+                ('id', models.AutoField(serialize=False, primary_key=True, auto_created=True, verbose_name='ID')),
                 ('slug', models.SlugField(max_length=20)),
                 ('description', models.TextField()),
             ],
@@ -56,7 +56,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='structure',
             name='stabilizing_agents',
-            field=models.ManyToManyField(to='structure.StructureStabilizingAgent', null=True),
+            field=models.ManyToManyField(null=True, to='structure.StructureStabilizingAgent'),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -68,7 +68,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='structure',
             name='xray_ligand',
-            field=models.ForeignKey(null=True, related_name='xray_ligand', to='ligand.Ligand'),
+            field=models.ForeignKey(related_name='xray_ligand', null=True, to='ligand.Ligand'),
             preserve_default=True,
         ),
     ]
