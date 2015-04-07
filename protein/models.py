@@ -5,6 +5,7 @@ class Protein(models.Model):
     family = models.ForeignKey('ProteinFamily')
     species = models.ForeignKey('Species')
     source = models.ForeignKey('ProteinSource')
+    residue_numbering_scheme = models.ForeignKey('residue.ResidueNumberingScheme')
     accession = models.CharField(max_length=100)
     entry_name = models.SlugField(max_length=100, unique=True)
     name = models.CharField(max_length=200)

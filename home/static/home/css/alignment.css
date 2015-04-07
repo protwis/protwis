@@ -4,7 +4,6 @@
     font-size: 10px;
     white-space: nowrap;
     height: 25px;
-    border: 1px solid black;
 }
 .ali-td-space
 {
@@ -29,9 +28,17 @@
 {
     height: 30px;
 }
+.ali-td-generic-num-normal
+{
+    font-size: 8px;
+    line-height: 10px;
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
+}
 .ali-td-generic-num-tiny
 {
     font-size: 5px;
+    line-height: 10px;
     padding: 0px 0px 0px 0px;
     margin: 0px 0px 0px 0px;
 }
@@ -126,5 +133,93 @@
 }
 ::-webkit-scrollbar-thumb
 {
-    background: rgba(6,128,202,1); 
+    background: rgba(6,128,202,1);
+}
+.res-color-A {
+    background-color: #E6E600;
+    color: #000000;
+}
+.res-color-C {
+    background-color: #B2B548;
+    color: #000000;
+}
+.res-color-D {
+    background-color: #E60A0A;
+    color: #FDFF7B;
+}
+.res-color-E {
+    background-color: #E60A0A;
+    color: #FDFF7B;
+}
+.res-color-F {
+    background-color: #18FF0B;
+    color: #000000;
+}
+.res-color-G {
+    background-color: #FF00F2;
+    color: #000000;
+}
+.res-color-H {
+    background-color: #0093DD;
+    color: #000000;
+}
+.res-color-I {
+    background-color: #E6E600;
+    color: #000000;
+}
+.res-color-K {
+    background-color: #145AFF;
+    color: #FDFF7B;
+}
+.res-color-L {
+    background-color: #E6E600;
+    color: #000000;
+}
+.res-color-M {
+    background-color: #E6E600;
+    color: #000000;
+}
+.res-color-N {
+    background-color: #A70CC6;
+    color: #FDFF7B;
+}
+.res-color-P {
+    background-color: #CC0099;
+    color: #FDFF7B;
+}
+.res-color-Q {
+    background-color: #A70CC6;
+    color: #FDFF7B;
+}
+.res-color-R {
+    background-color: #145AFF;
+    color: #FDFF7B;
+}
+.res-color-S {
+    background-color: #A70CC6;
+    color: #FDFF7B;
+}
+.res-color-T {
+    background-color: #A70CC6;
+    color: #FDFF7B;
+}
+.res-color-V {
+    background-color: #E6E600;
+    color: #000000;
+}
+.res-color-W {
+    background-color: #0BCF00;
+    color: #000000;
+}
+.res-color-Y {
+    background-color: #18FF0B;
+    color: #000000;
+}
+.res-color-- {
+    background-color: #FFFFFF;
+    color: #000000;
+}
+.res-color-_ {
+    background-color: #EDEDED;
+    color: #000000;
 }

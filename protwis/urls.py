@@ -26,7 +26,15 @@ urlpatterns = patterns('',
     url(r'^common/', include('common.urls')),
     url(r'^api/', include(rest_api.urls)),
     url(r'^protein/', include('protein.urls')),
+    url(r'^mutations/', include('mutation.urls')),
     url(r'^residue/', include('residue.urls')),
     url(r'^alignment/', include('alignment.urls')),
     url(r'^similaritysearch/', include('similaritysearch.urls')),
+    url(r'^structural_tools_gpcr/', include('structural_tools_gpcr.urls')),
 )
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += patterns('',
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    )

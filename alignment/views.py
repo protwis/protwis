@@ -1,8 +1,10 @@
 from django.shortcuts import render
+from django.conf import settings
 
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
-from common.alignment import Alignment
+# from common.alignment_SITE_NAME import Alignment
+Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from collections import OrderedDict
 
