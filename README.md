@@ -1,7 +1,7 @@
 PROTWIS
 ====
 
-The next generation of GPCRDB and related systems
+The next generation of GPCRdb and related systems
 
 INSTALLATION
 ---
