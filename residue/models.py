@@ -6,7 +6,7 @@ class Residue(models.Model):
     protein_segment = models.ForeignKey('protein.ProteinSegment', null=True)
     generic_number = models.ForeignKey('ResidueGenericNumber', related_name='compare', null=True)
     display_generic_number = models.ForeignKey('ResidueGenericNumber', related_name='display', null=True)
-    alternative_generic_number = models.ManyToManyField('ResidueGenericNumber', related_name='alternative', null=True)
+    alternative_generic_number = models.ManyToManyField('ResidueGenericNumber', related_name='alternative')
     sequence_number = models.SmallIntegerField()
     amino_acid = models.CharField(max_length=1)
 

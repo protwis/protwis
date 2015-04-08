@@ -11,6 +11,12 @@ class Protein(models.Model):
     name = models.CharField(max_length=200)
     sequence = models.TextField()
     web_link = models.ManyToManyField('common.WebLink')
+    
+    # non-database attributes
+    identity = False # % identity to a reference sequence in an alignment
+    similarity = False # % similarity to a reference sequence in an alignment (% BLOSUM62 score > 0)
+    similarity_score = False # similarity score to a reference sequence in an alignment (sum of BLOSUM62 scores)
+    alignment = False # residues formatted for use in an Alignment class
 
     def __str__(self):
         return self.entry_name

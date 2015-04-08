@@ -51,6 +51,8 @@ class Alignment(GenericAlignment):
         seq_num = split_gn_helix[1]
         str_num = split_gn[1]
 
+        # is's ugly to have HTML here, but adding it in the template would awkward
+
         # helix number
         formatted_gn = '<b>{:s}</b><br />'.format(helix_num)
         
