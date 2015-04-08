@@ -9,6 +9,7 @@ from residue.models import ResidueNumberingScheme
 from collections import OrderedDict
 from copy import deepcopy
 from operator import itemgetter
+from Bio.SubsMat import MatrixInfo
 
 
 class Alignment:
@@ -20,15 +21,13 @@ class Alignment:
         self.numbering_schemes = {}
         self.generic_numbers = OrderedDict()
         self.positions = []
-        self.matrix = []
         self.default_numbering_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
+        
+        # refers to which Protein attribute to order by (identity, similarity or similarity score)
+        self.order_by = 'similarity_score' 
 
     def __str__(self):
         return str(self.__dict__)
-
-    def calculate_similarity(self):
-        """Calculate the sequence identity/similarity of every selected protein compared to a selected reference"""
-        pass
 
     def load_proteins_from_selection(self, simple_selection):
         """Read user selection and fetch selected proteins from the DB"""
@@ -36,6 +35,10 @@ class Alignment:
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
+
+        # reference protein
+        if selection.reference:
+            self.proteins.append(selection.reference[0].item)
 
         # flatten the selection into individual proteins
         for target in selection.targets:
@@ -152,7 +155,8 @@ class Alignment:
                     # update position counter
                     position_counter += 1
                 row.append(s)
-            self.matrix.append(row)
+            # self.matrix.append(row)
+            p.alignment = row
             self.positions.sort()
         self.merge_generic_numbers()
         self.clear_empty_positions()
@@ -166,18 +170,20 @@ class Alignment:
             for segment, positions in segments.items():
                 for pos, dn in positions.items():
                     if pos not in self.positions:
+                        # remove position from generic numbers dict
                         del self.generic_numbers[ns][segment][pos]
                         
+                        # remove position from segment dict
                         if pos in self.segments[segment]:
                             self.segments[segment].remove(pos)
 
         # matrix
-        matrix = deepcopy(self.matrix) # deepcopy is required because the list changes during the loop
-        for i, row in enumerate(matrix):
-            for j, s in enumerate(row):
+        proteins = deepcopy(self.proteins) # deepcopy is required because the list changes during the loop
+        for i, protein in enumerate(proteins):
+            for j, s in enumerate(protein.alignment):
                 for p in s:
                     if p[0] not in self.positions:
-                        self.matrix[i][j].remove(p)
+                        self.proteins[i].alignment[j].remove(p)
 
     def merge_generic_numbers(self):
         """Check whether there are many display numbers for each position, and merge them if there are"""
@@ -194,3 +200,55 @@ class Alignment:
     def format_generic_number(self, generic_number):
         """A placeholder for an instance specific function"""
         return generic_number
+
+    def calculate_similarity(self):
+        """Calculate the sequence identity/similarity of every selected protein compared to a selected reference"""
+        gaps = ['-', '_']
+        for i, protein in enumerate(self.proteins):
+            # skip the first row, as it is the reference
+            if i != 0:
+                identities = []
+                similarities = []
+                similarity_scores = []
+                for j, s in enumerate(protein.alignment):
+                    for k, p in enumerate(s):
+                        reference_residue = self.proteins[0].alignment[j][k][2]
+                        protein_residue = self.proteins[i].alignment[j][k][2]
+                        if not (reference_residue in gaps and protein_residue in gaps):
+                            # identity
+                            if protein_residue == reference_residue:
+                                identities.append(1)
+                            else:
+                                identities.append(0)
+
+                            # similarity
+                            if reference_residue in gaps or protein_residue in gaps:
+                                similarities.append(0)
+                                similarity_scores.append(0)
+                            else:
+                                pair = (protein_residue, reference_residue)
+                                similarity = self.score_match(pair, MatrixInfo.blosum62)
+                                if similarity > 0:
+                                    similarities.append(1)
+                                else:
+                                    similarities.append(0)
+                                similarity_scores.append(similarity)
+                
+                # update the protein
+                if identities:
+                    self.proteins[i].identity = "{:10.0f}".format(sum(identities) / len(identities) * 100)
+                if similarities:
+                    self.proteins[i].similarity = "{:10.0f}".format(sum(similarities) / len(similarities) * 100)
+                    self.proteins[i].similarity_score = sum(similarity_scores)
+
+        # order protein list by similarity score
+        ref = self.proteins.pop(0)
+        # self.proteins.sort(key=lambda x: x.similarity_score, reverse=True)
+        self.proteins.sort(key=lambda x: getattr(x, self.order_by), reverse=True)
+        self.proteins.insert(0, ref)
+
+    def score_match(self, pair, matrix):
+        if pair not in matrix:
+            return matrix[(tuple(reversed(pair)))]
+        else:
+            return matrix[pair]
