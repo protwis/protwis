@@ -29,8 +29,23 @@ class Alignment:
     def __str__(self):
         return str(self.__dict__)
 
+    def load_proteins(self, proteins):
+        """Load a list of protein objects into the alignment"""
+        self.proteins += proteins
+
+        # update numbering scheme list
+        for p in self.proteins:
+            if p.residue_numbering_scheme.slug not in self.numbering_schemes:
+                self.numbering_schemes[p.residue_numbering_scheme.slug] = p.residue_numbering_scheme.name
+        
+        # order and convert numbering scheme dict to tuple
+        self.numbering_schemes = sorted(self.numbering_schemes.items(), key=itemgetter(0))
+
     def load_proteins_from_selection(self, simple_selection):
         """Read user selection and fetch selected proteins from the DB"""
+        # local protein list
+        proteins = []
+        
         # create full selection and import simple selection (if it exists)
         selection = Selection()
         if simple_selection:
@@ -38,12 +53,12 @@ class Alignment:
 
         # reference protein
         if selection.reference:
-            self.proteins.append(selection.reference[0].item)
+            proteins.append(selection.reference[0].item)
 
         # flatten the selection into individual proteins
         for target in selection.targets:
             if target.type == 'protein':
-                self.proteins.append(target.item)
+                proteins.append(target.item)
             elif target.type == 'family':
                 # species filter
                 species_list = []
@@ -59,34 +74,40 @@ class Alignment:
                     species__in=(species_list),
                     source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
                 for fp in family_proteins:
-                    self.proteins.append(fp)
-        
-        # update numbering scheme list
-        for p in self.proteins:
-            if p.residue_numbering_scheme.slug not in self.numbering_schemes:
-                self.numbering_schemes[p.residue_numbering_scheme.slug] = p.residue_numbering_scheme.name
-        # order and convert numbering scheme dict to tuple
-        self.numbering_schemes = sorted(self.numbering_schemes.items(), key=itemgetter(0))
+                    proteins.append(fp)
 
-    def load_positions_from_selection(self, simple_selection):
-        """Read user selection and add selected protein segments/residue positions"""
-        for segment in simple_selection.segments:
-            segment_residues = ResidueGenericNumber.objects.filter(protein_segment=segment.item,
+        # load protein list
+        self.load_proteins(proteins)
+
+    def load_positions(self, segments):
+        for segment in segments:
+            segment_residues = ResidueGenericNumber.objects.filter(protein_segment=segment,
                 scheme=self.default_numbering_scheme).order_by('label')
             
             # generic numbers in the schemes of all selected proteins
             for ns in self.numbering_schemes:
                 if ns[0] not in self.generic_numbers:
                     self.generic_numbers[ns[0]] = OrderedDict()
-                self.generic_numbers[ns[0]][segment.item.slug] = OrderedDict()
+                self.generic_numbers[ns[0]][segment.slug] = OrderedDict()
                 for segment_residue in segment_residues:
-                    self.generic_numbers[ns[0]][segment.item.slug][segment_residue.label] = []
+                    self.generic_numbers[ns[0]][segment.slug][segment_residue.label] = []
 
             # segments
-            self.segments[segment.item.slug] = []
+            self.segments[segment.slug] = []
             for segment_residue in segment_residues:
-                self.segments[segment.item.slug].append(segment_residue.label)
+                self.segments[segment.slug].append(segment_residue.label)
 
+    def load_positions_from_selection(self, simple_selection):
+        """Read user selection and add selected protein segments/residue positions"""
+        # local segment list
+        segments = []
+
+        # read selection
+        for segment in simple_selection.segments:
+            segments.append(segment.item)
+
+        # load segment positions
+        self.load_positions(segments)
 
     def build_alignment_matrix(self):
         """Fetch selected residues from DB and build an alignment matrix"""
