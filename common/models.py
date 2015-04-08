@@ -37,21 +37,25 @@ class Publication(models.Model):
     citation = models.TextField()
 
     def update_from_pubmed_data(self, index=None):
-        Entrez.email = 'A.N.Other@example.com'
-        if index:
-            handle = Entrez.efetch(
-                db="pubmed", 
-                id=index, 
-                rettype="medline", 
-                retmode="text"
-                )
-        else:
-            handle = Entrez.efetch(
-                db="pubmed", 
-                id=self.web_link.index,
-                rettype="medline",
-                retmode="text"
-                )
+        try:
+            Entrez.email = 'A.N.Other@example.com'
+            if index:
+                handle = Entrez.efetch(
+                    db="pubmed", 
+                    id=index, 
+                    rettype="medline", 
+                    retmode="text"
+                    )
+            else:
+                handle = Entrez.efetch(
+                    db="pubmed", 
+                    id=self.web_link.index,
+                    rettype="medline",
+                    retmode="text"
+                    )
+        except Exception as e:
+            print("Failed to retrieve data for pubmed id: {}".format(index))
+            return
         try:
             record = Medline.read(handle)
             self.title = record['TI']

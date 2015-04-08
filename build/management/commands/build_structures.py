@@ -74,10 +74,12 @@ class Command(BaseCommand):
                 structures = self.parse_csv_data(os.sep.join([self.structure_build_data_dir, arg]))
                 self.logger.info('USING DATA FROM {} FILE'.format(arg))
 
-                for structure in structures:
+                #Omitting first row - header
+                for structure in structures[1:]:
                     if len(Structure.objects.filter(pdb_code__index=structure[self.csv_fields['pdb_code']])) != 0:
                         print('juz jest')
                         continue
+                    #print(structure[self.csv_fields['xray_ligand']])
                     s = Structure() 
                     s.resolution = structure[self.csv_fields['resolution']]
                     s.pdb_publication_date = "{!s}".format(datetime.strptime(structure[self.csv_fields['date']], "%Y-%m-%d %H:%M:%S").date())
@@ -85,7 +87,7 @@ class Command(BaseCommand):
                     try:
                         s.protein = Protein.objects.get(entry_name=structure[self.csv_fields['prot_name']])
                     except Protein.DoesNotExist:
-                        print("Failed to save the structure {} Protein {} does not exist.".format(structure[self.csv_fields['pdb_code']], structure[self.csv_fields['prot_name']]))
+                        #print("Failed to save the structure {} Protein {} does not exist.".format(structure[self.csv_fields['pdb_code']], structure[self.csv_fields['prot_name']]))
                         self.logger.error("Failed to save the structure {} Protein {} does not exist.".format(structure[self.csv_fields['pdb_code']], structure[self.csv_fields['prot_name']]))
                         continue
                     #We assume that the proper web resources are defined already
@@ -107,41 +109,46 @@ class Command(BaseCommand):
                         xray = StructureType(slug='x-ray', description='X-Ray Diffraction')
                         xray.save()
                         s.structure_type = xray
-                    try:
-                        s.publication = Publication.objects.get(web_link__index=structure[self.csv_fields['pubmed_id']])
-                    except Publication.DoesNotExist as e:
-                        p = Publication()
+                    if structure[self.csv_fields['pubmed_id']] != 'N/A':
                         try:
-                            p.web_link = WebLink.objects.get(index=structure[self.csv_fields['pubmed_id']], web_resource__slug='pubmed')
-                        except WebLink.DoesNotExist:
-                            code = WebLink(index=structure[self.csv_fields['pubmed_id']], web_resource = WebResource.objects.get(slug='pubmed'))
-                            code.save()
-                            p.web_link = code
-                        p.update_from_pubmed_data(index=structure[self.csv_fields['pubmed_id']])
-                        p.save()
-                        s.publication = p
+                            s.publication = Publication.objects.get(web_link__index=structure[self.csv_fields['pubmed_id']])
+                        except Publication.DoesNotExist as e:
+                            p = Publication()
+                            try:
+                                p.web_link = WebLink.objects.get(index=structure[self.csv_fields['pubmed_id']], web_resource__slug='pubmed')
+                            except WebLink.DoesNotExist:
+                                code = WebLink(index=structure[self.csv_fields['pubmed_id']], web_resource = WebResource.objects.get(slug='pubmed'))
+                                code.save()
+                                p.web_link = code
+                            p.update_from_pubmed_data(index=structure[self.csv_fields['pubmed_id']])
+                            p.save()
+                            s.publication = p
                     try:
                         s.xray_ligand = Ligand.objects.get(name=self.csv_fields['xray_ligand'])
                     except Ligand.DoesNotExist as e:
-                        l = Ligand(name=self.csv_fields['xray_ligand'])
+                        l = Ligand()
+                        l.name = self.csv_fields['xray_ligand']
                         #l.save()
                         try:
                             l.role = LigandRole.objects.get(role=self.csv_fields['ligand_role'])
                         except LigandRole.DoesNotExist as ee:
-                            r = LigandRole(role=self.csv_fields['ligand_role'])
+                            r = LigandRole()
+                            r.role = self.csv_fields['ligand_role']
                             r.save()
                             l.role = r
                         l.save()
                     try:
                         s.endogenous_ligand = Ligand.objects.get(name=self.csv_fields['endogenous_ligand'])
                     except Ligand.DoesNotExist as e:
-                        l = Ligand(name=self.csv_fields['endogenous_ligand'])
+                        l = Ligand()
+                        l.name = self.csv_fields['endogenous_ligand']
                         #l.save()
                         try:
                             #Are the endogenous ligands always agonists?
                             l.role = LigandRole.objects.get(role='Agonist')
                         except LigandRole.DoesNotExist as ee:
-                            r = LigandRole(role='Agonist')
+                            r = LigandRole()
+                            r.role = 'Agonist'
                             r.save()
                             l.role = r
                         l.save()
