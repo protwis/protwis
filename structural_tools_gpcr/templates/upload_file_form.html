@@ -6,7 +6,7 @@
         </div>
         <div style="width:370px;height:200px;">
             <br />
-            <form id="{{form_id}}" action="{{ url }}" method="post" enctype="multipart/form-data">
+            <form id="{{form_id}}" action="{{ url }}" method="post" enctype="multipart/form-data"> {% csrf_token %}
                 {{ form_code }}
              </form>
         </div>
