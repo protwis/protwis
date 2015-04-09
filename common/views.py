@@ -165,9 +165,6 @@ def AddToSelection(request):
     if selection_type == 'reference' or selection_type == 'targets':
         if selection_subtype == 'protein':
             o = Protein.objects.get(pk=selection_id)
-
-            # include species name for proteins
-            o.name = o.name + ' [' + o.species.common_name + "]"
         elif selection_subtype == 'family':
             o = ProteinFamily.objects.get(pk=selection_id)
         elif selection_subtype == 'set':
