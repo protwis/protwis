@@ -41,7 +41,9 @@ class Alignment:
 
     def load_proteins(self, proteins):
         """Load a list of protein objects into the alignment"""
-        self.proteins += proteins
+        for protein in proteins:
+            if protein not in self.proteins:
+                self.proteins.append(protein)
         self.update_numbering_schemes()
 
     def load_proteins_from_selection(self, simple_selection):
