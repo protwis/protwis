@@ -1,0 +1,8 @@
+﻿<div class="col-md-12 well text-center">
+    {% for button_name, button in buttons.items %}
+    <a href="#" class="btn btn-{{ button.color }} btn-lg btn-block" onclick='document.getElementById("{{ form_id }}").submit()'>
+        {{ button.label }}
+    </a>
+    {% endfor %}
+</div>
+

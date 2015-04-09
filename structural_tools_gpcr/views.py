@@ -1,16 +1,23 @@
-from django.http import HttpResponse
-from django.shortcuts import render
 from django.views.generic import TemplateView
+from django.http import HttpResponse
 from django import forms
-import inspect
+from django.shortcuts import render
+from django.core.context_processors import csrf
+import structural_tools_gpcr.assign_generic_numbers as gn
+import inspect, os
+from io import StringIO
+from Bio.PDB import PDBIO
 
+
+#===================Assignment of generic numbers==============================
 #Class for starting page of generic numbers assignment
-class GenericNumberingStart(TemplateView):
-    template_name = 'generic_numbering.html'
+class GenericNumberingIndex(TemplateView):
+
+    template_name = 'common_structural_tools.html'
     
     #Left panel
     step = 1
-    number_of_steps = 2
+    number_of_steps = 1
     title = "UPLOAD A PDB FILE"
     description = """
     Upload a pdb file you want to be annotated with generic numbers. Note that "CA" atoms will be assigned a number in GPCRdb notation, and "N" atoms will be annotated with Ballesteros-Weinstein scheme.
@@ -19,35 +26,145 @@ class GenericNumberingStart(TemplateView):
         """
 
     #Input file form data
-    header = "Upload your pdb file"
+    header = "Upload your pdb file:"
     upload_form_data = {
         "pdb_file": forms.FileField(),
         }
     form_code = forms.Form()
     form_code.fields = upload_form_data
     form_id = 'gn_pdb_file'
-    url = ''
+    url = '/structural_tools_gpcr/generic_numbering_results'
+    mid_section = "upload_file_form.html"
 
     #Buttons
     buttons = {
         'continue' : {
             'label' : 'Assign generic numbers',
-            'url' : '/structural_tools_gpcr/gn_results',
             'color' : 'success',
             },
         }
 
-    def get_context_data(self, **kwargs):
-        context = super(GenericNumberingStart, self).get_context_data(**kwargs)
 
+    def get_context_data(self, **kwargs):
+
+        context = super(GenericNumberingIndex, self).get_context_data(**kwargs)
         # get attributes of this class and add them to the context
         context['form_code'] = str(self.form_code)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
+
         return context
+
 
 #Class rendering results from generic numbers assignment
 class GenericNumberingResults(TemplateView):
-    pass    
+
+    template_name='common_structural_tools.html'
+
+    #Left panel - blank
+    #Mid section
+    mid_section = 'gn_results.html'
+    #Buttons - none
+
+
+    def post(self, request, *args, **kwargs):
+
+        generic_numbering = gn.GenericNumbering(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8')))
+        out_struct = generic_numbering.assign_generic_numbers()
+        out_stream = StringIO()
+        io = PDBIO()
+        io.set_structure(out_struct)
+        io.save(out_stream)
+        if len(out_stream.getvalue()) > 0:
+            request.session['outfile'] = { request.FILES['pdb_file'].name : out_stream, }
+            self.input_file = request.FILES['pdb_file'].name
+            self.success = True
+            self.outfile = request.FILES['pdb_file'].name
+        else:
+            self.success = False
+
+        context =  super(GenericNumberingResults, self).get_context_data(**kwargs)
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+
+        return render(request, self.template_name, context)
+
+
+    def get_context_data(self, **kwargs):
+
+        context =  super(GenericNumberingResults, self).get_context_data(**kwargs)
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+
+        return context
+
+#==============================================================================
+
+#========================Superposition of structures===========================
+#Class for starting page of superposition workflow
+class SuperpositionWorkflowIndex(TemplateView):
+    
+    template_name = "common_structural_tools.html"
+
+    #Left panel
+    step = 1
+    number_of_steps = 2
+    title = "UPLOAD YOUR FILES"
+    description = """
+    Upload a pdb file for reference structure, and one or more files that will be superposed. You can also select the structures from crystal structure browser.
+
+    Once you have uploaded/selected all your targets, click the green button.
+    """
+
+    header = "Upload or select your structures:"
+    upload_form_data = {
+        'ref_file' : forms.FileField(label="Reference structure"),
+        'alt_files[]' : forms.FileField(label="Structure(s) to superpose"),
+        }
+    form_code = forms.Form()
+    form_code.fields = upload_form_data
+    form_id = 'superpose_files'
+    url = '/structural_tools_gpcr/superpose_results'
+    mid_section = 'upload_file_form.html'
+
+    #Buttons
+    buttons = {
+        'continue' : {
+            'label' : 'Superpose structures',
+            'color' : 'success',
+            }
+        }
+
+
+    def get_context_data(self, **kwargs):
+
+        context = super(SuperpositionWorkflowIndex, self).get_context_data(**kwargs)
+        # get attributes of this class and add them to the context
+        context['form_code'] = str(self.form_code)
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+
+        return context
+
+
+#==============================================================================
+
+def ServePdbOutfile(request, outfile):
+    
+    root, ext = os.path.splitext(outfile)
+    out_stream = request.session['outfile'][outfile]
+    print(request.session['outfile'][outfile])
+
+    response = HttpResponse(content_type="chemical/x-pdb")
+    response['Content-Disposition'] = 'attachment; filename="{}_GPCRDB.pdb"'.format(root)
+    response.write(out_stream.getvalue())
+
+    return response
