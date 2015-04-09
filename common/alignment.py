@@ -121,8 +121,16 @@ class Alignment:
             generic_numbers += gns
 
         # fetch all residues for the selected proteins. Prefetch the generic numbers (a lot faster)
-        rs = Residue.objects.filter(generic_number__scheme=self.default_numbering_scheme,
-            generic_number__label__in=generic_numbers, protein__in=self.proteins).prefetch_related('protein', 'protein_segment', 'generic_number', 'display_generic_number__scheme', 'alternative_generic_number__scheme')
+        # only fetch the alternative generic numbers if more than one numbering scheme is needed
+        if len(self.numbering_schemes) > 1:
+            rs = Residue.objects.filter(generic_number__scheme=self.default_numbering_scheme,
+                generic_number__label__in=generic_numbers, protein__in=self.proteins).prefetch_related(
+                'protein', 'protein_segment', 'generic_number', 'display_generic_number__scheme',
+                'alternative_generic_number__scheme')
+        else:
+            rs = Residue.objects.filter(generic_number__scheme=self.default_numbering_scheme,
+                generic_number__label__in=generic_numbers, protein__in=self.proteins).prefetch_related(
+                'protein', 'protein_segment', 'generic_number', 'display_generic_number__scheme')
 
         # create a dict of proteins, segments and residues
         proteins = {}
@@ -153,8 +161,10 @@ class Alignment:
                             self.positions.append(pos)
 
                         # add display number to list of display numbers for this position
-                        if r.display_generic_number.label not in self.generic_numbers[p.residue_numbering_scheme.slug][segment][pos]:
-                            self.generic_numbers[p.residue_numbering_scheme.slug][segment][pos].append(r.display_generic_number.label)
+                        if r.display_generic_number.label not in (
+                            self.generic_numbers[p.residue_numbering_scheme.slug][segment][pos]):
+                            self.generic_numbers[p.residue_numbering_scheme.slug][segment][pos].append(
+                                r.display_generic_number.label)
                             pass
 
                         # add display numbers for other numbering schemes of selected proteins
