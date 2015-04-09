@@ -115,6 +115,24 @@ class Alignment:
 
     def build_alignment(self):
         """Fetch selected residues from DB and build an alignment"""
+        # make a list of generic numbers from all segments
+        generic_numbers = []
+        for segment, gns in self.segments.items():
+            generic_numbers += gns
+
+        # fetch all residues for the selected proteins. Prefetch the generic numbers (a lot faster)
+        rs = Residue.objects.filter(generic_number__scheme=self.default_numbering_scheme,
+            generic_number__label__in=generic_numbers, protein__in=self.proteins).prefetch_related('protein', 'protein_segment', 'generic_number', 'display_generic_number__scheme', 'alternative_generic_number__scheme')
+
+        # create a dict of proteins, segments and residues
+        proteins = {}
+        for r in rs:
+            if r.protein.entry_name not in proteins:
+                proteins[r.protein.entry_name] = {}
+            if r.protein_segment.slug not in proteins[r.protein.entry_name]:
+                proteins[r.protein.entry_name][r.protein_segment.slug] = {}
+            proteins[r.protein.entry_name][r.protein_segment.slug][r.generic_number.label] = r
+
         for p in self.proteins:
             row = []
             for segment, positions in self.segments.items():
@@ -124,20 +142,11 @@ class Alignment:
                 gap_counter = 0
                 position_counter = 1
 
-                # fetch all residues for this segment. Prefetch the generic numbers (a lot faster)
-                rs = Residue.objects.filter(generic_number__scheme=self.default_numbering_scheme,
-                    generic_number__label__in=positions, protein=p).prefetch_related('generic_number', 'display_generic_number__scheme', 'alternative_generic_number__scheme')
-
-                # create a dict of residues with their generic number as key for easy lookup
-                res = {}
-                for r in rs:
-                    res[r.generic_number.label] = r
-
                 # loop all positions in this segment
                 for pos in positions:
                     try:
                         # find the residue record from the dict defined above
-                        r = res[pos]
+                        r = proteins[p.entry_name][segment][pos]
                         
                         # add position to the list of positions that are not empty
                         if pos not in self.positions:
