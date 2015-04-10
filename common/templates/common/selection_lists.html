@@ -14,6 +14,9 @@
                 {{ selected_item.item.slug|safe }}
             {% else %}
                 {{ selected_item.item.name|safe }}
+                {% if selected_item.item.species.common_name %}
+                    [{{ selected_item.item.species.common_name|safe }}]
+                {% endif %}
             {% endif %}
 
             ({{ selected_item.type_title }})

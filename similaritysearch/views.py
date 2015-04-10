@@ -71,11 +71,12 @@ def render_alignment(request):
     a = Alignment()
 
     # load data from selection into the alignment
+    a.load_reference_protein_from_selection(simple_selection)
     a.load_proteins_from_selection(simple_selection)
-    a.load_positions_from_selection(simple_selection)
+    a.load_segments_from_selection(simple_selection)
 
     # build the alignment data matrix
-    a.build_alignment_matrix()
+    a.build_alignment()
 
     # calculate identity and similarity of each row compared to the reference
     a.calculate_similarity()
