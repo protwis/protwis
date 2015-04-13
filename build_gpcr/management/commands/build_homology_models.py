@@ -12,11 +12,11 @@ from collections import OrderedDict
 class Command(BaseCommand):
     
     def handle(self, *args, **options):
-        Homology_model = HomologyModeling('5ht1a_human','Agonist')
+        Homology_model = HomologyModeling('5ht2b_human', 'Agonist')
         multi_alignment = Homology_model.run_pairwise_alignment()
         main_template = Homology_model.select_main_template(multi_alignment)
         main_alignment = Homology_model.run_main_alignment(Homology_model.reference_protein,main_template)
-        Homology_model.run_non_conserved_switcher(main_alignment)        
+        non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)       
         
         self.stdout.write(Homology_model.statistics, ending='')
 
@@ -25,12 +25,14 @@ class HomologyModeling(object):
     ''' Class to build homology models for GPCRs. 
     
         @param reference_id: str, protein id \n
-        @param role: str, endogenous ligand role \n
+        @param role: str, endogenous ligand role of reference \n
+        @param query_roles: list, list of endogenous ligand roles to be applied for template search \n
         @param testing: boolean, test program with existing structure, default: False \n
     '''
-    def __init__(self, reference_id, role, testing=False):
+    def __init__(self, reference_id, role, query_roles='default', testing=False):
         self.reference_id = reference_id
         self.role = role
+        self.query_roles = query_roles
         self.testing = testing
         
     def __repr__(self):
@@ -61,12 +63,19 @@ class HomologyModeling(object):
             @param role: str, endogenous ligand role
         '''
         self.role = role
-        if self.testing == False:
-            self.structures_datatable = Structure.objects.filter(endogenous_ligand_id__role_id__role=self.role).order_by('protein_id','-resolution').distinct('protein_id')
-###TO BE FIXED        
-        elif self.testing == True:
-            self.structures_datatable = Structure.objects.filter(endogenous_ligand_id__role_id__role=self.role).order_by('protein_id','-resolution').distinct('protein_id')
-###        
+
+        if self.query_roles == 'default':          
+            if self.testing == False:
+                self.structures_datatable = Structure.objects.filter(endogenous_ligand_id__role_id__role=self.role).order_by('protein_id','-resolution').distinct('protein_id')       
+            elif self.testing == True:
+                self.structures_datatable = Structure.objects.filter(endogenous_ligand_id__role_id__role=self.role).order_by('protein_id','-resolution').distinct('protein_id').exclude(protein_id__entry_name=self.reference_id)
+        elif type(self.query_roles) is list:
+            for query_role in self.query_roles:
+                assert (Structure.objects.filter(endogenous_ligand_id__role_id__role=query_role)), "InputError: query role argument {} is not valid. No such entry in the database.".format(query_role)
+            if self.testing == False:
+                self.structures_datatable = Structure.objects.filter(endogenous_ligand_id__role_id__role__in=self.query_roles).order_by('protein_id','-resolution').distinct('protein_id')       
+            elif self.testing == True:
+                self.structures_datatable = Structure.objects.filter(endogenous_ligand_id__role_id__role__in=self.query_roles).order_by('protein_id','-resolution').distinct('protein_id').exclude(protein_id__entry_name=self.reference_id)
         return self.structures_datatable        
         
     def get_targets_protein_data(self, structures_data):
@@ -91,7 +100,7 @@ class HomologyModeling(object):
         '''
         if not targets:
             targets = self.get_targets_protein_data(self.get_target_structures_data(self.role))
-        segments = ProteinSegment.objects.filter(slug__in=segments)
+        
         
         # core functions from alignment.py
         a = Alignment()
@@ -99,8 +108,10 @@ class HomologyModeling(object):
             a.load_reference_protein(self.get_receptor_data(self.reference_id))
         a.load_proteins(targets)
         if segments=='default':
-            a.load_segments(['TM1','TM2','TM3','TM4','TM5','TM6','TM7'])
+            segments = ProteinSegment.objects.filter(slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7'])
+            a.load_segments(segments)
         else:
+            segments = ProteinSegment.objects.filter(slug__in=segments)
             a.load_segments(segments)
         a.build_alignment()
         if calculate_similarity==True:
@@ -118,6 +129,7 @@ class HomologyModeling(object):
         for i in range(1,len(alignment.proteins)):
             self.similarity_table[alignment.proteins[i]] = int(alignment.proteins[i].similarity)
             self.identity_table[alignment.proteins[i]] = int(alignment.proteins[i].identity)  
+
         best = [0,0]
         for key, value in self.similarity_table.items():
             if best[1]<value:            
@@ -126,7 +138,7 @@ class HomologyModeling(object):
                 pass
             elif best[1]==value:
                 best+=[key,value]
-        print(best)
+        
         main_structure = self.structures_datatable.get(protein_id__entry_name=best[0])
 
         self.main_pdb_id = str(WebLink.objects.get(id=main_structure.pdb_code_id))[-4:]
@@ -149,7 +161,7 @@ class HomologyModeling(object):
             @param main_template: Structure object, main template
         '''
         main_template_protein = Protein.objects.get(id=main_template.protein_id)
-        a = self.run_pairwise_alignment(['TM1','TM2','TM3','TM4','TM5','TM6','TM7',], reference=False, calculate_similarity=False, targets=[reference, main_template_protein])
+        a = self.run_pairwise_alignment(reference=False, calculate_similarity=False, targets=[reference, main_template_protein])
         ref = a.proteins[0].alignment
         temp = a.proteins[1].alignment
         reference_string = ''
@@ -207,23 +219,66 @@ class HomologyModeling(object):
             template_string+='/'
             matching_string+='/'
 
-        output = AlignedReferenceAndTemplate(self.reference_id, self.main_pdb_id, reference_dict, template_dict, matching_string)           
-        return output
+        main_alignment = AlignedReferenceAndTemplate(self.reference_id, self.main_pdb_id, reference_dict, template_dict, matching_string)           
+        return main_alignment
         
-    def run_non_conserved_switcher(aligned_reference_and_template, switch_bulges=True, switch_constrictions=True):
+    def run_non_conserved_switcher(self, alignment_input, switch_bulges=True, switch_constrictions=True):
         '''
         '''
         ref_length = 0
-        for ref_res, temp_res, aligned_res in zip(aligned_reference_and_template.reference_dict, aligned_reference_and_template.template_dict, aligned_reference_and_template.aligned_string):
+        ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
+        
+        for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, alignment_input.aligned_string):
             if ref_res!='-' and ref_res!='/':
                 ref_length+=1
+            
+            gn = ref_res
+            gn_TM = self.gn_num_extract(gn, 'x')[0]
+            gn_num = self.gn_num_extract(gn, 'x')[1]
             
             # bulges and constrictions
             if aligned_res=='-':
                 if switch_bulges==True:
-                    if ref_res=='-':
-                        print(aligned_reference_and_template.reference_dict[ref_res])
-                
+                    if alignment_input.reference_dict[ref_res]=='-' and alignment_input.reference_dict[self.gn_indecer(gn,'x',-1)] not in ['-','/'] and alignment_input.reference_dict[self.gn_indecer(gn,'x',+1)] not in ['-','/']: #and alignment_input.reference_dict[self.gn_indecer(gn,'x',-1)]!='/' and alignment_input.reference_dict[self.gn_indecer(gn,'x',+1)]!='/':
+
+                        # bulge in template
+                        if len(str(gn_num))==3:
+                            temp_bulge_list.append({gn:alignment_input.template_dict[temp_res]})
+                            print(gn, gn_TM, gn_num, alignment_input.template_dict[self.gn_indecer(gn, 'x', -1)])
+                        # constriction in target
+                        else:
+                            pass
+                    
+                    elif alignment_input.template_dict[temp_res]=='-' and alignment_input.template_dict[self.gn_indecer(gn,'x',-1)] not in ['-','/'] and alignment_input.template_dict[self.gn_indecer(gn,'x',+1)] not in ['-','/']: #and alignment_input.reference_dict[self.gn_indecer(gn,'x',-1)]!='/' and alignment_input.reference_dict[self.gn_indecer(gn,'x',+1)]!='/':
+                        
+                        # bulge in target
+                        if len(str(gn_num))==3:
+                            ref_bulge_list.append({gn:alignment_input.reference_dict[ref_res]})
+                            print(gn, gn_TM, gn_num, alignment_input.template_dict[self.gn_indecer(gn, 'x', -1)])
+                            
+                        # constriction in template
+                        else:
+                            pass
+        print(temp_bulge_list)
+        print(ref_bulge_list)
+                    
+    def gn_num_extract(self, gn, delimiter):
+        try:
+            split = gn.split(delimiter)
+            return int(split[0]), int(split[1])
+        except:
+            return '/', '/'
+            
+    def gn_indecer(self, gn, delimiter, direction):
+        split = self.gn_num_extract(gn, delimiter)
+        if split[0]!='/':
+            if len(str(split[1]))==2:
+                return str(split[0])+delimiter+str(split[1]+direction)
+            elif len(str(split[1]))==3:
+                if direction<0:
+                    direction += 1
+                return str(split[0])+delimiter+str(int(str(split[1])[:2])+direction)
+        return '/'
             
 class BulgesAndConstrictions(object):
     def __init__(self):
