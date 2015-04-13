@@ -31,8 +31,9 @@ class Alignment:
 
     def load_reference_protein(self, protein):
         """Loads a protein into the alignment as a reference"""
+        self.reference = True
         self.proteins.insert(0, protein)
-        self.update_numbering_schemes()
+        self.update_numbering_schemes()       
 
     def load_reference_protein_from_selection(self, simple_selection):
         """Read user selection and add selected reference protein"""
