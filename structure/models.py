@@ -8,7 +8,7 @@ class Structure(models.Model):
     resolution = models.DecimalField(max_digits=5, decimal_places=3)
     endogenous_ligand = models.ForeignKey('ligand.Ligand', related_name='endogenous_ligand', null=True)
     xray_ligand = models.ForeignKey('ligand.Ligand', related_name='xray_ligand', null=True)
-    publication = models.CharField(max_length=20)
+    publication = models.ForeignKey('common.Publication', null=True)
     pdb_publication_date = models.DateField()
     stabilizing_agents = models.ManyToManyField('StructureStabilizingAgent', null=True)
 

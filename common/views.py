@@ -44,13 +44,17 @@ class AbsTargetSelection(TemplateView):
     ])
 
     # proteins and families
-    ppf = ProteinFamily.objects.get(slug='000')
-    pfs = ProteinFamily.objects.order_by('id').filter(parent=ppf.id) # FIXME move order_by to model
-    ps = Protein.objects.filter(family=ppf)
-    tree_indent_level = []
-    action = 'expand'
-    # remove the parent family (for all other families than the root of the tree, the parent should be shown)
-    del ppf
+    #try - except block prevents manage.py from crashing - circular dependencies between protein - common 
+    try:
+        ppf = ProteinFamily.objects.get(slug='000')
+        pfs = ProteinFamily.objects.order_by('id').filter(parent=ppf.id) # FIXME move order_by to model
+        ps = Protein.objects.filter(family=ppf)
+        tree_indent_level = []
+        action = 'expand'
+        # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+        del ppf
+    except Exception as e:
+        pass
 
     # species
     sps = Species.objects.all()
@@ -161,9 +165,6 @@ def AddToSelection(request):
     if selection_type == 'reference' or selection_type == 'targets':
         if selection_subtype == 'protein':
             o = Protein.objects.get(pk=selection_id)
-
-            # include species name for proteins
-            o.name = o.name + ' [' + o.species.common_name + "]"
         elif selection_subtype == 'family':
             o = ProteinFamily.objects.get(pk=selection_id)
         elif selection_subtype == 'set':
