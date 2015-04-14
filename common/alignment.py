@@ -31,6 +31,7 @@ class Alignment:
 
     def load_reference_protein(self, protein):
         """Loads a protein into the alignment as a reference"""
+        self.reference = True
         self.proteins.insert(0, protein)
         self.update_numbering_schemes()
 
