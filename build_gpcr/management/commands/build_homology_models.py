@@ -15,10 +15,11 @@ class Command(BaseCommand):
         Homology_model = HomologyModeling('5ht2b_human', 'Agonist')
         multi_alignment = Homology_model.run_pairwise_alignment()
         main_template = Homology_model.select_main_template(multi_alignment)
-        main_alignment = Homology_model.run_main_alignment(Homology_model.reference_protein,main_template)
+        main_alignment = Homology_model.run_main_alignment(Homology_model.reference_protein, main_template)
+    
         non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)       
-        
-        self.stdout.write(Homology_model.statistics, ending='')
+
+#        self.stdout.write(Homology_model.statistics, ending='')
 
 
 class HomologyModeling(object):
@@ -26,7 +27,7 @@ class HomologyModeling(object):
     
         @param reference_id: str, protein id \n
         @param role: str, endogenous ligand role of reference \n
-        @param query_roles: list, list of endogenous ligand roles to be applied for template search \n
+        @param query_roles: list, list of endogenous ligand roles to be applied for template search, default: same as reference \n
         @param testing: boolean, test program with existing structure, default: False \n
     '''
     def __init__(self, reference_id, role, query_roles='default', testing=False):
@@ -57,12 +58,13 @@ class HomologyModeling(object):
         slist = Structure.objects.get(pdb_code_id__index=pdb)
         return slist.resolution
 
-    def get_target_structures_data(self, role):
+    def get_targets_structure_data(self, role, query_roles):
         ''' Get all target Structure objects based on endogenous ligand role. Returns QuerySet object.
         
             @param role: str, endogenous ligand role
         '''
         self.role = role
+        self.query_roles = query_roles
 
         if self.query_roles == 'default':          
             if self.testing == False:
@@ -81,14 +83,14 @@ class HomologyModeling(object):
     def get_targets_protein_data(self, structures_data):
         ''' Get all target Protein objects based on Structure objects. Returns a list of Protein objects.
         
-            @param structures_data: QuerySet, query set of Structure objects. Output of get_target_structures_data function.
+            @param structures_data: QuerySet, query set of Structure objects. Output of get_targets_structure_data function.
         '''
         plist = []
         for target in structures_data:
             plist.append(Protein.objects.get(id=target.protein_id))
         return plist
         
-    def run_pairwise_alignment(self, segments='default', reference=True, calculate_similarity=True, targets=None):
+    def run_pairwise_alignment(self, segments='default_7TM', reference=True, calculate_similarity=True, targets=None):
         ''' Creates pairwise alignment between reference and target receptor(s).
             Returns Alignment object.
             
@@ -98,21 +100,21 @@ class HomologyModeling(object):
             @param targets: list, list of Protein objects to use as targets. By default it uses all targets with role
             specified when initializing the HomologyModeling() class.
         '''
+        self.segments = segments
         if not targets:
-            targets = self.get_targets_protein_data(self.get_target_structures_data(self.role))
-        
+            targets = self.get_targets_protein_data(self.get_targets_structure_data(self.role, self.query_roles))       
         
         # core functions from alignment.py
         a = Alignment()
         if reference==True:
             a.load_reference_protein(self.get_receptor_data(self.reference_id))
         a.load_proteins(targets)
-        if segments=='default':
-            segments = ProteinSegment.objects.filter(slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7'])
-            a.load_segments(segments)
+        if self.segments=='default_7TM':
+            self.segments = ProteinSegment.objects.filter(slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7'])
+            a.load_segments(self.segments)
         else:
-            segments = ProteinSegment.objects.filter(slug__in=segments)
-            a.load_segments(segments)
+            self.segments = ProteinSegment.objects.filter(slug__in=self.segments)
+            a.load_segments(self.segments)
         a.build_alignment()
         if calculate_similarity==True:
             a.calculate_similarity()   
@@ -152,7 +154,7 @@ class HomologyModeling(object):
         self.statistics.add_info("preferred_chain", self.main_template_preferred_chain)
         return main_structure
         
-    def run_main_alignment(self, reference, main_template):
+    def run_main_alignment(self, reference, main_template, segments='default_7TM'):
         ''' Creates an alignment between reference (Protein object) and main_template (Structure object) 
             where matching residues are depicted with the one-letter residue code, mismatches with '.', 
             gaps with '-', gaps due to shorter sequences with 'x'. returns a AlignedReferenceAndTemplate class.
@@ -160,8 +162,13 @@ class HomologyModeling(object):
             @param reference: Protein object, reference receptor
             @param main_template: Structure object, main template
         '''
+        
         main_template_protein = Protein.objects.get(id=main_template.protein_id)
-        a = self.run_pairwise_alignment(reference=False, calculate_similarity=False, targets=[reference, main_template_protein])
+        if segments=='default_7TM':
+            a = self.run_pairwise_alignment(reference=False, calculate_similarity=False, targets=[reference, main_template_protein])
+        else:
+            self.segments = segments
+            a = self.run_pairwise_alignment(segments=self.segments, reference=False, calculate_similarity=False, targets=[reference, main_template_protein])            
         ref = a.proteins[0].alignment
         temp = a.proteins[1].alignment
         reference_string = ''
@@ -244,7 +251,7 @@ class HomologyModeling(object):
                         # bulge in template
                         if len(str(gn_num))==3:
                             temp_bulge_list.append({gn:alignment_input.template_dict[temp_res]})
-                            print(gn, gn_TM, gn_num, alignment_input.template_dict[self.gn_indecer(gn, 'x', -1)])
+#                            print(gn, gn_TM, gn_num, alignment_input.template_dict[self.gn_indecer(gn, 'x', -1)])
                         # constriction in target
                         else:
                             pass
@@ -254,13 +261,13 @@ class HomologyModeling(object):
                         # bulge in target
                         if len(str(gn_num))==3:
                             ref_bulge_list.append({gn:alignment_input.reference_dict[ref_res]})
-                            print(gn, gn_TM, gn_num, alignment_input.template_dict[self.gn_indecer(gn, 'x', -1)])
+#                            print(gn, gn_TM, gn_num, alignment_input.template_dict[self.gn_indecer(gn, 'x', -1)])
                             
                         # constriction in template
                         else:
                             pass
-        print(temp_bulge_list)
-        print(ref_bulge_list)
+#        print(temp_bulge_list)
+#        print(ref_bulge_list)
                     
     def gn_num_extract(self, gn, delimiter):
         try:
