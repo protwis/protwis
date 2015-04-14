@@ -1,7 +1,5 @@
 from django.db import models
 
-from common.models import WebLink
-
 
 class Ligand(models.Model):
     web_link = models.ManyToManyField('common.WebLink')

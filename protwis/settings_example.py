@@ -54,6 +54,7 @@ INSTALLED_APPS = (
     'structure',
     'ligand',
     'mutation',
+    'interaction',
     'build_' + SITE_NAME,
 )
 
