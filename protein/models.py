@@ -2,10 +2,12 @@ from django.db import models
 
 
 class Protein(models.Model):
+    parent = models.ForeignKey('self', null=True)
     family = models.ForeignKey('ProteinFamily')
     species = models.ForeignKey('Species')
     source = models.ForeignKey('ProteinSource')
     residue_numbering_scheme = models.ForeignKey('residue.ResidueNumberingScheme')
+    sequence_type = models.ForeignKey('ProteinSequenceType')
     accession = models.CharField(max_length=100)
     entry_name = models.SlugField(max_length=100, unique=True)
     name = models.CharField(max_length=200)
@@ -108,3 +110,14 @@ class ProteinFamily(models.Model):
 
     class Meta():
         db_table = 'protein_family'
+
+
+class ProteinSequenceType(models.Model):
+    slug = models.SlugField(max_length=20, unique=True)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'protein_sequence_type'

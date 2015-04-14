@@ -36,6 +36,12 @@ class Publication(models.Model):
     journal = models.ForeignKey('PublicationJournal')
     citation = models.TextField()
 
+    def __str__(self):
+        return "{!s} ({!s})".format(self.journal, self.year)
+
+    class Meta():
+        db_table = 'publication'
+
     def update_from_pubmed_data(self, index=None):
         try:
             Entrez.email = 'A.N.Other@example.com'
