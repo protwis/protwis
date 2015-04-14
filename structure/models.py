@@ -5,11 +5,12 @@ class Structure(models.Model):
     protein = models.ForeignKey('protein.Protein')
     structure_type = models.ForeignKey('StructureType')
     pdb_code = models.ForeignKey('common.WebLink')
+    ligands = models.ManyToManyField('ligand.Ligand', through='interaction.StructureLigandInteraction')
+    stabilizing_agents = models.ManyToManyField('StructureStabilizingAgent')
     preferred_chain = models.CharField(max_length=20)
     resolution = models.DecimalField(max_digits=5, decimal_places=3)
     publication = models.ForeignKey('common.Publication', null=True)
     publication_date = models.DateField()
-    stabilizing_agents = models.ManyToManyField('StructureStabilizingAgent')
 
     def __str__(self):
         return self.pdb_code

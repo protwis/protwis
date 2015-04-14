@@ -8,6 +8,7 @@ class Protein(models.Model):
     source = models.ForeignKey('ProteinSource')
     residue_numbering_scheme = models.ForeignKey('residue.ResidueNumberingScheme')
     sequence_type = models.ForeignKey('ProteinSequenceType')
+    endogenous_ligand = models.ManyToManyField('ligand.Ligand')
     accession = models.CharField(max_length=100)
     entry_name = models.SlugField(max_length=100, unique=True)
     name = models.CharField(max_length=200)
