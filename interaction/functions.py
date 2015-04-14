@@ -8,6 +8,9 @@ import getopt
 
 from Bio.PDB import *
 import openbabel
+#sudo apt-get install e-openbabel
+#sudo python3 -m pip install openbabel
+
 import pybel
 
 
@@ -24,6 +27,8 @@ import collections
 from math import pi,degrees
 from operator import itemgetter, attrgetter, methodcaller
 
+import getopt
+import sys
 
 AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
      'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
@@ -35,7 +40,8 @@ AROMATIC = {'TYR','TRP','PHE','HIS'}
 
 CHARGEDAA = {'ARG','LYS','ASP','GLU'} #skip ,'HIS'
 
-projectdir = '/vagrant/poseview/python/'
+module_dir = os.path.dirname(__file__)
+projectdir = module_dir + '/temp/'
 ignore_het = ['NA','W'] #ignore sodium and water
 
 
@@ -44,10 +50,6 @@ hydrophob_radius = 4.5
 ignore_het = ['NA','W'] #ignore sodium and water
 
 
-
-if __name__ == "__main__":
-	pdbname = '1F88'
-	calculate_interactions(pdbname)
 
 
 def fetch_pdb(id):
@@ -123,8 +125,8 @@ def create_ligands_and_poseview():
 	        else:
 	            return 0
 
-	p=PDBParser()
-	s = p.get_structure(pdbname, projectdir+'pdbs/'+pdbname+'.pdb')
+	p=PDBParser(QUIET=True)
+	s = p.get_structure(pdbname, projectdir+'pdbs/'+pdbname+'.pdb') #Disable warnings
 	hetflag_done = {}
 	for model in s:
 	    for chain in model:
@@ -178,7 +180,7 @@ def create_ligands_and_poseview():
 	                        Draw.MolToFile(m,ligand_png)
 
 
-	                    if not os.path.isfile(ligand_poseview):  #if interaction png not made, make it
+	                    if not os.path.isfile(ligand_poseview) and 1==2:  #if interaction png not made, make it #SKIP poseview stuff
 	                        cmd = "poseview -l "+ligand_sdf+" -p "+projectdir+"pdbs/"+pdbname+".pdb -o "+ligand_poseview
 
 	                        #print('Running cmd ' + cmd)
@@ -249,7 +251,7 @@ def get_ring_from_aa(residueid):
                 return 1
             else:
                 return 0
-    ptemp=PDBParser()
+    ptemp=PDBParser(QUIET=True) #disable warnings
     stemp = ptemp.get_structure(pdbname, projectdir+'pdbs/'+pdbname+'.pdb')
     temp_aa_id = residueid
 
@@ -287,7 +289,7 @@ def get_hydrogen_from_aa(residueid):
                 return 1
             else:
                 return 0
-    ptemp=PDBParser()
+    ptemp=PDBParser(QUIET=True)
     stemp = ptemp.get_structure(pdbname, projectdir+'pdbs/'+pdbname+'.pdb')
     temp_aa_id = residueid
 
@@ -322,7 +324,7 @@ def get_hydrogen_from_aa(residueid):
 
 def build_ligand_info():
 	count_atom_ligand = {}
-	p=PDBParser()
+	p=PDBParser(QUIET=True)
 	s = p.get_structure(pdbname, projectdir+'pdbs/'+pdbname+'.pdb')
 	for model in s:
 	    for chain in model:
@@ -432,7 +434,7 @@ def find_interactions():
 	count_atom = 0
 	count_skips = 0
 	count_calcs = 0
-	p=PDBParser()
+	p=PDBParser(QUIET=True)
 	s = p.get_structure(pdbname, projectdir+'pdbs/'+pdbname+'.pdb')
 	for model in s:
 	    for chain in model:
@@ -754,4 +756,27 @@ def calculate_interactions(pdb):
 	analyze_interactions()
 	pretty_results()
 
+def main(argv): 
+    pdbname = ''                             
+    try:                                
+        opts, args = getopt.getopt(argv, "p:", ["pdb"]) 
+    except getopt.GetoptError:           
+        print "Remember PDB name -p "                      
+        sys.exit(2)
 
+    for opt, arg in opts:                
+        if opt in ("-p"):      
+            pdbname = arg    
+
+    if not pdbname:
+        print "Remember PDB name -p "                      
+        sys.exit(2)
+    #print "looking for",pdbname
+
+    calculate_interactions(pdbname)
+
+
+if __name__ == "__main__":
+	main(sys.argv[1:])
+	#pdbname = '1F88'
+	#calculate_interactions(pdbname)
