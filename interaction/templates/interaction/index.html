@@ -1,0 +1,11 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+Hi please select the pdb file to analyse:
+<form action="calculate" method="post">
+{% csrf_token %}
+    <label for="pdbname">PDBname</label>
+    <input id="pdbname" type="text" name="pdbname" value="">
+    <input type="submit" value="OK">
+</form>
+{% endblock %}
