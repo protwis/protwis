@@ -14,6 +14,9 @@ import logging, os
 
 
 class Command(BaseCommand):
+    
+    def add_arguments(self, parser):
+        parser.add_argument('filename', nargs='+', type=str)
 
     logger = logging.getLogger(__name__)
     structure_build_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data'])
@@ -52,7 +55,7 @@ class Command(BaseCommand):
         except Exception as msg:
             # print(msg)
             self.logger.error(msg)
-        self.create_structures(args)
+        self.create_structures(options['filename'])
     
     def truncate_structure_tables(self):
         cursor = connection.cursor()
