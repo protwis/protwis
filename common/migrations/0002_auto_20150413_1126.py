@@ -14,37 +14,34 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Publication',
             fields=[
-                ('id', models.AutoField(primary_key=True, verbose_name='ID', serialize=False, auto_created=True)),
+                ('id', models.AutoField(verbose_name='ID', serialize=False, primary_key=True, auto_created=True)),
                 ('title', models.TextField()),
                 ('year', models.IntegerField()),
                 ('citation', models.TextField()),
             ],
             options={
+                'db_table': 'publication',
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='PublicationJournal',
             fields=[
-                ('id', models.AutoField(primary_key=True, verbose_name='ID', serialize=False, auto_created=True)),
+                ('id', models.AutoField(verbose_name='ID', serialize=False, primary_key=True, auto_created=True)),
                 ('slug', models.CharField(max_length=30, null=True)),
                 ('name', models.TextField()),
             ],
             options={
                 'db_table': 'publication_journal',
             },
-            bases=(models.Model,),
         ),
         migrations.AddField(
             model_name='publication',
             name='journal',
             field=models.ForeignKey(to='common.PublicationJournal'),
-            preserve_default=True,
         ),
         migrations.AddField(
             model_name='publication',
             name='web_link',
             field=models.ForeignKey(to='common.WebLink'),
-            preserve_default=True,
         ),
     ]
