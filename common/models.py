@@ -30,15 +30,22 @@ class WebLink(models.Model):
 
 
 class Publication(models.Model):
-    web_link = models.ForeignKey('common.WebLink')
-    title = models.TextField()
-    year = models.IntegerField()
+    web_link = models.ForeignKey('common.WebLink', null=True)
     journal = models.ForeignKey('PublicationJournal')
-    citation = models.TextField()
+    title = models.TextField()
+    authors = models.TextField()
+    year = models.IntegerField()
+    reference = models.TextField()
+
+    def __str__(self):
+        return "{!s} ({!s})".format(self.journal, self.year)
+
+    class Meta():
+        db_table = 'publication'
 
     def update_from_pubmed_data(self, index=None):
         try:
-            Entrez.email = 'A.N.Other@example.com'
+            Entrez.email = 'info@gpcrdb.org'
             if index:
                 handle = Entrez.efetch(
                     db="pubmed", 
@@ -59,6 +66,7 @@ class Publication(models.Model):
         try:
             record = Medline.read(handle)
             self.title = record['TI']
+            self.authors = record['AU']
             self.year = record['DA'][0:3]
             try:
                 self.journal = PublicationJournal.objects.get(slug=record['TA'], name=record['JT'])
@@ -66,7 +74,7 @@ class Publication(models.Model):
                 j = PublicationJournal(slug=record['TA'], name=record['JT'])
                 j.save()
                 self.journal = j
-            self.citation = "{}({}):{}".format(record['VI'], record['IP'], record['PG'])
+            self.reference = "{}({}):{}".format(record['VI'], record['IP'], record['PG'])
         except Exception as msg:
             print(msg)
 
