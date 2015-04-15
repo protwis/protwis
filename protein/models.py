@@ -122,3 +122,46 @@ class ProteinSequenceType(models.Model):
 
     class Meta():
         db_table = 'protein_sequence_type'
+
+
+class ProteinAnomaly(models.Model):
+    anomaly_type = models.ForeignKey('ProteinAnomalyType')
+    generic_number = models.ForeignKey('residue.ResidueGenericNumber')
+
+    def __str__(self):
+        return self.generic_number.label
+
+    class Meta():
+        db_table = 'protein_anomaly'
+
+class ProteinAnomalyType(models.Model):
+    slug = models.SlugField(max_length=20, unique=True)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'protein_anomaly_type'
+
+
+class ProteinAnomalyRuleSet(models.Model):
+    protein_anomaly = models.ForeignKey('ProteinAnomaly')
+    protein_anomaly_rules = models.ManyToManyField('ProteinAnomalyRule')
+
+    def __str__(self):
+        return self.protein_anomaly.generic_number.label
+
+    class Meta():
+        db_table = 'protein_anomaly_rule_set'
+
+
+class ProteinAnomalyRule(models.Model):
+    generic_number = models.ForeignKey('residue.ResidueGenericNumber')
+    amino_acid = models.ManyToManyField('residue.AminoAcid')
+
+    def __str__(self):
+        return "{} {}".format(self.generic_number.label, self.amino.acid.one_letter_code)
+
+    class Meta():
+        db_table = 'protein_anomaly_rule'
