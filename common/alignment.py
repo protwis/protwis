@@ -298,4 +298,3 @@ class Alignment:
             return matrix[(tuple(reversed(pair)))]
         else:
             return matrix[pair]
-
