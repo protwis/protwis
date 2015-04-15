@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ProteinAnomaly',
             fields=[
-                ('id', models.AutoField(serialize=False, auto_created=True, primary_key=True, verbose_name='ID')),
+                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
             ],
             options={
                 'db_table': 'protein_anomaly',
@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ProteinAnomalyRule',
             fields=[
-                ('id', models.AutoField(serialize=False, auto_created=True, primary_key=True, verbose_name='ID')),
+                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
                 ('amino_acid', models.ManyToManyField(to='residue.AminoAcid')),
                 ('generic_number', models.ForeignKey(to='residue.ResidueGenericNumber')),
             ],
@@ -35,18 +35,18 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ProteinAnomalyRuleSet',
             fields=[
-                ('id', models.AutoField(serialize=False, auto_created=True, primary_key=True, verbose_name='ID')),
+                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
                 ('protein_anomaly', models.ForeignKey(to='protein.ProteinAnomaly')),
                 ('protein_anomaly_rules', models.ManyToManyField(to='protein.ProteinAnomalyRule')),
             ],
             options={
-                'db_table': 'protein_anomaly_rule',
+                'db_table': 'protein_anomaly_rule_set',
             },
         ),
         migrations.CreateModel(
             name='ProteinAnomalyType',
             fields=[
-                ('id', models.AutoField(serialize=False, auto_created=True, primary_key=True, verbose_name='ID')),
+                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
                 ('slug', models.SlugField(max_length=20, unique=True)),
                 ('name', models.CharField(max_length=100)),
             ],

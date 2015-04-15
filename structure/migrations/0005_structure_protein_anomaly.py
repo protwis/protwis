@@ -7,7 +7,7 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('protein', '0005_auto_20150415_2125'),
+        ('protein', '0005_auto_20150415_2149'),
         ('structure', '0004_structure_ligands'),
     ]
 
