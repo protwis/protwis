@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from interaction.functions import *
+#from interaction.functions import *
 # Create your views here.
 
 def index(request):

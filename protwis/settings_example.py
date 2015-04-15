@@ -51,6 +51,10 @@ INSTALLED_APPS = (
     'residue',
     'alignment',
     'similaritysearch',
+    'structure',
+    'ligand',
+    'mutation',
+    'interaction',
     'build_' + SITE_NAME,
 )
 
