@@ -5,7 +5,7 @@ from structure.models import Structure
 from protein.models import ProteinSegment
 from common.alignment import Alignment
 from common.models import WebLink
-import pprint
+
 from collections import OrderedDict
 
 
@@ -15,11 +15,10 @@ class Command(BaseCommand):
         Homology_model = HomologyModeling('5ht2b_human', 'Agonist')
         multi_alignment = Homology_model.run_pairwise_alignment()
         main_template = Homology_model.select_main_template(multi_alignment)
-        main_alignment = Homology_model.run_main_alignment(Homology_model.reference_protein, main_template)
-    
+        main_alignment = Homology_model.run_main_alignment(Homology_model.reference_protein, main_template)    
         non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)       
-
-#        self.stdout.write(Homology_model.statistics, ending='')
+        
+        self.stdout.write(Homology_model.statistics, ending='')
 
 
 class HomologyModeling(object):
@@ -35,6 +34,7 @@ class HomologyModeling(object):
         self.role = role
         self.query_roles = query_roles
         self.testing = testing
+        self.statistics = CreateStatistics(self.reference_id)
         
     def __repr__(self):
         return "<{}, {}>".format(self.reference_id, self.role)
@@ -47,7 +47,7 @@ class HomologyModeling(object):
         self.reference_protein = Protein.objects.get(entry_name=self.reference_id)
         self.uniprot_id = self.reference_protein.accession
         self.reference_sequence = self.reference_protein.sequence
-        self.statistics = CreateStatistics(self.uniprot_id)
+        self.statistics.add_info('uniprot_id',self.uniprot_id)
         return self.reference_protein
 
     def get_structure_data(self, pdb):
@@ -55,8 +55,8 @@ class HomologyModeling(object):
         
             @param pdb: str, pdb code
         '''
-        slist = Structure.objects.get(pdb_code_id__index=pdb)
-        return slist.resolution
+        structure = Structure.objects.get(pdb_code_id__index=pdb)
+        return structure
 
     def get_targets_structure_data(self, role, query_roles):
         ''' Get all target Structure objects based on endogenous ligand role. Returns QuerySet object.
@@ -125,26 +125,13 @@ class HomologyModeling(object):
         
             @param alignment: Alignment, aligment object where the first protein is the reference. Output of pairwise_alignment function.
         '''
-        self.similarity_table = OrderedDict()
-        self.identity_table = OrderedDict()
+        self.similarity_table = self.create_ordered_similarity_table(self.role, self.query_roles, self.structures_datatable)
         
-        for i in range(1,len(alignment.proteins)):
-            self.similarity_table[alignment.proteins[i]] = int(alignment.proteins[i].similarity)
-            self.identity_table[alignment.proteins[i]] = int(alignment.proteins[i].identity)  
-
-        best = [0,0]
-        for key, value in self.similarity_table.items():
-            if best[1]<value:            
-                best = [key,value]
-            elif value==0:
-                pass
-            elif best[1]==value:
-                best+=[key,value]
+        main_structure = list(self.similarity_table.items())[0][0]       
+        main_structure_protein = Protein.objects.get(id=main_structure.protein_id)
         
-        main_structure = self.structures_datatable.get(protein_id__entry_name=best[0])
-
         self.main_pdb_id = str(WebLink.objects.get(id=main_structure.pdb_code_id))[-4:]
-        self.main_template_sequence = best[0].sequence
+        self.main_template_sequence = main_structure_protein.sequence
         if len(main_structure.preferred_chain)>1:
             self.main_template_preferred_chain = main_structure.preferred_chain[0]
         else:
@@ -152,6 +139,7 @@ class HomologyModeling(object):
             
         self.statistics.add_info("main_template", self.main_pdb_id)
         self.statistics.add_info("preferred_chain", self.main_template_preferred_chain)
+
         return main_structure
         
     def run_main_alignment(self, reference, main_template, segments='default_7TM'):
@@ -230,46 +218,92 @@ class HomologyModeling(object):
         return main_alignment
         
     def run_non_conserved_switcher(self, alignment_input, switch_bulges=True, switch_constrictions=True):
-        '''
+        ''' Function to identify and switch non conserved residues in the alignment. Optionally,
+            it can identify and switch bulge and constriction sites too. 
+            
+            @param alignment_input: AlignedReferenceAndTemplate, alignment of reference and main template with alignment string. \n
+            @param switch_bulges: boolean, identify and switch bulge sites. Default = True.
+            @param switch_constrictions: boolean, identify and switch constriction sites. Default = True.
         '''
         ref_length = 0
+        non_cons_count = 0
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         
-        for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, alignment_input.aligned_string):
-            if ref_res!='-' and ref_res!='/':
-                ref_length+=1
+        # bulges and constrictions
+        if switch_bulges==True or switch_constrictions==True:
+            self.similarity_table_all = self.create_ordered_similarity_table(self.role, self.query_roles, self.structures_datatable)
             
-            gn = ref_res
-            gn_TM = self.gn_num_extract(gn, 'x')[0]
-            gn_num = self.gn_num_extract(gn, 'x')[1]
-            
-            # bulges and constrictions
-            if aligned_res=='-':
-                if switch_bulges==True:
+            for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, alignment_input.aligned_string):
+                if ref_res!='-' and ref_res!='/':
+                    ref_length+=1
+                
+                gn = ref_res
+                gn_TM = self.gn_num_extract(gn, 'x')[0]
+                gn_num = self.gn_num_extract(gn, 'x')[1]
+                
+                if aligned_res=='-':
                     if alignment_input.reference_dict[ref_res]=='-' and alignment_input.reference_dict[self.gn_indecer(gn,'x',-1)] not in ['-','/'] and alignment_input.reference_dict[self.gn_indecer(gn,'x',+1)] not in ['-','/']: #and alignment_input.reference_dict[self.gn_indecer(gn,'x',-1)]!='/' and alignment_input.reference_dict[self.gn_indecer(gn,'x',+1)]!='/':
-
+    
                         # bulge in template
                         if len(str(gn_num))==3:
-                            temp_bulge_list.append({gn:alignment_input.template_dict[temp_res]})
-#                            print(gn, gn_TM, gn_num, alignment_input.template_dict[self.gn_indecer(gn, 'x', -1)])
+                            if switch_bulges==True:
+                                temp_bulge_list.append({gn:alignment_input.template_dict[temp_res]})
+    
                         # constriction in target
                         else:
-                            pass
+                            if switch_constrictions==True:
+                                ref_const_list.append({self.gn_indecer(gn, 'x', -1)+'-'+self.gn_indecer(gn, 'x', +1):alignment_input.reference_dict[self.gn_indecer(gn, 'x', -1)]+'-'+alignment_input.reference_dict[self.gn_indecer(gn, 'x', +1)]})
                     
                     elif alignment_input.template_dict[temp_res]=='-' and alignment_input.template_dict[self.gn_indecer(gn,'x',-1)] not in ['-','/'] and alignment_input.template_dict[self.gn_indecer(gn,'x',+1)] not in ['-','/']: #and alignment_input.reference_dict[self.gn_indecer(gn,'x',-1)]!='/' and alignment_input.reference_dict[self.gn_indecer(gn,'x',+1)]!='/':
                         
                         # bulge in target
                         if len(str(gn_num))==3:
-                            ref_bulge_list.append({gn:alignment_input.reference_dict[ref_res]})
-#                            print(gn, gn_TM, gn_num, alignment_input.template_dict[self.gn_indecer(gn, 'x', -1)])
+                            if switch_bulges==True:
+                                ref_bulge_list.append({gn:alignment_input.reference_dict[ref_res]})
                             
                         # constriction in template
                         else:
-                            pass
-#        print(temp_bulge_list)
-#        print(ref_bulge_list)
-                    
+                            if switch_constrictions==True:
+                                temp_const_list.append({self.gn_indecer(gn, 'x', -1)+'-'+self.gn_indecer(gn, 'x', +1):alignment_input.template_dict[self.gn_indecer(gn, 'x', -1)]+'-'+alignment_input.template_dict[self.gn_indecer(gn, 'x', +1)]})
+        
+        # non-conserved residues
+        for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, alignment_input.aligned_string):
+            if ref_res!='-' and ref_res!='/':
+                ref_length+=1   
+            
+            gn = ref_res
+            gn_TM = self.gn_num_extract(gn, 'x')[0]
+            gn_num = self.gn_num_extract(gn, 'x')[1]
+            
+            if aligned_res=='.':
+                non_cons_count+=1                            
+                 
+    def create_ordered_similarity_table(self, role, query_roles, structures_datatable):
+        ''' Creates an ordered dictionary, where templates are sorted by similarity score.
+        
+            @param role: str, endogenous ligand role of reference \n
+            @param query_roles: list, endogenous ligand roles of templates involved \n
+            @param structures_datatable: QuerySet, involved template structures. Output of get_targets_structure_data
+        '''
+        structure_data = self.get_targets_structure_data(role, query_roles=query_roles) 
+        targets = self.get_targets_protein_data(structure_data)
+        alignment_all = self.run_pairwise_alignment(targets=targets)
+        sim_table_all_temp = {}
+        similarity_table_all = OrderedDict()
+        
+        for i in range(1,len(alignment_all.proteins)):
+            sim_table_all_temp[int(alignment_all.proteins[i].similarity)] = alignment_all.proteins[i]
+        sim_table_order = sorted(sim_table_all_temp, reverse=True)
+        for i in sim_table_order:
+            similarity_table_all[structures_datatable.get(protein_id__entry_name=sim_table_all_temp[i].entry_name)] = i
+        return similarity_table_all
+                
     def gn_num_extract(self, gn, delimiter):
+        ''' Extract TM number and position for formatting.
+        
+            @param gn: str, Generic number \n
+            @param delimiter: str, character between TM and position (usually 'x')
+        '''
         try:
             split = gn.split(delimiter)
             return int(split[0]), int(split[1])
@@ -277,6 +311,12 @@ class HomologyModeling(object):
             return '/', '/'
             
     def gn_indecer(self, gn, delimiter, direction):
+        ''' Get an upstream or downstream generic number from reference generic number.
+        
+            @param gn: str, Generic number \n
+            @param delimiter: str, character between TM and position (usually 'x') \n 
+            @param direction: int, n'th position from gn (+ or -)
+        '''
         split = self.gn_num_extract(gn, delimiter)
         if split[0]!='/':
             if len(str(split[1]))==2:
@@ -286,6 +326,7 @@ class HomologyModeling(object):
                     direction += 1
                 return str(split[0])+delimiter+str(int(str(split[1])[:2])+direction)
         return '/'
+
             
 class BulgesAndConstrictions(object):
     def __init__(self):
@@ -309,12 +350,12 @@ class AlignedReferenceAndTemplate(object):
 class CreateStatistics(object):
     ''' Statistics dictionary for HomologyModeling.
     '''
-    def __init__(self, uniprot):
-        self.uniprot = uniprot
+    def __init__(self, reference):
+        self.reference = reference
         self.info_dict = OrderedDict()
     
     def __repr__(self):
-        return "<{} \n {} \n>".format(self.uniprot, self.info_dict)
+        return "<{} \n {} \n>".format(self.reference, self.info_dict)
     
     def add_info(self, info_name, info):
         ''' Adds new information to the statistics dictionary.
