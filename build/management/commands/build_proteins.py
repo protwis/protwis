@@ -11,7 +11,6 @@ from protein.models import Species
 from protein.models import Gene
 from protein.models import ProteinSource
 from residue.models import ResidueNumberingScheme
-from residue.models import AminoAcid
 
 import logging
 import shlex
