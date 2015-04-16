@@ -118,14 +118,19 @@ class Command(BaseCommand):
                     if protein.entry_name in residue_data.keys():
                         try:
                             r.save()
-                            self.logger.info('Created residue {:n}{!s} for protein {!s}'.format(i, aa, protein.name))
+                            self.logger.info('Created residue {:n}{!s} for protein {!s}'.format(i, aa,
+                                protein.entry_name))
                         except Exception as msg:
                             print(msg)
                             self.logger.error('Failed to create residue {:n}{!s} for protein {!s}'.format(i, aa,
-                                protein.name))
+                                protein.entry_name))
                   
                         for res_record in residue_data[protein.entry_name]:
                             if int(res_record[0]) == r.sequence_number and res_record[1] == r.three_letter():
+                                # residue segment
+                                dump_segment = res_record[6]
+                                r.protein_segment = ProteinSegment.objects.get(slug=dump_segment)
+                                
                                 # separate bulge number (1241 - > 124 + 1)
                                 bulge_prime = ''
                                 dump_oliveira = str(res_record[2])
@@ -134,8 +139,6 @@ class Command(BaseCommand):
                                     dump_oliveira = dump_oliveira[:3]
                                 dump_gpcrdb = res_record[3][:4]
                                 dump_seq_based = res_record[4]
-                                dump_segment = res_record[6]
-                                r.protein_segment = ProteinSegment.objects.get(slug=dump_segment)
 
                                 # default gpcrdb number
                                 def_gpcrdb = False
@@ -226,11 +229,14 @@ class Command(BaseCommand):
                                                 r.alternative_generic_number.add(struct_based)
                         try:
                             r.save()
-                            self.logger.info('Added generic numbers for residue {:n}{!s}for protein {!s}'.format(i, aa, protein.name))
+                            self.logger.info('Added generic numbers for residue {:n}{!s} for protein {!s}'.format(i, aa,
+                                protein.entry_name))
                         except Exception as msg:
                             print(msg)
-                            self.logger.error('Failed to create residue {:n}{!s}for protein {!s}'.format(i, aa, protein.name))
-                self.logger.info('COMPLETED CREATING RESIDUES FROM FILE {}'.format(os.sep.join([self.dump_source_dir, arg])))
+                            self.logger.error(
+                                'Failed to create generic numbers for residue {:n}{!s} for protein {!s}'.format(i, aa,
+                                protein.entry_name))
+                self.logger.info('Completed creating residues for protein {}'.format(protein.entry_name))
             self.logger.info('COMPLETED CREATING RESIDUES')
 
     def parse_residue_data_file(self, file_name):

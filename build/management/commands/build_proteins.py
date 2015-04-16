@@ -23,20 +23,12 @@ class Command(BaseCommand):
 
     logger = logging.getLogger(__name__)
 
-    amino_acid_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'amino_acids.txt'])
     protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'proteins_and_families.txt'])
     segment_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'segments.txt'])
     residue_number_scheme_source_file = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers',
         'schemes.txt'])
 
     def handle(self, *args, **options):
-        # create amino acids
-        try:
-            self.create_amino_acids()
-        except Exception as msg:
-            # print(msg)
-            self.logger.error(msg)
-
         # create parent protein family, 000
         try:
             self.create_parent_protein_family()
@@ -64,28 +56,6 @@ class Command(BaseCommand):
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
-
-    def create_amino_acids(self):
-        self.logger.info('Parsing file ' + self.amino_acid_source_file)
-        self.logger.info('CREATING AMINO ACIDS')
-
-        with open(self.amino_acid_source_file, "r", encoding='UTF-8') as amino_acid_source_file:
-            for row in amino_acid_source_file:
-                split_row = shlex.split(row)
-
-                # create scheme
-                aa = AminoAcid()
-                aa.one_letter_code = split_row[0]
-                aa.three_letter_code = split_row[1]
-
-                try:
-                    aa.save()
-                    self.logger.info('Created amino acid ' + aa.one_letter_code)
-                except:
-                    self.logger.error('Failed creating amino acid ' + aa.one_letter_code)
-                    continue
-
-        self.logger.info('COMPLETED CREATING AMINO ACIDS')
 
     def create_parent_protein_family(self):
         pf = ProteinFamily()
