@@ -30,7 +30,7 @@ class StructureLigandInteraction(models.Model):
     structure = models.ForeignKey('structure.Structure')
     ligand = models.ForeignKey('ligand.Ligand')
     ligand_role = models.ForeignKey('ligand.LigandRole')
-    pdb_reference = models.CharField(max_length=3)
+    pdb_reference = models.CharField(max_length=3, null=True)
 
     def __str__(self):
         return "{} {}".format(self.structure.pdb_code, self.ligand.name)
