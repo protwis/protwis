@@ -11,7 +11,6 @@ from protein.models import Species
 from protein.models import Gene
 from protein.models import ProteinSource
 from residue.models import ResidueNumberingScheme
-from residue.models import AminoAcid
 
 import logging
 import shlex
@@ -366,7 +365,11 @@ class Command(BaseCommand):
                     line = raw_line.decode('UTF-8')
                 else:
                     line = raw_line
-
+                
+                # end of file
+                if line.startswith('//'):
+                    break		
+                
                 # entry name and review status
                 if line.startswith('ID'):
                     split_id_line = line.split()
