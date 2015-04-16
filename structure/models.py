@@ -6,6 +6,7 @@ class Structure(models.Model):
     structure_type = models.ForeignKey('StructureType')
     pdb_code = models.ForeignKey('common.WebLink')
     ligands = models.ManyToManyField('ligand.Ligand', through='interaction.StructureLigandInteraction')
+    protein_anomaly = models.ManyToManyField('protein.ProteinAnomaly')
     stabilizing_agents = models.ManyToManyField('StructureStabilizingAgent')
     preferred_chain = models.CharField(max_length=20)
     resolution = models.DecimalField(max_digits=5, decimal_places=3)
