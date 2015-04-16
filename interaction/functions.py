@@ -12,7 +12,7 @@ import openbabel
 #sudo python3 -m pip install openbabel
 
 import pybel
-
+import yaml
 
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -487,7 +487,7 @@ def find_interactions():
 	                        if d.norm()<radius:
 	                            if not hetflag in results: 
 	                                results[hetflag] = {}
-	                                summary_results[hetflag] = {'score':[],'hbond':[],'hbond+':[], 'hbond_confirmed' : [],'waals':[],'aromatic':[],'aromatic+':[],'hydrophobic':[]}
+	                                summary_results[hetflag] = {'score':[],'hbond':[],'hbondplus':[], 'hbond_confirmed' : [],'waals':[],'aromatic':[],'aromaticplus':[],'hydrophobic':[]}
 	                            if not aaname in results[hetflag]: 
 	                                results[hetflag][aaname] = []
 	                            results[hetflag][aaname].append([het_atom,aa_atom,round(d.norm(),2),het_vector,aa_vector,aa_seqid])
@@ -528,7 +528,7 @@ def find_interactions():
 	                        distance = (center-charged[1]).norm()
 	                        if distance<4.2 and charged[2]>0: ### needs max 4.2 distance to make aromatic+
 	                            #print "Ring #",count,"Distance:",round(distance,2), "Angle:",round(angle_degrees,2)
-	                            summary_results[hetflag]['aromatic+'].append([aaname,count,round(distance,2),charged])
+	                            summary_results[hetflag]['aromaticplus'].append([aaname,count,round(distance,2),charged])
 	                #print aaname, ligand_rings,hetflag
 	                if sum>2 and aa_resname in CHARGEDAA and ligand_rings[hetflag]:
 	                    #print "check for charged AA to aromatic rings!",aa_resname,hetflag
@@ -633,7 +633,7 @@ def analyze_interactions():
                         #     chargedcheck = 1
 
                     if residue[0:3] in CHARGEDAA:
-                        #print "check for hbond+!",residue,entry
+                        #print "check for hbondplus!",residue,entry
                         #Need to check which atoms, but for now assume charged
                         chargedcheck = 1
 
@@ -656,11 +656,11 @@ def analyze_interactions():
 
                         if found==0: summary_results[ligand]['hbond_confirmed'].append([residue,hbondconfirmed])
                         if chargedcheck: 
-	                        type = 'hbond+'
+	                        type = 'hbondplus'
 	                        hbondplus.append(entry)
 
                     elif chargedcheck:
-                        type = 'hbond+'
+                        type = 'hbondplus'
                         hbondplus.append(entry)
                     else:
                         type = 'hbond'
@@ -674,8 +674,8 @@ def analyze_interactions():
                 summary_results[ligand]['waals'].append([residue,score,sum])
             elif type == 'hbond':
                 summary_results[ligand]['hbond'].append([residue,score,sum,hbond])
-            elif type == 'hbond+':
-                summary_results[ligand]['hbond+'].append([residue,score,sum,hbondplus])
+            elif type == 'hbondplus':
+                summary_results[ligand]['hbondplus'].append([residue,score,sum,hbondplus])
             # elif type == 'hbond_confirmed':
             #     summary_results[ligand]['hbond_confirmed'].append([residue,score,sum,hbondconfirmed])
 
@@ -709,7 +709,7 @@ def pretty_results():
 	                output += '\t'.join(map(str, entry[0:1]))+'\n'
 	                for bond in entry[3]:
 	                    output += '\t'.join(map(str, bond[0:3]))+'\n'
-	            elif type == 'hbond+':
+	            elif type == 'hbondplus':
 	                output += '\t'.join(map(str, entry[0:1]))+'\n'
 	                for bond in entry[3]:
 	                    output += '\t'.join(map(str, bond[0:3]))+'\n'
@@ -721,11 +721,14 @@ def pretty_results():
 	                #print entry
 	                output += '\t'.join(map(str, entry))+'\n'
 	    #print output
-	    temp_path = projectdir+'results/'+pdbname+'/output/'+pdbname+'_'+ligand.replace("H_","")+'.txt'
+	    # temp_path = projectdir+'results/'+pdbname+'/output/'+pdbname+'_'+ligand.replace("H_","")+'.txt'
+	    # #print "writing to ",temp_path
+	    # f=open(temp_path,'w')
+	    # f.write(output)
+	    # f.close();
+	    temp_path = projectdir+'results/'+pdbname+'/output/'+pdbname+'_'+ligand.replace("H_","")+'.yaml'
 	    #print "writing to ",temp_path
-	    f=open(temp_path,'w')
-	    f.write(output)
-	    f.close();
+	    yaml.dump(result, open(temp_path,'w'))
 
 	    addresiduestoligand(ligand,pdbname,bindingresidues)
     #print bindingresidues
