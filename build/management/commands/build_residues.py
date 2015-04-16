@@ -108,8 +108,6 @@ class Command(BaseCommand):
                 id,res_num,res_name,oli,gpcrdb,bw,bw2,bs,prot_name,sec_str_name = [x.strip().strip('"') for x in line.split(',')] #double strip due to some weird bug...
                 if prot_name in missing_proteins:
                     continue
-                #print(polypeptide.three_to_one(res_name.upper()))
-                #residue_data = [res_num, res_name, oli, gpcrdb, bw, bs, sec_str_name]
                 
                 # fetch schemes and conversion tables
                 #Checking if the protein exists in the db
