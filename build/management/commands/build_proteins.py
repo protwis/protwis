@@ -6,6 +6,7 @@ from protein.models import Protein
 from protein.models import ProteinFamily
 from protein.models import ProteinAlias
 from protein.models import ProteinSegment
+from protein.models import ProteinSequenceType
 from protein.models import Species
 from protein.models import Gene
 from protein.models import ProteinSource
@@ -14,7 +15,7 @@ from residue.models import ResidueNumberingScheme
 import logging
 import shlex
 import os
-
+from urllib.request import urlopen
 
 class Command(BaseCommand):
     help = 'Reads source data and creates protein families, proteins, and associated tables'
@@ -142,7 +143,7 @@ class Command(BaseCommand):
                 # is this a family or protein line?
 
                 ###########
-                # family
+                # family/family type
                 ###########
                 create_protein = False
                 if row.strip().startswith('"'): # protein row
@@ -207,38 +208,44 @@ class Command(BaseCommand):
 
                         # parse uniprot file for this protein
                         self.logger.info('Parsing uniprot file for protein ' + protein_name)
-                        uniprot_file = settings.DATA_DIR + '/uniprot/txt/' + protein_accession + '.txt'
-                        up = self.parse_uniprot_file(uniprot_file)
+                        up = self.parse_uniprot_file(protein_accession)
                         if not up:
                             self.logger.error('Failed parsing uniprot file for protein ' + protein_name + ', skipping')
                             continue
 
                         # get/create protein source
                         try:
-                            source = ProteinSource.objects.get(name=up['source'])
-                        except ProteinSource.DoesNotExist:
-                            source = ProteinSource()
-                            source.name = up['source']
-                            
-                            try:
-                                source.save()
+                            source, created = ProteinSource.objects.get_or_create(name=up['source'],
+                                defaults={'name': up['source']})
+                            if created:
                                 self.logger.info('Created protein source ' + source.name)
-                            except:
+                        except:
                                 self.logger.error('Failed creating protein source ' + source.name)
 
                         # get/create species
                         try:
-                            species = Species.objects.get(latin_name=up['species_latin_name'])
-                        except Species.DoesNotExist:
-                            species = Species()
-                            species.latin_name = up['species_latin_name']
-                            species.common_name = up['species_common_name']
-
-                            try:
-                                species.save()
+                            species, created = Species.objects.get_or_create(latin_name=up['species_latin_name'],
+                                defaults={
+                                'latin_name': up['species_latin_name'],
+                                'common_name': up['species_common_name'],
+                                })
+                            if created:
                                 self.logger.info('Created species ' + species.latin_name)
-                            except:
+                        except:
                                 self.logger.error('Failed creating species ' + species.latin_name)
+                        
+                        # get/create protein sequence type
+                        # Wild-type for all sequences from source file, isoforms handled separately
+                        try:
+                            sequence_type, created = ProteinSequenceType.objects.get_or_create(slug='wt',
+                                defaults={
+                                'slug': 'wt',
+                                'name': 'Wild-type',
+                                })
+                            if created:
+                                self.logger.info('Created protein sequence type Wild-type')
+                        except:
+                                self.logger.error('Failed creating protein sequence type Wild-type')
 
                         # create protein
                         p = Protein()
@@ -246,6 +253,7 @@ class Command(BaseCommand):
                         p.species = species
                         p.source = source
                         p.residue_numbering_scheme = residue_numbering_scheme
+                        p.sequence_type = sequence_type
                         p.accession = protein_accession
                         p.entry_name = up['entry_name']
                         p.name = protein_name
@@ -253,9 +261,9 @@ class Command(BaseCommand):
 
                         try:
                             p.save()
-                            self.logger.info('Created protein ' + p.name)
+                            self.logger.info('Created protein ' + p.entry_name + ', ' + p.accession)
                         except:
-                            self.logger.error('Failed creating protein ' + p.name)
+                            self.logger.error('Failed creating protein ' + p.entry_name + ', ' + p.accession)
 
                         # protein aliases
                         for i, alias in enumerate(up['names']):
@@ -333,64 +341,80 @@ class Command(BaseCommand):
             'level_family_counter': level_family_counter,
         }
 
-    def parse_uniprot_file(self, file_path):
+    def parse_uniprot_file(self, accession):
+        local_file_path = settings.DATA_DIR + '/uniprot/txt/' + accession + '.txt'
+        remote_file_path = 'http://www.uniprot.org/uniprot/' + accession + '.txt'
+
         up = {}
         up['genes'] = []
         up['names'] = []
         read_sequence = False
+        remote = False
         try:
-            with open(file_path) as uf:
-                for line in uf:
-                    # entry name and review status
-                    if line.startswith('ID'):
-                        split_id_line = line.split()
-                        up['entry_name'] = split_id_line[1].lower()
-                        review_status = split_id_line[2].strip(';')
-                        if review_status == 'Unreviewed':
-                            up['source'] = 'TREMBL'
-                        elif review_status == 'Reviewed':
-                            up['source'] = 'SWISSPROT'
-                    
-                    # species
-                    elif line.startswith('OS'):
-                        species_full = line[2:].strip().strip('.')
-                        species_split = species_full.split('(')
-                        up['species_latin_name'] = species_split[0]
-                        if len(species_split) > 1:
-                            up['species_common_name'] = species_split[1].strip(')')
-                        else:
-                            up['species_common_name'] = up['species_latin_name']
+            if os.path.isfile(local_file_path):
+                uf = open(local_file_path, 'r')
+                self.logger.info('Reading local file ' + local_file_path)
+            else:
+                uf = urlopen(remote_file_path)
+                remote = True
+                self.logger.info('Reading remote file ' + remote_file_path)
+            
+            for raw_line in uf:
+                # line format
+                if remote:
+                    line = raw_line.decode('UTF-8')
+                else:
+                    line = raw_line
 
-                    # names
-                    elif line.startswith('DE'):
-                        split_de_line = line.split('=')
-                        if len(split_de_line) > 1:
-                            split_segment = split_de_line[1].split('{')
-                            up['names'].append(split_segment[0].strip())
+                # entry name and review status
+                if line.startswith('ID'):
+                    split_id_line = line.split()
+                    up['entry_name'] = split_id_line[1].lower()
+                    review_status = split_id_line[2].strip(';')
+                    if review_status == 'Unreviewed':
+                        up['source'] = 'TREMBL'
+                    elif review_status == 'Reviewed':
+                        up['source'] = 'SWISSPROT'
+                
+                # species
+                elif line.startswith('OS'):
+                    species_full = line[2:].strip().strip('.')
+                    species_split = species_full.split('(')
+                    up['species_latin_name'] = species_split[0]
+                    if len(species_split) > 1:
+                        up['species_common_name'] = species_split[1].strip(')')
+                    else:
+                        up['species_common_name'] = up['species_latin_name']
 
-                    # genes
-                    elif line.startswith('GN'):
-                        split_gn_line = line.split(';')
-                        for segment in split_gn_line:
-                            if '=' in segment:
-                                split_segment = segment.split('=')
-                                split_segment = split_segment[1].split(',')
-                                for gene_name in split_segment:
-                                    split_gene_name = gene_name.split('{')
-                                    up['genes'].append(split_gene_name[0].strip())
+                # names
+                elif line.startswith('DE'):
+                    split_de_line = line.split('=')
+                    if len(split_de_line) > 1:
+                        split_segment = split_de_line[1].split('{')
+                        up['names'].append(split_segment[0].strip().strip(';'))
 
-                    # sequence
-                    elif line.startswith('SQ'):
-                        split_sq_line = line.split()
-                        seq_len = split_sq_line[2]
-                        read_sequence = True
-                        up['sequence'] = ''
-                    elif line.startswith('//'):
-                        read_sequence = False
-                        if len(sequence) != seq_len:
-                            self.logger.error('Sequence length does not match specification')
-                    elif read_sequence == True:
-                        up['sequence'] += line.strip().replace(' ', '')
+                # genes
+                elif line.startswith('GN'):
+                    split_gn_line = line.split(';')
+                    for segment in split_gn_line:
+                        if '=' in segment:
+                            split_segment = segment.split('=')
+                            split_segment = split_segment[1].split(',')
+                            for gene_name in split_segment:
+                                split_gene_name = gene_name.split('{')
+                                up['genes'].append(split_gene_name[0].strip())
+
+                # sequence
+                elif line.startswith('SQ'):
+                    split_sq_line = line.split()
+                    seq_len = int(split_sq_line[2])
+                    read_sequence = True
+                    up['sequence'] = ''
+                elif read_sequence == True:
+                    up['sequence'] += line.strip().replace(' ', '')
+
+            # close the Uniprot file
+            uf.close()
         except:
             return False
 

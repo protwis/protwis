@@ -51,6 +51,10 @@ INSTALLED_APPS = (
     'residue',
     'alignment',
     'similaritysearch',
+    'structure',
+    'ligand',
+    'mutation',
+    'interaction',
     'build_' + SITE_NAME,
 )
 
@@ -100,7 +104,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = '/vagrant/protwis/static_root'
 STATICFILES_DIRS = (os.sep.join([BASE_DIR, "static"]),)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = '/vagrant/protwis/media'
 
 # Serializer
 
@@ -108,48 +115,48 @@ SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 # Logging
 
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'formatters': {
-#         'verbose': {
-#             'format' : "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
-#             'datefmt' : "%d/%b/%Y %H:%M:%S"
-#         },
-#     },
-#     'handlers': {
-#         'django': {
-#             'level': 'DEBUG',
-#             'class': 'logging.FileHandler',
-#             'filename': 'logs/django.log',
-#             'formatter': 'verbose'
-#         },
-#         'build': {
-#             'level': 'DEBUG',
-#             'class': 'logging.FileHandler',
-#             'filename': 'logs/protwis_build.log',
-#             'formatter': 'verbose'
-#         },
-#         'protwis': {
-#             'level': 'DEBUG',
-#             'class': 'logging.FileHandler',
-#             'filename': 'logs/protwis.log',
-#             'formatter': 'verbose'
-#         },
-#     },
-#     'loggers': {
-#         'django': {
-#             'handlers':['django'],
-#             'propagate': True,
-#             'level':'DEBUG',
-#         },
-#         'build': {
-#             'handlers': ['build'],
-#             'level': 'DEBUG',
-#         },
-#         'protwis': {
-#             'handlers': ['protwis'],
-#             'level': 'DEBUG',
-#         },
-#     }
-# }
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format' : "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            'datefmt' : "%d/%b/%Y %H:%M:%S"
+        },
+    },
+    'handlers': {
+        'django': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/django.log',
+            'formatter': 'verbose'
+        },
+        'build': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/protwis_build.log',
+            'formatter': 'verbose'
+        },
+        'protwis': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/protwis.log',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers':['django'],
+            'propagate': True,
+            'level':'DEBUG',
+        },
+        'build': {
+            'handlers': ['build'],
+            'level': 'DEBUG',
+        },
+        'protwis': {
+            'handlers': ['protwis'],
+            'level': 'DEBUG',
+        },
+    }
+}
