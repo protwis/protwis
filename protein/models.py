@@ -147,7 +147,6 @@ class ProteinAnomalyType(models.Model):
 
 class ProteinAnomalyRuleSet(models.Model):
     protein_anomaly = models.ForeignKey('ProteinAnomaly')
-    protein_anomaly_rules = models.ManyToManyField('ProteinAnomalyRule')
 
     def __str__(self):
         return self.protein_anomaly.generic_number.label
@@ -157,11 +156,12 @@ class ProteinAnomalyRuleSet(models.Model):
 
 
 class ProteinAnomalyRule(models.Model):
+    rule_set = models.ForeignKey('ProteinAnomalyRuleSet')
     generic_number = models.ForeignKey('residue.ResidueGenericNumber')
-    amino_acid = models.ManyToManyField('residue.AminoAcid')
+    amino_acid = models.CharField(max_length=1)
 
     def __str__(self):
-        return "{} {}".format(self.generic_number.label, self.amino.acid.one_letter_code)
+        return "{} {}".format(self.generic_number.label, self.amino.acid)
 
     class Meta():
         db_table = 'protein_anomaly_rule'
