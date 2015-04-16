@@ -2,3 +2,4 @@
 *.log
 protwis/settings.py
 env
+/data
