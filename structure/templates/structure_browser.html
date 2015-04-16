@@ -1,0 +1,33 @@
+﻿{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+    {% if crystals %}
+        <script src="{% staticfiles 'home/js/jquery.datatables.js' %}"> </script>
+        <script src="{% staticfiles 'home/js/jquery.js' %}"> </script>
+        <div>
+            <table width="80%" class="table table-striped" id="crystal_strucutres" cellspacing="0">
+                {% for crystal in crystals %}
+                    <tr>
+                        <td>{{ crystal.protein.entry_name }}</td>
+                        <td>{{ crystal.protein.family.slug}}</td>
+                        <td>{{ crystal.protein.species.latin_name }}</td>
+                        <td>{{ crystal.pdb_code.resource.slug}}</td>
+                        <td>{{ crystal.endogenous_ligand.name }}</td>
+                        <td>{{ crystal.resolution}}</td>
+                        <td>{{ crystal.xray_ligand.name }}</td>
+                        <td>{{ crystal.xray_ligand.role.role }}</td>
+                        <td>{{ crystal.preferred_chain }}</td>
+                        <td>{{ crystal.publication.web_link.resource.index }}</td>
+                        <td>{{ crystal.publication_date }}</td>
+                        <td>{{ crystal.stabilizing_agents }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    {% else %}
+        <p> Ooops! There is no data to show here yet. </p>
+    {% endif %}
+
+{% endblock %}
