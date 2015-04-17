@@ -47,7 +47,7 @@ class AbsTargetSelection(TemplateView):
     #try - except block prevents manage.py from crashing - circular dependencies between protein - common 
     try:
         ppf = ProteinFamily.objects.get(slug='000')
-        pfs = ProteinFamily.objects.order_by('id').filter(parent=ppf.id) # FIXME move order_by to model
+        pfs = ProteinFamily.objects.filter(parent=ppf.id)
         ps = Protein.objects.filter(family=ppf)
         tree_indent_level = []
         action = 'expand'
@@ -261,7 +261,7 @@ def ToggleFamilyTreeNode(request):
 
     ppf = ProteinFamily.objects.get(pk=node_id)
     if action == 'expand':
-        pfs = ProteinFamily.objects.order_by('id').filter(parent=node_id) # FIXME move order_by to model
+        pfs = ProteinFamily.objects.filter(parent=node_id)
 
         # species filter
         species_list = []
