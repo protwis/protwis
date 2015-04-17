@@ -5,8 +5,6 @@ from django.db import connection
 from residue.models import Residue
 from protein.models import Protein, ProteinSegment
 
-from Bio import PDB
-
 from optparse import make_option
 from datetime import datetime
 import logging, os, yaml
@@ -114,7 +112,6 @@ class Command(BaseCommand):
             
             resi = list(Residue.objects.filter(display_generic_number__protein_segment__slug = segment.slug, protein__entry_name = prot_entry_name).order_by('sequence_number'))
             try:
-                #print(resi[0].sequence_number)
                 output[segment.slug] = ['{:n},{:n}'.format(resi[0].sequence_number, resi[-1].sequence_number)]
             except Exception as e:
                 output[segment.slug] = ['-,-']
