@@ -63,7 +63,7 @@ class Command(BaseCommand):
         yaml_pdb_data = {
             'pdb' : data[self.csv_fields['pdb_code']], 
             'resolution' : data[self.csv_fields['resolution']],
-            'publication_date' : data[self.csv_fields['date']],
+            'publication_date' : data[self.csv_fields['date']][:10],
             'pubmed_id' : data[self.csv_fields['pubmed_id']],                       
             }
 
