@@ -110,7 +110,7 @@ class Command(BaseCommand):
         segments = ProteinSegment.objects.all()
         for segment in segments:
             
-            resi = list(Residue.objects.filter(display_generic_number__protein_segment__slug = segment.slug, protein__entry_name = prot_entry_name).order_by('sequence_number'))
+            resi = list(Residue.objects.filter(protein_segment__slug = segment.slug, protein__entry_name = prot_entry_name).order_by('sequence_number'))
             try:
                 output[segment.slug] = ['{:n},{:n}'.format(resi[0].sequence_number, resi[-1].sequence_number)]
             except Exception as e:
