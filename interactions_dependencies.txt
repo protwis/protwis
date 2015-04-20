@@ -1,0 +1,8 @@
+Dependencies for python script (python 2.x)
+sudo apt-get install python-pip
+
+ImportError: No module named Bio.PDB
+sudo pip install biopython
+
+
+
