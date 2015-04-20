@@ -16,7 +16,7 @@ class Residue(models.Model):
 
     class Meta():
         db_table = 'residue'
-        ordering = 'sequence_number'
+        ordering = ['sequence_number']
 
     def three_letter(self):
         return definitions.AMINO_ACIDS[self.amino_acid]

@@ -5,15 +5,15 @@ class Protein(models.Model):
     parent = models.ForeignKey('self', null=True)
     family = models.ForeignKey('ProteinFamily')
     species = models.ForeignKey('Species')
-    source = models.ForeignKey('ProteinSource')
+    source = models.ForeignKey('ProteinSource', null=True)
     residue_numbering_scheme = models.ForeignKey('residue.ResidueNumberingScheme')
     sequence_type = models.ForeignKey('ProteinSequenceType')
     endogenous_ligand = models.ManyToManyField('ligand.Ligand')
-    accession = models.CharField(max_length=100)
-    entry_name = models.SlugField(max_length=100, unique=True)
+    web_link = models.ManyToManyField('common.WebLink')
+    entry_name = models.SlugField(max_length=100, db_index=True, null=True)
+    accession = models.CharField(max_length=100, db_index=True, null=True)
     name = models.CharField(max_length=200)
     sequence = models.TextField()
-    web_link = models.ManyToManyField('common.WebLink')
     
     # non-database attributes
     identity = False # % identity to a reference sequence in an alignment
@@ -78,7 +78,7 @@ class ProteinSet(models.Model):
 
 
 class ProteinSegment(models.Model):
-    slug = models.SlugField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100)
     name = models.CharField(max_length=50)
     category = models.CharField(max_length=50)
     position = models.SmallIntegerField()
@@ -103,7 +103,7 @@ class ProteinSource(models.Model):
 
 class ProteinFamily(models.Model):
     parent = models.ForeignKey('self', null=True)
-    slug = models.SlugField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100)
     name = models.CharField(max_length=200)
 
     def __str__(self):
@@ -111,10 +111,11 @@ class ProteinFamily(models.Model):
 
     class Meta():
         db_table = 'protein_family'
+        ordering = ['id']
 
 
 class ProteinSequenceType(models.Model):
-    slug = models.SlugField(max_length=20, unique=True)
+    slug = models.SlugField(max_length=20)
     name = models.CharField(max_length=100)
 
     def __str__(self):
@@ -135,7 +136,7 @@ class ProteinAnomaly(models.Model):
         db_table = 'protein_anomaly'
 
 class ProteinAnomalyType(models.Model):
-    slug = models.SlugField(max_length=20, unique=True)
+    slug = models.SlugField(max_length=20)
     name = models.CharField(max_length=100)
 
     def __str__(self):
