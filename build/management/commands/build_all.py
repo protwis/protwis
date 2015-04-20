@@ -9,15 +9,18 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         commands = [
-            'build_common',
-            'build_proteins',
-            'build_residues',
-            'build_yaml_from_structure cs.tsv',
-            'build_constructs',
-            'build_structures',
+            ['build_common'],
+            ['build_proteins'],
+            ['build_residues', 'all'],
+            ['build_yaml_from_structure', 'cs.tsv'],
+            ['build_constructs'],
+            ['build_structures'],
         ]
 
         for c in commands:
             print('{} Running {}'.format(
-                datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), c))
-            call_command(c)
+                datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), c[0]))
+            if len(c) > 1:
+                call_command(c[0],c[1])
+            else:
+                call_command(c[0])
