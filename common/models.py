@@ -49,14 +49,14 @@ class Publication(models.Model):
             if index:
                 handle = Entrez.efetch(
                     db="pubmed", 
-                    id=index, 
+                    id=str(index), 
                     rettype="medline", 
                     retmode="text"
                     )
             else:
                 handle = Entrez.efetch(
                     db="pubmed", 
-                    id=self.web_link.index,
+                    id=str(self.web_link.index),
                     rettype="medline",
                     retmode="text"
                     )
@@ -67,7 +67,7 @@ class Publication(models.Model):
             record = Medline.read(handle)
             self.title = record['TI']
             self.authors = record['AU']
-            self.year = record['DA'][0:3]
+            self.year = record['DA'][:4]
             try:
                 self.journal = PublicationJournal.objects.get(slug=record['TA'], name=record['JT'])
             except PublicationJournal.DoesNotExist:
