@@ -67,6 +67,6 @@ class MappedResidue(object):
         #PDB format does not allow fractional part longer than 2 digits
         #so numbers x.xx1 are negative
         if len(gpcrdb_number) > 4:
-          self.gpcrdb = '-' + gpcrdb_number.replace('x', '.')
+          self.gpcrdb = '-' + gpcrdb_number[:4].replace('x', '.')
         else:
           self.gpcrdb = gpcrdb_number.replace('x', '.')

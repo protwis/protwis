@@ -22,7 +22,7 @@ class Command(BaseCommand):
     help = 'Reads source data and creates pdb structure records'
     
     def add_arguments(self, parser):
-        parser.add_argument('--filename', action='append', dest='filename', default=False,
+        parser.add_argument('--filename', type=str, action='append', dest='filename',
             help='Filename to import. Can be used multiple times')
         parser.add_argument('--purge', action='store_true', dest='purge', default=False,
             help='Purge existing construct records')
@@ -42,11 +42,11 @@ class Command(BaseCommand):
                 self.logger.error(msg)
         
         # import the structure data
-        try:
-            self.create_structures(options['filename'])
-        except Exception as msg:
-            print(msg)
-            self.logger.error(msg)
+        #try:
+        self.create_structures(options['filename'])
+        #except Exception as msg:
+        #    print(msg)
+        #    self.logger.error(msg)
     
     def truncate_structure_tables(self):
         cursor = connection.cursor()
@@ -83,7 +83,8 @@ class Command(BaseCommand):
                     if sd['resolution']:
                         s.resolution = float(sd['resolution'])
                     if sd['publication_date']:
-                        s.publication_date = sd['publication_date']
+                        s.publication_date = "{!s}".format(datetime.strptime(sd['publication_date'], "%Y-%m-%d %H:%M:%S").date())
+
 
                     # protein
                     if sd['construct']:

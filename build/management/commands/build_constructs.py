@@ -14,7 +14,7 @@ class Command(BaseCommand):
     help = 'Reads source data and creates protein records for constructs'
     
     def add_arguments(self, parser):
-        parser.add_argument('--filename', action='append', dest='filename', default=False,
+        parser.add_argument('--filename', type=str, action='append', dest='filename',
             help='Filename to import. Can be used multiple times')
         parser.add_argument('--purge', action='store_true', dest='purge', default=False,
             help='Purge existing construct records')

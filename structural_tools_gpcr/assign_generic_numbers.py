@@ -40,9 +40,9 @@ class GenericNumbering(object):
         pdb_struct = None
         #checking for file handle or file name to parse
         if self.pdb_file:
-            pdb_struct = PDBParser().get_structure('ref', self.pdb_file)[0]
+            pdb_struct = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_file)[0]
         elif self.pdb_filename:
-            pdb_struct = PDBParser().get_structure('ref', self.pdb_file)[0]
+            pdb_struct = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_file)[0]
         else:
             return None
 
@@ -106,12 +106,18 @@ class GenericNumbering(object):
                 if resn != 0:
                     try:
                         db_res = Residue.objects.get(protein=prot_id, sequence_number=subj_counter)
-                        #FIXME: querying ManyToMany field
-                        self.residues[chain][resn].add_bw_number(db_res.alternative_generic_number(slug='bw'))
-                        self.residues[chain][resn].add_gpcrdb_number(db_res.alternative_generic_number(slug='gpcrdb'))
-                        self.logger.info(db_res.alternative_generic_number(slug='gpcrdb'))
-                    except Exception as e:
-                        self.logger.warning("Could not find residue {} in the database.".format(subj_counter))
+                        try:
+                            self.residues[chain][resn].add_bw_number(db_res.alternative_generic_number.get(scheme__slug='bw').label)
+                        except:
+                            pass
+                        try:
+                            self.residues[chain][resn].add_gpcrdb_number(db_res.alternative_generic_number.get(scheme__slug='gpcrdb').label)
+                        except:
+                            self.residues[chain][resn].add_gpcrdb_number(db_res.display_generic_number.label)
+                            #self.logger.info(db_res.alternative_generic_number.get(scheme__slug='gpcrdb').label)
+                    except Exception as msg:
+                        self.logger.warning("Could not find residue {} in the database. \n {}".format(subj_counter, msg))
+
                     
                     if prot_id not in self.prot_id_list:
                         self.prot_id_list.append(prot_id)
