@@ -24,8 +24,12 @@ class Ligand(models.Model):
     def load_by_name(self, name):
         # fetch ligand info from pubchem
         pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + name + '/json'
-        req = urlopen(pubchem_url)
-        pubchem = json.loads(req.read().decode('UTF-8'))
+        
+        try:
+            req = urlopen(pubchem_url)
+            pubchem = json.loads(req.read().decode('UTF-8'))
+        except:
+            return
 
         # weblink
         pubchem_id = pubchem['PC_Compounds'][0]['id']['id']['cid']

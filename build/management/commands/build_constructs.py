@@ -14,7 +14,7 @@ class Command(BaseCommand):
     help = 'Reads source data and creates protein records for constructs'
     
     def add_arguments(self, parser):
-        parser.add_argument('--filename', action='append', dest='filename', default=False,
+        parser.add_argument('--filename', action='append', dest='filename',
             help='Filename to import. Can be used multiple times')
         parser.add_argument('--purge', action='store_true', dest='purge', default=False,
             help='Purge existing construct records')
@@ -57,7 +57,7 @@ class Command(BaseCommand):
         # parse files
         for source_file in filenames:
             source_file_path = os.sep.join([self.construct_data_dir, source_file])
-            if os.path.isfile(source_file_path):
+            if os.path.isfile(source_file_path) and source_file[0] != '.':
                 self.logger.info('Reading file {}'.format(source_file_path))
                 # read the yaml file
                 with open(source_file_path, 'r') as f:
