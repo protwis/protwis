@@ -7,18 +7,22 @@ from common.alignment import Alignment
 from common.models import WebLink
 
 from collections import OrderedDict
+import re
+import pprint
 
 
 class Command(BaseCommand):
     
     def handle(self, *args, **options):
-        Homology_model = HomologyModeling('5ht2b_human', 'Agonist')
-        multi_alignment = Homology_model.run_pairwise_alignment()
-        main_template = Homology_model.select_main_template(multi_alignment)
-        main_alignment = Homology_model.run_main_alignment(Homology_model.reference_protein, main_template)    
-        non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)       
-        
-        self.stdout.write(Homology_model.statistics, ending='')
+#        Homology_model = HomologyModeling('5ht2b_human', 'Inactive')
+#        multi_alignment = Homology_model.run_pairwise_alignment()
+#        main_template = Homology_model.select_main_template(multi_alignment)
+#        main_alignment = Homology_model.run_main_alignment(Homology_model.reference_protein, main_template)    
+#        non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)       
+    
+        print(GPCRDBParsingPDB.extract_AA_from_pdb_line('ATOM   5126  CA  GLY A 324      73.589   9.802  -0.482  1.00102.15           C  '))
+        pprint.pprint(GPCRDBParsingPDB.pdb_array_creator('./build_gpcr/management/commands/3UON_A_GPCRDB.pdb'))
+#        self.stdout.write(Homology_model.statistics, ending='')
 
 
 class HomologyModeling(object):
@@ -68,16 +72,17 @@ class HomologyModeling(object):
 
         if self.query_roles == 'default':          
             if self.testing == False:
-                self.structures_datatable = Structure.objects.filter(endogenous_ligand_id__role_id__role=self.role).order_by('protein_id','-resolution').distinct('protein_id')       
+                self.structures_datatable = Structure.objects.filter(state_id__name=self.role).order_by('protein_id','-resolution').distinct('protein_id')
             elif self.testing == True:
-                self.structures_datatable = Structure.objects.filter(endogenous_ligand_id__role_id__role=self.role).order_by('protein_id','-resolution').distinct('protein_id').exclude(protein_id__entry_name=self.reference_id)
+                self.structures_datatable = Structure.objects.filter(state_id__name=self.role).order_by('protein_id','-resolution').distinct('protein_id').exclude(protein_id__entry_name=self.reference_id)
         elif type(self.query_roles) is list:
             for query_role in self.query_roles:
-                assert (Structure.objects.filter(endogenous_ligand_id__role_id__role=query_role)), "InputError: query role argument {} is not valid. No such entry in the database.".format(query_role)
+                assert (Structure.objects.filter(state_id__name=query_role)), "InputError: query role argument {} is not valid. No such entry in the database.".format(query_role)
             if self.testing == False:
-                self.structures_datatable = Structure.objects.filter(endogenous_ligand_id__role_id__role__in=self.query_roles).order_by('protein_id','-resolution').distinct('protein_id')       
+                self.structures_datatable = Structure.objects.filter(state_id__name__in=self.query_roles).order_by('protein_id','-resolution').distinct('protein_id')       
             elif self.testing == True:
-                self.structures_datatable = Structure.objects.filter(endogenous_ligand_id__role_id__role__in=self.query_roles).order_by('protein_id','-resolution').distinct('protein_id').exclude(protein_id__entry_name=self.reference_id)
+                self.structures_datatable = Structure.objects.filter(state_id__name__in=self.query_roles).order_by('protein_id','-resolution').distinct('protein_id').exclude(protein_id__entry_name=self.reference_id)
+
         return self.structures_datatable        
         
     def get_targets_protein_data(self, structures_data):
@@ -139,7 +144,7 @@ class HomologyModeling(object):
             
         self.statistics.add_info("main_template", self.main_pdb_id)
         self.statistics.add_info("preferred_chain", self.main_template_preferred_chain)
-
+        print(main_structure)
         return main_structure
         
     def run_main_alignment(self, reference, main_template, segments='default_7TM'):
@@ -232,7 +237,7 @@ class HomologyModeling(object):
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
             self.similarity_table_all = self.create_ordered_similarity_table(self.role, self.query_roles, self.structures_datatable)
-            
+            print(self.similarity_table_all)
             for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, alignment_input.aligned_string):
                 if ref_res!='-' and ref_res!='/':
                     ref_length+=1
@@ -290,10 +295,11 @@ class HomologyModeling(object):
         alignment_all = self.run_pairwise_alignment(targets=targets)
         sim_table_all_temp = {}
         similarity_table_all = OrderedDict()
-        
+        print(structures_datatable)
         for i in range(1,len(alignment_all.proteins)):
             sim_table_all_temp[int(alignment_all.proteins[i].similarity)] = alignment_all.proteins[i]
         sim_table_order = sorted(sim_table_all_temp, reverse=True)
+
         for i in sim_table_order:
             similarity_table_all[structures_datatable.get(protein_id__entry_name=sim_table_all_temp[i].entry_name)] = i
         return similarity_table_all
@@ -346,6 +352,74 @@ class AlignedReferenceAndTemplate(object):
         
     def __repr__(self):
         return "<{}, {}>".format(self.reference_id,self.template_id)
+        
+class GPCRDBParsingPDB(object):
+    ''' Class to manipulate cleaned pdb files of GPCRs.
+    '''
+    def AA_trans(residue_name):
+        code_table = {'GLY':'G','ALA':'A','VAL':'V','LEU':'L','ILE':'I',
+                      'MET':'M','PHE':'F','TRP':'W','PRO':'P','SER':'S',
+                      'THR':'T','CYS':'C','TYR':'Y','ASN':'N','GLN':'Q',
+                      'ASP':'D','GLU':'E','LYS':'K','ARG':'R','HIS':'H'}
+        if residue_name in code_table:
+            residue_name = code_table[residue_name]
+        elif len(residue_name)==4 and residue_name[1:] in code_table:
+            residue_name = code_table[residue_name[1:]]
+        else:
+            return '?'
+        return residue_name
+        
+    def extract_AA_from_pdb_line(pdb_line):
+        ''' Extracts the 3 letter amino acid name from a line of a pdb file.
+            
+            @param pdb_line: str, line from pdb file.
+        '''
+        search = re.search('(ATOM\s+\d+\s+\S+\s*)(\S{3,4})(\s+\S\s*)(-*\d+)([0-9\s+-.]+)(\S)',pdb_line)
+        return search.group(2)
+        
+    def pdb_array_creator(filename):
+        ''' Creates a nested OrderedDict from a pdb file where residue numbers/generic numbers are 
+            keys for the outer OrderedDict, and atom names are keys for the inner OrderedDict.
+            
+            @param filename: str, file name with path.
+        '''
+        with open(filename) as f:
+            lines = f.readlines()
+        res_num = int(re.search('(ATOM\s+\d+\s+\S+\s*\S{3,4}\s+\S\s*)(-*\d+)([0-9\s+-.]+)(\S)',lines[0]).group(2))
+        pdb_array = OrderedDict()
+        atom_lines = OrderedDict()
+        
+        for line in lines:
+            res0 = re.compile('(ATOM\s+\d+\s+)(\S+)(\s*\S{{3,4}}\s+\S\s*)({})([0-9\s+-.]+)(\S)'.format(res_num))
+            res1 = re.compile('(ATOM\s+\d+\s+)(\S+)(\s*\S{{3,4}}\s+\S\s*)({})([0-9\s+-.]+)(\S)'.format(res_num+1))
+            resx = re.compile('(ATOM\s+\d+\s+)(\S+)(\s*\S{3,4}\s+\S\s*)(\d+)([0-9\s+-.]+)(\S)')
+            res0_line = res0.match(line)
+            res1_line = res1.match(line)
+            resx_line = resx.match(line)
+            
+            if res0_line:
+                atom_lines.update({res0_line.group(2):line})
+            elif res1_line:
+                pdb_array[res_num] = atom_lines
+                atom_lines = OrderedDict()
+                atom_lines.update({res1_line.group(2):line})
+                res_num+=1
+            elif resx_line:
+                res_num = int(resx_line.group(4))
+                atom_lines = OrderedDict()
+                atom_lines.update({resx_line.group(2):line})
+        pdb_array[res_num] = atom_lines
+        
+        out_array = OrderedDict()
+        for key, value in pdb_array.items():
+            res = re.compile('(ATOM\s+\d+\s+)(CA)(\s+)(\S{3})(\s+\S\s*)([0-9\s.-]+)(\d.\d{2}\s+)(-*\d.\d{2})(\s+\S)')
+            res = res.match(value['CA'])
+                   
+            if value['CA'] and res:
+                out_array[res.group(8)] = value
+            else:
+                out_array[key] = value
+        return out_array
         
 class CreateStatistics(object):
     ''' Statistics dictionary for HomologyModeling.
