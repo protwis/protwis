@@ -1,10 +1,4 @@
-
-
-import os, logging
-
-#!/usr/bin/env python
-
-import os,sys,math,optparse
+import os,sys,math,logging
 from Bio.PDB import *
 import selection_parser
 import gpcrdb_assign_generic_numbers as gn
