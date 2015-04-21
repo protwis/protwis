@@ -22,7 +22,10 @@ class Protein(models.Model):
     alignment = False # residues formatted for use in an Alignment class
 
     def __str__(self):
-        return self.entry_name
+        if not self.entry_name:
+            return self.name
+        else:
+            return str(self.entry_name)
     
     class Meta():
         db_table = 'protein'
