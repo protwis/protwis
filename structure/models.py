@@ -15,7 +15,7 @@ class Structure(models.Model):
     publication_date = models.DateField()
 
     def __str__(self):
-        return self.pdb_code
+        return self.pdb_code.index
 
     class Meta():
         db_table = 'structure'
