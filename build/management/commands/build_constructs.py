@@ -57,7 +57,7 @@ class Command(BaseCommand):
         # parse files
         for source_file in filenames:
             source_file_path = os.sep.join([self.construct_data_dir, source_file])
-            if os.path.isfile(source_file_path):
+            if os.path.isfile(source_file_path) and source_file[0] != '.':
                 self.logger.info('Reading file {}'.format(source_file_path))
                 # read the yaml file
                 with open(source_file_path, 'r') as f:

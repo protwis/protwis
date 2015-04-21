@@ -40,7 +40,6 @@ class Command(BaseCommand):
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
-        
         # import the structure data
         #try:
         self.create_structures(options['filename'])
@@ -68,7 +67,7 @@ class Command(BaseCommand):
 
         for source_file in filenames:
             source_file_path = os.sep.join([self.structure_data_dir, source_file])
-            if os.path.isfile(source_file_path):
+            if os.path.isfile(source_file_path) and source_file[0] != '.':
                 self.logger.info('Reading file {}'.format(source_file_path))
                 # read the yaml file
                 with open(source_file_path, 'r') as f:
@@ -144,8 +143,10 @@ class Command(BaseCommand):
                                 l, created = Ligand.objects.get_or_create(name=ligand['name'])
                                 if created:
                                     l.load_by_name(ligand['name'])
-                            elif ligand['inchi']:
-                                pass # FIXME write!
+                            # elif ligand['inchi']:
+                            #     pass # FIXME write!
+                            else:
+                                continue
 
                             # save ligand
                             l.save()
