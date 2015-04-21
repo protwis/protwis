@@ -183,8 +183,7 @@ class Command(BaseCommand):
                     protein_name = split_row[4]
 
                     # accession codes for human, mouse and rat receptors (from IU-PHAR)
-                    # accessions = [split_row[15], split_row[31], split_row[23]]
-                    accessions = [split_row[15]]
+                    accessions = [split_row[15], split_row[31], split_row[23]]
 
                     # create a family for this protein
                     created_family = self.create_protein_family(protein_name, indent, parent_family,
