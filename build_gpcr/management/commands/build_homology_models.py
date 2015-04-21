@@ -14,14 +14,14 @@ import pprint
 class Command(BaseCommand):
     
     def handle(self, *args, **options):
-#        Homology_model = HomologyModeling('5ht2b_human', 'Inactive')
-#        multi_alignment = Homology_model.run_pairwise_alignment()
-#        main_template = Homology_model.select_main_template(multi_alignment)
-#        main_alignment = Homology_model.run_main_alignment(Homology_model.reference_protein, main_template)    
-#        non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)       
+        Homology_model = HomologyModeling('5ht2b_human', 'Inactive')
+        multi_alignment = Homology_model.run_pairwise_alignment()
+        main_template = Homology_model.select_main_template(multi_alignment)
+        main_alignment = Homology_model.run_main_alignment(Homology_model.reference_protein, main_template)    
+        non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)       
     
-        print(GPCRDBParsingPDB.extract_AA_from_pdb_line('ATOM   5126  CA  GLY A 324      73.589   9.802  -0.482  1.00102.15           C  '))
-        pprint.pprint(GPCRDBParsingPDB.pdb_array_creator('./build_gpcr/management/commands/3UON_A_GPCRDB.pdb'))
+#        print(GPCRDBParsingPDB.extract_AA_from_pdb_line('ATOM   5126  CA  GLY A 324      73.589   9.802  -0.482  1.00102.15           C  '))
+#        pprint.pprint(GPCRDBParsingPDB.pdb_array_creator('./build_gpcr/management/commands/3UON_A_GPCRDB.pdb'))
 #        self.stdout.write(Homology_model.statistics, ending='')
 
 
@@ -72,16 +72,16 @@ class HomologyModeling(object):
 
         if self.query_roles == 'default':          
             if self.testing == False:
-                self.structures_datatable = Structure.objects.filter(state_id__name=self.role).order_by('protein_id','-resolution').distinct('protein_id')
+                self.structures_datatable = Structure.objects.filter(state__name=self.role).order_by('protein','-resolution').distinct('protein')
             elif self.testing == True:
-                self.structures_datatable = Structure.objects.filter(state_id__name=self.role).order_by('protein_id','-resolution').distinct('protein_id').exclude(protein_id__entry_name=self.reference_id)
+                self.structures_datatable = Structure.objects.filter(state__name=self.role).order_by('protein','-resolution').distinct('protein').exclude(protein__entry_name=self.reference_id)
         elif type(self.query_roles) is list:
             for query_role in self.query_roles:
                 assert (Structure.objects.filter(state_id__name=query_role)), "InputError: query role argument {} is not valid. No such entry in the database.".format(query_role)
             if self.testing == False:
-                self.structures_datatable = Structure.objects.filter(state_id__name__in=self.query_roles).order_by('protein_id','-resolution').distinct('protein_id')       
+                self.structures_datatable = Structure.objects.filter(state__name__in=self.query_roles).order_by('protein','-resolution').distinct('protein')       
             elif self.testing == True:
-                self.structures_datatable = Structure.objects.filter(state_id__name__in=self.query_roles).order_by('protein_id','-resolution').distinct('protein_id').exclude(protein_id__entry_name=self.reference_id)
+                self.structures_datatable = Structure.objects.filter(state__name__in=self.query_roles).order_by('protein','-resolution').distinct('protein').exclude(protein__entry_name=self.reference_id)
 
         return self.structures_datatable        
         
@@ -92,7 +92,7 @@ class HomologyModeling(object):
         '''
         plist = []
         for target in structures_data:
-            plist.append(Protein.objects.get(id=target.protein_id))
+            plist.append(Protein.objects.get(id=target.protein.parent.id))
         return plist
         
     def run_pairwise_alignment(self, segments='default_7TM', reference=True, calculate_similarity=True, targets=None):
@@ -144,7 +144,7 @@ class HomologyModeling(object):
             
         self.statistics.add_info("main_template", self.main_pdb_id)
         self.statistics.add_info("preferred_chain", self.main_template_preferred_chain)
-        print(main_structure)
+        
         return main_structure
         
     def run_main_alignment(self, reference, main_template, segments='default_7TM'):
@@ -237,7 +237,7 @@ class HomologyModeling(object):
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
             self.similarity_table_all = self.create_ordered_similarity_table(self.role, self.query_roles, self.structures_datatable)
-            print(self.similarity_table_all)
+#            print(self.similarity_table_all)
             for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, alignment_input.aligned_string):
                 if ref_res!='-' and ref_res!='/':
                     ref_length+=1
@@ -270,6 +270,7 @@ class HomologyModeling(object):
                         else:
                             if switch_constrictions==True:
                                 temp_const_list.append({self.gn_indecer(gn, 'x', -1)+'-'+self.gn_indecer(gn, 'x', +1):alignment_input.template_dict[self.gn_indecer(gn, 'x', -1)]+'-'+alignment_input.template_dict[self.gn_indecer(gn, 'x', +1)]})
+        print(ref_bulge_list,temp_bulge_list,ref_const_list,temp_const_list)
         
         # non-conserved residues
         for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, alignment_input.aligned_string):
@@ -295,13 +296,14 @@ class HomologyModeling(object):
         alignment_all = self.run_pairwise_alignment(targets=targets)
         sim_table_all_temp = {}
         similarity_table_all = OrderedDict()
-        print(structures_datatable)
+        
         for i in range(1,len(alignment_all.proteins)):
             sim_table_all_temp[int(alignment_all.proteins[i].similarity)] = alignment_all.proteins[i]
         sim_table_order = sorted(sim_table_all_temp, reverse=True)
-
+        print(sim_table_all_temp)
         for i in sim_table_order:
-            similarity_table_all[structures_datatable.get(protein_id__entry_name=sim_table_all_temp[i].entry_name)] = i
+            similarity_table_all[structures_datatable.get(protein__parent__entry_name=sim_table_all_temp[i].entry_name)] = i
+        
         return similarity_table_all
                 
     def gn_num_extract(self, gn, delimiter):
