@@ -25,7 +25,7 @@ class Protein(models.Model):
         if not self.entry_name:
             return self.name
         else:
-            return str(self.entry_name)
+            return self.entry_name
     
     class Meta():
         db_table = 'protein'
