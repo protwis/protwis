@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django import forms
 from django.shortcuts import render
 from django.core.context_processors import csrf
-import structural_tools_gpcr.assign_generic_numbers as gn
+from structural_tools_gpcr.assign_generic_numbers import GenericNumbering
 import inspect, os
 from io import StringIO
 from Bio.PDB import PDBIO
@@ -71,7 +71,7 @@ class GenericNumberingResults(TemplateView):
 
     def post(self, request, *args, **kwargs):
 
-        generic_numbering = gn.GenericNumbering(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8')))
+        generic_numbering = GenericNumbering(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8')))
         out_struct = generic_numbering.assign_generic_numbers()
         out_stream = StringIO()
         io = PDBIO()

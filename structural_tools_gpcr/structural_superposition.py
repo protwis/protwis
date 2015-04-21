@@ -1,56 +1,42 @@
 import os,sys,math,logging
+
 from Bio.PDB import *
-import selection_parser
-import gpcrdb_assign_generic_numbers as gn
+from structural_tools_gpcr.common import SelectionParser
+from structural_tools_gpcr.assign_generic_numbers import GenericNumbering
 
 
 
 #Basic functionality uses pdb residue numbers provided by input
 #==============================================================================
-class ca_selector(object):
+class CASelector(object):
 
     logger = logging.getLogger("structural_tools_gpcr")
 
-    residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
-  
-    def __init__(self, sel_string, ref_struct, alt_structs):
+    def __init__(self, parsed_selection, ref_struct, alt_structs):
     
         self.ref_atoms = []
         self.alt_atoms = {}
     
-        self.selection = selection_parser.selection(sel_string)
+        self.selection = parsed_selection
+
         #Selecting the actual atoms from the selection string
         try:
-              self.ref_atoms.extend(self.select_resi(self.selection.residues, ref_struct[0]))
-              self.ref_atoms.extend(self.select_gn(self.selection.bw_numbers, ref_struct[0]))
+              self.ref_atoms.extend(self.select_gn(self.selection.generic_numbers, ref_struct[0]))
               self.ref_atoms.extend(self.select_helices(self.selection.helices, ref_struct[0]))
         except:
-              print("Can't select atoms from the reference structure!")
+              self.logger.warning("Can't select atoms from the reference structure!")
     
         for alt_struct in alt_structs:
             try:
                 self.alt_atoms[alt_struct.id] = []
-                self.alt_atoms[alt_struct.id].extend(self.select_resi(self.selection.residues, alt_struct[0]))
-                self.alt_atoms[alt_struct.id].extend(self.select_gn(self.selection.bw_numbers, alt_struct[0]))
+                self.alt_atoms[alt_struct.id].extend(self.select_gn(self.selection.generic_numbers, alt_struct[0]))
                 self.alt_atoms[alt_struct.id].extend(self.select_helices(self.selection.helices, alt_struct[0]))
             except:
-                print("Can't select atoms from structure %s" %alt_struct.id)
+                self.logger.warning("Can't select atoms from structure {!s}".format(alt_struct.id))
 
-    #Sequence-based numbers
-    def select_resi (self, resi_list, structure):
-      
-        if resi_list == []:
-            return []
-        atom_list = []
-        for chain in structure:
-            for res in chain:
-                if res.id[1] in resi_list:
-                    atom_list.append(res['CA'])
-    
-        return atom_list
 
-    #B-W numbers from annotated structure...
-    def select_gn (self, gn_list, structure):
+    #GPCRdb numbers from annotated structure...
+    def select_generic_numbers (self, gn_list, structure):
     
         if gn_list == []:
             return []
@@ -59,15 +45,17 @@ class ca_selector(object):
     
         for chain in structure:
             for res in chain:
-                if res.resname not in self.residue_list:
+                try:
+                    if -8.1 < res['CA'].get_bfactor() < 8.1 and res["CA"].bfactor in gn_list:
+                        atom_list.append(res['CA'])
+                except:
                     continue
-                if -8.1 < res['CA'].get_bfactor() < 8.1 and res["CA"].bfactor in gn_list:
-                    atom_list.append(res['CA'])
 
         if atom_list == []:
-            print("No atoms selected for b-w numbers. Did you assign generic numbers to your pdb %s?" %structure.id)
+            self.logger.warning("No atoms with given generic numbers for  {!s}".format(structure.id))
         return atom_list
-  
+    
+    
     #... and all residues from given helices
     def select_helices (self, helices_list, structure):
     
@@ -77,15 +65,17 @@ class ca_selector(object):
         atom_list = []
         for chain in structure:
             for res in chain:
-                if res.resname not in self.residue_list:
+                try:
+                    if -8.1 < res['CA'].get_bfactor() < 8.1 and int(math.floor(abs(res['CA'].get_bfactor()))) in helices_list:
+                        atom_list.append(res['CA'])
+                except:
                     continue
-                if -8.1 < res['CA'].get_bfactor() < 8.1 and int(math.floor(abs(res['CA'].get_bfactor()))) in helices_list:
-                    atom_list.append(res['CA'])
 
         if atom_list == []:
-            print("No atoms selected for helices. Did you assign b-w to your pdb?")
+            self.logger.warning("No atoms with given generic numbers for  {!s}".format(structure.id))
 
         return atom_list
+
 
     #Just the tool functions for retrieving atom sets
     def get_consensus_sets(self, alt_id):
@@ -118,55 +108,53 @@ class ca_selector(object):
             return []
 
 
-  def get_alt_atoms_all (self):
+    def get_alt_atoms_all (self):
     
-    return self.alt_atoms
+        return self.alt_atoms
  
 
 #==============================================================================  
-class prot_superpose (object):
-  residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
+class ProteinSuperpose(object):
   
-  def __init__ (self, ref_file, alt_files, selection_string):
+    def __init__ (self, ref_file, alt_files, simple_selection):
     
-    self.out_path = os.path.dirname(ref_file)
+        self.out_path = os.path.dirname(ref_file)
     
-    #FIXME Selection parser is invoked twice not to pass the object between classes
-    self.selection = selection_parser.selection(selection_string)
+        self.selection = SelectionParser(simple_selection)
     
-    #Setting up reference structure
-    self.ref_struct = PDBParser().get_structure('ref', ref_file)
-    #Kicking out if there is no reference
-    assert self.ref_struct, "Can't parse the ref file %s" %ref_file
+        #Setting up reference structure
+        self.ref_struct = PDBParser().get_structure('ref', ref_file)
+        #Kicking out if there is no reference
+        assert self.ref_struct, "Can't parse the ref file %s" %ref_file
     
-    #Checking if the reference structure is annotated with B-W numbers and running annotation if not
-    if self.selection.bw_numbers != [] or self.selection.helices != []:
-      if self.check_gn(self.ref_struct[0]) == False:
-        gn_assigner = gn.generic_numbering(ref_file)
-        self.ref_struct = gn_assigner.assign_generic_numbers()
+        #Checking if the reference structure is annotated with B-W numbers and running annotation if not
+        if self.selection.generic_numbers != [] or self.selection.helices != []:
+            if self.check_gn(self.ref_struct[0]) == False:
+                gn_assigner = GenericNumbering(ref_file)
+                self.ref_struct = gn_assigner.assign_generic_numbers()
       
-    #Setting up structures to align
-    self.alt_structs = []
-    for alt_file in alt_files:
-      self.out_path = os.path.dirname(alt_file)
+        #Setting up structures to align
+        self.alt_structs = []
+        for alt_file in alt_files:
+            self.out_path = os.path.dirname(alt_file)
       
-      #Identifying structures by filenames
-      alt_id = os.path.splitext(os.path.basename(alt_file))[0]
-      #print alt_id
-      try:
-        tmp_struct = PDBParser().get_structure(alt_id, alt_file)
-        #B-W check for alt structures as well
-        if self.selection.bw_numbers != [] or self.selection.helices != []:
-          if self.check_gn(tmp_struct[0]) == False:
-            gn_assigner = gn.generic_numbering(alt_file)
-            self.alt_structs.append(gn_assigner.assign_generic_numbers())
-          else:
-            self.alt_structs.append(tmp_struct)
+        #Identifying structures by filenames
+        alt_id = os.path.splitext(os.path.basename(alt_file))[0]
+        #print alt_id
+        try:
+            tmp_struct = PDBParser().get_structure(alt_id, alt_file)
+            #B-W check for alt structures as well
+            if self.selection.bw_numbers != [] or self.selection.helices != []:
+                if self.check_gn(tmp_struct[0]) == False:
+                    gn_assigner = GenericNumbering(alt_file)
+                    self.alt_structs.append(gn_assigner.assign_generic_numbers())
+            else:
+                self.alt_structs.append(tmp_struct)
     
-      except:
-        print "Can't parse the file %s" %alt_file
+        except:
+            self.logger.warning("Can't parse the file {!s}".format(alt_file))
     
-    self.selector = ca_selector(selection_string, self.ref_struct, self.alt_structs)
+        self.selector = ca_selector(self.selection, self.ref_struct, self.alt_structs)
 
 
   def run (self):

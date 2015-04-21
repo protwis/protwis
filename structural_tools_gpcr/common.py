@@ -3,6 +3,8 @@ from io import StringIO
 from Bio.Blast import NCBIXML
 
 from django.conf import settings
+from common.selection import SimpleSelection
+
 import os,sys,tempfile,logging
 
 #==============================================================================
@@ -70,3 +72,20 @@ class MappedResidue(object):
           self.gpcrdb = '-' + gpcrdb_number[:4].replace('x', '.')
         else:
           self.gpcrdb = gpcrdb_number.replace('x', '.')
+
+#==============================================================================
+
+#turns selection into actual residues
+class SelectionParser(object):
+
+    def __init__(self, simple_selection):
+    
+        self.generic_numbers = []
+        self.helices = []
+        
+        self.db_segments = [x.slug for x in ProteinSegment.objects.all()]
+        for segment in simple_selection.segments:
+            if 'TM' in segment:
+                self.helices.append(segment)
+            elif segment not in self.db_segments:
+                self.residues.append(segment)
