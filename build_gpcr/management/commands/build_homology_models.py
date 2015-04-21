@@ -1,6 +1,8 @@
 from django.core.management.base import BaseCommand
 
 from protein.models import Protein
+from residue.models import Residue
+from residue.models import ResidueGenericNumber
 from structure.models import Structure
 from protein.models import ProteinSegment
 from common.alignment import Alignment
@@ -29,19 +31,19 @@ class HomologyModeling(object):
     ''' Class to build homology models for GPCRs. 
     
         @param reference_id: str, protein id \n
-        @param role: str, endogenous ligand role of reference \n
-        @param query_roles: list, list of endogenous ligand roles to be applied for template search, default: same as reference \n
+        @param state: str, endogenous ligand state of reference \n
+        @param query_states: list, list of endogenous ligand states to be applied for template search, default: same as reference \n
         @param testing: boolean, test program with existing structure, default: False \n
     '''
-    def __init__(self, reference_id, role, query_roles='default', testing=False):
+    def __init__(self, reference_id, state, query_states='default', testing=False):
         self.reference_id = reference_id
-        self.role = role
-        self.query_roles = query_roles
+        self.state = state
+        self.query_states = query_states
         self.testing = testing
         self.statistics = CreateStatistics(self.reference_id)
         
     def __repr__(self):
-        return "<{}, {}>".format(self.reference_id, self.role)
+        return "<{}, {}>".format(self.reference_id, self.state)
         
     def get_receptor_data(self, receptor):
         ''' Get Protein object of receptor.
@@ -62,26 +64,27 @@ class HomologyModeling(object):
         structure = Structure.objects.get(pdb_code_id__index=pdb)
         return structure
 
-    def get_targets_structure_data(self, role, query_roles):
-        ''' Get all target Structure objects based on endogenous ligand role. Returns QuerySet object.
+    def get_targets_structure_data(self, state, query_states):
+        ''' Get all target Structure objects based on endogenous ligand state. Returns QuerySet object.
         
-            @param role: str, endogenous ligand role
+            @param state: str, endogenous ligand state \n
+            @param query_states: list, list of endogenous ligand states to be applied for template search, default: same as reference 
         '''
-        self.role = role
-        self.query_roles = query_roles
+        self.state = state
+        self.query_states = query_states
 
-        if self.query_roles == 'default':          
+        if self.query_states == 'default':          
             if self.testing == False:
-                self.structures_datatable = Structure.objects.filter(state__name=self.role).order_by('protein','-resolution').distinct('protein')
+                self.structures_datatable = Structure.objects.filter(state__name=self.state).order_by('protein__parent','-resolution').distinct('protein__parent')
             elif self.testing == True:
-                self.structures_datatable = Structure.objects.filter(state__name=self.role).order_by('protein','-resolution').distinct('protein').exclude(protein__entry_name=self.reference_id)
-        elif type(self.query_roles) is list:
-            for query_role in self.query_roles:
-                assert (Structure.objects.filter(state_id__name=query_role)), "InputError: query role argument {} is not valid. No such entry in the database.".format(query_role)
+                self.structures_datatable = Structure.objects.filter(state__name=self.state).order_by('protein__parent','-resolution').distinct('protein__parent').exclude(protein__parent__entry_name=self.reference_id)
+        elif type(self.query_states) is list:
+            for query_state in self.query_states:
+                assert (Structure.objects.filter(state__name=query_state)), "InputError: query state argument {} is not valid. No such entry in the database.".format(query_state)
             if self.testing == False:
-                self.structures_datatable = Structure.objects.filter(state__name__in=self.query_roles).order_by('protein','-resolution').distinct('protein')       
+                self.structures_datatable = Structure.objects.filter(state__name__in=self.query_states).order_by('protein__parent','-resolution').distinct('protein__parent')       
             elif self.testing == True:
-                self.structures_datatable = Structure.objects.filter(state__name__in=self.query_roles).order_by('protein','-resolution').distinct('protein').exclude(protein__entry_name=self.reference_id)
+                self.structures_datatable = Structure.objects.filter(state__name__in=self.query_states).order_by('protein__parent','-resolution').distinct('protein__parent').exclude(protein__parent__entry_name=self.reference_id)
 
         return self.structures_datatable        
         
@@ -102,12 +105,12 @@ class HomologyModeling(object):
             @param segments: list, list of segments to use, e.g.: ['TM1','IL1','TM2','EL1'] \n
             @param reference: boolean, if True, reference receptor is used as reference, default: True.
             @param calculate_similarity: boolean, if True, call Alignment.calculate_similarity, default: True.
-            @param targets: list, list of Protein objects to use as targets. By default it uses all targets with role
+            @param targets: list, list of Protein objects to use as targets. By default it uses all targets with state
             specified when initializing the HomologyModeling() class.
         '''
         self.segments = segments
         if not targets:
-            targets = self.get_targets_protein_data(self.get_targets_structure_data(self.role, self.query_roles))       
+            targets = self.get_targets_protein_data(self.get_targets_structure_data(self.state, self.query_states))       
         
         # core functions from alignment.py
         a = Alignment()
@@ -130,18 +133,18 @@ class HomologyModeling(object):
         
             @param alignment: Alignment, aligment object where the first protein is the reference. Output of pairwise_alignment function.
         '''
-        self.similarity_table = self.create_ordered_similarity_table(self.role, self.query_roles, self.structures_datatable)
+        self.similarity_table = self.create_ordered_similarity_table(self.state, self.query_states, self.structures_datatable)
         
         main_structure = list(self.similarity_table.items())[0][0]       
-        main_structure_protein = Protein.objects.get(id=main_structure.protein_id)
+        main_structure_protein = Protein.objects.get(id=main_structure.protein.parent.id)
         
-        self.main_pdb_id = str(WebLink.objects.get(id=main_structure.pdb_code_id))[-4:]
+        self.main_pdb_id = main_structure.pdb_code.index #str(WebLink.objects.get(id=main_structure.pdb_code_id))[-4:]
         self.main_template_sequence = main_structure_protein.sequence
         if len(main_structure.preferred_chain)>1:
             self.main_template_preferred_chain = main_structure.preferred_chain[0]
         else:
             self.main_template_preferred_chain = main_structure.preferred_chain   
-            
+        
         self.statistics.add_info("main_template", self.main_pdb_id)
         self.statistics.add_info("preferred_chain", self.main_template_preferred_chain)
         
@@ -164,9 +167,7 @@ class HomologyModeling(object):
             a = self.run_pairwise_alignment(segments=self.segments, reference=False, calculate_similarity=False, targets=[reference, main_template_protein])            
         ref = a.proteins[0].alignment
         temp = a.proteins[1].alignment
-        reference_string = ''
-        template_string = ''
-        matching_string = ''       
+        reference_string, template_string, matching_string = '','',''   
         reference_dict = OrderedDict()
         template_dict = OrderedDict()
         segment_count = 0
@@ -236,11 +237,9 @@ class HomologyModeling(object):
         
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
-            self.similarity_table_all = self.create_ordered_similarity_table(self.role, self.query_roles, self.structures_datatable)
-#            print(self.similarity_table_all)
+            self.similarity_table_all = self.create_ordered_similarity_table(self.state, self.query_states, self.structures_datatable)
+            print(self.similarity_table_all)
             for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, alignment_input.aligned_string):
-                if ref_res!='-' and ref_res!='/':
-                    ref_length+=1
                 
                 gn = ref_res
                 gn_TM = self.gn_num_extract(gn, 'x')[0]
@@ -254,17 +253,18 @@ class HomologyModeling(object):
                             if switch_bulges==True:
                                 temp_bulge_list.append({gn:alignment_input.template_dict[temp_res]})
     
-                        # constriction in target
+                        # constriction in reference
                         else:
                             if switch_constrictions==True:
                                 ref_const_list.append({self.gn_indecer(gn, 'x', -1)+'-'+self.gn_indecer(gn, 'x', +1):alignment_input.reference_dict[self.gn_indecer(gn, 'x', -1)]+'-'+alignment_input.reference_dict[self.gn_indecer(gn, 'x', +1)]})
                     
                     elif alignment_input.template_dict[temp_res]=='-' and alignment_input.template_dict[self.gn_indecer(gn,'x',-1)] not in ['-','/'] and alignment_input.template_dict[self.gn_indecer(gn,'x',+1)] not in ['-','/']: #and alignment_input.reference_dict[self.gn_indecer(gn,'x',-1)]!='/' and alignment_input.reference_dict[self.gn_indecer(gn,'x',+1)]!='/':
                         
-                        # bulge in target
+                        # bulge in reference
                         if len(str(gn_num))==3:
                             if switch_bulges==True:
                                 ref_bulge_list.append({gn:alignment_input.reference_dict[ref_res]})
+                                Bulges.bulge_in_reference(gn, self.similarity_table_all)
                             
                         # constriction in template
                         else:
@@ -284,25 +284,25 @@ class HomologyModeling(object):
             if aligned_res=='.':
                 non_cons_count+=1                            
                  
-    def create_ordered_similarity_table(self, role, query_roles, structures_datatable):
+    def create_ordered_similarity_table(self, state, query_states, structures_datatable):
         ''' Creates an ordered dictionary, where templates are sorted by similarity score.
         
-            @param role: str, endogenous ligand role of reference \n
-            @param query_roles: list, endogenous ligand roles of templates involved \n
+            @param state: str, endogenous ligand state of reference \n
+            @param query_states: list, endogenous ligand states of templates involved \n
             @param structures_datatable: QuerySet, involved template structures. Output of get_targets_structure_data
         '''
-        structure_data = self.get_targets_structure_data(role, query_roles=query_roles) 
+        structure_data = self.get_targets_structure_data(state, query_states=query_states) 
         targets = self.get_targets_protein_data(structure_data)
         alignment_all = self.run_pairwise_alignment(targets=targets)
-        sim_table_all_temp = {}
+        sim_table_all_temp = []
         similarity_table_all = OrderedDict()
         
         for i in range(1,len(alignment_all.proteins)):
-            sim_table_all_temp[int(alignment_all.proteins[i].similarity)] = alignment_all.proteins[i]
-        sim_table_order = sorted(sim_table_all_temp, reverse=True)
-        print(sim_table_all_temp)
+            sim_table_all_temp.append([alignment_all.proteins[i],int(alignment_all.proteins[i].similarity)])
+        sim_table_order = sorted(sim_table_all_temp, key=lambda x: x[1], reverse=True)
+
         for i in sim_table_order:
-            similarity_table_all[structures_datatable.get(protein__parent__entry_name=sim_table_all_temp[i].entry_name)] = i
+            similarity_table_all[structures_datatable.get(protein__parent__entry_name=i[0].entry_name)] = i[1]
         
         return similarity_table_all
                 
@@ -336,11 +336,26 @@ class HomologyModeling(object):
         return '/'
 
             
-class BulgesAndConstrictions(object):
+class Bulges(object):
     def __init__(self):
         pass
-    def bulge_in_reference():
-        pass                    
+    def bulge_in_reference(gn, similarity_table):
+        res = []
+        for structure, value in similarity_table.items():  
+#            try:
+#            res.append(ResidueGenericNumber.objects.get(label=gn).id)#.get(protein_id__entry_name=structure.protein.parent.entry_name))
+            protein_name = Protein.objects.get(id=structure.protein.parent.id)
+            print(protein_name)
+            try:            
+                base = Residue.objects.filter(generic_number__scheme__slug='gpcrdb', generic_number__label=gn)#.get(protein=protein_name)
+                for i in base:
+                    print(i.protein)
+            except:
+                pass
+#            res.append(Residue.objects.filter(generic_number__scheme__slug = 'gpcrdb', generic_number__label=gn, protein=protein).prefetch_related(
+#                'protein', 'protein_segment', 'generic_number', 'display_generic_number__scheme'))
+ 
+        
  
 class AlignedReferenceAndTemplate(object):
     ''' Representation class for HomologyModeling.run_main_alignment() function. 
