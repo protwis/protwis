@@ -154,7 +154,8 @@ class Command(BaseCommand):
                                 if ligand['role']:
                                     lr, created = LigandRole.objects.get_or_create(slug=slugify(ligand['role']),
                                         defaults={'name': ligand['role']})
-                                    i = StructureLigandInteraction.objects.create(structure=s, ligand=l, ligand_role=lr)
+                                    i = StructureLigandInteraction.objects.create(structure=s, ligand=l,
+                                        ligand_role=lr)
                     
                     # protein anomalies
                     if sd['bulges']:
@@ -166,7 +167,8 @@ class Command(BaseCommand):
                                 continue
                             pa = ProteinAnomaly.objects.create(anomaly_type=pab, generic_number=gn)
                             s.protein_anomalies.add(pa)
-                        pac, create = ProteinAnomalyType.objects.get_or_create(slug='constriction', name='Constriction')
+                        pac, create = ProteinAnomalyType.objects.get_or_create(slug='constriction',
+                            name='Constriction')
                         for constriction in sd['constrictions']:
                             try:
                                 gn = ResidueGenericNumber.objects.get(label=constriction)
@@ -176,15 +178,16 @@ class Command(BaseCommand):
                             s.protein_anomalies.add(pa)
                     
                     # stabilizing agents
-                    if sd['fusion_protein']:
-                        if isinstance(sd['fusion_protein'], list):
-                            fusion_proteins = sd['fusion_protein']
-                        else:
-                            fusion_proteins = [sd['fusion_protein']]
-                        for fusion_protein in fusion_proteins:
-                            sa, created = StructureStabilizingAgent.objects.get_or_create(slug=slugify(fusion_protein),
-                                name=fusion_protein)
-                            s.stabilizing_agents.add(sa)
+                    # fusion proteins moved to constructs, use this for G-proteins and other agents?
+                    # if sd['fusion_protein']:
+                    #     if isinstance(sd['fusion_protein'], list):
+                    #         fusion_proteins = sd['fusion_protein']
+                    #     else:
+                    #         fusion_proteins = [sd['fusion_protein']]
+                    #     for fusion_protein in fusion_proteins:
+                    #         sa, created = StructureStabilizingAgent.objects.get_or_create(slug=slugify(fusion_protein),
+                    #             name=fusion_protein)
+                    #         s.stabilizing_agents.add(sa)
 
                     # save structure
                     s.save()

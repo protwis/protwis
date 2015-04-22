@@ -67,7 +67,7 @@ class Command(BaseCommand):
         self.logger.info('CREATING PROTEIN SEGMENTS')
 
         with open(self.segment_source_file, "r", encoding='UTF-8') as segment_file:
-            for i, row in enumerate(segment_file):
+            for row in segment_file:
                 split_row = shlex.split(row)
 
                 # create segment
@@ -75,7 +75,6 @@ class Command(BaseCommand):
                 s.slug = split_row[0]
                 s.category = split_row[1]
                 s.name = split_row[2]
-                s.position = i
 
                 try:
                     s.save()
