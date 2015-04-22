@@ -11,7 +11,6 @@ from common.models import WebLink
 
 from collections import OrderedDict
 import re
-from itertools import chain
 import pprint
 
 
