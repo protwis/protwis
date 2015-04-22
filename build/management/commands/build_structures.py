@@ -179,15 +179,16 @@ class Command(BaseCommand):
                             s.protein_anomalies.add(pa)
                     
                     # stabilizing agents
-                    if sd['fusion_protein']:
-                        if isinstance(sd['fusion_protein'], list):
-                            fusion_proteins = sd['fusion_protein']
-                        else:
-                            fusion_proteins = [sd['fusion_protein']]
-                        for fusion_protein in fusion_proteins:
-                            sa, created = StructureStabilizingAgent.objects.get_or_create(slug=slugify(fusion_protein),
-                                name=fusion_protein)
-                            s.stabilizing_agents.add(sa)
+                    # fusion proteins moved to constructs, use this for G-proteins and other agents?
+                    # if sd['fusion_protein']:
+                    #     if isinstance(sd['fusion_protein'], list):
+                    #         fusion_proteins = sd['fusion_protein']
+                    #     else:
+                    #         fusion_proteins = [sd['fusion_protein']]
+                    #     for fusion_protein in fusion_proteins:
+                    #         sa, created = StructureStabilizingAgent.objects.get_or_create(slug=slugify(fusion_protein),
+                    #             name=fusion_protein)
+                    #         s.stabilizing_agents.add(sa)
 
                     # save structure
                     s.save()
