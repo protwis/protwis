@@ -154,7 +154,8 @@ class Command(BaseCommand):
                                 if ligand['role']:
                                     lr, created = LigandRole.objects.get_or_create(slug=slugify(ligand['role']),
                                         defaults={'name': ligand['role']})
-                                    i = StructureLigandInteraction.objects.create(structure=s, ligand=l, ligand_role=lr)
+                                    i = StructureLigandInteraction.objects.create(structure=s, ligand=l,
+                                        ligand_role=lr)
                     
                     # protein anomalies
                     if sd['bulges']:
@@ -166,7 +167,8 @@ class Command(BaseCommand):
                                 continue
                             pa = ProteinAnomaly.objects.create(anomaly_type=pab, generic_number=gn)
                             s.protein_anomalies.add(pa)
-                        pac, create = ProteinAnomalyType.objects.get_or_create(slug='constriction', name='Constriction')
+                        pac, create = ProteinAnomalyType.objects.get_or_create(slug='constriction',
+                            name='Constriction')
                         for constriction in sd['constrictions']:
                             try:
                                 gn = ResidueGenericNumber.objects.get(label=constriction)

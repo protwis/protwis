@@ -84,13 +84,12 @@ class ProteinSegment(models.Model):
     slug = models.SlugField(max_length=100)
     name = models.CharField(max_length=50)
     category = models.CharField(max_length=50)
-    position = models.SmallIntegerField()
 
     def __str__(self):
         return self.name
 
     class Meta():
-        ordering = ('position', )
+        ordering = ('id', )
         db_table = 'protein_segment'
 
 
@@ -114,7 +113,7 @@ class ProteinFamily(models.Model):
 
     class Meta():
         db_table = 'protein_family'
-        ordering = ['id']
+        ordering = ('id', )
 
 
 class ProteinSequenceType(models.Model):
@@ -165,7 +164,32 @@ class ProteinAnomalyRule(models.Model):
     amino_acid = models.CharField(max_length=1)
 
     def __str__(self):
-        return "{} {}".format(self.generic_number.label, self.amino.acid)
+        return "{} {}".format(self.generic_number.label, self.amino_acid)
 
     class Meta():
         db_table = 'protein_anomaly_rule'
+
+
+class ProteinFusion(models.Model):
+    protein = models.ManyToManyField('Protein', through='ProteinFusionProtein')
+    name = models.CharField(max_length=100, unique=True)
+    sequence = models.TextField(null=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'protein_fusion'
+
+
+class ProteinFusionProtein(models.Model):
+    protein = models.ForeignKey('Protein')
+    protein_fusion = models.ForeignKey('ProteinFusion')
+    segment_before = models.ForeignKey('ProteinSegment', related_name='segment_before')
+    segment_after = models.ForeignKey('ProteinSegment', related_name='segment_after')
+
+    def __str__(self):
+        return self.protein.name + " " + self.protein_fusion.name
+
+    class Meta():
+        db_table = 'protein_fusion_protein'

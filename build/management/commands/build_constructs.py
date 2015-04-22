@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 
-from protein.models import Protein, ProteinSequenceType
+from protein.models import Protein, ProteinSequenceType, ProteinSegment, ProteinFusion, ProteinFusionProtein
 from residue.models import Residue
 
 from optparse import make_option
@@ -85,9 +85,10 @@ class Command(BaseCommand):
                     # save construct
                     try:
                         p.save()
-                        self.logger.info('Created construct {} with parent protein {}'.format(p.name, pp.name))
+                        self.logger.info('Created construct {} with parent protein {}'.format(p.name, pp.entry_name))
                     except:
-                        self.logger.error('Failed creating construct {} with parent protein {}'.format(p.name, pp.name))
+                        self.logger.error('Failed creating construct {} with parent protein {}'.format(p.name,
+                            pp.name))
                         continue
 
                     # create residue records
@@ -104,6 +105,42 @@ class Command(BaseCommand):
                             'full': m,
                         }
 
+                    # fusion proteins
+                    split_segments = {}
+                    for fp in sd['fusion_proteins']:
+                        fp_start = Residue.objects.get(protein=pp, sequence_number=fp['positions'][0])
+                        fp_end = Residue.objects.get(protein=pp, sequence_number=fp['positions'][1])
+                        # if the fusion protein is inserted within only one segment (the usual case), split that
+                        # segment into two segments
+                        if fp_start and fp_start.protein_segment == fp_end.protein_segment:
+                            # get/create split protein segments
+                            segment_before, created = ProteinSegment.objects.get_or_create(
+                                slug=fp_start.protein_segment.slug+"_1", defaults={
+                                'name': fp_start.protein_segment.name, 'category': fp_start.protein_segment.category})
+                            segment_after, created = ProteinSegment.objects.get_or_create(
+                                slug=fp_start.protein_segment.slug+"_2", defaults={
+                                'name': fp_start.protein_segment.name, 'category': fp_start.protein_segment.category})
+
+                            # keep track of  information about split segments
+                            split_segments[fp_start.protein_segment.slug] = {
+                                'start': {
+                                    'sequence_number': fp['positions'][0],
+                                    'segment': segment_before,
+                                },
+                                'end': {
+                                    'sequence_number': fp['positions'][1],
+                                    'segment': segment_after,
+                                },
+                            }
+
+                        # get/insert fusion protein
+                        fusion, create = ProteinFusion.objects.get_or_create(name=fp['name'], defaults={
+                            'sequence': fp['sequence']})
+
+                        # create relationship with protein
+                        ProteinFusionProtein.objects.create(protein=p, protein_fusion=fusion,
+                            segment_before=segment_before, segment_after=segment_after)
+
                     prs = Residue.objects.filter(protein=pp).prefetch_related(
                         'protein', 'protein_segment', 'generic_number', 'display_generic_number__scheme',
                         'alternative_generic_number__scheme')
@@ -111,10 +148,20 @@ class Command(BaseCommand):
                         if pr.sequence_number not in truncations:
                             r = Residue()
                             r.protein = p
-                            r.protein_segment = pr.protein_segment
                             r.generic_number = pr.generic_number
                             r.display_generic_number = pr.display_generic_number
                             r.sequence_number = pr.sequence_number
+                            
+                            # check for split segments
+                            if pr.protein_segment.slug in split_segments:
+                                rsns = split_segments[pr.protein_segment.slug]['start']['sequence_number']
+                                rsne = split_segments[pr.protein_segment.slug]['end']['sequence_number']
+                                if r.sequence_number <= rsns:
+                                    r.protein_segment = split_segments[pr.protein_segment.slug]['start']['segment']
+                                elif r.sequence_number >= rsne:
+                                    r.protein_segment = split_segments[pr.protein_segment.slug]['end']['segment']
+                            else:
+                                r.protein_segment = pr.protein_segment
 
                             # amino acid, check for mutations
                             if r.sequence_number in mutations:
