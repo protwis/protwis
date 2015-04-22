@@ -67,12 +67,17 @@ class Command(BaseCommand):
             'pubmed_id' : data[self.csv_fields['pubmed_id']],                       
             }
 
+        if data[self.csv_fields['ligand_role']] != 'Agonist' and data[self.csv_fields['G_protein']] != 'None':
+            state = 'Active'
+        else:
+            state = 'Inactive'
+
         yaml_struct_annotations = {
-            'ligand' : {'name' : data[self.csv_fields['xray_ligand']], 'role' : data[self.csv_fields['ligand_role']]},
-            'state' : 'Inactive' if data[self.csv_fields['ligand_role']] != 'Agonist' else 'Active', #Naive assumption, but have to start with smth
+            'ligand' : [{'name' : data[self.csv_fields['xray_ligand']],
+                'role' : data[self.csv_fields['ligand_role']]}],
+            'state' : state,
             'preferred_chain' : data[self.csv_fields['chain']],
             'g_protein' : data[self.csv_fields['G_protein']],
-            'fusion_protein' : data[self.csv_fields['stabilizing_agent']],
             }
 
         yaml_other_data = {
@@ -96,11 +101,12 @@ class Command(BaseCommand):
             'protein' : data[self.csv_fields['prot_name']],
             'truncations' : '',
             'mutations' : '',
-            'fusion_proteins' : data[self.csv_fields['stabilizing_agent']],
+            'fusion_proteins' : [{'name': data[self.csv_fields['stabilizing_agent']], 'sequence': '',
+                'positions': [1,2]}]
             }
 
         construct_fh = open('{}.yaml'.format(os.sep.join([self.structure_build_data_dir, 'constructs', data[self.csv_fields['pdb_code']]])), 'w')
-        yaml.dump(yaml_construct, construct_fh)
+        yaml.dump(yaml_construct, construct_fh, indent=4)
         construct_fh.close()
 
 

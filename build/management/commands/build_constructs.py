@@ -107,39 +107,42 @@ class Command(BaseCommand):
 
                     # fusion proteins
                     split_segments = {}
-                    for fp in sd['fusion_proteins']:
-                        fp_start = Residue.objects.get(protein=pp, sequence_number=fp['positions'][0])
-                        fp_end = Residue.objects.get(protein=pp, sequence_number=fp['positions'][1])
-                        # if the fusion protein is inserted within only one segment (the usual case), split that
-                        # segment into two segments
-                        if fp_start and fp_start.protein_segment == fp_end.protein_segment:
-                            # get/create split protein segments
-                            segment_before, created = ProteinSegment.objects.get_or_create(
-                                slug=fp_start.protein_segment.slug+"_1", defaults={
-                                'name': fp_start.protein_segment.name, 'category': fp_start.protein_segment.category})
-                            segment_after, created = ProteinSegment.objects.get_or_create(
-                                slug=fp_start.protein_segment.slug+"_2", defaults={
-                                'name': fp_start.protein_segment.name, 'category': fp_start.protein_segment.category})
+                    if sd['fusion_proteins']:
+                        for fp in sd['fusion_proteins']:
+                            fp_start = Residue.objects.get(protein=pp, sequence_number=fp['positions'][0])
+                            fp_end = Residue.objects.get(protein=pp, sequence_number=fp['positions'][1])
+                            # if the fusion protein is inserted within only one segment (the usual case), split that
+                            # segment into two segments
+                            if fp_start and fp_start.protein_segment == fp_end.protein_segment:
+                                # get/create split protein segments
+                                segment_before, created = ProteinSegment.objects.get_or_create(
+                                    slug=fp_start.protein_segment.slug+"_1", defaults={
+                                    'name': fp_start.protein_segment.name,
+                                    'category': fp_start.protein_segment.category})
+                                segment_after, created = ProteinSegment.objects.get_or_create(
+                                    slug=fp_start.protein_segment.slug+"_2", defaults={
+                                    'name': fp_start.protein_segment.name,
+                                    'category': fp_start.protein_segment.category})
 
-                            # keep track of  information about split segments
-                            split_segments[fp_start.protein_segment.slug] = {
-                                'start': {
-                                    'sequence_number': fp['positions'][0],
-                                    'segment': segment_before,
-                                },
-                                'end': {
-                                    'sequence_number': fp['positions'][1],
-                                    'segment': segment_after,
-                                },
-                            }
+                                # keep track of  information about split segments
+                                split_segments[fp_start.protein_segment.slug] = {
+                                    'start': {
+                                        'sequence_number': fp['positions'][0],
+                                        'segment': segment_before,
+                                    },
+                                    'end': {
+                                        'sequence_number': fp['positions'][1],
+                                        'segment': segment_after,
+                                    },
+                                }
 
-                        # get/insert fusion protein
-                        fusion, create = ProteinFusion.objects.get_or_create(name=fp['name'], defaults={
-                            'sequence': fp['sequence']})
+                            # get/insert fusion protein
+                            fusion, create = ProteinFusion.objects.get_or_create(name=fp['name'], defaults={
+                                'sequence': fp['sequence']})
 
-                        # create relationship with protein
-                        ProteinFusionProtein.objects.create(protein=p, protein_fusion=fusion,
-                            segment_before=segment_before, segment_after=segment_after)
+                            # create relationship with protein
+                            ProteinFusionProtein.objects.create(protein=p, protein_fusion=fusion,
+                                segment_before=segment_before, segment_after=segment_after)
 
                     prs = Residue.objects.filter(protein=pp).prefetch_related(
                         'protein', 'protein_segment', 'generic_number', 'display_generic_number__scheme',
