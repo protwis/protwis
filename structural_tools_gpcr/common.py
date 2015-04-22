@@ -4,6 +4,7 @@ from Bio.Blast import NCBIXML
 
 from django.conf import settings
 from common.selection import SimpleSelection
+from protein.models import ProteinSegment
 
 import os,sys,tempfile,logging
 
@@ -78,14 +79,16 @@ class MappedResidue(object):
 #turns selection into actual residues
 class SelectionParser(object):
 
-    def __init__(self, simple_selection):
+    def __init__(self, selection):
     
         self.generic_numbers = []
         self.helices = []
         
         self.db_segments = [x.slug for x in ProteinSegment.objects.all()]
-        for segment in simple_selection.segments:
-            if 'TM' in segment:
-                self.helices.append(segment)
+        
+        for segment in selection.segments:
+            if 'TM' in segment.item.slug:
+                self.helices.append(segment.item.slug[-1])
             elif segment not in self.db_segments:
                 self.residues.append(segment)
+        print(self.helices)
