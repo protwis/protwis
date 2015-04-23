@@ -1,8 +1,8 @@
 import os,sys,math,logging
 
 from Bio.PDB import *
-from structural_tools_gpcr.common import SelectionParser
-from structural_tools_gpcr.assign_generic_numbers import GenericNumbering
+from structure_gpcr.common import SelectionParser
+from structure_gpcr.assign_generic_numbers import GenericNumbering
 
 
 
@@ -10,7 +10,7 @@ from structural_tools_gpcr.assign_generic_numbers import GenericNumbering
 #==============================================================================
 class CASelector(object):
 
-    logger = logging.getLogger("structural_tools_gpcr")
+    logger = logging.getLogger("structure_gpcr")
 
     def __init__(self, parsed_selection, ref_struct, alt_structs):
     
@@ -112,7 +112,7 @@ class CASelector(object):
 #==============================================================================  
 class ProteinSuperpose(object):
   
-    logger = logging.getLogger("structural_tools_gpcr")
+    logger = logging.getLogger("structure_gpcr")
 
     def __init__ (self, ref_file, alt_files, simple_selection):
     

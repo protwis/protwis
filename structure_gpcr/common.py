@@ -8,13 +8,13 @@ from protein.models import ProteinSegment
 
 import os,sys,tempfile,logging
 
-logger = logging.getLogger("structural_tools_gpcr")
+logger = logging.getLogger("structure_gpcr")
 
 #==============================================================================
 # I have put it into separate class for the sake of future uses
 class BlastSearch(object):
     
-    logger = logging.getLogger("structural_tools_gpcr")
+    logger = logging.getLogger("structure_gpcr")
 
     def __init__ (self, blast_path = 'blastp', blastdb = os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']), top_results = 1):
   

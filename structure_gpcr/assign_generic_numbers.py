@@ -3,7 +3,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio.PDB import *
 from Bio.PDB.PDBIO import Select
 from residue.models import Residue
-from structural_tools_gpcr.common import BlastSearch, MappedResidue
+from structure_gpcr.common import BlastSearch, MappedResidue
 
 import Bio.PDB.Polypeptide as polypeptide
 import os,logging
@@ -13,7 +13,7 @@ import os,logging
 #Class for annotating the pdb structures with generic numbers
 class GenericNumbering(object):
     
-    logger = logging.getLogger("structural_tools_gpcr")
+    logger = logging.getLogger("structure_gpcr")
 
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
   

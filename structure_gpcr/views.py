@@ -4,8 +4,8 @@ from django import forms
 from django.shortcuts import render
 from django.core.context_processors import csrf
 
-from structural_tools_gpcr.assign_generic_numbers import GenericNumbering
-from structural_tools_gpcr.structural_superposition import ProteinSuperpose
+from structure_gpcr.assign_generic_numbers import GenericNumbering
+from structure_gpcr.structural_superposition import ProteinSuperpose
 from common.views import AbsSegmentSelection
 from common.selection import Selection
 
@@ -39,7 +39,7 @@ class GenericNumberingIndex(TemplateView):
     form_code = forms.Form()
     form_code.fields = upload_form_data
     form_id = 'gn_pdb_file'
-    url = '/structural_tools_gpcr/generic_numbering_results'
+    url = '/structure_gpcr/generic_numbering_results'
     mid_section = "upload_file_form.html"
 
     #Buttons
@@ -137,7 +137,7 @@ class SuperpositionWorkflowIndex(TemplateView):
     form_code = forms.Form()
     form_code.fields = upload_form_data
     form_id = 'superpose_files'
-    url = '/structural_tools_gpcr/superposition_workflow_selection'
+    url = '/structure_gpcr/superposition_workflow_selection'
     mid_section = 'upload_file_form.html'
 
     #Buttons
@@ -180,7 +180,7 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
     buttons = {
         'continue': {
             'label': 'Superpose proteins',
-            'url': '/structural_tools_gpcr/superposition_workflow_results',
+            'url': '/structure_gpcr/superposition_workflow_results',
             'color': 'success',
         },
     }
