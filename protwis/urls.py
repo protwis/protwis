@@ -32,7 +32,7 @@ urlpatterns = patterns('',
     url(r'^alignment/', include('alignment.urls')),
     url(r'^similaritysearch/', include('similaritysearch.urls')),
     url(r'^structure_gpcr/', include('structure_gpcr.urls')),
-    url(r'^structure/', include('structure.urls')),
+    url(r'^structure/',include('structure_' + settings.SITE_NAME + '.urls')),
 )
 
 if settings.DEBUG:

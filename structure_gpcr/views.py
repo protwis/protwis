@@ -8,6 +8,7 @@ from structure_gpcr.assign_generic_numbers import GenericNumbering
 from structure_gpcr.structural_superposition import ProteinSuperpose
 from common.views import AbsSegmentSelection
 from common.selection import Selection
+from structure.views import *
 
 import inspect, os
 from io import StringIO
