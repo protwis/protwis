@@ -87,6 +87,7 @@ class GenericNumberingResults(TemplateView):
             request.session['outfile'] = { request.FILES['pdb_file'].name : out_stream, }
             self.success = True
             self.outfile = request.FILES['pdb_file'].name
+            self.replacement_tag = 'GPCRDB'
         else:
             self.input_file = request.FILES['pdb_file'].name
             self.success = False
@@ -165,14 +166,14 @@ class SuperpositionWorkflowIndex(TemplateView):
 #Class rendering selection box for sequence segments
 class SuperpositionWorkflowSelection(AbsSegmentSelection):
 
-    template_name='common_structural_tools.html'
+    template_name='common/segmentselection.html'
 
     #Left panel
     step = 2
     number_of_steps = 3
 
     #Mid section
-    mid_section = 'common/segmentselection.html'
+    #mid_section = 'segment_selection.html'
 
     #Right panel
     segment_list = True
@@ -252,10 +253,11 @@ class SuperpositionWorkflowResults(TemplateView):
             io.set_structure(out_structs[0])
             io.save(out_stream)
             if len(out_stream.getvalue()) > 0:
-                self.session['outfiles'] = { request.FILES['alt_files'].name : out_stream, }
+                self.request.session['outfile'] = { self.request.session['alt_files'].name : out_stream, }
                 #self.input_file = request.FILES['pdb_file'].name
                 self.success = True
-                self.outfile = request.FILES['alt_files'].name
+                self.outfile = self.request.session['alt_files'].name
+                self.replacement_tag = 'aligned'
 
         
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
@@ -270,14 +272,12 @@ class SuperpositionWorkflowResults(TemplateView):
 
 #==============================================================================
 
-def ServePdbOutfile(request, outfile):
+def ServePdbOutfile(request, outfile, replacement_tag):
     
     root, ext = os.path.splitext(outfile)
     out_stream = request.session['outfile'][outfile]
-    print(request.session['outfile'][outfile])
-
     response = HttpResponse(content_type="chemical/x-pdb")
-    response['Content-Disposition'] = 'attachment; filename="{}_GPCRDB.pdb"'.format(root)
+    response['Content-Disposition'] = 'attachment; filename="{}_{}.pdb"'.format(root, replacement_tag)
     response.write(out_stream.getvalue())
 
     return response

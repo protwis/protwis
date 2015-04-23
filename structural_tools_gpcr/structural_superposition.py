@@ -18,20 +18,24 @@ class CASelector(object):
         self.alt_atoms = {}
     
         self.selection = parsed_selection
+        print(parsed_selection.helices)
         try:
             self.ref_atoms.extend(self.select_generic_numbers(self.selection.generic_numbers, ref_struct[0]))
             self.ref_atoms.extend(self.select_helices(self.selection.helices, ref_struct[0]))
+            print(self.ref_atoms)
         except Exception as msg:
             self.logger.warning("Can't select atoms from the reference structure!\n{!s}".format(msg))
     
         for alt_struct in alt_structs:
-            try:
-                self.alt_atoms[alt_struct.id] = []
-                self.alt_atoms[alt_struct.id].extend(self.select_gn(self.selection.generic_numbers, alt_struct[0]))
-                self.alt_atoms[alt_struct.id].extend(self.select_helices(self.selection.helices, alt_struct[0]))
-            except:
-                self.logger.warning("Can't select atoms from structure {!s}".format(alt_struct.id))
-
+            #try:
+            print("Are we there yet?")
+            self.alt_atoms[alt_struct.id] = []
+            self.alt_atoms[alt_struct.id].extend(self.select_generic_numbers(self.selection.generic_numbers, alt_struct[0]))
+            self.alt_atoms[alt_struct.id].extend(self.select_helices(self.selection.helices, alt_struct[0]))
+                
+        #    except Exception as msg:
+        #        self.logger.warning("Can't select atoms from structure {!s}\n{!s}".format(alt_struct.id, msg))
+        #print(self.alt_atoms)
 
     def select_generic_numbers (self, gn_list, structure):
     
@@ -127,17 +131,18 @@ class ProteinSuperpose(object):
         self.alt_structs = []
         for alt_id, alt_file in enumerate(alt_files):
             try:
-                tmp_struct = PDBParser().get_structure(alt_id, alt_file)
+                tmp_struct = PDBParser(PERMISSIVE=True).get_structure(alt_id, alt_file)
                 if self.selection.generic_numbers != [] or self.selection.helices != []:
                     if not self.check_gn(tmp_struct[0]):
+                        print("Assigning")
                         gn_assigner = GenericNumbering(alt_file)
                         self.alt_structs.append(gn_assigner.assign_generic_numbers())
-                else:
-                    self.alt_structs.append(tmp_struct)
+                    else:
+                        self.alt_structs.append(tmp_struct)
             except Exception as e:
+                print(e)
                 self.logger.warning("Can't parse the file {!s}\n{!s}".format(alt_id, e))
-    
-            self.selector = CASelector(self.selection, self.ref_struct, self.alt_structs)
+        self.selector = CASelector(self.selection, self.ref_struct, self.alt_structs)
 
 
     def run (self):

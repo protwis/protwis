@@ -8,6 +8,8 @@ from protein.models import ProteinSegment
 
 import os,sys,tempfile,logging
 
+logger = logging.getLogger("structural_tools_gpcr")
+
 #==============================================================================
 # I have put it into separate class for the sake of future uses
 class BlastSearch(object):
@@ -88,7 +90,7 @@ class SelectionParser(object):
         
         for segment in selection.segments:
             if 'TM' in segment.item.slug:
-                self.helices.append(segment.item.slug[-1])
+                self.helices.append(int(segment.item.slug[-1]))
             elif segment not in self.db_segments:
                 self.residues.append(segment)
-        print(self.helices)
+        logger.debug("Helices selected: {}; Residues: {}".format(self.helices, self.generic_numbers))
