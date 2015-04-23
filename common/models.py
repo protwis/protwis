@@ -74,7 +74,14 @@ class Publication(models.Model):
                 j = PublicationJournal(slug=record['TA'], name=record['JT'])
                 j.save()
                 self.journal = j
-            self.reference = "{}({}):{}".format(record['VI'], record['IP'], record['PG'])
+            
+            self.reference = ""
+            if 'VI' in record:
+                self.reference += record['VI']
+            if 'IP' in record:
+                self.reference += "(" + record['IP'] + ")"
+            if 'PG' in record:
+                self.reference += ":" + record['PG']
         except Exception as msg:
             print(msg)
 
