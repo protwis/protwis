@@ -41,11 +41,11 @@ class Command(BaseCommand):
                 print(msg)
                 self.logger.error(msg)
         # import the structure data
-        #try:
-        self.create_structures(options['filename'])
-        #except Exception as msg:
-        #    print(msg)
-        #    self.logger.error(msg)
+        try:
+            self.create_structures(options['filename'])
+        except Exception as msg:
+            print(msg)
+            self.logger.error(msg)
     
     def truncate_structure_tables(self):
         cursor = connection.cursor()
@@ -82,8 +82,7 @@ class Command(BaseCommand):
                     if sd['resolution']:
                         s.resolution = float(sd['resolution'])
                     if sd['publication_date']:
-                        s.publication_date = "{!s}".format(datetime.strptime(sd['publication_date'], "%Y-%m-%d %H:%M:%S").date())
-
+                        s.publication_date = sd['publication_date']
 
                     # protein
                     if sd['construct']:

@@ -1,7 +1,5 @@
 from django.conf.urls import patterns, url
 from structural_tools_gpcr.views import *
-#from structural_tools_gpcr.views import GenericNumberingIndex, GenericNumberingResults, SuperpositionWorkflowIndex, SuperpositionWorkflowSelection, SuperpositionWorkflowResults, ServePdbOutfile
-
 
 urlpatterns = patterns('',
     url(r'^generic_numbering_index', GenericNumberingIndex.as_view(), name='generic_numbering'),

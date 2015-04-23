@@ -18,7 +18,6 @@ class CASelector(object):
         self.alt_atoms = {}
     
         self.selection = parsed_selection
-        print(parsed_selection.helices)
         try:
             self.ref_atoms.extend(self.select_generic_numbers(self.selection.generic_numbers, ref_struct[0]))
             self.ref_atoms.extend(self.select_helices(self.selection.helices, ref_struct[0]))
@@ -27,15 +26,13 @@ class CASelector(object):
             self.logger.warning("Can't select atoms from the reference structure!\n{!s}".format(msg))
     
         for alt_struct in alt_structs:
-            #try:
-            print("Are we there yet?")
-            self.alt_atoms[alt_struct.id] = []
-            self.alt_atoms[alt_struct.id].extend(self.select_generic_numbers(self.selection.generic_numbers, alt_struct[0]))
-            self.alt_atoms[alt_struct.id].extend(self.select_helices(self.selection.helices, alt_struct[0]))
+            try:
+                self.alt_atoms[alt_struct.id] = []
+                self.alt_atoms[alt_struct.id].extend(self.select_generic_numbers(self.selection.generic_numbers, alt_struct[0]))
+                self.alt_atoms[alt_struct.id].extend(self.select_helices(self.selection.helices, alt_struct[0]))
                 
-        #    except Exception as msg:
-        #        self.logger.warning("Can't select atoms from structure {!s}\n{!s}".format(alt_struct.id, msg))
-        #print(self.alt_atoms)
+            except Exception as msg:
+                self.logger.warning("Can't select atoms from structure {!s}\n{!s}".format(alt_struct.id, msg))
 
     def select_generic_numbers (self, gn_list, structure):
     
