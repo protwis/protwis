@@ -8,8 +8,9 @@ class Protein(models.Model):
     source = models.ForeignKey('ProteinSource', null=True)
     residue_numbering_scheme = models.ForeignKey('residue.ResidueNumberingScheme')
     sequence_type = models.ForeignKey('ProteinSequenceType')
-    endogenous_ligand = models.ManyToManyField('ligand.Ligand')
-    web_link = models.ManyToManyField('common.WebLink')
+    states = models.ManyToManyField('ProteinState', through='ProteinConformation')
+    endogenous_ligands = models.ManyToManyField('ligand.Ligand')
+    web_links = models.ManyToManyField('common.WebLink')
     entry_name = models.SlugField(max_length=100, db_index=True, null=True)
     accession = models.CharField(max_length=100, db_index=True, null=True)
     name = models.CharField(max_length=200)
@@ -29,6 +30,28 @@ class Protein(models.Model):
     
     class Meta():
         db_table = 'protein'
+
+
+class ProteinConformation(models.Model):
+    protein = models.ForeignKey('Protein')
+    state = models.ForeignKey('ProteinState')
+
+    def __str__(self):
+        return self.protein.name + "(" + self.state.name + ")"
+
+    class Meta():
+        db_table = "protein_conformation"
+
+
+class ProteinState(models.Model):
+    slug = models.SlugField(max_length=20)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = "protein_state"
 
 
 class Gene(models.Model):

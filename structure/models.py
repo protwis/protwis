@@ -5,7 +5,7 @@ class Structure(models.Model):
     protein = models.ForeignKey('protein.Protein')
     structure_type = models.ForeignKey('StructureType')
     pdb_code = models.ForeignKey('common.WebLink')
-    state = models.ForeignKey('StructureState')
+    state = models.ForeignKey('protein.ProteinState')
     ligands = models.ManyToManyField('ligand.Ligand', through='interaction.StructureLigandInteraction')
     protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
     stabilizing_agents = models.ManyToManyField('StructureStabilizingAgent')
@@ -40,17 +40,6 @@ class StructureType(models.Model):
 
     class Meta():
         db_table = "structure_type"
-
-
-class StructureState(models.Model):
-    slug = models.SlugField(max_length=20)
-    name = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.name
-
-    class Meta():
-        db_table = "structure_state"
 
 
 class StructureStabilizingAgent(models.Model):

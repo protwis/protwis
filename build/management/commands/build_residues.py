@@ -112,19 +112,20 @@ class Command(BaseCommand):
                 # fetch schemes and conversion tables
                 #Checking if the protein exists in the db
                 try:
-                    protein = Protein.objects.get(entry_name=prot_name)
+                    pconf = ProteinConformation.objects.get(protein__entry_name=prot_name,
+                        state=settings.DEFAULT_PROTEIN_STATE)
                 except Protein.DoesNotExist as e:
                     missing_proteins.append(prot_name)
                     continue
                 #Checking if given residue already exists in the db
                 try:
-                    Residue.objects.get(protein=protein.id, sequence_number=res_num)
+                    Residue.objects.get(protein_conformation=pconf.id, sequence_number=res_num)
                     continue
                 except Residue.DoesNotExist as e:
                     pass
 
                 r = Residue()
-                r.protein = protein
+                r.protein_conformation = pconf
                 r.sequence_number = int(res_num)
                 r.amino_acid = polypeptide.three_to_one(res_name.upper())
                 
@@ -132,11 +133,12 @@ class Command(BaseCommand):
                 
                 try:
                     r.save()
-                    #self.logger.info('Created residue {:n}{!s} for protein {!s}'.format(r.sequence_number,r.amino_acid, protein.entry_name))
+                    self.logger.info('Created residue {:n}{!s} for protein {!s}'.format(r.sequence_number,
+                        r.amino_acid, protein.entry_name))
                 except Exception as msg:
                     print(msg)
                     self.logger.error('Failed to create residue {:n}{!s} for protein {!s}'.format(
-                        r.sequence_number, r.amino_acid, protein.entry_name))
+                        r.sequence_number, r.amino_acid, pconf.protein.entry_name))
                     continue
                   
                 # residue segment
@@ -160,7 +162,8 @@ class Command(BaseCommand):
                     # default gpcrdb number
                     def_gpcrdb = False
                     if dump_oliveira in schemes[settings.DEFAULT_NUMBERING_SCHEME]['table']:
-                        default_label = schemes[settings.DEFAULT_NUMBERING_SCHEME]['table'][dump_oliveira] + bulge_prime
+                        default_label = (schemes[settings.DEFAULT_NUMBERING_SCHEME]['table'][dump_oliveira] + 
+                            bulge_prime)
                         try:
                             def_gpcrdb = ResidueGenericNumber.objects.get(label=default_label,
                                 scheme=schemes[settings.DEFAULT_NUMBERING_SCHEME]['obj'])
@@ -187,11 +190,12 @@ class Command(BaseCommand):
                         for scheme_name, scheme in schemes.items():
                             if scheme['type'] == 'sequence':
                                 # is this number in the scheme defined for this protein?
-                                if scheme_name == schemes[protein.residue_numbering_scheme.slug]['seq_based']:
+                                if scheme_name == schemes[pconf.protein.residue_numbering_scheme.slug]['seq_based']:
                                     seq_based_label = dump_seq_based
                                 # if not convert the number to the correct scheme
                                 else:
-                                    for d, c in schemes[schemes[protein.residue_numbering_scheme.slug]['seq_based']]['table'].items():
+                                    slug = pconf.protein.residue_numbering_scheme.slug
+                                    for d, c in schemes[schemes[slug]['seq_based']]['table'].items():
                                         if c == dump_seq_based:
                                             seq_based_label = scheme['table'][d]
                                             break
@@ -215,7 +219,7 @@ class Command(BaseCommand):
                         for scheme_name, scheme in schemes.items():
                             if scheme['type'] == 'structure':
                                 # is this number in the scheme defined for this protein?
-                                if scheme_name == protein.residue_numbering_scheme.slug:
+                                if scheme_name == pconf.protein.residue_numbering_scheme.slug:
                                     struct_based_label = dump_gpcrdb + bulge_prime
                                 # if not convert the number to the correct scheme
                                 else:
@@ -226,7 +230,8 @@ class Command(BaseCommand):
 
                                 # add the sequence-based label (5x461 -> 5.46x461)
                                 split_struct_based_label = struct_based_label.split('x')
-                                struct_based_label = seq_based_labels[scheme['seq_based']] + 'x' + split_struct_based_label[1]
+                                struct_based_label = (seq_based_labels[scheme['seq_based']] + 'x' +
+                                    split_struct_based_label[1])
 
                                 # fetch/insert the number
                                 try:
@@ -246,10 +251,11 @@ class Command(BaseCommand):
                                     r.alternative_generic_number.add(struct_based)
                 try:
                     r.save()
-                    #self.logger.info('Added generic numbers for residue {}{!s} for protein {!s}'.format(res_num, res_name,protein.entry_name))
+                    self.logger.info('Added generic numbers for residue {}{!s} for protein {!s}'.format(res_num,
+                        res_name, protein.entry_name))
                 except Exception as msg:
                     print(msg)
                     self.logger.error(
-                        'Failed to create generic numbers for residue {}{!s} for protein {!s}'.format(res_num, res_name,
-                        protein.entry_name))
+                        'Failed to create generic numbers for residue {}{!s} for protein {!s}'.format(res_num,
+                            res_name, protein.entry_name))
         self.logger.info('COMPLETED CREATING RESIDUES')

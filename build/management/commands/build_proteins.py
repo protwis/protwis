@@ -3,6 +3,8 @@ from django.conf import settings
 from django.db import connection
 
 from protein.models import Protein
+from protein.models import ProteinConformation
+from protein.models import ProteinState
 from protein.models import ProteinFamily
 from protein.models import ProteinAlias
 from protein.models import ProteinSegment
@@ -263,6 +265,11 @@ class Command(BaseCommand):
                             self.logger.info('Created protein ' + p.entry_name + ', ' + p.accession)
                         except:
                             self.logger.error('Failed creating protein ' + p.entry_name + ', ' + p.accession)
+
+                        # protein conformations
+                        ps = ProteinState.objects.get_or_create(slug=settings.DEFAULT_PROTEIN_CONFORMATION, defaults={
+                            'name': settings.DEFAULT_PROTEIN_CONFORMATION.title()})
+                        pc = ProteinConformation.objects.create(protein=p, state=ps)
 
                         # protein aliases
                         for i, alias in enumerate(up['names']):
