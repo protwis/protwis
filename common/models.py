@@ -85,20 +85,6 @@ class Publication(models.Model):
         except Exception as msg:
             print(msg)
 
-    def update_from_doi(self, doi):
-
-        try:
-            Entrez.email = 'info@gpcrdb.org'
-            record = Entrez.read(Entrez.esearch(
-                db='pubmed',
-                retmax=1,
-                term=doi
-                ))
-            self.update_from_pubmed_data(record['IdList'][0])
-        except Exception as msg:
-            print('Could not retrieve pubmed record for doi {}\n{}'.format(doi, msg))
-
-
 class PublicationJournal(models.Model):
     slug = models.CharField(max_length=30, null=True)
     name = models.TextField()
