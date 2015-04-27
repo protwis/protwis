@@ -8,17 +8,21 @@ from common.alignment import Alignment
 
 import Bio.PDB as PDB
 from collections import OrderedDict
-
+import pprint
 
 class Command(BaseCommand):
     
     def handle(self, *args, **options):
-        Homology_model = HomologyModeling('gp139_human', 'Inactive', ['Inactive'])
-        multi_alignment = Homology_model.run_pairwise_alignment()
-        main_template = Homology_model.select_main_template(multi_alignment)
-        main_alignment = Homology_model.run_main_alignment(Homology_model.reference_protein, main_template)    
-        non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
-
+        s = [x.protein.parent.entry_name for x in Structure.objects.all()]
+    
+        for i in Protein.objects.all():
+            if i.entry_name not in s:
+                Homology_model = HomologyModeling(i.entry_name, 'Inactive', ['Inactive'])
+                multi_alignment = Homology_model.run_pairwise_alignment()
+                main_template = Homology_model.select_main_template(multi_alignment)
+                main_alignment = Homology_model.run_main_alignment(alignment=multi_alignment)
+                non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
+            
         self.stdout.write(Homology_model.statistics, ending='')
         
 
@@ -38,17 +42,6 @@ class HomologyModeling(object):
         
     def __repr__(self):
         return "<{}, {}>".format(self.reference_entry_name, self.state)
-        
-    def get_receptor_data(self, receptor):
-        ''' Get Protein object of receptor.
-        
-            @param receptor: str, protein id
-        '''
-        self.reference_protein = Protein.objects.get(entry_name=self.reference_entry_name)
-        self.uniprot_id = self.reference_protein.accession
-        self.reference_sequence = self.reference_protein.sequence
-        self.statistics.add_info('uniprot_id',self.uniprot_id)
-        return self.reference_protein
 
     def get_structure_queryset(self, query_states):
         ''' Get all target Structure objects based on endogenous ligand state. Returns QuerySet object.
@@ -57,7 +50,7 @@ class HomologyModeling(object):
             default: same as reference 
         '''
         return Structure.objects.filter(state__name__in=query_states).order_by('protein__parent',
-        'resolution').distinct('protein__parent')
+                                                                            'resolution').distinct('protein__parent')
                
     def get_protein_objects(self, structures_data):
         ''' Get all target Protein objects based on Structure objects. Returns a list of Protein objects.
@@ -86,14 +79,14 @@ class HomologyModeling(object):
         a = Alignment()
         a.order_by = order_by
         if reference==True:
-            a.load_reference_protein(self.get_receptor_data(self.reference_entry_name))
+            self.reference_protein = Protein.objects.get(entry_name=self.reference_entry_name)
+            self.uniprot_id = self.reference_protein.accession
+            self.reference_sequence = self.reference_protein.sequence
+            self.statistics.add_info('uniprot_id',self.uniprot_id)
+            a.load_reference_protein(self.reference_protein)
         a.load_proteins(targets)
-        if self.segments==['TM1','TM2','TM3','TM4','TM5','TM6','TM7']:
-            self.segments = ProteinSegment.objects.filter(slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7'])
-            a.load_segments(self.segments)
-        else:
-            self.segments = ProteinSegment.objects.filter(slug__in=self.segments)
-            a.load_segments(self.segments)
+        self.segments = ProteinSegment.objects.filter(slug__in=self.segments)
+        a.load_segments(self.segments)
         a.build_alignment()
         if calculate_similarity==True:
             a.calculate_similarity()   
@@ -123,23 +116,24 @@ class HomologyModeling(object):
         
         return main_structure
         
-    def run_main_alignment(self, reference, main_template, segments=['TM1','TM2','TM3','TM4','TM5','TM6','TM7']):
+    def run_main_alignment(self, alignment=None, reference=None, main_template=None, 
+                           segments=['TM1','TM2','TM3','TM4','TM5','TM6','TM7']):
         ''' Creates an alignment between reference (Protein object) and main_template (Structure object) 
             where matching residues are depicted with the one-letter residue code, mismatches with '.', 
             gaps with '-', gaps due to shorter sequences with 'x'. returns a AlignedReferenceAndTemplate class.
             
-            @param reference: Protein object, reference receptor
-            @param main_template: Structure object, main template
+            @param alignment: Alignment, output of run_pairwise_alignment. \n
+            @param reference: Protein object, reference receptor. \n
+            @param main_template: Structure object, main template. \n
+            @param segments: list, list of segments to use, e.g.: ['TM1','IL1','TM2','EL1'].
         '''
-        
-        main_template_protein = Protein.objects.get(id=main_template.protein_id)
-        if segments==['TM1','TM2','TM3','TM4','TM5','TM6','TM7']:
-            a = self.run_pairwise_alignment(reference=False, calculate_similarity=False, 
-                                            targets=[reference, main_template_protein])
-        else:
+        if alignment==None and reference!=None and main_template!=None:
+            main_template_protein = Protein.objects.get(id=main_template.protein_id)        
             self.segments = segments
             a = self.run_pairwise_alignment(segments=self.segments, reference=False, 
-                                            calculate_similarity=False, targets=[reference, main_template_protein])            
+                                                calculate_similarity=False, targets=[reference, main_template_protein])
+        else:
+            a = alignment
         ref = a.proteins[0].alignment
         temp = a.proteins[1].alignment
         reference_string, template_string, matching_string = '','',''   
@@ -183,12 +177,12 @@ class HomologyModeling(object):
                     template_string+=temp_position[2]
                     matching_string+='-'
                     
-                elif ref_position[2]=='-' and temp_position[2]=='-':
-                    reference_dict[ref_position[0]]='-'
-                    template_dict[temp_position[0]]='-'
-                    reference_string+='-'
-                    template_string+='-'
-                    matching_string+='-'  
+#                elif ref_position[2]=='-' and temp_position[2]=='-':
+#                    reference_dict[ref_position[0]]='-'
+#                    template_dict[temp_position[0]]='-'
+#                    reference_string+='-'
+#                    template_string+='-'
+#                    matching_string+='-'  
             reference_dict["TM"+str(segment_count)+"_end"]='/'                     
             template_dict["TM"+str(segment_count)+"_end"]='/'  
             reference_string+='/'
@@ -218,7 +212,6 @@ class HomologyModeling(object):
             structure_table_all = self.get_structure_queryset(['Inactive','Active'])
             alignment = self.run_pairwise_alignment(targets=self.get_protein_objects(structure_table_all))
             self.similarity_table_all = self.create_similarity_table(alignment, structure_table_all)
-
             for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, 
                                                       alignment_input.aligned_string):
                 
@@ -234,15 +227,21 @@ class HomologyModeling(object):
                         # bulge in template
                         if len(str(gn_num))==3:
                             if switch_bulges==True:
-                                temp_bulge_list.append({gn:alignment_input.template_dict[temp_res]})
-    
+                                Bulge = Bulges()
+                                bulge_template = Bulge.find_bulge_template(gn, self.similarity_table_all, 
+                                                                           bulge_in_reference=False)
+                                temp_bulge_list.append({gn:Bulge.template})
+                                
                         # constriction in reference
                         else:
                             if switch_constrictions==True:
-                                ref_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+
-                                    parse.gn_indecer(gn, 'x', +1):alignment_input.reference_dict[parse.gn_indecer(gn, 
-                                    'x', -1)]+'-'+alignment_input.reference_dict[parse.gn_indecer(gn, 'x', +1)]})
-                    
+                                print(self.reference_entry_name)
+#                                Const = Constrictions()
+#                                constriction_template = Const.find_constriction_template(gn, self.similarity_table_all,
+#                                                                                    constriction_in_reference=True)
+                                ref_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 
+                                                                                            'x', +1):'a'})
+                               
                     elif (alignment_input.template_dict[temp_res]=='-' and 
                           alignment_input.template_dict[parse.gn_indecer(gn,'x',-1)] not in 
                           ['-','/'] and alignment_input.template_dict[parse.gn_indecer(gn,'x',+1)] not in ['-','/']): 
@@ -251,18 +250,25 @@ class HomologyModeling(object):
                         if len(str(gn_num))==3:
                             if switch_bulges==True:
                                 Bulge = Bulges()
-                                bulge_template = Bulge.bulge_in_reference(gn, self.similarity_table_all)
+                                bulge_template = Bulge.find_bulge_template(gn, self.similarity_table_all,
+                                                                           bulge_in_reference=True)
                                 ref_bulge_list.append({gn:Bulge.template})
                                                
                         # constriction in template
                         else:
                             if switch_constrictions==True:
-                                temp_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+
-                                    parse.gn_indecer(gn, 'x', +1):alignment_input.template_dict[parse.gn_indecer(gn, 
-                                    'x', -1)]+'-'+alignment_input.template_dict[parse.gn_indecer(gn, 'x', +1)]})
-        
+                                Const = Constrictions()
+                                constriction_template = Const.find_constriction_template(gn, self.similarity_table_all,
+                                                                                    constriction_in_reference=False)
+                                temp_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 
+                                                                                            'x', +1):Const.template})
+                                
         self.statistics.add_info('reference_bulges', ref_bulge_list)
-
+        self.statistics.add_info('template_bulges', temp_bulge_list)
+        self.statistics.add_info('reference_constrictions', ref_const_list)
+        self.statistics.add_info('template_constrictions', temp_const_list)
+        
+        print(ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list)
         # non-conserved residues
         for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, 
                                                   alignment_input.aligned_string):
@@ -284,63 +290,131 @@ class HomologyModeling(object):
         '''
         similarity_table = OrderedDict()
 
-        for i in range(1,len(alignment.proteins)):
-            matches = structures_datatable.order_by('protein__parent',
-                            'resolution').distinct('protein__parent').filter(protein__parent=alignment.proteins[i].id)    
-            similarity_table[list(matches)[0]] = alignment.proteins[i].similarity
+        for protein in alignment.proteins:
+            if protein!=self.reference_protein:
+                matches = structures_datatable.order_by('protein__parent',
+                                        'resolution').distinct('protein__parent').filter(protein__parent=protein.id)    
+                similarity_table[list(matches)[0]] = int(protein.similarity)
         
         return similarity_table
 
-class Bulges(object):
+class Bulges():
     ''' Class to handle bulges in GPCR structures.
     '''
     def __init__(self):
         pass
     
-    def bulge_in_reference(self, gn, similarity_table):
-        ''' Searches for bulge template when bulge is in the reference receptor.
+    def find_bulge_template(self, gn, similarity_table, bulge_in_reference):
+        ''' Searches for bulge template, returns residues of template (5 residues if the bulge is in the reference, 4
+            residues if the bulge is in the template). 
             
             @param gn: str, Generic number of bulge, e.g. 1x411 \n
             @param similarity_table: OrderedDict(), table of structures ordered by preference.
-            Output of HomologyModeling().create_similarity_table().
+            Output of HomologyModeling().create_similarity_table(). \n
+            @param bulge_in_reference: boolean, Set it to True if the bulge is in the reference, set it to False if the
+            bulge is in the template.
         '''
         bulge_templates = []
         parse = GPCRDBParsingPDB()
-        matches = Residue.objects.filter(generic_number__label=gn)
+        if bulge_in_reference==True:
+            matches = Residue.objects.filter(generic_number__label=gn)
+        elif bulge_in_reference==False:
+            excludees = Residue.objects.filter(generic_number__label=gn)
+            excludee_proteins = list(OrderedDict.fromkeys([res.protein.entry_name for res in excludees]))
+            matches = Residue.objects.filter(generic_number__label=gn[:-1])
         for structure, value in similarity_table.items():  
-            protein_name = Protein.objects.get(id=structure.protein.parent.id)
+            protein_object = Protein.objects.get(id=structure.protein.parent.id)
             try:                            
                 for match in matches:
-                    if match.protein==protein_name:
-                        bulge_templates.append(structure)
+                    if bulge_in_reference==True:
+                        if match.protein==protein_object:
+                            bulge_templates.append(structure)
+                    elif bulge_in_reference==False:
+                        if match.protein==protein_object and match.protein.entry_name not in excludee_proteins:
+                            bulge_templates.append(structure)
             except:
                 pass
         for temp in bulge_templates:
             try:
-                alt_bulge = GPCRDBParsingPDB.fetch_residues_from_pdb(parse, 
-                                                                     temp, str(temp.preferred_chain)[0], 
-                                                                    [parse.gn_indecer(gn,'x',-2),
-                                                                     parse.gn_indecer(gn,'x',-1),gn,
-                                                                     parse.gn_indecer(gn,'x',+1),
-                                                                     parse.gn_indecer(gn,'x',+2)])
+                if bulge_in_reference==True:
+                    alt_bulge = parse.fetch_residues_from_pdb(temp, str(temp.preferred_chain)[0], 
+                                                              [parse.gn_indecer(gn,'x',-2),
+                                                               parse.gn_indecer(gn,'x',-1),gn,
+                                                               parse.gn_indecer(gn,'x',+1),
+                                                               parse.gn_indecer(gn,'x',+2)])
+                elif bulge_in_reference==False:
+                    alt_bulge = parse.fetch_residues_from_pdb(temp, str(temp.preferred_chain)[0], 
+                                                              [parse.gn_indecer(gn,'x',-2),
+                                                               parse.gn_indecer(gn,'x',-1),
+                                                               parse.gn_indecer(gn,'x',+1),
+                                                               parse.gn_indecer(gn,'x',+2)])
                 self.template = temp              
                 break
             except:
-                self.template = None
-                
+                self.template = None               
         try:
             return alt_bulge
         except:
             return None
             
-    def bulge_in_template(self, gn, similarity_table):
-        ''' Searches for subtemplate when bulge is in the template receptor.
-            
-            @param gn: str, Generic number of bulge, e.g. 1x411 \n
-            @param similarity_table: OrderedDict(), table of structures ordered by preference.
-            Output of HomologyModeling().create_similarity_table().
-        '''
+class Constrictions():
+    ''' Class to handle constrictions in GPCRs.
+    '''
+    def __init__(self):
         pass
+    
+    def find_constriction_template(self, gn, similarity_table, constriction_in_reference):
+        ''' Searches for constriction template, returns residues of template (4 residues if the constriction is in the 
+            reference, 5 residues if the constriction is in the template). 
+            
+            @param gn: str, Generic number of constriction, e.g. 7x44 \n
+            @param similarity_table: OrderedDict(), table of structures ordered by preference.
+            Output of HomologyModeling().create_similarity_table(). \n
+            @param constriction_in_reference: boolean, Set it to True if the constriction is in the reference, set it 
+            to False if the constriction is in the template.
+        '''        
+        constriction_templates = []
+        parse = GPCRDBParsingPDB()
+        if constriction_in_reference==True:
+            excludees = Residue.objects.filter(generic_number__label=gn)
+            excludee_proteins = list(OrderedDict.fromkeys([res.protein.entry_name for res in excludees]))
+            matches = Residue.objects.filter(generic_number__label=parse.gn_indecer(gn,'x',-1))
+        elif constriction_in_reference==False:
+            matches = Residue.objects.filter(generic_number__label=gn)
+        for structure, value in similarity_table.items():  
+            protein_object = Protein.objects.get(id=structure.protein.parent.id)
+            try:                            
+                for match in matches:
+                    if constriction_in_reference==True:
+                        if match.protein==protein_object and match.protein.entry_name not in excludee_proteins:
+                            constriction_templates.append(structure)
+                    elif constriction_in_reference==False:
+                        if match.protein==protein_object:
+                            constriction_templates.append(structure)
+            except:
+                pass
+        for temp in constriction_templates:
+            try:
+                if constriction_in_reference==True:
+                    alt_bulge = parse.fetch_residues_from_pdb(temp, str(temp.preferred_chain)[0], 
+                                                              [parse.gn_indecer(gn,'x',-2),
+                                                               parse.gn_indecer(gn,'x',-1),
+                                                               parse.gn_indecer(gn,'x',+1),
+                                                               parse.gn_indecer(gn,'x',+2)])
+                elif constriction_in_reference==False:
+                    alt_bulge = parse.fetch_residues_from_pdb(temp, str(temp.preferred_chain)[0], 
+                                                              [parse.gn_indecer(gn,'x',-2),
+                                                               parse.gn_indecer(gn,'x',-1),gn,
+                                                               parse.gn_indecer(gn,'x',+1),
+                                                               parse.gn_indecer(gn,'x',+2)])
+                self.template = temp              
+                break
+            except:
+                self.template = None               
+        try:
+            return alt_bulge
+        except:
+            return None
 
 class AlignedReferenceAndTemplate(object):
     ''' Representation class for HomologyModeling.run_main_alignment() function. 
