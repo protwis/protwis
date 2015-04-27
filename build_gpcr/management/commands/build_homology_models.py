@@ -27,7 +27,8 @@ class HomologyModeling(object):
     
         @param reference_entry_name: str, protein entry name \n
         @param state: str, endogenous ligand state of reference \n
-        @param query_states: list, list of endogenous ligand states to be applied for template search, default: same as reference \n
+        @param query_states: list, list of endogenous ligand states to be applied for template search, 
+        default: same as reference
     '''
     def __init__(self, reference_entry_name, state, query_states):
         self.reference_entry_name = reference_entry_name
@@ -52,18 +53,22 @@ class HomologyModeling(object):
     def get_structure_queryset(self, query_states):
         ''' Get all target Structure objects based on endogenous ligand state. Returns QuerySet object.
         
-            @param query_states: list, list of endogenous ligand states to be applied for template search, default: same as reference 
+            @param query_states: list, list of endogenous ligand states to be applied for template search, 
+            default: same as reference 
         '''
-        return Structure.objects.filter(state__name__in=query_states).order_by('protein__parent','resolution').distinct('protein__parent')
+        return Structure.objects.filter(state__name__in=query_states).order_by('protein__parent',
+        'resolution').distinct('protein__parent')
                
     def get_protein_objects(self, structures_data):
         ''' Get all target Protein objects based on Structure objects. Returns a list of Protein objects.
         
-            @param structures_data: QuerySet, query set of Structure objects. Output of get_structure_queryset function.
+            @param structures_data: QuerySet, query set of Structure objects. Output of get_structure_queryset 
+            function.
         '''
         return [Protein.objects.get(id=target.protein.parent.id) for target in structures_data]
         
-    def run_pairwise_alignment(self, segments=['TM1','TM2','TM3','TM4','TM5','TM6','TM7'], reference=True, calculate_similarity=True, targets=None):
+    def run_pairwise_alignment(self, segments=['TM1','TM2','TM3','TM4','TM5','TM6','TM7'], order_by='similarity', 
+                               reference=True, calculate_similarity=True, targets=None):
         ''' Creates pairwise alignment between reference and target receptor(s).
             Returns Alignment object.
             
@@ -79,6 +84,7 @@ class HomologyModeling(object):
         
         # core functions from alignment.py
         a = Alignment()
+        a.order_by = order_by
         if reference==True:
             a.load_reference_protein(self.get_receptor_data(self.reference_entry_name))
         a.load_proteins(targets)
@@ -94,12 +100,14 @@ class HomologyModeling(object):
         return a
     
     def select_main_template(self, alignment):
-        ''' Select main template for homology model based on highest sequence similarity. Returns Structure object of main template.
+        ''' Select main template for homology model based on highest sequence similarity. Returns Structure object of 
+        main template.
         
-            @param alignment: Alignment, aligment object where the first protein is the reference. Output of pairwise_alignment function.
+            @param alignment: Alignment, aligment object where the first protein is the reference. Output of 
+            pairwise_alignment function.
         '''
-        self.similarity_table = self.create_ordered_similarity_table(self.state, self.query_states, self.get_structure_queryset(self.query_states))
- 
+        self.similarity_table = self.create_similarity_table(alignment, self.get_structure_queryset(self.query_states))
+
         main_structure = list(self.similarity_table.items())[0][0]       
         main_structure_protein = Protein.objects.get(id=main_structure.protein.parent.id)
         
@@ -126,10 +134,12 @@ class HomologyModeling(object):
         
         main_template_protein = Protein.objects.get(id=main_template.protein_id)
         if segments==['TM1','TM2','TM3','TM4','TM5','TM6','TM7']:
-            a = self.run_pairwise_alignment(reference=False, calculate_similarity=False, targets=[reference, main_template_protein])
+            a = self.run_pairwise_alignment(reference=False, calculate_similarity=False, 
+                                            targets=[reference, main_template_protein])
         else:
             self.segments = segments
-            a = self.run_pairwise_alignment(segments=self.segments, reference=False, calculate_similarity=False, targets=[reference, main_template_protein])            
+            a = self.run_pairwise_alignment(segments=self.segments, reference=False, 
+                                            calculate_similarity=False, targets=[reference, main_template_protein])            
         ref = a.proteins[0].alignment
         temp = a.proteins[1].alignment
         reference_string, template_string, matching_string = '','',''   
@@ -185,14 +195,16 @@ class HomologyModeling(object):
             template_string+='/'
             matching_string+='/'
 
-        main_alignment = AlignedReferenceAndTemplate(self.reference_entry_name, self.main_pdb_id, reference_dict, template_dict, matching_string)           
+        main_alignment = AlignedReferenceAndTemplate(self.reference_entry_name, self.main_pdb_id, 
+                                                     reference_dict, template_dict, matching_string)           
         return main_alignment
         
     def run_non_conserved_switcher(self, alignment_input, switch_bulges=True, switch_constrictions=True):
         ''' Function to identify and switch non conserved residues in the alignment. Optionally,
             it can identify and switch bulge and constriction sites too. 
             
-            @param alignment_input: AlignedReferenceAndTemplate, alignment of reference and main template with alignment string. \n
+            @param alignment_input: AlignedReferenceAndTemplate, alignment of reference and main template with 
+            alignment string. \n
             @param switch_bulges: boolean, identify and switch bulge sites. Default = True.
             @param switch_constrictions: boolean, identify and switch constriction sites. Default = True.
         '''
@@ -203,16 +215,21 @@ class HomologyModeling(object):
         
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
-            self.similarity_table_all = self.create_ordered_similarity_table(self.state, ['Active','Inactive'], self.get_structure_queryset(self.query_states))
+            structure_table_all = self.get_structure_queryset(['Inactive','Active'])
+            alignment = self.run_pairwise_alignment(targets=self.get_protein_objects(structure_table_all))
+            self.similarity_table_all = self.create_similarity_table(alignment, structure_table_all)
 
-            for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, alignment_input.aligned_string):
+            for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, 
+                                                      alignment_input.aligned_string):
                 
                 gn = ref_res
                 gn_TM = parse.gn_num_extract(gn, 'x')[0]
                 gn_num = parse.gn_num_extract(gn, 'x')[1]
                 
                 if aligned_res=='-':
-                    if alignment_input.reference_dict[ref_res]=='-' and alignment_input.reference_dict[parse.gn_indecer(gn,'x',-1)] not in ['-','/'] and alignment_input.reference_dict[parse.gn_indecer(gn,'x',+1)] not in ['-','/']: 
+                    if (alignment_input.reference_dict[ref_res]=='-' and 
+                        alignment_input.reference_dict[parse.gn_indecer(gn,'x',-1)] not in 
+                        ['-','/'] and alignment_input.reference_dict[parse.gn_indecer(gn,'x',+1)] not in ['-','/']): 
     
                         # bulge in template
                         if len(str(gn_num))==3:
@@ -222,9 +239,13 @@ class HomologyModeling(object):
                         # constriction in reference
                         else:
                             if switch_constrictions==True:
-                                ref_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 'x', +1):alignment_input.reference_dict[parse.gn_indecer(gn, 'x', -1)]+'-'+alignment_input.reference_dict[parse.gn_indecer(gn, 'x', +1)]})
+                                ref_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+
+                                    parse.gn_indecer(gn, 'x', +1):alignment_input.reference_dict[parse.gn_indecer(gn, 
+                                    'x', -1)]+'-'+alignment_input.reference_dict[parse.gn_indecer(gn, 'x', +1)]})
                     
-                    elif alignment_input.template_dict[temp_res]=='-' and alignment_input.template_dict[parse.gn_indecer(gn,'x',-1)] not in ['-','/'] and alignment_input.template_dict[parse.gn_indecer(gn,'x',+1)] not in ['-','/']: 
+                    elif (alignment_input.template_dict[temp_res]=='-' and 
+                          alignment_input.template_dict[parse.gn_indecer(gn,'x',-1)] not in 
+                          ['-','/'] and alignment_input.template_dict[parse.gn_indecer(gn,'x',+1)] not in ['-','/']): 
                         
                         # bulge in reference
                         if len(str(gn_num))==3:
@@ -236,12 +257,15 @@ class HomologyModeling(object):
                         # constriction in template
                         else:
                             if switch_constrictions==True:
-                                temp_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 'x', +1):alignment_input.template_dict[parse.gn_indecer(gn, 'x', -1)]+'-'+alignment_input.template_dict[parse.gn_indecer(gn, 'x', +1)]})
+                                temp_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+
+                                    parse.gn_indecer(gn, 'x', +1):alignment_input.template_dict[parse.gn_indecer(gn, 
+                                    'x', -1)]+'-'+alignment_input.template_dict[parse.gn_indecer(gn, 'x', +1)]})
         
         self.statistics.add_info('reference_bulges', ref_bulge_list)
 
         # non-conserved residues
-        for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, alignment_input.aligned_string):
+        for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, 
+                                                  alignment_input.aligned_string):
             if ref_res!='-' and ref_res!='/':
                 ref_length+=1   
             
@@ -252,28 +276,21 @@ class HomologyModeling(object):
             if aligned_res=='.':
                 non_cons_count+=1                            
                  
-    def create_ordered_similarity_table(self, state, query_states, structures_datatable):
+    def create_similarity_table(self, alignment, structures_datatable):
         ''' Creates an ordered dictionary, where templates are sorted by similarity score.
         
-            @param state: str, endogenous ligand state of reference \n
-            @param query_states: list, endogenous ligand states of templates involved \n
-            @param structures_datatable: QuerySet, involved template structures. Output of get_structure_queryset
+            @param alignment: Alignment, alignment of sequences. Output of run_pairwise_alignment \n
+            @param structures_datatable: QuerySet, involved template structures. Output of get_structure_queryset.
         '''
-        structure_data = self.get_structure_queryset(query_states=query_states) 
-        target_list = self.get_protein_objects(structure_data)
-        alignment_all = self.run_pairwise_alignment(targets=target_list)
-        sim_table_all_temp = []
-        similarity_table_all = OrderedDict()
+        similarity_table = OrderedDict()
 
-        for i in range(1,len(alignment_all.proteins)):
-            sim_table_all_temp.append([alignment_all.proteins[i],int(alignment_all.proteins[i].similarity)])
-        sim_table_order = sorted(sim_table_all_temp, key=lambda x: x[1], reverse=True)
-        for i in sim_table_order:
-            matches = structure_data.order_by('protein__parent','resolution').distinct('protein__parent').filter(protein__parent=i[0].id)    
-            similarity_table_all[list(matches)[0]] = i[1]
-           
-        return similarity_table_all
-            
+        for i in range(1,len(alignment.proteins)):
+            matches = structures_datatable.order_by('protein__parent',
+                            'resolution').distinct('protein__parent').filter(protein__parent=alignment.proteins[i].id)    
+            similarity_table[list(matches)[0]] = alignment.proteins[i].similarity
+        
+        return similarity_table
+
 class Bulges(object):
     ''' Class to handle bulges in GPCR structures.
     '''
@@ -285,7 +302,7 @@ class Bulges(object):
             
             @param gn: str, Generic number of bulge, e.g. 1x411 \n
             @param similarity_table: OrderedDict(), table of structures ordered by preference.
-            Output of HomologyModeling().create_ordered_similarity_table().
+            Output of HomologyModeling().create_similarity_table().
         '''
         bulge_templates = []
         parse = GPCRDBParsingPDB()
@@ -300,7 +317,12 @@ class Bulges(object):
                 pass
         for temp in bulge_templates:
             try:
-                alt_bulge = GPCRDBParsingPDB.fetch_residues_from_pdb(parse, temp, str(temp.preferred_chain)[0], [parse.gn_indecer(gn,'x',-2),parse.gn_indecer(gn,'x',-1),gn,parse.gn_indecer(gn,'x',+1),parse.gn_indecer(gn,'x',+2)])
+                alt_bulge = GPCRDBParsingPDB.fetch_residues_from_pdb(parse, 
+                                                                     temp, str(temp.preferred_chain)[0], 
+                                                                    [parse.gn_indecer(gn,'x',-2),
+                                                                     parse.gn_indecer(gn,'x',-1),gn,
+                                                                     parse.gn_indecer(gn,'x',+1),
+                                                                     parse.gn_indecer(gn,'x',+2)])
                 self.template = temp              
                 break
             except:
@@ -316,7 +338,7 @@ class Bulges(object):
             
             @param gn: str, Generic number of bulge, e.g. 1x411 \n
             @param similarity_table: OrderedDict(), table of structures ordered by preference.
-            Output of HomologyModeling().create_ordered_similarity_table().
+            Output of HomologyModeling().create_similarity_table().
         '''
         pass
 
