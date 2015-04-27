@@ -1,0 +1,19 @@
+﻿{% block gn_results %}
+    <h4>Results for your query: </h4>
+    <div class='row-fluid well well-small selection-box'>
+        {% if success %}
+            Structures superposed successufully.
+        {% else %}
+            Failed to superpose structure {{ input_file }}
+        {% endif %}
+    </div>
+    <br />
+    <hr />
+    {% if outfile %}
+        <div>
+            <a class="btn btn-small" href="/structural_tools_gpcr/output/{{ outfile }}/{{ replacement_tag }}">
+                <i class="icon-download">Output file<i>
+            </a>
+        </div>
+    {% endif %}
+{% endblock %}

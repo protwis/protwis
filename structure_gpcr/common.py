@@ -3,13 +3,18 @@ from io import StringIO
 from Bio.Blast import NCBIXML
 
 from django.conf import settings
+from common.selection import SimpleSelection
+from protein.models import ProteinSegment
+
 import os,sys,tempfile,logging
+
+logger = logging.getLogger("structure_gpcr")
 
 #==============================================================================
 # I have put it into separate class for the sake of future uses
 class BlastSearch(object):
     
-    logger = logging.getLogger("structural_tools_gpcr")
+    logger = logging.getLogger("structure_gpcr")
 
     def __init__ (self, blast_path = 'blastp', blastdb = os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']), top_results = 1):
   
@@ -67,6 +72,25 @@ class MappedResidue(object):
         #PDB format does not allow fractional part longer than 2 digits
         #so numbers x.xx1 are negative
         if len(gpcrdb_number) > 4:
-          self.gpcrdb = '-' + gpcrdb_number.replace('x', '.')
+          self.gpcrdb = '-' + gpcrdb_number[:4].replace('x', '.')
         else:
           self.gpcrdb = gpcrdb_number.replace('x', '.')
+
+#==============================================================================
+
+#turns selection into actual residues
+class SelectionParser(object):
+
+    def __init__(self, selection):
+    
+        self.generic_numbers = []
+        self.helices = []
+        
+        self.db_segments = [x.slug for x in ProteinSegment.objects.all()]
+        
+        for segment in selection.segments:
+            if 'TM' in segment.item.slug:
+                self.helices.append(int(segment.item.slug[-1]))
+            elif segment not in self.db_segments:
+                self.residues.append(segment)
+        logger.debug("Helices selected: {}; Residues: {}".format(self.helices, self.generic_numbers))
