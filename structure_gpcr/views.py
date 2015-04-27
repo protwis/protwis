@@ -192,6 +192,7 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
         ('segments', True),
     ])
 
+
     def post(self, request, *args, **kwargs):
 
         request.session['ref_file'] = request.FILES['ref_file']
@@ -216,9 +217,6 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
                 context[a[0]] = a[1]
 
         return render(request, self.template_name, context)
-
-
-
 
 
 
