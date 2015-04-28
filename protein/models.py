@@ -5,13 +5,13 @@ class Protein(models.Model):
     parent = models.ForeignKey('self', null=True)
     family = models.ForeignKey('ProteinFamily')
     species = models.ForeignKey('Species')
-    source = models.ForeignKey('ProteinSource', null=True)
+    source = models.ForeignKey('ProteinSource')
     residue_numbering_scheme = models.ForeignKey('residue.ResidueNumberingScheme')
     sequence_type = models.ForeignKey('ProteinSequenceType')
     states = models.ManyToManyField('ProteinState', through='ProteinConformation')
     endogenous_ligands = models.ManyToManyField('ligand.Ligand')
-    web_link = models.ManyToManyField('common.WebLink')
-    entry_name = models.SlugField(max_length=100, db_index=True, null=True)
+    web_links = models.ManyToManyField('common.WebLink')
+    entry_name = models.SlugField(max_length=100, unique=True)
     accession = models.CharField(max_length=100, db_index=True, null=True)
     name = models.CharField(max_length=200)
     sequence = models.TextField()
@@ -194,7 +194,7 @@ class ProteinAnomalyRule(models.Model):
 
 
 class ProteinFusion(models.Model):
-    protein = models.ManyToManyField('Protein', through='ProteinFusionProtein')
+    proteins = models.ManyToManyField('Protein', through='ProteinFusionProtein')
     name = models.CharField(max_length=100, unique=True)
     sequence = models.TextField(null=True)
 

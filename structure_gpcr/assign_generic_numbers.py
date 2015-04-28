@@ -107,11 +107,11 @@ class GenericNumbering(object):
                     try:
                         db_res = Residue.objects.get(protein=prot_id, sequence_number=subj_counter)
                         try:
-                            self.residues[chain][resn].add_bw_number(db_res.alternative_generic_number.get(scheme__slug='bw').label)
+                            self.residues[chain][resn].add_bw_number(db_res.alternative_generic_numbers.get(scheme__slug='bw').label)
                         except:
                             pass
                         try:
-                            self.residues[chain][resn].add_gpcrdb_number(db_res.alternative_generic_number.get(scheme__slug='gpcrdb').label)
+                            self.residues[chain][resn].add_gpcrdb_number(db_res.alternative_generic_numbers.get(scheme__slug='gpcrdb').label)
                         except:
                             self.residues[chain][resn].add_gpcrdb_number(db_res.display_generic_number.label)
                     except Exception as msg:

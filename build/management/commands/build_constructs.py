@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.utils.text import slugify
+from django.utils.html import strip_tags
 
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinSequenceType, ProteinSegment,
 ProteinFusion, ProteinFusionProtein, ProteinSource)
@@ -90,7 +91,7 @@ class Command(BaseCommand):
                     p.sequence_type, created = ProteinSequenceType.objects.get_or_create(slug='mod',
                         defaults={'name': 'Modified'})
                     p.source, created = ProteinSource.objects.get_or_create(name='OTHER')
-                    p.entry_name = slugify(sd['name'])
+                    p.entry_name = slugify(strip_tags(sd['name']))
                     p.name = sd['name']
                     p.sequence = ppc.protein.sequence
                     
@@ -171,7 +172,7 @@ class Command(BaseCommand):
 
                     prs = Residue.objects.filter(protein_conformation=ppc).prefetch_related(
                         'protein_conformation__protein', 'protein_segment', 'generic_number',
-                        'display_generic_number__scheme', 'alternative_generic_number__scheme')
+                        'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
                     for pr in prs:
                         if pr.sequence_number not in truncations:
                             r = Residue()
@@ -206,8 +207,8 @@ class Command(BaseCommand):
                             r.save()
 
                             # alternative generic numbers
-                            agns = pr.alternative_generic_number.all()
+                            agns = pr.alternative_generic_numbers.all()
                             for agn in agns:
-                                r.alternative_generic_number.add(agn)
+                                r.alternative_generic_numbers.add(agn)
 
         self.logger.info('COMPLETED CREATING CONSTRUCTS')

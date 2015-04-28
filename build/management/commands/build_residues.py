@@ -209,7 +209,7 @@ class Command(BaseCommand):
                                     seq_based.scheme = scheme['obj']
                                     seq_based.protein_segment = r.protein_segment
                                     seq_based.save()
-                                r.alternative_generic_number.add(seq_based)
+                                r.alternative_generic_numbers.add(seq_based)
 
                                 # add added number to the dict for later use
                                 seq_based_labels[scheme_name] = seq_based_label
@@ -247,7 +247,7 @@ class Command(BaseCommand):
                                 if scheme_name == pconf.protein.residue_numbering_scheme.slug:
                                     r.display_generic_number = struct_based
                                 else:
-                                    r.alternative_generic_number.add(struct_based)
+                                    r.alternative_generic_numbers.add(struct_based)
                 try:
                     r.save()
                     self.logger.info('Added generic numbers for residue {}{!s} for protein {!s}'.format(res_num,

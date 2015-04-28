@@ -144,7 +144,7 @@ class Alignment:
             rs = Residue.objects.filter(
                 protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins).prefetch_related(
                 'protein_conformation__protein', 'protein_segment', 'generic_number', 'display_generic_number__scheme',
-                'alternative_generic_number__scheme')
+                'alternative_generic_numbers__scheme')
         else:
             rs = Residue.objects.filter(
                 protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins).prefetch_related(
@@ -254,7 +254,7 @@ class Alignment:
 
                         # add display numbers for other numbering schemes of selected proteins
                         if r.generic_number and len(self.numbering_schemes) > 1:
-                            for arn in r.alternative_generic_number.all():
+                            for arn in r.alternative_generic_numbers.all():
                                 for ns in self.numbering_schemes:
                                     if (arn.scheme.slug == ns[0] and
                                         arn.scheme.slug != ns):
