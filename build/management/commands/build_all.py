@@ -12,7 +12,6 @@ class Command(BaseCommand):
             ['build_common'],
             ['build_proteins'],
             ['build_residues', 'all'],
-            ['build_yaml_from_structure', 'cs.tsv'],
             ['build_constructs'],
             ['build_structures'],
         ]

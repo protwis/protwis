@@ -7,68 +7,75 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ligand', '0002_auto_20150225_1441'),
-        ('common', '0003_auto_20150414_1215'),
-        ('protein', '0002_auto_20150316_1232'),
+        ('protein', '0001_initial'),
+        ('common', '0001_initial'),
+        ('ligand', '0001_initial'),
+        ('interaction', '0001_initial'),
     ]
 
     operations = [
         migrations.CreateModel(
             name='Structure',
             fields=[
-                ('id', models.AutoField(serialize=False, primary_key=True, auto_created=True, verbose_name='ID')),
+                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
                 ('preferred_chain', models.CharField(max_length=20)),
                 ('resolution', models.DecimalField(decimal_places=3, max_digits=5)),
-                ('pdb_publication_date', models.DateField()),
-                ('endogenous_ligand', models.ForeignKey(related_name='endogenous_ligand', null=True, to='ligand.Ligand')),
+                ('publication_date', models.DateField()),
+                ('ligands', models.ManyToManyField(to='ligand.Ligand', through='interaction.StructureLigandInteraction')),
                 ('pdb_code', models.ForeignKey(to='common.WebLink')),
-                ('protein', models.ForeignKey(to='protein.Protein')),
-                ('publication', models.ForeignKey(to='common.Publication')),
+                ('protein_anomalies', models.ManyToManyField(to='protein.ProteinAnomaly')),
+                ('protein_conformation', models.ForeignKey(to='protein.ProteinConformation')),
+                ('publication', models.ForeignKey(to='common.Publication', null=True)),
             ],
             options={
                 'db_table': 'structure',
             },
-            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='StructureModel',
+            fields=[
+                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('protein', models.ForeignKey(to='protein.Protein')),
+            ],
+            options={
+                'db_table': 'structure_model',
+            },
         ),
         migrations.CreateModel(
             name='StructureStabilizingAgent',
             fields=[
-                ('id', models.AutoField(serialize=False, primary_key=True, auto_created=True, verbose_name='ID')),
+                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
                 ('slug', models.SlugField(max_length=20)),
+                ('name', models.CharField(max_length=100)),
             ],
             options={
                 'db_table': 'structure_stabilizing_agent',
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='StructureType',
             fields=[
-                ('id', models.AutoField(serialize=False, primary_key=True, auto_created=True, verbose_name='ID')),
+                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
                 ('slug', models.SlugField(max_length=20)),
-                ('description', models.TextField()),
+                ('name', models.CharField(max_length=100)),
             ],
             options={
                 'db_table': 'structure_type',
             },
-            bases=(models.Model,),
         ),
         migrations.AddField(
             model_name='structure',
             name='stabilizing_agents',
-            field=models.ManyToManyField(null=True, to='structure.StructureStabilizingAgent'),
-            preserve_default=True,
+            field=models.ManyToManyField(to='structure.StructureStabilizingAgent'),
+        ),
+        migrations.AddField(
+            model_name='structure',
+            name='state',
+            field=models.ForeignKey(to='protein.ProteinState'),
         ),
         migrations.AddField(
             model_name='structure',
             name='structure_type',
             field=models.ForeignKey(to='structure.StructureType'),
-            preserve_default=True,
-        ),
-        migrations.AddField(
-            model_name='structure',
-            name='xray_ligand',
-            field=models.ForeignKey(related_name='xray_ligand', null=True, to='ligand.Ligand'),
-            preserve_default=True,
         ),
     ]

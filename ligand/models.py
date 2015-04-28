@@ -8,8 +8,8 @@ import json
 
 
 class Ligand(models.Model):
-    web_link = models.ManyToManyField('common.WebLink')
     ligand_type = models.ForeignKey('LigandType', null=True)
+    web_links = models.ManyToManyField('common.WebLink')
     name = models.TextField()
     smiles = models.TextField(null=True)
     inchikey = models.CharField(max_length=50, null=True)
@@ -39,7 +39,7 @@ class Ligand(models.Model):
             # abort if pdb resource is not found
             raise Exception('PubChem resource not found, aborting!')
         wl, created = WebLink.objects.get_or_create(index=pubchem_id, web_resource=web_resource)
-        self.web_link.add(wl)
+        self.web_links.add(wl)
 
         # ligand type
         self.ligand_type, created = LigandType.objects.get_or_create(slug='sm', defaults={'name':'Small molecule'})

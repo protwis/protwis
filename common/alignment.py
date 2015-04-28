@@ -1,7 +1,7 @@
 from django.conf import settings
 
 from common.selection import Selection
-from protein.models import Protein
+from protein.models import Protein, ProteinConformation, ProteinState, ProteinSegment, ProteinFusionProtein
 from residue.models import Residue
 from residue.models import ResidueGenericNumber
 from residue.models import ResidueNumberingScheme
@@ -22,8 +22,9 @@ class Alignment:
         self.generic_numbers = OrderedDict()
         self.positions = []
         self.default_numbering_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
+        self.states = [settings.DEFAULT_PROTEIN_STATE] # inactive, active etc
         
-        # refers to which Protein attribute to order by (identity, similarity or similarity score)
+        # refers to which ProteinConformation attribute to order by (identity, similarity or similarity score)
         self.order_by = 'similarity_score' 
 
     def __str__(self):
@@ -32,7 +33,17 @@ class Alignment:
     def load_reference_protein(self, protein):
         """Loads a protein into the alignment as a reference"""
         self.reference = True
-        self.proteins.insert(0, protein)
+
+        # fetch the selected conformations of the protein
+        # only one can be selected for similarity search, therefore state[0] (other states ignored, if defined)
+        try:
+            pconf = ProteinConformation.objects.get(protein=protein,
+                state=ProteinState.objects.get(slug=self.states[0]))
+        except ProteinConformation.DoesNotExist:
+            raise Exception ('Protein conformation {} not found for protein {}'.format(self.states[0],
+                protein.entry_name))
+
+        self.proteins.insert(0, pconf)
         self.update_numbering_schemes()
 
     def load_reference_protein_from_selection(self, simple_selection):
@@ -43,8 +54,15 @@ class Alignment:
     def load_proteins(self, proteins):
         """Load a list of protein objects into the alignment"""
         for protein in proteins:
-            if protein not in self.proteins:
-                self.proteins.append(protein)
+            for state in self.states:
+                try:
+                    pconf = ProteinConformation.objects.get(protein=protein,
+                        state=ProteinState.objects.get(slug=state))
+                except ProteinConformation.DoesNotExist:
+                    raise Exception ('Protein conformation {} not found for protein {}'.format(state,
+                        protein.entry_name))
+                if pconf not in self.proteins:
+                    self.proteins.append(pconf)
         self.update_numbering_schemes()
 
     def load_proteins_from_selection(self, simple_selection):
@@ -77,22 +95,25 @@ class Alignment:
         self.load_proteins(proteins)
 
     def load_segments(self, segments):
-        for segment in segments:
-            segment_residues = ResidueGenericNumber.objects.filter(protein_segment=segment,
-                scheme=self.default_numbering_scheme).order_by('label')
-            
-            # generic numbers in the schemes of all selected proteins
-            for ns in self.numbering_schemes:
-                if ns[0] not in self.generic_numbers:
-                    self.generic_numbers[ns[0]] = OrderedDict()
-                self.generic_numbers[ns[0]][segment.slug] = OrderedDict()
-                for segment_residue in segment_residues:
-                    self.generic_numbers[ns[0]][segment.slug][segment_residue.label] = []
+        for s in segments:
+            # fetch split segments (e.g. ICL3_1 and ICL3_2)
+            alt_segments = ProteinSegment.objects.filter(slug__startswith=s.slug)
+            for segment in alt_segments:
+                segment_residues = ResidueGenericNumber.objects.filter(protein_segment=segment,
+                    scheme=self.default_numbering_scheme).order_by('label')
+                
+                # generic numbers in the schemes of all selected proteins
+                for ns in self.numbering_schemes:
+                    if ns[0] not in self.generic_numbers:
+                        self.generic_numbers[ns[0]] = OrderedDict()
+                    self.generic_numbers[ns[0]][segment.slug] = OrderedDict()
+                    for segment_residue in segment_residues:
+                        self.generic_numbers[ns[0]][segment.slug][segment_residue.label] = []
 
-            # segments
-            self.segments[segment.slug] = []
-            for segment_residue in segment_residues:
-                self.segments[segment.slug].append(segment_residue.label)
+                # segments
+                self.segments[segment.slug] = []
+                for segment_residue in segment_residues:
+                    self.segments[segment.slug].append(segment_residue.label)
 
     def load_segments_from_selection(self, simple_selection):
         """Read user selection and add selected protein segments/residue positions"""
@@ -109,77 +130,144 @@ class Alignment:
     def update_numbering_schemes(self):
         """Update numbering scheme list"""
         self.numbering_schemes = {}
-        for p in self.proteins:
-            if p.residue_numbering_scheme.slug not in self.numbering_schemes:
-                self.numbering_schemes[p.residue_numbering_scheme.slug] = p.residue_numbering_scheme.name
+        for pc in self.proteins:
+            if pc.protein.residue_numbering_scheme.slug not in self.numbering_schemes:
+                rnsn = pc.protein.residue_numbering_scheme.name
+                self.numbering_schemes[pc.protein.residue_numbering_scheme.slug] = rnsn
         
         # order and convert numbering scheme dict to tuple
         self.numbering_schemes = sorted(self.numbering_schemes.items(), key=itemgetter(0))
 
     def build_alignment(self):
         """Fetch selected residues from DB and build an alignment"""
-        # make a list of generic numbers from all segments
-        generic_numbers = []
-        for segment, gns in self.segments.items():
-            generic_numbers += gns
-
-        # fetch all residues for the selected proteins. Prefetch the generic numbers (a lot faster)
-        # only fetch the alternative generic numbers if more than one numbering scheme is needed
         if len(self.numbering_schemes) > 1:
-            rs = Residue.objects.filter(generic_number__scheme=self.default_numbering_scheme,
-                generic_number__label__in=generic_numbers, protein__in=self.proteins).prefetch_related(
-                'protein', 'protein_segment', 'generic_number', 'display_generic_number__scheme',
-                'alternative_generic_number__scheme')
+            rs = Residue.objects.filter(
+                protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins).prefetch_related(
+                'protein_conformation__protein', 'protein_segment', 'generic_number', 'display_generic_number__scheme',
+                'alternative_generic_numbers__scheme')
         else:
-            rs = Residue.objects.filter(generic_number__scheme=self.default_numbering_scheme,
-                generic_number__label__in=generic_numbers, protein__in=self.proteins).prefetch_related(
-                'protein', 'protein_segment', 'generic_number', 'display_generic_number__scheme')
+            rs = Residue.objects.filter(
+                protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins).prefetch_related(
+                'protein_conformation__protein', 'protein_segment', 'generic_number', 'display_generic_number__scheme')
 
         # create a dict of proteins, segments and residues
         proteins = {}
+        segment_counters = {}
+        fusion_protein_inserted = {}
         for r in rs:
-            if r.protein.entry_name not in proteins:
-                proteins[r.protein.entry_name] = {}
-            if r.protein_segment.slug not in proteins[r.protein.entry_name]:
-                proteins[r.protein.entry_name][r.protein_segment.slug] = {}
-            proteins[r.protein.entry_name][r.protein_segment.slug][r.generic_number.label] = r
+            # handle split segments, slug_1 and slug_2 are merged into slug, with a fusion protein in between
+            pss = r.protein_segment.slug.split("_")
+            if len(pss) > 1:
+                ps = pss[0]
+                segment_part = int(pss[1])
+            else:
+                ps = r.protein_segment.slug
+                segment_part = 1
 
-        for p in self.proteins:
+            # identifiers for protein/state/segment
+            pcid = r.protein_conformation.protein.entry_name + "-" + r.protein_conformation.state.slug
+            
+            if pcid not in proteins:
+                proteins[pcid] = {}
+            if ps not in proteins[pcid]:
+                proteins[pcid][ps] = {}
+            if pcid not in segment_counters:
+                segment_counters[pcid] = {}
+            if ps not in segment_counters[pcid]:
+                segment_counters[pcid][ps] = 1
+            else:
+                segment_counters[pcid][ps] += 1
+            if pcid not in fusion_protein_inserted:
+                fusion_protein_inserted[pcid] = {}
+            if ps not in fusion_protein_inserted[pcid]:
+                fusion_protein_inserted[pcid][ps] = False
+
+            # user generic numbers as keys for aligned segments
+            if r.generic_number:
+                proteins[pcid][ps][r.generic_number.label] = r
+            # use residue numbers in segment as keys for non-aligned segments
+            else:
+                # position label
+                pos_label = ps + "-" + str("%04d" % (segment_counters[pcid][ps],))
+
+                # insert fusion protein
+                if not fusion_protein_inserted[pcid][ps] and segment_part == 2:
+                    fp = ProteinFusionProtein.objects.get(protein=r.protein_conformation.protein,
+                        segment_after=r.protein_segment)
+                    fusion_pos_label = ps + "-" + str("%04d" % (segment_counters[pcid][ps]-1,)) + "-fusion"
+                    proteins[pcid][ps][fusion_pos_label] = Residue(amino_acid=fp.protein_fusion.name)
+                    if fusion_pos_label not in self.segments[ps]:
+                        self.segments[ps].append(fusion_pos_label)
+                    fusion_protein_inserted[pcid][ps] = True
+
+                # residue
+                proteins[pcid][ps][pos_label] = r
+                if pos_label not in self.segments[ps]:
+                    self.segments[ps].append(pos_label)
+
+        # remove split segments from segment list and order segment positions
+        for segment, positions in self.segments.items():
+            s = segment.split("_")
+            if len(s) > 1:
+                del self.segments[segment]
+            else:
+                self.segments[segment].sort()
+
+        # remove split segments from generic numbers list
+        for ns, gs in self.generic_numbers.items():
+            for segment, positions in gs.items():
+                s = segment.split("_")
+                if len(s) > 1:
+                    del self.generic_numbers[ns][segment]
+
+        for pc in self.proteins:
             row = []
             for segment, positions in self.segments.items():
                 s = []
                 first_residue_found = False
+                
                 # counters to keep track of gaps at the end of a segment
                 gap_counter = 0
                 position_counter = 1
+
+                # numbering scheme
+                ns = pc.protein.residue_numbering_scheme.slug
 
                 # loop all positions in this segment
                 for pos in positions:
                     try:
                         # find the residue record from the dict defined above
-                        r = proteins[p.entry_name][segment][pos]
+                        pcid = pc.protein.entry_name + "-" + pc.state.slug
+                        r = proteins[pcid][segment][pos]
                         
                         # add position to the list of positions that are not empty
                         if pos not in self.positions:
                             self.positions.append(pos)
 
                         # add display number to list of display numbers for this position
-                        if r.display_generic_number.label not in (
-                            self.generic_numbers[p.residue_numbering_scheme.slug][segment][pos]):
-                            self.generic_numbers[p.residue_numbering_scheme.slug][segment][pos].append(
-                                r.display_generic_number.label)
-                            pass
+                        if r.display_generic_number:
+                            if r.display_generic_number.label not in self.generic_numbers[ns][segment][pos]:
+                                self.generic_numbers[ns][segment][pos].append(r.display_generic_number.label)
+                        else:
+                            if pos not in self.generic_numbers[ns][segment]:
+                                self.generic_numbers[ns][segment][pos] = []
 
                         # add display numbers for other numbering schemes of selected proteins
-                        if len(self.numbering_schemes) > 1:
-                            for arn in r.alternative_generic_number.all():
+                        if r.generic_number and len(self.numbering_schemes) > 1:
+                            for arn in r.alternative_generic_numbers.all():
                                 for ns in self.numbering_schemes:
-                                    if arn.scheme.slug == ns[0] and arn.scheme.slug != p.residue_numbering_scheme.slug:
+                                    if (arn.scheme.slug == ns[0] and
+                                        arn.scheme.slug != ns):
                                         self.generic_numbers[arn.scheme.slug][segment][pos].append(arn.label)
                                         break
 
                         # append the residue to the matrix
-                        s.append([pos, r.display_generic_number.label, r.amino_acid, r.display_generic_number.scheme.short_name])
+                        if r.generic_number:
+                            s.append([pos, r.display_generic_number.label, r.amino_acid,
+                                r.display_generic_number.scheme.short_name])
+                        else:
+                            s.append([pos, "", r.amino_acid, ""])
+
                         first_residue_found = True
 
                         # reset gap counter
@@ -202,8 +290,7 @@ class Alignment:
                     # update position counter
                     position_counter += 1
                 row.append(s)
-            p.alignment = row
-            self.positions.sort()
+            pc.alignment = row
         self.merge_generic_numbers()
         self.clear_empty_positions()
 
@@ -238,7 +325,9 @@ class Alignment:
         for ns, segments in generic_numbers.items():
             for segment, positions in segments.items():
                 for pos, dns in positions.items():
-                    if len(dns) == 1:
+                    if not dns: # don't format if there are no numbers
+                        self.generic_numbers[ns][segment][pos] = ""
+                    elif len(dns) == 1:
                         self.generic_numbers[ns][segment][pos] = self.format_generic_number(dns[0])
                     else:
                         self.generic_numbers[ns][segment][pos] = '-'.join(dns)
@@ -289,7 +378,6 @@ class Alignment:
 
         # order protein list by similarity score
         ref = self.proteins.pop(0)
-        # self.proteins.sort(key=lambda x: x.similarity_score, reverse=True)
         self.proteins.sort(key=lambda x: getattr(x, self.order_by), reverse=True)
         self.proteins.insert(0, ref)
 

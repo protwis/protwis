@@ -3,6 +3,8 @@ from django.conf import settings
 from django.db import connection
 
 from protein.models import Protein
+from protein.models import ProteinConformation
+from protein.models import ProteinState
 from protein.models import ProteinFamily
 from protein.models import ProteinAlias
 from protein.models import ProteinSegment
@@ -57,11 +59,9 @@ class Command(BaseCommand):
             self.logger.error(msg)
 
     def create_parent_protein_family(self):
-        pf = ProteinFamily()
-        pf.slug = '000'
-        pf.name = 'Parent family'
-        pf.save()
-
+        pf = ProteinFamily.objects.get_or_create(slug='000', defaults={
+            'name': 'Parent family'})
+        
     def create_protein_segments(self):
         self.logger.info('Parsing file ' + self.segment_source_file)
         self.logger.info('CREATING PROTEIN SEGMENTS')
@@ -71,16 +71,14 @@ class Command(BaseCommand):
                 split_row = shlex.split(row)
 
                 # create segment
-                s = ProteinSegment()
-                s.slug = split_row[0]
-                s.category = split_row[1]
-                s.name = split_row[2]
-
                 try:
-                    s.save()
-                    self.logger.info('Created protein segment ' + s.name)
+                    s, created = ProteinSegment.objects.get_or_create(slug=split_row[0], defaults={
+                        'category': split_row[1], 'name': split_row[2]})
+
+                    if created:
+                        self.logger.info('Created protein segment ' + s.name)
                 except:
-                    self.logger.error('Failed creating protein segment ' + s.name)
+                    self.logger.error('Failed creating protein segment {}'.format(split(row[0])))
                     continue
 
         self.logger.info('COMPLETED CREATING PROTEIN SEGMENTS')
@@ -94,16 +92,14 @@ class Command(BaseCommand):
                 split_row = shlex.split(row)
 
                 # create scheme
-                s = ResidueNumberingScheme()
-                s.slug = split_row[0]
-                s.short_name = split_row[1]
-                s.name = split_row[2]
-
                 try:
-                    s.save()
-                    self.logger.info('Created residue numbering scheme ' + s.name)
+                    s, created = ResidueNumberingScheme.objects.get_or_create(slug=split_row[0], defaults={
+                        'short_name': split_row[1], 'name': split_row[2]})
+                    
+                    if created:
+                        self.logger.info('Created residue numbering scheme ' + s.name)
                 except:
-                    self.logger.error('Failed creating residue numbering scheme ' + s.name)
+                    self.logger.error('Failed creating residue numbering scheme {}'.format(split_row[0]))
                     continue
 
         self.logger.info('COMPLETED CREATING RESIDUE NUMBERING SCHEMES')
@@ -263,6 +259,11 @@ class Command(BaseCommand):
                             self.logger.info('Created protein ' + p.entry_name + ', ' + p.accession)
                         except:
                             self.logger.error('Failed creating protein ' + p.entry_name + ', ' + p.accession)
+
+                        # protein conformations
+                        ps, created = ProteinState.objects.get_or_create(slug=settings.DEFAULT_PROTEIN_STATE,
+                            defaults={'name': settings.DEFAULT_PROTEIN_STATE.title()})
+                        pc = ProteinConformation.objects.create(protein=p, state=ps)
 
                         # protein aliases
                         for i, alias in enumerate(up['names']):
