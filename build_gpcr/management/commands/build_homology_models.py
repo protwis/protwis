@@ -8,21 +8,17 @@ from common.alignment import Alignment
 
 import Bio.PDB as PDB
 from collections import OrderedDict
-import pprint
 
 class Command(BaseCommand):
     
     def handle(self, *args, **options):
-        s = [x.protein.parent.entry_name for x in Structure.objects.all()]
+
+        Homology_model = HomologyModeling('gp139_human', 'Inactive', ['Inactive'])
+        multi_alignment = Homology_model.run_pairwise_alignment()
+        main_template = Homology_model.select_main_template(multi_alignment)
+        main_alignment = Homology_model.run_main_alignment(alignment=multi_alignment)
+        non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
     
-        for i in Protein.objects.all():
-            if i.entry_name not in s:
-                Homology_model = HomologyModeling(i.entry_name, 'Inactive', ['Inactive'])
-                multi_alignment = Homology_model.run_pairwise_alignment()
-                main_template = Homology_model.select_main_template(multi_alignment)
-                main_alignment = Homology_model.run_main_alignment(alignment=multi_alignment)
-                non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
-            
         self.stdout.write(Homology_model.statistics, ending='')
         
 
@@ -177,12 +173,6 @@ class HomologyModeling(object):
                     template_string+=temp_position[2]
                     matching_string+='-'
                     
-#                elif ref_position[2]=='-' and temp_position[2]=='-':
-#                    reference_dict[ref_position[0]]='-'
-#                    template_dict[temp_position[0]]='-'
-#                    reference_string+='-'
-#                    template_string+='-'
-#                    matching_string+='-'  
             reference_dict["TM"+str(segment_count)+"_end"]='/'                     
             template_dict["TM"+str(segment_count)+"_end"]='/'  
             reference_string+='/'
@@ -206,6 +196,8 @@ class HomologyModeling(object):
         non_cons_count = 0
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
+        Bulge = Bulges()
+        Const = Constrictions()
         
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
@@ -214,7 +206,6 @@ class HomologyModeling(object):
             self.similarity_table_all = self.create_similarity_table(alignment, structure_table_all)
             for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, 
                                                       alignment_input.aligned_string):
-                
                 gn = ref_res
                 gn_TM = parse.gn_num_extract(gn, 'x')[0]
                 gn_num = parse.gn_num_extract(gn, 'x')[1]
@@ -226,21 +217,18 @@ class HomologyModeling(object):
     
                         # bulge in template
                         if len(str(gn_num))==3:
-                            if switch_bulges==True:
-                                Bulge = Bulges()
+                            if switch_bulges==True:                              
                                 bulge_template = Bulge.find_bulge_template(gn, self.similarity_table_all, 
                                                                            bulge_in_reference=False)
                                 temp_bulge_list.append({gn:Bulge.template})
                                 
                         # constriction in reference
                         else:
-                            if switch_constrictions==True:
-                                print(self.reference_entry_name)
-#                                Const = Constrictions()
-#                                constriction_template = Const.find_constriction_template(gn, self.similarity_table_all,
-#                                                                                    constriction_in_reference=True)
+                            if switch_constrictions==True:                            
+                                constriction_template = Const.find_constriction_template(gn, self.similarity_table_all,
+                                                                                    constriction_in_reference=True)
                                 ref_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 
-                                                                                            'x', +1):'a'})
+                                                                                            'x', +1):Const.template})
                                
                     elif (alignment_input.template_dict[temp_res]=='-' and 
                           alignment_input.template_dict[parse.gn_indecer(gn,'x',-1)] not in 
@@ -249,7 +237,6 @@ class HomologyModeling(object):
                         # bulge in reference
                         if len(str(gn_num))==3:
                             if switch_bulges==True:
-                                Bulge = Bulges()
                                 bulge_template = Bulge.find_bulge_template(gn, self.similarity_table_all,
                                                                            bulge_in_reference=True)
                                 ref_bulge_list.append({gn:Bulge.template})
@@ -257,18 +244,16 @@ class HomologyModeling(object):
                         # constriction in template
                         else:
                             if switch_constrictions==True:
-                                Const = Constrictions()
                                 constriction_template = Const.find_constriction_template(gn, self.similarity_table_all,
                                                                                     constriction_in_reference=False)
                                 temp_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 
                                                                                             'x', +1):Const.template})
                                 
-        self.statistics.add_info('reference_bulges', ref_bulge_list)
-        self.statistics.add_info('template_bulges', temp_bulge_list)
-        self.statistics.add_info('reference_constrictions', ref_const_list)
-        self.statistics.add_info('template_constrictions', temp_const_list)
+            self.statistics.add_info('reference_bulges', ref_bulge_list)
+            self.statistics.add_info('template_bulges', temp_bulge_list)
+            self.statistics.add_info('reference_constrictions', ref_const_list)
+            self.statistics.add_info('template_constrictions', temp_const_list)
         
-        print(ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list)
         # non-conserved residues
         for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, 
                                                   alignment_input.aligned_string):
@@ -280,7 +265,8 @@ class HomologyModeling(object):
             gn_num = parse.gn_num_extract(gn, 'x')[1]
             
             if aligned_res=='.':
-                non_cons_count+=1                            
+                non_cons_count+=1
+                
                  
     def create_similarity_table(self, alignment, structures_datatable):
         ''' Creates an ordered dictionary, where templates are sorted by similarity score.
@@ -385,7 +371,7 @@ class Constrictions():
             protein_object = Protein.objects.get(id=structure.protein.parent.id)
             try:                            
                 for match in matches:
-                    if constriction_in_reference==True:
+                    if constriction_in_reference==True:                        
                         if match.protein==protein_object and match.protein.entry_name not in excludee_proteins:
                             constriction_templates.append(structure)
                     elif constriction_in_reference==False:
