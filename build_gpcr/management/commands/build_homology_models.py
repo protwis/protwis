@@ -510,8 +510,3 @@ class CreateStatistics(object):
             @param info: object, any object as value
         '''
         self.info_dict[info_name] = info
-        
-    
-        
-        
-        
