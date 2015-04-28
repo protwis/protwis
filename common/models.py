@@ -2,7 +2,7 @@ from django.db import models
 from Bio import Entrez, Medline
 from string import Template
 
-import urllib,json
+import urllib.request,json
 
 
 class WebResource(models.Model):
