@@ -78,7 +78,7 @@ class GenericNumberingResults(TemplateView):
 
     def post(self, request, *args, **kwargs):
 
-        generic_numbering = GenericNumbering(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8')))
+        generic_numbering = GenericNumbering(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8',"ignore")))
         out_struct = generic_numbering.assign_generic_numbers()
         out_stream = StringIO()
         io = PDBIO()
@@ -192,6 +192,7 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
         ('segments', True),
     ])
 
+
     def post(self, request, *args, **kwargs):
 
         request.session['ref_file'] = request.FILES['ref_file']
@@ -216,9 +217,6 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
                 context[a[0]] = a[1]
 
         return render(request, self.template_name, context)
-
-
-
 
 
 
