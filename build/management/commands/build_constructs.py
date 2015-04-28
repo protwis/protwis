@@ -1,7 +1,9 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
+from django.utils.text import slugify
 
-from protein.models import Protein, ProteinSequenceType, ProteinSegment, ProteinFusion, ProteinFusionProtein
+from protein.models import (Protein, ProteinConformation, ProteinState, ProteinSequenceType, ProteinSegment,
+ProteinFusion, ProteinFusionProtein, ProteinSource)
 from residue.models import Residue
 
 from optparse import make_option
@@ -63,33 +65,55 @@ class Command(BaseCommand):
                 with open(source_file_path, 'r') as f:
                     sd = yaml.load(f)
 
+                    # is a protein specified?
+                    if 'protein' not in sd:
+                        self.logger.error('Protein not specified for construct, skipping')
+                        continue
+
                     # fetch the parent protein
                     try:
-                        pp = Protein.objects.get(entry_name=sd['protein'])
-                    except Protein.DoesNotExist:
+                        ppc = ProteinConformation.objects.select_related('protein__family', 'protein__species',
+                            'protein__residue_numbering_scheme').get(protein__entry_name=sd['protein'],
+                            state__slug=settings.DEFAULT_PROTEIN_STATE)
+                    except ProteinConformation.DoesNotExist:
                         # abort if parent protein is not found
-                        raise Exception('Parent protein {} for construct {} not found, aborting!'.format(
+                        self.logger.error('Parent protein {} for construct {} not found, aborting!'.format(
                             sd['protein'], sd['name']))
+                        continue
 
                     # create a protein record
                     p = Protein()
-                    p.parent = pp
-                    p.family = pp.family
-                    p.species = pp.species
-                    p.residue_numbering_scheme = pp.residue_numbering_scheme
+                    p.parent = ppc.protein
+                    p.family = ppc.protein.family
+                    p.species = ppc.protein.species
+                    p.residue_numbering_scheme = ppc.protein.residue_numbering_scheme
                     p.sequence_type, created = ProteinSequenceType.objects.get_or_create(slug='mod',
                         defaults={'name': 'Modified'})
+                    p.source, created = ProteinSource.objects.get_or_create(name='OTHER')
+                    p.entry_name = slugify(sd['name'])
                     p.name = sd['name']
-                    p.sequence = pp.sequence
+                    p.sequence = ppc.protein.sequence
                     
-                    # save construct
+                    # save protein (construct)
                     try:
                         p.save()
-                        self.logger.info('Created construct {} with parent protein {}'.format(p.name, pp.entry_name))
+                        self.logger.info('Created construct {} with parent protein {}'.format(p.name,
+                            ppc.protein.entry_name))
                     except:
                         self.logger.error('Failed creating construct {} with parent protein {}'.format(p.name,
-                            pp.name))
+                            ppc.protein.entry_name))
                         continue
+
+                    # create protein conformation record
+                    pc = ProteinConformation()
+                    pc.protein = p
+                    pc.state = ProteinState.objects.get(slug=settings.DEFAULT_PROTEIN_STATE)
+                    try:
+                        pc.save()
+                        self.logger.info('Created conformation {} of protein {}'.format(pc.state.name, p.name))
+                    except:
+                        self.logger.error('Failed creating conformation {} of protein {}'.format(pc.state.name,
+                            p.entry_name))
 
                     # create residue records
                     truncations = []
@@ -109,8 +133,9 @@ class Command(BaseCommand):
                     split_segments = {}
                     if sd['fusion_proteins']:
                         for fp in sd['fusion_proteins']:
-                            fp_start = Residue.objects.get(protein=pp, sequence_number=fp['positions'][0])
-                            fp_end = Residue.objects.get(protein=pp, sequence_number=fp['positions'][1])
+                            fp_start = Residue.objects.get(protein_conformation=ppc,
+                                sequence_number=fp['positions'][0])
+                            fp_end = Residue.objects.get(protein_conformation=ppc, sequence_number=fp['positions'][1])
                             # if the fusion protein is inserted within only one segment (the usual case), split that
                             # segment into two segments
                             if fp_start and fp_start.protein_segment == fp_end.protein_segment:
@@ -144,13 +169,13 @@ class Command(BaseCommand):
                             ProteinFusionProtein.objects.create(protein=p, protein_fusion=fusion,
                                 segment_before=segment_before, segment_after=segment_after)
 
-                    prs = Residue.objects.filter(protein=pp).prefetch_related(
-                        'protein', 'protein_segment', 'generic_number', 'display_generic_number__scheme',
-                        'alternative_generic_number__scheme')
+                    prs = Residue.objects.filter(protein_conformation=ppc).prefetch_related(
+                        'protein_conformation__protein', 'protein_segment', 'generic_number',
+                        'display_generic_number__scheme', 'alternative_generic_number__scheme')
                     for pr in prs:
                         if pr.sequence_number not in truncations:
                             r = Residue()
-                            r.protein = p
+                            r.protein_conformation = pc
                             r.generic_number = pr.generic_number
                             r.display_generic_number = pr.display_generic_number
                             r.sequence_number = pr.sequence_number
@@ -172,7 +197,8 @@ class Command(BaseCommand):
                                     r.amino_acid = mutations[r.sequence_number]['mut_res']
                                 else:
                                     self.logger.error('Mutation {} in construct {} does not match wild-type sequence' \
-                                    + ' of {}'.format(mutations[r.sequence_number]['full'], p.name, pp.entry_name))
+                                        + ' of {}'.format(mutations[r.sequence_number]['full'], pc.protein.name,
+                                        ppc.protein.entry_name))
                             else:
                                 r.amino_acid = pr.amino_acid
 

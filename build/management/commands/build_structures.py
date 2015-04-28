@@ -3,7 +3,7 @@ from django.conf import settings
 from django.db import connection
 from django.utils.text import slugify
 
-from protein.models import Protein, ProteinState, ProteinAnomaly, ProteinAnomalyType
+from protein.models import Protein, ProteinConformation, ProteinState, ProteinAnomaly, ProteinAnomalyType
 from residue.models import ResidueGenericNumber
 from common.models import WebLink, WebResource, Publication
 from structure.models import Structure, StructureType, StructureStabilizingAgent
@@ -73,13 +73,20 @@ class Command(BaseCommand):
                 with open(source_file_path, 'r') as f:
                     sd = yaml.load(f)
 
-                    # protein
-                    try:
-                        s.protein = Protein.objects.get(name=sd['construct'])
-                    except Protein.DoesNotExist:
-                        self.logger.error('Construct {} for structure {} does not exists, skipping!'.format(
-                            sd['construct'], sd['pdb']))
+                    # is there a construct?
+                    if 'construct' not in sd:
+                        self.logger.error('No construct specified, skipping!')
                         continue
+
+                    # does the construct exists?
+                    try:
+                        con = Protein.objects.get(name=sd['construct'])
+                    except Protein.DoesNotExist:
+                        self.logger.error('Construct {} does not exists, skipping!'.format(sd['construct']))
+                        continue
+
+                    # create a structure record
+                    s = Structure()
 
                     # pdb code
                     if 'pdb' in sd:
@@ -91,37 +98,49 @@ class Command(BaseCommand):
                         s.pdb_code, created = WebLink.objects.get_or_create(index=sd['pdb'],
                             web_resource=web_resource)
                     else:
-                        self.logger.error('PDB code not specified for structure {}, skipping!'.format(sd['pdb'])
+                        self.logger.error('PDB code not specified for structure {}, skipping!'.format(sd['pdb']))
                         continue
 
-                    # create a structure record
-                    s = Structure()
+                    # protein state
+                    if 'state' not in sd:
+                        self.logger.error('State not defined, using default state {}'.format(
+                            settings.DEFAULT_PROTEIN_STATE))
+                        state = settings.DEFAULT_STATE.title()
+                    else:
+                        state = sd['state']
+                    ps, created = ProteinState.objects.get_or_create(slug=slugify(state), defaults={'name': state})
+                    if created:
+                        self.logger.info('Created protein state {}'.format(ps.name))
+                    s.state = ps
+
+                    # protein conformation
+                    try:
+                        s.protein_conformation, created = ProteinConformation.objects.get_or_create(protein=con,
+                            state=ps)
+                        if created:
+                            self.logger.info('Created conformation {} for protein {}'.format(ps.name, con.name))
+                    except Protein.DoesNotExist:
+                        self.logger.error('Construct {} for structure {} does not exists, skipping!'.format(
+                            sd['construct'], sd['pdb']))
+                        continue
 
                     # insert into plain text fields
                     if 'preferred_chain' in sd:
                         s.preferred_chain = sd['preferred_chain']
                     else:
-                        self.logger.warning('Preferred chain not specified for structure {}'.format(sd['pdb'])
+                        self.logger.warning('Preferred chain not specified for structure {}'.format(sd['pdb']))
                     if 'resolution' in sd:
                         s.resolution = float(sd['resolution'])
                     else:
-                        self.logger.warning('Resolution not specified for structure {}'.format(sd['pdb'])
+                        self.logger.warning('Resolution not specified for structure {}'.format(sd['pdb']))
                     if 'publication_date' in sd:
                         s.publication_date = sd['publication_date']
                     else:
-                        self.logger.warning('Publication date not specified for structure {}'.format(sd['pdb'])
+                        self.logger.warning('Publication date not specified for structure {}'.format(sd['pdb']))
 
                     # structure type
                     st, created = StructureType.objects.get_or_create(slug='xray', defaults={'name': 'X-ray'})
-                    s.structure_type = st
-                    
-                    # state
-                    if 'state' in sd:
-                        ss, created = ProteinState.objects.get_or_create(name=sd['state'],
-                            defaults={'slug': slugify(sd['state']), 'name': sd['state']})
-                        s.state = ss
-                    else:
-                        self.logger.warning('State not specified for structure {}'.format(sd['pdb'])                        
+                    s.structure_type = st                        
 
                     # publication
                     if 'pubmed_id' in sd:

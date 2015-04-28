@@ -13,7 +13,9 @@ class Alignment(GenericAlignment):
         for ns, segments in generic_numbers.items():
             for segment, positions in segments.items():
                 for pos, dns in positions.items():
-                    if len(dns) == 1:
+                    if not dns:
+                        self.generic_numbers[ns][segment][pos] = ""
+                    elif len(dns) == 1:
                         self.generic_numbers[ns][segment][pos] = self.format_generic_number(dns[0])
                     else:
                         helix_num = False
@@ -45,6 +47,9 @@ class Alignment(GenericAlignment):
 
     def format_generic_number(self, generic_number):
         """Format a generic number for display in alignment viewer"""
+        if not generic_number:
+            return ""
+
         split_gn = generic_number.split("x")
         split_gn_helix = split_gn[0].split('.')
         helix_num = split_gn_helix[0]

@@ -10,18 +10,12 @@ class Protein(models.Model):
     sequence_type = models.ForeignKey('ProteinSequenceType')
     states = models.ManyToManyField('ProteinState', through='ProteinConformation')
     endogenous_ligands = models.ManyToManyField('ligand.Ligand')
-    web_links = models.ManyToManyField('common.WebLink')
+    web_link = models.ManyToManyField('common.WebLink')
     entry_name = models.SlugField(max_length=100, db_index=True, null=True)
     accession = models.CharField(max_length=100, db_index=True, null=True)
     name = models.CharField(max_length=200)
     sequence = models.TextField()
     
-    # non-database attributes
-    identity = False # % identity to a reference sequence in an alignment
-    similarity = False # % similarity to a reference sequence in an alignment (% BLOSUM62 score > 0)
-    similarity_score = False # similarity score to a reference sequence in an alignment (sum of BLOSUM62 scores)
-    alignment = False # residues formatted for use in an Alignment class
-
     def __str__(self):
         if not self.entry_name:
             return self.name
@@ -36,8 +30,14 @@ class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein')
     state = models.ForeignKey('ProteinState')
 
+    # non-database attributes
+    identity = False # % identity to a reference sequence in an alignment
+    similarity = False # % similarity to a reference sequence in an alignment (% BLOSUM62 score > 0)
+    similarity_score = False # similarity score to a reference sequence in an alignment (sum of BLOSUM62 scores)
+    alignment = False # residues formatted for use in an Alignment class
+
     def __str__(self):
-        return self.protein.name + "(" + self.state.name + ")"
+        return self.protein.entry_name + " (" + self.state.name + ")"
 
     class Meta():
         db_table = "protein_conformation"

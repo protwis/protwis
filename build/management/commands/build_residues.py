@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
 
-from protein.models import Protein, ProteinSegment
+from protein.models import Protein, ProteinConformation, ProteinSegment
 from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme
 
 import Bio.PDB.Polypeptide as polypeptide
@@ -98,7 +98,6 @@ class Command(BaseCommand):
         for arg in args:
             if os.path.exists(os.sep.join([self.dump_source_dir, arg])):
                 residue_data_fh = open(os.sep.join([self.dump_source_dir, arg]), 'r')
-                print('Parsing residue data from {}'.format(arg))
                 self.logger.info('Parsing residue data from {}'.format(arg))
             else:
                 print("Failed to open file {!s}".format(os.sep.join([self.dump_source_dir, arg])))
@@ -113,8 +112,8 @@ class Command(BaseCommand):
                 #Checking if the protein exists in the db
                 try:
                     pconf = ProteinConformation.objects.get(protein__entry_name=prot_name,
-                        state=settings.DEFAULT_PROTEIN_STATE)
-                except Protein.DoesNotExist as e:
+                        state__slug=settings.DEFAULT_PROTEIN_STATE)
+                except ProteinConformation.DoesNotExist as e:
                     missing_proteins.append(prot_name)
                     continue
                 #Checking if given residue already exists in the db
@@ -134,7 +133,7 @@ class Command(BaseCommand):
                 try:
                     r.save()
                     self.logger.info('Created residue {:n}{!s} for protein {!s}'.format(r.sequence_number,
-                        r.amino_acid, protein.entry_name))
+                        r.amino_acid, pconf.protein.entry_name))
                 except Exception as msg:
                     print(msg)
                     self.logger.error('Failed to create residue {:n}{!s} for protein {!s}'.format(
@@ -223,7 +222,7 @@ class Command(BaseCommand):
                                     struct_based_label = dump_gpcrdb + bulge_prime
                                 # if not convert the number to the correct scheme
                                 else:
-                                    for d, c in schemes[protein.residue_numbering_scheme.slug]['table'].items():
+                                    for d, c in schemes[pconf.protein.residue_numbering_scheme.slug]['table'].items():
                                         if c == dump_gpcrdb:
                                             struct_based_label = scheme['table'][d] + bulge_prime
                                             break
@@ -245,17 +244,17 @@ class Command(BaseCommand):
                                     struct_based.save()
                                                 
                                 # add to residue as a display number or alternative number?
-                                if scheme_name == protein.residue_numbering_scheme.slug:
+                                if scheme_name == pconf.protein.residue_numbering_scheme.slug:
                                     r.display_generic_number = struct_based
                                 else:
                                     r.alternative_generic_number.add(struct_based)
                 try:
                     r.save()
                     self.logger.info('Added generic numbers for residue {}{!s} for protein {!s}'.format(res_num,
-                        res_name, protein.entry_name))
+                        res_name, pconf.protein.entry_name))
                 except Exception as msg:
                     print(msg)
                     self.logger.error(
                         'Failed to create generic numbers for residue {}{!s} for protein {!s}'.format(res_num,
-                            res_name, protein.entry_name))
+                            res_name, pconf.protein.entry_name))
         self.logger.info('COMPLETED CREATING RESIDUES')

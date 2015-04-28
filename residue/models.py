@@ -12,7 +12,7 @@ class Residue(models.Model):
     amino_acid = models.CharField(max_length=1)
 
     def __str__(self):
-        return str(self.sequence_number) + self.amino_acid
+        return self.amino_acid + str(self.sequence_number)
 
     class Meta():
         db_table = 'residue'

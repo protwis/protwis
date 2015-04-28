@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Structure(models.Model):
-    protein = models.ForeignKey('protein.Protein')
+    protein_conformation = models.ForeignKey('protein.ProteinConformation')
     structure_type = models.ForeignKey('StructureType')
     pdb_code = models.ForeignKey('common.WebLink')
     state = models.ForeignKey('protein.ProteinState')
