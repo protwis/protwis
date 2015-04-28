@@ -78,7 +78,7 @@ class GenericNumberingResults(TemplateView):
 
     def post(self, request, *args, **kwargs):
 
-        generic_numbering = GenericNumbering(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8')))
+        generic_numbering = GenericNumbering(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8',"ignore")))
         out_struct = generic_numbering.assign_generic_numbers()
         out_stream = StringIO()
         io = PDBIO()
