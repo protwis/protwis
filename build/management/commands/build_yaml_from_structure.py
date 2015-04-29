@@ -67,7 +67,7 @@ class Command(BaseCommand):
             'pubmed_id' : data[self.csv_fields['pubmed_id']],                       
             }
 
-        if data[self.csv_fields['ligand_role']] != 'Agonist' and data[self.csv_fields['G_protein']] != 'None':
+        if data[self.csv_fields['ligand_role']] == 'Agonist' and data[self.csv_fields['G_protein']] != 'None':
             state = 'Active'
         else:
             state = 'Inactive'

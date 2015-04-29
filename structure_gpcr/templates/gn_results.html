@@ -10,14 +10,15 @@
     <br />
     <hr />
     <div>
-        <a class="btn btn-small" href="/structural_tools_gpcr/output/{{ outfile }}">
+        <a class="btn btn-small" href="/structural_tools_gpcr/output/{{ outfile }}/{{ replacement_tag}}">
             <i class="icon-download">Output file<i>
         </a>
     </div>
     <br />
     <hr />
     Download the visualization scripts:
-    <a class="btn btn-small" href="static/pymol_view_generic_numbers.pml">
-        <i class="icon-download">PyMOL</i>
-    </a>
-   {% endblock %}
+    <a class="btn btn-small" href="static/visualization_scripts/pymol_view_generic_numbers.pml">
+        <i class="icon-download">PyMOL</i></a>
+    <a class="btn btn-small" href="static/visualization_scripts/maestro_label_generic_numbers.py">
+        <i class="icon-download">Maestro</i></a>
+{% endblock %}
