@@ -15,12 +15,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='residuefragmentinteraction',
             name='rotamer',
-            field=models.ForeignKey(default='', to='structure.Rotamer'),
+            field=models.ForeignKey(default=0, to='structure.Rotamer'),
             preserve_default=False,
         ),
-        migrations.AlterField(
+        migrations.AddField(
             model_name='residuefragmentinteraction',
-            name='fragment',
-            field=models.ForeignKey(to='structure.Fragment'),
+            name='sfragment',
+            field=models.ForeignKey(default=0, to='structure.Fragment'),
+            preserve_default=False,
         ),
     ]

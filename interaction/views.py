@@ -12,8 +12,8 @@ from interaction.models import *
 from ligand.models import Ligand
 from ligand.models import LigandType
 from ligand.models import LigandRole
-from structure.models import Structure
-from protein.models import Protein
+from structure.models import Structure,PdbData,Rotamer,Fragment
+from protein.models import ProteinConformation
 from residue.models import Residue
 from common.models import WebResource
 from common.models import WebLink
@@ -88,38 +88,26 @@ def calculate(request):
         if form.is_valid():
             pdbname = form.cleaned_data['pdbname']
             call(["python", "interaction/functions.py","-p",pdbname])
-            #return HttpResponse("You pressed! "+pdbname)
             mypath = module_dir+'/temp/results/'+pdbname+'/output'
 
-            results = []
 
-            #Unnecessary at this point? Should assume made?
+            results = []
             web_resource, created = WebResource.objects.get_or_create(slug='pdb',url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
             web_link, created = WebLink.objects.get_or_create(web_resource=web_resource,index=pdbname)
 
-
-            protein=Protein.objects.filter(name=pdbname) #is the name the final version? Will pdbcode == name?
-            if protein.exists():
-                protein=Protein.objects.get(name=pdbname)
-            else:
-                 quit() #quit!
-
-            structure=Structure.objects.filter(pdb_code=web_link, protein=protein) #is the name the final version? Will pdbcode == name?
+            structure=Structure.objects.filter(pdb_code=web_link) 
             if structure.exists():
-                structure=Structure.objects.get(pdb_code=web_link, protein=protein)
+                structure=Structure.objects.get(pdb_code=web_link)
             else:
                  quit() #quit!
 
+            protein=structure.protein_conformation
 
             for f in listdir(mypath):
                 if isfile(join(mypath,f)):       
-                    #output = open(mypath+"/"+f, 'r').read()
-                    #output = open(mypath+"/"+f, 'rb').read()
                     result = yaml.load(open(mypath+"/"+f, 'rb'))
-                    #result = pickle.load( open( mypath+"/"+f, "rb") )
                     output = result
 
-                    #output ="<br />".join(output.split("\n"))
                     temp = f.replace('.yaml','').split("_")
                     temp.append([output])
                     temp.append(round(output['score'][0][0]))
@@ -133,57 +121,20 @@ def calculate(request):
                         defaults={'name':temp[1], 'smiles':output['smiles'].strip(),'ligand_type':ligandtype})
 
 
-                    proteinligand, created = ProteinLigandInteraction.objects.get_or_create(protein=protein,ligand=ligand)
+                    #proteinligand, created = ProteinLigandInteraction.objects.get_or_create(protein=protein,ligand=ligand)
 
                     
                     ligandrole, created = LigandRole.objects.get_or_create(name='unknown',slug='unknown')
 
-
-                    structureligandinteraction, created = StructureLigandInteraction.objects.get_or_create(ligand=ligand,structure=structure, ligand_role=ligandrole) #, pdb_reference=pdbname <-- max length set to 3? So can't insert ones correctly
-
                     f = module_dir+"/temp/results/"+pdbname+"/interaction"+"/"+pdbname+"_"+temp[1]+".pdb"
                     if isfile(f):      
+                        pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read()) #does this close the file?
                         print("Found file"+f)
-                        with open(f) as file:
-                            for line in file:
-                                if line.startswith('HETATM') or line.startswith('ATOM'):
-                                    line = line.split()
-                                    #print(line)
-                                    m = re.match("(\d\.\d{2})([\d\.]{3-6})",line[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-                                    if (m):
-                                        line.extend(line[9])
-                                        line[9] = m.group(2)
-                                        line[8] = m.group(1)
-                                    m = re.match("(\w)(\d+)",line[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-                                    if (m):
-                                        line.extend(line[10])
+                    else:
+                        quit()
 
-                                        line[10] = line[9]
-                                        line[9] = line[8]
-                                        line[8] = line[7]
-                                        line[7] = line[6]
-                                        line[6] = line[5]
-                                        
-                                        line[4] = m.group(1)
-                                        line[5] = m.group(2)
+                    structureligandinteraction, created = StructureLigandInteraction.objects.get_or_create(ligand=ligand,structure=structure, ligand_role=ligandrole, pdb_file=pdbdata) #, pdb_reference=pdbname <-- max length set to 3? So can't insert ones correctly
 
-                                    #print(line)
-
-                                    atom, created = ResidueFragmentAtom.objects.get_or_create(
-                                        structureligandpair=structureligandinteraction,
-                                        interaction=None,
-                                        atomtype=line[0],
-                                        atomnr=line[1],
-                                        atomclass=line[2],
-                                        residuename=line[3],
-                                        chain=line[4],
-                                        residuenr=line[5],
-                                        x=line[6],
-                                        y=line[7],
-                                        z=line[8],
-                                        occupancy=line[9],
-                                        temperature=line[10],
-                                        element_name=line[11])
                     
                     for interactiontype,interactionlist in output.items():
                         if interactiontype=='hbond' or interactiontype=='hbondplus':
@@ -192,10 +143,9 @@ def calculate(request):
                                 aa = entry[0]
                                 aa,pos,chain = regexaa(aa)
 
-
-                                residue=Residue.objects.filter(protein=protein, sequence_number=pos,amino_acid=aa)
+                                residue=Residue.objects.filter(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
                                 if residue.exists():
-                                    residue=Residue.objects.get(protein=protein, sequence_number=pos,amino_acid=aa)
+                                    residue=Residue.objects.get(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
                                 else:
                                     print("Not found residue!",pdbname,pos,aa)
                                     continue #SKIP THESE -- mostly fusion residues that aren't mapped yet.
@@ -203,53 +153,35 @@ def calculate(request):
                                 for pair in entry[3]:
                                     fragment = pair[0] #NEED TO EXPAND THIS TO INCLUDE MORE INFO
 
-                                    interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug=interactiontype,name=interactiontype)
-                                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment)
-                                    
-
-                                    #mypath = module_dir+'/temp/results/'+pdbname+'/fragments'
                                     f = module_dir+"/temp/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_"+fragment+"_HB.pdb"
                                     if interactiontype=='hbondplus':  f = module_dir+"/temp/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_"+fragment+"_HBC.pdb"
                                     if isfile(f):      
                                         print("Found file"+f)
-                                        with open(f) as file:
-                                            for line in file:
-                                                line = line.split()
-                                                m = re.match("(\d+\.\d{2})([\d\.]+)",line[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-                                                if (m):
-                                                    line.extend(line[9])
-                                                    line[9] = m.group(2)
-                                                    line[8] = m.group(1)
-                                                m = re.match("(\w)(\d+)",line[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-                                                if (m):
-                                                    line.extend(line[10])
+                                        f_in = open(f, 'r')
+                                        rotamer_pdb = ''
+                                        fragment_pdb = ''
+                                        for line in f_in:
+                                            if line.startswith('HETATM') or line.startswith('CONECT') or line.startswith('MASTER') or line.startswith('END'): 
+                                                fragment_pdb += line
+                                            elif line.startswith('ATOM'): 
+                                                rotamer_pdb += line
+                                            else:
+                                                fragment_pdb += line
+                                                rotamer_pdb += line
+                                        f_in.close();
 
-                                                    line[10] = line[9]
-                                                    line[9] = line[8]
-                                                    line[8] = line[7]
-                                                    line[7] = line[6]
-                                                    line[6] = line[5]
-                                                    
-                                                    line[4] = m.group(1)
-                                                    line[5] = m.group(2)
+                                        rotamer_data, created = PdbData.objects.get_or_create(pdb=rotamer_pdb)
+                                        rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
 
-                                                atom, created = ResidueFragmentAtom.objects.get_or_create(
-                                                    structureligandpair=structureligandinteraction,
-                                                    interaction=fragment_interaction,
-                                                    atomtype=line[0],
-                                                    atomnr=line[1],
-                                                    atomclass=line[2],
-                                                    residuename=line[3],
-                                                    chain=line[4],
-                                                    residuenr=line[5],
-                                                    x=line[6],
-                                                    y=line[7],
-                                                    z=line[8],
-                                                    occupancy=line[9],
-                                                    temperature=line[10],
-                                                    element_name=line[11])
+                                        fragment_data, created = PdbData.objects.get_or_create(pdb=fragment_pdb) 
+                                        fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data)
                                     else:
-                                        print("Could not find "+f)
+                                        quit("Could not find "+f)
+
+                                    interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug=interactiontype,name=interactiontype)
+                                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
+                                    
+                                    
                         elif interactiontype=='hbond_confirmed':
                             for entry in interactionlist:
                                 #print(interactiontype,entry)
@@ -257,9 +189,9 @@ def calculate(request):
                                 aa,pos,chain = regexaa(aa)
                                 interactiontype="HB"+entry[1][0][0]
 
-                                residue=Residue.objects.filter(protein=protein, sequence_number=pos,amino_acid=aa)
+                                residue=Residue.objects.filter(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
                                 if residue.exists():
-                                    residue=Residue.objects.get(protein=protein, sequence_number=pos,amino_acid=aa)
+                                    residue=Residue.objects.get(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
                                 else:
                                     print("Not found residue!",pdbname,pos,aa)
                                     continue #SKIP THESE -- mostly fusion residues that aren't mapped yet.
@@ -267,49 +199,92 @@ def calculate(request):
                                 for pair in entry[1]:  
                                     fragment = pair[1] #NEED TO EXPAND THIS TO INCLUDE MORE INFO
 
-                                    interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug=interactiontype,name=interactiontype)
-                                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment)
-                        
                                     #mypath = module_dir+'/temp/results/'+pdbname+'/fragments'
                                     f = module_dir+"/temp/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_"+fragment+"_HB.pdb"
                                     if isfile(f):      
                                         print("Found file"+f)
+                                        f_in = open(f, 'r')
+                                        rotamer_pdb = ''
+                                        fragment_pdb = ''
+                                        for line in f_in:
+                                            if line.startswith('HETATM') or line.startswith('CONECT') or line.startswith('MASTER') or line.startswith('END'): 
+                                                fragment_pdb += line
+                                            elif line.startswith('ATOM'): 
+                                                rotamer_pdb += line
+                                            else:
+                                                fragment_pdb += line
+                                                rotamer_pdb += line
+                                        f_in.close();
+
+                                        rotamer_data, created = PdbData.objects.get_or_create(pdb=rotamer_pdb)
+                                        rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
+
+                                        fragment_data, created = PdbData.objects.get_or_create(pdb=fragment_pdb) 
+                                        fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data)
                                     else:
-                                        print("Could not find "+f)
-                        elif interactiontype=='hydrophobic':
+                                        quit("Could not find "+f)
+
+                                    interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug=interactiontype,name=interactiontype)
+                                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
+                          
+                        elif interactiontype=='hydrophobic': #NO FRAGMENT FOR THESE, WHAT TO DO? USE WHOLE LIGAND?
                             for entry in interactionlist:
                                 #print(entry)
                                 aa = entry[0]
                                 aa,pos,chain = regexaa(aa)
                                 #fragment = entry[1][0][1] #NEED TO EXPAND THIS TO INCLUDE MORE INFO
 
-                                residue=Residue.objects.filter(protein=protein, sequence_number=pos,amino_acid=aa)
+                                residue=Residue.objects.filter(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
                                 if residue.exists():
-                                    residue=Residue.objects.get(protein=protein, sequence_number=pos,amino_acid=aa)
+                                    residue=Residue.objects.get(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
                                 else:
                                     print("Not found residue!",pdbname,pos,aa)
                                     continue #SKIP THESE -- mostly fusion residues that aren't mapped yet.
 
                                 fragment = '' #NEED TO EXPAND THIS TO INCLUDE MORE INFO
 
-                                interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug='hydrofob',name=interactiontype)
-                                fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment)
+                                #interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug='hydrofob',name=interactiontype)
+                                #fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment)
                         elif interactiontype=='aromaticplus' or interactiontype=='aromatic':
                             for entry in interactionlist:
-                                #print(entry)
+                                print(entry)
                                 aa = entry[0]
                                 aa,pos,chain = regexaa(aa)
                                 fragment = entry[1]
 
-                                residue=Residue.objects.filter(protein=protein, sequence_number=pos,amino_acid=aa)
+                                residue=Residue.objects.filter(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
                                 if residue.exists():
-                                    residue=Residue.objects.get(protein=protein, sequence_number=pos,amino_acid=aa)
+                                    residue=Residue.objects.get(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
                                 else:
                                     print("Not found residue!",pdbname,pos,aa)
                                     continue #SKIP THESE -- mostly fusion residues that aren't mapped yet.
 
-                                interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug='arom',name=interactiontype)
-                                fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment)
+                                f = module_dir+"/temp/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_aromatic_"+str(entry[1])+".pdb"
+                                if isfile(f):      
+                                    print("Found file"+f)
+                                    f_in = open(f, 'r')
+                                    rotamer_pdb = ''
+                                    fragment_pdb = ''
+                                    for line in f_in:
+                                        if line.startswith('HETATM') or line.startswith('CONECT') or line.startswith('MASTER') or line.startswith('END'): 
+                                            fragment_pdb += line
+                                        elif line.startswith('ATOM'): 
+                                            rotamer_pdb += line
+                                        else:
+                                            fragment_pdb += line
+                                            rotamer_pdb += line
+                                    f_in.close();   
+
+                                    rotamer_data, created = PdbData.objects.get_or_create(pdb=rotamer_pdb)
+                                    rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
+
+                                    fragment_data, created = PdbData.objects.get_or_create(pdb=fragment_pdb) 
+                                    fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data)
+                                else:
+                                    quit("Could not find "+f)
+
+                                interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug=interactiontype,name=interactiontype)
+                                fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
 
 
 
@@ -336,11 +311,6 @@ def calculate(request):
 def download(request):      
     pdbname = request.GET.get('pdb')
     ligand = request.GET.get('ligand')
-    # response = HttpResponse(mimetype='application/force-download')
-    # #response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(file_name)
-    # response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(pdbname+'_'+ligand+'.pdb')
-    # mypath = module_dir+'/temp/results/'+pdbname+'/interaction/'+pdbname+'_'+ligand+'.pdb'
-    # response['X-Sendfile'] = smart_str(mypath)
 
     filename = module_dir+'/temp/results/'+pdbname+'/interaction/'+pdbname+'_'+ligand+'.pdb' # Select your file here.                                
     #wrapper = FileWrapper(file(filename))

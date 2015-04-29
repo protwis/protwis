@@ -234,6 +234,8 @@ def fragment_library(ligand,atomvector,atomname,residuenr,typeinteraction):
     f=open(filename,'w')
     f.write(tempstr)
     f.close();
+    mol = pybel.readfile("pdb", filename).next()
+    mol.write("pdb", filename,overwrite=True)
 
 def fragment_library_aromatic(ligand,atomvectors,residuenr,ringnr):
     #print "Make aromatic fragment pdb file for ligand:",ligand,"atom vectors",atomvectors,"residuenr from protein", residuenr
@@ -294,6 +296,7 @@ def fragment_library_aromatic(ligand,atomvectors,residuenr,ringnr):
             if temp[5]!=residuenr:
                 continue
             residuename = temp[3]
+            chain = temp[4]
         else:
             continue #ignore all other lines
         
@@ -301,7 +304,7 @@ def fragment_library_aromatic(ligand,atomvectors,residuenr,ringnr):
         tempstr += line
 
 
-    filename = projectdir + 'results/'+pdbname+'/fragments/'+pdbname+"_"+ligand+"_"+residuename+str(residuenr)+"_aromatic_"+str(ringnr)+".pdb"
+    filename = projectdir + 'results/'+pdbname+'/fragments/'+pdbname+"_"+ligand+"_"+residuename+str(residuenr)+chain+"_aromatic_"+str(ringnr)+".pdb"
     #print tempstr
     f_in.close();
     f=open(filename,'w')
