@@ -1,7 +1,0 @@
-Dependencies for python script (python 2.x)
-sudo apt-get install python-pip
-
-sudo apt-get install python-biopython
-sudo apt-get install python-openbabel
-sudo apt-get install python-rdkit
-
