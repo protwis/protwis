@@ -2,11 +2,12 @@ from django.db import models
 
 
 class ResidueFragmentInteraction(models.Model):
-    structure = models.ForeignKey('structure.Structure')
-    residue = models.ForeignKey('residue.Residue')
-    ligand = models.ForeignKey('ligand.Ligand')
+    structure = models.ForeignKey('structure.Structure') #redundant via rotamer
+    residue = models.ForeignKey('residue.Residue') #redundant via rotamer
+    rotamer = models.ForeignKey('structure.Rotamer')
+    fragment = models.ForeignKey('structure.Fragment')
+    ligand = models.ForeignKey('ligand.Ligand') #redundant via fragment
     interaction_type = models.ForeignKey('ResidueFragmentInteractionType')
-    fragment = models.TextField()
 
     def __str__(self):
         return "{} {} {}".format(self.structure.pdb_code, self.residue.generic_number.label, self.ligand.name)
