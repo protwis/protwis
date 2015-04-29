@@ -1,8 +1,7 @@
 Dependencies for python script (python 2.x)
 sudo apt-get install python-pip
 
-ImportError: No module named Bio.PDB
-sudo pip install biopython
-
-
+sudo apt-get install python-biopython
+sudo apt-get install python-openbabel
+sudo apt-get install python-rdkit
 

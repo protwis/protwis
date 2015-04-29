@@ -1,0 +1,20 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+Hi please select the pdb file to analyse:
+<form action="calculate" method="post">
+{% csrf_token %}
+    <label for="pdbname">PDBname</label>
+    <input id="pdbname" type="text" name="pdbname" value="">
+    <input type="submit" value="OK">
+</form>
+
+
+{% for structure in structures %}
+    <a href="view?pdb={{structure.structure.pdb_code.index}}">{{structure.structure.pdb_code.index}} <br>
+{% empty %}
+    No structures yet.
+{% endfor %}
+
+
+{% endblock %}

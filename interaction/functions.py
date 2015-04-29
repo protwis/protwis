@@ -42,6 +42,9 @@ CHARGEDAA = {'ARG','LYS','ASP','GLU'} #skip ,'HIS'
 
 module_dir = os.path.dirname(__file__)
 projectdir = module_dir + '/temp/'
+if not os.path.exists(projectdir):
+        os.makedirs(projectdir)
+        os.makedirs(projectdir+'/temp/')
 ignore_het = ['NA','W'] #ignore sodium and water
 
 
@@ -67,12 +70,24 @@ def check_unique_ligand_mol(filename):
     for line in f_in:
         if line.startswith('HETATM'): 
             temp = line.split()
-
+            m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            if (m):
+                temp.extend(temp[9])
+                temp[9] = m.group(2)
+                temp[8] = m.group(1)
             m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
             if (m):
+                temp.extend(temp[10])
+
+                temp[10] = temp[9]
+                temp[9] = temp[8]
+                temp[8] = temp[7]
+                temp[7] = temp[6]
+                temp[6] = temp[5]
+                
                 temp[4] = m.group(1)
                 temp[5] = m.group(2)
-            
+
             if (temp[5]!=ligandid and ligandid!=0) or (temp[4]!=chainid and chainid!=0): continue
 
             ligandid = temp[5]
@@ -87,6 +102,10 @@ def check_unique_ligand_mol(filename):
 
 
 def check_pdb():
+    if not os.path.exists(projectdir+'pdbs/'):
+        os.makedirs(projectdir+'pdbs/')
+
+
     if not os.path.isfile(projectdir+'pdbs/'+pdbname+'.pdb'):
         pdbfile = fetch_pdb(pdbname)
         temp_path = projectdir+'pdbs/'+pdbname+'.pdb'
@@ -115,6 +134,179 @@ def checkdirs():
     directory = projectdir + 'results/'+pdbname+'/png'
     if not os.path.exists(directory):
         os.makedirs(directory)
+    directory = projectdir + 'results/'+pdbname+'/fragments'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+def fragment_library(ligand,atomvector,atomname,residuenr,typeinteraction):
+    #print "Make fragment pdb file for ligand:",ligand,"atom vector",atomvector,"atomname",atomname,"residuenr from protein", residuenr
+
+    ligand_pdb = projectdir+'results/'+pdbname+'/ligand/'+ligand+'_'+pdbname+'.pdb'
+    #print "Look in",ligand_pdb
+    mol = pybel.readfile("pdb", ligand_pdb).next()
+    mol.removeh()
+    listofvectors = []
+    for atom in mol:
+        distance = (Vector(getattr(atom,'coords'))-atomvector).norm()
+        if distance>0.1:
+            continue
+        #print "Parent:",getattr(atom,'type'),getattr(atom,'idx') ,Vector(getattr(atom,'coords'))
+        listofvectors.append(Vector(getattr(atom ,'coords')))
+        for neighbour_atom in openbabel.OBAtomAtomIter(atom.OBAtom):
+           #print neighbour_atom.GetAtomicNum()
+           neighbor = pybel.Atom(neighbour_atom)
+           #print "Neighbour:",neighbour_atom.GetType(),Vector(getattr(neighbor,'coords'))
+           listofvectors.append(Vector(getattr(neighbor ,'coords')))
+           for neighbour_atom2 in openbabel.OBAtomAtomIter(neighbour_atom):
+           #print neighbour_atom.GetAtomicNum()
+               neighbor2 = pybel.Atom(neighbour_atom2)
+               #print "Neighbour2:",neighbour_atom2.GetType(),Vector(getattr(neighbor2,'coords'))
+               listofvectors.append(Vector(getattr(neighbor2,'coords')))
+    #print "vectors:",listofvectors
+
+    pdbfile = projectdir+'pdbs/'+pdbname+'.pdb'
+
+
+    f_in = open(pdbfile, 'r')
+    tempstr = ''
+    for line in f_in:
+        if line.startswith('HETATM'): 
+            temp = line.split()
+
+            m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            if (m):
+                temp.extend(temp[9])
+                temp[9] = m.group(2)
+                temp[8] = m.group(1)
+            m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            if (m):
+                temp.extend(temp[10])
+
+                temp[10] = temp[9]
+                temp[9] = temp[8]
+                temp[8] = temp[7]
+                temp[7] = temp[6]
+                temp[6] = temp[5]
+                
+                temp[4] = m.group(1)
+                temp[5] = m.group(2)
+            
+            atomvector = Vector(temp[6],temp[7],temp[8])
+            skip = 1
+            for targetvector in listofvectors:
+                distance = (targetvector-atomvector).norm()
+                if distance<0.1:
+                    #print "FOUND!"
+                    skip = 0
+            if skip==1: continue
+        elif line.startswith('ATOM'): 
+            temp = line.split()
+            m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            if (m):
+                temp.extend(temp[9])
+                temp[9] = m.group(2)
+                temp[8] = m.group(1)
+            m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            if (m):
+                temp.extend(temp[10])
+
+                temp[10] = temp[9]
+                temp[9] = temp[8]
+                temp[8] = temp[7]
+                temp[7] = temp[6]
+                temp[6] = temp[5]
+                
+                temp[4] = m.group(1)
+                temp[5] = m.group(2)
+            if temp[5]!=residuenr:
+                continue
+            residuename = temp[3]
+            chain = temp[4]
+        else:
+            continue #ignore all other lines
+
+        tempstr += line
+
+
+    filename = projectdir + 'results/'+pdbname+'/fragments/'+pdbname+"_"+ligand+"_"+residuename+residuenr+chain+"_"+atomname+"_"+typeinteraction+".pdb"
+    #print tempstr
+    f_in.close();
+    f=open(filename,'w')
+    f.write(tempstr)
+    f.close();
+
+def fragment_library_aromatic(ligand,atomvectors,residuenr,ringnr):
+    #print "Make aromatic fragment pdb file for ligand:",ligand,"atom vectors",atomvectors,"residuenr from protein", residuenr
+
+    pdbfile = projectdir+'pdbs/'+pdbname+'.pdb'
+    residuename = ''
+
+    f_in = open(pdbfile, 'r')
+    tempstr = ''
+    for line in f_in:
+        if line.startswith('HETATM'): 
+            temp = line.split()
+            m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            if (m):
+                temp.extend(temp[9])
+                temp[9] = m.group(2)
+                temp[8] = m.group(1)
+            m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            if (m):
+                temp.extend(temp[10])
+
+                temp[10] = temp[9]
+                temp[9] = temp[8]
+                temp[8] = temp[7]
+                temp[7] = temp[6]
+                temp[6] = temp[5]
+                
+                temp[4] = m.group(1)
+                temp[5] = m.group(2)
+            
+            atomvector = Vector(temp[6],temp[7],temp[8])
+            skip = 1
+            for targetvector in atomvectors:
+                distance = (targetvector-atomvector).norm()
+                if distance<0.1:
+                    #print "FOUND!"
+                    skip = 0
+            if skip==1: continue
+        elif line.startswith('ATOM'): 
+            temp = line.split()
+            m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            if (m):
+                temp.extend(temp[9])
+                temp[9] = m.group(2)
+                temp[8] = m.group(1)
+            m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            if (m):
+                temp.extend(temp[10])
+
+                temp[10] = temp[9]
+                temp[9] = temp[8]
+                temp[8] = temp[7]
+                temp[7] = temp[6]
+                temp[6] = temp[5]
+                
+                temp[4] = m.group(1)
+                temp[5] = m.group(2)
+            if temp[5]!=residuenr:
+                continue
+            residuename = temp[3]
+        else:
+            continue #ignore all other lines
+        
+
+        tempstr += line
+
+
+    filename = projectdir + 'results/'+pdbname+'/fragments/'+pdbname+"_"+ligand+"_"+residuename+str(residuenr)+"_aromatic_"+str(ringnr)+".pdb"
+    #print tempstr
+    f_in.close();
+    f=open(filename,'w')
+    f.write(tempstr)
+    f.close();
 
 
 def create_ligands_and_poseview():
@@ -170,7 +362,6 @@ def create_ligands_and_poseview():
                             obConversion.SetOptions("K", obConversion.OUTOPTIONS)
                             mol = openbabel.OBMol()
                             obConversion.ReadFile(mol, ligand_pdb)   # Open Babel will uncompress automatically
-
                             obConversion.WriteFile(mol, ligand_inchi)
                             inchikey = obConversion.WriteString(mol)
 
@@ -191,11 +382,7 @@ def create_ligands_and_poseview():
                             obConversion.ReadFile(mol, ligand_pdb)   # Open Babel will uncompress automatically
 
                             obConversion.WriteFile(mol, ligand_sdf)
-
-
                            
-
-
                         
                         if not os.path.isfile(ligand_png):  #if png of ligand not made, make it
                             m = Chem.MolFromMolFile(ligand_sdf)
@@ -214,6 +401,7 @@ def create_ligands_and_poseview():
                         else:
                             #print "Already made Poseview:",pdbname+"_"+HETNAM+".png"
                             continue
+    #print "Done "+str(len(hetflag_done))
 
 def addresiduestoligand(ligand,pdb,residuelist):
     temp_path = projectdir+'pdbs/'+pdb+'.pdb'
@@ -374,6 +562,9 @@ def build_ligand_info():
 
 
                         mol = pybel.readfile("pdb", projectdir+'results/'+pdbname+'/ligand/'+hetflag+'_'+pdbname+".pdb").next()
+                        #print "LIGAND",hetflag
+                        
+
                         rings = getattr(mol,"OBMol").GetSSSR()
 
 
@@ -386,16 +577,18 @@ def build_ligand_info():
                                 #print "Found an aromatic ring"
                                 atomlist = []
                                 atomnames = []
+                                vectorlist = []
                                 for atom in mol:
                                     if ring.IsMember( atom.OBAtom): 
                                         #print atom.idx,getattr(atom,'type'), ring.IsMember( atom.OBAtom)
                                         a_vector = Vector(getattr(atom,'coords'))
                                         center += a_vector
                                         atomlist.append(atom.idx)
+                                        vectorlist.append(a_vector)
                                         atomnames.append(getattr(atom,'type'))
                                 center = center/members
                                 normal = center-a_vector #vector in plane
-                                ringlist.append([atomlist,center,normal,atomnames])
+                                ringlist.append([atomlist,center,normal,atomnames,vectorlist])
 
                         ligand_rings[hetflag] = ringlist
 
@@ -534,7 +727,7 @@ def find_interactions():
                         center = aaring[1]
                         count = 0
                         for ring in ligand_rings[hetflag]:
-                            #print ring[0]
+                            #print ring
                             count += 1
                             angle = Vector.angle(center-ring[1],ring[2]) #take vector from two centers, and compare against vector from center to outer point -- this will give the perpendicular angel.
                             angle2 = Vector.angle(center-ring[1],aaring[2]) #take vector from two centers, and compare against vector from center to outer point -- this will give the perpendicular angel.
@@ -546,10 +739,12 @@ def find_interactions():
                                 #print "Ring #",count,"Distance:",round(distance,2), "Angle:",round(angle_degrees,2)
                                 summary_results[hetflag]['aromatic'].append([aaname,count,round(distance,2),angle_degrees])
 
+                                fragment_library_aromatic(hetflag,ring[4],aa_seqid,count)
+
                         for charged in ligand_charged[hetflag]:
                             distance = (center-charged[1]).norm()
                             if distance<4.2 and charged[2]>0: ### needs max 4.2 distance to make aromatic+
-                                #print "Ring #",count,"Distance:",round(distance,2), "Angle:",round(angle_degrees,2)
+                                print "Ring #",count,"Distance:",round(distance,2), "Angle:",round(angle_degrees,2)
                                 summary_results[hetflag]['aromaticplus'].append([aaname,count,round(distance,2),charged])
                     #print aaname, ligand_rings,hetflag
                     if sum>2 and aa_resname in CHARGEDAA and ligand_rings[hetflag]:
@@ -580,6 +775,7 @@ def analyze_interactions():
             for entry in interaction:
                 hbondconfirmed = []
                 if entry[2]<3.3:
+                    
                     #print "Likely H-Bond",entry
 
 
@@ -650,6 +846,8 @@ def analyze_interactions():
                         if d<0.5:
                             #print 'found charge',residue,d,entry
                             chargedcheck = 1
+                            hydrogenmatch = 0 #Replace previous match!
+
                         # elif entry[0][0]=='O' and charged[0][0]=='O' and d<2.5:
                         #     print "found O close to O that is charged -- defining as COO-"
                         #     chargedcheck = 1
@@ -658,8 +856,8 @@ def analyze_interactions():
                         #print "check for hbondplus!",residue,entry
                         #Need to check which atoms, but for now assume charged
                         chargedcheck = 1
+                        hydrogenmatch = 0 #Replace previous match!
 
-                    entry[3] = ''
 
 
                     if hydrogenmatch:
@@ -681,12 +879,20 @@ def analyze_interactions():
                             type = 'hbondplus'
                             hbondplus.append(entry)
 
+                        fragment_library(ligand,entry[3],entry[0],entry[5],'HB')
+
                     elif chargedcheck:
                         type = 'hbondplus'
                         hbondplus.append(entry)
+                        fragment_library(ligand,entry[3],entry[0],entry[5],'HBC')
                     else:
                         type = 'hbond'
                         hbond.append(entry)
+                        fragment_library(ligand,entry[3],entry[0],entry[5],'HB')
+
+
+                    entry[3] = ''
+
                 if (entry[2]<4.5): 
                     sum += 1
                     score += 4.5-entry[2]
