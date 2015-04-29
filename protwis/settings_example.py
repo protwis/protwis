@@ -14,6 +14,7 @@ SITE_TITLE = 'GPCRDB' # for display in templates
 ANALYTICS_KEY = ''
 DATA_DIR = '/vagrant/data/protwis/' + SITE_NAME
 DEFAULT_NUMBERING_SCHEME = 'gpcrdb'
+DEFAULT_PROTEIN_STATE = 'inactive'
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)

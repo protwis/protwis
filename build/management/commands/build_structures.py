@@ -3,10 +3,10 @@ from django.conf import settings
 from django.db import connection
 from django.utils.text import slugify
 
-from protein.models import Protein, ProteinAnomaly, ProteinAnomalyType
-from residue.models import Residue, ResidueGenericNumber
+from protein.models import Protein, ProteinConformation, ProteinState, ProteinAnomaly, ProteinAnomalyType
+from residue.models import ResidueGenericNumber
 from common.models import WebLink, WebResource, Publication
-from structure.models import Structure, StructureType, StructureStabilizingAgent, StructureState
+from structure.models import Structure, StructureType, StructureStabilizingAgent
 from ligand.models import Ligand, LigandType, LigandRole
 from interaction.models import StructureLigandInteraction
 
@@ -22,7 +22,7 @@ class Command(BaseCommand):
     help = 'Reads source data and creates pdb structure records'
     
     def add_arguments(self, parser):
-        parser.add_argument('--filename', action='append', dest='filename', default=False,
+        parser.add_argument('--filename', action='append', dest='filename',
             help='Filename to import. Can be used multiple times')
         parser.add_argument('--purge', action='store_true', dest='purge', default=False,
             help='Purge existing construct records')
@@ -40,7 +40,6 @@ class Command(BaseCommand):
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
-        
         # import the structure data
         try:
             self.create_structures(options['filename'])
@@ -68,52 +67,83 @@ class Command(BaseCommand):
 
         for source_file in filenames:
             source_file_path = os.sep.join([self.structure_data_dir, source_file])
-            if os.path.isfile(source_file_path):
+            if os.path.isfile(source_file_path) and source_file[0] != '.':
                 self.logger.info('Reading file {}'.format(source_file_path))
                 # read the yaml file
                 with open(source_file_path, 'r') as f:
                     sd = yaml.load(f)
 
+                    # is there a construct?
+                    if 'construct' not in sd:
+                        self.logger.error('No construct specified, skipping!')
+                        continue
+
+                    # does the construct exists?
+                    try:
+                        con = Protein.objects.get(name=sd['construct'])
+                    except Protein.DoesNotExist:
+                        self.logger.error('Construct {} does not exists, skipping!'.format(sd['construct']))
+                        continue
+
                     # create a structure record
                     s = Structure()
 
-                    # insert into plain text fields
-                    if sd['preferred_chain']:
-                        s.preferred_chain = sd['preferred_chain']
-                    if sd['resolution']:
-                        s.resolution = float(sd['resolution'])
-                    if sd['publication_date']:
-                        s.publication_date = sd['publication_date']
-
-                    # protein
-                    if sd['construct']:
+                    # pdb code
+                    if 'pdb' in sd:
                         try:
-                            s.protein = Protein.objects.get(name=sd['construct'])
-                        except Protein.DoesNotExist:
-                            self.logger.error('Construct {} for structure {} does not exists, skipping!'.format(
-                                sd['construct'], sd['pdb']))
-                            continue
+                            web_resource = WebResource.objects.get(slug='pdb')
+                        except:
+                            # abort if pdb resource is not found
+                            raise Exception('PDB resource not found, aborting!')
+                        s.pdb_code, created = WebLink.objects.get_or_create(index=sd['pdb'],
+                            web_resource=web_resource)
+                    else:
+                        self.logger.error('PDB code not specified for structure {}, skipping!'.format(sd['pdb']))
+                        continue
 
+                    # protein state
+                    if 'state' not in sd:
+                        self.logger.error('State not defined, using default state {}'.format(
+                            settings.DEFAULT_PROTEIN_STATE))
+                        state = settings.DEFAULT_STATE.title()
+                    else:
+                        state = sd['state']
+                    ps, created = ProteinState.objects.get_or_create(slug=slugify(state), defaults={'name': state})
+                    if created:
+                        self.logger.info('Created protein state {}'.format(ps.name))
+                    s.state = ps
+
+                    # protein conformation
+                    try:
+                        s.protein_conformation, created = ProteinConformation.objects.get_or_create(protein=con,
+                            state=ps)
+                        if created:
+                            self.logger.info('Created conformation {} for protein {}'.format(ps.name, con.name))
+                    except Protein.DoesNotExist:
+                        self.logger.error('Construct {} for structure {} does not exists, skipping!'.format(
+                            sd['construct'], sd['pdb']))
+                        continue
+
+                    # insert into plain text fields
+                    if 'preferred_chain' in sd:
+                        s.preferred_chain = sd['preferred_chain']
+                    else:
+                        self.logger.warning('Preferred chain not specified for structure {}'.format(sd['pdb']))
+                    if 'resolution' in sd:
+                        s.resolution = float(sd['resolution'])
+                    else:
+                        self.logger.warning('Resolution not specified for structure {}'.format(sd['pdb']))
+                    if 'publication_date' in sd:
+                        s.publication_date = sd['publication_date']
+                    else:
+                        self.logger.warning('Publication date not specified for structure {}'.format(sd['pdb']))
 
                     # structure type
                     st, created = StructureType.objects.get_or_create(slug='xray', defaults={'name': 'X-ray'})
-                    s.structure_type = st
-                    
-                    # pdb code
-                    try:
-                        web_resource = WebResource.objects.get(slug='pdb')
-                    except:
-                        # abort if pdb resource is not found
-                        raise Exception('PDB resource not found, aborting!')
-                    s.pdb_code, created = WebLink.objects.get_or_create(index=sd['pdb'], web_resource=web_resource)
-
-                    # state
-                    ss, created = StructureState.objects.get_or_create(name=sd['state'],
-                        defaults={'slug': slugify(sd['state']), 'name': sd['state']})
-                    s.state = ss
+                    s.structure_type = st                        
 
                     # publication
-                    if sd['pubmed_id']:
+                    if 'pubmed_id' in sd:
                         try:
                             s.publication = Publication.objects.get(web_link__index=sd['pubmed_id'])
                         except Publication.DoesNotExist as e:
@@ -132,7 +162,7 @@ class Command(BaseCommand):
                     s.save()
                     
                     # ligands
-                    if sd['ligand']:
+                    if 'ligand' in sd:
                         if isinstance(sd['ligand'], list):
                             ligands = sd['ligand']
                         else:
@@ -143,8 +173,10 @@ class Command(BaseCommand):
                                 l, created = Ligand.objects.get_or_create(name=ligand['name'])
                                 if created:
                                     l.load_by_name(ligand['name'])
-                            elif ligand['inchi']:
-                                pass # FIXME write!
+                            # elif ligand['inchi']:
+                            #     pass # FIXME write!
+                            else:
+                                continue
 
                             # save ligand
                             l.save()
@@ -153,10 +185,11 @@ class Command(BaseCommand):
                                 if ligand['role']:
                                     lr, created = LigandRole.objects.get_or_create(slug=slugify(ligand['role']),
                                         defaults={'name': ligand['role']})
-                                    i = StructureLigandInteraction.objects.create(structure=s, ligand=l, ligand_role=lr)
+                                    i = StructureLigandInteraction.objects.create(structure=s, ligand=l,
+                                        ligand_role=lr)
                     
                     # protein anomalies
-                    if sd['bulges']:
+                    if 'bulges' in sd:
                         pab, create = ProteinAnomalyType.objects.get_or_create(slug='bulge', name='Bulge')
                         for bulge in sd['bulges']:
                             try:
@@ -165,7 +198,8 @@ class Command(BaseCommand):
                                 continue
                             pa = ProteinAnomaly.objects.create(anomaly_type=pab, generic_number=gn)
                             s.protein_anomalies.add(pa)
-                        pac, create = ProteinAnomalyType.objects.get_or_create(slug='constriction', name='Constriction')
+                        pac, create = ProteinAnomalyType.objects.get_or_create(slug='constriction',
+                            name='Constriction')
                         for constriction in sd['constrictions']:
                             try:
                                 gn = ResidueGenericNumber.objects.get(label=constriction)
@@ -175,15 +209,16 @@ class Command(BaseCommand):
                             s.protein_anomalies.add(pa)
                     
                     # stabilizing agents
-                    if sd['fusion_protein']:
-                        if isinstance(sd['fusion_protein'], list):
-                            fusion_proteins = sd['fusion_protein']
-                        else:
-                            fusion_proteins = [sd['fusion_protein']]
-                        for fusion_protein in fusion_proteins:
-                            sa, created = StructureStabilizingAgent.objects.get_or_create(slug=slugify(fusion_protein),
-                                name=fusion_protein)
-                            s.stabilizing_agents.add(sa)
+                    # fusion proteins moved to constructs, use this for G-proteins and other agents?
+                    # if 'fusion_protein' in sd:
+                    #     if isinstance(sd['fusion_protein'], list):
+                    #         fusion_proteins = sd['fusion_protein']
+                    #     else:
+                    #         fusion_proteins = [sd['fusion_protein']]
+                    #     for fusion_protein in fusion_proteins:
+                    #         sa, created = StructureStabilizingAgent.objects.get_or_create(slug=slugify(fusion_protein),
+                    #             name=fusion_protein)
+                    #         s.stabilizing_agents.add(sa)
 
                     # save structure
                     s.save()

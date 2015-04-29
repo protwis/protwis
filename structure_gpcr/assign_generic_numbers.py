@@ -3,7 +3,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio.PDB import *
 from Bio.PDB.PDBIO import Select
 from residue.models import Residue
-from structural_tools_gpcr.common import BlastSearch, MappedResidue
+from structure_gpcr.common import BlastSearch, MappedResidue
 
 import Bio.PDB.Polypeptide as polypeptide
 import os,logging
@@ -13,7 +13,7 @@ import os,logging
 #Class for annotating the pdb structures with generic numbers
 class GenericNumbering(object):
     
-    logger = logging.getLogger("structural_tools_gpcr")
+    logger = logging.getLogger("structure_gpcr")
 
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
   
@@ -40,9 +40,9 @@ class GenericNumbering(object):
         pdb_struct = None
         #checking for file handle or file name to parse
         if self.pdb_file:
-            pdb_struct = PDBParser().get_structure('ref', self.pdb_file)[0]
+            pdb_struct = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_file)[0]
         elif self.pdb_filename:
-            pdb_struct = PDBParser().get_structure('ref', self.pdb_file)[0]
+            pdb_struct = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_file)[0]
         else:
             return None
 
@@ -106,12 +106,17 @@ class GenericNumbering(object):
                 if resn != 0:
                     try:
                         db_res = Residue.objects.get(protein=prot_id, sequence_number=subj_counter)
-                        #FIXME: querying ManyToMany field
-                        self.residues[chain][resn].add_bw_number(db_res.alternative_generic_number(slug='bw'))
-                        self.residues[chain][resn].add_gpcrdb_number(db_res.alternative_generic_number(slug='gpcrdb'))
-                        self.logger.info(db_res.alternative_generic_number(slug='gpcrdb'))
-                    except Exception as e:
-                        self.logger.warning("Could not find residue {} in the database.".format(subj_counter))
+                        try:
+                            self.residues[chain][resn].add_bw_number(db_res.alternative_generic_numbers.get(scheme__slug='bw').label)
+                        except:
+                            pass
+                        try:
+                            self.residues[chain][resn].add_gpcrdb_number(db_res.alternative_generic_numbers.get(scheme__slug='gpcrdb').label)
+                        except:
+                            self.residues[chain][resn].add_gpcrdb_number(db_res.display_generic_number.label)
+                    except Exception as msg:
+                        self.logger.warning("Could not find residue {} in the database. \n {}".format(subj_counter, msg))
+
                     
                     if prot_id not in self.prot_id_list:
                         self.prot_id_list.append(prot_id)

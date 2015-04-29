@@ -3,16 +3,16 @@ import common.definitions as definitions
 
 
 class Residue(models.Model):
-    protein = models.ForeignKey('protein.Protein')
+    protein_conformation = models.ForeignKey('protein.ProteinConformation')
     protein_segment = models.ForeignKey('protein.ProteinSegment', null=True)
     generic_number = models.ForeignKey('ResidueGenericNumber', related_name='compare', null=True)
     display_generic_number = models.ForeignKey('ResidueGenericNumber', related_name='display', null=True)
-    alternative_generic_number = models.ManyToManyField('ResidueGenericNumber', related_name='alternative')
+    alternative_generic_numbers = models.ManyToManyField('ResidueGenericNumber', related_name='alternative')
     sequence_number = models.SmallIntegerField()
     amino_acid = models.CharField(max_length=1)
 
     def __str__(self):
-        return str(self.sequence_number) + self.amino_acid
+        return self.amino_acid + str(self.sequence_number)
 
     class Meta():
         db_table = 'residue'
@@ -34,15 +34,15 @@ class ResidueSet(models.Model):
     
     
 class ResidueGenericNumber(models.Model):
-    label = models.CharField(db_index=True, max_length=10)
     scheme = models.ForeignKey('ResidueNumberingScheme')
     protein_segment = models.ForeignKey('protein.ProteinSegment', null=True)
+    label = models.CharField(db_index=True, max_length=10)
 
     def __str__(self):
         return self.label
     
     class Meta():
-        db_table = 'generic_number'
+        db_table = 'residue_generic_number'
 
 
 class ResidueNumberingScheme(models.Model):
@@ -54,4 +54,4 @@ class ResidueNumberingScheme(models.Model):
         return self.name
 
     class Meta():
-        db_table = 'residue_numbering_scheme'
+        db_table = 'residue_generic_numbering_scheme'

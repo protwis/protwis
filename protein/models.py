@@ -5,16 +5,31 @@ class Protein(models.Model):
     parent = models.ForeignKey('self', null=True)
     family = models.ForeignKey('ProteinFamily')
     species = models.ForeignKey('Species')
-    source = models.ForeignKey('ProteinSource', null=True)
+    source = models.ForeignKey('ProteinSource')
     residue_numbering_scheme = models.ForeignKey('residue.ResidueNumberingScheme')
     sequence_type = models.ForeignKey('ProteinSequenceType')
-    endogenous_ligand = models.ManyToManyField('ligand.Ligand')
-    web_link = models.ManyToManyField('common.WebLink')
-    entry_name = models.SlugField(max_length=100, db_index=True, null=True)
+    states = models.ManyToManyField('ProteinState', through='ProteinConformation')
+    endogenous_ligands = models.ManyToManyField('ligand.Ligand')
+    web_links = models.ManyToManyField('common.WebLink')
+    entry_name = models.SlugField(max_length=100, unique=True)
     accession = models.CharField(max_length=100, db_index=True, null=True)
     name = models.CharField(max_length=200)
     sequence = models.TextField()
     
+    def __str__(self):
+        if not self.entry_name:
+            return self.name
+        else:
+            return self.entry_name
+    
+    class Meta():
+        db_table = 'protein'
+
+
+class ProteinConformation(models.Model):
+    protein = models.ForeignKey('Protein')
+    state = models.ForeignKey('ProteinState')
+
     # non-database attributes
     identity = False # % identity to a reference sequence in an alignment
     similarity = False # % similarity to a reference sequence in an alignment (% BLOSUM62 score > 0)
@@ -22,10 +37,21 @@ class Protein(models.Model):
     alignment = False # residues formatted for use in an Alignment class
 
     def __str__(self):
-        return self.entry_name
-    
+        return self.protein.entry_name + " (" + self.state.name + ")"
+
     class Meta():
-        db_table = 'protein'
+        db_table = "protein_conformation"
+
+
+class ProteinState(models.Model):
+    slug = models.SlugField(max_length=20)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = "protein_state"
 
 
 class Gene(models.Model):
@@ -81,13 +107,12 @@ class ProteinSegment(models.Model):
     slug = models.SlugField(max_length=100)
     name = models.CharField(max_length=50)
     category = models.CharField(max_length=50)
-    position = models.SmallIntegerField()
 
     def __str__(self):
         return self.name
 
     class Meta():
-        ordering = ('position', )
+        ordering = ('id', )
         db_table = 'protein_segment'
 
 
@@ -111,7 +136,7 @@ class ProteinFamily(models.Model):
 
     class Meta():
         db_table = 'protein_family'
-        ordering = ['id']
+        ordering = ('id', )
 
 
 class ProteinSequenceType(models.Model):
@@ -162,7 +187,32 @@ class ProteinAnomalyRule(models.Model):
     amino_acid = models.CharField(max_length=1)
 
     def __str__(self):
-        return "{} {}".format(self.generic_number.label, self.amino.acid)
+        return "{} {}".format(self.generic_number.label, self.amino_acid)
 
     class Meta():
         db_table = 'protein_anomaly_rule'
+
+
+class ProteinFusion(models.Model):
+    proteins = models.ManyToManyField('Protein', through='ProteinFusionProtein')
+    name = models.CharField(max_length=100, unique=True)
+    sequence = models.TextField(null=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'protein_fusion'
+
+
+class ProteinFusionProtein(models.Model):
+    protein = models.ForeignKey('Protein')
+    protein_fusion = models.ForeignKey('ProteinFusion')
+    segment_before = models.ForeignKey('ProteinSegment', related_name='segment_before')
+    segment_after = models.ForeignKey('ProteinSegment', related_name='segment_after')
+
+    def __str__(self):
+        return self.protein.name + " " + self.protein_fusion.name
+
+    class Meta():
+        db_table = 'protein_fusion_protein'
