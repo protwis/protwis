@@ -326,6 +326,8 @@ class Bulges(object):
     '''
     def __init__(self, gn):
         self.gn = gn
+        self.bulge_templates = []
+        self.template = None
     
     def find_bulge_template(self, similarity_table, bulge_in_reference):
         ''' Searches for bulge template, returns residues of template (5 residues if the bulge is in the reference, 4
@@ -338,7 +340,7 @@ class Bulges(object):
             bulge is in the template.
         '''
         gn = self.gn
-        bulge_templates = []
+        
         parse = GPCRDBParsingPDB()
         if bulge_in_reference==True:
             matches = Residue.objects.filter(generic_number__label=gn)
@@ -352,13 +354,13 @@ class Bulges(object):
                 for match in matches:
                     if bulge_in_reference==True:
                         if match.protein_conformation.protein.parent==protein_object:
-                            bulge_templates.append(structure)
+                            self.bulge_templates.append(structure)
                     elif bulge_in_reference==False:
                         if match.protein_conformation.protein.parent==protein_object and match.protein_conformation.protein.parent.entry_name not in excludee_proteins:
-                            bulge_templates.append(structure)
+                            self.bulge_templates.append(structure)
             except:
                 pass
-        for temp in bulge_templates:
+        for temp in self.bulge_templates:
             try:
                 if bulge_in_reference==True:
                     alt_bulge = parse.fetch_residues_from_pdb(temp, str(temp.preferred_chain)[0], 
@@ -386,6 +388,8 @@ class Constrictions(object):
     '''
     def __init__(self, gn):
         self.gn = gn
+        self.constriction_templates = []
+        self.template = None
     
     def find_constriction_template(self, similarity_table, constriction_in_reference):
         ''' Searches for constriction template, returns residues of template (4 residues if the constriction is in the 
@@ -398,7 +402,6 @@ class Constrictions(object):
             to False if the constriction is in the template.
         '''
         gn = self.gn
-        constriction_templates = []
         parse = GPCRDBParsingPDB()
         if constriction_in_reference==True:
             excludees = Residue.objects.filter(generic_number__label=gn)
@@ -412,13 +415,13 @@ class Constrictions(object):
                 for match in matches:
                     if constriction_in_reference==True:                        
                         if match.protein_conformation.protein.parent==protein_object and match.protein_conformation.protein.parent.entry_name not in excludee_proteins:
-                            constriction_templates.append(structure)
+                            self.constriction_templates.append(structure)
                     elif constriction_in_reference==False:
                         if match.protein_conformation.protein.parent==protein_object:
-                            constriction_templates.append(structure)
+                            self.constriction_templates.append(structure)
             except:
                 pass
-        for temp in constriction_templates:
+        for temp in self.constriction_templates:
             try:
                 if constriction_in_reference==True:
                     alt_bulge = parse.fetch_residues_from_pdb(temp, str(temp.preferred_chain)[0], 
