@@ -13,20 +13,20 @@ import pprint
 class Command(BaseCommand):
     
     def handle(self, *args, **options):
-#        count=0
-#        s = [struct.protein_conformation.protein.parent.entry_name for struct in Structure.objects.all()]
-#        for protein in ProteinConformation.objects.all():
-#            if protein.protein.entry_name not in s and count < 5:
-#                Homology_model = HomologyModeling(protein.protein.entry_name, 'Inactive', ['Inactive'])
-#                multi_alignment = Homology_model.run_pairwise_alignment()
-#                main_template = Homology_model.select_main_template(multi_alignment)
-#                main_alignment = Homology_model.run_main_alignment(alignment=multi_alignment)
-#                non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
-#    
-#                self.stdout.write(Homology_model.statistics, ending='')
-#                count+=1
+        count=0
+        s = [struct.protein_conformation.protein.parent.entry_name for struct in Structure.objects.all()]
+        for protein in ProteinConformation.objects.all():
+            if protein.protein.entry_name not in s and count < 0:
+                Homology_model = HomologyModeling(protein.protein.entry_name, 'Inactive', ['Inactive'])
+                multi_alignment = Homology_model.run_pairwise_alignment()
+                main_template = Homology_model.select_main_template(multi_alignment)
+                main_alignment = Homology_model.run_main_alignment(alignment=multi_alignment)
+                non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
+    
+                self.stdout.write(Homology_model.statistics, ending='')
+                count+=1
                 
-        Homology_model = HomologyModeling('gp132_human', 'Inactive', ['Inactive'])
+        Homology_model = HomologyModeling('gp139_human', 'Inactive', ['Inactive'])
         multi_alignment = Homology_model.run_pairwise_alignment()
         main_template = Homology_model.select_main_template(multi_alignment)
         main_alignment = Homology_model.run_main_alignment(alignment=multi_alignment)
@@ -148,6 +148,7 @@ class HomologyModeling(object):
             a = alignment
         ref = a.proteins[0].alignment
         temp = a.proteins[1].alignment
+
         reference_string, template_string, matching_string = '','',''   
         reference_dict = OrderedDict()
         template_dict = OrderedDict()
@@ -155,7 +156,7 @@ class HomologyModeling(object):
 
         for ref_segment, temp_segment in zip(ref,temp):
             segment_count+=1
-            for ref_position, temp_position in zip(ref_segment,temp_segment):                
+            for ref_position, temp_position in zip(ref_segment,temp_segment):
                 if ref_position[1]!=False and temp_position[1]!=False:
                     if ref_position[0]==temp_position[0]:
                         reference_dict[ref_position[0]]=ref_position[2]
@@ -212,8 +213,6 @@ class HomologyModeling(object):
         matched_count = 0
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
-        Bulge = Bulges()
-        Const = Constrictions()
         main_pdb_array = parse.pdb_array_creator('./structure/PDB/{}_{}_GPCRDB.pdb'.format(self.main_pdb_id,self.main_template_preferred_chain))
         
         # bulges and constrictions
@@ -235,16 +234,16 @@ class HomologyModeling(object):
                         # bulge in template
                         if len(str(gn_num))==3:
                             if switch_bulges==True:
-                                print('bulge_in_template')
-                                bulge_template = Bulge.find_bulge_template(gn, self.similarity_table_all, 
+                                Bulge = Bulges(gn)
+                                bulge_template = Bulge.find_bulge_template(self.similarity_table_all, 
                                                                            bulge_in_reference=False)
                                 temp_bulge_list.append({gn:Bulge.template})
                                 
                         # constriction in reference
                         else:
                             if switch_constrictions==True: 
-                                print('const_in_ref')
-                                constriction_template = Const.find_constriction_template(gn, self.similarity_table_all,
+                                Const = Constrictions(gn)
+                                constriction_template = Const.find_constriction_template(self.similarity_table_all,
                                                                                     constriction_in_reference=True)
                                 ref_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 
                                                                                             'x', +1):Const.template})
@@ -256,16 +255,16 @@ class HomologyModeling(object):
                         # bulge in reference
                         if len(str(gn_num))==3:
                             if switch_bulges==True:
-                                print('bulge_in_ref')
-                                bulge_template = Bulge.find_bulge_template(gn, self.similarity_table_all,
+                                Bulge = Bulges(gn)
+                                bulge_template = Bulge.find_bulge_template(self.similarity_table_all,
                                                                            bulge_in_reference=True)
                                 ref_bulge_list.append({gn:Bulge.template})
                                                
                         # constriction in template
                         else:
                             if switch_constrictions==True:
-                                print('const_in_temp')
-                                constriction_template = Const.find_constriction_template(gn, self.similarity_table_all,
+                                Const = Constrictions(gn)
+                                constriction_template = Const.find_constriction_template(self.similarity_table_all,
                                                                                     constriction_in_reference=False)
                                 temp_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 
                                                                                             'x', +1):Const.template})
@@ -322,13 +321,13 @@ class HomologyModeling(object):
         
         return similarity_table
 
-class Bulges():
+class Bulges(object):
     ''' Class to handle bulges in GPCR structures.
     '''
-    def __init__(self):
-        pass
+    def __init__(self, gn):
+        self.gn = gn
     
-    def find_bulge_template(self, gn, similarity_table, bulge_in_reference):
+    def find_bulge_template(self, similarity_table, bulge_in_reference):
         ''' Searches for bulge template, returns residues of template (5 residues if the bulge is in the reference, 4
             residues if the bulge is in the template). 
             
@@ -338,6 +337,7 @@ class Bulges():
             @param bulge_in_reference: boolean, Set it to True if the bulge is in the reference, set it to False if the
             bulge is in the template.
         '''
+        gn = self.gn
         bulge_templates = []
         parse = GPCRDBParsingPDB()
         if bulge_in_reference==True:
@@ -381,13 +381,13 @@ class Bulges():
         except:
             return None
             
-class Constrictions():
+class Constrictions(object):
     ''' Class to handle constrictions in GPCRs.
     '''
-    def __init__(self):
-        pass
+    def __init__(self, gn):
+        self.gn = gn
     
-    def find_constriction_template(self, gn, similarity_table, constriction_in_reference):
+    def find_constriction_template(self, similarity_table, constriction_in_reference):
         ''' Searches for constriction template, returns residues of template (4 residues if the constriction is in the 
             reference, 5 residues if the constriction is in the template). 
             
@@ -396,7 +396,8 @@ class Constrictions():
             Output of HomologyModeling().create_similarity_table(). \n
             @param constriction_in_reference: boolean, Set it to True if the constriction is in the reference, set it 
             to False if the constriction is in the template.
-        '''        
+        '''
+        gn = self.gn
         constriction_templates = []
         parse = GPCRDBParsingPDB()
         if constriction_in_reference==True:
