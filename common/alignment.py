@@ -231,7 +231,7 @@ class Alignment:
                 position_counter = 1
 
                 # numbering scheme
-                ns = pc.protein.residue_numbering_scheme.slug
+                ns_slug = pc.protein.residue_numbering_scheme.slug
 
                 # loop all positions in this segment
                 for pos in positions:
@@ -246,18 +246,17 @@ class Alignment:
 
                         # add display number to list of display numbers for this position
                         if r.display_generic_number:
-                            if r.display_generic_number.label not in self.generic_numbers[ns][segment][pos]:
-                                self.generic_numbers[ns][segment][pos].append(r.display_generic_number.label)
+                            if r.display_generic_number.label not in self.generic_numbers[ns_slug][segment][pos]:
+                                self.generic_numbers[ns_slug][segment][pos].append(r.display_generic_number.label)
                         else:
-                            if pos not in self.generic_numbers[ns][segment]:
-                                self.generic_numbers[ns][segment][pos] = []
+                            if pos not in self.generic_numbers[ns_slug][segment]:
+                                self.generic_numbers[ns_slug][segment][pos] = []
 
                         # add display numbers for other numbering schemes of selected proteins
                         if r.generic_number and len(self.numbering_schemes) > 1:
                             for arn in r.alternative_generic_numbers.all():
                                 for ns in self.numbering_schemes:
-                                    if (arn.scheme.slug == ns[0] and
-                                        arn.scheme.slug != ns):
+                                    if (arn.scheme.slug == ns[0] and arn.scheme.slug != ns):
                                         self.generic_numbers[arn.scheme.slug][segment][pos].append(arn.label)
                                         break
 
