@@ -1,26 +1,38 @@
 from django.core.management.base import BaseCommand
 
-from protein.models import Protein
+from protein.models import Protein, ProteinSegment, ProteinConformation
 from residue.models import Residue
 from structure.models import Structure
-from protein.models import ProteinSegment
 from common.alignment import Alignment
+from django.conf import settings
 
 import Bio.PDB as PDB
 from collections import OrderedDict
+import pprint
 
 class Command(BaseCommand):
     
     def handle(self, *args, **options):
-
-        Homology_model = HomologyModeling('gp139_human', 'Inactive', ['Inactive'])
+#        count=0
+#        s = [struct.protein_conformation.protein.parent.entry_name for struct in Structure.objects.all()]
+#        for protein in ProteinConformation.objects.all():
+#            if protein.protein.entry_name not in s and count < 5:
+#                Homology_model = HomologyModeling(protein.protein.entry_name, 'Inactive', ['Inactive'])
+#                multi_alignment = Homology_model.run_pairwise_alignment()
+#                main_template = Homology_model.select_main_template(multi_alignment)
+#                main_alignment = Homology_model.run_main_alignment(alignment=multi_alignment)
+#                non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
+#    
+#                self.stdout.write(Homology_model.statistics, ending='')
+#                count+=1
+                
+        Homology_model = HomologyModeling('gp132_human', 'Inactive', ['Inactive'])
         multi_alignment = Homology_model.run_pairwise_alignment()
         main_template = Homology_model.select_main_template(multi_alignment)
         main_alignment = Homology_model.run_main_alignment(alignment=multi_alignment)
         non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
     
         self.stdout.write(Homology_model.statistics, ending='')
-        
 
 class HomologyModeling(object):
     ''' Class to build homology models for GPCRs. 
@@ -45,8 +57,8 @@ class HomologyModeling(object):
             @param query_states: list, list of endogenous ligand states to be applied for template search, 
             default: same as reference 
         '''
-        return Structure.objects.filter(state__name__in=query_states).order_by('protein__parent',
-                                                                            'resolution').distinct('protein__parent')
+        return Structure.objects.filter(state__name__in=query_states).order_by('protein_conformation__protein__parent',
+                                                                            'resolution').distinct('protein_conformation__protein__parent')
                
     def get_protein_objects(self, structures_data):
         ''' Get all target Protein objects based on Structure objects. Returns a list of Protein objects.
@@ -54,7 +66,7 @@ class HomologyModeling(object):
             @param structures_data: QuerySet, query set of Structure objects. Output of get_structure_queryset 
             function.
         '''
-        return [Protein.objects.get(id=target.protein.parent.id) for target in structures_data]
+        return [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in structures_data]
         
     def run_pairwise_alignment(self, segments=['TM1','TM2','TM3','TM4','TM5','TM6','TM7'], order_by='similarity', 
                                reference=True, calculate_similarity=True, targets=None):
@@ -72,8 +84,10 @@ class HomologyModeling(object):
             targets = self.get_protein_objects(self.get_structure_queryset(self.query_states))       
         
         # core functions from alignment.py
+        
         a = Alignment()
         a.order_by = order_by
+        
         if reference==True:
             self.reference_protein = Protein.objects.get(entry_name=self.reference_entry_name)
             self.uniprot_id = self.reference_protein.accession
@@ -85,7 +99,8 @@ class HomologyModeling(object):
         a.load_segments(self.segments)
         a.build_alignment()
         if calculate_similarity==True:
-            a.calculate_similarity()   
+            a.calculate_similarity()
+        
         return a
     
     def select_main_template(self, alignment):
@@ -96,9 +111,10 @@ class HomologyModeling(object):
             pairwise_alignment function.
         '''
         self.similarity_table = self.create_similarity_table(alignment, self.get_structure_queryset(self.query_states))
-
-        main_structure = list(self.similarity_table.items())[0][0]       
-        main_structure_protein = Protein.objects.get(id=main_structure.protein.parent.id)
+        
+        main_structure = list(self.similarity_table.items())[0][0]
+        
+        main_structure_protein = Protein.objects.get(id=main_structure.protein_conformation.protein.parent.id)
         
         self.main_pdb_id = main_structure.pdb_code.index 
         self.main_template_sequence = main_structure_protein.sequence
@@ -124,7 +140,7 @@ class HomologyModeling(object):
             @param segments: list, list of segments to use, e.g.: ['TM1','IL1','TM2','EL1'].
         '''
         if alignment==None and reference!=None and main_template!=None:
-            main_template_protein = Protein.objects.get(id=main_template.protein_id)        
+            main_template_protein = Protein.objects.get(id=main_template.protein_conformation.protein.parent.id)        
             self.segments = segments
             a = self.run_pairwise_alignment(segments=self.segments, reference=False, 
                                                 calculate_similarity=False, targets=[reference, main_template_protein])
@@ -139,8 +155,7 @@ class HomologyModeling(object):
 
         for ref_segment, temp_segment in zip(ref,temp):
             segment_count+=1
-            for ref_position, temp_position in zip(ref_segment,temp_segment):
-                
+            for ref_position, temp_position in zip(ref_segment,temp_segment):                
                 if ref_position[1]!=False and temp_position[1]!=False:
                     if ref_position[0]==temp_position[0]:
                         reference_dict[ref_position[0]]=ref_position[2]
@@ -194,10 +209,12 @@ class HomologyModeling(object):
         '''
         ref_length = 0
         non_cons_count = 0
+        matched_count = 0
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
         Bulge = Bulges()
         Const = Constrictions()
+        main_pdb_array = parse.pdb_array_creator('./structure/PDB/{}_{}_GPCRDB.pdb'.format(self.main_pdb_id,self.main_template_preferred_chain))
         
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
@@ -217,14 +234,16 @@ class HomologyModeling(object):
     
                         # bulge in template
                         if len(str(gn_num))==3:
-                            if switch_bulges==True:                              
+                            if switch_bulges==True:
+                                print('bulge_in_template')
                                 bulge_template = Bulge.find_bulge_template(gn, self.similarity_table_all, 
                                                                            bulge_in_reference=False)
                                 temp_bulge_list.append({gn:Bulge.template})
                                 
                         # constriction in reference
                         else:
-                            if switch_constrictions==True:                            
+                            if switch_constrictions==True: 
+                                print('const_in_ref')
                                 constriction_template = Const.find_constriction_template(gn, self.similarity_table_all,
                                                                                     constriction_in_reference=True)
                                 ref_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 
@@ -237,6 +256,7 @@ class HomologyModeling(object):
                         # bulge in reference
                         if len(str(gn_num))==3:
                             if switch_bulges==True:
+                                print('bulge_in_ref')
                                 bulge_template = Bulge.find_bulge_template(gn, self.similarity_table_all,
                                                                            bulge_in_reference=True)
                                 ref_bulge_list.append({gn:Bulge.template})
@@ -244,6 +264,7 @@ class HomologyModeling(object):
                         # constriction in template
                         else:
                             if switch_constrictions==True:
+                                print('const_in_temp')
                                 constriction_template = Const.find_constriction_template(gn, self.similarity_table_all,
                                                                                     constriction_in_reference=False)
                                 temp_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 
@@ -255,6 +276,7 @@ class HomologyModeling(object):
             self.statistics.add_info('template_constrictions', temp_const_list)
         
         # non-conserved residues
+        non_cons_res_templates = []
         for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, 
                                                   alignment_input.aligned_string):
             if ref_res!='-' and ref_res!='/':
@@ -266,8 +288,24 @@ class HomologyModeling(object):
             
             if aligned_res=='.':
                 non_cons_count+=1
-                
-                 
+                residues = Residue.objects.filter(generic_number__label=ref_res)
+                proteins_w_this_gn = [res.protein_conformation.protein.parent for res in 
+                                        residues if res.amino_acid==alignment_input.reference_dict[ref_res]]
+                for struct in self.similarity_table:
+                    if struct.protein_conformation.protein.parent in proteins_w_this_gn:
+                        non_cons_res_templates.append({ref_res:struct})
+                        matched_count+=1
+                        break
+                    else:
+                        try:
+                            main_pdb_array[ref_res.replace('x','.')] = OrderedDict([('N',main_pdb_array[ref_res.replace('x','.')]['N']),
+                                                                        ('CA',main_pdb_array[ref_res.replace('x','.')]['CA']),
+                                                                        ('C',main_pdb_array[ref_res.replace('x','.')]['C']),
+                                                                        ('O',main_pdb_array[ref_res.replace('x','.')]['O'])])
+                        except:
+                            pass
+        self.statistics.add_info('non_conserved_residue_templates', non_cons_res_templates)
+        
     def create_similarity_table(self, alignment, structures_datatable):
         ''' Creates an ordered dictionary, where templates are sorted by similarity score.
         
@@ -275,11 +313,11 @@ class HomologyModeling(object):
             @param structures_datatable: QuerySet, involved template structures. Output of get_structure_queryset.
         '''
         similarity_table = OrderedDict()
-
+        
         for protein in alignment.proteins:
-            if protein!=self.reference_protein:
-                matches = structures_datatable.order_by('protein__parent',
-                                        'resolution').distinct('protein__parent').filter(protein__parent=protein.id)    
+            if protein.protein!=self.reference_protein:
+                matches = structures_datatable.order_by('protein_conformation__protein__parent',
+                    'resolution').distinct('protein_conformation__protein__parent').filter(protein_conformation__protein__parent__id=protein.protein.id)    
                 similarity_table[list(matches)[0]] = int(protein.similarity)
         
         return similarity_table
@@ -306,17 +344,17 @@ class Bulges():
             matches = Residue.objects.filter(generic_number__label=gn)
         elif bulge_in_reference==False:
             excludees = Residue.objects.filter(generic_number__label=gn)
-            excludee_proteins = list(OrderedDict.fromkeys([res.protein.entry_name for res in excludees]))
+            excludee_proteins = list(OrderedDict.fromkeys([res.protein_conformation.protein.parent.entry_name for res in excludees]))
             matches = Residue.objects.filter(generic_number__label=gn[:-1])
         for structure, value in similarity_table.items():  
-            protein_object = Protein.objects.get(id=structure.protein.parent.id)
+            protein_object = Protein.objects.get(id=structure.protein_conformation.protein.parent.id)
             try:                            
                 for match in matches:
                     if bulge_in_reference==True:
-                        if match.protein==protein_object:
+                        if match.protein_conformation.protein.parent==protein_object:
                             bulge_templates.append(structure)
                     elif bulge_in_reference==False:
-                        if match.protein==protein_object and match.protein.entry_name not in excludee_proteins:
+                        if match.protein_conformation.protein.parent==protein_object and match.protein_conformation.protein.parent.entry_name not in excludee_proteins:
                             bulge_templates.append(structure)
             except:
                 pass
@@ -363,19 +401,19 @@ class Constrictions():
         parse = GPCRDBParsingPDB()
         if constriction_in_reference==True:
             excludees = Residue.objects.filter(generic_number__label=gn)
-            excludee_proteins = list(OrderedDict.fromkeys([res.protein.entry_name for res in excludees]))
+            excludee_proteins = list(OrderedDict.fromkeys([res.protein_conformation.protein.parent.entry_name for res in excludees]))
             matches = Residue.objects.filter(generic_number__label=parse.gn_indecer(gn,'x',-1))
         elif constriction_in_reference==False:
             matches = Residue.objects.filter(generic_number__label=gn)
         for structure, value in similarity_table.items():  
-            protein_object = Protein.objects.get(id=structure.protein.parent.id)
+            protein_object = Protein.objects.get(id=structure.protein_conformation.protein.parent.id)
             try:                            
                 for match in matches:
                     if constriction_in_reference==True:                        
-                        if match.protein==protein_object and match.protein.entry_name not in excludee_proteins:
+                        if match.protein_conformation.protein.parent==protein_object and match.protein_conformation.protein.parent.entry_name not in excludee_proteins:
                             constriction_templates.append(structure)
                     elif constriction_in_reference==False:
-                        if match.protein==protein_object:
+                        if match.protein_conformation.protein.parent==protein_object:
                             constriction_templates.append(structure)
             except:
                 pass
