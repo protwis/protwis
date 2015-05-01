@@ -4,10 +4,11 @@ from protein.models import Protein, ProteinSegment, ProteinConformation
 from residue.models import Residue
 from structure.models import Structure
 from common.alignment import Alignment
-from django.conf import settings
 
 import Bio.PDB as PDB
 from collections import OrderedDict
+import os
+import logging
 import pprint
 
 class Command(BaseCommand):
@@ -47,6 +48,19 @@ class HomologyModeling(object):
         self.state = state
         self.query_states = query_states
         self.statistics = CreateStatistics(self.reference_entry_name)
+        self.reference_protein = Protein.objects.get(entry_name=self.reference_entry_name)
+        self.uniprot_id = self.reference_protein.accession
+        self.reference_sequence = self.reference_protein.sequence
+        self.statistics.add_info('uniprot_id',self.uniprot_id)
+        self.segments = []
+        self.similarity_table = OrderedDict()
+        self.similarity_table_all = OrderedDict()
+        self.main_pdb_id = ''
+        self.main_template_preferred_chain = ''
+        self.main_template_sequence = ''
+        if os.path.isfile('homology_modeling.log'):
+            os.remove('homology_modeling.log')
+        logging.basicConfig(filename='homology_modeling.log',level=logging.WARNING)
         
     def __repr__(self):
         return "<{}, {}>".format(self.reference_entry_name, self.state)
@@ -86,21 +100,15 @@ class HomologyModeling(object):
         # core functions from alignment.py
         
         a = Alignment()
-        a.order_by = order_by
-        
+        a.order_by = order_by      
         if reference==True:
-            self.reference_protein = Protein.objects.get(entry_name=self.reference_entry_name)
-            self.uniprot_id = self.reference_protein.accession
-            self.reference_sequence = self.reference_protein.sequence
-            self.statistics.add_info('uniprot_id',self.uniprot_id)
             a.load_reference_protein(self.reference_protein)
         a.load_proteins(targets)
         self.segments = ProteinSegment.objects.filter(slug__in=self.segments)
         a.load_segments(self.segments)
         a.build_alignment()
         if calculate_similarity==True:
-            a.calculate_similarity()
-        
+            a.calculate_similarity()       
         return a
     
     def select_main_template(self, alignment):
@@ -291,20 +299,28 @@ class HomologyModeling(object):
                 proteins_w_this_gn = [res.protein_conformation.protein.parent for res in 
                                         residues if res.amino_acid==alignment_input.reference_dict[ref_res]]
                 for struct in self.similarity_table:
+                    gn_ = ref_res.replace('x','.')
                     if struct.protein_conformation.protein.parent in proteins_w_this_gn:
-                        non_cons_res_templates.append({ref_res:struct})
-                        matched_count+=1
-                        break
-                    else:
+                            alt_temp = parse.pdb_array_creator('./structure/PDB/{}_{}_GPCRDB.pdb'.format(struct.pdb_code.index,
+                                                                                           str(struct.preferred_chain)[0]))
+#                            alt_temp[gn_]
+                            non_cons_res_templates.append({ref_res:struct})
+                            matched_count+=1
                         try:
-                            main_pdb_array[ref_res.replace('x','.')] = OrderedDict([('N',main_pdb_array[ref_res.replace('x','.')]['N']),
-                                                                        ('CA',main_pdb_array[ref_res.replace('x','.')]['CA']),
-                                                                        ('C',main_pdb_array[ref_res.replace('x','.')]['C']),
-                                                                        ('O',main_pdb_array[ref_res.replace('x','.')]['O'])])
+                            break
                         except:
                             pass
+                    else:
+                        try:
+                            residue = main_pdb_array[gn_]
+                            main_pdb_array[gn_] = OrderedDict([('N',residue['N']),
+                                                               ('CA',residue['CA']),
+                                                               ('C',residue['C']),
+                                                               ('O',residue['O'])])
+                        except:
+                            logging.warning("Missing atoms in {} at {}".format(self.main_pdb_id,gn))
         self.statistics.add_info('non_conserved_residue_templates', non_cons_res_templates)
-        
+
     def create_similarity_table(self, alignment, structures_datatable):
         ''' Creates an ordered dictionary, where templates are sorted by similarity score.
         
@@ -524,15 +540,18 @@ class GPCRDBParsingPDB(object):
         for model in pdb_struct:        
             for chain in model:
                 for residue in chain:
-                    if -8.1 < residue['CA'].get_bfactor() < 8.1:
-                        gn = str(residue['CA'].get_bfactor())
-                        if gn[0]=='-':
-                            gn = gn[1:]+'1'
-                        elif len(gn)==3:
-                            gn = gn+'0'
-                        residue_array[gn] = residue
-                    else:                          
-                        residue_array[str(residue.get_id()[1])] = residue
+                    try:
+                        if -8.1 < residue['CA'].get_bfactor() < 8.1:
+                            gn = str(residue['CA'].get_bfactor())
+                            if gn[0]=='-':
+                                gn = gn[1:]+'1'
+                            elif len(gn)==3:
+                                gn = gn+'0'
+                            residue_array[gn] = residue
+                        else:                          
+                            residue_array[str(residue.get_id()[1])] = residue
+                    except:
+                        logging.warning("Unable to parse {} in {}".format(residue, filename))
         return residue_array
         
 class CreateStatistics(object):
