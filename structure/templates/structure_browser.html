@@ -6,32 +6,43 @@
     {% if crystals %}
         <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
         <script src="{% static 'home/js/jquery.js' %}"> </script>
+        
         <div>
+            <script type="text/javascript" charset"utf-8">
+                $(document).ready(function () {
+                    $('#crystal_structures').dataTable({
+                        'ordering': true,
+                        'filtering': true,
+                    });
+                 });
+            </script> 
+            <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
             <table width="80%" class="table table-striped" id="crystal_strucutres" cellspacing="0">
-                <thead>
+            <!--<table width="100%" class="display" id="crystal_strucutres" cellspacing="0">-->
+                    <thead>
+                        <tr>
+                            <th>Protein name</th>
+                            <th>Protein class</th>
+                            <th>Species</th>
+                            <th>PDB code</th>
+                            <th>Endogenous lignad</th>
+                            <th>Resolution</th>
+                            <th>X-ray ligand</th>
+                            <th>Ligand function</th>
+                            <th>Preferred chain</th>
+                            <th>PMID</th>
+                            <th>Publication date</th>
+                            <!--<th>G protein-bound</th>-->
+                            <th>Stabilizing agents</th>
+                        </tr>
+                    </thead>
+                    {% for crystal in crystals %}
                     <tr>
-                        <th>Protein name</th>
-                        <th>Protein class</th>
-                        <th>Species</th>
-                        <th>PDB code</th>
-                        <th>Endogenous lignad</th>
-                        <th>Resolution</th>
-                        <th>X-ray ligand</th>
-                        <th>Ligand function</th>
-                        <th>Preferred chain</th>
-                        <th>PMID</th>
-                        <th>Publication date</th>
-                        <!--<th>G protein-bound</th>-->
-                        <th>Stabilizing agents</th>
-                    </tr>
-                </thead>
-                {% for crystal in crystals %}
-                    <tr>
-                        <td>{{ crystal.protein.entry_name }}</td>
-                        <td>{{ crystal.protein.family.name}}</td>
-                        <td>{{ crystal.protein.species.latin_name }}</td>
-                        <td>{{ crystal.pdb_code.resource.slug}}</td>
-                        <td>{{ crystal.protein.endogenous_ligand.name }}</td>
+                        <td>{{ crystal.protein_conformation.protein.entry_name|safe }}</td>
+                        <td>{{ crystal.protein_conformation.protein.family.name|safe}}</td>
+                        <td>{{ crystal.protein_conformation.protein.species.latin_name }}</td>
+                        <td>{{ crystal.pdb_code.index}}</td>
+                        <td>{{ crystal.protein_conformation.protein.endogenous_ligands.name }}</td>
                         <td>{{ crystal.resolution}}</td>
                         <td>{{ crystal.xray_ligand.name }}</td>
                         <td>{{ crystal.xray_ligand.role.role }}</td>
@@ -40,8 +51,8 @@
                         <td>{{ crystal.publication_date }}</td>
                         <td>{{ crystal.stabilizing_agents }}</td>
                     </tr>
-                {% endfor %}
-            </table>
+                    {% endfor %}
+                </table>
         </div>
     {% else %}
         <p> Ooops! There is no data to show here yet. </p>
