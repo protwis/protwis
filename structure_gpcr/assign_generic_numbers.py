@@ -105,7 +105,7 @@ class GenericNumbering(object):
                 resn = self.locate_res_by_pos(chain, q_counter)
                 if resn != 0:
                     try:
-                        db_res = Residue.objects.get(protein=prot_id, sequence_number=subj_counter)
+                        db_res = Residue.objects.get(protein_conformation__protein=prot_id, sequence_number=subj_counter)
                         try:
                             self.residues[chain][resn].add_bw_number(db_res.alternative_generic_numbers.get(scheme__slug='bw').label)
                         except:
