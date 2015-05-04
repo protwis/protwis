@@ -8,8 +8,6 @@ import getopt
 
 from Bio.PDB import *
 import openbabel
-#sudo apt-get install e-openbabel
-#sudo python3 -m pip install openbabel
 
 import pybel
 import yaml
@@ -953,20 +951,13 @@ def pretty_results():
                 else:
                     #print entry
                     output += '\t'.join(map(str, entry))+'\n'
-        #print output
-        # temp_path = projectdir+'results/'+pdbname+'/output/'+pdbname+'_'+ligand.replace("H_","")+'.txt'
-        # #print "writing to ",temp_path
-        # f=open(temp_path,'w')
-        # f.write(output)
-        # f.close();
+
         temp_path = projectdir+'results/'+pdbname+'/output/'+pdbname+'_'+ligand.replace("H_","")+'.yaml'
-        #print "writing to ",temp_path
+
         yaml.dump(result, open(temp_path,'w'))
 
         addresiduestoligand(ligand,pdbname,bindingresidues)
-    #print bindingresidues
 
-    #print "Total atom-pair distance calculations",count_calcs,"Skipped AA",count_skips
 
 
 def calculate_interactions(pdb):
