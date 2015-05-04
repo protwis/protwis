@@ -51,3 +51,28 @@ class StructureStabilizingAgent(models.Model):
 
     class Meta():
         db_table = "structure_stabilizing_agent"
+
+
+class PdbData(models.Model):
+    pdb = models.TextField()
+
+    class Meta():
+        db_table = "structure_pdb_data"
+
+
+class Rotamer(models.Model):
+    residue = models.ForeignKey('residue.Residue')
+    structure = models.ForeignKey('structure.Structure')
+    pdbdata = models.ForeignKey('PdbData')
+
+    class Meta():
+        db_table = "structure_rotamer"
+
+
+class Fragment(models.Model):
+    ligand = models.ForeignKey('ligand.Ligand')
+    structure = models.ForeignKey('structure.Structure')
+    pdbdata = models.ForeignKey('PdbData')
+
+    class Meta():
+        db_table = "structure_fragment"

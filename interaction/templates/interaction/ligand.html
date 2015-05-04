@@ -1,0 +1,30 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+Hi please select the pdb file to analyse:
+<form action="calculate" method="post">
+{% csrf_token %}
+    <label for="pdbname">PDBname</label>
+    <input id="pdbname" type="text" name="pdbname" value="">
+    <input type="submit" value="OK">
+</form>
+
+
+ <script src="http://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script> 
+
+ <h2> Showing {{ligand}} in structure {{pdbname}} </h2>
+ <a href='view?pdb={{pdbname}}'>Back to Structure</a>
+ <table><tr><td>
+ <div style="height: 600px; width: 800px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xf6f6f6' data-href='download?pdb={{pdbname}}&ligand={{ligand}}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres1='fontSize:10;opacity:1;color:white;backgroundOpacity:0.8' data-select1='{"hetflag":false}' data-style1='stick' data-select2='{"hetflag":true}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
+         <a href="download?pdb={{pdbname}}&ligand={{ligand}}">Download PDB file</a>
+
+</td><td>
+{% for fragment in fragments %}
+    <a href="ligand?pdb={{pdbname}}&ligand={{structure.ligand.name}}">{{fragment.interaction_type.name}}</a> {{fragment.residue.three_letter}} {{fragment.residue.sequence_number}}<br>
+{% empty %}
+    No structures yet.
+{% endfor %}
+</td></tr></table>
+
+
+{% endblock %}
