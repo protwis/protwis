@@ -36,3 +36,25 @@ class Interaction(models.Model):
     def __str__(self):
         return self.slug
 
+
+class FragmentAtom(models.Model):
+    atomtype = models.CharField(max_length = 20)
+    atomnr = models.SmallIntegerField()
+    atomtype = models.CharField(max_length = 20)
+    residuename = models.CharField(max_length = 20)
+    chain = models.CharField(max_length = 20)
+    residuenr = models.SmallIntegerField()
+    x = models.DecimalField(max_digits=6, decimal_places=3)
+    y = models.DecimalField(max_digits=6, decimal_places=3)
+    z = models.DecimalField(max_digits=6, decimal_places=3)
+    occupancy = models.DecimalField(max_digits=6, decimal_places=3)
+    temperature = models.DecimalField(max_digits=6, decimal_places=3)
+    element_name = models.CharField(max_length = 20)
+
+
+    class Meta():
+        db_table = 'fragment_atoms'
+
+    def __str__(self):
+        return self.atomtype
+
