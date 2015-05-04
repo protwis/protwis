@@ -1,58 +1,97 @@
 ﻿{% extends "home/base.html" %}
 {% load staticfiles %}
+{% load structure_extras %}
+
+
+{% block addon_css %}
+ <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            $('#crystal_structures').dataTable( {
+                "scrollX": true,
+                initComplete: function () {
+                    this.api().columns().every(function () {
+                        var column = this;
+                        var select = $('<select><option value=""></option></select>')
+                            .appendTo($(column.footer()).empty())
+                            .on('change', function () {
+                                var val = $.fn.dataTable.util.escapeRegex(
+                                    $(this).val()
+                                );
+                                column
+                                    .search(val ? '^' + val + '$' : '', true, false)
+                                    .draw();
+                            });
+                        column.data().unique().sort().each(function (d, j) {
+                            select.append('<option value="' + d + '">' + d + '</option>')
+                        });
+                    });
+                }
+            });
+            });
+    </script> 
+{% endblock %}
 
 {% block content %}
-
-    {% if crystals %}
-        <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-        <script src="{% static 'home/js/jquery.js' %}"> </script>
-        
-        <div>
-            <script type="text/javascript" charset"utf-8">
-                $(document).ready(function () {
-                    $('#crystal_structures').dataTable({
-                        'ordering': true,
-                        'filtering': true,
-                    });
-                 });
-            </script> 
-            <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-            <table width="80%" class="table table-striped" id="crystal_strucutres" cellspacing="0">
-            <!--<table width="100%" class="display" id="crystal_strucutres" cellspacing="0">-->
-                    <thead>
-                        <tr>
-                            <th>Protein name</th>
-                            <th>Protein class</th>
-                            <th>Species</th>
-                            <th>PDB code</th>
-                            <th>Endogenous lignad</th>
-                            <th>Resolution</th>
-                            <th>X-ray ligand</th>
-                            <th>Ligand function</th>
-                            <th>Preferred chain</th>
-                            <th>PMID</th>
-                            <th>Publication date</th>
-                            <!--<th>G protein-bound</th>-->
-                            <th>Stabilizing agents</th>
-                        </tr>
-                    </thead>
-                    {% for crystal in crystals %}
+    {% if crystals %}              
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">           
+            <table width="70%" class="display" id="crystal_structures" cellspacing="0">
+                <thead>
                     <tr>
-                        <td>{{ crystal.protein_conformation.protein.entry_name|safe }}</td>
-                        <td>{{ crystal.protein_conformation.protein.family.name|safe}}</td>
-                        <td>{{ crystal.protein_conformation.protein.species.latin_name }}</td>
-                        <td>{{ crystal.pdb_code.index}}</td>
-                        <td>{{ crystal.protein_conformation.protein.endogenous_ligands.name }}</td>
-                        <td>{{ crystal.resolution}}</td>
-                        <td>{{ crystal.xray_ligand.name }}</td>
-                        <td>{{ crystal.xray_ligand.role.role }}</td>
-                        <td>{{ crystal.preferred_chain }}</td>
-                        <td>{{ crystal.publication.web_link.web_resource.index }}</td>
-                        <td>{{ crystal.publication_date }}</td>
-                        <td>{{ crystal.stabilizing_agents }}</td>
+                        <th>Protein name</th>
+                        <th>Protein class</th>
+                        <th>Species</th>
+                        <th>PDB code</th>
+                        <th>Endogenous ligand</th>
+                        <th>Resolution</th>
+                        <th>X-ray ligand</th>
+                        <!--<th>Ligand function</th>-->
+                        <th>Preferred chain</th>
+                        <th>PMID</th>
+                        <th>Publication date</th>
+                        <!--<th>G protein-bound</th>-->
+                        <th>Stabilizing agents</th>
                     </tr>
-                    {% endfor %}
-                </table>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th>Protein name</th>
+                        <th>Protein class</th>
+                        <th>Species</th>
+                        <th>PDB code</th>
+                        <th>Endogenous ligand</th>
+                        <th>Resolution</th>
+                        <th>X-ray ligand</th>
+                        <!--<th>Ligand function</th>-->
+                        <th>Preferred chain</th>
+                        <th>PMID</th>
+                        <th>Publication date</th>
+                        <!--<th>G protein-bound</th>-->
+                        <th>Stabilizing agents</th>
+                    </tr>
+                </tfoot>
+                {% for crystal in crystals %}
+                <tr>
+                    <td>{{ crystal.protein_conformation.protein.family.name|safe }}</td>
+                    <td>{{ crystal.protein_conformation.protein.get_protein_class|safe}}</td>
+                    <td>{{ crystal.protein_conformation.protein.species.latin_name }}</td>
+                    <td>{{ crystal.pdb_code.index}}</td>
+                    <td>{{ crystal.protein_conformation.protein.endogenous_ligands.all|join_attr:"name" }}</td>
+                    <td>{{ crystal.resolution}}</td>
+                    <td>{{ crystal.ligands.all|join_attr:"name" }}</td>
+                    <!--<td>{{ crystal.ligand.role.role }}</td>-->
+                    <td>{{ crystal.preferred_chain }}</td>
+                    <td>{{ crystal.publication.web_link.index }}</td>
+                    <td>{{ crystal.publication_date }}</td>
+                    <td>{{ crystal.stabilizing_agents.all|join_attr:"name" }}</td>
+                </tr>
+                {% endfor %}
+            </table>
         </div>
     {% else %}
         <p> Ooops! There is no data to show here yet. </p>

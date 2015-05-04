@@ -3,3 +3,4 @@
 protwis/settings.py
 env
 /data
+/static/blast

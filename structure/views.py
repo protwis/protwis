@@ -17,3 +17,10 @@ class StructureBrowser(TemplateView):
             pass
 
         return context
+
+
+
+class Statistics(TemplateView):
+
+    template_name = 'statistics.html'
+
