@@ -12,8 +12,9 @@
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
-            $('#crystal_structures').dataTable( {
+            var table = $('#crystal_structures').dataTable( {
                 "scrollX": true,
+                "filter": true,
                 initComplete: function () {
                     this.api().columns().every(function () {
                         var column = this;
@@ -32,6 +33,9 @@
                         });
                     });
                 }
+            });
+            $('#example tbody').on('click', 'tr', function () {
+                $(this).toggleClass('selected');
             });
             });
     </script> 
