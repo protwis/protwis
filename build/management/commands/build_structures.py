@@ -3,10 +3,12 @@ from django.conf import settings
 from django.db import connection
 from django.utils.text import slugify
 
-from protein.models import Protein, ProteinConformation, ProteinState, ProteinAnomaly, ProteinAnomalyType
-from residue.models import ResidueGenericNumber, Residue
+from protein.models import (Protein, ProteinConformation, ProteinState, ProteinAnomaly, ProteinAnomalyType,
+    ProteinSegment)
+from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue
 from common.models import WebLink, WebResource, Publication
-from structure.models import Structure, StructureType, StructureStabilizingAgent,PdbData,Rotamer
+from structure.models import (Structure, StructureType, StructureSegment, StructureStabilizingAgent,PdbData,
+    Rotamer)
 from ligand.models import Ligand, LigandType, LigandRole
 from interaction.models import StructureLigandInteraction
 
@@ -129,13 +131,16 @@ class Command(BaseCommand):
 
                     # does the construct exists?
                     try:
-                        con = Protein.objects.get(name=sd['construct'])
+                        con = Protein.objects.get(entry_name=sd['construct'])
                     except Protein.DoesNotExist:
                         self.logger.error('Construct {} does not exists, skipping!'.format(sd['construct']))
                         continue
 
                     # create a structure record
-                    s = Structure()
+                    try:
+                        s = Structure.objects.get(protein_conformation__protein=con)
+                    except Structure.DoesNotExist:
+                        s = Structure()
 
                     # pdb code
                     if 'pdb' in sd:
@@ -189,7 +194,7 @@ class Command(BaseCommand):
 
                     # structure type
                     st, created = StructureType.objects.get_or_create(slug='xray', defaults={'name': 'X-ray'})
-                    s.structure_type = st                        
+                    s.structure_type = st
 
                     # publication
                     if 'pubmed_id' in sd:
@@ -246,25 +251,38 @@ class Command(BaseCommand):
                                     i = StructureLigandInteraction.objects.create(structure=s, ligand=l,
                                         ligand_role=lr)
                     
+                    # structure segments
+                    if 'segments' in sd and sd['segments']:
+                        for segment, positions in sd['segments'].items():
+                            ps = StructureSegment()
+                            ps.structure = s
+                            ps.protein_segment = ProteinSegment.objects.get(slug=segment)
+                            ps.start = positions[0]
+                            ps.end = positions[1]
+                            ps.save()
+
                     # protein anomalies
-                    if 'bulges' in sd:
-                        pab, create = ProteinAnomalyType.objects.get_or_create(slug='bulge', name='Bulge')
-                        for bulge in sd['bulges']:
-                            try:
-                                gn = ResidueGenericNumber.objects.get(label=bulge)
-                            except ResidueGenericNumber.DoesNotExist:
-                                continue
-                            pa = ProteinAnomaly.objects.create(anomaly_type=pab, generic_number=gn)
-                            s.protein_anomalies.add(pa)
-                        pac, create = ProteinAnomalyType.objects.get_or_create(slug='constriction',
-                            name='Constriction')
-                        for constriction in sd['constrictions']:
-                            try:
-                                gn = ResidueGenericNumber.objects.get(label=constriction)
-                            except ResidueGenericNumber.DoesNotExist:
-                                continue
-                            pa = ProteinAnomaly.objects.create(anomaly_type=pac, generic_number=gn)
-                            s.protein_anomalies.add(pa)
+                    if 'bulges' in sd and sd['bulges']:
+                        scheme = s.protein_conformation.protein.residue_numbering_scheme
+                        pab, created = ProteinAnomalyType.objects.get_or_create(slug='bulge', defaults={
+                            'name': 'Bulge'})
+                        for segment, bulges in sd['bulges'].items():
+                            for bulge in bulges:
+                                gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge, defaults={
+                                    'protein_segment': ProteinSegment.objects.get(slug=segment),
+                                    'scheme': ResidueNumberingScheme.objects.get(slug=scheme.slug)})
+                                pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pab, generic_number=gn)
+                                s.protein_anomalies.add(pa)
+                    if 'constrictions' in sd and sd['constrictions']:
+                        pac, created = ProteinAnomalyType.objects.get_or_create(slug='constriction', defaults={
+                            'name': 'Constriction'})
+                        for segment, constrictions in sd['constrictions'].items():
+                            for constriction in constrictions:
+                                gn, created = ResidueGenericNumber.objects.get_or_create(label=constriction, defaults={
+                                    'protein_segment': ProteinSegment.objects.get(slug=segment),
+                                    'scheme': ResidueNumberingScheme.objects.get(slug=scheme.slug)})
+                                pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pac, generic_number=gn)
+                                s.protein_anomalies.add(pa)
                     
                     # stabilizing agents
                     # fusion proteins moved to constructs, use this for G-proteins and other agents?
