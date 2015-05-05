@@ -3,7 +3,7 @@ from django.conf import settings
 from django.db import connection
 
 from residue.models import Residue
-from protein.models import Protein, ProteinSegment
+from protein.models import Protein, ProteinConformation, ProteinSegment
 
 from optparse import make_option
 from datetime import datetime
@@ -81,7 +81,7 @@ class Command(BaseCommand):
             }
 
         yaml_other_data = {
-            'construct' : data[self.csv_fields['pdb_code']],
+            'construct' : data[self.csv_fields['pdb_code']].lower(),
             'segments' : self.get_segments_data(data[self.csv_fields['prot_name']]),
             'bulges' : '',
             'constrictions' : '',
@@ -97,7 +97,7 @@ class Command(BaseCommand):
 
 
         yaml_construct = {
-            'name' : data[self.csv_fields['pdb_code']],
+            'name' : data[self.csv_fields['pdb_code']].lower(),
             'protein' : data[self.csv_fields['prot_name']],
             'truncations' : '',
             'mutations' : '',
@@ -111,14 +111,14 @@ class Command(BaseCommand):
 
 
     def get_segments_data(self, prot_entry_name):
-
         output = {}
         segments = ProteinSegment.objects.all()
         for segment in segments:
-            
-            resi = list(Residue.objects.filter(protein_segment__slug = segment.slug, protein__entry_name = prot_entry_name).order_by('sequence_number'))
+            resi = list(Residue.objects.filter(protein_segment__slug = segment.slug,
+                protein_conformation__protein__entry_name = prot_entry_name).order_by('sequence_number'))
             try:
-                output[segment.slug] = ['{:n},{:n}'.format(resi[0].sequence_number, resi[-1].sequence_number)]
+                if resi:
+                    output[segment.slug] = [resi[0].sequence_number, resi[-1].sequence_number]
             except Exception as e:
                 output[segment.slug] = ['-,-']
         return output

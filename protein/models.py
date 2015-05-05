@@ -35,6 +35,7 @@ class Protein(models.Model):
 class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein')
     state = models.ForeignKey('ProteinState')
+    template_structure = models.ForeignKey('structure.Structure', null=True)
 
     # non-database attributes
     identity = False # % identity to a reference sequence in an alignment
@@ -179,6 +180,7 @@ class ProteinAnomalyType(models.Model):
 
 class ProteinAnomalyRuleSet(models.Model):
     protein_anomaly = models.ForeignKey('ProteinAnomaly')
+    exclusive = models.BooleanField(default=False)
 
     def __str__(self):
         return self.protein_anomaly.generic_number.label
@@ -191,6 +193,7 @@ class ProteinAnomalyRule(models.Model):
     rule_set = models.ForeignKey('ProteinAnomalyRuleSet')
     generic_number = models.ForeignKey('residue.ResidueGenericNumber')
     amino_acid = models.CharField(max_length=1)
+    negative = models.BooleanField(default=False)
 
     def __str__(self):
         return "{} {}".format(self.generic_number.label, self.amino_acid)
@@ -222,3 +225,16 @@ class ProteinFusionProtein(models.Model):
 
     class Meta():
         db_table = 'protein_fusion_protein'
+
+
+class ProteinConformationTemplateStructure(models.Model):
+    protein_conformation = models.ForeignKey('ProteinConformation')
+    protein_segment = models.ForeignKey('ProteinSegment')
+    structure = models.ForeignKey('structure.Structure')
+
+    def __str__(self):
+        return self.protein_conformation.protein.name + " " + self.protein_segment.slug \
+        + " " + self.structure.pdb_code.index
+
+    class Meta():
+        db_table = 'protein_conformation_template_structure'
