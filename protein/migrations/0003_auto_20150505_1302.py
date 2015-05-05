@@ -7,7 +7,7 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('structure', '0002_structuresegment'),
+        ('structure', '0002_auto_20150429_1313'),
         ('protein', '0002_auto_20150428_1149'),
     ]
 
@@ -15,11 +15,21 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ProteinConformationTemplateStructure',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', auto_created=True, primary_key=True, serialize=False)),
+                ('id', models.AutoField(serialize=False, primary_key=True, auto_created=True, verbose_name='ID')),
             ],
             options={
                 'db_table': 'protein_conformation_template_structure',
             },
+        ),
+        migrations.AddField(
+            model_name='proteinanomalyrule',
+            name='negative',
+            field=models.BooleanField(default=False),
+        ),
+        migrations.AddField(
+            model_name='proteinanomalyruleset',
+            name='exclusive',
+            field=models.BooleanField(default=False),
         ),
         migrations.AddField(
             model_name='proteinconformation',
