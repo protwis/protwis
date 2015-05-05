@@ -1,0 +1,30 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+Hi please select the pdb file to analyse:
+<form action="calculate" method="post">
+{% csrf_token %}
+    <label for="pdbname">PDBname</label>
+    <input id="pdbname" type="text" name="pdbname" value="">
+    <input type="submit" value="OK">
+</form>
+
+
+ <script src="http://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script> 
+
+ <h2> Showing ligands in structure with {{pdbname}} </h2>
+ <a href='list'>Back to list</a>
+ <table><tr><td>
+ <div style="height: 600px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xf6f6f6' data-href='pdb?pdb={{pdbname}}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"hetflag":true}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
+         <a href="pdb?pdb={{pdbname}}">Download PDB file</a>
+
+</td><td>
+{% for structure in structures %}
+    <a href="ligand?pdb={{pdbname}}&ligand={{structure.ligand.name}}">{{structure.ligand.name}}</a> Has {{structure.numRes}} residues interacting<br>
+{% empty %}
+    No structures yet.
+{% endfor %}
+</td></tr></table>
+
+
+{% endblock %}

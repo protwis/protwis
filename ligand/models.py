@@ -12,7 +12,7 @@ class Ligand(models.Model):
     web_links = models.ManyToManyField('common.WebLink')
     name = models.TextField()
     smiles = models.TextField(null=True)
-    inchikey = models.CharField(max_length=50, null=True)
+    inchikey = models.CharField(max_length=50, null=True, unique=True)
 
     def __str__(self):
         return self.name
@@ -58,7 +58,7 @@ class Ligand(models.Model):
 
 
 class LigandType(models.Model):
-    slug = models.SlugField(max_length=50)
+    slug = models.SlugField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
 
     def __str__(self):
