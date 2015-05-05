@@ -20,7 +20,7 @@ Hi please select the pdb file to analyse:
 
 </td><td>
 {% for fragment in fragments %}
-    <a href="ligand?pdb={{pdbname}}&ligand={{structure.ligand.name}}">{{fragment.interaction_type.name}}</a> {{fragment.residue.three_letter}} {{fragment.residue.sequence_number}}<br>
+    <a href="fragment?pdb={{pdbname}}&ligand={{ligand}}&fragment={{fragment.id}}">{{fragment.interaction_type.name}}</a> {{fragment.rotamer.residue.three_letter}} {{fragment.rotamer.residue.sequence_number}}<br>
 {% empty %}
     No structures yet.
 {% endfor %}
