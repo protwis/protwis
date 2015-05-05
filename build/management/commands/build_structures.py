@@ -75,7 +75,7 @@ class Command(BaseCommand):
                     continue
                 preferred_chain = chain #If reached this point either the preferred_chain is specified or needs to be the first one and is thus specified now.
                 if check==0 or residue_number==check: #If this is either the begining or the same as previous line add to current rotamer
-                    temp += line
+                    temp += line + "\n"
                 else: #if this is a new residue
                     try:
                         residue=Residue.objects.get(protein_conformation=protein_conformation, sequence_number=check)
@@ -90,7 +90,7 @@ class Command(BaseCommand):
                         residue = None
                         errors += 1
                     
-                    temp = line
+                    temp = line + "\n"
                 check = residue_number
                 residue_name = line[17:20].title() #use title to get GLY to Gly so it matches
         try:
