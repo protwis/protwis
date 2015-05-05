@@ -3,11 +3,9 @@ from django.db import models
 
 class ResidueFragmentInteraction(models.Model):
 
-    structure = models.ForeignKey('structure.Structure') #redundant via rotamer
-    residue = models.ForeignKey('residue.Residue') #redundant via rotamer
+    structure_ligand_pair = models.ForeignKey('StructureLigandInteraction')
     rotamer = models.ForeignKey('structure.Rotamer')
     fragment = models.ForeignKey('structure.Fragment')
-    ligand = models.ForeignKey('ligand.Ligand') #redundant via fragment
     interaction_type = models.ForeignKey('ResidueFragmentInteractionType')
 
     def __str__(self):
@@ -33,7 +31,7 @@ class StructureLigandInteraction(models.Model):
     ligand = models.ForeignKey('ligand.Ligand')
     ligand_role = models.ForeignKey('ligand.LigandRole')
     pdb_reference = models.CharField(max_length=3, null=True)
-    pdb_file = models.ForeignKey('structure.PdbData')
+    pdb_file = models.ForeignKey('structure.PdbData', null=True)
 
     def __str__(self):
         return "{} {}".format(self.structure.pdb_code, self.ligand.name)

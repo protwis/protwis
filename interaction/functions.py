@@ -144,23 +144,24 @@ def fragment_library(ligand,atomvector,atomname,residuenr,typeinteraction):
     mol = pybel.readfile("pdb", ligand_pdb).next()
     mol.removeh()
     listofvectors = []
-    for atom in mol:
-        distance = (Vector(getattr(atom,'coords'))-atomvector).norm()
-        if distance>0.1:
-            continue
-        #print "Parent:",getattr(atom,'type'),getattr(atom,'idx') ,Vector(getattr(atom,'coords'))
-        listofvectors.append(Vector(getattr(atom ,'coords')))
-        for neighbour_atom in openbabel.OBAtomAtomIter(atom.OBAtom):
-           #print neighbour_atom.GetAtomicNum()
-           neighbor = pybel.Atom(neighbour_atom)
-           #print "Neighbour:",neighbour_atom.GetType(),Vector(getattr(neighbor,'coords'))
-           listofvectors.append(Vector(getattr(neighbor ,'coords')))
-           for neighbour_atom2 in openbabel.OBAtomAtomIter(neighbour_atom):
-           #print neighbour_atom.GetAtomicNum()
-               neighbor2 = pybel.Atom(neighbour_atom2)
-               #print "Neighbour2:",neighbour_atom2.GetType(),Vector(getattr(neighbor2,'coords'))
-               listofvectors.append(Vector(getattr(neighbor2,'coords')))
-    #print "vectors:",listofvectors
+    if atomvector is not None:
+        for atom in mol:
+            distance = (Vector(getattr(atom,'coords'))-atomvector).norm()
+            if distance>0.1:
+                continue
+            #print "Parent:",getattr(atom,'type'),getattr(atom,'idx') ,Vector(getattr(atom,'coords'))
+            listofvectors.append(Vector(getattr(atom ,'coords')))
+            for neighbour_atom in openbabel.OBAtomAtomIter(atom.OBAtom):
+               #print neighbour_atom.GetAtomicNum()
+               neighbor = pybel.Atom(neighbour_atom)
+               #print "Neighbour:",neighbour_atom.GetType(),Vector(getattr(neighbor,'coords'))
+               listofvectors.append(Vector(getattr(neighbor ,'coords')))
+               for neighbour_atom2 in openbabel.OBAtomAtomIter(neighbour_atom):
+               #print neighbour_atom.GetAtomicNum()
+                   neighbor2 = pybel.Atom(neighbour_atom2)
+                   #print "Neighbour2:",neighbour_atom2.GetType(),Vector(getattr(neighbor2,'coords'))
+                   listofvectors.append(Vector(getattr(neighbor2,'coords')))
+        #print "vectors:",listofvectors
 
     pdbfile = projectdir+'pdbs/'+pdbname+'.pdb'
 
@@ -715,6 +716,8 @@ def find_interactions():
 
                     if hydrophobic_count>2: #min 3 c-c interactions
                         summary_results[hetflag]['hydrophobic'].append([aaname,hydrophobic_count])
+
+                        fragment_library(hetflag,None,'',aa_seqid,'hydrop')
 
                     if sum>5 and aa_resname in AROMATIC:
                         #print aaatomlist

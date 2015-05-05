@@ -5,9 +5,10 @@ from django.utils.text import slugify
 
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinAnomaly, ProteinAnomalyType,
     ProteinSegment)
-from residue.models import ResidueGenericNumber, ResidueNumberingScheme
+from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue
 from common.models import WebLink, WebResource, Publication
-from structure.models import Structure, StructureType, StructureSegment, StructureStabilizingAgent
+from structure.models import (Structure, StructureType, StructureSegment, StructureStabilizingAgent,PdbData,
+    Rotamer)
 from ligand.models import Ligand, LigandType, LigandRole
 from interaction.models import StructureLigandInteraction
 
@@ -58,6 +59,55 @@ class Command(BaseCommand):
 
         for table in tables_to_truncate:
             cursor.execute("TRUNCATE TABLE {!s} CASCADE".format(table))
+
+    def create_rotamers(self, structure):
+        pdb = structure.pdb_data.pdb
+        protein_conformation=structure.protein_conformation
+        preferred_chain = structure.preferred_chain
+        temp = ''
+        check = 0
+        errors = 0
+        for line in pdb.splitlines():
+            if line.startswith('ATOM'): #If it is a residue
+                residue_number = line[23:26]
+                chain = line[21]
+                if preferred_chain and chain!=preferred_chain: #If perferred is defined and is not the same as the current line, then skip
+                    continue
+                preferred_chain = chain #If reached this point either the preferred_chain is specified or needs to be the first one and is thus specified now.
+                if check==0 or residue_number==check: #If this is either the begining or the same as previous line add to current rotamer
+                    temp += line + "\n"
+                else: #if this is a new residue
+                    try:
+                        residue=Residue.objects.get(protein_conformation=protein_conformation, sequence_number=check)
+                        if not residue_name==residue.three_letter():
+                            #print('Residue not found in '+structure.pdb_code.index+', skipping! '+residue_name+' vs '+residue.three_letter()+ ' at position '+residue_number)
+                            errors += 1
+                        else:
+                            rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
+                            rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
+                    except Residue.DoesNotExist:
+                        #print('Residue not found in '+structure.pdb_code.index+' ' +residue_name+' at position '+residue_number)
+                        residue = None
+                        errors += 1
+                    
+                    temp = line + "\n"
+                check = residue_number
+                residue_name = line[17:20].title() #use title to get GLY to Gly so it matches
+        try:
+            residue=Residue.objects.get(protein_conformation=protein_conformation, sequence_number=check)
+            if not residue_name==residue.three_letter():
+                #print('Residue not found in '+structure.pdb_code.index+', skipping! '+residue_name+' vs '+residue.three_letter()+ ' at position '+residue_number)
+                errors += 1
+            else:
+                rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
+                rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
+        except Residue.DoesNotExist:
+            #print('Residue not found in '+structure.pdb_code.index+' ' +residue_name+' at position '+residue_number)
+            residue = None
+            errors += 1
+        if errors:
+            print(structure.pdb_code.index + " had " + str(errors) + " residues that did not match in the database")
+        return None
 
     def create_structures(self, filenames):
         self.logger.info('CREATING PDB STRUCTURES')
@@ -162,9 +212,18 @@ class Command(BaseCommand):
                             p.save()
                             s.publication = p
                     
+                    
+                    # get the PDB file and save to DB
+                    url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
+                    pdbdata = urlopen(url).read()
+                    pdbdata, created = PdbData.objects.get_or_create(pdb=pdbdata)
+                    s.pdb_data = pdbdata
+
                     # save structure before adding M2M relations
                     s.save()
-                    
+
+                    self.create_rotamers(s)
+
                     # ligands
                     if 'ligand' in sd:
                         if isinstance(sd['ligand'], list):
