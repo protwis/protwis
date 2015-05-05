@@ -23,4 +23,7 @@ class StructureBrowser(TemplateView):
 class Statistics(TemplateView):
 
     template_name = 'statistics.html'
+    pass
 
+
+#==============================================================================

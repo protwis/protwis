@@ -169,6 +169,8 @@ def AddToSelection(request):
             o = ProteinFamily.objects.get(pk=selection_id)
         elif selection_subtype == 'set':
             o = ProteinSet.objects.get(pk=selection_id)
+        elif selection_subtype == 'structure':
+            o = Protein.objects.get(entry_name=selection_id)
     elif selection_type == 'segments':
         o = ProteinSegment.objects.get(pk=selection_id)
 

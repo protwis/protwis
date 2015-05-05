@@ -2,7 +2,6 @@
 {% load staticfiles %}
 {% load structure_extras %}
 
-
 {% block addon_css %}
  <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 {% endblock %}
@@ -12,39 +11,63 @@
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
-            var table = $('#crystal_structures').dataTable( {
+            var table = $('#crystal_structures').DataTable( {
                 "scrollX": true,
                 "filter": true,
+                'paging': true,
+                'length': 30,
                 initComplete: function () {
                     this.api().columns().every(function () {
                         var column = this;
-                        var select = $('<select><option value=""></option></select>')
-                            .appendTo($(column.footer()).empty())
+                        var select = $('<select width="70%"><option value=""></option></select>')
+                            .appendTo($(column.header()).empty())
                             .on('change', function () {
                                 var val = $.fn.dataTable.util.escapeRegex(
                                     $(this).val()
                                 );
                                 column
-                                    .search(val ? '^' + val + '$' : '', true, false)
+                                    .search(val, false, true)
                                     .draw();
                             });
                         column.data().unique().sort().each(function (d, j) {
                             select.append('<option value="' + d + '">' + d + '</option>')
                         });
                     });
-                }
+                },
             });
-            $('#example tbody').on('click', 'tr', function () {
+            $('#crystal_structures tbody').on('click', 'tr', function () {
                 $(this).toggleClass('selected');
             });
+            $('#ref_btn').click(function () {
+                //alert( table.rows('.selected').data().length + ' row(s) selected' );
+                if ( table.rows('.selected').data().length != 1 ) {
+                    alert( "Can only use one reference structure!!!" );
+                    }
+            });
+            $('#alt_btn').click(function () {
+                var message = ''
+                var selected_data = table.rows('.selected').data();
+                for (i = 0; i < selected_data.lenght; i++) {
+                    message += selected_data[i]["PDB code"] + ' ';
+                }
+                alert(message);
+            })
+            
             });
     </script> 
 {% endblock %}
 
 {% block content %}
+
+    <div class="btn-group">
+        <a id="ref_btn" class="btn btn-primary btn-mini " href="#"><i class="icon-download icon-white"></i> Select as reference</a>
+    </div>
+    <div class="btn-group">
+        <a id="alt_btn" class="btn btn-primary btn-mini " href="#"><i class="icon-download icon-white"></i> Select as altering</a>
+    </div>
     {% if crystals %}              
         <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">           
-            <table width="70%" class="display" id="crystal_structures" cellspacing="0">
+            <table width="70%" class="display" id="crystal_structures">
                 <thead>
                     <tr>
                         <th>Protein name</th>
@@ -60,6 +83,19 @@
                         <th>Publication date</th>
                         <!--<th>G protein-bound</th>-->
                         <th>Stabilizing agents</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tfoot>
@@ -79,7 +115,7 @@
                         <th>Stabilizing agents</th>
                     </tr>
                 </tfoot>
-                {% for crystal in crystals %}
+                {% for crystal in crystals.select_related.all %}
                 <tr>
                     <td>{{ crystal.protein_conformation.protein.family.name|safe }}</td>
                     <td>{{ crystal.protein_conformation.protein.get_protein_class|safe}}</td>
