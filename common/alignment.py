@@ -53,16 +53,19 @@ class Alignment:
 
     def load_proteins(self, proteins):
         """Load a list of protein objects into the alignment"""
-        for protein in proteins:
-            for state in self.states:
-                try:
-                    pconf = ProteinConformation.objects.get(protein=protein,
-                        state=ProteinState.objects.get(slug=state))
-                except ProteinConformation.DoesNotExist:
-                    raise Exception ('Protein conformation {} not found for protein {}'.format(state,
-                        protein.entry_name))
-                if pconf not in self.proteins:
-                    self.proteins.append(pconf)
+        # fetch all protein conformations
+        protein_conformations = ProteinConformation.objects.filter(protein__in=proteins,
+            state__slug__in=self.states).select_related('protein__residue_numbering_scheme', 'protein__species',
+            'state')
+        pconfs = {}
+        for pconf in protein_conformations:
+            pconf_label = pconf.__str__()
+            if pconf_label not in pconfs:
+                pconfs[pconf_label] = {}
+            pconfs[pconf_label] = pconf
+
+        for pconf_label, pconf in pconfs.items():
+            self.proteins.append(pconf)
         self.update_numbering_schemes()
 
     def load_proteins_from_selection(self, simple_selection):
@@ -143,12 +146,13 @@ class Alignment:
         if len(self.numbering_schemes) > 1:
             rs = Residue.objects.filter(
                 protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins).prefetch_related(
-                'protein_conformation__protein', 'protein_segment', 'generic_number', 'display_generic_number__scheme',
-                'alternative_generic_numbers__scheme')
+                'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
+                'generic_number__scheme', 'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
         else:
             rs = Residue.objects.filter(
                 protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins).prefetch_related(
-                'protein_conformation__protein', 'protein_segment', 'generic_number', 'display_generic_number__scheme')
+                'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
+                'generic_number__scheme', 'display_generic_number__scheme')
 
         # create a dict of proteins, segments and residues
         proteins = {}
