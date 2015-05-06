@@ -215,7 +215,7 @@ class Command(BaseCommand):
                     
                     # get the PDB file and save to DB
                     url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
-                    pdbdata = urlopen(url).read()
+                    pdbdata = urlopen(url).read().decode('utf-8')
                     pdbdata, created = PdbData.objects.get_or_create(pdb=pdbdata)
                     s.pdb_data = pdbdata
 

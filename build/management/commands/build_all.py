@@ -14,6 +14,7 @@ class Command(BaseCommand):
             ['build_residues', 'all'],
             ['build_constructs'],
             ['build_structures'],
+            ['find_protein_templates'],
         ]
 
         for c in commands:
