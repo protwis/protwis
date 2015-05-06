@@ -3,10 +3,12 @@ from django.conf import settings
 from django.db import connection
 from django.utils.text import slugify
 
-from protein.models import Protein, ProteinConformation, ProteinState, ProteinAnomaly, ProteinAnomalyType
-from residue.models import ResidueGenericNumber
+from protein.models import (Protein, ProteinConformation, ProteinState, ProteinAnomaly, ProteinAnomalyType,
+    ProteinSegment)
+from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue
 from common.models import WebLink, WebResource, Publication
-from structure.models import Structure, StructureType, StructureStabilizingAgent
+from structure.models import (Structure, StructureType, StructureSegment, StructureStabilizingAgent,PdbData,
+    Rotamer)
 from ligand.models import Ligand, LigandType, LigandRole
 from interaction.models import StructureLigandInteraction
 
@@ -58,6 +60,55 @@ class Command(BaseCommand):
         for table in tables_to_truncate:
             cursor.execute("TRUNCATE TABLE {!s} CASCADE".format(table))
 
+    def create_rotamers(self, structure):
+        pdb = structure.pdb_data.pdb
+        protein_conformation=structure.protein_conformation
+        preferred_chain = structure.preferred_chain
+        temp = ''
+        check = 0
+        errors = 0
+        for line in pdb.splitlines():
+            if line.startswith('ATOM'): #If it is a residue
+                residue_number = line[23:26]
+                chain = line[21]
+                if preferred_chain and chain!=preferred_chain: #If perferred is defined and is not the same as the current line, then skip
+                    continue
+                preferred_chain = chain #If reached this point either the preferred_chain is specified or needs to be the first one and is thus specified now.
+                if check==0 or residue_number==check: #If this is either the begining or the same as previous line add to current rotamer
+                    temp += line + "\n"
+                else: #if this is a new residue
+                    try:
+                        residue=Residue.objects.get(protein_conformation=protein_conformation, sequence_number=check)
+                        if not residue_name==residue.three_letter():
+                            #print('Residue not found in '+structure.pdb_code.index+', skipping! '+residue_name+' vs '+residue.three_letter()+ ' at position '+residue_number)
+                            errors += 1
+                        else:
+                            rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
+                            rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
+                    except Residue.DoesNotExist:
+                        #print('Residue not found in '+structure.pdb_code.index+' ' +residue_name+' at position '+residue_number)
+                        residue = None
+                        errors += 1
+                    
+                    temp = line + "\n"
+                check = residue_number
+                residue_name = line[17:20].title() #use title to get GLY to Gly so it matches
+        try:
+            residue=Residue.objects.get(protein_conformation=protein_conformation, sequence_number=check)
+            if not residue_name==residue.three_letter():
+                #print('Residue not found in '+structure.pdb_code.index+', skipping! '+residue_name+' vs '+residue.three_letter()+ ' at position '+residue_number)
+                errors += 1
+            else:
+                rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
+                rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
+        except Residue.DoesNotExist:
+            #print('Residue not found in '+structure.pdb_code.index+' ' +residue_name+' at position '+residue_number)
+            residue = None
+            errors += 1
+        if errors:
+            print(structure.pdb_code.index + " had " + str(errors) + " residues that did not match in the database")
+        return None
+
     def create_structures(self, filenames):
         self.logger.info('CREATING PDB STRUCTURES')
         
@@ -80,13 +131,16 @@ class Command(BaseCommand):
 
                     # does the construct exists?
                     try:
-                        con = Protein.objects.get(name=sd['construct'])
+                        con = Protein.objects.get(entry_name=sd['construct'])
                     except Protein.DoesNotExist:
                         self.logger.error('Construct {} does not exists, skipping!'.format(sd['construct']))
                         continue
 
                     # create a structure record
-                    s = Structure()
+                    try:
+                        s = Structure.objects.get(protein_conformation__protein=con)
+                    except Structure.DoesNotExist:
+                        s = Structure()
 
                     # pdb code
                     if 'pdb' in sd:
@@ -140,7 +194,7 @@ class Command(BaseCommand):
 
                     # structure type
                     st, created = StructureType.objects.get_or_create(slug='xray', defaults={'name': 'X-ray'})
-                    s.structure_type = st                        
+                    s.structure_type = st
 
                     # publication
                     if 'pubmed_id' in sd:
@@ -158,9 +212,18 @@ class Command(BaseCommand):
                             p.save()
                             s.publication = p
                     
+                    
+                    # get the PDB file and save to DB
+                    url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
+                    pdbdata = urlopen(url).read()
+                    pdbdata, created = PdbData.objects.get_or_create(pdb=pdbdata)
+                    s.pdb_data = pdbdata
+
                     # save structure before adding M2M relations
                     s.save()
-                    
+
+                    self.create_rotamers(s)
+
                     # ligands
                     if 'ligand' in sd:
                         if isinstance(sd['ligand'], list):
@@ -188,25 +251,38 @@ class Command(BaseCommand):
                                     i = StructureLigandInteraction.objects.create(structure=s, ligand=l,
                                         ligand_role=lr)
                     
+                    # structure segments
+                    if 'segments' in sd and sd['segments']:
+                        for segment, positions in sd['segments'].items():
+                            ps = StructureSegment()
+                            ps.structure = s
+                            ps.protein_segment = ProteinSegment.objects.get(slug=segment)
+                            ps.start = positions[0]
+                            ps.end = positions[1]
+                            ps.save()
+
                     # protein anomalies
-                    if 'bulges' in sd:
-                        pab, create = ProteinAnomalyType.objects.get_or_create(slug='bulge', name='Bulge')
-                        for bulge in sd['bulges']:
-                            try:
-                                gn = ResidueGenericNumber.objects.get(label=bulge)
-                            except ResidueGenericNumber.DoesNotExist:
-                                continue
-                            pa = ProteinAnomaly.objects.create(anomaly_type=pab, generic_number=gn)
-                            s.protein_anomalies.add(pa)
-                        pac, create = ProteinAnomalyType.objects.get_or_create(slug='constriction',
-                            name='Constriction')
-                        for constriction in sd['constrictions']:
-                            try:
-                                gn = ResidueGenericNumber.objects.get(label=constriction)
-                            except ResidueGenericNumber.DoesNotExist:
-                                continue
-                            pa = ProteinAnomaly.objects.create(anomaly_type=pac, generic_number=gn)
-                            s.protein_anomalies.add(pa)
+                    if 'bulges' in sd and sd['bulges']:
+                        scheme = s.protein_conformation.protein.residue_numbering_scheme
+                        pab, created = ProteinAnomalyType.objects.get_or_create(slug='bulge', defaults={
+                            'name': 'Bulge'})
+                        for segment, bulges in sd['bulges'].items():
+                            for bulge in bulges:
+                                gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge, defaults={
+                                    'protein_segment': ProteinSegment.objects.get(slug=segment),
+                                    'scheme': ResidueNumberingScheme.objects.get(slug=scheme.slug)})
+                                pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pab, generic_number=gn)
+                                s.protein_anomalies.add(pa)
+                    if 'constrictions' in sd and sd['constrictions']:
+                        pac, created = ProteinAnomalyType.objects.get_or_create(slug='constriction', defaults={
+                            'name': 'Constriction'})
+                        for segment, constrictions in sd['constrictions'].items():
+                            for constriction in constrictions:
+                                gn, created = ResidueGenericNumber.objects.get_or_create(label=constriction, defaults={
+                                    'protein_segment': ProteinSegment.objects.get(slug=segment),
+                                    'scheme': ResidueNumberingScheme.objects.get(slug=scheme.slug)})
+                                pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pac, generic_number=gn)
+                                s.protein_anomalies.add(pa)
                     
                     # stabilizing agents
                     # fusion proteins moved to constructs, use this for G-proteins and other agents?

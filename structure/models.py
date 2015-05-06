@@ -13,6 +13,8 @@ class Structure(models.Model):
     preferred_chain = models.CharField(max_length=20)
     resolution = models.DecimalField(max_digits=5, decimal_places=3)
     publication_date = models.DateField()
+    pdb_data = models.ForeignKey('PdbData', null=True) #allow null for now, since dump file does not contain.
+
 
     def __str__(self):
         return self.pdb_code.index
@@ -51,3 +53,41 @@ class StructureStabilizingAgent(models.Model):
 
     class Meta():
         db_table = "structure_stabilizing_agent"
+
+
+class PdbData(models.Model):
+    pdb = models.TextField()
+
+    class Meta():
+        db_table = "structure_pdb_data"
+
+
+class Rotamer(models.Model):
+    residue = models.ForeignKey('residue.Residue')
+    structure = models.ForeignKey('structure.Structure')
+    pdbdata = models.ForeignKey('PdbData')
+
+    class Meta():
+        db_table = "structure_rotamer"
+
+
+class Fragment(models.Model):
+    ligand = models.ForeignKey('ligand.Ligand')
+    structure = models.ForeignKey('structure.Structure')
+    pdbdata = models.ForeignKey('PdbData')
+
+    class Meta():
+        db_table = "structure_fragment"
+
+
+class StructureSegment(models.Model):
+    structure = models.ForeignKey('Structure')
+    protein_segment = models.ForeignKey('protein.ProteinSegment')
+    start = models.IntegerField()
+    end = models.IntegerField()
+
+    def __str__(self):
+        return self.structure.pdb_code.index + " " + protein_segment.slug
+
+    class Meta():
+        db_table = "structure_segment"
