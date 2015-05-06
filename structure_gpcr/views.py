@@ -139,7 +139,7 @@ class SuperpositionWorkflowIndex(TemplateView):
     form_code.fields = upload_form_data
     form_id = 'superpose_files'
     url = '/structure_gpcr/superposition_workflow_selection'
-    mid_section = 'upload_file_form.html'
+    mid_section = 'superposition_workflow_upload_file_form.html'
 
     #Buttons
     buttons = {
@@ -149,10 +149,31 @@ class SuperpositionWorkflowIndex(TemplateView):
             }
         }
 
+    # OrderedDict to preserve the order of the boxes
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', True),
+        ('segments', False)
+    ])
 
     def get_context_data(self, **kwargs):
 
         context = super(SuperpositionWorkflowIndex, self).get_context_data(**kwargs)
+
+        # get selection from session and add to context
+        # get simple selection from session
+        simple_selection = self.request.session.get('selection', False)
+
+        # create full selection and import simple selection (if it exists)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+
+        context['selection'] = {}
+        for selection_box, include in self.selection_boxes.items():
+            if include:
+                context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
+
         # get attributes of this class and add them to the context
         context['form_code'] = str(self.form_code)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))

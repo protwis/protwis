@@ -9,6 +9,7 @@
 {% block addon_js %}
     <script src="{% static 'home/js/jquery.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="/static/home/js/selection.js"></script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             var table = $('#crystal_structures').DataTable( {
@@ -42,16 +43,20 @@
                 //alert( table.rows('.selected').data().length + ' row(s) selected' );
                 if ( table.rows('.selected').data().length != 1 ) {
                     alert( "Can only use one reference structure!!!" );
-                    }
+                }
+                else {
+                    AddToSelection('reference', 'structure', table.rows('.selected').data()[0][3]);
+                }
+
             });
             $('#alt_btn').click(function () {
-                var message = ''
                 var selected_data = table.rows('.selected').data();
-                for (i = 0; i < selected_data.lenght; i++) {
-                    message += selected_data[i]["PDB code"] + ' ';
+                //alert(selected_data.length)
+                for (i = 0; i < selected_data.length; i++) {
+                    alert(selected_data[i][3]);
+                    AddToSelection('targets', 'structure', selected_data[i][3]);
                 }
-                alert(message);
-            })
+            });
             
             });
     </script> 
@@ -60,11 +65,16 @@
 {% block content %}
 
     <div class="btn-group">
-        <a id="ref_btn" class="btn btn-primary btn-mini " href="#"><i class="icon-download icon-white"></i> Select as reference</a>
+        <a id="ref_btn" class="btn btn-primary btn-mini" href="#"><i class="icon-download icon-white"></i>Select as reference</a>
     </div>
     <div class="btn-group">
-        <a id="alt_btn" class="btn btn-primary btn-mini " href="#"><i class="icon-download icon-white"></i> Select as altering</a>
+        <a id="alt_btn" class="btn btn-primary btn-mini " href="#"><i class="icon-download icon-white"></i>Select as altering</a>
     </div>
+    <div class="btn-group">
+        <a class="btn btn-primary btn-mini " href="/structure_gpcr/superposition_workflow_index">Go to superposition workflow</a>
+    </div>
+    <br />
+    <br />
     {% if crystals %}              
         <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">           
             <table width="70%" class="display" id="crystal_structures">
