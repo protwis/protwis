@@ -65,7 +65,7 @@ def list(request):
 def view(request):
     pdbname = request.GET.get('pdb')
     form = PDBform()
-    structures = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(residuefragmentatom__atomtype='ATOM').annotate(numRes = Count('residuefragmentatom__residuenr', distinct = True)).order_by('-numRes')
+    structures = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).annotate(numRes = Count('residuefragmentinteraction__rotamer', distinct = True)).order_by('-numRes')
     #structures = StructureLigandInteraction.objects.annotate(test = Count(ResidueFragmentAtom))
 
     return render(request,'interaction/view.html',{'form': form, 'pdbname': pdbname, 'structures': structures})
@@ -74,13 +74,26 @@ def ligand(request):
     pdbname = request.GET.get('pdb')
     ligand = request.GET.get('ligand')
     form = PDBform()
-    fragments = ResidueFragmentInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(ligand__name=ligand).order_by('interaction_type')
+    fragments = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname).filter(structure_ligand_pair__ligand__name=ligand).order_by('interaction_type')
     #print(fragments)
-    for fragment in fragments:
-        print(fragment.fragment)
+    #for fragment in fragments:
+       # print(fragment)
     #objects = Model.objects.filter(id__in=object_ids)
     #context = {}
     return render(request,'interaction/ligand.html',{'form': form, 'pdbname': pdbname, 'ligand': ligand, 'fragments': fragments})
+
+def fragment(request):
+    pdbname = request.GET.get('pdb')
+    ligand = request.GET.get('ligand')
+    fragment = request.GET.get('fragment')
+    form = PDBform()
+    fragments = ResidueFragmentInteraction.objects.get(id=fragment)
+    #print(fragments)
+    #for fragment1 in fragments:
+    #    print(fragment1.fragment)
+    #objects = Model.objects.filter(id__in=object_ids)
+    #context = {}
+    return render(request,'interaction/fragment.html',{'form': form, 'pdbname': pdbname, 'ligand': ligand, 'fragmentid': fragment, 'fragments': fragments})
 
 def calculate(request):     
     if request.method == 'POST':
@@ -99,7 +112,17 @@ def calculate(request):
             if structure.exists():
                 structure=Structure.objects.get(pdb_code=web_link)
             else:
-                 quit() #quit!
+                print("Structure not in DB?!??!")
+                quit() #quit!
+
+            if structure.pdb_data is None:
+                f = module_dir+"/temp/pdbs/"+pdbname+".pdb"
+                if isfile(f):      
+                    pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read()) #does this close the file?
+                else:
+                    quit()
+                structure.pdb_data = pdbdata
+                structure.save()
 
             protein=structure.protein_conformation
 
@@ -179,7 +202,7 @@ def calculate(request):
                                         quit("Could not find "+f)
 
                                     interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug=interactiontype,name=interactiontype)
-                                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
+                                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure_ligand_pair=structureligandinteraction,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
                                     
                                     
                         elif interactiontype=='hbond_confirmed':
@@ -225,11 +248,11 @@ def calculate(request):
                                         quit("Could not find "+f)
 
                                     interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug=interactiontype,name=interactiontype)
-                                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
-                          
+                                    #fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
+                                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure_ligand_pair=structureligandinteraction,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
                         elif interactiontype=='hydrophobic': #NO FRAGMENT FOR THESE, WHAT TO DO? USE WHOLE LIGAND?
                             for entry in interactionlist:
-                                #print(entry)
+                                print(entry)
                                 aa = entry[0]
                                 aa,pos,chain = regexaa(aa)
                                 #fragment = entry[1][0][1] #NEED TO EXPAND THIS TO INCLUDE MORE INFO
@@ -243,8 +266,23 @@ def calculate(request):
 
                                 fragment = '' #NEED TO EXPAND THIS TO INCLUDE MORE INFO
 
-                                #interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug='hydrofob',name=interactiontype)
+                                f = module_dir+"/temp/results/"+pdbname+"/ligand/"+temp[1]+"_"+pdbname+".pdb"
+                                if isfile(f):      
+                                    liganddata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read()) #does this close the file?
+                                    print("Hydro Found file"+f)
+                                else:
+                                    quit()
+
+                                f = module_dir+"/temp/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"__hydrop.pdb"
+                                rotamer_data, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read())
+
+                                rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
+
+                                fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=liganddata)
+
+                                interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug='hydrofob',name=interactiontype)
                                 #fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment)
+                                fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure_ligand_pair=structureligandinteraction,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
                         elif interactiontype=='aromaticplus' or interactiontype=='aromatic':
                             for entry in interactionlist:
                                 print(entry)
@@ -284,7 +322,8 @@ def calculate(request):
                                     quit("Could not find "+f)
 
                                 interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug=interactiontype,name=interactiontype)
-                                fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
+                                #fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
+                                fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure_ligand_pair=structureligandinteraction,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
 
 
 
@@ -312,11 +351,17 @@ def download(request):
     pdbname = request.GET.get('pdb')
     ligand = request.GET.get('ligand')
 
-    filename = module_dir+'/temp/results/'+pdbname+'/interaction/'+pdbname+'_'+ligand+'.pdb' # Select your file here.                                
-    #wrapper = FileWrapper(file(filename))
-    wrapper = FileWrapper(open(filename, 'rb'))
-    response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Length'] = path.getsize(filename)
+    pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(ligand__name=ligand).get()
+    response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
+    return response
+
+def pdbfragment(request):      
+    pdbname = request.GET.get('pdb')
+    ligand = request.GET.get('ligand')
+    fragment = request.GET.get('fragment')
+
+    result = ResidueFragmentInteraction.objects.filter(id=fragment).get()
+    response = HttpResponse(result.rotamer.pdbdata.pdb+result.fragment.pdbdata.pdb, content_type='text/plain')
     return response
 
 def pdb(request):       
@@ -327,17 +372,17 @@ def pdb(request):
     # mypath = module_dir+'/temp/results/'+pdbname+'/interaction/'+pdbname+'_'+ligand+'.pdb'
     # response['X-Sendfile'] = smart_str(mypath)
 
-    filename = module_dir+'/temp/pdbs/'+pdbname+'.pdb' # Select your file here.                                
-    #wrapper = FileWrapper(file(filename))
-    wrapper = FileWrapper(open(filename, 'rb'))
-    response = HttpResponse(wrapper, content_type='text/plain')
-    response['Content-Length'] = path.getsize(filename)
+    web_resource, created = WebResource.objects.get_or_create(slug='pdb',url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
+    web_link, created = WebLink.objects.get_or_create(web_resource=web_resource,index=pdbname)
+
+    structure=Structure.objects.filter(pdb_code=web_link) 
+    if structure.exists():
+        structure=Structure.objects.get(pdb_code=web_link)
+    else:
+         quit() #quit!
+
+    if structure.pdb_data is None:
+        quit()
+
+    response = HttpResponse(structure.pdb_data.pdb, content_type='text/plain')
     return response
-
-    # It's usually a good idea to set the 'Content-Length' header too.
-    # You can also set any other required headers: Cache-Control, etc.
-    #return response
-
-    #context = {}
-    #return HttpResponse(ref_id)
-    #return render(request,'interaction/index.html',context)

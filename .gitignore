@@ -1,6 +1,6 @@
 *.pyc
 *.log
-protwis/settings.py
+protwis/settings_local.py
 env
 /data
 /static/blast
