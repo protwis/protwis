@@ -6,10 +6,12 @@ from structure.models import Structure
 from common.alignment import Alignment
 
 import Bio.PDB as PDB
+from modeller import *
+from modeller.automodel import *
 from collections import OrderedDict
 import os
 import logging
-import pprint
+import numpy as np
 
 class Command(BaseCommand):
     
@@ -20,19 +22,21 @@ class Command(BaseCommand):
             if protein.protein.entry_name not in s and count < 0:
                 Homology_model = HomologyModeling(protein.protein.entry_name, 'Inactive', ['Inactive'])
                 multi_alignment = Homology_model.run_pairwise_alignment()
-                main_template = Homology_model.select_main_template(multi_alignment)
+                Homology_model.select_main_template(multi_alignment)
                 main_alignment = Homology_model.run_main_alignment(alignment=multi_alignment)
-                non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
+                non_conserved_switched_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
     
                 self.stdout.write(Homology_model.statistics, ending='')
                 count+=1
                 
         Homology_model = HomologyModeling('gp139_human', 'Inactive', ['Inactive'])
         multi_alignment = Homology_model.run_pairwise_alignment()
-        main_template = Homology_model.select_main_template(multi_alignment)
+        Homology_model.select_main_template(multi_alignment)
         main_alignment = Homology_model.run_main_alignment(alignment=multi_alignment)
-        non_conserved_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
-    
+        non_conserved_switched_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
+#        Homology_model.create_PIR_file(main_alignment)
+#        Homology_model.run_MODELLER("../../PIR/Q6DWJ6_agonist.pir", "../../PDB/4IB4_A_GPCRDB.pdb", Homology_model.uniprot_id, 1)
+
         self.stdout.write(Homology_model.statistics, ending='')
 
 class HomologyModeling(object):
@@ -58,9 +62,9 @@ class HomologyModeling(object):
         self.main_pdb_id = ''
         self.main_template_preferred_chain = ''
         self.main_template_sequence = ''
-        if os.path.isfile('homology_modeling.log'):
-            os.remove('homology_modeling.log')
-        logging.basicConfig(filename='homology_modeling.log',level=logging.WARNING)
+        if os.path.isfile('./structure/homology_modeling.log'):
+            os.remove('./structure/homology_modeling.log')
+        logging.basicConfig(filename='./structure/homology_modeling.log',level=logging.WARNING)
         
     def __repr__(self):
         return "<{}, {}>".format(self.reference_entry_name, self.state)
@@ -71,8 +75,8 @@ class HomologyModeling(object):
             @param query_states: list, list of endogenous ligand states to be applied for template search, 
             default: same as reference 
         '''
-        return Structure.objects.filter(state__name__in=query_states).order_by('protein_conformation__protein__parent',
-                                                                            'resolution').distinct('protein_conformation__protein__parent')
+        return Structure.objects.filter(state__name__in=query_states).order_by(
+                'protein_conformation__protein__parent','resolution').distinct('protein_conformation__protein__parent')
                
     def get_protein_objects(self, structures_data):
         ''' Get all target Protein objects based on Structure objects. Returns a list of Protein objects.
@@ -222,7 +226,8 @@ class HomologyModeling(object):
         switched_count = 0
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
-        main_pdb_array = parse.pdb_array_creator('./structure/PDB/{}_{}_GPCRDB.pdb'.format(self.main_pdb_id,self.main_template_preferred_chain))
+        main_pdb_array = parse.pdb_array_creator('./structure/PDB/{}_{}_GPCRDB.pdb'.format(
+                                                                self.main_pdb_id,self.main_template_preferred_chain))
         
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
@@ -311,7 +316,6 @@ class HomologyModeling(object):
         
         # non-conserved residues
         non_cons_res_templates = []
-        ref_sequence, temp_sequence = '', ''
         for ref_res, temp_res, aligned_res in zip(alignment_input.reference_dict, alignment_input.template_dict, 
                                                   alignment_input.aligned_string):
             if alignment_input.reference_dict[ref_res]!='-' and alignment_input.reference_dict[ref_res]!='/':
@@ -333,9 +337,10 @@ class HomologyModeling(object):
                 for struct in self.similarity_table:
                     if struct.protein_conformation.protein.parent in proteins_w_this_gn:
                         try:
-                            alt_temp = parse.pdb_array_creator('./structure/PDB/{}_{}_GPCRDB.pdb'.format(struct.pdb_code.index,
-                                                                                       str(struct.preferred_chain)[0]))                        
-                            if alignment_input.reference_dict[gn]==PDB.Polypeptide.three_to_one(alt_temp[gn_].get_resname()):
+                            alt_temp = parse.pdb_array_creator('./structure/PDB/{}_{}_GPCRDB.pdb'.format(
+                                                                struct.pdb_code.index, str(struct.preferred_chain)[0]))                        
+                            if alignment_input.reference_dict[gn]==PDB.Polypeptide.three_to_one(
+                                                                                        alt_temp[gn_].get_resname()):
                                 alignment_input.template_dict[gn] = alignment_input.reference_dict[gn]
                                 switched_count+=1                     
                                 non_cons_res_templates.append({ref_res:struct})                            
@@ -351,15 +356,66 @@ class HomologyModeling(object):
                                                                ('O',residue['O'])])
                         except:
                             logging.warning("Missing atoms in {} at {}".format(self.main_pdb_id,gn))
-            ref_sequence+=alignment_input.reference_dict[ref_res]
-            temp_sequence+=alignment_input.template_dict[temp_res]
         self.statistics.add_info('ref_seq_length', ref_length)
         self.statistics.add_info('conserved_num', conserved_count)
         self.statistics.add_info('non_conserved_num', non_cons_count)
         self.statistics.add_info('non_conserved_switched_num', switched_count)
-        self.statistics.add_info('non_conserved_residue_templates', non_cons_res_templates)
-        print(ref_sequence)
-        print(temp_sequence)
+        self.statistics.add_info('non_conserved_residue_templates', non_cons_res_templates)        
+        return alignment_input
+        
+    def create_PIR_file(self, alignment_input):
+        ''' Create PIR file from reference and template alignment (AlignedReferenceAndTemplate).
+        
+            @param alignment_input: AlignedReferenceAndTemplate
+        '''
+        ref_sequence, temp_sequence = '',''
+        for ref_res, temp_res in zip(alignment_input.reference_dict, alignment_input.template_dict):
+            if alignment_input.reference_dict[ref_res]=='x':
+                ref_sequence+='-'
+            else:
+                ref_sequence+=alignment_input.reference_dict[ref_res]
+            if alignment_input.template_dict[temp_res]=='x':
+                temp_sequence+='-'
+            else:
+                temp_sequence+=alignment_input.template_dict[temp_res]
+        with open("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", 'w+') as output_file:
+            template="""
+>P1;{temp_file}
+structure:{temp_file}::::::::
+{temp_sequence}
+
+>P1;{uniprot}
+sequence:{uniprot}::::::::
+{ref_sequence}   
+            """
+            context={"temp_file":"./structure/PDB/{}_{}_GPCRDB.pdb".format(self.main_pdb_id,
+                                                                           self.main_template_preferred_chain),
+                     "temp_sequence":temp_sequence,
+                     "uniprot":self.uniprot_id,
+                     "ref_sequence":ref_sequence}
+            output_file.write(template.format(**context))
+            
+    def run_MODELLER(self, pir_file, template, reference, number_of_models):
+        ''' Build homology model with MODELLER.
+        
+            @param pir_file: str, file name of PIR file with path \n
+            @param template: str, file name of template with path \n
+            @param target: str, Uniprot code of reference sequence \n
+            @param number_of_models: int, amount of models to be built
+        '''
+        log.verbose()
+        env = environ(rand_seed=80851) #!!random number generator
+        
+        a = automodel(env, alnfile = pir_file, knowns = template, sequence = reference)
+        a.starting_model = 1
+        a.ending_model = number_of_models
+        a.md_level = refine.very_slow
+        path = "./structure/homology_models/{}".format(reference+"_"+self.state)
+        if not os.path.exists(path):
+            os.mkdir(path)
+        os.chdir(path)
+        a.make()
+        os.chdir("../../../")
         
     def create_similarity_table(self, alignment, structures_datatable):
         ''' Creates an ordered dictionary, where templates are sorted by similarity score.
@@ -372,7 +428,8 @@ class HomologyModeling(object):
         for protein in alignment.proteins:
             if protein.protein!=self.reference_protein:
                 matches = structures_datatable.order_by('protein_conformation__protein__parent',
-                    'resolution').distinct('protein_conformation__protein__parent').filter(protein_conformation__protein__parent__id=protein.protein.id)    
+                    'resolution').distinct('protein_conformation__protein__parent').filter(
+                    protein_conformation__protein__parent__id=protein.protein.id)    
                 similarity_table[list(matches)[0]] = int(protein.similarity)
         
         return similarity_table
@@ -396,7 +453,6 @@ class Bulges(object):
             bulge is in the template.
         '''
         gn = self.gn
-        
         parse = GPCRDBParsingPDB()
         if bulge_in_reference==True:
             matches = Residue.objects.filter(generic_number__label=gn)
@@ -502,7 +558,6 @@ class Constrictions(object):
         except:
             return None
 
-
 class AlignedReferenceAndTemplate(object):
     ''' Representation class for HomologyModeling.run_main_alignment() function. 
     '''
@@ -596,7 +651,7 @@ class GPCRDBParsingPDB(object):
                     except:
                         logging.warning("Unable to parse {} in {}".format(residue, filename))
         return residue_array
-        
+   
 class CreateStatistics(object):
     ''' Statistics dictionary for HomologyModeling.
     '''
@@ -614,3 +669,29 @@ class CreateStatistics(object):
             @param info: object, any object as value
         '''
         self.info_dict[info_name] = info
+
+class Validation():
+    ''' Class to validate homology models.
+    '''
+    def __init__(self):
+        pass
+    
+    def PDB_RMSD(self, pdb_file1, pdb_file2):
+        ''' Calculates root-mean-square deviation between the coordinates of two model PDB files. The two files
+            must have the same number of atoms.
+            
+            @param pdb_file1: str, file name of first file with path \n
+            @param pdb_file2: str, file name of second file with path
+        '''
+        array1, array2 = np.array([0,0,0]), np.array([0,0,0])
+        parser = PDB.PDBParser()
+        pdb1 = parser.get_structure('struct1', pdb_file1)
+        pdb2 = parser.get_structure('struct2', pdb_file2)
+        for model1, model2 in zip(pdb1, pdb2):
+            for chain1, chain2 in zip(model1, model2):
+                for residue1, residue2 in zip(chain1, chain2):
+                    for atom1, atom2 in zip(residue1, residue2):
+                        array1 = np.vstack((array1, list(atom1.get_coord())))
+                        array2 = np.vstack((array2, list(atom2.get_coord())))
+        rmsd = np.sqrt(((array1-array2)**2).mean())
+        return rmsd
