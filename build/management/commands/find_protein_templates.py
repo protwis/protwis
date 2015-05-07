@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
         # fetch all conformations of wild-type proteins
         protein_sequence_type = ProteinSequenceType.objects.get(slug='wt')
-        pconfs = ProteinConformation.objects.filter(protein__sequence_type=protein_sequence_type.select_related(
+        pconfs = ProteinConformation.objects.filter(protein__sequence_type=protein_sequence_type).select_related(
             'protein')
 
         # fetch wild-type sequences of receptors with available structures
