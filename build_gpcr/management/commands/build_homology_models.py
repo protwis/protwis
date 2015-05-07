@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 
 from protein.models import Protein, ProteinSegment, ProteinConformation
 from residue.models import Residue
-from structure.models import Structure
+from structure.models import Structure, PdbData, Rotamer
 from common.alignment import Alignment
 
 import Bio.PDB as PDB
@@ -12,6 +12,8 @@ from collections import OrderedDict
 import os
 import logging
 import numpy as np
+import re
+import pprint
 
 class Command(BaseCommand):
     
@@ -34,8 +36,6 @@ class Command(BaseCommand):
         Homology_model.select_main_template(multi_alignment)
         main_alignment = Homology_model.run_main_alignment(alignment=multi_alignment)
         non_conserved_switched_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
-#        Homology_model.create_PIR_file(main_alignment)
-#        Homology_model.run_MODELLER("../../PIR/Q6DWJ6_agonist.pir", "../../PDB/4IB4_A_GPCRDB.pdb", Homology_model.uniprot_id, 1)
 
         self.stdout.write(Homology_model.statistics, ending='')
 
@@ -59,6 +59,7 @@ class HomologyModeling(object):
         self.segments = []
         self.similarity_table = OrderedDict()
         self.similarity_table_all = OrderedDict()
+        self.main_structure = None
         self.main_pdb_id = ''
         self.main_template_preferred_chain = ''
         self.main_template_sequence = ''
@@ -137,6 +138,7 @@ class HomologyModeling(object):
         
         self.statistics.add_info("main_template", self.main_pdb_id)
         self.statistics.add_info("preferred_chain", self.main_template_preferred_chain)
+        self.main_structure = main_structure
         
         return main_structure
         
@@ -228,7 +230,7 @@ class HomologyModeling(object):
         parse = GPCRDBParsingPDB()
         main_pdb_array = parse.pdb_array_creator('./structure/PDB/{}_{}_GPCRDB.pdb'.format(
                                                                 self.main_pdb_id,self.main_template_preferred_chain))
-        
+
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
             structure_table_all = self.get_structure_queryset(['Inactive','Active'])
@@ -336,9 +338,11 @@ class HomologyModeling(object):
                 gn_ = ref_res.replace('x','.')
                 for struct in self.similarity_table:
                     if struct.protein_conformation.protein.parent in proteins_w_this_gn:
+                        self.build_rotamers(ref_res, struct)
                         try:
                             alt_temp = parse.pdb_array_creator('./structure/PDB/{}_{}_GPCRDB.pdb'.format(
-                                                                struct.pdb_code.index, str(struct.preferred_chain)[0]))                        
+                                                                struct.pdb_code.index, str(struct.preferred_chain)[0]))
+                            
                             if alignment_input.reference_dict[gn]==PDB.Polypeptide.three_to_one(
                                                                                         alt_temp[gn_].get_resname()):
                                 alignment_input.template_dict[gn] = alignment_input.reference_dict[gn]
