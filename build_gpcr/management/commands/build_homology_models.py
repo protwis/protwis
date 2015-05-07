@@ -12,8 +12,7 @@ from collections import OrderedDict
 import os
 import logging
 import numpy as np
-import re
-import pprint
+
 
 class Command(BaseCommand):
     
@@ -36,7 +35,7 @@ class Command(BaseCommand):
         Homology_model.select_main_template(multi_alignment)
         main_alignment = Homology_model.run_main_alignment(alignment=multi_alignment)
         non_conserved_switched_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
-
+        
         self.stdout.write(Homology_model.statistics, ending='')
 
 class HomologyModeling(object):
@@ -337,8 +336,7 @@ class HomologyModeling(object):
                 proteins_w_this_gn = list(set(proteins_w_this_gn))
                 gn_ = ref_res.replace('x','.')
                 for struct in self.similarity_table:
-                    if struct.protein_conformation.protein.parent in proteins_w_this_gn:
-                        self.build_rotamers(ref_res, struct)
+                    if struct.protein_conformation.protein.parent in proteins_w_this_gn:                       
                         try:
                             alt_temp = parse.pdb_array_creator('./structure/PDB/{}_{}_GPCRDB.pdb'.format(
                                                                 struct.pdb_code.index, str(struct.preferred_chain)[0]))
