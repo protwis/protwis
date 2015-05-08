@@ -69,7 +69,7 @@ class Command(BaseCommand):
         errors = 0
         for line in pdb.splitlines():
             if line.startswith('ATOM'): #If it is a residue
-                residue_number = line[23:26]
+                residue_number = line[22:26]
                 chain = line[21]
                 if preferred_chain and chain!=preferred_chain: #If perferred is defined and is not the same as the current line, then skip
                     continue
