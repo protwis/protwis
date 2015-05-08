@@ -94,3 +94,19 @@ class SelectionParser(object):
             elif segment not in self.db_segments:
                 self.residues.append(segment)
         logger.debug("Helices selected: {}; Residues: {}".format(self.helices, self.generic_numbers))
+    
+#==============================================================================
+
+
+def check_gn(pdb_struct):
+        
+    gn_list = []
+    for chain in pdb_struct:
+        for residue in chain:
+            try:
+                if -8.1 < residue['CA'].get_bfactor() < 8.1:
+                    gn_list.append(residue['CA'])
+                    return True
+            except:
+                continue
+    return False
