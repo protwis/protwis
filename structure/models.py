@@ -72,6 +72,7 @@ class Rotamer(models.Model):
 
 
 class Fragment(models.Model):
+    residue = models.ForeignKey('residue.Residue')
     ligand = models.ForeignKey('ligand.Ligand')
     structure = models.ForeignKey('structure.Structure')
     pdbdata = models.ForeignKey('PdbData')
