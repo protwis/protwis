@@ -173,3 +173,27 @@ class ProteinSuperpose(object):
                 except:
                     continue
         return False
+
+class RotamerSuperpose(object):
+    ''' Class to superimpose Atom objects on one-another. 
+
+        @param original_rotamers: list of Atom objects of rotamers to be superposed on \n
+        @param rotamers: list of Atom objects of rotamers to be superposed
+    '''
+    def __init__(self, original_rotamers, rotamers):
+        self.original_rotamers = original_rotamers
+        self.rotamers = rotamers
+
+    def run(self):
+        ''' Run the superpositioning. 
+        '''
+        super_imposer = Superimposer()
+        try:
+            super_imposer.set_atoms(self.original_rotamers[0:4], self.rotamers[0:4])
+            super_imposer.apply(self.rotamers)
+            return self.rotamers
+        except Exception as msg:
+            print("Failed to superpose structures {} and {}".format(orig_struct.id, alt_struct.id))
+            return None
+
+
