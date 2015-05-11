@@ -3,7 +3,7 @@ import os,sys,math,logging
 from Bio.PDB import *
 import Bio.PDB.Polypeptide as polypeptide
 from Bio.Seq import Seq
-from structure_gpcr.common import SelectionParser,BlastSearch, check_gn
+from structure_gpcr.common import SelectionParser,BlastSearch,check_gn,get_segment_template
 from structure_gpcr.assign_generic_numbers import GenericNumbering
 from protein.models import Protein
 from structure.models import Structure,Rotamer,Fragment
@@ -179,6 +179,7 @@ class FragmentSuperpose(object):
         
         self.blast = BlastSearch()
 
+        self.target = Protein.objects.get(pk=self.identify_receptor())
 
     def parse_pdb (self):
 
@@ -216,3 +217,8 @@ class FragmentSuperpose(object):
             return None
 
 
+    def get_representative_fragments(self):
+        
+        template = get_segment_template(self.target)
+
+        pass

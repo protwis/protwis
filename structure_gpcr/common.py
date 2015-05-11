@@ -4,7 +4,9 @@ from Bio.Blast import NCBIXML
 
 from django.conf import settings
 from common.selection import SimpleSelection
+from common.alignment import Alignment
 from protein.models import ProteinSegment
+from structure.models import Structure
 
 import os,sys,tempfile,logging
 
@@ -110,3 +112,15 @@ def check_gn(pdb_struct):
             except:
                 continue
     return False
+
+
+def get_segment_template(protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']):
+
+    a = Alignment()
+    a.load_reference_protein(protein)
+    a.load_proteins(Structure.objects.filter(protein_conformation__protein__not=self.pk))
+    a.load_segments(segments)
+    a.build_alignment()
+    a.calculate_similarity()
+
+    return a.proteins[1]
