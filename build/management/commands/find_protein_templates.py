@@ -26,15 +26,13 @@ class Command(BaseCommand):
     def find_protein_templates(self):
         self.logger.info('ASSIGNING STRUCTURE TEMPLATES FOR PROTEINS')
 
-        # segments, move to settings
-        segment_slugs = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7']
-        segments = ProteinSegment.objects.filter(slug__in=segment_slugs)
+        # segments
+        segments = ProteinSegment.objects.filter(slug__in=settings.COMPARISON_SEGMENTS)
 
         # fetch all conformations of wild-type proteins
         protein_sequence_type = ProteinSequenceType.objects.get(slug='wt')
-        # pconfs = ProteinConformation.objects.filter(protein.sequence_type=protein_sequence_type)
-        pconfs = ProteinConformation.objects.filter(protein__sequence_type=protein_sequence_type,
-            protein__family__slug__startswith='001_001_001_012').select_related('protein') # use on 5-HT receptors for testing
+        pconfs = ProteinConformation.objects.filter(protein__sequence_type=protein_sequence_type).select_related(
+            'protein')
 
         # fetch wild-type sequences of receptors with available structures
         structures = Structure.objects.order_by('protein_conformation__protein__parent', 'resolution').distinct(
@@ -57,7 +55,7 @@ class Command(BaseCommand):
                 template = self.find_segment_template(pconf, sps, [segment])
                 template_structure = self.fetch_template_structure(structures, template.protein.entry_name)
                 pcts, created = ProteinConformationTemplateStructure.objects.get_or_create(protein_conformation=pconf,
-                    protein_segment=segment)
+                    protein_segment=segment, defaults={'structure': template_structure})
                 if pcts.structure != template_structure:
                     pcts.structure = template_structure
                     pcts.save()
