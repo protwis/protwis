@@ -14,6 +14,9 @@ class ResidueFragmentInteraction(models.Model):
     class Meta():
         db_table = 'interaction_residue_fragment'
 
+    def get_pdbdata(self):
+        return "{!s}\n{!s}".format(self.rotamer.pdbdata, self.fragment.pdbdata)
+
 
 class ResidueFragmentInteractionType(models.Model):
     slug = models.SlugField(max_length=10)

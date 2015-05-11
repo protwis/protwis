@@ -3,7 +3,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio.PDB import *
 from Bio.PDB.PDBIO import Select
 from residue.models import Residue
-from structure_gpcr.common import BlastSearch, MappedResidue
+from structure.functions import BlastSearch, MappedResidue
 
 import Bio.PDB.Polypeptide as polypeptide
 import os,logging
