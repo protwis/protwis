@@ -69,6 +69,18 @@ class FragmentSuperpose(object):
 
     logger = logging.getLogger("structure_gpcr")
 
+    similarity_dict = {
+        "fragment_residue" : 0,
+        "interaction_type" : 1,
+        "target_residue" : 2
+        }
+
+    similarity_rules = [
+        [['H', 'F', 'Y', 'W'], ['AEF', 'AFF'], ['H', 'F', 'Y', 'W']],
+        [['Y'], ['AFE'], ['F']],
+        [['S', 'T'], ['HBA', 'HBD'], ['S', 'T']]
+        ]
+
     def __init__(self, pdb_file=None, pdb_filename=None):
         
         #pdb_file can be either a name/path or a handle to an open file
@@ -80,6 +92,7 @@ class FragmentSuperpose(object):
         self.pdb_struct = self.parse_pdb()
 
         self.target = Protein.objects.get(pk=self.identify_receptor())
+
 
     def parse_pdb (self):
 
@@ -133,6 +146,7 @@ class FragmentSuperpose(object):
             except Exception as msg:
                 logger.error('Failed to superpose fragment {!s} with structure {!s}'.format(fragment, self.pdb_filename))
         return superposed_frags
+
 
     def get_representative_fragments(self):
         
