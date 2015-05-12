@@ -327,14 +327,16 @@ class HomologyModeling(object):
             self.statistics.add_info('template_constrictions', temp_const_list)
         
         # non-conserved residues
-        non_cons_res_templates = []
+        non_cons_res_templates = OrderedDict()
+        conserved_residues = OrderedDict()
         for ref_res, temp_res, aligned_res in zip(ref_temp_alignment.reference_dict, ref_temp_alignment.template_dict, 
                                                   ref_temp_alignment.aligned_string):
             if ref_temp_alignment.reference_dict[ref_res]!='-' and ref_temp_alignment.reference_dict[ref_res]!='/':
                 ref_length+=1
             if aligned_res!='.' and aligned_res!='/' and aligned_res!='x':
                 conserved_count+=1
-            
+                conserved_residues[ref_res] = aligned_res
+                
             gn = ref_res
             
             if aligned_res=='.':
@@ -357,7 +359,7 @@ class HomologyModeling(object):
                                 main_pdb_array[gn_] = new_atoms
                                 ref_temp_alignment.template_dict[gn] = ref_temp_alignment.reference_dict[gn]
                                 switched_count+=1                     
-                                non_cons_res_templates.append({ref_res:struct})                            
+                                non_cons_res_templates[ref_res] = struct
                                 break
                         except:
                             pass
@@ -367,15 +369,14 @@ class HomologyModeling(object):
                             main_pdb_array[gn_] = residue[0:4]
                         except:
                             logging.warning("Missing atoms in {} at {}".format(self.main_pdb_id,gn))
-            try:
-                print(ref_res, main_pdb_array[gn.replace('x','.')])
-            except:
-                pass
+
         self.statistics.add_info('ref_seq_length', ref_length)
         self.statistics.add_info('conserved_num', conserved_count)
         self.statistics.add_info('non_conserved_num', non_cons_count)
         self.statistics.add_info('non_conserved_switched_num', switched_count)
+        self.statistics.add_info('conserved_residues', conserved_residues)
         self.statistics.add_info('non_conserved_residue_templates', non_cons_res_templates)
+        self.statistics.add_info('similarity_table', self.similarity_table)
         
         path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
         if not os.path.exists(path):
@@ -449,7 +450,7 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}0
         with open("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", 'w+') as output_file:
             template="""
 >P1;{temp_file}
-structure:{temp_file}:1:{chain}:210:{chain}::::
+structure:{temp_file}::{chain}::{chain}::::
 {temp_sequence}*
 
 >P1;{uniprot}
@@ -686,17 +687,15 @@ class GPCRDBParsingPDB(object):
         '''
         output = OrderedDict()
         atoms_list = []
-        parser = PDB.PDBParser()
         for gn in generic_numbers:
             rotamer = Rotamer.objects.get(structure__protein_conformation=structure.protein_conformation, residue__generic_number__label=gn)
             io = StringIO(rotamer.pdbdata.pdb)
-            rota_struct = parser.get_structure('structure', io)
-            for model in rota_struct:
-                for chain in model:
-                    for residue in chain:
-                        output[gn.replace('x','.')] = residue
-                        for atom in residue:
-                            atoms_list.append(atom)
+            rota_struct = PDB.PDBParser().get_structure('structure', io)[0]
+            for chain in rota_struct:
+                for residue in chain:
+                    output[gn.replace('x','.')] = residue
+                    for atom in residue:
+                        atoms_list.append(atom)
         if output_type=='dict':
             return output
         elif output_type=='text':
@@ -710,23 +709,21 @@ class GPCRDBParsingPDB(object):
         '''
         io = StringIO(structure.pdb_data.pdb)
         residue_array = OrderedDict()
-        parser = PDB.PDBParser()
-        pdb_struct = parser.get_structure('structure', io)
-        for model in pdb_struct:        
-            for chain in model:
-                for residue in chain:
-                    try:
-                        if -8.1 < residue['CA'].get_bfactor() < 8.1:
-                            gn = str(residue['CA'].get_bfactor())
-                            if gn[0]=='-':
-                                gn = gn[1:]+'1'
-                            elif len(gn)==3:
-                                gn = gn+'0'
-                            residue_array[gn] = residue.get_unpacked_list()
-                        else:                          
-                            residue_array[str(residue.get_id()[1])] = residue.get_unpacked_list()
-                    except:
-                        logging.warning("Unable to parse {} in {}".format(residue, structure))
+        pdb_struct = PDB.PDBParser().get_structure('structure', io)[0]
+        for chain in pdb_struct:
+            for residue in chain:
+                try:
+                    if -8.1 < residue['CA'].get_bfactor() < 8.1:
+                        gn = str(residue['CA'].get_bfactor())
+                        if gn[0]=='-':
+                            gn = gn[1:]+'1'
+                        elif len(gn)==3:
+                            gn = gn+'0'
+                        residue_array[gn] = residue.get_unpacked_list()
+                    else:                          
+                        residue_array[str(residue.get_id()[1])] = residue.get_unpacked_list()
+                except:
+                    logging.warning("Unable to parse {} in {}".format(residue, structure))
         return residue_array
    
 class CreateStatistics(object):

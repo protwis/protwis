@@ -180,20 +180,22 @@ class RotamerSuperpose(object):
         @param original_rotamers: list of Atom objects of rotamers to be superposed on \n
         @param rotamers: list of Atom objects of rotamers to be superposed
     '''
-    def __init__(self, original_rotamers, rotamers):
-        self.original_rotamers = original_rotamers
-        self.rotamers = rotamers
+    def __init__(self, reference_atoms, template_atoms):
+        self.reference_atoms = reference_atoms
+        self.template_atoms = template_atoms
 
     def run(self):
         ''' Run the superpositioning. 
         '''
         super_imposer = Superimposer()
         try:
-            super_imposer.set_atoms(self.original_rotamers[0:4], self.rotamers[0:4])
-            super_imposer.apply(self.rotamers)
-            return self.rotamers
+            ref_backbone_atoms = [atom for atom in self.reference_atoms if atom.get_name() in ['N','CA','C','O']]
+            temp_backbone_atoms = [atom for atom in self.template_atoms if atom.get_name() in ['N','CA','C','O']]
+            super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
+            super_imposer.apply(self.template_atoms)
+            return self.template_atoms
         except Exception as msg:
-            print("Failed to superpose structures {} and {}".format(orig_struct.id, alt_struct.id))
+            print("Failed to superpose atoms {} and {}".format(self.reference_atoms, self.template_atoms))
             return None
 
 
