@@ -199,5 +199,3 @@ class RotamerSuperpose(object):
             return None
 
 
-
-
