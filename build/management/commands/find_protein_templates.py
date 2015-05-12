@@ -27,7 +27,7 @@ class Command(BaseCommand):
         self.logger.info('ASSIGNING STRUCTURE TEMPLATES FOR PROTEINS')
 
         # segments
-        segments = ProteinSegment.objects.filter(slug__in=settings.COMPARISON_SEGMENTS)
+        segments = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS)
 
         # fetch all conformations of wild-type proteins
         protein_sequence_type = ProteinSequenceType.objects.get(slug='wt')
