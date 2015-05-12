@@ -38,6 +38,7 @@ INSTALLED_APPS = (
     'interaction',
     'mutation',
     'build_' + SITE_NAME,
+    'structure_' + SITE_NAME,
 )
 
 MIDDLEWARE_CLASSES = (

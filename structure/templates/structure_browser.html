@@ -24,13 +24,13 @@
                             .appendTo($(column.header()).empty())
                             .on('change', function () {
                                 var val = $.fn.dataTable.util.escapeRegex(
-                                    $(this).val()
+                                $(this).val()
                                 );
                                 column
                                     .search(val, false, true)
                                     .draw();
                             });
-                        column.data().unique().sort().each(function (d, j) {
+                        column.data().unique().sort().each(function (d) {
                             select.append('<option value="' + d + '">' + d + '</option>')
                         });
                     });

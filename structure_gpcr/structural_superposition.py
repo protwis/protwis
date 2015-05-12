@@ -69,18 +69,6 @@ class FragmentSuperpose(object):
 
     logger = logging.getLogger("structure_gpcr")
 
-    similarity_dict = {
-        "fragment_residue" : 0,
-        "interaction_type" : 1,
-        "target_residue" : 2
-        }
-
-    similarity_rules = [
-        [['H', 'F', 'Y', 'W'], ['AEF', 'AFF'], ['H', 'F', 'Y', 'W']],
-        [['Y'], ['AFE'], ['F']],
-        [['S', 'T'], ['HBA', 'HBD'], ['S', 'T']]
-        ]
-
     def __init__(self, pdb_file=None, pdb_filename=None):
         
         #pdb_file can be either a name/path or a handle to an open file
@@ -90,6 +78,9 @@ class FragmentSuperpose(object):
         self.blast = BlastSearch()
 
         self.pdb_struct = self.parse_pdb()
+        if not check_gn(self.pdb_struct):
+            gn_assigner = GenericNumbering(self.pdb_file, self.pdb_filename)
+            self.pdb_struct = gn_assigner.assign_generic_numbers()
 
         self.target = Protein.objects.get(pk=self.identify_receptor())
 
@@ -130,13 +121,18 @@ class FragmentSuperpose(object):
             return None
 
 
-    def superpose_all_fragments():
+    def superpose_fragments(self, representative=False, use_similar=False):
 
         superposed_frags = [] #list of (fragment, superposed pdbdata) pairs
-        fragments = self.get_all_fragments()
+        if representative:
+            fragments = self.get_representative_fragments()
+        else:
+            fragments = self.get_all_fragments()
 
         for fragment in fragments:
-            atom_sel = BackboneSelector(self.pdb_struct, fragment)
+            atom_sel = BackboneSelector(self.pdb_struct, fragment, use_similar)
+            if atom_sel.get_ref_atoms() == []:
+                continue
             super_imposer = Superimposer()
             try:
                 fragment_struct = PDBParser(PERMISSIVE=True).get_structure('alt', StringIO(fragment.get_pdbdata()))[0]
@@ -144,7 +140,7 @@ class FragmentSuperpose(object):
                 super_imposer.apply(fragment_struct)
                 superposed_frags.append([fragment,fragment_struct])
             except Exception as msg:
-                logger.error('Failed to superpose fragment {!s} with structure {!s}'.format(fragment, self.pdb_filename))
+                self.logger.error('Failed to superpose fragment {!s} with structure {!s}\nDebug message: {!s}'.format(fragment, self.pdb_filename, msg))
         return superposed_frags
 
 

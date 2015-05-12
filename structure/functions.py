@@ -1,6 +1,7 @@
 from subprocess import Popen, PIPE
 from io import StringIO
 from Bio.Blast import NCBIXML
+import Bio.PDB.Polypeptide as polypeptide
 
 from django.conf import settings
 from common.selection import SimpleSelection
@@ -201,21 +202,39 @@ class CASelector(object):
 #Selects backbone atoms from reference structure and rotamer for Superposition  
 class BackboneSelector():
 
+    similarity_dict = {
+        "fragment_residue" : 0,
+        "interaction_type" : 1,
+        "target_residue" : 2
+        }
+
+    similarity_rules = [
+        [['H', 'F', 'Y', 'W'], ['AEF', 'AFF'], ['H', 'F', 'Y', 'W']],
+        [['Y'], ['AFE'], ['F']],
+        [['S', 'T'], ['HBA', 'HBD'], ['S', 'T']],
+        ]
+
     def __init__(self, ref_pdbio_struct, fragment):
 
         self.ref_atoms = []
         self.alt_atoms = []
         
-        self.ref_atoms = self.select_ref_atoms(fragment.rotamer.residue, ref_pdbio_struct[0])
+        self.ref_atoms = self.select_ref_atoms(fragment, ref_pdbio_struct[0])
         self.alt_atoms = self.select_alt_atoms(PDBParser(PERMISSIVE=True).get_structure('ref', StringIO(fragment.rotamer.pdbdata)))
         
         
-    def select_ref_atoms(self, residue, ref_pdbio_struct):
+    def select_ref_atoms(self, fragment, ref_pdbio_struct, use_similar=False):
 
         for chain in ref_pdbio_struct:
             for res in chain:
-                if self.get_generic_number(res) == residue.generic_number: 
-                    return [res['CA'], res['N'], res['O']] 
+                if self.get_generic_number(res) == fragment.rotamer.residue.generic_number:
+                    if use_similar:
+                        for rule in self.similarity_rules:
+                            if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and fragment.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
+                                return [res['CA'], res['N'], res['O']] 
+                    else:
+                        return [res['CA'], res['N'], res['O']] 
+
         return []                  
 
 

@@ -33,7 +33,7 @@ class GenericNumberingIndex(TemplateView):
         """
 
     #Input file form data
-    header = "Upload your pdb file:"
+    header = "Select a file to upload:"
     upload_form_data = {
         "pdb_file": forms.FileField(),
         }
@@ -288,6 +288,57 @@ class SuperpositionWorkflowResults(TemplateView):
         #return render(self.request, self.template_name, context) 
         return context
 
+
+
+class FragmentSuperpositionIndex(TemplateView):
+
+    template_name = 'common_structural_tools.html'
+
+    #Left panel
+    step = 1
+    number_of_steps = 1
+    title = "UPLOAD A PDB FILE"
+    description = """
+    Upload a pdb file you want to superpose the interacting moiety - residue pairs.
+    
+    Once you have selected all your targets, click the green button.
+        """
+
+    #Input file form data
+    header = "Select a file to upload:"
+    upload_form_data = {
+        "pdb_file": forms.FileField(),
+        "similarity" : forms.ChoiceField(
+            choices=(('identical','Use fragments with identical residues'),
+                     ('similar','Use fragments with residues of similar properties')),
+            widget=forms.RadioSelect())
+        }
+    form_code = forms.Form()
+    form_code.fields = upload_form_data
+    form_id = 'fragments'
+    url = '/structure_gpcr/fragment_superposition_results'
+    mid_section = "upload_file_form.html"
+
+    #Buttons
+    buttons = {
+        'continue' : {
+            'label' : 'Retrieve fragments',
+            'color' : 'success',
+            },
+        }
+
+
+    def get_context_data(self, **kwargs):
+
+        context = super(FragmentSuperpositionIndex, self).get_context_data(**kwargs)
+        # get attributes of this class and add them to the context
+        context['form_code'] = str(self.form_code)
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+
+        return context
        
 
 #==============================================================================
