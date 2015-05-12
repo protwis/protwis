@@ -198,3 +198,6 @@ class RotamerSuperpose(object):
             print("Failed to superpose atoms {} and {}".format(self.reference_atoms, self.template_atoms))
             return None
 
+
+
+
