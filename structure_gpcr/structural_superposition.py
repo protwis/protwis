@@ -56,7 +56,7 @@ class ProteinSuperpose(object):
                 ref, alt = self.selector.get_consensus_sets(alt_struct.id)
                 super_imposer.set_atoms(ref, alt)
                 super_imposer.apply(alt_struct[0].get_atoms())
-                self.logger("RMS(first model, model {!s}) = {:d}".format(alt_struct.id, super_imposer.rms))
+                self.logger.info("RMS(first model, model {!s}) = {:d}".format(alt_struct.id, super_imposer.rms))
             except Exception as msg:
                 self.logger.error("Failed to superpose structures {} and {}".format(self.ref_struct.id, alt_struct.id))
 
@@ -64,7 +64,7 @@ class ProteinSuperpose(object):
 
 
 
-
+#==============================================================================  
 class FragmentSuperpose(object):
 
     logger = logging.getLogger("structure_gpcr")
@@ -156,6 +156,7 @@ class FragmentSuperpose(object):
 
 
 
+#==============================================================================  
 class RotamerSuperpose(object):
     ''' Class to superimpose Atom objects on one-another. 
 

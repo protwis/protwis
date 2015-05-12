@@ -339,6 +339,31 @@ class FragmentSuperpositionIndex(TemplateView):
                 context[a[0]] = a[1]
 
         return context
+
+
+
+class FragmentSuperpositionResults(TemplateView):
+
+    template_name="common_structural_tools.html"
+
+    #Left panel - blank
+    #Mid section
+    mid_section = 'fragment_superposition_results.html'
+    #Buttons - none
+
+    def post(self, request, *args, **kwargs):
+        
+        if request.POST['similarity'] == 'identical':
+            print('similarity my ass')
+
+
+        context =  super(FragmentSuperpositionResults, self).get_context_data(**kwargs)
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+
+        return render(request, self.template_name, context)
        
 
 #==============================================================================
