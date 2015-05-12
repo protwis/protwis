@@ -177,8 +177,8 @@ class ProteinSuperpose(object):
 class RotamerSuperpose(object):
     ''' Class to superimpose Atom objects on one-another. 
 
-        @param original_rotamers: list of Atom objects of rotamers to be superposed on \n
-        @param rotamers: list of Atom objects of rotamers to be superposed
+        @param reference_atoms: list of Atom objects of rotamers to be superposed on \n
+        @param template_atoms: list of Atom objects of rotamers to be superposed
     '''
     def __init__(self, reference_atoms, template_atoms):
         self.reference_atoms = reference_atoms
