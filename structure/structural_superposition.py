@@ -1,4 +1,7 @@
-import os,sys,math,logging
+import os
+import sys
+import math
+import logging
 from io import StringIO
 
 import Bio.PDB.Polypeptide as polypeptide
@@ -11,7 +14,7 @@ from structure.models import Structure
 from interaction.models import ResidueFragmentInteraction
 
 
-#==============================================================================  
+#==============================================================================
 class ProteinSuperpose(object):
   
     logger = logging.getLogger("structure")
@@ -64,12 +67,12 @@ class ProteinSuperpose(object):
 
 
 
-#==============================================================================  
+#==============================================================================
 class FragmentSuperpose(object):
 
     logger = logging.getLogger("structure")
 
-    def __init__(self, pdb_file=None, pdb_filename=None):
+    def __init__ (self, pdb_file=None, pdb_filename=None):
         
         #pdb_file can be either a name/path or a handle to an open file
         self.pdb_file = pdb_file
@@ -99,11 +102,13 @@ class FragmentSuperpose(object):
             return None
 
         #extracting sequence and preparing dictionary of residues
-        #bio.pdb reads pdb in the following cascade: model->chain->residue->atom
+        #bio.pdb reads pdb in the following cascade:
+        #model->chain->residue->atom
         for chain in pdb_struct:
             self.pdb_seq[chain.id] = Seq('')            
             for res in chain:
-            #in bio.pdb the residue's id is a tuple of (hetatm flag, residue number, insertion code)
+            #in bio.pdb the residue's id is a tuple of (hetatm flag, residue
+            #number, insertion code)
                 if res.resname == "HID":
                     self.pdb_seq[chain.id] += polypeptide.three_to_one('HIS')
                 else:
@@ -114,7 +119,7 @@ class FragmentSuperpose(object):
         return pdb_struct
 
 
-    def identify_receptor(self):
+    def identify_receptor (self):
 
         try:
             return self.blast.run(Seq(''.join([str(self.pdb_seq[x]) for x in sorted(self.pdb_seq.keys())])))[0][0]        
@@ -123,7 +128,7 @@ class FragmentSuperpose(object):
             return None
 
 
-    def superpose_fragments(self, representative=False, use_similar=False):
+    def superpose_fragments (self, representative=False, use_similar=False):
 
         superposed_frags = [] #list of (fragment, superposed pdbdata) pairs
         if representative:
@@ -146,30 +151,30 @@ class FragmentSuperpose(object):
         return superposed_frags
 
 
-    def get_representative_fragments(self):
+    def get_representative_fragments (self):
         
         template = get_segment_template(self.target)
         return list(ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure=template.id))
 
 
-    def get_all_fragments(self):
+    def get_all_fragments (self):
 
         return list(ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__protein_conformation__protein__parent__not=self.target))
 
 
 
-#==============================================================================  
+#==============================================================================
 class RotamerSuperpose(object):
     ''' Class to superimpose Atom objects on one-another. 
 
         @param original_rotamers: list of Atom objects of rotamers to be superposed on \n
         @param rotamers: list of Atom objects of rotamers to be superposed
     '''
-    def __init__(self, reference_atoms, template_atoms):
+    def __init__ (self, reference_atoms, template_atoms):
         self.reference_atoms = reference_atoms
         self.template_atoms = template_atoms
 
-    def run(self):
+    def run (self):
         ''' Run the superpositioning. 
         '''
         super_imposer = Superimposer()

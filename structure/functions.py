@@ -10,7 +10,10 @@ from protein.models import ProteinSegment
 from residue.models import Residue
 from structure.models import Structure
 
-import os,sys,tempfile,logging
+import os
+import sys
+import tempfile
+import logging
 
 logger = logging.getLogger("structure")
 
@@ -19,15 +22,18 @@ logger = logging.getLogger("structure")
 class BlastSearch(object):
     
     
-    def __init__ (self, blast_path = 'blastp', blastdb = os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']), top_results = 1):
+    def __init__ (self, blast_path='blastp', blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']), top_results=1):
   
         self.blast_path = blast_path
         self.blastdb = blastdb
         #print(blastdb)
-        #typicaly top scored result is enough, but for sequences with missing residues it is better to use more results to avoid getting sequence of e.g. different species
+        #typicaly top scored result is enough, but for sequences with missing
+        #residues it is better to use more results to avoid getting sequence of
+        #e.g.  different species
         self.top_results = top_results
       
-    #takes Bio.Seq sequence as an input and returns a list of tuples with the alignments 
+    #takes Bio.Seq sequence as an input and returns a list of tuples with the
+    #alignments
     def run (self, input_seq):
     
         output = []
@@ -35,13 +41,13 @@ class BlastSearch(object):
         if sys.platform == 'win32':
             tmp = tempfile.NamedTemporaryFile()
             logger.debug("Running Blast with sequence: {}".format(input_seq))
-            tmp.write(bytes(str(input_seq)+'\n', 'latin1'))
+            tmp.write(bytes(str(input_seq) + '\n', 'latin1'))
             tmp.seek(0)
-            blast = Popen('%s -db %s -outfmt 5' %(self.blast_path, self.blastdb), universal_newlines=True, shell=True, stdin=tmp, stdout=PIPE, stderr=PIPE)
+            blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, shell=True, stdin=tmp, stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate()
         else:
         #Rest of the world:
-            blast = Popen('%s -db %s -outfmt 5' %(self.blast_path, self.blastdb), universal_newlines=True, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate(input=str(input_seq))
         if len(blast_err) != 0:
             logger.debug(blast_err)
@@ -57,7 +63,7 @@ class BlastSearch(object):
 #stores information about alignments and b-w numbers
 class MappedResidue(object):
   
-    def __init__(self, res_num, res_name):
+    def __init__ (self, res_num, res_name):
           
         self.number = res_num
         self.name = res_name
@@ -66,12 +72,12 @@ class MappedResidue(object):
         self.bw = 0.
         self.gpcrdb = 0.       
   
-    def add_bw_number(self, bw_number=''):
+    def add_bw_number (self, bw_number=''):
     
         self.bw = bw_number
 
 
-    def add_gpcrdb_number(self, gpcrdb_number=''):
+    def add_gpcrdb_number (self, gpcrdb_number=''):
 
         #PDB format does not allow fractional part longer than 2 digits
         #so numbers x.xx1 are negative
@@ -85,7 +91,7 @@ class MappedResidue(object):
 #turns selection into actual residues
 class SelectionParser(object):
 
-    def __init__(self, selection):
+    def __init__ (self, selection):
     
         self.generic_numbers = []
         self.helices = []
@@ -103,7 +109,7 @@ class SelectionParser(object):
 #==============================================================================
 class CASelector(object):
 
-    def __init__(self, parsed_selection, ref_pdbio_struct, alt_structs):
+    def __init__ (self, parsed_selection, ref_pdbio_struct, alt_structs):
     
         self.ref_atoms = []
         self.alt_atoms = {}
@@ -164,7 +170,7 @@ class CASelector(object):
         return atom_list
 
 
-    def get_consensus_sets(self, alt_id):
+    def get_consensus_sets (self, alt_id):
         
         tmp_ref = []
         tmp_alt = []
@@ -211,13 +217,11 @@ class BackboneSelector():
         "target_residue" : 2
         }
 
-    similarity_rules = [
-        [['H', 'F', 'Y', 'W'], ['AEF', 'AFF'], ['H', 'F', 'Y', 'W']],
+    similarity_rules = [[['H', 'F', 'Y', 'W'], ['AEF', 'AFF'], ['H', 'F', 'Y', 'W']],
         [['Y'], ['AFE'], ['F']],
-        [['S', 'T'], ['HBA', 'HBD'], ['S', 'T']],
-        ]
+        [['S', 'T'], ['HBA', 'HBD'], ['S', 'T']],]
 
-    def __init__(self, ref_pdbio_struct, fragment):
+    def __init__ (self, ref_pdbio_struct, fragment):
 
         self.ref_atoms = []
         self.alt_atoms = []
@@ -226,7 +230,7 @@ class BackboneSelector():
         self.alt_atoms = self.select_alt_atoms(PDBParser(PERMISSIVE=True).get_structure('ref', StringIO(fragment.rotamer.pdbdata)))
         
         
-    def select_ref_atoms(self, fragment, ref_pdbio_struct, use_similar=False):
+    def select_ref_atoms (self, fragment, ref_pdbio_struct, use_similar=False):
 
         for chain in ref_pdbio_struct:
             for res in chain:
@@ -241,7 +245,7 @@ class BackboneSelector():
         return []                  
 
 
-    def select_alt_atoms(self, rotamer_pdbio_struct):
+    def select_alt_atoms (self, rotamer_pdbio_struct):
 
         for chain in rotamer_pdbio_struct:
             for res in chain:
@@ -252,12 +256,12 @@ class BackboneSelector():
         return []
     
 
-    def get_generic_number(self, res):
+    def get_generic_number (self, res):
 
         if 0 < res['CA'].get_bfactor() < 8.1:
             return "{:2f}x{:2f}".format(res['N'].get_bfactor(), res['CA'].get_bfactor())
         if -8.1 < res['CA'].get_bfactor() < 0:
-            return "{:2f}x{:2f}".format(res['N'].get_bfactor(), -res['CA'].get_bfactor()+0.001)
+            return "{:2f}x{:2f}".format(res['N'].get_bfactor(), -res['CA'].get_bfactor() + 0.001)
         return 0.0
 
 
@@ -272,8 +276,8 @@ class BackboneSelector():
 
 
 
-#==============================================================================  
-def check_gn(pdb_struct):
+#==============================================================================
+def check_gn (pdb_struct):
         
     gn_list = []
     for chain in pdb_struct:
@@ -287,8 +291,8 @@ def check_gn(pdb_struct):
     return False
 
 
-#==============================================================================  
-def get_segment_template(protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']):
+#==============================================================================
+def get_segment_template (protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']):
 
     a = Alignment()
     a.load_reference_protein(protein)
@@ -301,7 +305,7 @@ def get_segment_template(protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM
     return a.proteins[1]
 
 
-#==============================================================================  
-def fetch_template_structure(template_protein):
+#==============================================================================
+def fetch_template_structure (template_protein):
 
     return Structure.objects.get(protein_conformation__protein__parent=template_protein.entry_name)

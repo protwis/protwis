@@ -9,7 +9,9 @@ from structure.structural_superposition import ProteinSuperpose,FragmentSuperpos
 from common.views import AbsSegmentSelection
 from common.selection import Selection
 
-import inspect, os, zipfile
+import inspect
+import os
+import zipfile
 from io import StringIO
 from collections import OrderedDict
 from Bio.PDB import PDBIO
@@ -21,7 +23,7 @@ class StructureBrowser(TemplateView):
 
     template_name = "structure_browser.html"
 
-    def get_context_data(self, **kwargs):
+    def get_context_data (self, **kwargs):
 
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
@@ -79,7 +81,7 @@ class GenericNumberingIndex(TemplateView):
         }
 
 
-    def get_context_data(self, **kwargs):
+    def get_context_data (self, **kwargs):
 
         context = super(GenericNumberingIndex, self).get_context_data(**kwargs)
         # get attributes of this class and add them to the context
@@ -95,7 +97,7 @@ class GenericNumberingIndex(TemplateView):
 #Class rendering results from generic numbers assignment
 class GenericNumberingResults(TemplateView):
 
-    template_name='common_structural_tools.html'
+    template_name = 'common_structural_tools.html'
 
     #Left panel - blank
     #Mid section
@@ -103,7 +105,7 @@ class GenericNumberingResults(TemplateView):
     #Buttons - none
 
 
-    def post(self, request, *args, **kwargs):
+    def post (self, request, *args, **kwargs):
 
         generic_numbering = GenericNumbering(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8',"ignore")))
         out_struct = generic_numbering.assign_generic_numbers()
@@ -120,7 +122,7 @@ class GenericNumberingResults(TemplateView):
             self.input_file = request.FILES['pdb_file'].name
             self.success = False
 
-        context =  super(GenericNumberingResults, self).get_context_data(**kwargs)
+        context = super(GenericNumberingResults, self).get_context_data(**kwargs)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
@@ -129,9 +131,9 @@ class GenericNumberingResults(TemplateView):
         return render(request, self.template_name, context)
 
 
-    def get_context_data(self, **kwargs):
+    def get_context_data (self, **kwargs):
 
-        context =  super(GenericNumberingResults, self).get_context_data(**kwargs)
+        context = super(GenericNumberingResults, self).get_context_data(**kwargs)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
@@ -177,13 +179,11 @@ class SuperpositionWorkflowIndex(TemplateView):
         }
 
     # OrderedDict to preserve the order of the boxes
-    selection_boxes = OrderedDict([
-        ('reference', True),
+    selection_boxes = OrderedDict([('reference', True),
         ('targets', True),
-        ('segments', False)
-    ])
+        ('segments', False)])
 
-    def get_context_data(self, **kwargs):
+    def get_context_data (self, **kwargs):
 
         context = super(SuperpositionWorkflowIndex, self).get_context_data(**kwargs)
 
@@ -215,7 +215,7 @@ class SuperpositionWorkflowIndex(TemplateView):
 #Class rendering selection box for sequence segments
 class SuperpositionWorkflowSelection(AbsSegmentSelection):
 
-    template_name='common/segmentselection.html'
+    template_name = 'common/segmentselection.html'
 
     #Left panel
     step = 2
@@ -234,14 +234,12 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
         },
     }
     # OrderedDict to preserve the order of the boxes
-    selection_boxes = OrderedDict([
-        ('reference', False),
+    selection_boxes = OrderedDict([('reference', False),
         ('targets', False),
-        ('segments', True),
-    ])
+        ('segments', True),])
 
 
-    def post(self, request, *args, **kwargs):
+    def post (self, request, *args, **kwargs):
 
         request.session['ref_file'] = request.FILES['ref_file']
         request.session['alt_files'] = request.FILES['alt_files']
@@ -252,7 +250,7 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
         if simple_selection:
             selection.importer(simple_selection)
         
-        context =  super(SuperpositionWorkflowSelection, self).get_context_data(**kwargs)
+        context = super(SuperpositionWorkflowSelection, self).get_context_data(**kwargs)
         context['selection'] = {}
         for selection_box, include in self.selection_boxes.items():
             if include:
@@ -271,7 +269,7 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
 #Class rendering results from superposition workflow
 class SuperpositionWorkflowResults(TemplateView):
 
-    template_name='common_structural_tools.html'
+    template_name = 'common_structural_tools.html'
 
     #Left panel - blank
     #Mid section
@@ -279,9 +277,9 @@ class SuperpositionWorkflowResults(TemplateView):
     #Buttons - none
 
 
-    def get_context_data(self, **kwargs):
+    def get_context_data (self, **kwargs):
 
-        context =  super(SuperpositionWorkflowResults, self).get_context_data(**kwargs)
+        context = super(SuperpositionWorkflowResults, self).get_context_data(**kwargs)
         
         simple_selection = self.request.session.get('selection', False)
         selection = Selection()
@@ -311,7 +309,7 @@ class SuperpositionWorkflowResults(TemplateView):
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
 
-        #return render(self.request, self.template_name, context) 
+        #return render(self.request, self.template_name, context)
         return context
 
 
@@ -334,12 +332,10 @@ class FragmentSuperpositionIndex(TemplateView):
     header = "Select a file to upload:"
     upload_form_data = {
         "pdb_file": forms.FileField(),
-        "similarity" : forms.ChoiceField(
-            choices=(('identical','Use fragments with identical residues'),
+        "similarity" : forms.ChoiceField(choices=(('identical','Use fragments with identical residues'),
                      ('similar','Use fragments with residues of similar properties')),
             widget=forms.RadioSelect()),
-        "representative" : forms.ChoiceField(
-            choices=(('closest','Use fragments from the evolutionary closest crystal structure'),
+        "representative" : forms.ChoiceField(choices=(('closest','Use fragments from the evolutionary closest crystal structure'),
                      ('any','Use all available fragments')),
             widget=forms.RadioSelect())
         }
@@ -358,7 +354,7 @@ class FragmentSuperpositionIndex(TemplateView):
         }
 
 
-    def get_context_data(self, **kwargs):
+    def get_context_data (self, **kwargs):
 
         context = super(FragmentSuperpositionIndex, self).get_context_data(**kwargs)
         # get attributes of this class and add them to the context
@@ -374,14 +370,14 @@ class FragmentSuperpositionIndex(TemplateView):
 
 class FragmentSuperpositionResults(TemplateView):
 
-    template_name="common_structural_tools.html"
+    template_name = "common_structural_tools.html"
 
     #Left panel - blank
     #Mid section
     mid_section = 'fragment_superposition_results.html'
     #Buttons - none
 
-    def post(self, request, *args, **kwargs):
+    def post (self, request, *args, **kwargs):
         
         frag_sp = FragmentSuperpose(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8', 'ignore')),request.FILES['pdb_file'].name)
         superposed_fragments = []
@@ -409,7 +405,7 @@ class FragmentSuperpositionResults(TemplateView):
                 self.success = True
                 self.message = '{:n} fragments were superposed.'.format(len(superposed_fragments))
 
-        context =  super(FragmentSuperpositionResults, self).get_context_data(**kwargs)
+        context = super(FragmentSuperpositionResults, self).get_context_data(**kwargs)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
@@ -419,8 +415,7 @@ class FragmentSuperpositionResults(TemplateView):
        
 
 #==============================================================================
-
-def ServePdbOutfile(request, outfile, replacement_tag):
+def ServePdbOutfile (request, outfile, replacement_tag):
     
     root, ext = os.path.splitext(outfile)
     out_stream = request.session['outfile'][outfile]
@@ -431,9 +426,11 @@ def ServePdbOutfile(request, outfile, replacement_tag):
     return response
 
 
-def ServeZipOutfile(request, outfile):
+def ServeZipOutfile (request, outfile):
     
     out_stream = request.session['outfile'][outfile]
     response = HttpResponse(content_type="application/zip")
     response['Content-Disposition'] = 'attachment; filename="{}"'.format(outfile)
     response.write(out_stream.getvalue())
+
+    return response
