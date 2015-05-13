@@ -4,7 +4,7 @@ from io import StringIO
 import Bio.PDB.Polypeptide as polypeptide
 from Bio.PDB import *
 from Bio.Seq import Seq
-from structure.functions import * #SelectionParser,BlastSearch,check_gn,get_segment_template
+from structure.functions import *
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from protein.models import Protein
 from structure.models import Structure

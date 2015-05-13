@@ -97,7 +97,6 @@ class GenericNumbering(object):
                 q_seq.pop(0)
                 continue
             if tmp_seq[0] == q_seq[0]:
-                #print "Query and temp match %i:%s %i %s" %(q_counter,q_seq[0],subj_counter,tmp_seq[0])
                 resn = self.locate_res_by_pos(chain, q_counter)
                 if resn != 0:
                     try:

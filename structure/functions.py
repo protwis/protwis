@@ -292,6 +292,7 @@ def get_segment_template(protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM
 
     a = Alignment()
     a.load_reference_protein(protein)
+    #You are so gonna love it...
     a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id))])
     a.load_segments(ProteinSegment.objects.filter(slug__in=segments))
     a.build_alignment()

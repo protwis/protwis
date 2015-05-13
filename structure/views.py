@@ -279,7 +279,6 @@ class SuperpositionWorkflowResults(TemplateView):
     #Buttons - none
 
 
-    #def post(self, request, *args, **kwargs):
     def get_context_data(self, **kwargs):
 
         context =  super(SuperpositionWorkflowResults, self).get_context_data(**kwargs)
