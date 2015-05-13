@@ -1,4 +1,5 @@
 import os,sys,math,logging
+from collections import OrderedDict
 
 from Bio.PDB import *
 from structure_gpcr.common import SelectionParser
@@ -177,8 +178,8 @@ class ProteinSuperpose(object):
 class RotamerSuperpose(object):
     ''' Class to superimpose Atom objects on one-another. 
 
-        @param original_rotamers: list of Atom objects of rotamers to be superposed on \n
-        @param rotamers: list of Atom objects of rotamers to be superposed
+        @param reference_atoms: list of Atom objects of rotamers to be superposed on \n
+        @param template_atoms: list of Atom objects of rotamers to be superposed
     '''
     def __init__(self, reference_atoms, template_atoms):
         self.reference_atoms = reference_atoms
@@ -197,5 +198,47 @@ class RotamerSuperpose(object):
         except Exception as msg:
             print("Failed to superpose atoms {} and {}".format(self.reference_atoms, self.template_atoms))
             return None
+
+class BulgeConstrictionSuperpose(object):
+    ''' Class to superimpose bulge and constriction site.
+
+        @param reference_dict: OrderedDict, dictionary of atoms to be superposed on, where keys are generic numbers 
+        and values are lists of atoms. \n
+        @param template_dict: OrderedDict, dictionary of atoms to be superposed. Same format as reference_dict.
+    '''
+    def __init__(self, reference_dict, template_dict):
+        self.reference_dict = reference_dict
+        self.reference_gns = list(reference_dict.keys())
+        self.template_dict = template_dict
+        self.template_gns = list(template_dict.keys())
+        self.starting_atom_type = template_dict[list(template_dict.keys())[0]][0].get_id()
+
+    def run(self):
+        ''' Runt the superpositioning.
+        '''
+        super_imposer = Superimposer()
+        ref_backbone_atoms = [atom for atom in self.reference_dict[self.reference_gns[0]] if atom.get_name() in ['N','CA','C']] + [atom for atom in self.reference_dict[self.reference_gns[-1]] if atom.get_name() in ['N','CA','C']]
+        temp_backbone_atoms= [atom for atom in self.template_dict[self.template_gns[0]] if atom.get_name() in ['N','CA','C']] + [atom for atom in self.template_dict[self.template_gns[-1]] if atom.get_name() in ['N','CA','C']]
+        all_template_atoms = []
+        for gn, atoms in self.template_dict.items():
+            all_template_atoms+=atoms
+        super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
+        super_imposer.apply(all_template_atoms)
+        residue = []
+        temp_dict = OrderedDict()
+        key_count = 0
+        for atom in all_template_atoms:
+            if atom.get_id()==self.starting_atom_type and residue!=[]:
+                key_count+=1
+                temp_dict[key_count] = residue
+                residue = []
+            residue.append(atom)
+        temp_dict[key_count+1] = residue
+        gn_count = 0
+        for gn in self.template_gns:
+            gn_count+=1
+            self.template_dict[gn] = temp_dict[gn_count]
+
+        return self.template_dict
 
 

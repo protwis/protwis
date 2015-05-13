@@ -39,13 +39,13 @@ class Command(BaseCommand):
         Homology_model.select_main_template(multi_alignment)
         main_alignment = Homology_model.run_main_alignment(alignment=multi_alignment)
         non_conserved_switched_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
-        Homology_model.create_PIR_file(non_conserved_switched_alignment, 
-                                       "./structure/homology_models/{}_{}/model1.pdb".format(Homology_model.uniprot_id, 
-                                                                                             Homology_model.state))
-        Homology_model.run_MODELLER("./structure/PIR/{}_{}.pir".format(Homology_model.uniprot_id, Homology_model.state), 
-                                    "./structure/homology_models/{}_{}/model1.pdb".format(Homology_model.uniprot_id,
-                                                                                          Homology_model.state),
-                                    Homology_model.uniprot_id, 1)
+#        Homology_model.create_PIR_file(non_conserved_switched_alignment, 
+#                                       "./structure/homology_models/{}_{}/model1.pdb".format(Homology_model.uniprot_id, 
+#                                                                                             Homology_model.state))
+#        Homology_model.run_MODELLER("./structure/PIR/{}_{}.pir".format(Homology_model.uniprot_id, Homology_model.state), 
+#                                    "./structure/homology_models/{}_{}/model1.pdb".format(Homology_model.uniprot_id,
+#                                                                                          Homology_model.state),
+#                                    Homology_model.uniprot_id, 1)
 
         self.stdout.write(Homology_model.statistics, ending='')
 
@@ -135,7 +135,7 @@ class HomologyModeling(object):
         '''
         self.similarity_table = self.create_similarity_table(alignment, self.get_structure_queryset(self.query_states))
         
-        main_structure = list(self.similarity_table.items())[0][0]
+        main_structure = list(self.similarity_table.items())[17][0]
         
         main_structure_protein = Protein.objects.get(id=main_structure.protein_conformation.protein.parent.id)
         
@@ -171,7 +171,7 @@ class HomologyModeling(object):
         else:
             a = alignment
         ref = a.proteins[0].alignment
-        temp = a.proteins[1].alignment
+        temp = a.proteins[18].alignment
 
         reference_string, template_string, matching_string = '','',''   
         reference_dict = OrderedDict()
@@ -264,10 +264,10 @@ class HomologyModeling(object):
                                 bulge_template = Bulge.find_bulge_template(self.similarity_table_all, 
                                                                            bulge_in_reference=False)
                                 switch_res = 0
-                                for gen_num, res in bulge_template.items():
+                                for gen_num, atoms in bulge_template.items():
                                     if switch_res!=0 and switch_res!=3:
                                         ref_temp_alignment.template_dict[gen_num.replace('.',
-                                                                'x')] = PDB.Polypeptide.three_to_one(res.get_resname())
+                                            'x')] = PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())
                                     switch_res+=1
                                 del ref_temp_alignment.reference_dict[gn]
                                 del ref_temp_alignment.template_dict[gn]
@@ -280,10 +280,10 @@ class HomologyModeling(object):
                                 constriction_template = Const.find_constriction_template(self.similarity_table_all,
                                                                                     constriction_in_reference=True)
                                 switch_res = 0
-                                for gen_num, res in constriction_template.items():
+                                for gen_num, atoms in constriction_template.items():
                                     if switch_res!=0 and switch_res!=3:
                                         ref_temp_alignment.template_dict[gen_num.replace('.',
-                                                                'x')] = PDB.Polypeptide.three_to_one(res.get_resname())
+                                            'x')] = PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())
                                     switch_res+=1
                                 ref_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 
                                                                                             'x', +1):Const.template})
@@ -299,11 +299,19 @@ class HomologyModeling(object):
                                 Bulge = Bulges(gn)
                                 bulge_template = Bulge.find_bulge_template(self.similarity_table_all,
                                                                            bulge_in_reference=True)
+                                bulge_site = parse.fetch_residues_from_pdb(self.main_structure,
+                                                                           [parse.gn_indecer(gn,'x',-2),
+                                                                            parse.gn_indecer(gn,'x',-1),
+                                                                            parse.gn_indecer(gn,'x',+1),
+                                                                            parse.gn_indecer(gn,'x',+2)])
+                                superpose = sp.BulgeConstrictionSuperpose(bulge_site,bulge_template)
+                                new_residues = superpose.run()
                                 switch_res = 0
-                                for gen_num, res in bulge_template.items():
+                                for gen_num, atoms in bulge_template.items():
                                     if switch_res!=0 and switch_res!=4:
-                                        ref_temp_alignment.template_dict[gen_num.replace('.',
-                                                                'x')] = PDB.Polypeptide.three_to_one(res.get_resname())
+                                        gn__ = gen_num.replace('.','x')
+                                        main_pdb_array[gen_num] = new_residues[gen_num]
+                                        ref_temp_alignment.template_dict[gn__] = PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())
                                     switch_res+=1
                                 ref_bulge_list.append({gn:Bulge.template})
                                                
@@ -314,10 +322,10 @@ class HomologyModeling(object):
                                 constriction_template = Const.find_constriction_template(self.similarity_table_all,
                                                                                     constriction_in_reference=False)
                                 switch_res = 0
-                                for gen_num, res in constriction_template.items():
+                                for gen_num, atoms in constriction_template.items():
                                     if switch_res!=0 and switch_res!=4:
                                         ref_temp_alignment.template_dict[gen_num.replace('.',
-                                                                'x')] = PDB.Polypeptide.three_to_one(res.get_resname())
+                                            'x')] = PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())
                                     switch_res+=1
                                 temp_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 
                                                                                             'x', +1):Const.template})
@@ -325,6 +333,22 @@ class HomologyModeling(object):
             self.statistics.add_info('template_bulges', temp_bulge_list)
             self.statistics.add_info('reference_constrictions', ref_const_list)
             self.statistics.add_info('template_constrictions', temp_const_list)
+            
+            # insert bulge to array in the right place
+            if ref_bulge_list!=[]:
+                out_pdb_array = OrderedDict()
+                bulge_gns = []
+                for bulge in ref_bulge_list:
+                    gn = list(bulge.keys())[0].replace('x','.')
+                    bulge_gns.append(gn)
+                for key, value in main_pdb_array.items():
+                    out_pdb_array[key] = value                
+                    if str(key)+'1' in bulge_gns:
+                        out_pdb_array[str(key)+'1'] = main_pdb_array[str(key)+'1']
+                main_pdb_array = out_pdb_array
+            
+            if temp_const_list!=[]:
+                pass
         
         # non-conserved residues
         non_cons_res_templates = OrderedDict()
@@ -333,12 +357,11 @@ class HomologyModeling(object):
                                                   ref_temp_alignment.aligned_string):
             if ref_temp_alignment.reference_dict[ref_res]!='-' and ref_temp_alignment.reference_dict[ref_res]!='/':
                 ref_length+=1
-            if aligned_res!='.' and aligned_res!='/' and aligned_res!='x':
+            if aligned_res!='.' and aligned_res!='/' and aligned_res!='x' and aligned_res!='-':
                 conserved_count+=1
                 conserved_residues[ref_res] = aligned_res
                 
             gn = ref_res
-            
             if aligned_res=='.':
                 non_cons_count+=1
                 residues = Residue.objects.filter(generic_number__label=ref_res)
@@ -351,9 +374,9 @@ class HomologyModeling(object):
                         try:
                             alt_temp = parse.fetch_residues_from_pdb(struct, [gn])
                             if ref_temp_alignment.reference_dict[gn]==PDB.Polypeptide.three_to_one(
-                                                                                        alt_temp[gn_].get_resname()):
-                                orig_res = parse.fetch_residues_from_pdb(self.main_structure,[gn],output_type='text')
-                                alt_res = parse.fetch_residues_from_pdb(struct,[gn],output_type='text')
+                                                                        alt_temp[gn_][0].get_parent().get_resname()):
+                                orig_res = parse.fetch_residues_from_pdb(self.main_structure,[gn])[gn_]
+                                alt_res = parse.fetch_residues_from_pdb(struct,[gn])[gn_]
                                 superpose = sp.RotamerSuperpose(orig_res, alt_res)
                                 new_atoms = superpose.run()
                                 main_pdb_array[gn_] = new_atoms
@@ -378,11 +401,7 @@ class HomologyModeling(object):
         self.statistics.add_info('non_conserved_residue_templates', non_cons_res_templates)
         self.statistics.add_info('similarity_table', self.similarity_table)
         
-        path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
-        if not os.path.exists(path):
-            os.mkdir(path)
-        self.write_homology_model_pdb(path+"model1.pdb", main_pdb_array) 
-
+        # check for inconsitencies with db
         for gn, res in ref_temp_alignment.template_dict.items():
             try:
                 pdb_res = PDB.Polypeptide.three_to_one(main_pdb_array[gn.replace('x','.')][0].get_parent().get_resname())
@@ -391,6 +410,11 @@ class HomologyModeling(object):
             except:
                 pass
 
+        # write to file
+        path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
+        if not os.path.exists(path):
+            os.mkdir(path)
+        self.write_homology_model_pdb(path+"model1.pdb", main_pdb_array)
         return ref_temp_alignment       
     
     def write_homology_model_pdb(self, filename, main_pdb_array):
@@ -539,20 +563,21 @@ class Bulges(object):
                         if match.protein_conformation.protein.parent==protein_object:
                             self.bulge_templates.append(structure)
                     elif bulge_in_reference==False:
-                        if match.protein_conformation.protein.parent==protein_object and match.protein_conformation.protein.parent.entry_name not in excludee_proteins:
+                        if (match.protein_conformation.protein.parent==protein_object and 
+                            match.protein_conformation.protein.parent.entry_name not in excludee_proteins):
                             self.bulge_templates.append(structure)
             except:
                 pass
         for temp in self.bulge_templates:
             try:
                 if bulge_in_reference==True:
-                    alt_bulge = parse.fetch_residues_from_pdb(temp, str(temp.preferred_chain)[0], 
+                    alt_bulge = parse.fetch_residues_from_pdb(temp, 
                                                               [parse.gn_indecer(gn,'x',-2),
                                                                parse.gn_indecer(gn,'x',-1),gn,
                                                                parse.gn_indecer(gn,'x',+1),
                                                                parse.gn_indecer(gn,'x',+2)])
                 elif bulge_in_reference==False:
-                    alt_bulge = parse.fetch_residues_from_pdb(temp, str(temp.preferred_chain)[0], 
+                    alt_bulge = parse.fetch_residues_from_pdb(temp, 
                                                               [parse.gn_indecer(gn,'x',-2),
                                                                parse.gn_indecer(gn,'x',-1),
                                                                parse.gn_indecer(gn,'x',+1),
@@ -608,13 +633,13 @@ class Constrictions(object):
         for temp in self.constriction_templates:
             try:
                 if constriction_in_reference==True:
-                    alt_bulge = parse.fetch_residues_from_pdb(temp, str(temp.preferred_chain)[0], 
+                    alt_bulge = parse.fetch_residues_from_pdb(temp,
                                                               [parse.gn_indecer(gn,'x',-2),
                                                                parse.gn_indecer(gn,'x',-1),
                                                                parse.gn_indecer(gn,'x',+1),
                                                                parse.gn_indecer(gn,'x',+2)])
                 elif constriction_in_reference==False:
-                    alt_bulge = parse.fetch_residues_from_pdb(temp, str(temp.preferred_chain)[0], 
+                    alt_bulge = parse.fetch_residues_from_pdb(temp,
                                                               [parse.gn_indecer(gn,'x',-2),
                                                                parse.gn_indecer(gn,'x',-1),gn,
                                                                parse.gn_indecer(gn,'x',+1),
@@ -676,13 +701,13 @@ class GPCRDBParsingPDB(object):
                 return str(split[0])+delimiter+str(int(str(split[1])[:2])+direction)
         return '/'
 
-    def fetch_residues_from_pdb(self, structure, generic_numbers, output_type='dict'):
+    def fetch_residues_from_pdb(self, structure, generic_numbers):
         ''' Fetches specific lines from pdb file by generic number (if generic number is
             not available then by residue number). Returns nested OrderedDict()
             with generic numbers as keys in the outer dictionary, and atom names as keys
             in the inner dictionary.
             
-            @param pdb: Structure, Structure object where residues should be fetched from \n
+            @param structure: Structure, Structure object where residues should be fetched from \n
             @param generic_numbers: list, list of generic numbers to be fetched
         '''
         output = OrderedDict()
@@ -693,13 +718,11 @@ class GPCRDBParsingPDB(object):
             rota_struct = PDB.PDBParser().get_structure('structure', io)[0]
             for chain in rota_struct:
                 for residue in chain:
-                    output[gn.replace('x','.')] = residue
                     for atom in residue:
                         atoms_list.append(atom)
-        if output_type=='dict':
-            return output
-        elif output_type=='text':
-            return atoms_list
+                    output[gn.replace('x','.')] = atoms_list
+                    atoms_list = []
+        return output
 
     def pdb_array_creator(self, structure):
         ''' Creates an OrderedDict() from the pdb of a Structure object where residue numbers/generic numbers are 
