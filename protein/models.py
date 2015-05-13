@@ -25,6 +25,12 @@ class Protein(models.Model):
     class Meta():
         db_table = 'protein'
 
+    def get_protein_class(self):
+        tmp = self.family
+        while tmp.parent.parent is not None:
+            tmp = tmp.parent
+        return tmp.name
+
 
 class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein')
