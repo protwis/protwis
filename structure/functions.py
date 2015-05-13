@@ -12,7 +12,7 @@ from structure.models import Structure
 
 import os,sys,tempfile,logging
 
-logger = logging.getLogger("structure_gpcr")
+logger = logging.getLogger("structure")
 
 #==============================================================================
 # I have put it into separate class for the sake of future uses
@@ -34,14 +34,15 @@ class BlastSearch(object):
         #Windows has problems with Popen and PIPE
         if sys.platform == 'win32':
             tmp = tempfile.NamedTemporaryFile()
-            tmp.write(bytes(input_seq.seq+'\n', 'latin1'))
+            logger.debug("Running Blast with sequence: {}".format(input_seq))
+            tmp.write(bytes(str(input_seq)+'\n', 'latin1'))
             tmp.seek(0)
             blast = Popen('%s -db %s -outfmt 5' %(self.blast_path, self.blastdb), universal_newlines=True, shell=True, stdin=tmp, stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate()
         else:
         #Rest of the world:
             blast = Popen('%s -db %s -outfmt 5' %(self.blast_path, self.blastdb), universal_newlines=True, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-            (blast_out, blast_err) = blast.communicate(input=input_seq.seq)
+            (blast_out, blast_err) = blast.communicate(input=str(input_seq))
         if len(blast_err) != 0:
             logger.debug(blast_err)
 
@@ -199,8 +200,10 @@ class CASelector(object):
 
 
 #==============================================================================
-#Selects backbone atoms from reference structure and rotamer for Superposition  
 class BackboneSelector():
+    """
+    Selects backbone atoms from reference structure and rotamer for Superposition
+    """
 
     similarity_dict = {
         "fragment_residue" : 0,
@@ -289,8 +292,8 @@ def get_segment_template(protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM
 
     a = Alignment()
     a.load_reference_protein(protein)
-    a.load_proteins(Structure.objects.filter(protein_conformation__protein__not=self.pk))
-    a.load_segments(segments)
+    a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id))])
+    a.load_segments(ProteinSegment.objects.filter(slug__in=segments))
     a.build_alignment()
     a.calculate_similarity()
 

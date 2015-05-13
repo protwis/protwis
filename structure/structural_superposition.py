@@ -5,7 +5,7 @@ import Bio.PDB.Polypeptide as polypeptide
 from Bio.PDB import *
 from Bio.Seq import Seq
 from structure.functions import * #SelectionParser,BlastSearch,check_gn,get_segment_template
-from structure_gpcr.assign_generic_numbers import GenericNumbering
+from structure.assign_generic_numbers_gpcr import GenericNumbering
 from protein.models import Protein
 from structure.models import Structure
 from interaction.models import ResidueFragmentInteraction
@@ -14,27 +14,27 @@ from interaction.models import ResidueFragmentInteraction
 #==============================================================================  
 class ProteinSuperpose(object):
   
-    logger = logging.getLogger("structure_gpcr")
+    logger = logging.getLogger("structure")
 
     def __init__ (self, ref_file, alt_files, simple_selection):
     
         self.selection = SelectionParser(simple_selection)
     
-        self.ref_struct = PDBParser().get_structure('ref', ref_file)
+        self.ref_struct = PDBParser().get_structure('ref', ref_file)[0]
         assert self.ref_struct, self.logger.error("Can't parse the ref file %s".format(ref_file))
         if self.selection.generic_numbers != [] or self.selection.helices != []:
-            if not check_gn(self.ref_struct[0]):
-                gn_assigner = GenericNumbering(ref_file)
+            if not check_gn(self.ref_struct):
+                gn_assigner = GenericNumbering(structure=self.ref_struct)
                 self.ref_struct = gn_assigner.assign_generic_numbers()
       
         self.alt_structs = []
         for alt_id, alt_file in enumerate(alt_files):
             try:
-                tmp_struct = PDBParser(PERMISSIVE=True).get_structure(alt_id, alt_file)
+                tmp_struct = PDBParser(PERMISSIVE=True).get_structure(alt_id, alt_file)[0]
                 if self.selection.generic_numbers != [] or self.selection.helices != []:
-                    if not check_gn(tmp_struct[0]):
+                    if not check_gn(tmp_struct):
                         print("Assigning")
-                        gn_assigner = GenericNumbering(alt_file)
+                        gn_assigner = GenericNumbering(structure=tmp_struct)
                         self.alt_structs.append(gn_assigner.assign_generic_numbers())
                     else:
                         self.alt_structs.append(tmp_struct)
@@ -67,7 +67,7 @@ class ProteinSuperpose(object):
 #==============================================================================  
 class FragmentSuperpose(object):
 
-    logger = logging.getLogger("structure_gpcr")
+    logger = logging.getLogger("structure")
 
     def __init__(self, pdb_file=None, pdb_filename=None):
         
@@ -79,9 +79,11 @@ class FragmentSuperpose(object):
 
         self.pdb_struct = self.parse_pdb()
         if not check_gn(self.pdb_struct):
-            gn_assigner = GenericNumbering(self.pdb_file, self.pdb_filename)
+            gn_assigner = GenericNumbering(structure=self.pdb_struct)
             self.pdb_struct = gn_assigner.assign_generic_numbers()
 
+        rec = self.identify_receptor()
+        print(rec)
         self.target = Protein.objects.get(pk=self.identify_receptor())
 
 
@@ -92,7 +94,7 @@ class FragmentSuperpose(object):
         if self.pdb_file:
             pdb_struct = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_file)[0]
         elif self.pdb_filename:
-            pdb_struct = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_file)[0]
+            pdb_struct = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_filename)[0]
         else:
             return None
 
@@ -113,11 +115,11 @@ class FragmentSuperpose(object):
 
 
     def identify_receptor(self):
-        
+
         try:
-            return self.blast.run(Seq(''.join([self.pdb_seq[x].seq for x in sorted(self.pdb_seq.keys())])))[0]        
+            return self.blast.run(Seq(''.join([str(self.pdb_seq[x]) for x in sorted(self.pdb_seq.keys())])))[0][0]        
         except Exception as msg:
-            self.logger.error('Failed to identify protein for input file {!s}'.format(self.pdb_filename))
+            self.logger.error('Failed to identify protein for input file {!s}\nMessage: {!s}'.format(self.pdb_filename, msg))
             return None
 
 
@@ -147,12 +149,12 @@ class FragmentSuperpose(object):
     def get_representative_fragments(self):
         
         template = get_segment_template(self.target)
-        return list(ResidueFragmentInteraction.filter(structure_ligand_pair__structure=template.id))
+        return list(ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure=template.id))
 
 
     def get_all_fragments(self):
 
-        return list(ResidueFragmentInteraction.filter(structure_ligand_pair__structure__protein_conformation__protein__parent__not=self.target))
+        return list(ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__protein_conformation__protein__parent__not=self.target))
 
 
 
