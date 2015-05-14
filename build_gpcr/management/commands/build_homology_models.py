@@ -263,11 +263,20 @@ class HomologyModeling(object):
                                 Bulge = Bulges(gn)
                                 bulge_template = Bulge.find_bulge_template(self.similarity_table_all, 
                                                                            bulge_in_reference=False)
+                                bulge_site = parse.fetch_residues_from_pdb(self.main_structure,
+                                                                           [parse.gn_indecer(gn,'x',-2),
+                                                                            parse.gn_indecer(gn,'x',-1),gn,
+                                                                            parse.gn_indecer(gn,'x',+1),
+                                                                            parse.gn_indecer(gn,'x',+2)])
+                                superpose = sp.BulgeConstrictionSuperpose(bulge_site, bulge_template)
+                                new_residues = superpose.run()
                                 switch_res = 0
                                 for gen_num, atoms in bulge_template.items():
                                     if switch_res!=0 and switch_res!=3:
-                                        ref_temp_alignment.template_dict[gen_num.replace('.',
-                                            'x')] = PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())
+                                        gn__ = gen_num.replace('.','x')
+                                        main_pdb_array[gen_num] = new_residues[gen_num]
+                                        ref_temp_alignment.template_dict[gn__] = PDB.Polypeptide.three_to_one(
+                                                                                  atoms[0].get_parent().get_resname())
                                     switch_res+=1
                                 del ref_temp_alignment.reference_dict[gn]
                                 del ref_temp_alignment.template_dict[gn]
@@ -279,11 +288,20 @@ class HomologyModeling(object):
                                 Const = Constrictions(gn)
                                 constriction_template = Const.find_constriction_template(self.similarity_table_all,
                                                                                     constriction_in_reference=True)
+                                constriction_site = parse.fetch_residues_from_pdb(self.main_structure,
+                                                                                  [parse.gn_indecer(gn,'x',-2),
+                                                                                   parse.gn_indecer(gn,'x',-1),gn,
+                                                                                   parse.gn_indecer(gn,'x',+1),
+                                                                                   parse.gn_indecer(gn,'x',+2)])
+                                superpose = sp.BulgeConstrictionSuperpose(constriction_site, constriction_template)
+                                new_residues = superpose.run()                                  
                                 switch_res = 0
                                 for gen_num, atoms in constriction_template.items():
                                     if switch_res!=0 and switch_res!=3:
-                                        ref_temp_alignment.template_dict[gen_num.replace('.',
-                                            'x')] = PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())
+                                        gn__ = gen_num.replace('.','x')
+                                        main_pdb_array[gen_num] = new_residues[gen_num]
+                                        ref_temp_alignment.template_dict[gn__] = PDB.Polypeptide.three_to_one(
+                                                                                  atoms[0].get_parent().get_resname())
                                     switch_res+=1
                                 ref_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 
                                                                                             'x', +1):Const.template})
@@ -304,14 +322,15 @@ class HomologyModeling(object):
                                                                             parse.gn_indecer(gn,'x',-1),
                                                                             parse.gn_indecer(gn,'x',+1),
                                                                             parse.gn_indecer(gn,'x',+2)])
-                                superpose = sp.BulgeConstrictionSuperpose(bulge_site,bulge_template)
+                                superpose = sp.BulgeConstrictionSuperpose(bulge_site, bulge_template)
                                 new_residues = superpose.run()
                                 switch_res = 0
                                 for gen_num, atoms in bulge_template.items():
                                     if switch_res!=0 and switch_res!=4:
                                         gn__ = gen_num.replace('.','x')
                                         main_pdb_array[gen_num] = new_residues[gen_num]
-                                        ref_temp_alignment.template_dict[gn__] = PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())
+                                        ref_temp_alignment.template_dict[gn__] = PDB.Polypeptide.three_to_one(
+                                                                                  atoms[0].get_parent().get_resname())
                                     switch_res+=1
                                 ref_bulge_list.append({gn:Bulge.template})
                                                
@@ -321,11 +340,20 @@ class HomologyModeling(object):
                                 Const = Constrictions(gn)
                                 constriction_template = Const.find_constriction_template(self.similarity_table_all,
                                                                                     constriction_in_reference=False)
+                                constriction_site = parse.fetch_residues_from_pdb(self.main_structure,
+                                                                                  [parse.gn_indecer(gn,'x',-2),
+                                                                                   parse.gn_indecer(gn,'x',-1),
+                                                                                   parse.gn_indecer(gn,'x',+1),
+                                                                                   parse.gn_indecer(gn,'x',+2)])
+                                superpose = sp.BulgeConstrictionSuperpose(constriction_site, constriction_template)
+                                new_residues = superpose.run()
                                 switch_res = 0
                                 for gen_num, atoms in constriction_template.items():
                                     if switch_res!=0 and switch_res!=4:
-                                        ref_temp_alignment.template_dict[gen_num.replace('.',
-                                            'x')] = PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())
+                                        gn__ = gen_num.replace('.','x')
+                                        main_pdb_array[gen_num] = new_residues[gen_num]
+                                        ref_temp_alignment.template_dict[gn__] = PDB.Polypeptide.three_to_one(
+                                                                                  atoms[0].get_parent().get_resname())
                                     switch_res+=1
                                 temp_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 
                                                                                             'x', +1):Const.template})
@@ -348,7 +376,16 @@ class HomologyModeling(object):
                 main_pdb_array = out_pdb_array
             
             if temp_const_list!=[]:
-                pass
+                out_pdb_array = OrderedDict()
+                const_gns = []
+                for const in temp_const_list:
+                    gn = parse.gn_indecer(list(const.keys())[0].split('-')[0].replace('x','.'), '.', +1)
+                    const_gns.append(gn)
+                for key, value in main_pdb_array.items():
+                    out_pdb_array[key] = value
+                    if parse.gn_indecer(key, '.', +1) in const_gns:
+                        out_pdb_array[parse.gn_indecer(key, '.', +1)] = main_pdb_array[parse.gn_indecer(key, '.', +1)]
+                main_pdb_array = out_pdb_array
         
         # non-conserved residues
         non_cons_res_templates = OrderedDict()
