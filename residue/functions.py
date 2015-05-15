@@ -36,6 +36,8 @@ def load_reference_positions(path):
     return ref_positions
 
 def create_or_update_residues_in_segment(protein_conformation, segment, start, end, schemes, ref_positions):
+    logger = logging.getLogger(__name__)
+
     rns_defaults = {'protein_segment': segment} # default numbering scheme for creating generic numbers
     for i, aa in enumerate(protein_conformation.protein.sequence[(start-1):end]):
         sequence_number = start + i
@@ -62,7 +64,7 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
                     label=gnl, defaults=rns_defaults)
                 rvalues['generic_number'] = schemes[ns]['generic_numbers'][gnl] = gn
                 if created:
-                    self.logger.info('Created generic number {}'.format(gn.label))
+                    logger.info('Created generic number {}'.format(gn.label))
             
             # sequence based generic number
             ns = settings.DEFAULT_SEQUENCE_BASED_NUMBERING_SCHEME
@@ -76,7 +78,7 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
                     label=gnl, defaults=rns_defaults)
                 rvalues['sequence_based_generic_number'] = schemes[ns]['generic_numbers'][gnl] = gn
                 if created:
-                    self.logger.info('Created generic number {}'.format(gn.label))
+                    logger.info('Created generic number {}'.format(gn.label))
             
             # display generic number
             ns = protein_conformation.protein.residue_numbering_scheme.slug
@@ -89,7 +91,7 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
                     label=gnl, defaults=rns_defaults)
                 rvalues['display_generic_number'] = schemes[ns]['generic_numbers'][gnl] = gn
                 if created:
-                    self.logger.info('Created generic number {}'.format(gn.label))
+                    logger.info('Created generic number {}'.format(gn.label))
             
         # UPDATE or CREATE the residue
         r, created = Residue.objects.update_or_create(
@@ -98,10 +100,10 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
             defaults = rvalues)
         if created:
             if r.generic_number:
-                self.logger.info('Created residue {}{}({}) for protein {}'.format(r.amino_acid, r.sequence_number,
+                logger.info('Created residue {}{}({}) for protein {}'.format(r.amino_acid, r.sequence_number,
                     r.generic_number.label, protein_conformation.protein.entry_name))
             else:
-                self.logger.info('Created residue {}{} for protein {}'.format(r.amino_acid, r.sequence_number,
+                logger.info('Created residue {}{} for protein {}'.format(r.amino_acid, r.sequence_number,
                     protein_conformation.protein.entry_name))
 
         # alternative generic numbers

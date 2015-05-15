@@ -2,12 +2,14 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 
 from common.models import WebResource
-from protein.models import ProteinSegment
-from residue.models import ResidueNumberingScheme
+from protein.models import (ProteinSegment, ProteinAnomaly, ProteinAnomalyType, ProteinAnomalyRuleSet,
+    ProteinAnomalyRule)
+from residue.models import ResidueGenericNumber, ResidueNumberingScheme
 
 import logging
 import shlex
 import os
+import yaml
 
 class Command(BaseCommand):
     help = 'Reads source data and creates common database tables'
@@ -18,14 +20,16 @@ class Command(BaseCommand):
     segment_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'segments.txt'])
     residue_number_scheme_source_file = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers',
         'schemes.txt'])
+    anomaly_source_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'anomalies'])
 
     def handle(self, *args, **options):
         functions = [
             'create_resources',
             'create_protein_segments',
             'create_residue_numbering_schemes',
+            'create_anomalies',
         ]
-        
+
         # execute functions
         for f in functions:
             try:
@@ -116,3 +120,87 @@ class Command(BaseCommand):
                     continue
 
         self.logger.info('COMPLETED CREATING RESIDUE NUMBERING SCHEMES')
+
+    def create_anomalies(self):
+        self.logger.info('CREATING PROTEIN ANOMALIES')
+        
+        filenames = os.listdir(self.anomaly_source_dir)
+        for source_file in filenames:
+            source_file_path = os.sep.join([self.anomaly_source_dir, source_file])
+            if os.path.isfile(source_file_path) and source_file[0] != '.':
+                self.logger.info('Parsing file {}'.format(source_file_path))
+                # read the yaml file
+                with open(source_file_path, 'r') as f:
+                    ano = yaml.load(f)
+
+                    # anomaly type
+                    if 'anomaly_type' in ano and ano['anomaly_type']:
+                        at, created = ProteinAnomalyType.objects.get_or_create(slug=ano['anomaly_type'],
+                            defaults={'name': ano['anomaly_type'].title()})
+                        if created:
+                            self.logger.info('Created protein anomaly type {}'.format(at.slug))
+                    else:
+                        self.logger.error('Anomaly type not specified in file {}, skipping!'.format(source_file))
+                        continue
+
+                    # protein segment
+                    if 'protein_segment' in ano and ano['protein_segment']:
+                        try:
+                            ps = ProteinSegment.objects.get(slug=ano['protein_segment'])
+                        except ProteinSegment.DoesNotExists:
+                            self.logger.error('Protein segment {} not found, skipping!'.format(
+                                anop['protein_segmemt']))
+                            continue
+
+                    # generic number
+                    if 'generic_number' in ano and ano['generic_number']:
+                        rns = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
+                        gn, created = ResidueGenericNumber.objects.get_or_create(label=ano['generic_number'],
+                            scheme=rns, defaults={'protein_segment': ps})
+                        if created:
+                            self.logger.info('Created generic number {}'.format(gn.label))
+                    else:
+                        self.logger.error('Generic number not specified in file {}, skipping!'.format(source_file))
+                        continue
+
+                    # anomaly
+                    pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=at, generic_number=gn)
+                    if created:
+                        self.logger.info('Created {} {}'.format(at.slug, gn.label))
+
+                    # rule sets
+                    if 'rule_sets' not in ano:
+                        self.logger.error('No rule sets specified in file {}, skipping!'.format(source_file))
+                        continue
+                    for i, rule_set in enumerate(ano['rule_sets']):
+                        # exclusive rule set?
+                        exclusive = False
+                        if 'exclusive' in rule_set and rule_set['exclusive']:
+                            exclusive = True
+                        
+                        # rules in this rule set
+                        if 'rules' in rule_set and rule_set['rules']:
+                            pars = ProteinAnomalyRuleSet.objects.create(protein_anomaly=pa, exclusive=exclusive)
+                            self.logger.info('Created protein anomaly rule set')
+                            for rule in rule_set['rules']:
+                                exp_keys = ['generic_number', 'amino_acid']
+                                
+                                # are all expected values specified for this rule
+                                if all(x in rule for x in exp_keys) and all(rule[x] for x in exp_keys):
+                                    # is this a negative rule (!= instead of ==)
+                                    negative = False
+                                    if rule['negative']:
+                                        negative = True
+                                    pargn, created = ResidueGenericNumber.objects.get_or_create(
+                                        label=rule['generic_number'], protein_segment=ps, scheme=rns)
+                                    if created:
+                                        self.logger.info('Created generic_number {}'.format(pargn.label))
+                                    par = ProteinAnomalyRule.objects.create(generic_number=pargn,
+                                        rule_set=pars, amino_acid=rule['amino_acid'], negative=negative)
+                                    self.logger.info('Created rule {} = {}, negative = {}'.format(
+                                        par.generic_number.label, par.amino_acid, negative))
+                                else:
+                                    self.logger.error('Missing values for rule {:d} in file {}'.format((i+1),
+                                        source_file))
+        
+        self.logger.info('COMPLETED CREATING PROTEIN ANOMALIES')

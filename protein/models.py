@@ -44,7 +44,7 @@ class ProteinConformation(models.Model):
     alignment = False # residues formatted for use in an Alignment class
 
     def __str__(self):
-        return self.protein.entry_name + " (" + self.state.name + ")"
+        return self.protein.entry_name + " (" + self.state.slug + ")"
 
     class Meta():
         db_table = "protein_conformation"
@@ -55,7 +55,7 @@ class ProteinState(models.Model):
     name = models.CharField(max_length=100)
 
     def __str__(self):
-        return self.name
+        return self.slug
 
     class Meta():
         db_table = "protein_state"
@@ -117,7 +117,7 @@ class ProteinSegment(models.Model):
     partial = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.name
+        return self.slug
 
     class Meta():
         ordering = ('id', )
@@ -152,7 +152,7 @@ class ProteinSequenceType(models.Model):
     name = models.CharField(max_length=100)
 
     def __str__(self):
-        return self.name
+        return self.slug
 
     class Meta():
         db_table = 'protein_sequence_type'
@@ -173,14 +173,14 @@ class ProteinAnomalyType(models.Model):
     name = models.CharField(max_length=100)
 
     def __str__(self):
-        return self.name
+        return self.slug
 
     class Meta():
         db_table = 'protein_anomaly_type'
 
 
 class ProteinAnomalyRuleSet(models.Model):
-    protein_anomaly = models.ForeignKey('ProteinAnomaly')
+    protein_anomaly = models.ForeignKey('ProteinAnomaly', related_name='rulesets')
     exclusive = models.BooleanField(default=False)
 
     def __str__(self):
@@ -188,10 +188,11 @@ class ProteinAnomalyRuleSet(models.Model):
 
     class Meta():
         db_table = 'protein_anomaly_rule_set'
+        ordering = ('id', )
 
 
 class ProteinAnomalyRule(models.Model):
-    rule_set = models.ForeignKey('ProteinAnomalyRuleSet')
+    rule_set = models.ForeignKey('ProteinAnomalyRuleSet', related_name='rules')
     generic_number = models.ForeignKey('residue.ResidueGenericNumber')
     amino_acid = models.CharField(max_length=1)
     negative = models.BooleanField(default=False)
