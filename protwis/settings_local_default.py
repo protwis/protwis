@@ -7,8 +7,10 @@ SITE_TITLE = 'GPCRdb' # for display in templates
 ANALYTICS_KEY = ''
 DATA_DIR = '/vagrant/data/protwis/' + SITE_NAME
 DEFAULT_NUMBERING_SCHEME = 'gpcrdb'
+DEFAULT_SEQUENCE_BASED_NUMBERING_SCHEME = 'bw'
 DEFAULT_PROTEIN_STATE = 'inactive'
-COMPARISON_SEGMENTS = ('TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7')
+REFERENCE_POSITIONS = {'TM1': '1x50', 'TM2': '2x50', 'TM3': '3x50', 'TM4': '4x50', 'TM5': '5x50', 'TM6': '6x50',
+    'TM7': '7x50', 'H8': '8x50'}
 
 
 # Database

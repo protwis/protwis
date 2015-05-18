@@ -2,16 +2,8 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
 
-from protein.models import Protein
-from protein.models import ProteinConformation
-from protein.models import ProteinState
-from protein.models import ProteinFamily
-from protein.models import ProteinAlias
-from protein.models import ProteinSegment
-from protein.models import ProteinSequenceType
-from protein.models import Species
-from protein.models import Gene
-from protein.models import ProteinSource
+from protein.models import (Protein, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
+        ProteinSequenceType, Species, Gene, ProteinSource)
 from residue.models import ResidueNumberingScheme
 
 import logging
@@ -25,9 +17,6 @@ class Command(BaseCommand):
     logger = logging.getLogger(__name__)
 
     protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'proteins_and_families.txt'])
-    segment_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'segments.txt'])
-    residue_number_scheme_source_file = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers',
-        'schemes.txt'])
 
     def handle(self, *args, **options):
         # create parent protein family, 000
@@ -35,20 +24,6 @@ class Command(BaseCommand):
             self.create_parent_protein_family()
         except Exception as msg:
             # print(msg)
-            self.logger.error(msg)
-
-        # create protein segments
-        try:
-            self.create_protein_segments()
-        except Exception as msg:
-            print(msg)
-            self.logger.error(msg)
-
-        # create residue numbering schemes
-        try:
-            self.create_residue_numbering_schemes()
-        except Exception as msg:
-            print(msg)
             self.logger.error(msg)
 
         # create proteins and families
@@ -61,52 +36,10 @@ class Command(BaseCommand):
     def create_parent_protein_family(self):
         pf = ProteinFamily.objects.get_or_create(slug='000', defaults={
             'name': 'Parent family'})
-        
-    def create_protein_segments(self):
-        self.logger.info('Parsing file ' + self.segment_source_file)
-        self.logger.info('CREATING PROTEIN SEGMENTS')
-
-        with open(self.segment_source_file, "r", encoding='UTF-8') as segment_file:
-            for row in segment_file:
-                split_row = shlex.split(row)
-
-                # create segment
-                try:
-                    s, created = ProteinSegment.objects.get_or_create(slug=split_row[0], defaults={
-                        'category': split_row[1], 'name': split_row[2]})
-
-                    if created:
-                        self.logger.info('Created protein segment ' + s.name)
-                except:
-                    self.logger.error('Failed creating protein segment {}'.format(split(row[0])))
-                    continue
-
-        self.logger.info('COMPLETED CREATING PROTEIN SEGMENTS')
-
-    def create_residue_numbering_schemes(self):
-        self.logger.info('Parsing file ' + self.residue_number_scheme_source_file)
-        self.logger.info('CREATING RESIDUE NUMBERING SCHEMES')
-
-        with open(self.residue_number_scheme_source_file, "r", encoding='UTF-8') as residue_number_scheme_source_file:
-            for row in residue_number_scheme_source_file:
-                split_row = shlex.split(row)
-
-                # create scheme
-                try:
-                    s, created = ResidueNumberingScheme.objects.get_or_create(slug=split_row[0], defaults={
-                        'short_name': split_row[1], 'name': split_row[2]})
-                    
-                    if created:
-                        self.logger.info('Created residue numbering scheme ' + s.name)
-                except:
-                    self.logger.error('Failed creating residue numbering scheme {}'.format(split_row[0]))
-                    continue
-
-        self.logger.info('COMPLETED CREATING RESIDUE NUMBERING SCHEMES')
 
     def create_proteins_and_families(self):
-        self.logger.info('Parsing file ' + self.protein_source_file)
         self.logger.info('CREATING PROTEINS')
+        self.logger.info('Parsing file ' + self.protein_source_file)
 
         with open(self.protein_source_file, "r", encoding='UTF-8') as protein_file:
             # family hierarchy is determined by indent
@@ -178,7 +111,8 @@ class Command(BaseCommand):
                     protein_name = split_row[4]
 
                     # accession codes for human, mouse and rat receptors (from IU-PHAR)
-                    accessions = [split_row[15], split_row[31], split_row[23]]
+                    # accessions = [split_row[15], split_row[31], split_row[23]]
+                    accessions = [split_row[15]]
 
                     # create a family for this protein
                     created_family = self.create_protein_family(protein_name, indent, parent_family,

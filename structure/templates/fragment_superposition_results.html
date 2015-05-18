@@ -4,14 +4,16 @@
         {% if success %}
             Structures superposed successufully.
         {% else %}
-            Failed to superpose structure {{ input_file }}
+            Failed to superpose fragments onto structure {{ input_file }}
+        
         {% endif %}
+        {{ message }}
     </div>
     <br />
     <hr />
     {% if outfile %}
         <div>
-            <a class="btn btn-small" href="/structural_tools_gpcr/output/{{ outfile }}/{{ replacement_tag }}">
+            <a class="btn btn-small" href="/structure/output/{{ outfile }}/{{ replacement_tag }}">
                 <i class="icon-download">Output file<i>
             </a>
         </div>

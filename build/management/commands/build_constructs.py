@@ -173,6 +173,7 @@ class Command(BaseCommand):
                     prs = Residue.objects.filter(protein_conformation=ppc).prefetch_related(
                         'protein_conformation__protein', 'protein_segment', 'generic_number',
                         'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
+                    updated_sequence = ''
                     for pr in prs:
                         if pr.sequence_number not in truncations:
                             r = Residue()
@@ -203,6 +204,9 @@ class Command(BaseCommand):
                             else:
                                 r.amino_acid = pr.amino_acid
 
+                            # save amino acid to updated sequence
+                            updated_sequence += r.amino_acid
+
                             # save residue before populating M2M relations
                             r.save()
 
@@ -210,5 +214,9 @@ class Command(BaseCommand):
                             agns = pr.alternative_generic_numbers.all()
                             for agn in agns:
                                 r.alternative_generic_numbers.add(agn)
+                    
+                    # update sequence
+                    p.sequence = updated_sequence
+                    p.save()
 
         self.logger.info('COMPLETED CREATING CONSTRUCTS')

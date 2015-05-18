@@ -3,7 +3,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio.PDB import *
 from Bio.PDB.PDBIO import Select
 from residue.models import Residue
-from structure_gpcr.common import BlastSearch, MappedResidue
+from structure.functions import BlastSearch, MappedResidue
 
 import Bio.PDB.Polypeptide as polypeptide
 import os,logging
@@ -13,11 +13,11 @@ import os,logging
 #Class for annotating the pdb structures with generic numbers
 class GenericNumbering(object):
     
-    logger = logging.getLogger("structure_gpcr")
+    logger = logging.getLogger("structure")
 
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
   
-    def __init__ (self, pdb_file=None, pdb_filename=None):
+    def __init__ (self, pdb_file=None, pdb_filename=None, structure=None):
     
         #pdb_file can be either a name/path or a handle to an open file
         self.pdb_file = pdb_file
@@ -31,23 +31,21 @@ class GenericNumbering(object):
         #setup for local blast search
         self.blast = BlastSearch()
         
-        if self.pdb_file is not None or self.pdb_filename is not None:
-            self.pdb_structure = self.parse_pdb()
-        
-
-    def parse_pdb (self):
-
-        pdb_struct = None
-        #checking for file handle or file name to parse
         if self.pdb_file:
-            pdb_struct = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_file)[0]
+            self.pdb_structure = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_file)[0]
         elif self.pdb_filename:
-            pdb_struct = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_file)[0]
+            self.pdb_structure = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_filename)[0]
         else:
-            return None
+            self.pdb_structure = structure
 
-        #extracting sequence and preparing dictionary of residues
-        #bio.pdb reads pdb in the following cascade: model->chain->residue->atom
+        self.parse_structure(self.pdb_structure)
+
+
+    def parse_structure(self, pdb_struct):
+        """
+        extracting sequence and preparing dictionary of residues
+        bio.pdb reads pdb in the following cascade: model->chain->residue->atom
+        """
         for chain in pdb_struct:
             self.residues[chain.id] = {}
             self.pdb_seq[chain.id] = Seq('')
@@ -61,12 +59,10 @@ class GenericNumbering(object):
                         continue
                     self.residues[chain.id][res.id[1]] = MappedResidue(res.id[1], polypeptide.three_to_one(res.resname))
     
-            self.pdb_seq[chain.id].seq = ''.join([self.residues[chain.id][x].name for x in sorted(self.residues[chain.id].keys())])
+            self.pdb_seq[chain.id] = ''.join([self.residues[chain.id][x].name for x in sorted(self.residues[chain.id].keys())])
             
             for pos, res in enumerate(sorted(self.residues[chain.id].keys()), start=1):
                 self.residues[chain.id][res].pos_in_aln = pos
-
-        return pdb_struct
 
 
     def locate_res_by_pos (self, chain, pos):
@@ -101,11 +97,10 @@ class GenericNumbering(object):
                 q_seq.pop(0)
                 continue
             if tmp_seq[0] == q_seq[0]:
-                #print "Query and temp match %i:%s %i %s" %(q_counter,q_seq[0],subj_counter,tmp_seq[0])
                 resn = self.locate_res_by_pos(chain, q_counter)
                 if resn != 0:
                     try:
-                        db_res = Residue.objects.get(protein=prot_id, sequence_number=subj_counter)
+                        db_res = Residue.objects.get(protein_conformation__protein=prot_id, sequence_number=subj_counter)
                         try:
                             self.residues[chain][resn].add_bw_number(db_res.alternative_generic_numbers.get(scheme__slug='bw').label)
                         except:
@@ -115,7 +110,7 @@ class GenericNumbering(object):
                         except:
                             self.residues[chain][resn].add_gpcrdb_number(db_res.display_generic_number.label)
                     except Exception as msg:
-                        self.logger.warning("Could not find residue {} in the database. \n {}".format(subj_counter, msg))
+                        self.logger.warning("Could not find residue {} in the database.\t{}".format(subj_counter, msg))
 
                     
                     if prot_id not in self.prot_id_list:

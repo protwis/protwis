@@ -113,6 +113,12 @@ LOGGING = {
            'filename': 'logs/protwis.log',
            'formatter': 'verbose'
        },
+       'structure': {
+           'level': 'DEBUG',
+           'class': 'logging.FileHandler',
+           'filename': 'logs/structure.log',
+           'formatter': 'verbose'
+       },
    },
    'loggers': {
        'django': {
@@ -126,6 +132,10 @@ LOGGING = {
        },
        'protwis': {
            'handlers': ['protwis'],
+           'level': 'DEBUG',
+       },
+       'structure': {
+           'handlers': ['structure'],
            'level': 'DEBUG',
        },
    }
