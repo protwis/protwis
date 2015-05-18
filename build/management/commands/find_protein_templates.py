@@ -27,7 +27,7 @@ class Command(BaseCommand):
         self.logger.info('ASSIGNING STRUCTURE TEMPLATES FOR PROTEINS')
 
         # segments
-        segments = ProteinSegment.objects.filter(slug__in=settings.COMPARISON_SEGMENTS)
+        segments = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS)
 
         # fetch all conformations of wild-type proteins
         protein_sequence_type = ProteinSequenceType.objects.get(slug='wt')
@@ -44,16 +44,16 @@ class Command(BaseCommand):
         # find templates
         for pconf in pconfs:
             # overall
-            print("Overall template for {}".format(pconf))
             template = self.find_segment_template(pconf, sps, segments)
             pconf.template_structure = self.fetch_template_structure(structures, template.protein.entry_name)
+            self.logger.info("Assigned {} as overall template for {}".format(pconf.template_structure, pconf))
             pconf.save()
 
             # for each segment
             for segment in segments:
-                print("{}".format(segment.slug))
                 template = self.find_segment_template(pconf, sps, [segment])
                 template_structure = self.fetch_template_structure(structures, template.protein.entry_name)
+                self.logger.info("Assigned {} as {} template for {}".format(pconf.template_structure, segment, pconf))
                 pcts, created = ProteinConformationTemplateStructure.objects.get_or_create(protein_conformation=pconf,
                     protein_segment=segment, defaults={'structure': template_structure})
                 if pcts.structure != template_structure:
@@ -70,7 +70,6 @@ class Command(BaseCommand):
             a.build_alignment()
             a.calculate_similarity()
 
-            print(a.proteins[1])
             return a.proteins[1]
 
     def fetch_template_structure(self, structures, template_protein):
