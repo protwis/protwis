@@ -153,7 +153,7 @@ class GenericNumbering(object):
         #get the basename, extension and export the pdb structure with b-w numbers
         root, ext = os.path.splitext(self.pdb_filename)
         io=PDBIO()
-        io.set_structure(pdb_struct)
+        io.set_structure(self.pdb_structure)
         io.save("%s_GPCRDB%s" %(root, ext))
            
     
