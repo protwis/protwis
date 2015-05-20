@@ -11,10 +11,11 @@ class Command(BaseCommand):
         commands = [
             ['build_common'],
             ['build_proteins'],
-            ['build_residues', 'all'],
+            ['build_residues'],
             ['build_constructs'],
             ['build_structures'],
             ['find_protein_templates'],
+            ['update_alignments'],
         ]
 
         for c in commands:

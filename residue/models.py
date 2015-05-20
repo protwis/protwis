@@ -6,6 +6,7 @@ class Residue(models.Model):
     protein_conformation = models.ForeignKey('protein.ProteinConformation')
     protein_segment = models.ForeignKey('protein.ProteinSegment', null=True)
     generic_number = models.ForeignKey('ResidueGenericNumber', related_name='compare', null=True)
+    sequence_based_generic_number = models.ForeignKey('ResidueGenericNumber', related_name='seq_compare', null=True)
     display_generic_number = models.ForeignKey('ResidueGenericNumber', related_name='display', null=True)
     alternative_generic_numbers = models.ManyToManyField('ResidueGenericNumber', related_name='alternative')
     sequence_number = models.SmallIntegerField()
@@ -46,6 +47,7 @@ class ResidueGenericNumber(models.Model):
 
 
 class ResidueNumberingScheme(models.Model):
+    parent = models.ForeignKey('self', null=True)
     slug = models.SlugField(max_length=20)
     short_name = models.CharField(max_length=20)
     name = models.CharField(max_length=100)
