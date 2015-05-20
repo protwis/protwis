@@ -106,7 +106,7 @@ class Command(BaseCommand):
             residue = None
             errors += 1
         if errors:
-            print(structure.pdb_code.index + " had " + str(errors) + " residues that did not match in the database")
+            self.logger.error(structure.pdb_code.index + " had " + str(errors) + " residues that did not match in the database")
         return None
 
     def create_structures(self, filenames):
