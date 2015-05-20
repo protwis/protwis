@@ -2,8 +2,8 @@ import os,sys,math,logging
 from collections import OrderedDict
 
 from Bio.PDB import *
-from structure_gpcr.common import SelectionParser
-from structure_gpcr.assign_generic_numbers import GenericNumbering
+from structure.functions import SelectionParser
+from structure.assign_generic_numbers_gpcr import GenericNumbering
 
 
 

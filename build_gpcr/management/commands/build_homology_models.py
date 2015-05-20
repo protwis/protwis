@@ -5,7 +5,7 @@ from residue.models import Residue
 from structure.models import Structure, PdbData, Rotamer
 from common.alignment import Alignment
 import structure.structural_superposition as sp
-import structure.assign_generic_numbers as as_gn
+import structure.assign_generic_numbers_gpcr as as_gn
 from build.management.commands.build_structures import Command as rota
 
 import Bio.PDB as PDB
@@ -40,6 +40,9 @@ class Command(BaseCommand):
         Homology_model.select_main_template(multi_alignment)
         main_alignment = Homology_model.run_main_alignment(alignment=multi_alignment)
         non_conserved_switched_alignment = Homology_model.run_non_conserved_switcher(main_alignment)
+        
+        val = Validation()
+        val.PDB_RMSD('./structure/homology_models/Q6DWJ6_Inactive/Q6DWJ6_post.pdb', './structure/homology_models/Q6DWJ6_Inactive/Q6DWJ6_post.pdb')#'./structure/PDB/4IB4_A_GPCRDB.pdb')        
         
         self.stdout.write(Homology_model.statistics, ending='')
 
@@ -496,7 +499,7 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}0
                                  "res_num":str(res_num).rjust(4), "coord1":coord1.rjust(12), 
                                  "coord2":coord2.rjust(8), "coord3":coord3.rjust(8), 
                                  "occupancy":str(atom.get_occupancy()).rjust(5),
-                                 "bfactor":str(bfact).rjust(6), "atom_s":str(atom.get_id())[0]}
+                                 "bfactor":str(bfact).rjust(4), "atom_s":str(atom.get_id())[0]}
                         f.write(template.format(**context))
                     segment_pre=segment
             f.write("\nTER\nEND")
@@ -853,14 +856,25 @@ class Validation():
         '''
         array1, array2 = np.array([0,0,0]), np.array([0,0,0])
         parser = PDB.PDBParser()
-        pdb1 = parser.get_structure('struct1', pdb_file1)
-        pdb2 = parser.get_structure('struct2', pdb_file2)
-        for model1, model2 in zip(pdb1, pdb2):
-            for chain1, chain2 in zip(model1, model2):
-                for residue1, residue2 in zip(chain1, chain2):
-                    if residue1.get_resname()==residue2.get_resname() and len(residue1.get_unpacked_list())==len(residue2.get_unpacked_list()):
-                        for atom1, atom2 in zip(residue1, residue2):
-                            array1 = np.vstack((array1, list(atom1.get_coord())))
+        pdb1 = parser.get_structure('struct1', pdb_file1)[0]
+        pdb2 = parser.get_structure('struct2', pdb_file2)[0]
+        gns = OrderedDict()
+        
+        for chain1 in pdb1:
+            for residue1 in chain1:
+                if -8.1 < residue1['CA'].get_bfactor() < 8.1:
+                    gns[residue1['CA'].get_bfactor()] = residue1.get_resname()
+                    for atom1 in residue1:
+                        array1 = np.vstack((array1, list(atom1.get_coord())))
+        for chain2 in pdb2:
+            for residue2 in chain2:
+                print(residue2['CA'].get_bfactor())
+                try:
+                    if -8.1 < residue2['CA'].get_bfactor() < 8.1 and gns[residue2['CA'].get_bfactor()]==residue2.get_resname():
+                        for atom2 in residue2:
                             array2 = np.vstack((array2, list(atom2.get_coord())))
+                except:
+                    pass
+#        print(len(array1),len(array2))
         rmsd = np.sqrt(((array1-array2)**2).mean())
         return rmsd
