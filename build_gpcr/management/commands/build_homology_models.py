@@ -4,8 +4,8 @@ from protein.models import Protein, ProteinSegment, ProteinConformation
 from residue.models import Residue
 from structure.models import Structure, PdbData, Rotamer
 from common.alignment import Alignment
-import structure_gpcr.structural_superposition as sp
-import structure_gpcr.assign_generic_numbers as as_gn
+import structure.structural_superposition as sp
+import structure.assign_generic_numbers as as_gn
 from build.management.commands.build_structures import Command as rota
 
 import Bio.PDB as PDB
