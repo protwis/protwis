@@ -110,7 +110,7 @@ class GenericNumbering(object):
                         try:
                             self.residues[chain][resn].add_gpcrdb_number(db_res.alternative_generic_numbers.get(scheme__slug='gpcrdb').label)
                         except:
-                            self.residues[chain][resn].add_gpcrdb_number(db_res.display_generic_number.label)
+                            self.residues[chain][resn].add_gpcrdb_number(db_res.default_generic_number.label)
                     except Exception as msg:
                         self.logger.warning("Could not find residue {} in the database.\t{}".format(subj_counter, msg))
 
