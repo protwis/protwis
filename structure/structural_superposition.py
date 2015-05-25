@@ -1,114 +1,17 @@
 import os,sys,math,logging
+from io import StringIO
 from collections import OrderedDict
+import numpy as np
 
+import Bio.PDB.Polypeptide as polypeptide
 from Bio.PDB import *
-from structure.functions import SelectionParser
+from Bio.Seq import Seq
+from structure.functions import *
 from structure.assign_generic_numbers_gpcr import GenericNumbering
+from protein.models import Protein
+from structure.models import Structure
+from interaction.models import ResidueFragmentInteraction
 
-
-
-#Basic functionality uses pdb residue numbers provided by input
-#==============================================================================
-class CASelector(object):
-
-    logger = logging.getLogger("structure_gpcr")
-
-    def __init__(self, parsed_selection, ref_struct, alt_structs):
-    
-        self.ref_atoms = []
-        self.alt_atoms = {}
-    
-        self.selection = parsed_selection
-        try:
-            self.ref_atoms.extend(self.select_generic_numbers(self.selection.generic_numbers, ref_struct[0]))
-            self.ref_atoms.extend(self.select_helices(self.selection.helices, ref_struct[0]))
-            print(self.ref_atoms)
-        except Exception as msg:
-            self.logger.warning("Can't select atoms from the reference structure!\n{!s}".format(msg))
-    
-        for alt_struct in alt_structs:
-            try:
-                self.alt_atoms[alt_struct.id] = []
-                self.alt_atoms[alt_struct.id].extend(self.select_generic_numbers(self.selection.generic_numbers, alt_struct[0]))
-                self.alt_atoms[alt_struct.id].extend(self.select_helices(self.selection.helices, alt_struct[0]))
-                
-            except Exception as msg:
-                self.logger.warning("Can't select atoms from structure {!s}\n{!s}".format(alt_struct.id, msg))
-
-    def select_generic_numbers (self, gn_list, structure):
-    
-        if gn_list == []:
-            return []
-    
-        atom_list = []
-    
-        for chain in structure:
-            for res in chain:
-                try:
-                    if -8.1 < res['CA'].get_bfactor() < 8.1 and res["CA"].bfactor in gn_list:
-                        atom_list.append(res['CA'])
-                except:
-                    continue
-
-        if atom_list == []:
-            self.logger.warning("No atoms with given generic numbers for  {!s}".format(structure.id))
-        return atom_list
-    
-    
-    def select_helices (self, helices_list, structure):
-    
-        if helices_list == []:
-            return []
-    
-        atom_list = []
-        for chain in structure:
-            for res in chain:
-                try:
-                    if -8.1 < res['CA'].get_bfactor() < 8.1 and int(math.floor(abs(res['CA'].get_bfactor()))) in helices_list:
-                        atom_list.append(res['CA'])
-                except:
-                    continue
-
-        if atom_list == []:
-            self.logger.warning("No atoms with given generic numbers for  {!s}".format(structure.id))
-
-        return atom_list
-
-
-    def get_consensus_sets(self, alt_id):
-        
-        tmp_ref = []
-        tmp_alt = []
-    
-        for ref_at in self.ref_atoms:
-            for alt_at in self.alt_atoms[alt_id]:
-                if ref_at.get_bfactor() == alt_at.get_bfactor():
-                    tmp_ref.append(ref_at)
-                    tmp_alt.append(alt_at)
-    
-        if len(tmp_ref) != len(tmp_alt):
-            return ([], [])
-    
-        return (tmp_ref, tmp_alt)
-    
-    
-    def get_ref_atoms (self):
-    
-        return self.ref_atoms
-  
-  
-    def get_alt_atoms (self, alt_id):
-    
-        try:
-            return self.alt_atoms[alt_id]
-        except:
-            return []
-
-
-    def get_alt_atoms_all (self):
-    
-        return self.alt_atoms
- 
 
 #==============================================================================  
 class ProteinSuperpose(object):
@@ -175,6 +78,99 @@ class ProteinSuperpose(object):
                     continue
         return False
 
+#==============================================================================  
+class FragmentSuperpose(object):
+
+    logger = logging.getLogger("structure")
+
+    def __init__(self, pdb_file=None, pdb_filename=None):
+        
+        #pdb_file can be either a name/path or a handle to an open file
+        self.pdb_file = pdb_file
+        self.pdb_filename = pdb_filename
+        self.pdb_seq = {}
+        self.blast = BlastSearch()
+
+        self.pdb_struct = self.parse_pdb()
+        if not check_gn(self.pdb_struct):
+            gn_assigner = GenericNumbering(structure=self.pdb_struct)
+            self.pdb_struct = gn_assigner.assign_generic_numbers()
+
+        rec = self.identify_receptor()
+        print(rec)
+        self.target = Protein.objects.get(pk=self.identify_receptor())
+
+
+    def parse_pdb (self):
+
+        pdb_struct = None
+        #checking for file handle or file name to parse
+        if self.pdb_file:
+            pdb_struct = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_file)[0]
+        elif self.pdb_filename:
+            pdb_struct = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_filename)[0]
+        else:
+            return None
+
+        #extracting sequence and preparing dictionary of residues
+        #bio.pdb reads pdb in the following cascade: model->chain->residue->atom
+        for chain in pdb_struct:
+            self.pdb_seq[chain.id] = Seq('')            
+            for res in chain:
+            #in bio.pdb the residue's id is a tuple of (hetatm flag, residue number, insertion code)
+                if res.resname == "HID":
+                    self.pdb_seq[chain.id] += polypeptide.three_to_one('HIS')
+                else:
+                    try:
+                        self.pdb_seq[chain.id] += polypeptide.three_to_one(res.resname)
+                    except Exception as msg:
+                        continue
+        return pdb_struct
+
+
+    def identify_receptor(self):
+
+        try:
+            return self.blast.run(Seq(''.join([str(self.pdb_seq[x]) for x in sorted(self.pdb_seq.keys())])))[0][0]        
+        except Exception as msg:
+            self.logger.error('Failed to identify protein for input file {!s}\nMessage: {!s}'.format(self.pdb_filename, msg))
+            return None
+
+
+    def superpose_fragments(self, representative=False, use_similar=False):
+
+        superposed_frags = [] #list of (fragment, superposed pdbdata) pairs
+        if representative:
+            fragments = self.get_representative_fragments()
+        else:
+            fragments = self.get_all_fragments()
+
+        for fragment in fragments:
+            atom_sel = BackboneSelector(self.pdb_struct, fragment, use_similar)
+            if atom_sel.get_ref_atoms() == []:
+                continue
+            super_imposer = Superimposer()
+            try:
+                fragment_struct = PDBParser(PERMISSIVE=True).get_structure('alt', StringIO(fragment.get_pdbdata()))[0]
+                super_imposer.set_atoms(atom_sel.get_ref_atoms(), atom_sel.get_alt_atoms())
+                super_imposer.apply(fragment_struct)
+                superposed_frags.append([fragment,fragment_struct])
+            except Exception as msg:
+                self.logger.error('Failed to superpose fragment {!s} with structure {!s}\nDebug message: {!s}'.format(fragment, self.pdb_filename, msg))
+        return superposed_frags
+
+
+    def get_representative_fragments(self):
+        
+        template = get_segment_template(self.target)
+        return list(ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure=template.id))
+
+
+    def get_all_fragments(self):
+
+        return list(ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__protein_conformation__protein__parent__not=self.target))
+
+#==============================================================================  
 class RotamerSuperpose(object):
     ''' Class to superimpose Atom objects on one-another. 
 
@@ -184,6 +180,7 @@ class RotamerSuperpose(object):
     def __init__(self, reference_atoms, template_atoms):
         self.reference_atoms = reference_atoms
         self.template_atoms = template_atoms
+        self.backbone_rmsd = None
 
     def run(self):
         ''' Run the superpositioning. 
@@ -194,11 +191,16 @@ class RotamerSuperpose(object):
             temp_backbone_atoms = [atom for atom in self.template_atoms if atom.get_name() in ['N','CA','C','O']]
             super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
             super_imposer.apply(self.template_atoms)
+            array1, array2 = np.array([0,0,0]), np.array([0,0,0])
+            for atom1, atom2 in zip(ref_backbone_atoms, temp_backbone_atoms):
+                array1 = np.vstack((array1, list(atom1.get_coord())))
+                array2 = np.vstack((array2, list(atom2.get_coord())))
+            self.backbone_rmsd = np.sqrt(((array1[1:]-array2[1:])**2).mean())
             return self.template_atoms
         except Exception as msg:
             print("Failed to superpose atoms {} and {}".format(self.reference_atoms, self.template_atoms))
-            return None
 
+#==============================================================================  
 class BulgeConstrictionSuperpose(object):
     ''' Class to superimpose bulge and constriction site.
 

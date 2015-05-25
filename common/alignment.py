@@ -5,6 +5,7 @@ from protein.models import Protein, ProteinConformation, ProteinState, ProteinSe
 from residue.models import Residue
 from residue.models import ResidueGenericNumber
 from residue.models import ResidueNumberingScheme
+from structure.models import Structure
 
 from collections import OrderedDict
 from copy import deepcopy
@@ -389,3 +390,91 @@ class Alignment:
             return matrix[(tuple(reversed(pair)))]
         else:
             return matrix[pair]
+
+class AlignedReferenceTemplate(object):
+    ''' Creates a structure based alignment between reference protein and target proteins that are made up from the 
+        best available unique structures. It marks the best match as the main template structure.
+
+        @param reference_protein: Protein object of reference protein. \n
+        @param segments: list of segment ids to be considered in the alignment, e.g. ['TM1','TM2']. \n
+        @param query_states: list of activation sites considered. \n
+        @param order_by: str of ordering the aligned proteins. Identity, similarity or simscore.
+    '''
+    def __init__(self, reference_protein, segments, query_states, order_by):
+        self.structures_data = Structure.objects.filter(state__name__in=query_states).order_by(
+                'protein_conformation__protein__parent','resolution').distinct('protein_conformation__protein__parent').exclude(protein_conformation__protein__parent__family__parent=reference_protein.family.parent_id)
+        targets = [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data]
+        self.alignment = Alignment()
+        self.alignment.order_by = order_by
+        self.alignment.load_reference_protein(reference_protein)
+        self.alignment.load_proteins(targets)
+        self.segments = ProteinSegment.objects.filter(slug__in=segments)
+        self.alignment.load_segments(self.segments)
+        self.alignment.build_alignment()
+        self.alignment.calculate_similarity()
+        self.reference_protein = self.alignment.proteins[0]
+        self.template_protein = self.alignment.proteins[1]
+        self.similarity_table = self.create_similarity_table()
+        self.main_template_structure = list(self.similarity_table.items())[0][0]
+        self.reference_dict = OrderedDict()
+        self.template_dict = OrderedDict()
+        self.alignment_dict = OrderedDict()
+        
+    def __repr__(self):
+        return '<AlignedReferenceTemplate: Reference: {} ; Template: {}>'.format(self.reference_protein.protein.entry_name, 
+                                                                               self.main_template_structure)
+
+    def create_similarity_table(self):
+        ''' Creates an ordered dictionary of structure objects, where templates are sorted by similarity.
+        '''
+        temp_list = []
+        similarity_table = OrderedDict()
+        for protein in self.alignment.proteins:
+            if protein.protein!=self.reference_protein.protein:
+                matches = self.structures_data.filter(protein_conformation__protein__parent__id=protein.protein.id)
+                temp_list.append((list(matches)[0], int(protein.similarity), float(list(matches)[0].resolution)))
+        sorted_list = sorted(temp_list, key=lambda x: (-x[1],x[2]))
+        for i in sorted_list:
+            similarity_table[i[0]] = i[1]
+        return similarity_table
+
+    def enhance_best_alignment(self):
+        ''' Creates an alignment between reference and main_template where matching residues are depicted with the 
+            one-letter residue code, mismatches with '.', gaps with '-', gaps due to shorter sequences with 'x'.
+        '''
+        ref = self.reference_protein.alignment
+        temp = self.template_protein.alignment
+        segment_count = 0
+
+        for ref_segment, temp_segment in zip(ref,temp):
+            segment_count+=1
+            for ref_position, temp_position in zip(ref_segment,temp_segment):
+                if ref_position[1]!=False and temp_position[1]!=False:
+                    if ref_position[0]==temp_position[0]:
+                        self.reference_dict[ref_position[0]]=ref_position[2]
+                        self.template_dict[temp_position[0]]=temp_position[2]
+                        if ref_position[2]==temp_position[2]:
+                            self.alignment_dict[ref_position[0]]=ref_position[2]
+                        else:
+                            self.alignment_dict[ref_position[0]]='.'
+                    else:
+                        print("Error: Generic numbers don't align")
+                            
+                elif ref_position[1]!=False and temp_position[1]==False:
+                    self.reference_dict[ref_position[0]]=ref_position[2]                    
+                    if temp_position[2]=='-':
+                        self.template_dict[temp_position[0]]='-'
+                        self.alignment_dict[temp_position[0]]='-'
+                    elif temp_position[2]=='_':
+                        self.template_dict[temp_position[0]]='x'
+                        self.alignment_dict[temp_position[0]]='x'
+                        
+                elif ref_position[2]=='-' and temp_position[1]!=False:
+                    self.reference_dict[ref_position[0]]='-'
+                    self.template_dict[temp_position[0]]=temp_position[2]
+                    self.alignment_dict[ref_position[0]]='-'
+                    
+            self.reference_dict["TM"+str(segment_count)+"_end"]='/'                     
+            self.template_dict["TM"+str(segment_count)+"_end"]='/' 
+            self.alignment_dict["TM"+str(segment_count)+"_end"]='/'
+
