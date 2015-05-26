@@ -34,15 +34,15 @@ class Command(BaseCommand):
                 self.stdout.write(Homology_model.statistics, ending='')
                 count+=1
 
-        Homology_model = HomologyModeling('5ht2b_human', 'Inactive', ['Inactive'])
+        Homology_model = HomologyModeling('gp139_human', 'Inactive', ['Inactive'])
         alignment = Homology_model.run_alignment()
         Homology_model.run_non_conserved_switcher(alignment)        
                     
-        val = Validation()
-        struct = Structure.objects.get(protein_conformation__protein__name="4ib4")
-        print(val.PDB_RMSD(StringIO(struct.pdb_data.pdb),
-                "./structure/homology_models/{}_Inactive/pre_switch.pdb".format(Homology_model.uniprot_id), #Homology_model.uniprot_id),
-                assign_gns=[1]))
+#        val = Validation()
+#        struct = Structure.objects.get(protein_conformation__protein__name="4ib4")
+#        print(val.PDB_RMSD(StringIO(struct.pdb_data.pdb),
+#                "./structure/homology_models/{}_Inactive/pre_switch.pdb".format(Homology_model.uniprot_id), #Homology_model.uniprot_id),
+#                assign_gns=[1]))
         self.stdout.write(Homology_model.statistics, ending='')
 
 class HomologyModeling(object):
@@ -93,6 +93,12 @@ class HomologyModeling(object):
             self.main_template_preferred_chain = str(self.main_structure.preferred_chain)[0]
             self.statistics.add_info("main_template", self.main_structure)
             self.statistics.add_info("preferred_chain", self.main_template_preferred_chain)
+            loops = OrderedDict()
+            for loop in ['ICL1','ECL1','ICL2','ECL2','ICL3','ECL3']:
+                loop_alignment = AlignedReferenceTemplate(self.reference_protein, [loop], ['Inactive','Active'], 
+                                                          order_by='similarity', 
+                                                          provide_main_template_structure=self.main_structure)
+                loops[loop] = loop_alignment.main_template_structure
         return alignment
         
     def run_non_conserved_switcher(self, ref_temp_alignment, switch_bulges=True, switch_constrictions=True):
@@ -384,7 +390,7 @@ class HomologyModeling(object):
         atom_num=0
         with open(filename,'w+') as f:
             for key in main_pdb_array:
-                if '.' in str(key) and str(key).replace('.','x') in ref_temp_alignment.reference_dict:
+                if '.' in str(key):# and str(key).replace('.','x') in ref_temp_alignment.reference_dict:
                     res_num+=1
                     segment = int(str(key).split('.')[0])
                     try:

@@ -400,9 +400,9 @@ class AlignedReferenceTemplate(object):
         @param query_states: list of activation sites considered. \n
         @param order_by: str of ordering the aligned proteins. Identity, similarity or simscore.
     '''
-    def __init__(self, reference_protein, segments, query_states, order_by):
+    def __init__(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None):
         self.structures_data = Structure.objects.filter(state__name__in=query_states).order_by(
-                'protein_conformation__protein__parent','resolution').distinct('protein_conformation__protein__parent').exclude(protein_conformation__protein__parent__family__parent=reference_protein.family.parent_id)
+                'protein_conformation__protein__parent','resolution').distinct('protein_conformation__protein__parent')#.exclude(protein_conformation__protein__parent__family__parent=reference_protein.family.parent_id)
         targets = [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data]
         self.alignment = Alignment()
         self.alignment.order_by = order_by
@@ -413,18 +413,26 @@ class AlignedReferenceTemplate(object):
         self.alignment.build_alignment()
         self.alignment.calculate_similarity()
         self.reference_protein = self.alignment.proteins[0]
-        self.template_protein = self.alignment.proteins[1]
-        self.similarity_table = self.create_similarity_table()
-        self.main_template_structure = list(self.similarity_table.items())[0][0]
+        self.main_template_protein = None
+        if provide_main_template_structure==None:
+            self.main_template_structure = None
+        else:
+            self.main_template_structure = provide_main_template_structure
+        segment_type = [str(x)[:2] for x in segments]
+        if 'TM' in segment_type and ('IC' not in segment_type or 'EC' not in segment_type):
+            self.similarity_table = self.create_helix_similarity_table()
+        elif 'IC' in segment_type or 'EC' in segment_type and 'TM' not in segment_type:
+            self.similarity_table = self.create_loop_similarity_table()
         self.reference_dict = OrderedDict()
         self.template_dict = OrderedDict()
         self.alignment_dict = OrderedDict()
+
         
     def __repr__(self):
         return '<AlignedReferenceTemplate: Reference: {} ; Template: {}>'.format(self.reference_protein.protein.entry_name, 
-                                                                               self.main_template_structure)
+                                                                                 self.main_template_structure)
 
-    def create_similarity_table(self):
+    def create_helix_similarity_table(self):
         ''' Creates an ordered dictionary of structure objects, where templates are sorted by similarity.
         '''
         temp_list = []
@@ -436,17 +444,60 @@ class AlignedReferenceTemplate(object):
         sorted_list = sorted(temp_list, key=lambda x: (-x[1],x[2]))
         for i in sorted_list:
             similarity_table[i[0]] = i[1]
+        self.main_template_protein = self.alignment.proteins[1]
+        self.main_template_structure = list(similarity_table.items())[0][0]
         return similarity_table
+
+    def create_loop_similarity_table(self):
+        '''
+        '''
+        temp_list = []
+        similarity_table = OrderedDict()
+        self.main_template_protein = [p for p in self.alignment.proteins if 
+                                    p.protein==self.main_template_structure.protein_conformation.protein.parent][0]
+        for protein in self.alignment.proteins:
+            if protein.protein==self.reference_protein.protein:
+                ref_length = 0
+                for res in protein.alignment[0]:
+                    if res[1]!=False:
+                        ref_length+=1
+            elif protein.protein==self.main_template_protein.protein:
+                main_temp_length = 0
+                main_struct_sim = int(protein.similarity)
+                for res in protein.alignment[0]:
+                    if res[1]!=False:
+                        main_temp_length+=1
+            else:
+                temp_length = 0
+                matches = self.structures_data.filter(protein_conformation__protein__parent__id=protein.protein.id)
+                for res in protein.alignment[0]:
+                    if res[1]!=False:
+                        temp_length+=1
+                temp_list.append((list(matches)[0], temp_length, int(protein.similarity), float(list(matches)[0].resolution), protein))
+        if ref_length!=main_temp_length:
+            alt_temps = [entry for entry in temp_list if entry[1]==ref_length]
+            sorted_list = sorted(alt_temps, key=lambda x: (-x[2],x[3]))
+            for i in sorted_list:
+                similarity_table[i[0]] = i[2]
+            try:
+                self.main_template_protein = sorted_list[0][4]
+                self.main_template_structure = sorted_list[0][0]
+            except:
+                self.main_template_protein = None
+                self.main_template_structure = None
+                return None            
+        else:
+            similarity_table[self.main_template_structure] = main_struct_sim
+        return similarity_table
+
 
     def enhance_best_alignment(self):
         ''' Creates an alignment between reference and main_template where matching residues are depicted with the 
             one-letter residue code, mismatches with '.', gaps with '-', gaps due to shorter sequences with 'x'.
         '''
-        ref = self.reference_protein.alignment
-        temp = self.template_protein.alignment
         segment_count = 0
 
-        for ref_segment, temp_segment in zip(ref,temp):
+        for ref_segment, temp_segment in zip(self.reference_protein.alignment,self.main_template_protein.alignment):
             segment_count+=1
             for ref_position, temp_position in zip(ref_segment,temp_segment):
                 if ref_position[1]!=False and temp_position[1]!=False:
