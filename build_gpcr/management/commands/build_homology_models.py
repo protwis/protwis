@@ -38,11 +38,11 @@ class Command(BaseCommand):
         alignment = Homology_model.run_alignment()
         Homology_model.run_non_conserved_switcher(alignment)        
                     
-#        val = Validation()
-#        struct = Structure.objects.get(protein_conformation__protein__name="4ib4")
-#        print(val.PDB_RMSD(StringIO(struct.pdb_data.pdb),
-#                "./structure/homology_models/{}_Inactive/pre_switch.pdb".format(Homology_model.uniprot_id), #Homology_model.uniprot_id),
-#                assign_gns=[1]))
+        val = Validation()
+        struct = Structure.objects.get(protein_conformation__protein__name="4ib4")
+        print(val.PDB_RMSD(StringIO(struct.pdb_data.pdb),
+                "./structure/homology_models/{}_Inactive/pre_switch.pdb".format(Homology_model.uniprot_id),
+                assign_gns=[1]))
         self.stdout.write(Homology_model.statistics, ending='')
 
 class HomologyModeling(object):
@@ -122,7 +122,7 @@ class HomologyModeling(object):
         if switch_bulges==True or switch_constrictions==True:
             self.similarity_table_all = self.run_alignment(core_alignment=False, 
                                                            query_states=['Inactive','Active']).similarity_table
-            for ref_res, temp_res, aligned_res in zip(ref_temp_alignment.reference_dict, ref_temp_alignment.template_dict, 
+            for ref_res,temp_res,aligned_res in zip(ref_temp_alignment.reference_dict,ref_temp_alignment.template_dict, 
                                                       ref_temp_alignment.alignment_dict):
                 gn = ref_res
                 gn_TM = parse.gn_num_extract(gn, 'x')[0]
@@ -246,9 +246,6 @@ class HomologyModeling(object):
                                                                                        parse.gn_indecer(gn,'x',+2)])
                                     superpose = sp.BulgeConstrictionSuperpose(constriction_site, constriction_template)
                                     new_residues = superpose.run()
-
-                                    self.write_homology_model_pdb("./structure/homology_models/{}_{}/pre_const.pdb".format(self.uniprot_id,self.state), constriction_site, ref_temp_alignment)
-                                    self.write_homology_model_pdb("./structure/homology_models/{}_{}/post_const.pdb".format(self.uniprot_id,self.state), new_residues, ref_temp_alignment)
                                     switch_res = 0
                                     for gen_num, atoms in constriction_template.items():
                                         if switch_res!=0 and switch_res!=4:
@@ -312,7 +309,9 @@ class HomologyModeling(object):
         path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
         if not os.path.exists(path):
             os.mkdir(path)
-        self.write_homology_model_pdb("./structure/homology_models/{}_{}/pre_switch.pdb".format(self.uniprot_id, self.state), main_pdb_array, ref_temp_alignment)        
+        self.write_homology_model_pdb(
+                                "./structure/homology_models/{}_{}/pre_switch.pdb".format(self.uniprot_id, self.state), 
+                                main_pdb_array, ref_temp_alignment)        
         
         # non-conserved residues
         non_cons_res_templates = OrderedDict()
@@ -330,7 +329,8 @@ class HomologyModeling(object):
             
             gn = ref_res
 
-            if ref_temp_alignment.alignment_dict[aligned_res]=='.' and ref_temp_alignment.reference_dict[gn]!=ref_temp_alignment.template_dict[gn]:
+            if (ref_temp_alignment.alignment_dict[aligned_res]=='.' and 
+                ref_temp_alignment.reference_dict[gn]!=ref_temp_alignment.template_dict[gn]):
                 non_cons_count+=1
                 residues = Residue.objects.filter(generic_number__label=ref_res)
                 proteins_w_this_gn = [res.protein_conformation.protein.parent for res in 
@@ -390,7 +390,7 @@ class HomologyModeling(object):
         atom_num=0
         with open(filename,'w+') as f:
             for key in main_pdb_array:
-                if '.' in str(key):# and str(key).replace('.','x') in ref_temp_alignment.reference_dict:
+                if '.' in str(key) and str(key).replace('.','x') in ref_temp_alignment.reference_dict:
                     res_num+=1
                     segment = int(str(key).split('.')[0])
                     try:
@@ -591,7 +591,8 @@ class Constrictions(object):
             try:                            
                 for match in matches:
                     if constriction_in_reference==True:                        
-                        if match.protein_conformation.protein.parent==protein_object and match.protein_conformation.protein.parent.entry_name not in excludee_proteins:
+                        if (match.protein_conformation.protein.parent==protein_object and 
+                            match.protein_conformation.protein.parent.entry_name not in excludee_proteins):
                             self.constriction_templates.append(structure)
                     elif constriction_in_reference==False:
                         if match.protein_conformation.protein.parent==protein_object:
@@ -667,7 +668,8 @@ class GPCRDBParsingPDB(object):
         output = OrderedDict()
         atoms_list = []
         for gn in generic_numbers:
-            rotamer = Rotamer.objects.get(structure__protein_conformation=structure.protein_conformation, residue__generic_number__label=gn)
+            rotamer = Rotamer.objects.get(structure__protein_conformation=structure.protein_conformation, 
+                                                                          residue__generic_number__label=gn)
             io = StringIO(rotamer.pdbdata.pdb)
             rota_struct = PDB.PDBParser().get_structure('structure', io)[0]
             for chain in rota_struct:
