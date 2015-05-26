@@ -473,7 +473,8 @@ class AlignedReferenceTemplate(object):
                 for res in protein.alignment[0]:
                     if res[1]!=False:
                         temp_length+=1
-                temp_list.append((list(matches)[0], temp_length, int(protein.similarity), float(list(matches)[0].resolution), protein))
+                temp_list.append((list(matches)[0], temp_length, int(protein.similarity), 
+                                  float(list(matches)[0].resolution), protein))
         if ref_length!=main_temp_length:
             alt_temps = [entry for entry in temp_list if entry[1]==ref_length]
             sorted_list = sorted(alt_temps, key=lambda x: (-x[2],x[3]))
