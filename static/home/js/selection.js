@@ -95,3 +95,16 @@ function SelectionSpeciesToggle(species_id) {
         }
     });
 }
+
+function ExpandSegment(segment_id) {
+    $.ajax({
+        'url': '/common/expandsegment',
+        'data': {
+            segment_id: segment_id
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#segment-generic-numbers").html(data);
+        }
+    });
+}

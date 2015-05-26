@@ -11,4 +11,5 @@ urlpatterns = patterns('',
     url(r'^selectionannotation', views.SelectionAnnotation, name='selectionannotation'),
     url(r'^selectionspeciespredefined', views.SelectionSpeciesPredefined, name='selectionspeciespredefined'),
     url(r'^selectionspeciestoggle', views.SelectionSpeciesToggle, name='selectionspeciestoggle'),
+    url(r'^expandsegment', views.ExpandSegment, name='expandsegment'),
 )

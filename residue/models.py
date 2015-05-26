@@ -36,7 +36,7 @@ class ResidueSet(models.Model):
     
 class ResidueGenericNumber(models.Model):
     scheme = models.ForeignKey('ResidueNumberingScheme')
-    protein_segment = models.ForeignKey('protein.ProteinSegment', null=True)
+    protein_segment = models.ForeignKey('protein.ProteinSegment', related_name='generic_numbers', null=True)
     label = models.CharField(db_index=True, max_length=10)
 
     def __str__(self):
