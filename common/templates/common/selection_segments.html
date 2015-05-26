@@ -1,6 +1,19 @@
 {% for s in ss %}
-    <a href="javascript:void(0)" onclick="AddToSelection('segments', '{{ s.category }}', '{{ s.id }}')"
-    class="btn btn-primary btn-sm">
-        {{ s.slug }}
-    </a>
+    <div class="btn-group" role="group">
+        <a href="javascript:void(0)" onclick="AddToSelection('segments', '{{ s.category }}', '{{ s.id }}')"
+        class="btn btn-primary btn-sm">
+            {{ s.slug }}
+        </a>
+        {% if s.generic_numbers.all %}
+        <a href="javascript:void(0)" onclick="ExpandSegment('{{ s.id }}')"
+        class="btn btn-primary btn-sm">
+            <span class="glyphicon glyphicon-arrow-down"></span>
+        </a>
+        {% endif %}
+    </div>
 {% endfor %}
+
+<p>
+<div id='segment-generic-numbers'>
+</div>
+</p>
