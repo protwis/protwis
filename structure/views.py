@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django import forms
 
 from structure.models import Structure
@@ -40,8 +40,21 @@ class StructureStatistics(TemplateView):
     So not ready that EA wanted to publish it
     """
 
-    template_name = 'statistics.html'
-    pass
+    template_name = 'structure_statistics.html'
+
+    def get_context_data (self, **kwargs):
+        context = super(StructureStatistics, self).get_context_data(**kwargs)
+
+        return context
+
+    def get_crystalized_receptors_data(self):
+
+        years = list(set([x.publication_date.year for x in Structure.objects.distinct('publication_date')]))
+        struct_data = []
+        for year in years:
+            struct_data.append({'year': year, 'count': len(Structure.objects.filter(publication_date__year=year))})
+
+        return JsonResponse(struct_data, safe=False)
 
 
 

@@ -1,0 +1,72 @@
+﻿{% extends "home/base.html" %}
+{% load staticfiles %}
+
+
+<!--{% block addon_js %}
+    
+{% endblock %}-->
+
+{% block content %}
+<script src="/static/home/js/d3.min.js"></script>
+<style>
+body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    margin: auto;
+    position: relative;
+    width: 960px;
+}
+
+text {
+    font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+.bar {
+  fill: steelblue;
+}
+
+</style>
+<script>
+    var margin = {top: 20, right: 20, bottom: 30, left: 50},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    var x = d3.scale.linear()
+        .range([0, width]);
+
+    var y = d3.scale.linear()
+        .range([0, height]);
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    var data = d3.json("/structure/crystal_statistics_by_year", function(data) {
+    x.domain(data.map(function(d) { return d.year; }));
+    y.domain([0, data.max(function(d) { return d.count; })]);
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis)
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+        .text("Value ($)");
+    svg.selectAll("bar")
+        .data(data)
+        .enter().append("rect")
+        .attr("x", function(d) { return x(d.date); })
+        .attr("width", x.rangeBand())
+        .attr("y", function(d) { return y(d.value); })
+        .attr("height", function(d) { return height - y(d.value); });
+    });
+
+</script>
+{% endblock %}

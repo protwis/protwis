@@ -279,12 +279,10 @@ class BackboneSelector():
 #==============================================================================
 def check_gn (pdb_struct):
         
-    gn_list = []
     for chain in pdb_struct:
         for residue in chain:
             try:
                 if -8.1 < residue['CA'].get_bfactor() < 8.1:
-                    gn_list.append(residue['CA'])
                     return True
             except:
                 continue
