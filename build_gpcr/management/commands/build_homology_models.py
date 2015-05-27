@@ -40,8 +40,8 @@ class Command(BaseCommand):
                     
         val = Validation()
         struct = Structure.objects.get(protein_conformation__protein__name="4ib4")
-        print(val.PDB_RMSD(StringIO(struct.pdb_data.pdb),
-                "./structure/homology_models/{}_Inactive/pre_switch.pdb".format(Homology_model.uniprot_id),
+        print(val.PDB_RMSD("./structure/homology_models/GPR139_model_Mohamed.pdb", #StringIO(struct.pdb_data.pdb),
+                "./structure/homology_models/Q6DWJ6_Inactive/Q6DWJ6_post.pdb",#.format(Homology_model.uniprot_id),
                 assign_gns=[1]))
         self.stdout.write(Homology_model.statistics, ending='')
 
@@ -93,12 +93,12 @@ class HomologyModeling(object):
             self.main_template_preferred_chain = str(self.main_structure.preferred_chain)[0]
             self.statistics.add_info("main_template", self.main_structure)
             self.statistics.add_info("preferred_chain", self.main_template_preferred_chain)
-            loops = OrderedDict()
+            self.loop_templates = OrderedDict()
             for loop in ['ICL1','ECL1','ICL2','ECL2','ICL3','ECL3']:
                 loop_alignment = AlignedReferenceTemplate(self.reference_protein, [loop], ['Inactive','Active'], 
                                                           order_by='similarity', 
                                                           provide_main_template_structure=self.main_structure)
-                loops[loop] = loop_alignment.main_template_structure
+                self.loop_templates[loop] = loop_alignment.main_template_structure
         return alignment
         
     def run_non_conserved_switcher(self, ref_temp_alignment, switch_bulges=True, switch_constrictions=True):

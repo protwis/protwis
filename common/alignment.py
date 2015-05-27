@@ -391,7 +391,7 @@ class Alignment:
         else:
             return matrix[pair]
 
-class AlignedReferenceTemplate(object):
+class AlignedReferenceTemplate(Alignment):
     ''' Creates a structure based alignment between reference protein and target proteins that are made up from the 
         best available unique structures. It marks the best match as the main template structure.
 
@@ -399,20 +399,19 @@ class AlignedReferenceTemplate(object):
         @param segments: list of segment ids to be considered in the alignment, e.g. ['TM1','TM2']. \n
         @param query_states: list of activation sites considered. \n
         @param order_by: str of ordering the aligned proteins. Identity, similarity or simscore.
+        @param provide_main_temlpate_structure: Structure object, use only when aligning loops and when the main 
+        template is already known.
     '''
     def __init__(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None):
-        self.structures_data = Structure.objects.filter(state__name__in=query_states).order_by(
-                'protein_conformation__protein__parent','resolution').distinct('protein_conformation__protein__parent')#.exclude(protein_conformation__protein__parent__family__parent=reference_protein.family.parent_id)
-        targets = [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data]
-        self.alignment = Alignment()
-        self.alignment.order_by = order_by
-        self.alignment.load_reference_protein(reference_protein)
-        self.alignment.load_proteins(targets)
-        self.segments = ProteinSegment.objects.filter(slug__in=segments)
-        self.alignment.load_segments(self.segments)
-        self.alignment.build_alignment()
-        self.alignment.calculate_similarity()
-        self.reference_protein = self.alignment.proteins[0]
+        super(AlignedReferenceTemplate, self).__init__()
+        self.query_states = query_states
+        self.order_by = order_by
+        self.load_reference_protein(reference_protein)
+        self.load_proteins_by_structure()
+        self.load_segments(ProteinSegment.objects.filter(slug__in=segments))
+        self.build_alignment()
+        self.calculate_similarity()
+        self.reference_protein = self.proteins[0]
         self.main_template_protein = None
         if provide_main_template_structure==None:
             self.main_template_structure = None
@@ -423,39 +422,58 @@ class AlignedReferenceTemplate(object):
             self.similarity_table = self.create_helix_similarity_table()
         elif 'IC' in segment_type or 'EC' in segment_type and 'TM' not in segment_type:
             self.similarity_table = self.create_loop_similarity_table()
+        if self.main_template_structure==None:
+            self.main_template_structure = self.get_main_template()
         self.reference_dict = OrderedDict()
         self.template_dict = OrderedDict()
         self.alignment_dict = OrderedDict()
-
-        
+       
     def __repr__(self):
         return '<AlignedReferenceTemplate: Reference: {} ; Template: {}>'.format(self.reference_protein.protein.entry_name, 
                                                                                  self.main_template_structure)
 
+    def load_proteins_by_structure(self):
+        ''' Loads proteins into alignment based on available structures in the database.
+        '''
+        self.structures_data = Structure.objects.filter(state__name__in=self.query_states).order_by(
+            'protein_conformation__protein__parent','resolution').distinct('protein_conformation__protein__parent')#.exclude(protein_conformation__protein__parent__family__parent=self.reference.family.parent_id)
+        self.load_proteins(
+            [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
+  
+    def get_main_template(self):
+        ''' Returns main template structure.
+        '''
+        try:
+            self.main_template_protein = self.proteins[1]
+            main_template_structure = list(self.similarity_table.items())[0][0]
+            return main_template_structure
+        except:
+            return None
+
     def create_helix_similarity_table(self):
-        ''' Creates an ordered dictionary of structure objects, where templates are sorted by similarity.
+        ''' Creates an ordered dictionary of structure objects, where templates are sorted by similarity and resolution.
         '''
         temp_list = []
         similarity_table = OrderedDict()
-        for protein in self.alignment.proteins:
+        for protein in self.proteins:
             if protein.protein!=self.reference_protein.protein:
                 matches = self.structures_data.filter(protein_conformation__protein__parent__id=protein.protein.id)
                 temp_list.append((list(matches)[0], int(protein.similarity), float(list(matches)[0].resolution)))
         sorted_list = sorted(temp_list, key=lambda x: (-x[1],x[2]))
         for i in sorted_list:
             similarity_table[i[0]] = i[1]
-        self.main_template_protein = self.alignment.proteins[1]
-        self.main_template_structure = list(similarity_table.items())[0][0]
         return similarity_table
 
     def create_loop_similarity_table(self):
-        '''
+        ''' Creates an ordered dictionary of structure objects, where templates are sorted by similarity and resolution.
+            Only templates that have the same loop length as the reference are considered. If the provided main 
+            structure has the same length as the reference, no other structure is inserted to the table.
         '''
         temp_list = []
         similarity_table = OrderedDict()
-        self.main_template_protein = [p for p in self.alignment.proteins if 
+        self.main_template_protein = [p for p in self.proteins if 
                                     p.protein==self.main_template_structure.protein_conformation.protein.parent][0]
-        for protein in self.alignment.proteins:
+        for protein in self.proteins:
             if protein.protein==self.reference_protein.protein:
                 ref_length = 0
                 for res in protein.alignment[0]:
