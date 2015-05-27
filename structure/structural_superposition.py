@@ -16,27 +16,27 @@ from interaction.models import ResidueFragmentInteraction
 #==============================================================================  
 class ProteinSuperpose(object):
   
-    logger = logging.getLogger("structure_gpcr")
+    logger = logging.getLogger("structure")
 
     def __init__ (self, ref_file, alt_files, simple_selection):
     
         self.selection = SelectionParser(simple_selection)
     
-        self.ref_struct = PDBParser().get_structure('ref', ref_file)
+        self.ref_struct = PDBParser().get_structure('ref', ref_file)[0]
         assert self.ref_struct, self.logger.error("Can't parse the ref file %s".format(ref_file))
         if self.selection.generic_numbers != [] or self.selection.helices != []:
-            if not self.check_gn(self.ref_struct[0]):
-                gn_assigner = GenericNumbering(ref_file)
+            if not check_gn(self.ref_struct):
+                gn_assigner = GenericNumbering(structure=self.ref_struct)
                 self.ref_struct = gn_assigner.assign_generic_numbers()
       
         self.alt_structs = []
         for alt_id, alt_file in enumerate(alt_files):
             try:
-                tmp_struct = PDBParser(PERMISSIVE=True).get_structure(alt_id, alt_file)
+                tmp_struct = PDBParser(PERMISSIVE=True).get_structure(alt_id, alt_file)[0]
                 if self.selection.generic_numbers != [] or self.selection.helices != []:
-                    if not self.check_gn(tmp_struct[0]):
+                    if not check_gn(tmp_struct):
                         print("Assigning")
-                        gn_assigner = GenericNumbering(alt_file)
+                        gn_assigner = GenericNumbering(structure=tmp_struct)
                         self.alt_structs.append(gn_assigner.assign_generic_numbers())
                     else:
                         self.alt_structs.append(tmp_struct)
@@ -44,7 +44,6 @@ class ProteinSuperpose(object):
                 print(e)
                 self.logger.warning("Can't parse the file {!s}\n{!s}".format(alt_id, e))
         self.selector = CASelector(self.selection, self.ref_struct, self.alt_structs)
-
 
     def run (self):
     
@@ -58,7 +57,7 @@ class ProteinSuperpose(object):
                 ref, alt = self.selector.get_consensus_sets(alt_struct.id)
                 super_imposer.set_atoms(ref, alt)
                 super_imposer.apply(alt_struct[0].get_atoms())
-                self.logger("RMS(first model, model {!s}) = {:d}".format(alt_struct.id, super_imposer.rms))
+                self.logger.info("RMS(first model, model {!s}) = {:d}".format(alt_struct.id, super_imposer.rms))
             except Exception as msg:
                 self.logger.error("Failed to superpose structures {} and {}".format(self.ref_struct.id, alt_struct.id))
 
