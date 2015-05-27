@@ -444,8 +444,8 @@ class AlignedReferenceTemplate(Alignment):
         ''' Returns main template structure.
         '''
         try:
-            self.main_template_protein = self.proteins[1]
             main_template_structure = list(self.similarity_table.items())[0][0]
+            self.main_template_protein = self.proteins[1]
             return main_template_structure
         except:
             return None
