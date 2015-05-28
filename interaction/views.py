@@ -197,7 +197,7 @@ def calculate(request):
                                         rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
 
                                         fragment_data, created = PdbData.objects.get_or_create(pdb=fragment_pdb) 
-                                        fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data)
+                                        fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data, residue=residue)
                                     else:
                                         quit("Could not find "+f)
 
@@ -243,7 +243,7 @@ def calculate(request):
                                         rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
 
                                         fragment_data, created = PdbData.objects.get_or_create(pdb=fragment_pdb) 
-                                        fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data)
+                                        fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data, residue=residue)
                                     else:
                                         quit("Could not find "+f)
 
@@ -278,7 +278,7 @@ def calculate(request):
 
                                 rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
 
-                                fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=liganddata)
+                                fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=liganddata, residue=residue)
 
                                 interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug='hydrofob',name=interactiontype)
                                 #fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment)
@@ -317,7 +317,7 @@ def calculate(request):
                                     rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
 
                                     fragment_data, created = PdbData.objects.get_or_create(pdb=fragment_pdb) 
-                                    fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data)
+                                    fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data, residue=residue)
                                 else:
                                     quit("Could not find "+f)
 

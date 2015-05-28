@@ -104,19 +104,13 @@ LOGGING = {
        'build': {
            'level': 'DEBUG',
            'class': 'logging.FileHandler',
-           'filename': 'logs/protwis_build.log',
+           'filename': 'logs/build.log',
            'formatter': 'verbose'
        },
        'protwis': {
            'level': 'DEBUG',
            'class': 'logging.FileHandler',
            'filename': 'logs/protwis.log',
-           'formatter': 'verbose'
-       },
-       'structure': {
-           'level': 'DEBUG',
-           'class': 'logging.FileHandler',
-           'filename': 'logs/structure.log',
            'formatter': 'verbose'
        },
    },
@@ -132,10 +126,6 @@ LOGGING = {
        },
        'protwis': {
            'handlers': ['protwis'],
-           'level': 'DEBUG',
-       },
-       'structure': {
-           'handlers': ['structure'],
            'level': 'DEBUG',
        },
    }

@@ -144,11 +144,13 @@ class Command(BaseCommand):
                                 segment_before, created = ProteinSegment.objects.get_or_create(
                                     slug=fp_start.protein_segment.slug+"_1", defaults={
                                     'name': fp_start.protein_segment.name,
-                                    'category': fp_start.protein_segment.category})
+                                    'category': fp_start.protein_segment.category,
+                                    'partial': True})
                                 segment_after, created = ProteinSegment.objects.get_or_create(
                                     slug=fp_start.protein_segment.slug+"_2", defaults={
                                     'name': fp_start.protein_segment.name,
-                                    'category': fp_start.protein_segment.category})
+                                    'category': fp_start.protein_segment.category,
+                                    'partial': True})
 
                                 # keep track of  information about split segments
                                 split_segments[fp_start.protein_segment.slug] = {
