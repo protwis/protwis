@@ -47,6 +47,7 @@ class StructureStatistics(TemplateView):
 
         return context
 
+
     def get_crystalized_receptors_data(self):
 
         years = list(set([x.publication_date.year for x in Structure.objects.distinct('publication_date')]))

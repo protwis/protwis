@@ -45,7 +45,7 @@ class Command(BaseCommand):
         self.logger.info('Issuing makeblastdb')
         try:
             #No need to unlink the previously existing database - makeblastdb overwrites it
-            makeblastdb = Popen("makeblastdb -in {} -dbtype prot -title protwis_blastdb -out {} -parse_seqids".format(os.sep.join([self.blast_database_dir, 'temp.fa']), os.sep.join([self.blast_database_dir, 'protwis_blastdb'])), universal_newlines=True, stdout=PIPE, stderr=PIPE)
+            makeblastdb = Popen("makeblastdb -in {} -dbtype prot -title protwis_blastdb -out {} -parse_seqids".format(os.sep.join([self.blast_database_dir, 'temp.fa']), os.sep.join([self.blast_database_dir, 'protwis_blastdb'])), universal_newlines=True, stdout=PIPE, shell=True, stderr=PIPE)
         except Exception as e:
             print(e)
             self.logger.error('Failed to launch makeblastdb')

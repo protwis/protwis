@@ -6,8 +6,7 @@ from residue.models import Residue
 from structure.functions import BlastSearch, MappedResidue
 
 import Bio.PDB.Polypeptide as polypeptide
-import os
-import logging
+import os,logging
 
 
 #==============================================================================
@@ -42,7 +41,7 @@ class GenericNumbering(object):
         self.parse_structure(self.pdb_structure)
 
 
-    def parse_structure (self, pdb_struct):
+    def parse_structure(self, pdb_struct):
         """
         extracting sequence and preparing dictionary of residues
         bio.pdb reads pdb in the following cascade: model->chain->residue->atom
@@ -52,8 +51,7 @@ class GenericNumbering(object):
             self.pdb_seq[chain.id] = Seq('')
             
             for res in chain:
-            #in bio.pdb the residue's id is a tuple of (hetatm flag, residue
-            #number, insertion code)
+            #in bio.pdb the residue's id is a tuple of (hetatm flag, residue number, insertion code)
                 if res.resname == "HID":
                     resname = polypeptide.three_to_one('HIS')
                 else:
@@ -110,7 +108,7 @@ class GenericNumbering(object):
                         try:
                             self.residues[chain][resn].add_gpcrdb_number(db_res.alternative_generic_numbers.get(scheme__slug='gpcrdb').label)
                         except:
-                            self.residues[chain][resn].add_gpcrdb_number(db_res.default_generic_number.label)
+                            self.residues[chain][resn].add_gpcrdb_number(db_res.generic_number.label)
                     except Exception as msg:
                         self.logger.warning("Could not find residue {} in the database.\t{}".format(subj_counter, msg))
 
@@ -123,7 +121,7 @@ class GenericNumbering(object):
             q_seq.pop(0)        
             
     
-    def get_annotated_structure (self):
+    def get_annotated_structure(self):
     
         for chain in self.pdb_structure:
             for residue in chain:
@@ -136,10 +134,9 @@ class GenericNumbering(object):
         return self.pdb_structure
   
   
-    def save_gn_to_pdb (self):
+    def save_gn_to_pdb(self):
     
-        #replace bfactor field of CA atoms with b-w numbers and return
-        #filehandle with the structure written
+        #replace bfactor field of CA atoms with b-w numbers and return filehandle with the structure written
         for chain in self.pdb_structure:
             for residue in chain:
                 if residue.id[1] in self.residues[chain.id].keys():
@@ -148,15 +145,14 @@ class GenericNumbering(object):
                     if self.residues[chain.id][residue.id[1]].bw != 0.:
                         residue["N"].set_bfactor(float(self.residues[chain.id][residue.id[1]].bw))
                     r = self.residues[chain.id][residue.id[1]]
-        #get the basename, extension and export the pdb structure with b-w
-        #numbers
+        #get the basename, extension and export the pdb structure with b-w numbers
         root, ext = os.path.splitext(self.pdb_filename)
-        io = PDBIO()
-        io.set_structure(pdb_struct)
-        io.save("%s_GPCRDB%s" % (root, ext))
+        io=PDBIO()
+        io.set_structure(self.pdb_structure)
+        io.save("%s_GPCRDB%s" %(root, ext))
            
     
-    def assign_generic_numbers (self):
+    def assign_generic_numbers(self):
         
         alignments = {}
         #blast search goes first, looping through all the chains
