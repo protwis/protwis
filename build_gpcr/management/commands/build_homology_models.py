@@ -36,7 +36,7 @@ class Command(BaseCommand):
 
         Homology_model = HomologyModeling('gp139_human', 'Inactive', ['Inactive'])
         alignment = Homology_model.run_alignment()
-        Homology_model.run_non_conserved_switcher(alignment)        
+#        Homology_model.run_non_conserved_switcher(alignment)        
                     
         val = Validation()
         struct = Structure.objects.get(protein_conformation__protein__name="4ib4")
@@ -302,9 +302,35 @@ class HomologyModeling(object):
                     ref_temp_alignment.template_dict[gn] = pdb_res
             except:
                 if res!='/':
-                    pdb_db_inconsistencies.append({gn:ref_temp_alignment.reference_dict[gn]})
-                    ref_temp_alignment.template_dict[gn] = 'x'
-        
+                    pdb_db_inconsistencies.append({gn:ref_temp_alignment.template_dict[gn]})
+                    if ref_temp_alignment.reference_dict[gn]!=res:
+                        ref_temp_alignment.alignment_dict[gn] = '.'
+                    else:
+                        ref_temp_alignment.alignment_dict[gn] = res
+        if pdb_db_inconsistencies!=[]:
+            for incons in pdb_db_inconsistencies:
+                temp_array = OrderedDict()
+                match = False
+                for key, value in main_pdb_array.items():
+                    if match==True:
+                        needed_res = value
+                        match=False
+                        continue
+                    if parse.gn_indecer(list(incons.keys())[0], 'x', -1)==key[:4].replace('.','x'):
+                        temp_array[key] = value
+                        temp_array[list(incons.keys())[0].replace('x','.')] = 'x'
+                        match = True
+                    else:
+                        temp_array[key] = value
+                main_pdb_array = temp_array
+                main_pdb_array[list(incons.keys())[0].replace('x','.')] = needed_res
+                switched_resname = PDB.Polypeptide.three_to_one(main_pdb_array[list(incons.keys())[0].replace('x','.')][0].get_parent().get_resname())
+                ref_temp_alignment.template_dict[list(incons.keys())[0]] = switched_resname
+                if ref_temp_alignment.reference_dict[list(incons.keys())[0]]!=ref_temp_alignment.template_dict[list(incons.keys())[0]]:
+                    ref_temp_alignment.alignment_dict[list(incons.keys())[0]] = '.'
+                else:
+                    ref_temp_alignment.alignment_dict[list(incons.keys())[0]] = switched_resname
+                
         self.statistics.add_info('pdb_db_inconsistencies', pdb_db_inconsistencies)
         path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
         if not os.path.exists(path):
@@ -314,8 +340,8 @@ class HomologyModeling(object):
                                 main_pdb_array, ref_temp_alignment)        
         
         # non-conserved residues
-        non_cons_res_templates = OrderedDict()
-        conserved_residues = OrderedDict()
+        non_cons_res_templates, conserved_residues = OrderedDict(), OrderedDict()
+        trimmed_residues = []
         for ref_res, temp_res, aligned_res in zip(ref_temp_alignment.reference_dict, ref_temp_alignment.template_dict, 
                                                   ref_temp_alignment.alignment_dict):
             if ref_temp_alignment.reference_dict[ref_res]!='-' and ref_temp_alignment.reference_dict[ref_res]!='/':
@@ -337,6 +363,7 @@ class HomologyModeling(object):
                                         residues if str(res.amino_acid)==ref_temp_alignment.reference_dict[ref_res]]
                 proteins_w_this_gn = list(set(proteins_w_this_gn))
                 gn_ = ref_res.replace('x','.')
+                no_match = True
                 for struct in self.similarity_table:
                     if struct.protein_conformation.protein.parent in proteins_w_this_gn:
                         try:
@@ -353,16 +380,18 @@ class HomologyModeling(object):
                                 ref_temp_alignment.template_dict[gn] = ref_temp_alignment.reference_dict[gn]
                                 switched_count+=1                     
                                 non_cons_res_templates[ref_res] = struct
+                                no_match = False
                                 break
                         except:
                             pass
-                    else:
-                        try:
-                            residue = main_pdb_array[gn_]
-                            main_pdb_array[gn_] = residue[0:4]
-                        except:
-                            logging.warning("Missing atoms in {} at {}".format(self.main_structure,gn))
-
+                if no_match==True:
+                    try:
+                        residue = main_pdb_array[gn_]
+                        main_pdb_array[gn_] = residue[0:4]
+                        trimmed_residues.append(gn_)
+                    except:
+                        logging.warning("Missing atoms in {} at {}".format(self.main_structure,gn))
+        
         self.statistics.add_info('ref_seq_length', ref_length)
         self.statistics.add_info('conserved_num', conserved_count)
         self.statistics.add_info('non_conserved_num', non_cons_count)
@@ -375,10 +404,14 @@ class HomologyModeling(object):
         path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
         if not os.path.exists(path):
             os.mkdir(path)
-        self.write_homology_model_pdb(path+self.uniprot_id+"_post.pdb", main_pdb_array, ref_temp_alignment)
+        trimmed_res_nums = self.write_homology_model_pdb(path+self.uniprot_id+"_post.pdb", main_pdb_array, 
+                                                         ref_temp_alignment, trimmed_residues=trimmed_residues)
+        self.create_PIR_file(ref_temp_alignment, path+self.uniprot_id+"_post.pdb")
+        self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
+                          self.uniprot_id, 1, "modeller_test.pdb", atom_dict=trimmed_res_nums)
         return ref_temp_alignment       
     
-    def write_homology_model_pdb(self, filename, main_pdb_array, ref_temp_alignment):
+    def write_homology_model_pdb(self, filename, main_pdb_array, ref_temp_alignment, trimmed_residues=[]):
         ''' Write PDB file from pdb array to file.
         
             @param filename: str, filename of output file \n
@@ -388,6 +421,7 @@ class HomologyModeling(object):
         '''
         res_num=0
         atom_num=0
+        trimmed_resi_nums = OrderedDict()
         with open(filename,'w+') as f:
             for key in main_pdb_array:
                 if '.' in str(key) and str(key).replace('.','x') in ref_temp_alignment.reference_dict:
@@ -399,6 +433,8 @@ class HomologyModeling(object):
                         segment_pre = 100
                     if segment>segment_pre:
                         f.write("\nTER")
+                    if key in trimmed_residues:
+                        trimmed_resi_nums[key] = res_num
                     for atom in main_pdb_array[key]:              
                         atom_num+=1
                         coord = list(atom.get_coord())
@@ -424,6 +460,7 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
                         f.write(template.format(**context))
                     segment_pre=segment
             f.write("\nTER\nEND")
+        return trimmed_resi_nums
     
     def create_PIR_file(self, ref_temp_alignment, template_file):
         ''' Create PIR file from reference and template alignment (AlignedReferenceAndTemplate).
@@ -444,7 +481,7 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
         with open("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", 'w+') as output_file:
             template="""
 >P1;{temp_file}
-structure:{temp_file}:1:{chain}:210:{chain}::::
+structure:{temp_file}:1:{chain}:2000:{chain}::::
 {temp_sequence}*
 
 >P1;{uniprot}
@@ -458,7 +495,7 @@ sequence:{uniprot}::::::::
                      "ref_sequence":ref_sequence}
             output_file.write(template.format(**context))
             
-    def run_MODELLER(self, pir_file, template, reference, number_of_models, output_file_name):
+    def run_MODELLER(self, pir_file, template, reference, number_of_models, output_file_name, atom_dict=None):
         ''' Build homology model with MODELLER.
         
             @param pir_file: str, file name of PIR file with path \n
@@ -470,7 +507,10 @@ sequence:{uniprot}::::::::
         log.verbose()
         env = environ(rand_seed=80851) #!!random number generator
         
-        a = automodel(env, alnfile = pir_file, knowns = template, sequence = reference)
+        if atom_dict==None:
+            a = automodel(env, alnfile = pir_file, knowns = template, sequence = reference)
+        else:
+            a = HomologyMODELLER(env, alnfile = pir_file, knowns = template, sequence = reference, atom_selection=atom_dict)
         a.starting_model = 1
         a.ending_model = number_of_models
         a.md_level = refine.very_slow
@@ -484,7 +524,17 @@ sequence:{uniprot}::::::::
             elif file.startswith(self.uniprot_id):
                 os.rename("./"+file, "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)+file)
             
-
+class HomologyMODELLER(automodel):
+    def __init__(self, env, alnfile, knowns, sequence, atom_selection):
+        super(HomologyMODELLER, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence)
+        self.atom_dict = atom_selection
+        
+    def select_atoms(self):
+        chains = ['A','B','C','D','E','F','G']
+        selection_out = []
+        for gn, atom in self.atom_dict.items():
+            selection_out.append(self.residues[str(atom)+":"+chains[int(gn[0])-1]])
+        return selection(selection_out)
 
 class Bulges(object):
     ''' Class to handle bulges in GPCR structures.
