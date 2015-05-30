@@ -177,6 +177,8 @@ class SuperpositionWorkflowIndex(TemplateView):
     upload_form_data = {
         'ref_file' : forms.FileField(label="Reference structure"),
         'alt_files' : forms.FileField(label="Structure(s) to superpose"),
+        'exclusive' : forms.BooleanField(label='Download only superposed subset of atoms', 
+                                        widget=forms.CheckboxInput())
         }
     form_code = forms.Form()
     form_code.fields = upload_form_data
@@ -255,6 +257,10 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
 
     def post (self, request, *args, **kwargs):
 
+        if 'exclusive' in request.POST:
+            request.session['exclusive'] = True
+        else:
+            request.session['exclusive'] = False
         request.session['ref_file'] = request.FILES['ref_file']
         request.session['alt_files'] = request.FILES['alt_files']
         simple_selection = request.session.get('selection', False)
@@ -323,7 +329,6 @@ class SuperpositionWorkflowResults(TemplateView):
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
 
-        #return render(self.request, self.template_name, context)
         return context
 
 

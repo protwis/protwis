@@ -1,6 +1,7 @@
 from subprocess import Popen, PIPE
 from io import StringIO
 from Bio.Blast import NCBIXML
+from Bio.PDB.PDBIO import Select
 import Bio.PDB.Polypeptide as polypeptide
 
 from django.conf import settings
@@ -14,8 +15,9 @@ import os
 import sys
 import tempfile
 import logging
+import math
 
-logger = logging.getLogger("structure")
+logger = logging.getLogger("protwis")
 
 #==============================================================================
 # I have put it into separate class for the sake of future uses
@@ -43,7 +45,7 @@ class BlastSearch(object):
             logger.debug("Running Blast with sequence: {}".format(input_seq))
             tmp.write(bytes(str(input_seq) + '\n', 'latin1'))
             tmp.seek(0)
-            blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, shell=True, stdin=tmp, stdout=PIPE, stderr=PIPE)
+            blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, stdin=tmp, stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate()
         else:
         #Rest of the world:
@@ -96,15 +98,37 @@ class SelectionParser(object):
         self.generic_numbers = []
         self.helices = []
         
-        self.db_segments = [x.slug for x in ProteinSegment.objects.all()]
-        
         for segment in selection.segments:
-            if 'TM' in segment.item.slug:
+            logger.debug('Segments in selection: {}'.format(segment))
+            if segment.type == 'helix':
                 self.helices.append(int(segment.item.slug[-1]))
-            elif segment not in self.db_segments:
-                self.residues.append(segment)
+            elif segment.type == 'residue':
+                self.generic_numbers.append(segment.item.label.replace('x','.'))
         logger.debug("Helices selected: {}; Residues: {}".format(self.helices, self.generic_numbers))
+
     
+#==============================================================================
+class GenericNumbersSelector(Select):
+
+    def __init__(self, generic_numbers=[], helices=[], parsed_selection=None):
+
+        self.generic_numbers = generic_numbers
+        self.helices = helices
+        if parsed_selection:
+            self.generic_numbers=parsed_selection.generic_numbers
+            self.helices = parsed_selection.helices
+
+
+    def accept_residue(self, residue):
+
+        try:
+            if str(residue['CA'].get_bfactor()) in self.generic_numbers:
+                return 1
+            if -8.1 < residue['CA'].get_bfactor() < 8.1 and int(math.floor(abs(residue['CA'].get_bfactor()))) in self.helices:
+                return 1
+        except:
+            return 0
+        
 
 #==============================================================================
 class CASelector(object):
@@ -115,23 +139,22 @@ class CASelector(object):
         self.alt_atoms = {}
     
         self.selection = parsed_selection
-        try:
-            self.ref_atoms.extend(self.select_generic_numbers(self.selection.generic_numbers, ref_pdbio_struct[0]))
-            self.ref_atoms.extend(self.select_helices(self.selection.helices, ref_pdbio_struct[0]))
-        except Exception as msg:
-            logger.warning("Can't select atoms from the reference structure!\n{!s}".format(msg))
+        #try:
+        self.ref_atoms.extend(self.select_generic_numbers(self.selection.generic_numbers, ref_pdbio_struct))
+        self.ref_atoms.extend(self.select_helices(self.selection.helices, ref_pdbio_struct))
+        #except Exception as msg:
+        #    logger.warning("Can't select atoms from the reference structure!\n{!s}".format(msg))
     
         for alt_struct in alt_structs:
             try:
                 self.alt_atoms[alt_struct.id] = []
-                self.alt_atoms[alt_struct.id].extend(self.select_generic_numbers(self.selection.generic_numbers, alt_struct[0]))
-                self.alt_atoms[alt_struct.id].extend(self.select_helices(self.selection.helices, alt_struct[0]))
+                self.alt_atoms[alt_struct.id].extend(self.select_generic_numbers(self.selection.generic_numbers, alt_struct))
+                self.alt_atoms[alt_struct.id].extend(self.select_helices(self.selection.helices, alt_struct))
                 
             except Exception as msg:
                 logger.warning("Can't select atoms from structure {!s}\n{!s}".format(alt_struct.id, msg))
 
     def select_generic_numbers (self, gn_list, structure):
-    
         if gn_list == []:
             return []
     
@@ -140,13 +163,13 @@ class CASelector(object):
         for chain in structure:
             for res in chain:
                 try:
-                    if -8.1 < res['CA'].get_bfactor() < 8.1 and res["CA"].bfactor in gn_list:
+                    if -8.1 < res['CA'].get_bfactor() < 8.1 and str(res["CA"].bfactor) in gn_list:
                         atom_list.append(res['CA'])
-                except:
+                except :
                     continue
 
         if atom_list == []:
-            logger.warning("No atoms with given generic numbers for  {!s}".format(structure.id))
+            logger.warning("No atoms with given generic numbers {} for  {!s}".format(gn_list, structure.id))
         return atom_list
     
     
@@ -159,9 +182,12 @@ class CASelector(object):
         for chain in structure:
             for res in chain:
                 try:
+                    print(int(math.floor(abs(res['CA'].get_bfactor()))))
                     if -8.1 < res['CA'].get_bfactor() < 8.1 and int(math.floor(abs(res['CA'].get_bfactor()))) in helices_list:
                         atom_list.append(res['CA'])
-                except:
+                        print("Got {}".format(res["CA"].bfactor) )
+                except Exception as msg:
+                    print(msg)
                     continue
 
         if atom_list == []:
@@ -261,7 +287,7 @@ class BackboneSelector():
         if 0 < res['CA'].get_bfactor() < 8.1:
             return "{:2f}x{:2f}".format(res['N'].get_bfactor(), res['CA'].get_bfactor())
         if -8.1 < res['CA'].get_bfactor() < 0:
-            return "{:2f}x{:2f}".format(res['N'].get_bfactor(), -res['CA'].get_bfactor() + 0.001)
+            return "{:2f}x{:3f}".format(res['N'].get_bfactor(), -res['CA'].get_bfactor() + 0.001)
         return 0.0
 
 

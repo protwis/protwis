@@ -12,11 +12,11 @@ from protein.models import Protein
 from structure.models import Structure
 from interaction.models import ResidueFragmentInteraction
 
-
+logger = logging.getLogger("protwis")
 #==============================================================================  
 class ProteinSuperpose(object):
   
-    logger = logging.getLogger("structure")
+    
 
     def __init__ (self, ref_file, alt_files, simple_selection):
     
@@ -35,20 +35,19 @@ class ProteinSuperpose(object):
                 tmp_struct = PDBParser(PERMISSIVE=True).get_structure(alt_id, alt_file)[0]
                 if self.selection.generic_numbers != [] or self.selection.helices != []:
                     if not check_gn(tmp_struct):
-                        print("Assigning")
                         gn_assigner = GenericNumbering(structure=tmp_struct)
                         self.alt_structs.append(gn_assigner.assign_generic_numbers())
                     else:
                         self.alt_structs.append(tmp_struct)
             except Exception as e:
                 print(e)
-                self.logger.warning("Can't parse the file {!s}\n{!s}".format(alt_id, e))
+                logger.warning("Can't parse the file {!s}\n{!s}".format(alt_id, e))
         self.selector = CASelector(self.selection, self.ref_struct, self.alt_structs)
 
     def run (self):
     
         if self.alt_structs == []:
-            self.logger.error("No structures to align!")
+            logger.error("No structures to align!")
             return []
     
         super_imposer = Superimposer()
@@ -56,10 +55,10 @@ class ProteinSuperpose(object):
             try:
                 ref, alt = self.selector.get_consensus_sets(alt_struct.id)
                 super_imposer.set_atoms(ref, alt)
-                super_imposer.apply(alt_struct[0].get_atoms())
-                self.logger.info("RMS(first model, model {!s}) = {:d}".format(alt_struct.id, super_imposer.rms))
+                super_imposer.apply(alt_struct.get_atoms())
+                logger.info("RMS(reference, model {!s}) = {:f}".format(alt_struct.id, super_imposer.rms))
             except Exception as msg:
-                self.logger.error("Failed to superpose structures {} and {}".format(self.ref_struct.id, alt_struct.id))
+                logger.error("Failed to superpose structures {} and {}\n{}".format(self.ref_struct.id, alt_struct.id, msg))
 
         return self.alt_structs
 
@@ -118,7 +117,7 @@ class FragmentSuperpose(object):
         try:
             return self.blast.run(Seq(''.join([str(self.pdb_seq[x]) for x in sorted(self.pdb_seq.keys())])))[0][0]        
         except Exception as msg:
-            self.logger.error('Failed to identify protein for input file {!s}\nMessage: {!s}'.format(self.pdb_filename, msg))
+            logger.error('Failed to identify protein for input file {!s}\nMessage: {!s}'.format(self.pdb_filename, msg))
             return None
 
 
@@ -141,7 +140,7 @@ class FragmentSuperpose(object):
                 super_imposer.apply(fragment_struct)
                 superposed_frags.append([fragment,fragment_struct])
             except Exception as msg:
-                self.logger.error('Failed to superpose fragment {!s} with structure {!s}\nDebug message: {!s}'.format(fragment, self.pdb_filename, msg))
+                logger.error('Failed to superpose fragment {!s} with structure {!s}\nDebug message: {!s}'.format(fragment, self.pdb_filename, msg))
         return superposed_frags
 
 
