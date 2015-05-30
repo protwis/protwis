@@ -238,14 +238,17 @@ class Alignment:
                 proteins[pcid][ps][pos_label] = r
                 if pos_label not in self.segments[ps]:
                     self.segments[ps].append(pos_label)
-        for r in crs:
-            ps = self.custom_segment_label
-            pcid = r.protein_conformation.protein.entry_name + "-" + r.protein_conformation.state.slug
-            if pcid not in proteins:
-                proteins[pcid] = {}
-            if ps not in proteins[pcid]:
-                proteins[pcid][ps] = {}
-            proteins[pcid][ps][r.generic_number.label] = r
+        
+        # individually selected residues (Custom segment)
+        if self.custom_segment_label in self.segments:
+            for r in crs:
+                ps = self.custom_segment_label
+                pcid = r.protein_conformation.protein.entry_name + "-" + r.protein_conformation.state.slug
+                if pcid not in proteins:
+                    proteins[pcid] = {}
+                if ps not in proteins[pcid]:
+                    proteins[pcid][ps] = {}
+                proteins[pcid][ps][r.generic_number.label] = r
 
         # remove split segments from segment list and order segment positions
         for segment, positions in self.segments.items():
