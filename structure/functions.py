@@ -124,6 +124,8 @@ class GenericNumbersSelector(Select):
         try:
             if str(residue['CA'].get_bfactor()) in self.generic_numbers:
                 return 1
+            if -8.1 < res['CA'].get_bfactor() < 0 and str(-res['CA'].get_bfactor() + 0.001) in self.generic_numbers:
+                return 1
             if -8.1 < residue['CA'].get_bfactor() < 8.1 and int(math.floor(abs(residue['CA'].get_bfactor()))) in self.helices:
                 return 1
         except:
@@ -140,22 +142,24 @@ class CASelector(object):
     
         self.selection = parsed_selection
         #try:
-        self.ref_atoms.extend(self.select_generic_numbers(self.selection.generic_numbers, ref_pdbio_struct))
-        self.ref_atoms.extend(self.select_helices(self.selection.helices, ref_pdbio_struct))
+        self.ref_atoms.extend(self.select_generic_numbers(ref_pdbio_struct))
+        self.ref_atoms.extend(self.select_helices(ref_pdbio_struct))
         #except Exception as msg:
         #    logger.warning("Can't select atoms from the reference structure!\n{!s}".format(msg))
     
         for alt_struct in alt_structs:
             try:
                 self.alt_atoms[alt_struct.id] = []
-                self.alt_atoms[alt_struct.id].extend(self.select_generic_numbers(self.selection.generic_numbers, alt_struct))
-                self.alt_atoms[alt_struct.id].extend(self.select_helices(self.selection.helices, alt_struct))
+                self.alt_atoms[alt_struct.id].extend(self.select_generic_numbers(alt_struct))
+                self.alt_atoms[alt_struct.id].extend(self.select_helices(alt_struct))
                 
             except Exception as msg:
                 logger.warning("Can't select atoms from structure {!s}\n{!s}".format(alt_struct.id, msg))
 
-    def select_generic_numbers (self, gn_list, structure):
-        if gn_list == []:
+
+    def select_generic_numbers (self, structure):
+
+        if self.selection.generic_numbers == []:
             return []
     
         atom_list = []
@@ -163,31 +167,32 @@ class CASelector(object):
         for chain in structure:
             for res in chain:
                 try:
-                    if -8.1 < res['CA'].get_bfactor() < 8.1 and str(res["CA"].bfactor) in gn_list:
+                    if 0 < res['CA'].get_bfactor() < 8.1 and str(res["CA"].get_bfactor()) in self.selection.generic_numbers:
+                        atom_list.append(res['CA'])
+                    if -8.1 < res['CA'].get_bfactor() < 0 and str(-res['CA'].get_bfactor() + 0.001) in self.selection.generic_numbers:
                         atom_list.append(res['CA'])
                 except :
                     continue
 
         if atom_list == []:
-            logger.warning("No atoms with given generic numbers {} for  {!s}".format(gn_list, structure.id))
+            logger.warning("No atoms with given generic numbers {} for  {!s}".format(self.selection.generic_numbers, structure.id))
         return atom_list
     
     
-    def select_helices (self, helices_list, structure):
+    def select_helices (self, structure):
     
-        if helices_list == []:
+        if self.selection.helices == []:
             return []
     
         atom_list = []
         for chain in structure:
             for res in chain:
                 try:
-                    print(int(math.floor(abs(res['CA'].get_bfactor()))))
-                    if -8.1 < res['CA'].get_bfactor() < 8.1 and int(math.floor(abs(res['CA'].get_bfactor()))) in helices_list:
+                    #print(int(math.floor(abs(res['CA'].get_bfactor()))))
+                    if -8.1 < res['CA'].get_bfactor() < 8.1 and int(math.floor(abs(res['CA'].get_bfactor()))) in self.selection.helices:
                         atom_list.append(res['CA'])
-                        print("Got {}".format(res["CA"].bfactor) )
+                        #print("Got {}".format(res["CA"].bfactor) )
                 except Exception as msg:
-                    print(msg)
                     continue
 
         if atom_list == []:
@@ -196,7 +201,7 @@ class CASelector(object):
         return atom_list
 
 
-    def get_consensus_sets (self, alt_id):
+    def get_consensus_atom_sets (self, alt_id):
         
         tmp_ref = []
         tmp_alt = []
@@ -212,6 +217,26 @@ class CASelector(object):
     
         return (tmp_ref, tmp_alt)
     
+
+    def get_consensus_gn_set (self):
+
+        gn_list = []
+        for alt_id in self.alt_atoms.keys():
+            tmp_ref, tmp_alt = self.get_consensus_atom_sets(alt_id)
+
+            for ref_ca in tmp_ref:
+                for alt_ca in tmp_alt:
+                    if ref_ca.get_bfactor() == alt_ca.get_bfactor():
+                        if 0 < ref_ca.get_bfactor() < 8.1 and str(ref_ca.get_bfactor()) in self.selection.generic_numbers:
+                            gn_list.append("{:.2f}".format(ref_ca.get_bfactor()))
+                        if -8.1 < ref_ca.get_bfactor() < 0 and str(-ref_ca.get_bfactor() + 0.001) in self.selection.generic_numbers:
+                            gn_list.append("{:.3f}".format(-ref_ca.get_bfactor() + 0.001))
+                        if 0 < ref_ca.get_bfactor() < 8.1 and int(math.floor(abs(ref_ca.get_bfactor()))) in self.selection.helices:
+                            gn_list.append("{:.2f}".format(ref_ca.get_bfactor()))
+                        if -8.1 < ref_ca.get_bfactor() < 0 and int(math.floor(abs(ref_ca.get_bfactor()))) in self.selection.helices:
+                            gn_list.append("{:.3f}".format(-ref_ca.get_bfactor() + 0.001))
+        return gn_list
+
     
     def get_ref_atoms (self):
     
@@ -299,7 +324,6 @@ class BackboneSelector():
     def get_alt_atoms (self):
     
         return self.alt_atoms
-
 
 
 #==============================================================================

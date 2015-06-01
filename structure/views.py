@@ -4,6 +4,7 @@ from django.http import HttpResponse, JsonResponse
 from django import forms
 
 from structure.models import Structure
+from structure.functions import CASelector, SelectionParser, GenericNumbersSelector
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from common.views import AbsSegmentSelection
@@ -12,9 +13,10 @@ from common.selection import Selection
 import inspect
 import os
 import zipfile
+from copy import deepcopy
 from io import StringIO
 from collections import OrderedDict
-from Bio.PDB import PDBIO
+from Bio.PDB import PDBIO, PDBParser
 
 class StructureBrowser(TemplateView):
     """
@@ -293,7 +295,7 @@ class SuperpositionWorkflowResults(TemplateView):
 
     #Left panel - blank
     #Mid section
-    mid_section = 'superposition_workflow_results.html'
+    mid_section = 'superposition_results.html'
     #Buttons - none
 
 
@@ -305,23 +307,44 @@ class SuperpositionWorkflowResults(TemplateView):
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
-
-        superposition = ProteinSuperpose(StringIO(self.request.session['ref_file'].file.read().decode('UTF-8')),[StringIO(self.request.session['alt_files'].file.read().decode('UTF-8'))], selection)
-
+        ref_file = StringIO(self.request.session['ref_file'].file.read().decode('UTF-8'))
+        superposition = ProteinSuperpose(deepcopy(ref_file),[StringIO(self.request.session['alt_files'].file.read().decode('UTF-8'))], selection)
         out_structs = superposition.run()
+
         if len(out_structs) == 0:
             self.success = False
         elif len(out_structs) == 1:
             out_stream = StringIO()
-            io = PDBIO()
-            io.set_structure(out_structs[0])
-            io.save(out_stream)
-            if len(out_stream.getvalue()) > 0:
-                self.request.session['outfile'] = { self.request.session['alt_files'].name : out_stream, }
-                #self.input_file = request.FILES['pdb_file'].name
-                self.success = True
-                self.outfile = self.request.session['alt_files'].name
-                self.replacement_tag = 'aligned'
+            io = PDBIO()            
+
+            if self.request.session['exclusive']:
+                ref_struct = PDBParser().get_structure('ref', ref_file)[0]
+                consensus_gn_set = CASelector(SelectionParser(selection), ref_struct, out_structs).get_consensus_gn_set()
+                zipf = zipfile.ZipFile(out_stream, 'w')
+                io.set_structure(ref_struct)
+                tmp = StringIO()
+                io.save(tmp, GenericNumbersSelector(consensus_gn_set))
+                tmp_str = tmp.getvalue()
+                zipf.writestr(self.request.session['ref_file'].name, "kurwa mac")
+                #for alt_struct in out_structs:
+                #    tmp = StringIO()
+                #    io.set_structure(alt_struct)
+                #    io.save(tmp, GenericNumbersSelector(consensus_gn_set))
+                #    zipf.writestr(self.request.session['alt_files'].name, tmp.read().decode('UTF-8'))
+                zipf.close()
+                if len(out_stream.getvalue()) > 0:
+                    self.request.session['outfile'] = { "Superposed_substructures.zip" : out_stream, }
+                    self.outfile = "Superposed_substructures.zip"
+                    self.success = True
+                    self.zip = 'zip'
+            else:
+                io.set_structure(out_structs[0])
+                io.save(out_stream)
+                if len(out_stream.getvalue()) > 0:
+                    self.request.session['outfile'] = { self.request.session['alt_files'].name : out_stream, }
+                    self.success = True
+                    self.outfile = self.request.session['alt_files'].name
+                    self.replacement_tag = 'aligned'
 
         
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
@@ -393,7 +416,7 @@ class FragmentSuperpositionResults(TemplateView):
 
     #Left panel - blank
     #Mid section
-    mid_section = 'fragment_superposition_results.html'
+    mid_section = 'superposition_results.html'
     #Buttons - none
 
     def post (self, request, *args, **kwargs):
@@ -422,6 +445,7 @@ class FragmentSuperpositionResults(TemplateView):
                 request.session['outfile'] = { 'interacting_moiety-residue_fragments.zip' : out_stream, }
                 self.outfile = 'interacting_moiety-residue_fragments.zip'
                 self.success = True
+                self.zip = 'zip'
                 self.message = '{:n} fragments were superposed.'.format(len(superposed_fragments))
 
         context = super(FragmentSuperpositionResults, self).get_context_data(**kwargs)

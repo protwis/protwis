@@ -53,7 +53,7 @@ class ProteinSuperpose(object):
         super_imposer = Superimposer()
         for alt_struct in self.alt_structs:
             try:
-                ref, alt = self.selector.get_consensus_sets(alt_struct.id)
+                ref, alt = self.selector.get_consensus_atom_sets(alt_struct.id)
                 super_imposer.set_atoms(ref, alt)
                 super_imposer.apply(alt_struct.get_atoms())
                 logger.info("RMS(reference, model {!s}) = {:f}".format(alt_struct.id, super_imposer.rms))
