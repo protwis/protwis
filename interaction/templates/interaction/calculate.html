@@ -23,7 +23,7 @@
          <a href="download?ligand={{ r.1 }}&pdb={{ r.0 }}">Download interactions PDB file</a>
          </td>
          <td>
-             <img src="http://www.rcsb.org/pdb/images/{{ r.1 }}:{{ r.0 }}_psv_v_500.png" width=300px>
+             <!-- <img src="http://www.rcsb.org/pdb/images/{{ r.1 }}:{{ r.0 }}_psv_v_500.png" width=300px> -->
 
          </td></tr>
          <tr><td colspan="3">
@@ -74,6 +74,11 @@
             <hr>
             {% for entry in r.2.0.aromatic%}
                 {{entry.0}} (To ring# {{entry.1}} distance {{entry.2}} angles: {{entry.3.0}} / {{entry.3.1}}) <br>
+
+            {% endfor %}
+            <hr>
+            {% for entry in r.2.0.aromaticfe%}
+                face_edge: {{entry.0}} (To ring# {{entry.1}} distance {{entry.2}} angles: {{entry.3.0}} / {{entry.3.1}}) <br>
 
             {% endfor %}
             </td>

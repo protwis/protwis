@@ -46,7 +46,7 @@ if not os.path.exists(projectdir):
 ignore_het = ['NA','W'] #ignore sodium and water
 
 
-radius = 4.5
+radius = 5
 hydrophob_radius = 4.5
 ignore_het = ['NA','W'] #ignore sodium and water
 
@@ -67,29 +67,35 @@ def check_unique_ligand_mol(filename):
     chainid = 0
     for line in f_in:
         if line.startswith('HETATM'): 
-            temp = line.split()
-            m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            if (m):
-                temp.extend(temp[9])
-                temp[9] = m.group(2)
-                temp[8] = m.group(1)
-            m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            if (m):
-                temp.extend(temp[10])
 
-                temp[10] = temp[9]
-                temp[9] = temp[8]
-                temp[8] = temp[7]
-                temp[7] = temp[6]
-                temp[6] = temp[5]
+            residue_number = line[22:26]
+            chain = line[21]
+
+            # temp = line.split()
+            # m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            # if (m):
+            #     temp.extend(temp[9])
+            #     temp[9] = m.group(2)
+            #     temp[8] = m.group(1)
+            # m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            # if (m):
+            #     temp.extend(temp[10])
+
+            #     temp[10] = temp[9]
+            #     temp[9] = temp[8]
+            #     temp[8] = temp[7]
+            #     temp[7] = temp[6]
+            #     temp[6] = temp[5]
                 
-                temp[4] = m.group(1)
-                temp[5] = m.group(2)
+            #     temp[4] = m.group(1)
+            #     temp[5] = m.group(2)
 
-            if (temp[5]!=ligandid and ligandid!=0) or (temp[4]!=chainid and chainid!=0): continue
+            if (residue_number!=ligandid and ligandid!=0) or (chain!=chainid and chainid!=0): continue
 
-            ligandid = temp[5]
-            chainid = temp[4]
+
+
+            ligandid = residue_number
+            chainid = chain
 
         tempstr += line
     #print tempstr
@@ -136,8 +142,8 @@ def checkdirs():
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-def fragment_library(ligand,atomvector,atomname,residuenr,typeinteraction):
-    #print "Make fragment pdb file for ligand:",ligand,"atom vector",atomvector,"atomname",atomname,"residuenr from protein", residuenr
+def fragment_library(ligand,atomvector,atomname,residuenr,chain,typeinteraction):
+    print "Make fragment pdb file for ligand:",ligand,"atom vector",atomvector,"atomname",atomname,"residuenr from protein", residuenr,typeinteraction,'chain',chain
 
     ligand_pdb = projectdir+'results/'+pdbname+'/ligand/'+ligand+'_'+pdbname+'.pdb'
     #print "Look in",ligand_pdb
@@ -161,7 +167,7 @@ def fragment_library(ligand,atomvector,atomname,residuenr,typeinteraction):
                    neighbor2 = pybel.Atom(neighbour_atom2)
                    #print "Neighbour2:",neighbour_atom2.GetType(),Vector(getattr(neighbor2,'coords'))
                    listofvectors.append(Vector(getattr(neighbor2,'coords')))
-        #print "vectors:",listofvectors
+        print "vectors:",listofvectors
 
     pdbfile = projectdir+'pdbs/'+pdbname+'.pdb'
 
@@ -170,27 +176,32 @@ def fragment_library(ligand,atomvector,atomname,residuenr,typeinteraction):
     tempstr = ''
     for line in f_in:
         if line.startswith('HETATM'): 
-            temp = line.split()
+            atomvector = Vector(line[30:38],line[38:46],line[46:54])
+            residue_number = line[22:26]
+            tempchain = line[21]
+            #print listofvectors
 
-            m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            if (m):
-                temp.extend(temp[9])
-                temp[9] = m.group(2)
-                temp[8] = m.group(1)
-            m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            if (m):
-                temp.extend(temp[10])
+            # temp = line.split()
 
-                temp[10] = temp[9]
-                temp[9] = temp[8]
-                temp[8] = temp[7]
-                temp[7] = temp[6]
-                temp[6] = temp[5]
+            # m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            # if (m):
+            #     temp.extend(temp[9])
+            #     temp[9] = m.group(2)
+            #     temp[8] = m.group(1)
+            # m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            # if (m):
+            #     temp.extend(temp[10])
+
+            #     temp[10] = temp[9]
+            #     temp[9] = temp[8]
+            #     temp[8] = temp[7]
+            #     temp[7] = temp[6]
+            #     temp[6] = temp[5]
                 
-                temp[4] = m.group(1)
-                temp[5] = m.group(2)
+            #     temp[4] = m.group(1)
+            #     temp[5] = m.group(2)
             
-            atomvector = Vector(temp[6],temp[7],temp[8])
+            #atomvector = Vector(temp[6],temp[7],temp[8])
             skip = 1
             for targetvector in listofvectors:
                 distance = (targetvector-atomvector).norm()
@@ -199,28 +210,34 @@ def fragment_library(ligand,atomvector,atomname,residuenr,typeinteraction):
                     skip = 0
             if skip==1: continue
         elif line.startswith('ATOM'): 
-            temp = line.split()
-            m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            if (m):
-                temp.extend(temp[9])
-                temp[9] = m.group(2)
-                temp[8] = m.group(1)
-            m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            if (m):
-                temp.extend(temp[10])
 
-                temp[10] = temp[9]
-                temp[9] = temp[8]
-                temp[8] = temp[7]
-                temp[7] = temp[6]
-                temp[6] = temp[5]
+            residue_number = line[22:26].strip()
+            tempchain = line[21].strip()
+            # temp = line.split()
+            # m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            # if (m):
+            #     temp.extend(temp[9])
+            #     temp[9] = m.group(2)
+            #     temp[8] = m.group(1)
+            # m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            # if (m):
+            #     temp.extend(temp[10])
+
+            #     temp[10] = temp[9]
+            #     temp[9] = temp[8]
+            #     temp[8] = temp[7]
+            #     temp[7] = temp[6]
+            #     temp[6] = temp[5]
                 
-                temp[4] = m.group(1)
-                temp[5] = m.group(2)
-            if temp[5]!=residuenr:
+            #     temp[4] = m.group(1)
+            #     temp[5] = m.group(2)
+            if residue_number!=residuenr:
                 continue
-            residuename = temp[3]
-            chain = temp[4]
+            if tempchain!=chain:
+                continue
+            residuenr = residue_number
+            chain = tempchain
+            residuename = line[17:20].strip()
         else:
             continue #ignore all other lines
 
@@ -228,7 +245,7 @@ def fragment_library(ligand,atomvector,atomname,residuenr,typeinteraction):
 
 
     filename = projectdir + 'results/'+pdbname+'/fragments/'+pdbname+"_"+ligand+"_"+residuename+residuenr+chain+"_"+atomname+"_"+typeinteraction+".pdb"
-    #print tempstr
+    print filename
     f_in.close();
     f=open(filename,'w')
     f.write(tempstr)
@@ -236,7 +253,7 @@ def fragment_library(ligand,atomvector,atomname,residuenr,typeinteraction):
     mol = pybel.readfile("pdb", filename).next()
     mol.write("pdb", filename,overwrite=True)
 
-def fragment_library_aromatic(ligand,atomvectors,residuenr,ringnr):
+def fragment_library_aromatic(ligand,atomvectors,residuenr,chain,ringnr):
     #print "Make aromatic fragment pdb file for ligand:",ligand,"atom vectors",atomvectors,"residuenr from protein", residuenr
 
     pdbfile = projectdir+'pdbs/'+pdbname+'.pdb'
@@ -246,26 +263,8 @@ def fragment_library_aromatic(ligand,atomvectors,residuenr,ringnr):
     tempstr = ''
     for line in f_in:
         if line.startswith('HETATM'): 
-            temp = line.split()
-            m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            if (m):
-                temp.extend(temp[9])
-                temp[9] = m.group(2)
-                temp[8] = m.group(1)
-            m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            if (m):
-                temp.extend(temp[10])
+            atomvector = Vector(line[30:38],line[38:46],line[46:54])
 
-                temp[10] = temp[9]
-                temp[9] = temp[8]
-                temp[8] = temp[7]
-                temp[7] = temp[6]
-                temp[6] = temp[5]
-                
-                temp[4] = m.group(1)
-                temp[5] = m.group(2)
-            
-            atomvector = Vector(temp[6],temp[7],temp[8])
             skip = 1
             for targetvector in atomvectors:
                 distance = (targetvector-atomvector).norm()
@@ -274,28 +273,16 @@ def fragment_library_aromatic(ligand,atomvectors,residuenr,ringnr):
                     skip = 0
             if skip==1: continue
         elif line.startswith('ATOM'): 
-            temp = line.split()
-            m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            if (m):
-                temp.extend(temp[9])
-                temp[9] = m.group(2)
-                temp[8] = m.group(1)
-            m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            if (m):
-                temp.extend(temp[10])
 
-                temp[10] = temp[9]
-                temp[9] = temp[8]
-                temp[8] = temp[7]
-                temp[7] = temp[6]
-                temp[6] = temp[5]
-                
-                temp[4] = m.group(1)
-                temp[5] = m.group(2)
-            if temp[5]!=residuenr:
+            residue_number = line[22:26].strip()
+            tempchain = line[21].strip()
+
+            if residue_number!=residuenr:
                 continue
-            residuename = temp[3]
-            chain = temp[4]
+            if tempchain!=chain:
+                continue
+            residuename = line[17:20].strip()
+            chain = tempchain
         else:
             continue #ignore all other lines
         
@@ -388,7 +375,7 @@ def create_ligands_and_poseview():
                         
                         if not os.path.isfile(ligand_png):  #if png of ligand not made, make it
                             m = Chem.MolFromMolFile(ligand_sdf)
-                            Draw.MolToFile(m,ligand_png)
+                            #Draw.MolToFile(m,ligand_png)
 
 
                         if not os.path.isfile(ligand_poseview) and 1==2:  #if interaction png not made, make it #SKIP poseview stuff
@@ -481,15 +468,17 @@ def get_ring_from_aa(residueid):
         if ring.IsAromatic():
             atomlist = []
             atomnames = []
+            atomvectors = []
             for atom in mol:
                 if ring.IsMember( atom.OBAtom): 
                     a_vector = Vector(getattr(atom,'coords'))
                     center += a_vector
                     atomlist.append(atom.idx)
+                    atomvectors.append(a_vector)
                     atomnames.append(getattr(atom,'type'))
             center = center/members
             normal = center-a_vector #vector in plane
-            ringlist.append([atomlist,center,normal,atomnames])
+            ringlist.append([atomlist,center,normal,atomnames,atomvectors])
     return ringlist
 
 def get_hydrogen_from_aa(residueid):
@@ -663,6 +652,7 @@ def find_interactions():
                 aaname = aa_resname+aa_seqid+chainid
 
 
+
                 hetflagtest = hetflagtest.replace("H_","")
                 #hetflagtest = hetflagtest.replace("W","")
 
@@ -704,10 +694,10 @@ def find_interactions():
                             if d.norm()<radius:
                                 if not hetflag in results: 
                                     results[hetflag] = {}
-                                    summary_results[hetflag] = {'score':[],'hbond':[],'hbondplus':[], 'hbond_confirmed' : [],'waals':[],'aromatic':[],'aromaticplus':[],'hydrophobic':[]}
+                                    summary_results[hetflag] = {'score':[],'hbond':[],'hbondplus':[], 'hbond_confirmed' : [],'waals':[],'aromatic':[],'aromaticplus':[],'aromaticfe':[],'hydrophobic':[]}
                                 if not aaname in results[hetflag]: 
                                     results[hetflag][aaname] = []
-                                results[hetflag][aaname].append([het_atom,aa_atom,round(d.norm(),2),het_vector,aa_vector,aa_seqid])
+                                results[hetflag][aaname].append([het_atom,aa_atom,round(d.norm(),2),het_vector,aa_vector,aa_seqid,chainid])
                                 tempdistance = round(d.norm(),2)
                                 sum += 1
                             if het_atom[0]=='C' and aa_atom[0]=='C' and d.norm()<hydrophob_radius and hydrophobic_check: #if both are carbon then we are making a hydrophic interaction
@@ -717,11 +707,11 @@ def find_interactions():
                     if hydrophobic_count>2: #min 3 c-c interactions
                         summary_results[hetflag]['hydrophobic'].append([aaname,hydrophobic_count])
 
-                        fragment_library(hetflag,None,'',aa_seqid,'hydrop')
+                        fragment_library(hetflag,None,'',aa_seqid,chainid,'hydrop')
 
-                    if sum>5 and aa_resname in AROMATIC:
+                    if sum>1 and aa_resname in AROMATIC:
                         #print aaatomlist
-                        #print "Need to analyse aromatic ring in ",aaname#, get_ring_atoms(aaatomlist)
+                        print "Need to analyse aromatic ring in ",aaname#, get_ring_atoms(aaatomlist)
                         #aaring = get_ring_atoms(aaatomlist)
                         aaring = get_ring_from_aa(aa_seqid)
                         if not aaring:
@@ -732,18 +722,38 @@ def find_interactions():
                         count = 0
                         for ring in ligand_rings[hetflag]:
                             #print ring
+
+                            shortest_center_het_ring_to_res_atom = 10
+                            shortest_center_aa_ring_to_het_atom = 10
+                            #print aaring[4]
+                            #print ring[4]
+                            for a in aaring[4]:
+                                if (ring[1]-a).norm()<shortest_center_het_ring_to_res_atom:
+                                    shortest_center_het_ring_to_res_atom = (ring[1]-a).norm()
+
+
+                            for a in ring[4]:
+                                if (center-a).norm()<shortest_center_aa_ring_to_het_atom:
+                                    shortest_center_aa_ring_to_het_atom = (center-a).norm()
+
+
                             count += 1
                             angle = Vector.angle(center-ring[1],ring[2]) #take vector from two centers, and compare against vector from center to outer point -- this will give the perpendicular angel.
                             angle2 = Vector.angle(center-ring[1],aaring[2]) #take vector from two centers, and compare against vector from center to outer point -- this will give the perpendicular angel.
                             #print "angleaa",aaring[2],"anglelig",ring[2]
                             angle_degrees = [round(degrees(angle),1),round(degrees(angle2),1)]
                             distance = (center-ring[1]).norm()
-                            #print "Ring #",count,"Distance:",round(distance,2), "Angle:",angle_degrees
+                            print "Ring #",count,"Distance:",round(distance,2), "Angle:",angle_degrees,'Shortest res->ligcenter',shortest_center_het_ring_to_res_atom,'Shortest lig->rescenter',shortest_center_aa_ring_to_het_atom
                             if distance<5: #poseview uses <5
                                 #print "Ring #",count,"Distance:",round(distance,2), "Angle:",round(angle_degrees,2)
                                 summary_results[hetflag]['aromatic'].append([aaname,count,round(distance,2),angle_degrees])
 
-                                fragment_library_aromatic(hetflag,ring[4],aa_seqid,count)
+                                fragment_library_aromatic(hetflag,ring[4],aa_seqid,chainid,count)
+                            if distance>=5 and (shortest_center_aa_ring_to_het_atom<5 or shortest_center_het_ring_to_res_atom<5): #need to be careful for edge-edge
+                                summary_results[hetflag]['aromaticfe'].append([aaname,count,round(distance,2),angle_degrees])
+
+                                fragment_library_aromatic(hetflag,ring[4],aa_seqid,chainid,count)
+
 
                         for charged in ligand_charged[hetflag]:
                             distance = (center-charged[1]).norm()
@@ -780,7 +790,7 @@ def analyze_interactions():
                 hbondconfirmed = []
                 if entry[2]<3.3:
                     
-                    #print "Likely H-Bond",entry
+                    print "Likely H-Bond",entry
 
 
                     if entry[0][0] == 'C' or entry[1][0] == 'C': 
@@ -883,16 +893,16 @@ def analyze_interactions():
                             type = 'hbondplus'
                             hbondplus.append(entry)
 
-                        fragment_library(ligand,entry[3],entry[0],entry[5],'HB')
+                        fragment_library(ligand,entry[3],entry[0],entry[5],entry[6],'HB')
 
                     elif chargedcheck:
                         type = 'hbondplus'
                         hbondplus.append(entry)
-                        fragment_library(ligand,entry[3],entry[0],entry[5],'HBC')
+                        fragment_library(ligand,entry[3],entry[0],entry[5],entry[6],'HBC')
                     else:
                         type = 'hbond'
                         hbond.append(entry)
-                        fragment_library(ligand,entry[3],entry[0],entry[5],'HB')
+                        fragment_library(ligand,entry[3],entry[0],entry[5],entry[6],'HB')
 
 
                     entry[3] = ''
