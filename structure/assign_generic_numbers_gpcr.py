@@ -108,7 +108,7 @@ class GenericNumbering(object):
                         try:
                             self.residues[chain][resn].add_gpcrdb_number(db_res.alternative_generic_numbers.get(scheme__slug='gpcrdb').label)
                         except:
-                            self.residues[chain][resn].add_gpcrdb_number(db_res.display_generic_number.label)
+                            self.residues[chain][resn].add_gpcrdb_number(db_res.generic_number.label)
                     except Exception as msg:
                         self.logger.warning("Could not find residue {} in the database.\t{}".format(subj_counter, msg))
 
@@ -148,7 +148,7 @@ class GenericNumbering(object):
         #get the basename, extension and export the pdb structure with b-w numbers
         root, ext = os.path.splitext(self.pdb_filename)
         io=PDBIO()
-        io.set_structure(pdb_struct)
+        io.set_structure(self.pdb_structure)
         io.save("%s_GPCRDB%s" %(root, ext))
            
     

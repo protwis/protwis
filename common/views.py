@@ -1,15 +1,11 @@
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView
+from django.conf import settings
 
-from common.selection import SimpleSelection
-from common.selection import Selection
-from common.selection import SelectionItem
-from protein.models import Protein
-from protein.models import ProteinFamily
-from protein.models import ProteinSegment
-from protein.models import Species
-from protein.models import ProteinSource
+from common.selection import SimpleSelection, Selection, SelectionItem
+from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource
+from residue.models import ResidueGenericNumber
 
 import inspect
 from collections import OrderedDict
@@ -126,7 +122,7 @@ class AbsSegmentSelection(TemplateView):
         ('segments', True),
     ])
 
-    ss = ProteinSegment.objects.all()
+    ss = ProteinSegment.objects.filter(partial=False).prefetch_related('generic_numbers')
     action = 'expand'
 
     def get_context_data(self, **kwargs):
@@ -172,7 +168,10 @@ def AddToSelection(request):
         elif selection_subtype == 'structure':
             o = Protein.objects.get(entry_name=selection_id.lower())
     elif selection_type == 'segments':
-        o = ProteinSegment.objects.get(pk=selection_id)
+        if selection_subtype == 'residue':
+            o = ResidueGenericNumber.objects.get(pk=selection_id)
+        else:
+            o = ProteinSegment.objects.get(pk=selection_id)
 
     selection_object = SelectionItem(selection_subtype, o)
 
@@ -401,3 +400,14 @@ def SelectionSpeciesToggle(request):
     context['sps'] = Species.objects.all()
     
     return render(request, 'common/selection_filters_species_selector.html', context)
+
+def ExpandSegment(request):
+    """Expands a segment to show it's generic numbers"""
+    segment_id = request.GET['segment_id']
+    
+    # fetch the generic numbers
+    context = {}
+    context['generic_numbers'] = ResidueGenericNumber.objects.filter(protein_segment__id=segment_id,
+        scheme__slug=settings.DEFAULT_NUMBERING_SCHEME)
+    
+    return render(request, 'common/segment_generic_numbers.html', context)
