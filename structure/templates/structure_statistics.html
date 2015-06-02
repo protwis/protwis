@@ -1,0 +1,89 @@
+﻿{% extends "home/base.html" %}
+{% load staticfiles %}
+
+
+<!--{% block addon_js %}
+    
+{% endblock %}-->
+
+{% block content %}
+<script src="/static/home/js/d3.min.js"></script>
+<style>
+body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    margin: auto;
+    position: relative;
+    width: 960px;
+}
+
+text {
+    font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+.bar {
+  fill: steelblue;
+}
+
+</style>
+<script>
+    var margin = {top: 20, right: 20, bottom: 30, left: 50},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    var x = d3.scale.ordinal()
+        .range([0, width], 1);
+
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+              .scale(x)
+              .orient("bottom");  //orient bottom because x-axis will appear below the bars
+
+    var yAxis = d3.svg.axis()
+                  .scale(y)
+                  .orient("left");
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    d3.json("/structure/crystal_statistics_by_year", function (error, json) {
+        data = json;
+        print(len(data));
+        x.domain(data.map(function(d) { return d.year; }));
+        y.domain([d3.min(data, function(d){return d.count}) - 10, d3.max(function (d) { return d.count; })]);
+        svg.selectAll("g")
+            .data(data);
+        
+        svg.selectAll("bar")
+            .data(data)
+            .enter().append("rect")
+            .attr("x", function(d) { return x(d.year); })
+            .attr("width", x.range())
+            .attr("y", function(d) { return y(d.count); })
+            .attr("height", function(d) { return height - y(d.count); });
+        svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(" + margin.left + "," + height + ")")
+            .call(xAxis);
+        svg.append("g")
+            .attr("class", "y axis")
+            .call(yAxis)
+            .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 6)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("Number of crystals");
+    });
+
+</script>
+{% endblock %}
