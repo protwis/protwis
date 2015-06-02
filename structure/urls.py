@@ -14,5 +14,5 @@ urlpatterns = patterns('',
     url(r'fragment_superposition_index', FragmentSuperpositionIndex.as_view(), name='fragment_superposition'),
     url(r'fragment_superposition_results', FragmentSuperpositionResults.as_view(), name='fragment_superposition'),
     url(r'^output/(?P<outfile>\w+.\w{3})/(?P<replacement_tag>\w+)$', ServePdbOutfile, name='structural_tools_result'),
-    url(r'^zipoutput/(?P<outfile>\w+.\w{3})/(?P<replacement_tag>\w+)$', ServeZipOutfile, name='structural_tools_result'), 
+    url(r'^zipoutput/(?P<outfile>\w+.\w{3})/', ServeZipOutfile, name='structural_tools_result'), 
 )

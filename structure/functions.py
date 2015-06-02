@@ -1,5 +1,3 @@
-from subprocess import Popen, PIPE
-from io import StringIO
 from Bio.Blast import NCBIXML
 from Bio.PDB.PDBIO import Select
 import Bio.PDB.Polypeptide as polypeptide
@@ -11,6 +9,8 @@ from protein.models import ProteinSegment
 from residue.models import Residue
 from structure.models import Structure
 
+from subprocess import Popen, PIPE
+from io import StringIO
 import os
 import sys
 import tempfile
@@ -28,7 +28,6 @@ class BlastSearch(object):
   
         self.blast_path = blast_path
         self.blastdb = blastdb
-        #print(blastdb)
         #typicaly top scored result is enough, but for sequences with missing
         #residues it is better to use more results to avoid getting sequence of
         #e.g.  different species
@@ -141,11 +140,11 @@ class CASelector(object):
         self.alt_atoms = {}
     
         self.selection = parsed_selection
-        #try:
-        self.ref_atoms.extend(self.select_generic_numbers(ref_pdbio_struct))
-        self.ref_atoms.extend(self.select_helices(ref_pdbio_struct))
-        #except Exception as msg:
-        #    logger.warning("Can't select atoms from the reference structure!\n{!s}".format(msg))
+        try:
+            self.ref_atoms.extend(self.select_generic_numbers(ref_pdbio_struct))
+            self.ref_atoms.extend(self.select_helices(ref_pdbio_struct))
+        except Exception as msg:
+            logger.warning("Can't select atoms from the reference structure!\n{!s}".format(msg))
     
         for alt_struct in alt_structs:
             try:
@@ -188,10 +187,8 @@ class CASelector(object):
         for chain in structure:
             for res in chain:
                 try:
-                    #print(int(math.floor(abs(res['CA'].get_bfactor()))))
                     if -8.1 < res['CA'].get_bfactor() < 8.1 and int(math.floor(abs(res['CA'].get_bfactor()))) in self.selection.helices:
                         atom_list.append(res['CA'])
-                        #print("Got {}".format(res["CA"].bfactor) )
                 except Exception as msg:
                     continue
 

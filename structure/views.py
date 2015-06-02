@@ -14,7 +14,7 @@ import inspect
 import os
 import zipfile
 from copy import deepcopy
-from io import StringIO
+from io import StringIO, BytesIO
 from collections import OrderedDict
 from Bio.PDB import PDBIO, PDBParser
 
@@ -314,23 +314,22 @@ class SuperpositionWorkflowResults(TemplateView):
         if len(out_structs) == 0:
             self.success = False
         elif len(out_structs) == 1:
-            out_stream = StringIO()
             io = PDBIO()            
 
             if self.request.session['exclusive']:
+                out_stream = BytesIO()
                 ref_struct = PDBParser().get_structure('ref', ref_file)[0]
                 consensus_gn_set = CASelector(SelectionParser(selection), ref_struct, out_structs).get_consensus_gn_set()
                 zipf = zipfile.ZipFile(out_stream, 'w')
                 io.set_structure(ref_struct)
                 tmp = StringIO()
                 io.save(tmp, GenericNumbersSelector(consensus_gn_set))
-                tmp_str = tmp.getvalue()
-                zipf.writestr(self.request.session['ref_file'].name, "kurwa mac")
-                #for alt_struct in out_structs:
-                #    tmp = StringIO()
-                #    io.set_structure(alt_struct)
-                #    io.save(tmp, GenericNumbersSelector(consensus_gn_set))
-                #    zipf.writestr(self.request.session['alt_files'].name, tmp.read().decode('UTF-8'))
+                zipf.writestr(self.request.session['ref_file'].name, tmp.getvalue())
+                for alt_struct in out_structs:
+                    tmp = StringIO()
+                    io.set_structure(alt_struct)
+                    io.save(tmp, GenericNumbersSelector(consensus_gn_set))
+                    zipf.writestr(self.request.session['alt_files'].name, tmp.getvalue())
                 zipf.close()
                 if len(out_stream.getvalue()) > 0:
                     self.request.session['outfile'] = { "Superposed_substructures.zip" : out_stream, }
@@ -338,6 +337,7 @@ class SuperpositionWorkflowResults(TemplateView):
                     self.success = True
                     self.zip = 'zip'
             else:
+                out_stream = StringIO()
                 io.set_structure(out_structs[0])
                 io.save(out_stream)
                 if len(out_stream.getvalue()) > 0:
