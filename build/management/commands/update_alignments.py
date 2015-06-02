@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 
-from protein.models import ProteinConformation, ProteinSegment, ProteinAnomaly
+from protein.models import ProteinConformation, ProteinSegment, ProteinAnomaly, ProteinConformationTemplateStructure
 from structure.models import StructureSegment
 from residue.models import Residue
 from residue.functions import *
@@ -45,7 +45,7 @@ class Command(BaseCommand):
             for pars in pa.rulesets.all():
                 anomalies[segment.slug][anomaly_label].append(pars)
 
-        # pref-fetch protein conformations
+        # pre-fetch protein conformations
         segments = ProteinSegment.objects.filter(partial=False)
         pconfs = ProteinConformation.objects.filter(protein__sequence_type__slug='wt').select_related(
             'protein__residue_numbering_scheme__parent', 'template_structure')
@@ -68,14 +68,12 @@ class Command(BaseCommand):
 
                 # find template segment (for segments borders)
                 try:
-                    main_tpl_ss = StructureSegment.objects.get(structure=pconf.template_structure, protein_segment=segment)
+                    main_tpl_ss = StructureSegment.objects.get(structure=pconf.template_structure,
+                        protein_segment=segment)
                 except StructureSegment.DoesNotExist:
-                    self.logger.error('Segment records not found for template structure {}, skipping!'.format(
-                        pconf.template_structure))
+                    self.logger.warning('Segment records not found for {} in template structure {}, skipping!'.format(
+                        segment, pconf.template_structure))
                     continue
-
-                # find template segments (for anomalies)
-                # tpl_ss = .. FIXME write
 
                 if segment.slug in settings.REFERENCE_POSITIONS:
                     # protein anomaly rules
@@ -94,9 +92,8 @@ class Command(BaseCommand):
                                         r = Residue.objects.get(protein_conformation=pconf,
                                             generic_number=rule.generic_number)
                                     except Residue.DoesNotExist:
-                                        self.logger.error('Residue {} in {} not found, skipping'.format(
+                                        self.logger.warning('Residue {} in {} not found, skipping'.format(
                                             rule.generic_number.label, pconf.protein.entry_name))
-                                        rule_set_met
                                         continue
                                     
                                     # does the rule break the set? Then go to next set..
@@ -118,21 +115,38 @@ class Command(BaseCommand):
                             # use similarity?
                             if use_similarity:
                                 # template anomalies
-                                # tplpas = .. # FIXME write
-                                print(pconf, pa, "use similarity")
+                                tplpas = ProteinConformationTemplateStructure.objects.get(
+                                    protein_conformation=pconf, protein_segment=segment)
+                                
+                                # does the template have the anomaly in question?
+                                if pa in tplpas.structure.protein_anomalies.all().values_list(
+                                    'generic_number__label', flat=True):
+                                    
+                                    # add it to the list of anomalies for this segment
+                                    protein_anomalies.append(pa)
+                                    self.logger.info("Anomaly {} included by similarity to {} in {}".format(pa,
+                                        tplpas.structure, pconf))
+                                else:
+                                    self.logger.info("Anomaly {} excluded by similarity to {} in {}".format(pa,
+                                        tplpas.structure, pconf))
                             else:
                                 if pa in protein_anomalies:
-                                    print(pconf, pa, "Included by rule")
+                                    self.logger.info("Anomaly {} included by rule in {}".format(pa, pconf))
                                 else:
-                                    print(pconf, pa, "Excluded by rule")
-                    continue # FIXME temp
+                                    self.logger.info("Anomaly {} excluded by rule in {}".format(pa, pconf))
 
                     # get reference positions of this segment (e.g. 1x50)
                     segment_ref_position = settings.REFERENCE_POSITIONS[segment.slug]
 
                     # template segment reference residue number
-                    tsrrn = Residue.objects.get(protein_conformation=pconf.template_structure.protein_conformation,
-                        generic_number__label=segment_ref_position)
+                    try:
+                        tsrrn = Residue.objects.get(
+                            protein_conformation=pconf.template_structure.protein_conformation,
+                            generic_number__label=segment_ref_position)
+                    except Residue.DoesNotExist:
+                        self.logger.warning("Template residues for {} in {} not found, skipping!".format(segment,
+                            pconf))
+                        continue
 
                     # number of residues before and after the reference position
                     tpl_res_before_ref = tsrrn.sequence_number - main_tpl_ss.start
@@ -140,17 +154,15 @@ class Command(BaseCommand):
 
                     # FIXME check whether this segments actually needs an update
 
-                    segment_start = (ref_positions[segment_ref_position]
-                        - tpl_res_before_ref)
-                    segment_end = (ref_positions[segment_ref_position]
-                        + tpl_res_after_ref)
+                    segment_start = (ref_positions[segment_ref_position] - tpl_res_before_ref)
+                    segment_end = (ref_positions[segment_ref_position] + tpl_res_after_ref)
                 else:
                     segment_start = sequence_number_counter + 1
-                    segment_end = main_tpl_ss.end - main_tpl_ss.start
+                    segment_end = segment_start + main_tpl_ss.end - main_tpl_ss.start
 
                 # update residues for this segment
                 create_or_update_residues_in_segment(pconf, segment, segment_start, segment_end, schemes,
-                    ref_positions)
+                    ref_positions, protein_anomalies)
                 
                 sequence_number_counter = segment_end
 

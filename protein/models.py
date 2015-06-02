@@ -10,6 +10,7 @@ class Protein(models.Model):
     sequence_type = models.ForeignKey('ProteinSequenceType')
     states = models.ManyToManyField('ProteinState', through='ProteinConformation')
     endogenous_ligands = models.ManyToManyField('ligand.Ligand')
+    protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
     web_links = models.ManyToManyField('common.WebLink')
     entry_name = models.SlugField(max_length=100, unique=True)
     accession = models.CharField(max_length=100, db_index=True, null=True)
@@ -184,6 +185,7 @@ class ProteinAnomaly(models.Model):
         return self.generic_number.label
 
     class Meta():
+        ordering = ('generic_number__label', )
         db_table = 'protein_anomaly'
 
 class ProteinAnomalyType(models.Model):
