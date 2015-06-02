@@ -442,7 +442,8 @@ class AlignedReferenceTemplate(Alignment):
         @param provide_main_temlpate_structure: Structure object, use only when aligning loops and when the main 
         template is already known.
     '''
-    def __init__(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None):
+    def __init__(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
+                 provide_similarity_table=None):
         super(AlignedReferenceTemplate, self).__init__()
         self.query_states = query_states
         self.order_by = order_by
@@ -459,6 +460,10 @@ class AlignedReferenceTemplate(Alignment):
         else:
             self.main_template_structure = provide_main_template_structure
         segment_type = [str(x)[:2] for x in segments]
+        if provide_similarity_table==None:
+            self.provide_similarity_table = None
+        else:
+            self.provide_similarity_table = provide_similarity_table
         if 'TM' in segment_type and ('IC' not in segment_type or 'EC' not in segment_type):
             self.similarity_table = self.create_helix_similarity_table()
         elif 'IC' in segment_type or 'EC' in segment_type and 'TM' not in segment_type:
@@ -550,12 +555,19 @@ class AlignedReferenceTemplate(Alignment):
                         main_temp_length.append(res[0])
             else:
                 temp_length = []
-                matches = self.structures_data.filter(protein_conformation__protein__parent__id=protein.protein.id)
                 for res in protein.alignment[0]:
                     if res[1]!=False:
                         temp_length.append(res[0])
-                temp_list.append((list(matches)[0], temp_length, int(protein.similarity), 
-                                  float(list(matches)[0].resolution), protein))
+                if self.provide_similarity_table==None:
+                    match = self.structures_data.filter(protein_conformation__protein__parent__id=protein.protein.id)
+                    temp_list.append((list(match)[0], temp_length, int(protein.similarity), 
+                                      float(list(match)[0].resolution), protein))
+                else:
+                    for struct, score in self.provide_similarity_table.items():
+                        if struct.protein_conformation.protein.parent.id==protein.protein.id:
+                            match = struct
+                            break
+                    temp_list.append((match, temp_length, score, float(match.resolution), protein))
         if len(ref_length)!=len(main_temp_length):
             alt_temps = [entry for entry in temp_list if len(entry[1])==len(ref_length)]
             sorted_list = sorted(alt_temps, key=lambda x: (-x[2],x[3]))
@@ -571,7 +583,11 @@ class AlignedReferenceTemplate(Alignment):
                 self.loop_table = None
                 return None            
         else:
-            similarity_table[self.main_template_structure] = main_struct_sim
+            if self.provide_similarity_table==None:
+                similarity_table[self.main_template_structure] = main_struct_sim
+            else:
+                similarity_table[self.main_template_structure] = self.provide_similarity_table[
+                                                                                        self.main_template_structure]
             self.loop_table = similarity_table
         return similarity_table
 
