@@ -436,7 +436,7 @@ class FragmentSuperpositionResults(TemplateView):
         if superposed_fragments == []:
             self.message = "No fragments were aligned."
         else:
-            out_stream = StringIO()
+            out_stream = BytesIO()
             zipf = zipfile.ZipFile(out_stream, 'a')
             for fragment, pdb_data in superposed_fragments:
                 zipf.writestr(fragment.generate_filename(), pdb_data)

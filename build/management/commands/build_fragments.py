@@ -2,7 +2,8 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
 
-from fragment.models import Fragment, Interaction
+#from fragment.models import Fragment, Interaction
+from interaction.models import *
 from residue.models import Residue
 from protein.models import Protein
 from structure.models import Structure
@@ -14,7 +15,8 @@ class Command(BaseCommand):
 
     logger = logging.getLogger(__name__)
     
-    fragments_dir = os.sep.join([settings.DATA_DIR, 'fragment_data'])
+    #fragments_dir = os.sep.join([settings.DATA_DIR, 'fragment_data'])
+    fragments_dir = 'C:\\Users\clz967\documents\protwis_vagrant\shared\protwis\data\fragments'
 
     def handle(self):
         # delete any existing fragment data
