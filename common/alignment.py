@@ -308,9 +308,9 @@ class Alignment:
                         # append the residue to the matrix
                         if r.generic_number:
                             s.append([pos, r.display_generic_number.label, r.amino_acid,
-                                r.display_generic_number.scheme.short_name])
+                                r.display_generic_number.scheme.short_name, r.sequence_number])
                         else:
-                            s.append([pos, "", r.amino_acid, ""])
+                            s.append([pos, "", r.amino_acid, "", r.sequence_number])
 
                         first_residue_found = True
 
@@ -318,7 +318,7 @@ class Alignment:
                         gap_counter = 0
                     except:
                         if first_residue_found:
-                            s.append([pos, False, '-'])
+                            s.append([pos, False, '-', 0])
 
                             # update gap counter
                             gap_counter += 1
@@ -329,7 +329,7 @@ class Alignment:
                                 for i in range(gap_counter):
                                     s[len(positions)-(i+1)][2] = '_'
                         else:
-                            s.append([pos, False, '_'])
+                            s.append([pos, False, '_', 0])
                     
                     # update position counter
                     position_counter += 1

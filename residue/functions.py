@@ -46,7 +46,7 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
         # dictionary of values for updating/creating a residue
         rvalues = {}
         rvalues['protein_segment'] = segment
-        rvalues['amino_acid'] = aa    
+        rvalues['amino_acid'] = aa
 
         # generic numbers
         if (segment.slug in settings.REFERENCE_POSITIONS and
@@ -80,6 +80,9 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
                 rvalues['display_generic_number'] = schemes[ns]['generic_numbers'][gnl] = gn
                 if created:
                     logger.info('Created generic number {}'.format(gn.label))
+        else:
+            rvalues['generic_number'] = None
+            rvalues['display_generic_number'] = None
             
         # UPDATE or CREATE the residue
         r, created = Residue.objects.update_or_create(
@@ -95,9 +98,9 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
                     protein_conformation.protein.entry_name))
 
         # alternative generic numbers
+        r.alternative_generic_numbers.clear() # remove any existing relations
         if (segment.slug in settings.REFERENCE_POSITIONS and
             settings.REFERENCE_POSITIONS[segment.slug] in ref_positions):
-            r.alternative_generic_numbers.clear() # remove any existing relations
             for alt_scheme, alt_num in numbers['alternative_generic_numbers'].items():
                 if alt_num in schemes[alt_scheme]['generic_numbers']:
                     argn = schemes[alt_scheme]['generic_numbers'][alt_num]
@@ -119,7 +122,7 @@ def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, r
 
     # offset by anomaly (anomalies before and after the reference position are handled differently)
     if len(protein_anomalies) > 1:
-        protein_anomalies.sort()
+        protein_anomalies.sort(key=lambda x: x.generic_number.label)
     offset = 0
     prime = ''
     
@@ -127,10 +130,8 @@ def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, r
     if generic_index < ref_generic_index:
         protein_anomalies.reverse()
 
-    for pal in protein_anomalies:
-        pa = ProteinAnomaly.objects.get(generic_number__label=pal) # FIXME prefetch
-        spagn = pa.generic_number.label.split("x")
-        pa_generic_index = int(spagn[1][:2]) # generic number without the prime for bulges
+    for pa in protein_anomalies:
+        pa_generic_index = int(pa.generic_number.label.split("x")[1][:2]) # generic number without the prime for bulges
         
         # add prime to bulges
         if pa.anomaly_type.slug == 'bulge' and (
@@ -151,7 +152,6 @@ def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, r
         elif (pa_generic_index < ref_generic_index and (generic_index+offset) <= pa_generic_index and
             pa.anomaly_type.slug == 'constriction'):
             offset -= 1
-
 
     # structure corrected index (based on anomalies)
     structure_corrected_generic_index = generic_index + offset

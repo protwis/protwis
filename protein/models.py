@@ -10,7 +10,6 @@ class Protein(models.Model):
     sequence_type = models.ForeignKey('ProteinSequenceType')
     states = models.ManyToManyField('ProteinState', through='ProteinConformation')
     endogenous_ligands = models.ManyToManyField('ligand.Ligand')
-    protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
     web_links = models.ManyToManyField('common.WebLink')
     entry_name = models.SlugField(max_length=100, unique=True)
     accession = models.CharField(max_length=100, db_index=True, null=True)
@@ -55,6 +54,7 @@ class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein')
     state = models.ForeignKey('ProteinState')
     template_structure = models.ForeignKey('structure.Structure', null=True)
+    protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
 
     # non-database attributes
     identity = False # % identity to a reference sequence in an alignment

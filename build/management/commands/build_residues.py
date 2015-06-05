@@ -43,6 +43,10 @@ class Command(BaseCommand):
             sequence_number_counter = 0
             # read reference positions for this protein
             ref_position_file_path = os.sep.join([self.ref_position_source_dir, pc.protein.entry_name + '.yaml'])
+            if not os.path.isfile(ref_position_file_path):
+                self.logger.error("File {} not found, skipping!".format(ref_position_file_path))
+                continue
+            
             ref_positions = load_reference_positions(ref_position_file_path)
 
             # check whether all segments have annotated reference positions
