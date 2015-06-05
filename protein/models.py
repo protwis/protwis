@@ -1,5 +1,5 @@
 from django.db import models
-
+from common.diagrams_gpcr import DrawHelixBox
 
 class Protein(models.Model):
     parent = models.ForeignKey('self', null=True)
@@ -16,6 +16,7 @@ class Protein(models.Model):
     name = models.CharField(max_length=200)
     sequence = models.TextField()
     
+    
     def __str__(self):
         if not self.entry_name:
             return self.name
@@ -30,6 +31,10 @@ class Protein(models.Model):
         while tmp.parent.parent is not None:
             tmp = tmp.parent
         return tmp.name
+
+    def get_helical_box(self):
+        return DrawHelixBox(self)
+
 
 
 class ProteinConformation(models.Model):
