@@ -140,7 +140,7 @@ class HomologyModeling(object):
                         elif loop_start==True and counter==1:
                             counter+=1
                         elif loop_start==True and counter<len(loop_keys):
-                            temp_array[loop_keys[0][0]+'_'+loop_keys[counter]] = loop_template[loop_keys[counter]]
+                            temp_array[str(0)+'_'+loop_keys[counter]+loop_keys[0][0]] = loop_template[loop_keys[counter]]
                             counter+=1
                         else:
                             temp_array[gn] = atoms
@@ -159,6 +159,27 @@ class HomologyModeling(object):
                         else:
                             temp_array[gn] = atoms
                     main_pdb_array = temp_array
+                if loop_template!=None:
+                    ref_residues = Residue.objects.filter(protein_conformation__protein=self.reference_protein, protein_segment__slug=label)
+                    temp_ref_dict,temp_temp_dict,temp_aligned_dict = OrderedDict(),OrderedDict(),OrderedDict()
+                    for ref, temp, aligned in zip(ref_temp_alignment.reference_dict, ref_temp_alignment.template_dict,
+                                                  ref_temp_alignment.alignment_dict):
+                        if ref==list(loop_template.keys())[0].replace('.','x'):
+                            temp_ref_dict[ref] = ref_temp_alignment.reference_dict[ref]
+                            temp_temp_dict[temp] = ref_temp_alignment.template_dict[temp]
+                            temp_aligned_dict[aligned] = ref_temp_alignment.alignment_dict[aligned]
+                            input_residues = list(loop_template.keys())[1:-1]
+                            for r_res, r_id in zip(ref_residues, input_residues):
+                                temp_ref_dict[loop_keys[0][0]+'_'+r_id] = r_res.amino_acid
+                                temp_temp_dict[loop_keys[0][0]+'_'+r_id] = PDB.Polypeptide.three_to_one(loop_template[r_id][0].get_parent().get_resname())
+                                temp_aligned_dict[loop_keys[0][0]+'_'+r_id] = 'loop'
+                        else:
+                            temp_ref_dict[ref] = ref_temp_alignment.reference_dict[ref]
+                            temp_temp_dict[temp] = ref_temp_alignment.template_dict[temp]
+                            temp_aligned_dict[aligned] = ref_temp_alignment.alignment_dict[aligned]
+                    ref_temp_alignment.reference_dict = temp_ref_dict
+                    ref_temp_alignment.template_dict = temp_temp_dict
+                    ref_temp_alignment.alignment_dict = temp_aligned_dict
 
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
@@ -474,7 +495,7 @@ class HomologyModeling(object):
                         segment_pre+=0
                     except:
                         segment_pre = 100
-                    if segment>segment_pre:
+                    if segment>segment_pre or segment==0:
                         f.write("\nTER")
                     if key in trimmed_residues:
                         trimmed_resi_nums[key] = res_num
@@ -489,7 +510,7 @@ class HomologyModeling(object):
                                 bfact = "%6.2f"% (float(key))
                             else:
                                 try:
-                                    bfact = "-%5.2f"% (float(key))
+                                    bfact = " -%4.2f"% (float(key))
                                 except:
                                     bfact = "%6.2f"% (float(atom.get_bfactor()))
                         else:
