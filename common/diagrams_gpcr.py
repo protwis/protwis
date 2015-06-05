@@ -179,8 +179,8 @@ class DrawHelixBox(Diagram):
         
 
 
-
+        output_backbone = self.DrawBackbone(coordinates);
 
         helix_number_svg = "<text x='"+str(startX)+"' y='"+str(startY+7)+"' text-anchor='middle' font-family='helvetica' font-size='20'>"+str(helixNum)+"</text>\n"
 
-        return output_residue+helix_number_svg
+        return output_backbone+output_residue+helix_number_svg
