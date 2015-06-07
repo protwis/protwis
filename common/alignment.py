@@ -471,6 +471,7 @@ class AlignedReferenceTemplate(Alignment):
             self.similarity_table = self.create_loop_similarity_table()
         if self.main_template_structure==None:
             self.main_template_structure = self.get_main_template()
+        self.segment_labels = segments
         self.reference_dict = OrderedDict()
         self.template_dict = OrderedDict()
         self.alignment_dict = OrderedDict()
@@ -599,35 +600,36 @@ class AlignedReferenceTemplate(Alignment):
         if not self.main_template_protein: raise AssertionError(
         "No main template with same helix endings. No homology model will be built for {}.".format(self.reference_protein))
         segment_count = 0
-        for ref_segment, temp_segment in zip(self.reference_protein.alignment,self.main_template_protein.alignment):
+        for ref_segment, temp_segment, segment_label in zip(self.reference_protein.alignment,
+                                                            self.main_template_protein.alignment, self.segment_labels):
             segment_count+=1
+            ref_segment_dict,temp_segment_dict,align_segment_dict = OrderedDict(), OrderedDict(), OrderedDict()
             for ref_position, temp_position in zip(ref_segment,temp_segment):
                 if ref_position[1]!=False and temp_position[1]!=False:
                     if ref_position[0]==temp_position[0]:
-                        self.reference_dict[ref_position[0]]=ref_position[2]
-                        self.template_dict[temp_position[0]]=temp_position[2]
+                        ref_segment_dict[ref_position[0]]=ref_position[2]
+                        temp_segment_dict[temp_position[0]]=temp_position[2]
                         if ref_position[2]==temp_position[2]:
-                            self.alignment_dict[ref_position[0]]=ref_position[2]
+                            align_segment_dict[ref_position[0]]=ref_position[2]
                         else:
-                            self.alignment_dict[ref_position[0]]='.'
+                            align_segment_dict[ref_position[0]]='.'
                     else:
                         print("Error: Generic numbers don't align")
                             
                 elif ref_position[1]!=False and temp_position[1]==False:
-                    self.reference_dict[ref_position[0]]=ref_position[2]                    
+                    ref_segment_dict[ref_position[0]]=ref_position[2]                    
                     if temp_position[2]=='-':
-                        self.template_dict[temp_position[0]]='-'
-                        self.alignment_dict[temp_position[0]]='-'
+                        temp_segment_dict[temp_position[0]]='-'
+                        align_segment_dict[temp_position[0]]='-'
                     elif temp_position[2]=='_':
-                        self.template_dict[temp_position[0]]='x'
-                        self.alignment_dict[temp_position[0]]='x'
+                        temp_segment_dict[temp_position[0]]='x'
+                        align_segment_dict[temp_position[0]]='x'
                         
                 elif ref_position[2]=='-' and temp_position[1]!=False:
-                    self.reference_dict[ref_position[0]]='-'
-                    self.template_dict[temp_position[0]]=temp_position[2]
-                    self.alignment_dict[ref_position[0]]='-'
-                    
-            self.reference_dict["TM"+str(segment_count)+"_end"]='/'                     
-            self.template_dict["TM"+str(segment_count)+"_end"]='/' 
-            self.alignment_dict["TM"+str(segment_count)+"_end"]='/'
+                    ref_segment_dict[ref_position[0]]='-'
+                    temp_segment_dict[temp_position[0]]=temp_position[2]
+                    align_segment_dict[ref_position[0]]='-'
 
+            self.reference_dict[segment_label] = ref_segment_dict
+            self.template_dict[segment_label] = temp_segment_dict
+            self.alignment_dict[segment_label] = align_segment_dict
