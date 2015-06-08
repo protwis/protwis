@@ -17,9 +17,7 @@ class Command(BaseCommand):
 
     logger = logging.getLogger(__name__)
     
-    #fragments_dir = os.sep.join([settings.DATA_DIR, 'fragment_data'])
-    fragments_dir = 'C:\\Users\\Stefan\\documents\\protwis_vagrant\\shared\\protwis\\data\\fragment_data'
-
+    fragments_dir = os.sep.join([settings.DATA_DIR, 'fragment_data'])
     #Interactions definitions to be uploaded to the db
     interactions = {
         'HBD': 'Hydrogen bond donor',
