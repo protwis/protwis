@@ -103,8 +103,8 @@ class HomologyModeling(object):
                                                           provide_main_template_structure=self.main_structure,
                                                           provide_similarity_table=self.similarity_table_all)
                 self.loop_template_table[loop] = loop_alignment.loop_table
-            self.statistics.add_info('loops',self.loop_template_table)
-            
+            self.statistics.add_info('similarity_table', self.similarity_table)
+            self.statistics.add_info('loops',self.loop_template_table)           
         return alignment
         
     def build_homology_model(self, ref_temp_alignment, switch_bulges=True, switch_constrictions=True, loops=True):
@@ -167,7 +167,7 @@ class HomologyModeling(object):
                                                 gn__ = gen_num.replace('.','x')
                                                 main_pdb_array[ref_seg][gen_num] = new_residues[gen_num]
                                                 a.template_dict[temp_seg][gn__] = PDB.Polypeptide.three_to_one(
-                                                                                          atoms[0].get_parent().get_resname())
+                                                                                   atoms[0].get_parent().get_resname())
                                                 if a.template_dict[temp_seg][gn__]==a.reference_dict[ref_seg][gn__]:
                                                     a.alignment_dict[aligned_seg][gn__]=a.template_dict[temp_seg][gn__]
                                                 else:
@@ -186,14 +186,17 @@ class HomologyModeling(object):
                                 if switch_constrictions==True:
                                     try:
                                         Const = Constrictions(gn)
-                                        constriction_template = Const.find_constriction_template(self.similarity_table_all,
-                                                                                            constriction_in_reference=True)
+                                        constriction_template = Const.find_constriction_template(
+                                                                                        self.similarity_table_all,
+                                                                                        constriction_in_reference=True)
                                         constriction_site = parse.fetch_residues_from_pdb(self.main_structure,
                                                                                           [parse.gn_indecer(gn,'x',-2),
-                                                                                           parse.gn_indecer(gn,'x',-1),gn,
+                                                                                           parse.gn_indecer(gn,'x',-1),
+                                                                                           gn,
                                                                                            parse.gn_indecer(gn,'x',+1),
                                                                                            parse.gn_indecer(gn,'x',+2)])
-                                        superpose = sp.BulgeConstrictionSuperpose(constriction_site, constriction_template)
+                                        superpose = sp.BulgeConstrictionSuperpose(constriction_site, 
+                                                                                  constriction_template)
                                         new_residues = superpose.run()                                  
                                         switch_res = 0
                                         for gen_num, atoms in constriction_template.items():
@@ -201,12 +204,12 @@ class HomologyModeling(object):
                                                 gn__ = gen_num.replace('.','x')
                                                 main_pdb_array[ref_seg][gen_num] = new_residues[gen_num]
                                                 a.template_dict[gn__] = PDB.Polypeptide.three_to_one(
-                                                                                          atoms[0].get_parent().get_resname())
+                                                                                   atoms[0].get_parent().get_resname())
                                                 if a.template_dict[temp_seg][gn__]==a.reference_dict[ref_seg][gn__]:
                                                     a.alignment_dict[aligned_seg][gn__]=a.template_dict[temp_seg][gn__]
                                             switch_res+=1
                                         ref_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 
-                                                                                                    'x', +1):Const.template})
+                                                                                             'x', +1):Const.template})
                                         del main_pdb_array[ref_seg][gn.replace('x','.')]
                                         del a.reference_dict[ref_seg][gn]
                                         del a.template_dict[temp_seg][gn]
@@ -238,7 +241,7 @@ class HomologyModeling(object):
                                                 gn__ = gen_num.replace('.','x')
                                                 main_pdb_array[ref_seg][gen_num] = new_residues[gen_num]
                                                 a.template_dict[temp_seg][gn__] = PDB.Polypeptide.three_to_one(
-                                                                                          atoms[0].get_parent().get_resname())
+                                                                                   atoms[0].get_parent().get_resname())
                                                 if a.template_dict[temp_seg][gn__]==a.reference_dict[ref_seg][gn__]:
                                                     a.alignment_dict[aligned_seg][gn__]=a.template_dict[temp_seg][gn__]
                                             switch_res+=1
@@ -251,14 +254,16 @@ class HomologyModeling(object):
                                 if switch_constrictions==True:
                                     try:
                                         Const = Constrictions(gn)
-                                        constriction_template = Const.find_constriction_template(self.similarity_table_all,
-                                                                                            constriction_in_reference=False)
+                                        constriction_template = Const.find_constriction_template(
+                                                                                       self.similarity_table_all,
+                                                                                       constriction_in_reference=False)
                                         constriction_site = parse.fetch_residues_from_pdb(self.main_structure,
                                                                                           [parse.gn_indecer(gn,'x',-2),
                                                                                            parse.gn_indecer(gn,'x',-1),
                                                                                            parse.gn_indecer(gn,'x',+1),
                                                                                            parse.gn_indecer(gn,'x',+2)])
-                                        superpose = sp.BulgeConstrictionSuperpose(constriction_site, constriction_template)
+                                        superpose = sp.BulgeConstrictionSuperpose(constriction_site, 
+                                                                                  constriction_template)
                                         new_residues = superpose.run()
                                         switch_res = 0
                                         for gen_num, atoms in constriction_template.items():
@@ -266,12 +271,12 @@ class HomologyModeling(object):
                                                 gn__ = gen_num.replace('.','x')
                                                 main_pdb_array[ref_seg][gen_num] = new_residues[gen_num]
                                                 a.template_dict[temp_seg][gn__] = PDB.Polypeptide.three_to_one(
-                                                                                          atoms[0].get_parent().get_resname())
+                                                                                   atoms[0].get_parent().get_resname())
                                                 if a.template_dict[temp_seg][gn__]==a.reference_dict[ref_seg][gn__]:
                                                     a.alignment_dict[aligned_seg][gn__]=a.template_dict[temp_seg][gn__]
                                             switch_res+=1
                                         temp_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 
-                                                                                                    'x', +1):Const.template})
+                                                                                              'x', +1):Const.template})
                                     except:
                                         temp_const_list.append({parse.gn_indecer(gn, 'x', -1)+'-'+parse.gn_indecer(gn, 
                                                                                                     'x', +1):None})
@@ -318,16 +323,17 @@ class HomologyModeling(object):
         for seg_label, segment in a.template_dict.items():
             for gn, res in segment.items():
                 try:
-                    pdb_res = PDB.Polypeptide.three_to_one(main_pdb_array[seg_label][gn.replace('x','.')][0].get_parent().get_resname())
+                    pdb_res = PDB.Polypeptide.three_to_one(
+                                        main_pdb_array[seg_label][gn.replace('x','.')][0].get_parent().get_resname())
                 except:
                     if 'x' in gn:
                         pdb_db_inconsistencies.append({gn:a.template_dict[seg_label][gn]})
-        
         if pdb_db_inconsistencies!=[]:
             for incons in pdb_db_inconsistencies:
                 seg = self.segment_coding[int(list(incons.keys())[0][0])]
-                seq_num = Residue.objects.get(protein_conformation__protein=self.main_structure.protein_conformation.protein, 
-                                              generic_number__label=list(incons.keys())[0])
+                seq_num = Residue.objects.get(
+                                        protein_conformation__protein=self.main_structure.protein_conformation.protein, 
+                                        generic_number__label=list(incons.keys())[0])
                 temp_segment, temp_array = OrderedDict(), OrderedDict()
                 for key, value in main_pdb_array[seg].items():
                     if key==str(seq_num.sequence_number):
@@ -346,12 +352,12 @@ class HomologyModeling(object):
                     a.alignment_dict[seg][list(incons.keys())[0]] = a.reference_dict[seg][list(incons.keys())[0]]
                     
         self.statistics.add_info('pdb_db_inconsistencies', pdb_db_inconsistencies)
-#        path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
-#        if not os.path.exists(path):
-#            os.mkdir(path)
-#        self.write_homology_model_pdb(
-#                                "./structure/homology_models/{}_{}/pre_switch.pdb".format(self.uniprot_id, self.state), 
-#                                main_pdb_array, a)        
+        path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
+        if not os.path.exists(path):
+            os.mkdir(path)
+        self.write_homology_model_pdb(
+                                "./structure/homology_models/{}_{}/pre_switch.pdb".format(self.uniprot_id, self.state), 
+                                main_pdb_array, a)        
         
         non_cons_switch = self.run_non_conserved_switcher(main_pdb_array,a.reference_dict,a.template_dict,
                                                           a.alignment_dict)
@@ -361,17 +367,17 @@ class HomologyModeling(object):
         a.alignment_dict = non_cons_switch[3]
         trimmed_residues = non_cons_switch[4]
         
-        self.statistics.add_info('similarity_table', self.similarity_table)
-        
         # write to file
-#        path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
-#        if not os.path.exists(path):
-#            os.mkdir(path)
-#        trimmed_res_nums = self.write_homology_model_pdb(path+self.uniprot_id+"_post.pdb", main_pdb_array, 
-#                                                         a, trimmed_residues=trimmed_residues)
-#        self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
-#        self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
-#                          self.uniprot_id, 1, "modeller_test.pdb", atom_dict=trimmed_res_nums)
+        path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
+        if not os.path.exists(path):
+            os.mkdir(path)
+        trimmed_res_nums = self.write_homology_model_pdb(path+self.uniprot_id+"_post.pdb", main_pdb_array, 
+                                                         a, trimmed_residues=trimmed_residues)
+        
+        # Model with MODELLER
+        self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
+        self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
+                          self.uniprot_id, 1, "modeller_test.pdb", atom_dict=trimmed_res_nums)
         return a       
     
     def run_non_conserved_switcher(self, main_pdb_array, reference_dict, template_dict, alignment_dict):
@@ -420,7 +426,7 @@ class HomologyModeling(object):
                             try:
                                 alt_temp = parse.fetch_residues_from_pdb(struct, [gn])
                                 if reference_dict[ref_seg][gn]==PDB.Polypeptide.three_to_one(
-                                                                            alt_temp[gn_][0].get_parent().get_resname()):
+                                                                        alt_temp[gn_][0].get_parent().get_resname()):
                                     orig_res = main_pdb_array[ref_seg][gn_]
                                     alt_res = parse.fetch_residues_from_pdb(struct,[gn])[gn_]
                                     superpose = sp.RotamerSuperpose(orig_res, alt_res)
@@ -460,86 +466,51 @@ class HomologyModeling(object):
             values are list of atoms. Output of GPCRDBParsingPDB.pdb_array_creator().
             @param ref_temp_alignment: AlignedReferenceAndTemplate, only writes residues that are in ref_temp_alignment.
         '''
-        res_num=0
-        atom_num=0
+        model_start = True
+        key = ''
+        res_num = 0
+        atom_num = 0
         trimmed_resi_nums = OrderedDict()
         with open(filename,'w+') as f:
-            for key in main_pdb_array:
-                if '_' in key or ('.' in str(key) and str(key).replace('.','x') in ref_temp_alignment.reference_dict):
-                    res_num+=1
-                    if '.' in key:
-                        segment = int(str(key).split('.')[0])
-                    else:
-                        segment = int(str(key).split('_')[0])
-                    try:
-                        segment_pre+=0
-                    except:
-                        segment_pre = 100
-                    if segment>segment_pre or segment==0:
-                        f.write("\nTER")
-                    if key in trimmed_residues:
-                        trimmed_resi_nums[key] = res_num
-                    for atom in main_pdb_array[key]:              
-                        atom_num+=1
-                        coord = list(atom.get_coord())
-                        coord1 = "%8.3f"% (coord[0])
-                        coord2 = "%8.3f"% (coord[1])
-                        coord3 = "%8.3f"% (coord[2])
-                        if str(atom.get_id())=='CA':
-                            if len(key)==4:
-                                bfact = "%6.2f"% (float(key))
-                            else:
-                                try:
-                                    bfact = " -%4.2f"% (float(key))
-                                except:
+            for seg_id, segment in main_pdb_array.items():
+                trimmed_segment = OrderedDict()
+                if model_start==False and 'cont' not in seg_id and '.' in key:
+                    f.write("\nTER")
+                for key in segment:
+                    if str(key).replace('.','x') in ref_temp_alignment.reference_dict[seg_id]:
+                        res_num+=1
+                        if key in trimmed_residues:
+                            trimmed_segment[key] = res_num
+                        for atom in main_pdb_array[seg_id][key]:    
+                            atom_num+=1
+                            coord = list(atom.get_coord())
+                            coord1 = "%8.3f"% (coord[0])
+                            coord2 = "%8.3f"% (coord[1])
+                            coord3 = "%8.3f"% (coord[2])
+                            if str(atom.get_id())=='CA':
+                                if len(key)==4:
+                                    bfact = "%6.2f"% (float(key))
+                                elif '.' not in key:
                                     bfact = "%6.2f"% (float(atom.get_bfactor()))
-                        else:
-                            bfact = "%6.2f"% (float(atom.get_bfactor()))
-                        occupancy = "%6.2f"% (atom.get_occupancy())
-                        template="""
+                                else:
+                                    bfact = " -%4.2f"% (float(key))
+                            else:
+                                bfact = "%6.2f"% (float(atom.get_bfactor()))
+                            occupancy = "%6.2f"% (atom.get_occupancy())
+                            template="""
 ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{bfactor}{atom_s}  """
-                        context={"atom_num":str(atom_num).rjust(7), "atom":str(atom.get_id()).ljust(4),
-                                 "res":atom.get_parent().get_resname(), "chain":str(self.main_template_preferred_chain)[0],
-                                 "res_num":str(res_num).rjust(4), "coord1":coord1.rjust(12), 
-                                 "coord2":coord2.rjust(8), "coord3":coord3.rjust(8), 
-                                 "occupancy":str(occupancy).rjust(3),
-                                 "bfactor":str(bfact).rjust(4), "atom_s":str(str(atom.get_id())[0]).rjust(12)}
-                        f.write(template.format(**context))
-                    segment_pre=segment
+                            context={"atom_num":str(atom_num).rjust(7), "atom":str(atom.get_id()).ljust(4),
+                                     "res":atom.get_parent().get_resname(), 
+                                     "chain":str(self.main_template_preferred_chain)[0],
+                                     "res_num":str(res_num).rjust(4), "coord1":coord1.rjust(12), 
+                                     "coord2":coord2.rjust(8), "coord3":coord3.rjust(8), 
+                                     "occupancy":str(occupancy).rjust(3),
+                                     "bfactor":str(bfact).rjust(4), "atom_s":str(str(atom.get_id())[0]).rjust(12)}
+                            f.write(template.format(**context))
+                trimmed_resi_nums[seg_id] = trimmed_segment
+                model_start=False
             f.write("\nTER\nEND")
         return trimmed_resi_nums
-        
-    def write_to_file(self, filename, dictionary):
-        with open(filename,'w+') as f:
-            atom_num = 0
-            res_num = 0
-            for key in dictionary:
-                res_num+=1
-                for atom in dictionary[key]:
-                    atom_num+=1
-                    coord = list(atom.get_coord())
-                    coord1 = "%8.3f"% (coord[0])
-                    coord2 = "%8.3f"% (coord[1])
-                    coord3 = "%8.3f"% (coord[2])
-                    if str(atom.get_id())=='CA':
-                        if len(key)==4:
-                            bfact = "%6.2f"% (float(key))
-                        elif len(key)==5:
-                            bfact = "-%5.2f"% (float(key))
-                        else:
-                            bfact = "%6.2f"% (float(atom.get_bfactor()))
-                    else:
-                        bfact = "%6.2f"% (float(atom.get_bfactor()))
-                    occupancy = "%6.2f"% (atom.get_occupancy())
-                    template="""
-ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{bfactor}{atom_s}  """
-                    context={"atom_num":str(atom_num).rjust(7), "atom":str(atom.get_id()).ljust(4),
-                             "res":atom.get_parent().get_resname(), "chain":str(self.main_template_preferred_chain)[0],
-                             "res_num":str(res_num).rjust(4), "coord1":coord1.rjust(12), 
-                             "coord2":coord2.rjust(8), "coord3":coord3.rjust(8), 
-                             "occupancy":str(occupancy).rjust(3),
-                             "bfactor":str(bfact).rjust(4), "atom_s":str(str(atom.get_id())[0]).rjust(12)}
-                    f.write(template.format(**context))
                     
     def create_PIR_file(self, ref_temp_alignment, template_file):
         ''' Create PIR file from reference and template alignment (AlignedReferenceAndTemplate).
@@ -548,19 +519,28 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
             @template_file: str, name of template file with path
         '''
         ref_sequence, temp_sequence = '',''
-        for ref_res, temp_res in zip(ref_temp_alignment.reference_dict, ref_temp_alignment.template_dict):
-            if ref_temp_alignment.reference_dict[ref_res]=='x':
-                ref_sequence+='-'
-            else:
-                ref_sequence+=ref_temp_alignment.reference_dict[ref_res]
-            if ref_temp_alignment.template_dict[temp_res]=='x':
-                temp_sequence+='-'
-            else:
-                temp_sequence+=ref_temp_alignment.template_dict[temp_res]
+        model_start = True
+        res_num = 0
+        for ref_seg, temp_seg in zip(ref_temp_alignment.reference_dict, ref_temp_alignment.template_dict):
+            if model_start==False and 'cont' not in ref_seg and 'x' in ref_res:
+                ref_sequence+='/'
+                temp_sequence+='/'
+            for ref_res, temp_res in zip(ref_temp_alignment.reference_dict[ref_seg], 
+                                         ref_temp_alignment.template_dict[temp_seg]):
+                res_num+=1
+                if ref_temp_alignment.reference_dict[ref_seg][ref_res]=='x':
+                    ref_sequence+='-'
+                else:
+                    ref_sequence+=ref_temp_alignment.reference_dict[ref_seg][ref_res]
+                if ref_temp_alignment.template_dict[temp_seg][temp_res]=='x':
+                    temp_sequence+='-'
+                else:
+                    temp_sequence+=ref_temp_alignment.template_dict[temp_seg][temp_res]
+            model_start=False
         with open("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", 'w+') as output_file:
             template="""
 >P1;{temp_file}
-structure:{temp_file}:1:{chain}:2000:{chain}::::
+structure:{temp_file}:1:{chain}:{res_num}:{chain}::::
 {temp_sequence}*
 
 >P1;{uniprot}
@@ -569,6 +549,7 @@ sequence:{uniprot}::::::::
             """
             context={"temp_file":template_file,
                      "chain":self.main_template_preferred_chain,
+                     "res_num":res_num,
                      "temp_sequence":temp_sequence,
                      "uniprot":self.uniprot_id,
                      "ref_sequence":ref_sequence}
@@ -589,7 +570,8 @@ sequence:{uniprot}::::::::
         if atom_dict==None:
             a = automodel(env, alnfile = pir_file, knowns = template, sequence = reference)
         else:
-            a = HomologyMODELLER(env, alnfile = pir_file, knowns = template, sequence = reference, atom_selection=atom_dict)
+            a = HomologyMODELLER(env, alnfile = pir_file, knowns = template, sequence = reference, 
+                                 atom_selection=atom_dict)
         a.starting_model = 1
         a.ending_model = number_of_models
         a.md_level = refine.very_slow
@@ -599,7 +581,8 @@ sequence:{uniprot}::::::::
         a.make()
         for file in os.listdir("./"):
             if file.startswith(self.uniprot_id) and file.endswith(".pdb"):
-                os.rename("./"+file, "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)+output_file_name)
+                os.rename("./"+file, "./structure/homology_models/{}_{}/".format(self.uniprot_id,
+                                                                                 self.state)+output_file_name)
             elif file.startswith(self.uniprot_id):
                 os.rename("./"+file, "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)+file)
             
@@ -611,8 +594,16 @@ class HomologyMODELLER(automodel):
     def select_atoms(self):
         chains = ['A','B','C','D','E','F','G']
         selection_out = []
-        for gn, atom in self.atom_dict.items():
-            selection_out.append(self.residues[str(atom)+":"+chains[int(gn[0])-1]])
+        chain_count = 0
+        model_start = True
+        prev_seg = ''
+        for seg_id, segment in self.atom_dict.items():
+            if model_start==False and 'cont' not in seg_id and 'cont' not in prev_seg:
+                chain_count+=1
+            for gn, atom in segment.items():
+                selection_out.append(self.residues[str(atom)+":"+chains[chain_count]])
+            model_start=False
+            prev_seg = seg_id
         return selection(selection_out)
 
 class Loops(object):
@@ -716,7 +707,7 @@ class Loops(object):
                     temp_array[seg_label] = gns
                     for key in loop_keys:
                         temp_loop[key] = loop_template[key]
-                    temp_array[self.loop_label+'_discont'] = temp_loop
+                    temp_array[self.loop_label+'_dis'] = temp_loop
                 else:
                     temp_array[seg_label] = gns
             self.main_pdb_array = temp_array
@@ -758,9 +749,9 @@ class Loops(object):
                         temp_temp_dict[self.loop_label+'_cont'] = temp_loop_seg
                         temp_aligned_dict[self.loop_label+'_cont'] = aligned_loop_seg
                     else:
-                        temp_ref_dict[self.loop_label+'_discont'] = ref_loop_seg
-                        temp_temp_dict[self.loop_label+'_discont'] = temp_loop_seg
-                        temp_aligned_dict[self.loop_label+'_discont'] = aligned_loop_seg
+                        temp_ref_dict[self.loop_label+'_dis'] = ref_loop_seg
+                        temp_temp_dict[self.loop_label+'_dis'] = temp_loop_seg
+                        temp_aligned_dict[self.loop_label+'_dis'] = aligned_loop_seg
                 else:
                     temp_ref_dict[ref_seg] = reference_dict[ref_seg]
                     temp_temp_dict[temp_seg] = template_dict[temp_seg]
