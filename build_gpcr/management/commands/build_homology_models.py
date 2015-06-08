@@ -323,7 +323,7 @@ class HomologyModeling(object):
         for seg_label, segment in a.template_dict.items():
             for gn, res in segment.items():
                 try:
-                    pdb_res = PDB.Polypeptide.three_to_one(
+                    PDB.Polypeptide.three_to_one(
                                         main_pdb_array[seg_label][gn.replace('x','.')][0].get_parent().get_resname())
                 except:
                     if 'x' in gn:
