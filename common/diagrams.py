@@ -89,8 +89,6 @@ class Diagram:
 
     def DrawBackbone(self,coordinates):
 
-        print("coordinates",coordinates)
-
         # box properties
         numSides = 4
 

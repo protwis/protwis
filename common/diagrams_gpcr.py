@@ -20,12 +20,23 @@ class DrawHelixBox(Diagram):
     plot_data['Class A']['helixTopResidues'] = [0,32, 63, 26, 61, 39, 57, 32]
     plot_data['Class A']['rotation'] = [0,340, 320, 290, 125, 40, 180, 130] # in degrees
 
+    # Class C
+    plot_data['Class C']['coordinates'] = [0, [455,231],[390,108],[245,118],[105,105],[75,241),[193,320],[328,303]];
+    plot_data['Class C']['helixTopResidues'] = array(0, 34, 235, 316, 431, 508, 627, 715);
+    plot_data['Class C']['rotation'] = array(0, 170, 200, 290, 145, 250, 210, 310); # in degrees
+
+    # Use class A as the default for now FIXME add all classes
+    if (!isset($plot_data[$receptor_class])) {
+    $receptor_class = "001";
+        }
+
     def __init__(self, protein):
         self.receptorId = protein
         self.family = protein.get_protein_class()
         self.output = ''
 
         for i in range(1,len(self.plot_data[self.family]['coordinates'])):
+            #fetch residues | add sort by sequence_number FIXME
             self.residuelist = Residue.objects.filter(
                 protein_segment__slug='TM'+str(i), protein_conformation__protein__entry_name=self.receptorId)
 
@@ -45,19 +56,9 @@ class DrawHelixBox(Diagram):
 
     def DrawHelix(self, startX,startY,residuelist,radius,direction,helixNum,helixTopResidue,rotation):
 
-        #fetch residues | add sort by sequence_number FIXME
-        
-        #.prefetch_related(
-         #       'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
-          #      'generic_number__scheme', 'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
-
         sequence = {}
         for r in residuelist:
-            #print(r)
-            #print(r.amino_acid)
-            #print(r.sequence_number)
             sequence[int(r.generic_number.label[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number}
-        print("HelixNum",helixNum,"residueNumbers",sequence.keys())
         # box size
         numResPerSide = 5
         numResInBox = numResPerSide*4
@@ -103,8 +104,6 @@ class DrawHelixBox(Diagram):
             nextResidue = currentResidue + helixDirection
 
             # line from the current side to the next
-            #print(helixSide)
-            print("i:"+str(i),"helixSide",helixSide,"currentResidue",currentResidue,"nextResidue",nextResidue)
             lineEquation = self.LineEquation(
                 {
                     "x":helixSideCoord[helixSide]["x"],
@@ -140,7 +139,6 @@ class DrawHelixBox(Diagram):
             # check for bulges (residue number suffixed with 1) or constrictions (missing
             # residue number)
             if int(str(nextResidue)+"1") in sequence:
-                print("FOUND BULGE")
                 coordinateIndices.append('1')
                 perpMove = self.MoveAlongLine(perpLen, lineEquation["m"], True, lineEquation['x'],
                     lineEquation['y']);
@@ -165,8 +163,6 @@ class DrawHelixBox(Diagram):
                     output_residue += self.DrawResidue(x[coordinateIndex],y[coordinateIndex],
                         sequence[tempCurrentResidue]['residueType'],residue_number, label,residueRadius);
                 
-            
-
             # residue position incrementer
             if i % 4 == 0:
                 resPosIncr += 1
@@ -177,8 +173,6 @@ class DrawHelixBox(Diagram):
             # next residue
             currentResidue = nextResidue
         
-
-
         output_backbone = self.DrawBackbone(coordinates);
 
         helix_number_svg = "<text x='"+str(startX)+"' y='"+str(startY+7)+"' text-anchor='middle' font-family='helvetica' font-size='20'>"+str(helixNum)+"</text>\n"
