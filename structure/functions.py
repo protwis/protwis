@@ -365,13 +365,15 @@ def extract_pdb_data(residue):
     hetfield, resseq, icode=residue.get_id()
     resname=residue.get_resname()
     segid=residue.get_segid()
+    atom_number = 1
     for atom in residue:
         pdb_string += get_atom_line(atom, hetfield, segid, atom_number, resname, resseq, icode, residue.get_parent().get_id())
+        atom_number += 1
     return pdb_string
 
 
 #==============================================================================
-def get_atom_line(self, atom, hetfield, segid, atom_number, resname, resseq, icode, chain_id, charge="  "): 
+def get_atom_line(atom, hetfield, segid, atom_number, resname, resseq, icode, chain_id, charge="  "): 
     """Returns an ATOM PDB string.""" 
     if hetfield!=" ": 
         record_type="HETATM" 
@@ -379,8 +381,6 @@ def get_atom_line(self, atom, hetfield, segid, atom_number, resname, resseq, ico
         record_type="ATOM  " 
     if atom.element: 
         element = atom.element.strip().upper() 
-        if element.capitalize() not in atom_weights: 
-            raise ValueError("Unrecognised element %r" % atom.element) 
         element = element.rjust(2) 
     else: 
         element = "  " 
@@ -401,4 +401,4 @@ def get_atom_line(self, atom, hetfield, segid, atom_number, resname, resseq, ico
             raise TypeError("Invalid occupancy %r in atom %r" % (occupancy, atom.get_full_id())) 
         pass 
     args=(record_type, atom_number, name, altloc, resname, chain_id, resseq, icode, x, y, z, occupancy_str, bfactor, segid, element, charge) 
-    return _ATOM_FORMAT_STRING % args
+    return ATOM_FORMAT_STRING % args
