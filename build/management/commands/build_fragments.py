@@ -93,6 +93,7 @@ class Command(BaseCommand):
                     fragment_pdb_data += extract_pdb_data(residue)
             try:
                 fd,create = PdbData.objects.get_or_create(pdb=fragment_pdb_data)
+                #Taking the first ligand from the list, since existing fragments do not contain the ligand info
                 f = Fragment(residue=r, ligand=s.ligands.all()[0], structure=s, pdbdata=fd)
                 f.save()
             except Exception as msg:
