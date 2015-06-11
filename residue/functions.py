@@ -117,12 +117,16 @@ def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, r
 
     # generic index
     sgn = ref_position.split("x")
+    segment_index = sgn[0]
     ref_generic_index = int(sgn[1])
     generic_index = ref_generic_index - (ref_residue - sequence_number)
 
-    # offset by anomaly (anomalies before and after the reference position are handled differently)
+    # order anomalies if there are more than one
+    # this is important for counting offset
     if len(protein_anomalies) > 1:
         protein_anomalies.sort(key=lambda x: x.generic_number.label)
+    
+    # offset by anomaly (anomalies before and after the reference position are handled differently)
     offset = 0
     prime = ''
     
@@ -156,8 +160,8 @@ def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, r
     # structure corrected index (based on anomalies)
     structure_corrected_generic_index = generic_index + offset
     
-    generic_number = sgn[0] + "x" + str(generic_index)
-    structure_corrected_generic_number = sgn[0] + "x" + str(structure_corrected_generic_index)
+    generic_number = segment_index + "x" + str(generic_index)
+    structure_corrected_generic_number = segment_index + "x" + str(structure_corrected_generic_index)
     numbers['generic_number'] = structure_corrected_generic_number + prime
 
     # alternative schemes

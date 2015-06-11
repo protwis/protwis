@@ -66,7 +66,7 @@ class Command(BaseCommand):
 
             # check whether all segments have annotated reference positions
             if len(ref_positions) != len(settings.REFERENCE_POSITIONS):
-                self.logger.warning('Missing reference positions for {}'.format(pconf))
+                self.logger.error('Missing reference positions for {}'.format(pconf))
                 continue
 
             # protein anomalies in main template
@@ -152,7 +152,7 @@ class Command(BaseCommand):
                                     self.logger.info("Anomaly {} excluded by similarity to {} in {}".format(pa,
                                         tplpas.structure, pconf))
                             else:
-                                if pa in protein_anomalies:
+                                if anomalies[pa] in protein_anomalies:
                                     self.logger.info("Anomaly {} included by rule in {}".format(pa, pconf))
                                 else:
                                     self.logger.info("Anomaly {} excluded by rule in {}".format(pa, pconf))
