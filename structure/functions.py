@@ -19,6 +19,8 @@ import math
 
 logger = logging.getLogger("protwis")
 
+ATOM_FORMAT_STRING="%s%5i %-4s%c%3s %c%4i%c   %8.3f%8.3f%8.3f%s%6.2f      %4s%2s%2s\n" 
+
 #==============================================================================
 # I have put it into separate class for the sake of future uses
 class BlastSearch(object):
@@ -354,3 +356,49 @@ def get_segment_template (protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','T
 def fetch_template_structure (template_protein):
 
     return Structure.objects.get(protein_conformation__protein__parent=template_protein.entry_name)
+
+
+#==============================================================================
+def extract_pdb_data(residue):
+    """Returns PDB string of a given residue"""
+    pdb_string = ''
+    hetfield, resseq, icode=residue.get_id()
+    resname=residue.get_resname()
+    segid=residue.get_segid()
+    atom_number = 1
+    for atom in residue:
+        pdb_string += get_atom_line(atom, hetfield, segid, atom_number, resname, resseq, icode, residue.get_parent().get_id())
+        atom_number += 1
+    return pdb_string
+
+
+#==============================================================================
+def get_atom_line(atom, hetfield, segid, atom_number, resname, resseq, icode, chain_id, charge="  "): 
+    """Returns an ATOM PDB string.""" 
+    if hetfield!=" ": 
+        record_type="HETATM" 
+    else: 
+        record_type="ATOM  " 
+    if atom.element: 
+        element = atom.element.strip().upper() 
+        element = element.rjust(2) 
+    else: 
+        element = "  " 
+    name=atom.get_fullname() 
+    altloc=atom.get_altloc() 
+    x, y, z=atom.get_coord() 
+    bfactor=atom.get_bfactor() 
+    occupancy=atom.get_occupancy() 
+    try: 
+        occupancy_str = "%6.2f" % occupancy 
+    except TypeError: 
+        if occupancy is None: 
+            occupancy_str = " " * 6 
+            import warnings 
+            from Bio import BiopythonWarning 
+            warnings.warn("Missing occupancy in atom %s written as blank" % repr(atom.get_full_id()), BiopythonWarning) 
+        else: 
+            raise TypeError("Invalid occupancy %r in atom %r" % (occupancy, atom.get_full_id())) 
+        pass 
+    args=(record_type, atom_number, name, altloc, resname, chain_id, resseq, icode, x, y, z, occupancy_str, bfactor, segid, element, charge) 
+    return ATOM_FORMAT_STRING % args
