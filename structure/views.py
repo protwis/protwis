@@ -423,27 +423,32 @@ class FragmentSuperpositionResults(TemplateView):
         
         frag_sp = FragmentSuperpose(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8', 'ignore')),request.FILES['pdb_file'].name)
         superposed_fragments = []
+        print(request.POST)
         if request.POST['similarity'] == 'identical':
-            if request.POST['representative'] == 'all':
+            if request.POST['representative'] == 'any':
                 superposed_fragments = frag_sp.superpose_fragments()
             else:
                 superposed_fragments = frag_sp.superpose_fragments(representative=True)
         else:
-            if request.POST['representative'] == 'all':
+            if request.POST['representative'] == 'any':
                 superposed_fragments = frag_sp.superpose_fragments(use_similar=True)
             else:
                 superposed_fragments = frag_sp.superpose_fragments(representative=True, use_similar=True)
         if superposed_fragments == []:
             self.message = "No fragments were aligned."
         else:
+            io = PDBIO()
             out_stream = BytesIO()
             zipf = zipfile.ZipFile(out_stream, 'a')
             for fragment, pdb_data in superposed_fragments:
-                zipf.writestr(fragment.generate_filename(), pdb_data)
+                io.set_structure(pdb_data)
+                tmp = StringIO()
+                io.save(tmp)
+                zipf.writestr(fragment.generate_filename(), tmp.getvalue())
             zipf.close()
             if len(out_stream.getvalue()) > 0:
-                request.session['outfile'] = { 'interacting_moiety-residue_fragments.zip' : out_stream, }
-                self.outfile = 'interacting_moiety-residue_fragments.zip'
+                request.session['outfile'] = { 'interacting_moiety_residue_fragments.zip' : out_stream, }
+                self.outfile = 'interacting_moiety_residue_fragments.zip'
                 self.success = True
                 self.zip = 'zip'
                 self.message = '{:n} fragments were superposed.'.format(len(superposed_fragments))

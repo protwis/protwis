@@ -58,6 +58,9 @@ class StructureStabilizingAgent(models.Model):
 class PdbData(models.Model):
     pdb = models.TextField()
 
+    def __str__(self):
+        return self.pdb
+
     class Meta():
         db_table = "structure_pdb_data"
 

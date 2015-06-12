@@ -9,13 +9,29 @@ class ResidueFragmentInteraction(models.Model):
     interaction_type = models.ForeignKey('ResidueFragmentInteractionType')
 
     def __str__(self):
-        return "{} {} {}".format(self.structure.pdb_code, self.residue.generic_number.label, self.ligand.name)
-
+        if self.rotamer.residue.display_generic_number is not None:
+            return "{!s} {!s} {!s}".format(self.structure_ligand_pair.structure.pdb_code.index, self.rotamer.residue.display_generic_number.label, self.structure_ligand_pair.ligand.name)
+        else:
+            return "{!s} {!s} {!s}".format(self.structure_ligand_pair.structure.pdb_code.index, self.rotamer.residue, self.structure_ligand_pair.ligand.name)
     class Meta():
         db_table = 'interaction_residue_fragment'
 
     def get_pdbdata(self):
         return "{!s}\n{!s}".format(self.rotamer.pdbdata, self.fragment.pdbdata)
+
+
+    def generate_filename(self):
+
+        if self.rotamer.residue.display_generic_number is not None:
+            generic_num = self.rotamer.residue.display_generic_number.label
+        else:
+            generic_num = self.rotamer.residue.sequence_number
+        res_name = self.rotamer.residue.amino_acid
+        prot_entry_name = str(self.structure_ligand_pair.structure.protein_conformation.protein.parent.entry_name)
+        pdb_code = self.structure_ligand_pair.structure.pdb_code.index
+        interaction = self.interaction_type.slug
+
+        return "{}_{}_{}_{}_{}.pdb".format(generic_num.replace('.','_'), res_name, prot_entry_name, pdb_code, interaction)
 
 
 class ResidueFragmentInteractionType(models.Model):
