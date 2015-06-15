@@ -8,13 +8,13 @@ from structure.functions import BlastSearch, MappedResidue
 import Bio.PDB.Polypeptide as polypeptide
 import os,logging
 
+logger = logging.getLogger("protwis")
 
 #==============================================================================
 #Class for annotating the pdb structures with generic numbers
 class GenericNumbering(object):
     
-    logger = logging.getLogger("structure")
-
+    
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
   
     def __init__ (self, pdb_file=None, pdb_filename=None, structure=None):
@@ -81,8 +81,8 @@ class GenericNumbering(object):
         subj_counter = hsps.sbjct_start	
         q_counter = hsps.query_start
         
-        self.logger.info("{}\n{}".format(hsps.query, hsps.sbjct))
-        self.logger.info("{:d}\t{:d}".format(hsps.query_start, hsps.sbjct_start))
+        logger.info("{}\n{}".format(hsps.query, hsps.sbjct))
+        logger.info("{:d}\t{:d}".format(hsps.query_start, hsps.sbjct_start))
 
         while tmp_seq:
             #skipping position if there is a gap in either of sequences
@@ -110,7 +110,7 @@ class GenericNumbering(object):
                         except:
                             self.residues[chain][resn].add_gpcrdb_number(db_res.generic_number.label)
                     except Exception as msg:
-                        self.logger.warning("Could not find residue {} in the database.\t{}".format(subj_counter, msg))
+                        logger.warning("Could not find residue {} in the database.\t{}".format(subj_counter, msg))
 
                     
                     if prot_id not in self.prot_id_list:

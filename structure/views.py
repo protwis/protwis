@@ -1,18 +1,22 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django import forms
 
 from structure.models import Structure
+from structure.functions import CASelector, SelectionParser, GenericNumbersSelector
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from common.views import AbsSegmentSelection
 from common.selection import Selection
 
-import inspect, os, zipfile
-from io import StringIO
+import inspect
+import os
+import zipfile
+from copy import deepcopy
+from io import StringIO, BytesIO
 from collections import OrderedDict
-from Bio.PDB import PDBIO
+from Bio.PDB import PDBIO, PDBParser
 
 class StructureBrowser(TemplateView):
     """
@@ -21,7 +25,7 @@ class StructureBrowser(TemplateView):
 
     template_name = "structure_browser.html"
 
-    def get_context_data(self, **kwargs):
+    def get_context_data (self, **kwargs):
 
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
@@ -38,8 +42,22 @@ class StructureStatistics(TemplateView):
     So not ready that EA wanted to publish it
     """
 
-    template_name = 'statistics.html'
-    pass
+    template_name = 'structure_statistics.html'
+
+    def get_context_data (self, **kwargs):
+        context = super(StructureStatistics, self).get_context_data(**kwargs)
+
+        return context
+
+
+    def get_crystalized_receptors_data(self):
+
+        years = list(set([x.publication_date.year for x in Structure.objects.distinct('publication_date')]))
+        struct_data = []
+        for year in years:
+            struct_data.append({'year': year, 'count': len(Structure.objects.filter(publication_date__year=year))})
+
+        return JsonResponse(struct_data, safe=False)
 
 
 
@@ -79,7 +97,7 @@ class GenericNumberingIndex(TemplateView):
         }
 
 
-    def get_context_data(self, **kwargs):
+    def get_context_data (self, **kwargs):
 
         context = super(GenericNumberingIndex, self).get_context_data(**kwargs)
         # get attributes of this class and add them to the context
@@ -95,7 +113,7 @@ class GenericNumberingIndex(TemplateView):
 #Class rendering results from generic numbers assignment
 class GenericNumberingResults(TemplateView):
 
-    template_name='common_structural_tools.html'
+    template_name = 'common_structural_tools.html'
 
     #Left panel - blank
     #Mid section
@@ -103,7 +121,7 @@ class GenericNumberingResults(TemplateView):
     #Buttons - none
 
 
-    def post(self, request, *args, **kwargs):
+    def post (self, request, *args, **kwargs):
 
         generic_numbering = GenericNumbering(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8',"ignore")))
         out_struct = generic_numbering.assign_generic_numbers()
@@ -120,7 +138,7 @@ class GenericNumberingResults(TemplateView):
             self.input_file = request.FILES['pdb_file'].name
             self.success = False
 
-        context =  super(GenericNumberingResults, self).get_context_data(**kwargs)
+        context = super(GenericNumberingResults, self).get_context_data(**kwargs)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
@@ -129,9 +147,9 @@ class GenericNumberingResults(TemplateView):
         return render(request, self.template_name, context)
 
 
-    def get_context_data(self, **kwargs):
+    def get_context_data (self, **kwargs):
 
-        context =  super(GenericNumberingResults, self).get_context_data(**kwargs)
+        context = super(GenericNumberingResults, self).get_context_data(**kwargs)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
@@ -161,6 +179,8 @@ class SuperpositionWorkflowIndex(TemplateView):
     upload_form_data = {
         'ref_file' : forms.FileField(label="Reference structure"),
         'alt_files' : forms.FileField(label="Structure(s) to superpose"),
+        'exclusive' : forms.BooleanField(label='Download only superposed subset of atoms', 
+                                        widget=forms.CheckboxInput())
         }
     form_code = forms.Form()
     form_code.fields = upload_form_data
@@ -177,13 +197,11 @@ class SuperpositionWorkflowIndex(TemplateView):
         }
 
     # OrderedDict to preserve the order of the boxes
-    selection_boxes = OrderedDict([
-        ('reference', True),
+    selection_boxes = OrderedDict([('reference', True),
         ('targets', True),
-        ('segments', False)
-    ])
+        ('segments', False)])
 
-    def get_context_data(self, **kwargs):
+    def get_context_data (self, **kwargs):
 
         context = super(SuperpositionWorkflowIndex, self).get_context_data(**kwargs)
 
@@ -215,7 +233,7 @@ class SuperpositionWorkflowIndex(TemplateView):
 #Class rendering selection box for sequence segments
 class SuperpositionWorkflowSelection(AbsSegmentSelection):
 
-    template_name='common/segmentselection.html'
+    template_name = 'common/segmentselection.html'
 
     #Left panel
     step = 2
@@ -234,15 +252,17 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
         },
     }
     # OrderedDict to preserve the order of the boxes
-    selection_boxes = OrderedDict([
-        ('reference', False),
+    selection_boxes = OrderedDict([('reference', False),
         ('targets', False),
-        ('segments', True),
-    ])
+        ('segments', True),])
 
 
-    def post(self, request, *args, **kwargs):
+    def post (self, request, *args, **kwargs):
 
+        if 'exclusive' in request.POST:
+            request.session['exclusive'] = True
+        else:
+            request.session['exclusive'] = False
         request.session['ref_file'] = request.FILES['ref_file']
         request.session['alt_files'] = request.FILES['alt_files']
         simple_selection = request.session.get('selection', False)
@@ -252,7 +272,7 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
         if simple_selection:
             selection.importer(simple_selection)
         
-        context =  super(SuperpositionWorkflowSelection, self).get_context_data(**kwargs)
+        context = super(SuperpositionWorkflowSelection, self).get_context_data(**kwargs)
         context['selection'] = {}
         for selection_box, include in self.selection_boxes.items():
             if include:
@@ -271,39 +291,60 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
 #Class rendering results from superposition workflow
 class SuperpositionWorkflowResults(TemplateView):
 
-    template_name='common_structural_tools.html'
+    template_name = 'common_structural_tools.html'
 
     #Left panel - blank
     #Mid section
-    mid_section = 'superposition_workflow_results.html'
+    mid_section = 'superposition_results.html'
     #Buttons - none
 
 
-    def get_context_data(self, **kwargs):
+    def get_context_data (self, **kwargs):
 
-        context =  super(SuperpositionWorkflowResults, self).get_context_data(**kwargs)
+        context = super(SuperpositionWorkflowResults, self).get_context_data(**kwargs)
         
         simple_selection = self.request.session.get('selection', False)
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
-
-        superposition = ProteinSuperpose(StringIO(self.request.session['ref_file'].file.read().decode('UTF-8')),[StringIO(self.request.session['alt_files'].file.read().decode('UTF-8'))], selection)
-
+        ref_file = StringIO(self.request.session['ref_file'].file.read().decode('UTF-8'))
+        superposition = ProteinSuperpose(deepcopy(ref_file),[StringIO(self.request.session['alt_files'].file.read().decode('UTF-8'))], selection)
         out_structs = superposition.run()
+
         if len(out_structs) == 0:
             self.success = False
         elif len(out_structs) == 1:
-            out_stream = StringIO()
-            io = PDBIO()
-            io.set_structure(out_structs[0])
-            io.save(out_stream)
-            if len(out_stream.getvalue()) > 0:
-                self.request.session['outfile'] = { self.request.session['alt_files'].name : out_stream, }
-                #self.input_file = request.FILES['pdb_file'].name
-                self.success = True
-                self.outfile = self.request.session['alt_files'].name
-                self.replacement_tag = 'aligned'
+            io = PDBIO()            
+
+            if self.request.session['exclusive']:
+                out_stream = BytesIO()
+                ref_struct = PDBParser().get_structure('ref', ref_file)[0]
+                consensus_gn_set = CASelector(SelectionParser(selection), ref_struct, out_structs).get_consensus_gn_set()
+                zipf = zipfile.ZipFile(out_stream, 'w')
+                io.set_structure(ref_struct)
+                tmp = StringIO()
+                io.save(tmp, GenericNumbersSelector(consensus_gn_set))
+                zipf.writestr(self.request.session['ref_file'].name, tmp.getvalue())
+                for alt_struct in out_structs:
+                    tmp = StringIO()
+                    io.set_structure(alt_struct)
+                    io.save(tmp, GenericNumbersSelector(consensus_gn_set))
+                    zipf.writestr(self.request.session['alt_files'].name, tmp.getvalue())
+                zipf.close()
+                if len(out_stream.getvalue()) > 0:
+                    self.request.session['outfile'] = { "Superposed_substructures.zip" : out_stream, }
+                    self.outfile = "Superposed_substructures.zip"
+                    self.success = True
+                    self.zip = 'zip'
+            else:
+                out_stream = StringIO()
+                io.set_structure(out_structs[0])
+                io.save(out_stream)
+                if len(out_stream.getvalue()) > 0:
+                    self.request.session['outfile'] = { self.request.session['alt_files'].name : out_stream, }
+                    self.success = True
+                    self.outfile = self.request.session['alt_files'].name
+                    self.replacement_tag = 'aligned'
 
         
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
@@ -311,7 +352,6 @@ class SuperpositionWorkflowResults(TemplateView):
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
 
-        #return render(self.request, self.template_name, context) 
         return context
 
 
@@ -334,12 +374,10 @@ class FragmentSuperpositionIndex(TemplateView):
     header = "Select a file to upload:"
     upload_form_data = {
         "pdb_file": forms.FileField(),
-        "similarity" : forms.ChoiceField(
-            choices=(('identical','Use fragments with identical residues'),
+        "similarity" : forms.ChoiceField(choices=(('identical','Use fragments with identical residues'),
                      ('similar','Use fragments with residues of similar properties')),
             widget=forms.RadioSelect()),
-        "representative" : forms.ChoiceField(
-            choices=(('closest','Use fragments from the evolutionary closest crystal structure'),
+        "representative" : forms.ChoiceField(choices=(('closest','Use fragments from the evolutionary closest crystal structure'),
                      ('any','Use all available fragments')),
             widget=forms.RadioSelect())
         }
@@ -358,7 +396,7 @@ class FragmentSuperpositionIndex(TemplateView):
         }
 
 
-    def get_context_data(self, **kwargs):
+    def get_context_data (self, **kwargs):
 
         context = super(FragmentSuperpositionIndex, self).get_context_data(**kwargs)
         # get attributes of this class and add them to the context
@@ -374,14 +412,14 @@ class FragmentSuperpositionIndex(TemplateView):
 
 class FragmentSuperpositionResults(TemplateView):
 
-    template_name="common_structural_tools.html"
+    template_name = "common_structural_tools.html"
 
     #Left panel - blank
     #Mid section
-    mid_section = 'fragment_superposition_results.html'
+    mid_section = 'superposition_results.html'
     #Buttons - none
 
-    def post(self, request, *args, **kwargs):
+    def post (self, request, *args, **kwargs):
         
         frag_sp = FragmentSuperpose(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8', 'ignore')),request.FILES['pdb_file'].name)
         superposed_fragments = []
@@ -398,7 +436,7 @@ class FragmentSuperpositionResults(TemplateView):
         if superposed_fragments == []:
             self.message = "No fragments were aligned."
         else:
-            out_stream = StringIO()
+            out_stream = BytesIO()
             zipf = zipfile.ZipFile(out_stream, 'a')
             for fragment, pdb_data in superposed_fragments:
                 zipf.writestr(fragment.generate_filename(), pdb_data)
@@ -407,9 +445,10 @@ class FragmentSuperpositionResults(TemplateView):
                 request.session['outfile'] = { 'interacting_moiety-residue_fragments.zip' : out_stream, }
                 self.outfile = 'interacting_moiety-residue_fragments.zip'
                 self.success = True
+                self.zip = 'zip'
                 self.message = '{:n} fragments were superposed.'.format(len(superposed_fragments))
 
-        context =  super(FragmentSuperpositionResults, self).get_context_data(**kwargs)
+        context = super(FragmentSuperpositionResults, self).get_context_data(**kwargs)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
@@ -419,8 +458,7 @@ class FragmentSuperpositionResults(TemplateView):
        
 
 #==============================================================================
-
-def ServePdbOutfile(request, outfile, replacement_tag):
+def ServePdbOutfile (request, outfile, replacement_tag):
     
     root, ext = os.path.splitext(outfile)
     out_stream = request.session['outfile'][outfile]
@@ -431,9 +469,11 @@ def ServePdbOutfile(request, outfile, replacement_tag):
     return response
 
 
-def ServeZipOutfile(request, outfile):
+def ServeZipOutfile (request, outfile):
     
     out_stream = request.session['outfile'][outfile]
     response = HttpResponse(content_type="application/zip")
     response['Content-Disposition'] = 'attachment; filename="{}"'.format(outfile)
     response.write(out_stream.getvalue())
+
+    return response
