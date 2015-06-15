@@ -9,6 +9,7 @@ from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from common.views import AbsSegmentSelection
 from common.selection import Selection
+from common.extensions import MultiFileField
 
 import inspect
 import os
@@ -176,12 +177,12 @@ class SuperpositionWorkflowIndex(TemplateView):
     """
 
     header = "Upload or select your structures:"
-    upload_form_data = {
-        'ref_file' : forms.FileField(label="Reference structure"),
-        'alt_files' : forms.FileField(label="Structure(s) to superpose"),
-        'exclusive' : forms.BooleanField(label='Download only superposed subset of atoms', 
-                                        widget=forms.CheckboxInput())
-        }
+    #
+    upload_form_data = OrderedDict([
+        ('ref_file', forms.FileField(label="Reference structure")),
+        ('alt_files', MultiFileField(label="Structure(s) to superpose", max_num=10, min_num=1)),
+        ('exclusive', forms.BooleanField(label='Download only superposed subset of atoms', widget=forms.CheckboxInput())),
+        ])
     form_code = forms.Form()
     form_code.fields = upload_form_data
     form_id = 'superpose_files'
@@ -264,7 +265,7 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
         else:
             request.session['exclusive'] = False
         request.session['ref_file'] = request.FILES['ref_file']
-        request.session['alt_files'] = request.FILES['alt_files']
+        request.session['alt_files'] = request.FILES.getlist('alt_files')
         simple_selection = request.session.get('selection', False)
 
         # create full selection and import simple selection (if it exists)
@@ -308,28 +309,28 @@ class SuperpositionWorkflowResults(TemplateView):
         if simple_selection:
             selection.importer(simple_selection)
         ref_file = StringIO(self.request.session['ref_file'].file.read().decode('UTF-8'))
-        superposition = ProteinSuperpose(deepcopy(ref_file),[StringIO(self.request.session['alt_files'].file.read().decode('UTF-8'))], selection)
+        superposition = ProteinSuperpose(deepcopy(ref_file),[StringIO(alt_file.file.read().decode('UTF-8')) for alt_file in self.request.session['alt_files']], selection)
         out_structs = superposition.run()
 
         if len(out_structs) == 0:
             self.success = False
         elif len(out_structs) == 1:
             io = PDBIO()            
+            out_stream = BytesIO()
+            zipf = zipfile.ZipFile(out_stream, 'w')
 
             if self.request.session['exclusive']:
-                out_stream = BytesIO()
                 ref_struct = PDBParser().get_structure('ref', ref_file)[0]
                 consensus_gn_set = CASelector(SelectionParser(selection), ref_struct, out_structs).get_consensus_gn_set()
-                zipf = zipfile.ZipFile(out_stream, 'w')
                 io.set_structure(ref_struct)
                 tmp = StringIO()
                 io.save(tmp, GenericNumbersSelector(consensus_gn_set))
                 zipf.writestr(self.request.session['ref_file'].name, tmp.getvalue())
-                for alt_struct in out_structs:
+                for alt_struct, alt_file in zip(out_structs, self.request.session['alt_files']):
                     tmp = StringIO()
                     io.set_structure(alt_struct)
                     io.save(tmp, GenericNumbersSelector(consensus_gn_set))
-                    zipf.writestr(self.request.session['alt_files'].name, tmp.getvalue())
+                    zipf.writestr(alt_file.name, tmp.getvalue())
                 zipf.close()
                 if len(out_stream.getvalue()) > 0:
                     self.request.session['outfile'] = { "Superposed_substructures.zip" : out_stream, }
@@ -337,15 +338,17 @@ class SuperpositionWorkflowResults(TemplateView):
                     self.success = True
                     self.zip = 'zip'
             else:
-                out_stream = StringIO()
-                io.set_structure(out_structs[0])
-                io.save(out_stream)
+                for alt_struct, alt_file in zip(out_structs, self.request.session['alt_files']):
+                    tmp = StringIO()
+                    io.set_structure(alt_struct)
+                    io.save(tmp)
+                    zipf.writestr(alt_file.name, tmp.getvalue())
+                zipf.close()
                 if len(out_stream.getvalue()) > 0:
-                    self.request.session['outfile'] = { self.request.session['alt_files'].name : out_stream, }
+                    self.request.session['outfile'] = { "Superposed_structures.zip" : out_stream, }
+                    self.outfile = "Superposed_structures.zip"
                     self.success = True
-                    self.outfile = self.request.session['alt_files'].name
-                    self.replacement_tag = 'aligned'
-
+                    self.zip = 'zip'
         
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
