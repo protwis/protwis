@@ -3,6 +3,7 @@ from django.conf import settings
 from django.db import connection
 
 from interaction.models import *
+from ligand.models import LigandRole
 from residue.models import Residue
 from protein.models import Protein
 from structure.models import Structure,Rotamer,Fragment,PdbData
@@ -70,7 +71,7 @@ class Command(BaseCommand):
 
         #ResidueFragmentInteractionType
         try:
-            i = ResidueFragmentInteractionType.objects.get_or_create(slug=feature, name=self.interactions[feature])
+            i, created = ResidueFragmentInteractionType.objects.get_or_create(slug=feature, name=self.interactions[feature])
         except Exception:
             self.logger.info("Failed to find or create feature {}...".format(feature))
         #Rotamer and Fragment
@@ -84,19 +85,30 @@ class Command(BaseCommand):
                     try:
                         r = Residue.objects.get(sequence_number=int(resseq), amino_acid=polypeptide.three_to_one(residue.resname),protein_conformation=s.protein_conformation)
                         d, created = PdbData.objects.get_or_create(pdb=extract_pdb_data(residue))
-                        rot = Rotamer(residue=r, structure=s, pdbdata=d)
-                        rot.save()
+                        rot, created = Rotamer.objects.get_or_create(residue=r, structure=s, pdbdata=d)
+                        #rot.save()
                     except Exception as msg:
                         self.logger.error('Failed to add rotamer {}:{}{}\n'.format(pdb_code, resseq, msg))
                         return
                 else:
                     fragment_pdb_data += extract_pdb_data(residue)
             try:
-                fd,create = PdbData.objects.get_or_create(pdb=fragment_pdb_data)
+                fd, created = PdbData.objects.get_or_create(pdb=fragment_pdb_data)
                 #Taking the first ligand from the list, since existing fragments do not contain the ligand info
-                f = Fragment(residue=r, ligand=s.ligands.all()[0], structure=s, pdbdata=fd)
-                f.save()
+                f, created = Fragment.objects.get_or_create(residue=r, ligand=s.ligands.all()[0], structure=s, pdbdata=fd)
+                #f.save()
             except Exception as msg:
                 self.logger.error('Failed to add fragment {}\n{}'.format(fragment_file_name, msg))
         except Exception as msg:
             self.logger.error('Failed to add fragment {} to the db\n{}'.format(fragment_file_name, msg))
+        #StructureLigandInteraction
+        try:
+            lr, created = LigandRole.objects.get_or_create(name='unknown',slug='unknown')
+            sli, created = StructureLigandInteraction.objects.get_or_create(structure=s, ligand=s.ligands.all()[0], ligand_role=lr)
+        except Exception as msg:
+            self.logger.error("Failed to add fragment {} to the db\n{}".format(fragment_file_name, msg))
+        try:
+            rfi, created = ResidueFragmentInteraction.objects.get_or_create(structure_ligand_pair=sli, rotamer=rot, fragment=f, interaction_type=i)
+            self.logger.info("Successfully added interacting fragment {}".format(fragment_file_name))
+        except Exception as msg:
+            self.logger.error("Failed to add fragment {} to the db\n{}".format(fragment_file_name, msg))
