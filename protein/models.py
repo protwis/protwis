@@ -1,5 +1,5 @@
 from django.db import models
-from common.diagrams_gpcr import DrawHelixBox
+from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 
 class Protein(models.Model):
     parent = models.ForeignKey('self', null=True)
@@ -34,6 +34,10 @@ class Protein(models.Model):
 
     def get_helical_box(self):
         return DrawHelixBox(self)
+
+
+    def get_snake_plot(self):
+        return DrawSnakePlot(self)
 
 
 

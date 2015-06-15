@@ -16,11 +16,20 @@ def uniqid(prefix='', more_entropy=False):
     return uniqid
 
 class Diagram:
-    def create(self, content):
-        return "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"595\" height=\"430\">\n"+content+"</svg>"
+    def create(self, content,sizex,sizey):
+        diagram_js = self.diagramJS()
+        return "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""+str(sizex)+"\" height=\""+str(sizey)+"\">\n"+content+diagram_js+"</svg>" #width=\"595\" height=\"430\"
+
+    def drawToolTip(self):
+        output = """<g id='tool-tip' transform='translate(0,0)' visibility='hidden'>
+            <rect x='0' y='-40' width='1' height='25' stroke='black' fill='white' stroke-width='1' />
+            <text x='0' y='-23' text-anchor='middle' font-family='Arial' font-size='12' fill='black'></text>
+            </g>"""
+        
+        return output
 
     #Draws a ring of a helical wheel  
-    def DrawResidue(self, x,y,aa,residue_number,label,radius,cfill="white", precolor = False):
+    def DrawResidue(self, x,y,aa,residue_number,label,radius, resclass = '',cfill="white", precolor = False):
         id = residue_number
         idtext = str(id) + 't'
         tfill = 'black'
@@ -32,18 +41,159 @@ class Diagram:
         #     tfill = isset(_SESSION['color_pattern'][iidtext]) ? _SESSION['color_pattern'][iidtext] : 'black'
         # }
         output =  """
-            <circle cx='{}' cy='{}' r='{}' stroke='black' stroke-width='2' fill='{}' 
+            <circle class='{}' cx='{}' cy='{}' r='{}' stroke='black' stroke-width='2' fill='{}' 
             fill-opacity='1' id='id' class='rcircle' onclick='residueColor.setColor(evt);'
-            onmouseover='showToolTip(x,y,"label",id);' onmouseout='hideToolTip();'/>
+            onmouseover='showToolTip({},{},"{}","id");' onmouseout='hideToolTip();'/>
             <text x='{}' y='{}' text-anchor='middle' font-family='helvetica' font-size='16' fill='tfill'
-            id='idtext' onclick='residueColor.setColor(evt);' class='rtext'
-            onmouseover='showToolTip(x,y,"label",id);' onmouseout='hideToolTip();'>{}</text>
-            """.format(x,y,radius,cfill,x,y+6,aa) #aa
+            id='idtext' onclick='residueColor.setColor(evt);' class='rtext {}'
+            onmouseover='showToolTip({},{},"{}","id");' onmouseout='hideToolTip();'>{}</text>
+            """.format(resclass,x,y,radius,cfill,x,y,label,x,y+6,resclass,x,y,label,aa) #aa
+        return output
+
+    def diagramJS(self):
+        output = """<script type="text/ecmascript">
+                    <![CDATA[
+
+                    var translateOffset = 0;
+                    function showToolTip(x, y, str,rid) {
+                        var tipElement = document.getElementById('tool-tip');
+
+                        var rect = tipElement.childNodes[1];
+                        var text = tipElement.childNodes[3];
+
+                        while (text.lastChild) {
+                            text.removeChild(text.lastChild);
+                        }
+                        
+                        var NS = "http://www.w3.org/2000/svg";
+
+
+                        //text.textContent =  str;
+                            var text_tspan = document.createElementNS(NS, "tspan");
+
+
+                            rect.setAttribute('height', 25);
+                            rect.setAttribute('y', -40);
+                            text_tspan.textContent = String(str);
+                            text.appendChild(text_tspan);
+                        
+                        
+                        var bbox = text.getBBox();
+                        rect.setAttribute('width', bbox.width + 8);
+                        rect.setAttribute('x', -bbox.width/2 - 4);
+
+                        var transX = (x <= (bbox.width + 8) / 2) ? (bbox.width + 8) / 2 : x;
+                        tipElement.setAttribute('transform', 'translate(' + transX + ',' + (y + translateOffset) + ')');
+                        tipElement.setAttribute('visibility', 'visible');
+                    }
+
+                    function hideToolTip() {
+                        var tipElement = document.getElementById('tool-tip');
+                        tipElement.setAttribute('visibility', 'hidden');
+                    }
+
+                    function toggleLoop(id,type) {
+                        $(id+".long").fadeToggle();
+                        $(id+".short").fadeToggle();
+                    }
+
+                    var elements = document.getElementsByClassName('long')
+
+                    for (var i = 0; i < elements.length; i++){
+                        elements[i].style.display = 'none';
+                    }
+
+                    ]]>
+                    </script>"""
         return output
 
     def deg2rad(self,degrees):
         radians = pi * degrees / 180
         return radians
+
+    def bezier(self,p0,p1,p2,t):
+        #https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+
+        v1x = p1[0]-p0[0]
+        v1y = p1[1]-p0[1]
+
+        i1 = [p0[0]+(p1[0]-p0[0])*t,p0[1]+(p1[1]-p0[1])*t]
+        i2 = [p1[0]+(p2[0]-p1[0])*t,p1[1]+(p2[1]-p1[1])*t]
+
+        return [i1[0]+(i2[0]-i1[0])*t,i1[1]+(i2[1]-i1[1])*t]
+
+    def bezier_high(self,p0,p1,p2,p3,t):
+        #https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+
+        i1 = self.bezier(p0,p1,p2,t)
+        i2 = self.bezier(p1,p2,p3,t)
+
+        return [i1[0]+(i2[0]-i1[0])*t,i1[1]+(i2[1]-i1[1])*t]
+
+    def bezier_high2(self,p0,p1,p2,p3,p4,t):
+        #https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+        #https://www.jasondavies.com/animated-bezier/
+        i1 = self.bezier_high(p0,p1,p2,p3,t)
+        i2 = self.bezier_high(p1,p2,p3,p4,t)
+
+        return [i1[0]+(i2[0]-i1[0])*t,i1[1]+(i2[1]-i1[1])*t]
+
+    def lengthbezier(self,p0,p1,p2,step,p3=False,p4=False):
+        #https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+
+        pos = 0
+        length = 0
+        p = p0
+        while pos <= 1:
+
+            
+            if p3==False: 
+                xy = self.bezier(p0,p1,p2,pos)
+            elif p4==False: 
+                xy = self.bezier_high(p0,p1,p2,p3,pos)
+            elif p4!=False: 
+                xy = self.bezier_high2(p0,p1,p2,p3,p4,pos)
+
+            length += math.sqrt( (xy[0]-p[0])**2 + (xy[1]-p[1])**2 )
+            p = xy
+            pos += step
+
+        return round(length)
+
+    def wherebezier(self,p0,p1,p2,step,stop,p3=False,p4=False):
+        #https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+
+        pos = 0
+        length = 0
+        p = p0
+        xy = [0,0]
+
+        if stop<0:
+            if p3==False: 
+                stop = self.lengthbezier(p0,p1,p2,step)+stop
+            elif p4==False:
+                stop = self.lengthbezier(p0,p1,p2,step,p3)+stop
+            else:
+                stop = self.lengthbezier(p0,p1,p2,step,p3)+stop
+
+        while pos <= 1:
+
+            if length>stop: #stop if it reached the length along the line
+                break
+
+            if p3==False: 
+                xy = self.bezier(p0,p1,p2,pos)
+            elif p4==False:
+                xy = self.bezier_high(p0,p1,p2,p3,pos)
+            else:
+                xy = self.bezier_high2(p0,p1,p2,p3,p4,pos)
+
+            length += math.sqrt( (xy[0]-p[0])**2 + (xy[1]-p[1])**2 )
+            p = xy
+            pos += step
+
+        return pos,xy
+
 
     #find slope and y-intercept of a line through two points
     def LineEquation(self,p1, p2):
