@@ -375,15 +375,14 @@ class FragmentSuperpositionIndex(TemplateView):
 
     #Input file form data
     header = "Select a file to upload:"
-    upload_form_data = {
-        "pdb_file": forms.FileField(),
-        "similarity" : forms.ChoiceField(choices=(('identical','Use fragments with identical residues'),
+    upload_form_data = OrderedDict([
+        ("pdb_file", forms.FileField()),
+        ("similarity", forms.ChoiceField(choices=(('identical','Use fragments with identical residues'),
                      ('similar','Use fragments with residues of similar properties')),
-            widget=forms.RadioSelect()),
-        "representative" : forms.ChoiceField(choices=(('closest','Use fragments from the evolutionary closest crystal structure'),
-                     ('any','Use all available fragments')),
-            widget=forms.RadioSelect())
-        }
+            widget=forms.RadioSelect())),
+        ("representative", forms.ChoiceField(choices=(('closest','Use fragments from the evolutionary closest crystal structure'),
+                     ('any','Use all available fragments')), widget=forms.RadioSelect())),
+        ])
     form_code = forms.Form()
     form_code.fields = upload_form_data
     form_id = 'fragments'
