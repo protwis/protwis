@@ -4,7 +4,7 @@
         <div class='selection-heading'>
            <span class='selection-heading-text'>{{ header }}</span>
         </div>
-        <div style="width:370px;height:200px;">
+        <div style="width:370px;height:{{ form_height }}px;">
             <br />
             <form id="{{form_id}}" action="{{ url }}" method="post" enctype="multipart/form-data"> {% csrf_token %}
                 {{ form_code }}

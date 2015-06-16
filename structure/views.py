@@ -88,7 +88,7 @@ class GenericNumberingIndex(TemplateView):
     form_id = 'gn_pdb_file'
     url = '/structure/generic_numbering_results'
     mid_section = "upload_file_form.html"
-
+    form_height = 200
     #Buttons
     buttons = {
         'continue' : {
@@ -264,8 +264,10 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
             request.session['exclusive'] = True
         else:
             request.session['exclusive'] = False
-        request.session['ref_file'] = request.FILES['ref_file']
-        request.session['alt_files'] = request.FILES.getlist('alt_files')
+        if 'ref_file' in request.FILES:
+            request.session['ref_file'] = request.FILES['ref_file']
+        if 'alt_files' in request.FILES:
+            request.session['alt_files'] = request.FILES.getlist('alt_files')
         simple_selection = request.session.get('selection', False)
 
         # create full selection and import simple selection (if it exists)
@@ -385,9 +387,11 @@ class FragmentSuperpositionIndex(TemplateView):
         ])
     form_code = forms.Form()
     form_code.fields = upload_form_data
+    form_code.initial={'similarity': 'similar', 'representative': 'closest'}
     form_id = 'fragments'
     url = '/structure/fragment_superposition_results'
     mid_section = "upload_file_form.html"
+    form_height = 350
 
     #Buttons
     buttons = {
