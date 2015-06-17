@@ -58,10 +58,11 @@ class Alignment:
     def load_proteins(self, proteins):
         """Load a list of protein objects into the alignment"""
         # fetch all protein conformations
-        protein_conformations = ProteinConformation.objects.filter(protein__in=proteins,
+        protein_conformations = ProteinConformation.objects.order_by('protein__family__slug',
+            'protein__entry_name').filter(protein__in=proteins,
             state__slug__in=self.states).select_related('protein__residue_numbering_scheme', 'protein__species',
             'state')
-        pconfs = {}
+        pconfs = OrderedDict()
         for pconf in protein_conformations:
             pconf_label = pconf.__str__()
             if pconf_label not in pconfs:
@@ -69,7 +70,9 @@ class Alignment:
             pconfs[pconf_label] = pconf
 
         for pconf_label, pconf in pconfs.items():
-            self.proteins.append(pconf)
+            # do not insert if same as reference
+            if not (self.reference and pconf == self.proteins[0]):
+                self.proteins.append(pconf)
         self.update_numbering_schemes()
 
     def load_proteins_from_selection(self, simple_selection):
@@ -379,6 +382,10 @@ class Alignment:
     def format_generic_number(self, generic_number):
         """A placeholder for an instance specific function"""
         return generic_number
+
+    def calculate_statistics(self):
+        """Calculate consesus sequence and amino acid and feature frequency"""
+        return False
 
     def calculate_similarity(self):
         """Calculate the sequence identity/similarity of every selected protein compared to a selected reference"""

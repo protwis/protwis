@@ -110,18 +110,21 @@
 }
 .ali-first-col-div
 {
-    overflow-x:scroll;
+    overflow-x: scroll;
 }
-.ali-main-div
+.ali-scroll-div, .ali-main-div
 {
-    overflow-x:scroll;
-    overflow-y:auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 920px;
 }
-.ali-scroll-div
+.ali-scroll-div, .ali-first-scroll-div
 {
-    overflow-x:scroll;
-    overflow-y:hidden;
-    height:16px;
+    height: 16px;
+}
+.dynamic-div
+{
+    display: inline-block;
 }
 ::-webkit-scrollbar {
     width: 8px;

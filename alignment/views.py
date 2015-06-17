@@ -59,4 +59,6 @@ def render_alignment(request):
     # build the alignment data matrix
     a.build_alignment()
 
-    return render(request, 'alignment/alignment.html', {'a': a})
+    num_of_sequences = len(a.proteins)
+
+    return render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences})

@@ -81,4 +81,6 @@ def render_alignment(request):
     # calculate identity and similarity of each row compared to the reference
     a.calculate_similarity()
 
-    return render(request, 'similaritysearch/alignment.html', {'a': a})
+    num_of_sequences = len(a.proteins)
+
+    return render(request, 'similaritysearch/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences})
