@@ -1,29 +1,101 @@
 ﻿{% extends "home/base.html" %}
 {% load staticfiles %}
-
-
 <!--{% block addon_js %}
-    
+    <script src="/static/home/js/d3.min.js"></script>
+    <script src="/static/home/js/nv.d3.min.js"></script>
 {% endblock %}-->
 
-{% block content %}
-<style>
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+{% endblock %}
 
-.chart rect {
+
+{% block content %}
+    <script src="/static/home/js/d3.min.js"></script>
+    <script src="/static/home/js/nv.d3.min.js"></script>
+    {% load nvd3_tags %}
+    {% load_chart charttype chartdata "multibarchart_container" extra %}
+    {% include_container "multibarchart_container" 400 600 %}
+
+<!--<style>
+
+.bar {
   fill: steelblue;
 }
 
-.chart text {
-  fill: white;
+.axis text {
   font: 10px sans-serif;
-  text-anchor: end;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
 }
 
 </style>
 
 <svg class="chart"></svg>
 <script src="/static/home/js/d3.min.js"></script>
+<script src="/static/home/js/nv.d3.min.js"></script>
+
 <script>
+
+    var margin = { top: 20, right: 30, bottom: 30, left: 40 },
+        width = 800 - margin.left - margin.right,
+        height = 600 - margin.top - margin.bottom;
+
+    var x = d3.scale.ordinal()
+        .rangeRoundBands([0, width], .1);
+
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left");
+
+    var chart = d3.select(".chart")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+    d3.json("/structure/crystal_statistics_by_year", function (error, data) {
+        x.domain(data.map(function (d) { return d.year; }));
+        y.domain([0, d3.max(data, function (d) { return d.count; })]);
+
+        var barWidth = width / data.length;
+
+        chart.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis);
+
+            chart.append("g")
+            .attr("class", "y axis")
+            .call(yAxis);
+
+        chart.selectAll(".bar")
+          .data(data)
+        .enter().append("rect")
+          .attr("class", "bar")
+          .attr("x", function (d) { return x(d.year); })
+          .attr("y", function (d) { return y(d.count); })
+          .attr("height", function (d) { return height - y(d.count); })
+          .attr("width", x.rangeBand());
+    });-->
+<!--<script>
 
     var data = [64, 4, 8, 15, 30, 16, 23, 42],
         width = 800,
@@ -48,44 +120,6 @@
         .attr("y", function (d) { return y(d) })
         .attr("height", function (d) { return height -y(d) })
         .attr("width", barWidth - 1);
-
-    bar.append("text")
-        .attr("x", barWidth / 2)
-        .attr("dx", ".35em")
-        .attr("y", function(d) { return y(d) - 3; })
-        .text(function(d) { return d; });
-
-</script>
-</br>
-</br>
-<script>
-
-    var width = 800,
-        height = 600;
-
-
-    var y = d3.scale.linear()
-        .range([height, 0]);
-
-    var chart = d3.select(".chart")
-        .attr("height", height)
-        .attr("width", width);
-
-    d3.json("/structure/crystal_statistics_by_year", function (error, data) {
-
-        y.domain([0, d3.max(function (d) { return d.count; })]);
-
-        var barWidth = width / data.length;
-
-        var bar = chart.selectAll("g")
-            .data(data)
-            .enter().append("g")
-            .attr("transform", function (d, i) { return "translate(" + i * barWidth + ", 0)"; });
-
-        bar.append("rect")
-            .attr("y", function (d) { return y(d.count) })
-            .attr("height", function (d) { return height -y(d.count) })
-            .attr("width", barWidth - 1);
 
     bar.append("text")
         .attr("x", barWidth / 2)
@@ -174,5 +208,4 @@ text {
             .text("Number of crystals");
     });-->
 
-</script>
 {% endblock %}

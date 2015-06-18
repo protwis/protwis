@@ -48,6 +48,26 @@ class StructureStatistics(TemplateView):
     def get_context_data (self, **kwargs):
         context = super(StructureStatistics, self).get_context_data(**kwargs)
 
+        years = list(set([x.publication_date.year for x in Structure.objects.distinct('publication_date')]))
+        struct_data = [len(Structure.objects.filter(publication_date__year=year)) for year in years]
+
+        extra = {
+            'x_axis_format': 'n',
+            'y_axis_format': 'f',
+            }
+        chartdata = {
+            'x' : years,
+            'name1': 'GPCRs', 'y1': struct_data,
+            }
+        charttype = "multiBarChart"
+        #data = {
+        #    'charttype': charttype,
+        #    'chartdata': chartdata,
+        #    }
+        context['charttype'] = charttype
+        context['chartdata'] = chartdata
+        context['extra'] = extra
+
         return context
 
 
@@ -60,6 +80,13 @@ class StructureStatistics(TemplateView):
 
         return JsonResponse(struct_data, safe=False)
 
+
+    def prepare_nvd3_chart(self, **kwargs):
+        """
+        Multibar chart for crystalized receptors by family.
+        """
+        #Simple example for start
+        return context
 
 
 class GenericNumberingIndex(TemplateView):
@@ -368,8 +395,10 @@ class FragmentSuperpositionIndex(TemplateView):
     #Left panel
     step = 1
     number_of_steps = 1
-    title = "UPLOAD A PDB FILE"
+    title = "SUPERPOSE FRAGMENTS OF CRYSTAL STRUCTURES"
     description = """
+    The tool implements a fragment-based pharmacophore method, as published in <a href='http://www.ncbi.nlm.nih.gov/pubmed/25286328'>Fidom K, et al (2015)</a>. Interacting ligand moiety - residue pairs extracted from selected crystal structures of GPCRs are superposed onto the input pdb file based on gpcrdb generic residue numbers. Resulting aligned ligand fragments can be used for placement of pharmacophore features.
+
     Upload a pdb file you want to superpose the interacting moiety - residue pairs.
     
     Once you have selected all your targets, click the green button.
@@ -429,17 +458,20 @@ class FragmentSuperpositionResults(TemplateView):
         
         frag_sp = FragmentSuperpose(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8', 'ignore')),request.FILES['pdb_file'].name)
         superposed_fragments = []
+        superposed_fragments_repr = []
         print(request.POST)
         if request.POST['similarity'] == 'identical':
             if request.POST['representative'] == 'any':
                 superposed_fragments = frag_sp.superpose_fragments()
             else:
-                superposed_fragments = frag_sp.superpose_fragments(representative=True)
+                superposed_fragments_repr = frag_sp.superpose_fragments(representative=True)
+                superposed_fragments = frag_sp.superpose_fragments()
         else:
             if request.POST['representative'] == 'any':
                 superposed_fragments = frag_sp.superpose_fragments(use_similar=True)
             else:
-                superposed_fragments = frag_sp.superpose_fragments(representative=True, use_similar=True)
+                superposed_fragments_repr = frag_sp.superpose_fragments(representative=True, use_similar=True)
+                superposed_fragments = frag_sp.superpose_fragments(use_similar=True)
         if superposed_fragments == []:
             self.message = "No fragments were aligned."
         else:
@@ -450,7 +482,16 @@ class FragmentSuperpositionResults(TemplateView):
                 io.set_structure(pdb_data)
                 tmp = StringIO()
                 io.save(tmp)
-                zipf.writestr(fragment.generate_filename(), tmp.getvalue())
+                if request.POST['representative'] == 'any':
+                    zipf.writestr(fragment.generate_filename(), tmp.getvalue())
+                else:
+                    zipf.writestr("all_fragments//{!s}".format(fragment.generate_filename()), tmp.getvalue())
+            if superposed_fragments_repr != []:
+                for fragment, pdb_data in superposed_fragments_repr:
+                    io.set_structure(pdb_data)
+                    tmp = StringIO()
+                    io.save(tmp)
+                    zipf.writestr("representative_fragments//{!s}".format(fragment.generate_filename()), tmp.getvalue())
             zipf.close()
             if len(out_stream.getvalue()) > 0:
                 request.session['outfile'] = { 'interacting_moiety_residue_fragments.zip' : out_stream, }
