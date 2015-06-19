@@ -3,6 +3,7 @@ from django.views.generic import TemplateView
 from django.http import HttpResponse, JsonResponse
 from django import forms
 
+from protein.models import Gene
 from structure.models import Structure
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector
 from structure.assign_generic_numbers_gpcr import GenericNumbering
@@ -40,7 +41,7 @@ class StructureBrowser(TemplateView):
 
 class StructureStatistics(TemplateView):
     """
-    So not ready that EA wanted to publish it
+    So not ready that EA wanted to publish it.
     """
 
     template_name = 'structure_statistics.html'
@@ -48,50 +49,62 @@ class StructureStatistics(TemplateView):
     def get_context_data (self, **kwargs):
         context = super(StructureStatistics, self).get_context_data(**kwargs)
 
-        years = list(set([x.publication_date.year for x in Structure.objects.distinct('publication_date')]))
-        struct_data = [len(Structure.objects.filter(publication_date__year=year)) for year in years]
-
+        #Prepare chart with unique crystallized receptors by year
+        all_structs = list(Structure.objects.all())
+        years = list(set([x.publication_date.year for x in all_structs]))
+        unique_structs = self.get_unique_structures(all_structs)
+        families = list(set([x.protein_conformation.protein.get_protein_family() for x in unique_structs]))
+        
         extra = {
-            'x_axis_format': 'n',
+            'x_axis_format': '',
             'y_axis_format': 'f',
             }
-        chartdata = {
-            'x' : years,
-            'name1': 'GPCRs', 'y1': struct_data,
-            }
-        charttype = "multiBarChart"
-        #data = {
-        #    'charttype': charttype,
-        #    'chartdata': chartdata,
-        #    }
-        context['charttype'] = charttype
-        context['chartdata'] = chartdata
+        context['charttype'] = "multiBarChart"
+        context['chartdata'] = self.get_per_family_data_series(years, families, unique_structs)
         context['extra'] = extra
 
         return context
 
 
-    def get_crystalized_receptors_data(self):
+    def get_unique_structures(self, structures):
+        """
+        Prepare a list of unique crystallized receptors. Uniqueness is evaluated by Gene object.
+        """
+        uniques = []
+        genes = Gene.objects.all()
+        for gene in genes:
+            coded_proteins = [x.entry_name for x in gene.proteins.all()]
+            for struct in structures:
+                if struct.protein_conformation.protein.parent.entry_name in coded_proteins and struct not in uniques:
+                    uniques.append(struct)
+        return uniques
 
-        years = list(set([x.publication_date.year for x in Structure.objects.distinct('publication_date')]))
-        struct_data = []
+
+    def get_per_family_data_series(self, years, families, structures):
+        """
+        Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
+        """
+        series = {'x' : years,}
+        data = {}
         for year in years:
-            struct_data.append({'year': year, 'count': len(Structure.objects.filter(publication_date__year=year))})
+            for family in families:
+                if family not in data.keys():
+                    data[family] = []
+                count = 0
+                for structure in structures:
+                    if structure.protein_conformation.protein.get_protein_family() == family and structure.publication_date.year == year:
+                        count += 1
+                data[family].append(count)
+        for idx, family in enumerate(data.keys()):
+            series['name{:n}'.format(idx+1)] = family
+            series['y{:n}'.format(idx+1)] = data[family]
+        return series
 
-        return JsonResponse(struct_data, safe=False)
-
-
-    def prepare_nvd3_chart(self, **kwargs):
-        """
-        Multibar chart for crystalized receptors by family.
-        """
-        #Simple example for start
-        return context
 
 
 class GenericNumberingIndex(TemplateView):
     """
-    Starting page of generic numbering assignment workflow
+    Starting page of generic numbering assignment workflow.
     """
     template_name = 'common_structural_tools.html'
     
