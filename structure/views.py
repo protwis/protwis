@@ -3,6 +3,7 @@ from django.views.generic import TemplateView
 from django.http import HttpResponse, JsonResponse
 from django import forms
 
+from protein.models import Gene
 from structure.models import Structure
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector
 from structure.assign_generic_numbers_gpcr import GenericNumbering
@@ -40,7 +41,7 @@ class StructureBrowser(TemplateView):
 
 class StructureStatistics(TemplateView):
     """
-    So not ready that EA wanted to publish it
+    So not ready that EA wanted to publish it.
     """
 
     template_name = 'structure_statistics.html'
@@ -48,23 +49,62 @@ class StructureStatistics(TemplateView):
     def get_context_data (self, **kwargs):
         context = super(StructureStatistics, self).get_context_data(**kwargs)
 
+        #Prepare chart with unique crystallized receptors by year
+        all_structs = list(Structure.objects.all())
+        years = list(set([x.publication_date.year for x in all_structs]))
+        unique_structs = self.get_unique_structures(all_structs)
+        families = list(set([x.protein_conformation.protein.get_protein_family() for x in unique_structs]))
+        
+        extra = {
+            'x_axis_format': '',
+            'y_axis_format': 'f',
+            }
+        context['charttype'] = "multiBarChart"
+        context['chartdata'] = self.get_per_family_data_series(years, families, unique_structs)
+        context['extra'] = extra
+
         return context
 
 
-    def get_crystalized_receptors_data(self):
+    def get_unique_structures(self, structures):
+        """
+        Prepare a list of unique crystallized receptors. Uniqueness is evaluated by Gene object.
+        """
+        uniques = []
+        genes = Gene.objects.all()
+        for gene in genes:
+            coded_proteins = [x.entry_name for x in gene.proteins.all()]
+            for struct in structures:
+                if struct.protein_conformation.protein.parent.entry_name in coded_proteins and struct not in uniques:
+                    uniques.append(struct)
+        return uniques
 
-        years = list(set([x.publication_date.year for x in Structure.objects.distinct('publication_date')]))
-        struct_data = []
+
+    def get_per_family_data_series(self, years, families, structures):
+        """
+        Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
+        """
+        series = {'x' : years,}
+        data = {}
         for year in years:
-            struct_data.append({'year': year, 'count': len(Structure.objects.filter(publication_date__year=year))})
-
-        return JsonResponse(struct_data, safe=False)
+            for family in families:
+                if family not in data.keys():
+                    data[family] = []
+                count = 0
+                for structure in structures:
+                    if structure.protein_conformation.protein.get_protein_family() == family and structure.publication_date.year == year:
+                        count += 1
+                data[family].append(count)
+        for idx, family in enumerate(data.keys()):
+            series['name{:n}'.format(idx+1)] = family
+            series['y{:n}'.format(idx+1)] = data[family]
+        return series
 
 
 
 class GenericNumberingIndex(TemplateView):
     """
-    Starting page of generic numbering assignment workflow
+    Starting page of generic numbering assignment workflow.
     """
     template_name = 'common_structural_tools.html'
     
@@ -88,7 +128,7 @@ class GenericNumberingIndex(TemplateView):
     form_id = 'gn_pdb_file'
     url = '/structure/generic_numbering_results'
     mid_section = "upload_file_form.html"
-
+    form_height = 200
     #Buttons
     buttons = {
         'continue' : {
@@ -264,8 +304,10 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
             request.session['exclusive'] = True
         else:
             request.session['exclusive'] = False
-        request.session['ref_file'] = request.FILES['ref_file']
-        request.session['alt_files'] = request.FILES.getlist('alt_files')
+        if 'ref_file' in request.FILES:
+            request.session['ref_file'] = request.FILES['ref_file']
+        if 'alt_files' in request.FILES:
+            request.session['alt_files'] = request.FILES.getlist('alt_files')
         simple_selection = request.session.get('selection', False)
 
         # create full selection and import simple selection (if it exists)
@@ -366,8 +408,10 @@ class FragmentSuperpositionIndex(TemplateView):
     #Left panel
     step = 1
     number_of_steps = 1
-    title = "UPLOAD A PDB FILE"
+    title = "SUPERPOSE FRAGMENTS OF CRYSTAL STRUCTURES"
     description = """
+    The tool implements a fragment-based pharmacophore method, as published in <a href='http://www.ncbi.nlm.nih.gov/pubmed/25286328'>Fidom K, et al (2015)</a>. Interacting ligand moiety - residue pairs extracted from selected crystal structures of GPCRs are superposed onto the input pdb file based on gpcrdb generic residue numbers. Resulting aligned ligand fragments can be used for placement of pharmacophore features.
+
     Upload a pdb file you want to superpose the interacting moiety - residue pairs.
     
     Once you have selected all your targets, click the green button.
@@ -385,9 +429,11 @@ class FragmentSuperpositionIndex(TemplateView):
         ])
     form_code = forms.Form()
     form_code.fields = upload_form_data
+    form_code.initial={'similarity': 'similar', 'representative': 'closest'}
     form_id = 'fragments'
     url = '/structure/fragment_superposition_results'
     mid_section = "upload_file_form.html"
+    form_height = 350
 
     #Buttons
     buttons = {
@@ -425,17 +471,20 @@ class FragmentSuperpositionResults(TemplateView):
         
         frag_sp = FragmentSuperpose(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8', 'ignore')),request.FILES['pdb_file'].name)
         superposed_fragments = []
+        superposed_fragments_repr = []
         print(request.POST)
         if request.POST['similarity'] == 'identical':
             if request.POST['representative'] == 'any':
                 superposed_fragments = frag_sp.superpose_fragments()
             else:
-                superposed_fragments = frag_sp.superpose_fragments(representative=True)
+                superposed_fragments_repr = frag_sp.superpose_fragments(representative=True)
+                superposed_fragments = frag_sp.superpose_fragments()
         else:
             if request.POST['representative'] == 'any':
                 superposed_fragments = frag_sp.superpose_fragments(use_similar=True)
             else:
-                superposed_fragments = frag_sp.superpose_fragments(representative=True, use_similar=True)
+                superposed_fragments_repr = frag_sp.superpose_fragments(representative=True, use_similar=True)
+                superposed_fragments = frag_sp.superpose_fragments(use_similar=True)
         if superposed_fragments == []:
             self.message = "No fragments were aligned."
         else:
@@ -446,7 +495,16 @@ class FragmentSuperpositionResults(TemplateView):
                 io.set_structure(pdb_data)
                 tmp = StringIO()
                 io.save(tmp)
-                zipf.writestr(fragment.generate_filename(), tmp.getvalue())
+                if request.POST['representative'] == 'any':
+                    zipf.writestr(fragment.generate_filename(), tmp.getvalue())
+                else:
+                    zipf.writestr("all_fragments//{!s}".format(fragment.generate_filename()), tmp.getvalue())
+            if superposed_fragments_repr != []:
+                for fragment, pdb_data in superposed_fragments_repr:
+                    io.set_structure(pdb_data)
+                    tmp = StringIO()
+                    io.save(tmp)
+                    zipf.writestr("representative_fragments//{!s}".format(fragment.generate_filename()), tmp.getvalue())
             zipf.close()
             if len(out_stream.getvalue()) > 0:
                 request.session['outfile'] = { 'interacting_moiety_residue_fragments.zip' : out_stream, }

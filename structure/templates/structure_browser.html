@@ -9,14 +9,20 @@
 {% block addon_js %}
     <script src="{% static 'home/js/jquery.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
     <script src="/static/home/js/selection.js"></script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             var table = $('#crystal_structures').DataTable( {
                 "scrollX": true,
                 "filter": true,
-                'paging': true,
+                'paging': false,
                 'length': 30,
+                dom: 'T<"clear">lfrtip',
+                tableTools: {
+                    "sRowSelect": "multi",
+                    "aButtons": ["select_all", "select_none"]
+                },
                 initComplete: function () {
                     this.api().columns().every(function () {
                         var column = this;
@@ -53,7 +59,6 @@
                 var selected_data = table.rows('.selected').data();
                 //alert(selected_data.length)
                 for (i = 0; i < selected_data.length; i++) {
-                    alert(selected_data[i][3]);
                     AddToSelection('targets', 'structure', selected_data[i][3]);
                 }
             });

@@ -41,6 +41,15 @@ class Protein(models.Model):
 
 
 
+    def get_protein_family(self):
+        tmp = self.family
+        while tmp.parent.parent.parent is not None:
+            tmp = tmp.parent
+        return tmp.name
+
+
+
+
 class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein')
     state = models.ForeignKey('ProteinState')

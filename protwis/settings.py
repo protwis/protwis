@@ -27,6 +27,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'debug_toolbar',
     # 'tastypie',
+    'django_nvd3',
     'common',
     'home',
     'protein',
