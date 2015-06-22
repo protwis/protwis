@@ -4,6 +4,9 @@ from django.conf import settings
 
 urlpatterns = patterns('',
     url(r'^$', StructureBrowser.as_view(), name='structure_browser'),
+    url(r'^template_browser', TemplateBrowser.as_view(), name='structure_browser'),
+    url(r'^template_selection', TemplateTargetSelection.as_view(), name='structure_browser'),
+    url(r'^template_segment_selection', TemplateSegmentSelection.as_view(), name='structure_browser'),
     url(r'^statistics$', StructureStatistics.as_view(), name='structure_statistics'),
     url(r'^generic_numbering_index', GenericNumberingIndex.as_view(), name='generic_numbering'),
     url(r'^generic_numbering_results', GenericNumberingResults.as_view(), name='generic_numbering'),

@@ -3,14 +3,15 @@ from django.views.generic import TemplateView
 from django.http import HttpResponse, JsonResponse
 from django import forms
 
-from protein.models import Gene
+from protein.models import Gene, ProteinSegment
 from structure.models import Structure
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
-from common.views import AbsSegmentSelection
+from common.views import AbsSegmentSelection,AbsReferenceSelection
 from common.selection import Selection
 from common.extensions import MultiFileField
+from common.alignment import Alignment
 
 import inspect
 import os
@@ -31,6 +32,7 @@ class StructureBrowser(TemplateView):
 
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
+            print(type(Structure.objects.all()))
             context['crystals'] = Structure.objects.all()
         except Structure.DoesNotExist as e:
             pass
@@ -273,8 +275,6 @@ class SuperpositionWorkflowIndex(TemplateView):
 
 #Class rendering selection box for sequence segments
 class SuperpositionWorkflowSelection(AbsSegmentSelection):
-
-    template_name = 'common/segmentselection.html'
 
     #Left panel
     step = 2
@@ -521,6 +521,100 @@ class FragmentSuperpositionResults(TemplateView):
 
         return render(request, self.template_name, context)
        
+
+#==============================================================================
+class TemplateTargetSelection(AbsReferenceSelection):
+    """
+    Starting point for template selection workflow. Target selection. 
+    """
+    
+    type_of_selection = 'reference'
+    #Left panel
+    description = 'Select targets by searching or browsing in the middle column. You can select entire target families or individual targets.\n\nSelected targets will appear in the right column, where you can edit the list.\n\nOnce you have selected all your targets, either proceed with all TMs alignment ("Find template" button) or specify the sequence segments manualy ("Advanced segment selection" button).'
+    step = 1
+    number_of_steps = 2
+
+    #Mid section
+
+    #Right panel
+    buttons = {
+        'continue': {
+            'label': 'Find template',
+            'url': '/structure/template_browser',
+            'color': 'success',
+        },
+        'segments' : {
+            'label' : 'Advanced segment selection',
+            'url' : '/structure/template_segment_selection',
+            'color' : 'info',
+        },
+    }
+
+
+
+#==============================================================================
+class TemplateSegmentSelection(AbsSegmentSelection):
+    """
+    Advanced selection of sequence segments for template search.
+    """
+   #Left panel
+    step = 2
+    number_of_steps = 2
+
+    #Mid section
+    #mid_section = 'segment_selection.html'
+
+    #Right panel
+    segment_list = True
+    buttons = {
+        'continue': {
+            'label': 'Find template',
+            'url': '/structure/template_browser',
+            'color': 'success',
+        },
+    }
+    # OrderedDict to preserve the order of the boxes
+    selection_boxes = OrderedDict([('reference', True),
+        ('targets', False),
+        ('segments', True),])    
+
+
+
+#==============================================================================
+class TemplateBrowser(TemplateView):
+    """
+    Fetching Structure data and ordering by similarity
+    """
+
+    template_name = "structure_browser.html"
+
+    def get_context_data (self, **kwargs):
+
+        context = super(TemplateBrowser, self).get_context_data(**kwargs)
+
+        # get simple selection from session
+        simple_selection = self.request.session.get('selection', False)
+        a = Alignment()
+        a.load_reference_protein_from_selection(simple_selection)
+        if simple_selection.segments != []:
+            a.load_segments_from_selection(simple_selection)
+        else:
+            a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']))
+        a.load_proteins([x.protein_conformation.protein for x in list(Structure.objects.all())])
+        a.build_alignment()
+        a.calculate_similarity()
+        print(len(a.proteins[1:]))
+        context['crystals'] = []
+        for prot in a.proteins[1:]:
+            context['crystals'].append(Structure.objects.get(protein_conformation__protein__entry_name=prot.protein.entry_name))
+        print(context['crystals'])
+        #try:
+        #    context['crystals'] = Structure.objects.all()
+        #except Structure.DoesNotExist as e:
+        #    pass
+
+        return context
+
 
 #==============================================================================
 def ServePdbOutfile (request, outfile, replacement_tag):
