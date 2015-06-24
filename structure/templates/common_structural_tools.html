@@ -18,7 +18,7 @@
                     <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
                     {% endif %}
                     <h4>{{ title }}</h4>
-                    {{ description|linebreaks }}
+                    {{ description|safe|linebreaks }}
                 </div>
 
             <!-- link to docs -->
