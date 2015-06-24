@@ -1,0 +1,9 @@
+{% for row in a.proteins %}
+    > {{ row.protein.entry_name }}<br />
+    {% for s in row.alignment %}
+        {% for r in s %}
+            {{ r.2 }}
+        {% endfor %}
+    {% endfor %}
+    <br />
+{% endfor %}

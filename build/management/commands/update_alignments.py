@@ -67,7 +67,6 @@ class Command(BaseCommand):
             # check whether all segments have annotated reference positions
             if len(ref_positions) != len(settings.REFERENCE_POSITIONS):
                 self.logger.error('Missing reference positions for {}'.format(pconf))
-                continue
 
             # protein anomalies in main template
             main_tpl_pas = pconf.template_structure.protein_anomalies.all().values_list(
@@ -98,6 +97,14 @@ class Command(BaseCommand):
                     continue
 
                 if segment.slug in settings.REFERENCE_POSITIONS:
+                    # get reference positions of this segment (e.g. 1x50)
+                    segment_ref_position = settings.REFERENCE_POSITIONS[segment.slug]
+
+                    # is there a defined reference position for this protein and segment
+                    if segment_ref_position not in ref_positions:
+                        self.logger.warning("{} missing definition for {}".format(pconf, segment_ref_position))
+                        continue
+
                     # protein anomaly rules
                     if segment.slug in anomaly_rule_sets:
                         for pa, parss in anomaly_rule_sets[segment.slug].items():
@@ -156,9 +163,6 @@ class Command(BaseCommand):
                                     self.logger.info("Anomaly {} included by rule in {}".format(pa, pconf))
                                 else:
                                     self.logger.info("Anomaly {} excluded by rule in {}".format(pa, pconf))
-
-                    # get reference positions of this segment (e.g. 1x50)
-                    segment_ref_position = settings.REFERENCE_POSITIONS[segment.slug]
 
                     # template segment reference residue number
                     try:

@@ -9,19 +9,24 @@
 <!-- sequence alignment starts -->
 <table>
     <tr>
+        <!-- static column -->
         <td>
-            <!-- static column -->
             <div class="ali-first-scroll-div"></div>
             <div class="ali-first-col-div">
                 <table>
+                    <!-- segment line -->
                     <tr>
                         <td class="ali-td ali-td-first-col"></td>
                     </tr>
+                    
+                    <!-- numbering scheme lines -->
                     {% for ns in a.numbering_schemes %}
                     <tr>
                         <td class="ali-td-generic-num ali-td-first-col">{{ ns.1 }}</td>
                     </tr>
                     {% endfor %}
+
+                    <!-- protein names -->
                     {% for p in a.proteins %}
                     <tr>
                         <td class="ali-td ali-td-first-col">
@@ -31,17 +36,59 @@
                         </td>
                     </tr>
                     {% endfor %}
+
+                    <!-- numbering scheme lines -->
                     {% for ns in a.numbering_schemes %}
                     <tr>
                         <td class="ali-td-generic-num ali-td-first-col">{{ ns.1 }}</td>
                     </tr>
                     {% endfor %}
+
+                    {% if a.consensus %}
+                    <!-- consensus sequence -->
+                    <tr>
+                        <td class="ali-td ali-td-first-col ali-td-consensus">
+                            CONSENSUS
+                        </td>
+                    </tr>
+
+                    <!-- feature frequency -->
+                    <tr>
+                        <td class="ali-td-header-row ali-td-first-col">
+                            RESIDUE PROPERTIES
+                        </td>
+                    </tr>
+                    {% for feature in a.features %}
+                    <tr>
+                        <td class="ali-td ali-td-first-col">
+                            {{ feature }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <!-- amino acid frequency -->
+                    <tr>
+                        <td class="ali-td-header-row ali-td-first-col">
+                            AMINO ACIDS
+                        </td>
+                    </tr>
+                    {% for aa in a.amino_acids %}
+                    <tr>
+                        <td class="ali-td ali-td-first-col">
+                            {{ aa }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+
                 </table>
             </div>
         </td>
+
         {% block scores %}{% endblock %}
+        
+        <!-- scrollable column -->
         <td>
-            <!-- scrollable column -->
             <div class="ali-scroll-div">
                 <div class="internal-scroll-div">
                     &nbsp;
@@ -112,6 +159,57 @@
                             {% endfor %}
                         </tr>
                         {% endfor %}
+                        
+                        {% if a.consensus %}
+                        <!-- consensus sequence -->
+                        <tr>
+                            {% for s in a.consensus %}
+                                {% for p, r in s.items %}
+                                    <td class="ali-td ali-residue res-cons-{{ r.1 }}">
+                                        <div data-toggle="tooltip" data-placement="top" data-html="true"
+                                        title="{{ r.2 }}">
+                                            {{ r.0 }}
+                                        </div>
+                                    </td>
+                                {% endfor %}
+                                <td class="ali-td">&nbsp;</td>
+                            {% endfor %}
+                        </tr>
+
+                        <!-- feature frequency -->
+                        <tr>
+                            <td class="ali-td-header-row" colspan={{ num_residue_columns }}>&nbsp;</td>
+                        </tr>
+                        {% for feature in a.feature_stats %}
+                        <tr>
+                        {% for segment in feature %}
+                            {% for freq in segment %}
+                            <td class="ali-td-stat-summary ali-residue res-cons-{{ freq.1 }}">
+                                {{ freq.0 }}
+                            </td>
+                            {% endfor %}
+                            <td class="ali-td">&nbsp;</td>
+                        {% endfor %}
+                        </tr>
+                        {% endfor %}
+
+                        <!-- amino acid frequency -->
+                        <tr>
+                            <td class="ali-td-header-row" colspan={{ num_residue_columns }}>&nbsp;</td>
+                        </tr>
+                        {% for aa in a.amino_acid_stats %}
+                        <tr>
+                        {% for segment in aa %}
+                            {% for freq in segment %}
+                            <td class="ali-td-stat-summary ali-residue res-cons-{{ freq.1 }}">
+                                {{ freq.0 }}
+                            </td>
+                            {% endfor %}
+                            <td class="ali-td">&nbsp;</td>
+                        {% endfor %}
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
 
                     </table>
                 </div>
@@ -125,4 +223,4 @@
 
 {% block addon_js %}
 <script src="{% static 'home/js/alignment.js' %}"></script>
-{% endblock %}
+{% endblock %}e

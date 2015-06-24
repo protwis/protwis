@@ -78,9 +78,14 @@ def render_alignment(request):
     # build the alignment data matrix
     a.build_alignment()
 
+    # calculate consensus sequence + amino acid and feature frequency
+    a.calculate_statistics()
+
     # calculate identity and similarity of each row compared to the reference
     a.calculate_similarity()
 
     num_of_sequences = len(a.proteins)
+    num_residue_columns = len(a.positions) + len(a.segments)
 
-    return render(request, 'similaritysearch/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences})
+    return render(request, 'similaritysearch/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
+        'num_residue_columns': num_residue_columns})

@@ -44,7 +44,6 @@ class SegmentSelection(AbsSegmentSelection):
         },
     }
 
-
 def render_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
@@ -59,6 +58,27 @@ def render_alignment(request):
     # build the alignment data matrix
     a.build_alignment()
 
-    num_of_sequences = len(a.proteins)
+    # calculate consensus sequence + amino acid and feature frequency
+    a.calculate_statistics()
 
-    return render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences})
+    num_of_sequences = len(a.proteins)
+    num_residue_columns = len(a.positions) + len(a.segments)
+
+    return render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
+        'num_residue_columns': num_residue_columns})
+
+def render_fasta_alignment(request):
+    # get the user selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create an alignment object
+    a = Alignment()
+
+    # load data from selection into the alignment
+    a.load_proteins_from_selection(simple_selection)
+    a.load_segments_from_selection(simple_selection)
+
+    # build the alignment data matrix
+    a.build_alignment()
+
+    return render(request, 'alignment/alignment_fasta.html', {'a': a})
