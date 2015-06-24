@@ -394,6 +394,7 @@ class HomologyModeling(object):
         ref_length = 0
         conserved_count = 0
         non_cons_count = 0
+        trimmed_res_num = 0
         switched_count = 0
         non_cons_res_templates, conserved_residues = OrderedDict(), OrderedDict()
         trimmed_residues = []
@@ -402,11 +403,9 @@ class HomologyModeling(object):
                                                       alignment_dict[aligned_seg]):
                 if reference_dict[ref_seg][ref_res]!='-' and reference_dict[ref_seg][ref_res]!='/':
                     ref_length+=1
-                if (alignment_dict[aligned_seg][aligned_res]!='.' and 
-                    alignment_dict[aligned_seg][aligned_res]!='/' and 
+                if (alignment_dict[aligned_seg][aligned_res]!='.' and
                     alignment_dict[aligned_seg][aligned_res]!='x' and 
-                    alignment_dict[aligned_seg][aligned_res]!='-' and
-                    alignment_dict[aligned_seg][aligned_res]!='loop'):
+                    alignment_dict[aligned_seg][aligned_res]!='-'):
                     conserved_count+=1
                     conserved_residues[ref_res] = alignment_dict[aligned_seg][aligned_res]
                 
@@ -415,10 +414,13 @@ class HomologyModeling(object):
                 if (alignment_dict[aligned_seg][aligned_res]=='.' and 
                     reference_dict[ref_seg][gn]!=template_dict[temp_seg][gn]):
                     non_cons_count+=1
-                    residues = Residue.objects.filter(generic_number__label=ref_res)
-                    proteins_w_this_gn = [res.protein_conformation.protein.parent for res in 
-                                            residues if str(res.amino_acid)==reference_dict[ref_seg][ref_res]]
-                    proteins_w_this_gn = list(set(proteins_w_this_gn))
+                    try:
+                        residues = Residue.objects.filter(generic_number__label=ref_res)
+                        proteins_w_this_gn = [res.protein_conformation.protein.parent for res in 
+                                                residues if str(res.amino_acid)==reference_dict[ref_seg][ref_res]]
+                        proteins_w_this_gn = list(set(proteins_w_this_gn))
+                    except:
+                        proteins_w_this_gn = []
                     gn_ = ref_res.replace('x','.')
                     no_match = True
                     for struct in self.similarity_table:
@@ -446,15 +448,18 @@ class HomologyModeling(object):
                             residue = main_pdb_array[ref_seg][gn_]
                             main_pdb_array[ref_seg][gn_] = residue[0:4]
                             trimmed_residues.append(gn_)
+                            trimmed_res_num+=1
                         except:
                             logging.warning("Missing atoms in {} at {}".format(self.main_structure,gn))
         
         self.statistics.add_info('ref_seq_length', ref_length)
         self.statistics.add_info('conserved_num', conserved_count)
         self.statistics.add_info('non_conserved_num', non_cons_count)
+        self.statistics.add_info('trimmed_residues_num', trimmed_res_num)
         self.statistics.add_info('non_conserved_switched_num', switched_count)
         self.statistics.add_info('conserved_residues', conserved_residues)
         self.statistics.add_info('non_conserved_residue_templates', non_cons_res_templates)
+        self.statistics.add_info('trimmed_residues', trimmed_residues)
         
         return [main_pdb_array, reference_dict, template_dict, alignment_dict, trimmed_residues]
     
@@ -743,7 +748,10 @@ class Loops(object):
                     for r_res, r_id in zip(ref_residues, input_residues):
                         ref_loop_seg[r_id] = r_res.amino_acid
                         temp_loop_seg[r_id] = PDB.Polypeptide.three_to_one(loop_template[r_id][0].get_parent().get_resname())
-                        aligned_loop_seg[r_id] = 'loop'
+                        if ref_loop_seg[r_id]==temp_loop_seg[r_id]:                        
+                            aligned_loop_seg[r_id] = ref_loop_seg[r_id]
+                        else:
+                            aligned_loop_seg[r_id] = '.'
                     if continuous_loop==True:
                         temp_ref_dict[self.loop_label+'_cont'] = ref_loop_seg
                         temp_temp_dict[self.loop_label+'_cont'] = temp_loop_seg
