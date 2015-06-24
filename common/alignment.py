@@ -442,7 +442,8 @@ class AlignedReferenceTemplate(Alignment):
         @param provide_main_temlpate_structure: Structure object, use only when aligning loops and when the main 
         template is already known.
     '''
-    def __init__(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None):
+    def __init__(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
+                 provide_similarity_table=None):
         super(AlignedReferenceTemplate, self).__init__()
         self.query_states = query_states
         self.order_by = order_by
@@ -453,17 +454,24 @@ class AlignedReferenceTemplate(Alignment):
         self.calculate_similarity()
         self.reference_protein = self.proteins[0]
         self.main_template_protein = None
+        self.ordered_proteins = []
         if provide_main_template_structure==None:
             self.main_template_structure = None
         else:
             self.main_template_structure = provide_main_template_structure
         segment_type = [str(x)[:2] for x in segments]
+        if provide_similarity_table==None:
+            self.provide_similarity_table = None
+        else:
+            self.provide_similarity_table = provide_similarity_table
         if 'TM' in segment_type and ('IC' not in segment_type or 'EC' not in segment_type):
             self.similarity_table = self.create_helix_similarity_table()
         elif 'IC' in segment_type or 'EC' in segment_type and 'TM' not in segment_type:
+            self.loop_table = OrderedDict()            
             self.similarity_table = self.create_loop_similarity_table()
         if self.main_template_structure==None:
             self.main_template_structure = self.get_main_template()
+        self.segment_labels = segments
         self.reference_dict = OrderedDict()
         self.template_dict = OrderedDict()
         self.alignment_dict = OrderedDict()
@@ -481,12 +489,31 @@ class AlignedReferenceTemplate(Alignment):
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
   
     def get_main_template(self):
-        ''' Returns main template structure.
+        ''' Returns main template structure after checking for matching helix start and end positions.
         '''
         try:
-            main_template_structure = list(self.similarity_table.items())[0][0]
-            self.main_template_protein = self.proteins[1]
-            return main_template_structure
+            for protein in self.ordered_proteins:
+                if protein.protein==self.reference_protein.protein:
+                    ref_positions = []
+                    for segment in protein.alignment:
+                        all_ref_positions = []
+                        for res in segment:
+                            if res[1]!=False:
+                               all_ref_positions.append(res[0])
+                        ref_positions.append([all_ref_positions[0],all_ref_positions[-1]])
+                else:
+                    temp_positions = []
+                    for segment in protein.alignment:
+                        all_temp_positions = []
+                        for res in segment:
+                            if res[1]!=False:
+                               all_temp_positions.append(res[0])
+                        temp_positions.append([all_temp_positions[0],all_temp_positions[-1]])
+                    if ref_positions==temp_positions:
+                        for struct in self.similarity_table:
+                            if protein.protein==struct.protein_conformation.protein.parent:
+                                self.main_template_protein = protein
+                                return struct
         except:
             return None
 
@@ -494,14 +521,16 @@ class AlignedReferenceTemplate(Alignment):
         ''' Creates an ordered dictionary of structure objects, where templates are sorted by similarity and resolution.
         '''
         temp_list = []
+        self.ordered_proteins = [self.proteins[0]]
         similarity_table = OrderedDict()
         for protein in self.proteins:
             if protein.protein!=self.reference_protein.protein:
                 matches = self.structures_data.filter(protein_conformation__protein__parent__id=protein.protein.id)
-                temp_list.append((list(matches)[0], int(protein.similarity), float(list(matches)[0].resolution)))
+                temp_list.append((list(matches)[0], int(protein.similarity), float(list(matches)[0].resolution), protein))
         sorted_list = sorted(temp_list, key=lambda x: (-x[1],x[2]))
         for i in sorted_list:
             similarity_table[i[0]] = i[1]
+            self.ordered_proteins.append(i[3])
         return similarity_table
 
     def create_loop_similarity_table(self):
@@ -515,38 +544,52 @@ class AlignedReferenceTemplate(Alignment):
                                     p.protein==self.main_template_structure.protein_conformation.protein.parent][0]
         for protein in self.proteins:
             if protein.protein==self.reference_protein.protein:
-                ref_length = 0
+                ref_length = []
                 for res in protein.alignment[0]:
                     if res[1]!=False:
-                        ref_length+=1
+                        ref_length.append(res[0])
             elif protein.protein==self.main_template_protein.protein:
-                main_temp_length = 0
+                main_temp_length = []
                 main_struct_sim = int(protein.similarity)
                 for res in protein.alignment[0]:
                     if res[1]!=False:
-                        main_temp_length+=1
+                        main_temp_length.append(res[0])
             else:
-                temp_length = 0
-                matches = self.structures_data.filter(protein_conformation__protein__parent__id=protein.protein.id)
+                temp_length = []
                 for res in protein.alignment[0]:
                     if res[1]!=False:
-                        temp_length+=1
-                temp_list.append((list(matches)[0], temp_length, int(protein.similarity), 
-                                  float(list(matches)[0].resolution), protein))
-        if ref_length!=main_temp_length:
-            alt_temps = [entry for entry in temp_list if entry[1]==ref_length]
+                        temp_length.append(res[0])
+                if self.provide_similarity_table==None:
+                    match = self.structures_data.filter(protein_conformation__protein__parent__id=protein.protein.id)
+                    temp_list.append((list(match)[0], temp_length, int(protein.similarity), 
+                                      float(list(match)[0].resolution), protein))
+                else:
+                    for struct, score in self.provide_similarity_table.items():
+                        if struct.protein_conformation.protein.parent.id==protein.protein.id:
+                            match = struct
+                            break
+                    temp_list.append((match, temp_length, score, float(match.resolution), protein))
+        if len(ref_length)!=len(main_temp_length):
+            alt_temps = [entry for entry in temp_list if len(entry[1])==len(ref_length)]
             sorted_list = sorted(alt_temps, key=lambda x: (-x[2],x[3]))
             for i in sorted_list:
                 similarity_table[i[0]] = i[2]
             try:
                 self.main_template_protein = sorted_list[0][4]
                 self.main_template_structure = sorted_list[0][0]
+                self.loop_table = similarity_table
             except:
                 self.main_template_protein = None
                 self.main_template_structure = None
+                self.loop_table = None
                 return None            
         else:
-            similarity_table[self.main_template_structure] = main_struct_sim
+            if self.provide_similarity_table==None:
+                similarity_table[self.main_template_structure] = main_struct_sim
+            else:
+                similarity_table[self.main_template_structure] = self.provide_similarity_table[
+                                                                                        self.main_template_structure]
+            self.loop_table = similarity_table
         return similarity_table
 
 
@@ -554,37 +597,39 @@ class AlignedReferenceTemplate(Alignment):
         ''' Creates an alignment between reference and main_template where matching residues are depicted with the 
             one-letter residue code, mismatches with '.', gaps with '-', gaps due to shorter sequences with 'x'.
         '''
+        if not self.main_template_protein: raise AssertionError(
+        "No main template with same helix endings. No homology model will be built for {}.".format(self.reference_protein))
         segment_count = 0
-
-        for ref_segment, temp_segment in zip(self.reference_protein.alignment,self.main_template_protein.alignment):
+        for ref_segment, temp_segment, segment_label in zip(self.reference_protein.alignment,
+                                                            self.main_template_protein.alignment, self.segment_labels):
             segment_count+=1
+            ref_segment_dict,temp_segment_dict,align_segment_dict = OrderedDict(), OrderedDict(), OrderedDict()
             for ref_position, temp_position in zip(ref_segment,temp_segment):
                 if ref_position[1]!=False and temp_position[1]!=False:
                     if ref_position[0]==temp_position[0]:
-                        self.reference_dict[ref_position[0]]=ref_position[2]
-                        self.template_dict[temp_position[0]]=temp_position[2]
+                        ref_segment_dict[ref_position[0]]=ref_position[2]
+                        temp_segment_dict[temp_position[0]]=temp_position[2]
                         if ref_position[2]==temp_position[2]:
-                            self.alignment_dict[ref_position[0]]=ref_position[2]
+                            align_segment_dict[ref_position[0]]=ref_position[2]
                         else:
-                            self.alignment_dict[ref_position[0]]='.'
+                            align_segment_dict[ref_position[0]]='.'
                     else:
                         print("Error: Generic numbers don't align")
                             
                 elif ref_position[1]!=False and temp_position[1]==False:
-                    self.reference_dict[ref_position[0]]=ref_position[2]                    
+                    ref_segment_dict[ref_position[0]]=ref_position[2]                    
                     if temp_position[2]=='-':
-                        self.template_dict[temp_position[0]]='-'
-                        self.alignment_dict[temp_position[0]]='-'
+                        temp_segment_dict[temp_position[0]]='-'
+                        align_segment_dict[temp_position[0]]='-'
                     elif temp_position[2]=='_':
-                        self.template_dict[temp_position[0]]='x'
-                        self.alignment_dict[temp_position[0]]='x'
+                        temp_segment_dict[temp_position[0]]='x'
+                        align_segment_dict[temp_position[0]]='x'
                         
                 elif ref_position[2]=='-' and temp_position[1]!=False:
-                    self.reference_dict[ref_position[0]]='-'
-                    self.template_dict[temp_position[0]]=temp_position[2]
-                    self.alignment_dict[ref_position[0]]='-'
-                    
-            self.reference_dict["TM"+str(segment_count)+"_end"]='/'                     
-            self.template_dict["TM"+str(segment_count)+"_end"]='/' 
-            self.alignment_dict["TM"+str(segment_count)+"_end"]='/'
+                    ref_segment_dict[ref_position[0]]='-'
+                    temp_segment_dict[temp_position[0]]=temp_position[2]
+                    align_segment_dict[ref_position[0]]='-'
 
+            self.reference_dict[segment_label] = ref_segment_dict
+            self.template_dict[segment_label] = temp_segment_dict
+            self.alignment_dict[segment_label] = align_segment_dict
