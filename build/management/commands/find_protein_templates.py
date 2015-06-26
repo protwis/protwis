@@ -45,20 +45,21 @@ class Command(BaseCommand):
         for pconf in pconfs:
             # overall
             template = self.find_segment_template(pconf, sps, segments)
-            pconf.template_structure = self.fetch_template_structure(structures, template.protein.entry_name)
-            self.logger.info("Assigned {} as overall template for {}".format(pconf.template_structure, pconf))
+            template_structure = self.fetch_template_structure(structures, template.protein.entry_name)
+            pconf.template_structure = template_structure
             pconf.save()
+            self.logger.info("Assigned {} as overall template for {}".format(template_structure, pconf))
 
             # for each segment
             for segment in segments:
                 template = self.find_segment_template(pconf, sps, [segment])
                 template_structure = self.fetch_template_structure(structures, template.protein.entry_name)
-                self.logger.info("Assigned {} as {} template for {}".format(pconf.template_structure, segment, pconf))
                 pcts, created = ProteinConformationTemplateStructure.objects.get_or_create(protein_conformation=pconf,
                     protein_segment=segment, defaults={'structure': template_structure})
                 if pcts.structure != template_structure:
                     pcts.structure = template_structure
                     pcts.save()
+                self.logger.info("Assigned {} as {} template for {}".format(template_structure, segment, pconf))
 
         self.logger.info('COMPLETED ASSIGNING STRUCTURE TEMPLATES FOR PROTEINS')
 

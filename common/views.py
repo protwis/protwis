@@ -123,6 +123,7 @@ class AbsSegmentSelection(TemplateView):
     ])
 
     ss = ProteinSegment.objects.filter(partial=False).prefetch_related('generic_numbers')
+    ss_cats = ProteinSegment.objects.values_list('category').order_by('category').distinct('category')
     action = 'expand'
 
     def get_context_data(self, **kwargs):
