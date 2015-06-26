@@ -17,6 +17,9 @@ class Command(BaseCommand):
     logger = logging.getLogger(__name__)
 
     protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'proteins_and_families.txt'])
+    local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'uniprot', 'txt'])
+    remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
+
 
     def handle(self, *args, **options):
         # create parent protein family, 000
@@ -132,7 +135,7 @@ class Command(BaseCommand):
 
                         # skip protein if accession code already exists
                         if Protein.objects.filter(accession=protein_accession).count() > 0:
-                            self.logger.error('Protein with accession ' + protein_accession + ' already exists, skipping')
+                            self.logger.error('Protein accession ' + protein_accession + ' already exists, skipping')
                             continue
 
                         # parse uniprot file for this protein
@@ -142,91 +145,94 @@ class Command(BaseCommand):
                             self.logger.error('Failed parsing uniprot file for protein ' + protein_name + ', skipping')
                             continue
 
-                        # get/create protein source
-                        try:
-                            source, created = ProteinSource.objects.get_or_create(name=up['source'],
-                                defaults={'name': up['source']})
-                            if created:
-                                self.logger.info('Created protein source ' + source.name)
-                        except:
-                                self.logger.error('Failed creating protein source ' + source.name)
-
-                        # get/create species
-                        try:
-                            species, created = Species.objects.get_or_create(latin_name=up['species_latin_name'],
-                                defaults={
-                                'latin_name': up['species_latin_name'],
-                                'common_name': up['species_common_name'],
-                                })
-                            if created:
-                                self.logger.info('Created species ' + species.latin_name)
-                        except:
-                                self.logger.error('Failed creating species ' + species.latin_name)
-                        
-                        # get/create protein sequence type
-                        # Wild-type for all sequences from source file, isoforms handled separately
-                        try:
-                            sequence_type, created = ProteinSequenceType.objects.get_or_create(slug='wt',
-                                defaults={
-                                'slug': 'wt',
-                                'name': 'Wild-type',
-                                })
-                            if created:
-                                self.logger.info('Created protein sequence type Wild-type')
-                        except:
-                                self.logger.error('Failed creating protein sequence type Wild-type')
-
-                        # create protein
-                        p = Protein()
-                        p.family = pf
-                        p.species = species
-                        p.source = source
-                        p.residue_numbering_scheme = residue_numbering_scheme
-                        p.sequence_type = sequence_type
-                        p.accession = protein_accession
-                        p.entry_name = up['entry_name']
-                        p.name = protein_name
-                        p.sequence = up['sequence']
-
-                        try:
-                            p.save()
-                            self.logger.info('Created protein ' + p.entry_name + ', ' + p.accession)
-                        except:
-                            self.logger.error('Failed creating protein ' + p.entry_name + ', ' + p.accession)
-
-                        # protein conformations
-                        ps, created = ProteinState.objects.get_or_create(slug=settings.DEFAULT_PROTEIN_STATE,
-                            defaults={'name': settings.DEFAULT_PROTEIN_STATE.title()})
-                        pc = ProteinConformation.objects.create(protein=p, state=ps)
-
-                        # protein aliases
-                        for i, alias in enumerate(up['names']):
-                            a = ProteinAlias()
-                            a.protein = p
-                            a.name = alias
-                            a.position = i
-
-                            try:
-                                a.save()
-                                self.logger.info('Created protein alias ' + a.name + ' for protein ' + p.name)
-                            except:
-                                self.logger.error('Failed creating protein alias ' + a.name + ' for protein ' + p.name)
-
-                        # genes
-                        for i, gene in enumerate(up['genes']):
-                            g = Gene()
-                            g.species = species
-                            g.name = gene
-                            g.position = i
-
-                            try:
-                                g.save()
-                                g.proteins.add(p)
-                                self.logger.info('Created gene ' + g.name + ' for protein ' + p.name)
-                            except:
-                                self.logger.error('Failed creating gene ' + g.name + ' for protein ' + p.name)
+                        self.create_protein(protein_name, pf, residue_numbering_scheme, protein_accession, up)
 
         self.logger.info('COMPLETED CREATING PROTEINS')
+
+    def create_protein(self, name, family, residue_numbering_scheme, accession, uniprot):
+        # get/create protein source
+        try:
+            source, created = ProteinSource.objects.get_or_create(name=uniprot['source'],
+                defaults={'name': uniprot['source']})
+            if created:
+                self.logger.info('Created protein source ' + source.name)
+        except:
+                self.logger.error('Failed creating protein source ' + source.name)
+
+        # get/create species
+        try:
+            species, created = Species.objects.get_or_create(latin_name=uniprot['species_latin_name'],
+                defaults={
+                'latin_name': uniprot['species_latin_name'],
+                'common_name': uniprot['species_common_name'],
+                })
+            if created:
+                self.logger.info('Created species ' + species.latin_name)
+        except:
+                self.logger.error('Failed creating species ' + species.latin_name)
+        
+        # get/create protein sequence type
+        # Wild-type for all sequences from source file, isoforms handled separately
+        try:
+            sequence_type, created = ProteinSequenceType.objects.get_or_create(slug='wt',
+                defaults={
+                'slug': 'wt',
+                'name': 'Wild-type',
+                })
+            if created:
+                self.logger.info('Created protein sequence type Wild-type')
+        except:
+                self.logger.error('Failed creating protein sequence type Wild-type')
+
+        # create protein
+        p = Protein()
+        p.family = family
+        p.species = species
+        p.source = source
+        p.residue_numbering_scheme = residue_numbering_scheme
+        p.sequence_type = sequence_type
+        p.accession = accession
+        p.entry_name = uniprot['entry_name']
+        p.name = name
+        p.sequence = uniprot['sequence']
+
+        try:
+            p.save()
+            self.logger.info('Created protein ' + p.entry_name + ', ' + p.accession)
+        except:
+            self.logger.error('Failed creating protein ' + p.entry_name + ', ' + p.accession)
+
+        # protein conformations
+        ps, created = ProteinState.objects.get_or_create(slug=settings.DEFAULT_PROTEIN_STATE,
+            defaults={'name': settings.DEFAULT_PROTEIN_STATE.title()})
+        pc = ProteinConformation.objects.create(protein=p, state=ps)
+
+        # protein aliases
+        for i, alias in enumerate(uniprot['names']):
+            a = ProteinAlias()
+            a.protein = p
+            a.name = alias
+            a.position = i
+
+            try:
+                a.save()
+                self.logger.info('Created protein alias ' + a.name + ' for protein ' + p.name)
+            except:
+                self.logger.error('Failed creating protein alias ' + a.name + ' for protein ' + p.name)
+
+        # genes
+        for i, gene in enumerate(uniprot['genes']):
+            g = Gene()
+            g.species = species
+            g.name = gene
+            g.position = i
+
+            try:
+                g.save()
+                g.proteins.add(p)
+                self.logger.info('Created gene ' + g.name + ' for protein ' + p.name)
+            except:
+                self.logger.error('Failed creating gene ' + g.name + ' for protein ' + p.name)
 
     def create_protein_family(self, family_name, indent, parent_family, level_family_counter):
         # find the parent family
@@ -276,14 +282,19 @@ class Command(BaseCommand):
         }
 
     def parse_uniprot_file(self, accession):
-        local_file_path = settings.DATA_DIR + '/uniprot/txt/' + accession + '.txt'
-        remote_file_path = 'http://www.uniprot.org/uniprot/' + accession + '.txt'
+        filename = accession + '.txt'
+        local_file_path = os.sep.join([self.local_uniprot_dir, filename])
+        remote_file_path = self.remote_uniprot_dir + filename
 
         up = {}
         up['genes'] = []
         up['names'] = []
         read_sequence = False
         remote = False
+
+        # record whether organism has been read
+        os_read = False
+
         try:
             if os.path.isfile(local_file_path):
                 uf = open(local_file_path, 'r')
@@ -315,14 +326,15 @@ class Command(BaseCommand):
                         up['source'] = 'SWISSPROT'
                 
                 # species
-                elif line.startswith('OS'):
+                elif line.startswith('OS') and not os_read:
                     species_full = line[2:].strip().strip('.')
                     species_split = species_full.split('(')
                     up['species_latin_name'] = species_split[0]
                     if len(species_split) > 1:
-                        up['species_common_name'] = species_split[1].strip(')')
+                        up['species_common_name'] = species_split[1].strip().strip(')')
                     else:
                         up['species_common_name'] = up['species_latin_name']
+                    os_read = True
 
                 # names
                 elif line.startswith('DE'):
