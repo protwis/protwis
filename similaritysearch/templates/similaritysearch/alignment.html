@@ -56,6 +56,7 @@
                     </tr>
                     {% endfor %}
                     
+                    {% if a.consensus %}                    
                     <!-- consensus sequence -->
                     <tr>
                         <td colspan="3" class="ali-td ali-td-first-col">
@@ -67,12 +68,26 @@
                         <td colspan="3" class="ali-td ali-td-first-col">
                         </td>
                     </tr>
+                    {% for feature in a.features %}
+                    <tr>
+                        <td class="ali-td ali-td-first-col">
+                        </td>
+                    </tr>
+                    {% endfor %}
 
                     <!-- amino acid frequency -->
                     <tr>
                         <td colspan="3" class="ali-td ali-td-first-col">
                         </td>
                     </tr>
+                    {% for aa in a.amino_acids %}
+                    <tr>
+                        <td class="ali-td ali-td-first-col">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+
                 </table>
             </div>
         </td>
