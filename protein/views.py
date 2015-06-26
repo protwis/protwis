@@ -67,7 +67,7 @@ def detail(request, slug):
         if i == 0 or (border and len(last_segment) <= (chunk_size - i % chunk_size)):
             segment_title = True
             border = False
-            title_cell_skip = len(last_segment) # skip cells following title (which has colspan > 1)
+            title_cell_skip += len(last_segment) # skip cells following title (which has colspan > 1)
         
         if i and i % chunk_size == 0:
             r_chunks.append(r_buffer)
