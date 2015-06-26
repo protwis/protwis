@@ -3,15 +3,13 @@ from django.views import generic
 from django.http import HttpResponse
 from django.db.models import Q
 
-from protein.models import Protein
-from protein.models import ProteinAlias
-from protein.models import Gene
-from protein.models import ProteinFamily
+from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene
+from residue.models import Residue
 from common.selection import Selection
-from common.views import AbsTargetSelection
-from common.views import AbsSegmentSelection
+from common.views import AbsReferenceSelection
 
 import json
+from collections import OrderedDict
 
 
 class IndexView(generic.ListView):
@@ -19,12 +17,72 @@ class IndexView(generic.ListView):
 
     def get_queryset(self):
         return Protein.objects.all()
+        
 
+def detail(request, slug):
+    # get protein
+    p = Protein.objects.get(entry_name=slug, sequence_type__slug='wt')
 
-class DetailView(generic.DetailView):
-    model = Protein
-    slug_field = 'entry_name'
+    # get family list
+    pf = p.family
+    families = [pf.name]
+    while pf.parent.parent:
+        families.append(pf.parent.name)
+        pf = pf.parent
+    families.reverse()
 
+    # get default conformation
+    pc = ProteinConformation.objects.get(protein=p)
+
+    # get protein aliases
+    aliases = ProteinAlias.objects.filter(protein=p).values_list('name', flat=True)
+
+    # get genes
+    genes = Gene.objects.filter(proteins=p).values_list('name', flat=True)
+    gene = genes[0]
+    alt_genes = genes[1:]
+
+    # get residues
+    residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
+        'protein_segment', 'generic_number', 'display_generic_number')
+
+    # process residues and return them in chunks of 10
+    # this is done for easier scaling on smaller screens
+    chunk_size = 10
+    r_chunks = []
+    r_buffer = []
+    last_segment = False
+    border = False
+    title_cell_skip = 0
+    for i, r in enumerate(residues):
+        # title of segment to be written out for the first residue in each segment
+        segment_title = False
+        
+        # keep track of last residues segment (for marking borders)
+        if r.protein_segment.slug != last_segment:
+            last_segment = r.protein_segment.slug
+            border = True
+        
+        # if on a border, is there room to write out the title? If not, write title in next chunk
+        if i == 0 or (border and len(last_segment) <= (chunk_size - i % chunk_size)):
+            segment_title = True
+            border = False
+            title_cell_skip = len(last_segment) # skip cells following title (which has colspan > 1)
+        
+        if i and i % chunk_size == 0:
+            r_chunks.append(r_buffer)
+            r_buffer = []
+        
+        r_buffer.append((r, segment_title, title_cell_skip))
+
+        # update cell skip counter
+        if title_cell_skip > 0:
+            title_cell_skip -= 1
+    if r_buffer:
+        r_chunks.append(r_buffer)
+
+    return render(request, 'protein/protein_detail.html', {'p': p, 'families': families, 'r_chunks': r_chunks,
+        'chunk_size': chunk_size, 'aliases': aliases, 'gene': gene, 'alt_genes': alt_genes})
 
 def SelectionAutocomplete(request):
     if request.is_ajax():
