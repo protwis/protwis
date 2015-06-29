@@ -24,7 +24,7 @@
                     <!-- protein lines -->
                     {% for p in a.proteins %}
                     <tr>
-                        {% if p.identity == False %}
+                        {% if forloop.counter == 1 %}
                         <td class="ali-td ali-td-first-col">
                             %I
                         </td>

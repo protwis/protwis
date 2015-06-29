@@ -73,6 +73,7 @@ def render_fasta_alignment(request):
     
     # create an alignment object
     a = Alignment()
+    a.show_padding = False
 
     # load data from selection into the alignment
     a.load_proteins_from_selection(simple_selection)

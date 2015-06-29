@@ -48,8 +48,6 @@ class Protein(models.Model):
         return tmp.name
 
 
-
-
 class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein')
     state = models.ForeignKey('ProteinState')
@@ -57,10 +55,10 @@ class ProteinConformation(models.Model):
     protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
 
     # non-database attributes
-    identity = False # % identity to a reference sequence in an alignment
-    similarity = False # % similarity to a reference sequence in an alignment (% BLOSUM62 score > 0)
-    similarity_score = False # similarity score to a reference sequence in an alignment (sum of BLOSUM62 scores)
-    alignment = False # residues formatted for use in an Alignment class
+    identity = 0 # % identity to a reference sequence in an alignment
+    similarity = 0 # % similarity to a reference sequence in an alignment (% BLOSUM62 score > 0)
+    similarity_score = 0 # similarity score to a reference sequence in an alignment (sum of BLOSUM62 scores)
+    alignment = 0 # residues formatted for use in an Alignment class
 
     def __str__(self):
         return self.protein.entry_name + " (" + self.state.slug + ")"
