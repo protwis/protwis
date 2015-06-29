@@ -220,7 +220,7 @@ class Command(BaseCommand):
 
             for us in update_segments:
                 # update residues for this segment
-                if 'start' in us: # FIXME take split segments into account
+                if 'end' in us and us['end']: # FIXME take split segments into account
                     create_or_update_residues_in_segment(pconf, us['segment'], us['start'], us['end'], schemes,
                         ref_positions, us['protein_anomalies'])
                 
