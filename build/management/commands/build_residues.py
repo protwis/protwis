@@ -16,6 +16,7 @@ class Command(BaseCommand):
 
     generic_numbers_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers'])
     ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'reference_positions'])
+    auto_ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'auto_reference_positions'])
     default_segment_length_file_path = os.sep.join([settings.DATA_DIR, 'residue_data', 'default_segment_length.yaml'])
 
     def handle(self, *args, **options):
@@ -50,12 +51,19 @@ class Command(BaseCommand):
                 ref_position_file_path = os.sep.join([self.ref_position_source_dir, pc.protein.entry_name + '.yaml'])
                 ref_positions = load_reference_positions(ref_position_file_path)
 
-                # check whether segments have annotated reference positions
+                # look for automatically generated ref positions if annotations are not found
+                if not ref_positions:
+                    auto_ref_position_file_path = os.sep.join([self.auto_ref_position_source_dir,
+                        pc.protein.entry_name + '.yaml'])
+                    ref_positions = load_reference_positions(auto_ref_position_file_path)
+
+                # if auto refs are not found, generate them
                 if not ref_positions:
                     # is this protein in the "not-annotated list"?
                     if pc in pclists[1]:
                         self.logger.info("Reference positions for {} not annotated, looking for a template".format(
                             pc.protein))
+                        
                         # required information about this protein
                         up = {}
                         up['entry_name'] = pc.protein.entry_name
@@ -93,6 +101,9 @@ class Command(BaseCommand):
                                     if tpl_ref_positions:
                                         self.logger.info("Found template {}".format(p))
                                         ref_positions = align_protein_to_reference(up, tpl_ref_position_file_path, p)
+                                        # write reference positions to a file
+                                        with open(auto_ref_position_file_path, "w") as auto_ref_position_file:
+                                            yaml.dump(ref_positions, auto_ref_position_file, default_flow_style=False)
                                         template_found = True
                                         break
                         else:
@@ -100,6 +111,7 @@ class Command(BaseCommand):
                                 self.logger.error('No template reference positions found for {}'.format(pc.protein))
                     else:
                         pclists[1].append(pc)
+                        continue
 
                 # determine segment ranges, and create residues
                 nseg = len(segments)
