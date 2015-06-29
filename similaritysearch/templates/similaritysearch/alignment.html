@@ -2,40 +2,93 @@
 {% load staticfiles %}
 
 {% block scores %}
-    <td>
-        <table>
-            <tr>
-                <td class="ali-td ali-td-first-col"></td>
-            </tr>
-            <tr>
-                <td colspan="3" rowspan="{{ a.numbering_schemes|length }}" class="ali-td-generic-num ali-td-first-col">
-                </td>
-            </tr>
-            {% for p in a.proteins %}
-            <tr>
-                {% if p.identity == False %}
-                <td class="ali-td ali-td-first-col">
-                    %I
-                </td>
-                <td class="ali-td ali-td-first-col">
-                    %S
-                </td>
-                <td class="ali-td ali-td-first-col">
-                    S
-                </td>
-                {% else %}
-                <td class="ali-td ali-td-first-col">
-                    {{ p.identity }}
-                </td>
-                <td class="ali-td ali-td-first-col">
-                    {{ p.similarity }}
-                </td>
-                <td class="ali-td ali-td-first-col">
-                    {{ p.similarity_score }}
-                </td>
-                {% endif %}
-            </tr>
-            {% endfor %}
-        </table>
-    </td>
+        <!-- similarity score column -->
+        <td>
+            <!-- stats column -->
+            <div class="ali-first-scroll-div"></div>
+            <div class="ali-first-col-div">
+                <table>
+                    <!-- segment line -->
+                    <tr>
+                        <td colspan="3" class="ali-td ali-td-first-col"></td>
+                    </tr>
+                    
+                    <!-- numbering scheme lines -->
+                    {% for ns in a.numbering_schemes %}
+                    <tr>
+                        <td colspan="3" class="ali-td-generic-num ali-td-first-col">
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <!-- protein lines -->
+                    {% for p in a.proteins %}
+                    <tr>
+                        {% if p.identity == False %}
+                        <td class="ali-td ali-td-first-col">
+                            %I
+                        </td>
+                        <td class="ali-td ali-td-first-col">
+                            %S
+                        </td>
+                        <td class="ali-td ali-td-first-col">
+                            S
+                        </td>
+                        {% else %}
+                        <td class="ali-td ali-td-first-col">
+                            {{ p.identity }}
+                        </td>
+                        <td class="ali-td ali-td-first-col">
+                            {{ p.similarity }}
+                        </td>
+                        <td class="ali-td ali-td-first-col">
+                            {{ p.similarity_score }}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+
+                    <!-- numbering scheme lines -->
+                    {% for ns in a.numbering_schemes %}
+                    <tr>
+                        <td colspan="3" class="ali-td-generic-num ali-td-first-col">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    
+                    {% if a.consensus %}                    
+                    <!-- consensus sequence -->
+                    <tr>
+                        <td colspan="3" class="ali-td ali-td-first-col">
+                        </td>
+                    </tr>
+                    
+                    <!-- feature frequence -->
+                    <tr>
+                        <td colspan="3" class="ali-td ali-td-first-col">
+                        </td>
+                    </tr>
+                    {% for feature in a.features %}
+                    <tr>
+                        <td class="ali-td ali-td-first-col">
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <!-- amino acid frequency -->
+                    <tr>
+                        <td colspan="3" class="ali-td ali-td-first-col">
+                        </td>
+                    </tr>
+                    {% for aa in a.amino_acids %}
+                    <tr>
+                        <td class="ali-td ali-td-first-col">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+
+                </table>
+            </div>
+        </td>
 {% endblock %}

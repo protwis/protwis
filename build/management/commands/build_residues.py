@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 
-from protein.models import Protein, ProteinConformation, ProteinSegment
+from protein.models import Protein, ProteinConformation, ProteinSegment, ProteinFamily
 from residue.functions import *
 
 import logging
@@ -39,40 +39,107 @@ class Command(BaseCommand):
         segments = ProteinSegment.objects.filter(partial=False)
         pcs = ProteinConformation.objects.filter(protein__sequence_type__slug='wt').select_related(
             'protein__residue_numbering_scheme__parent')
-        for pc in pcs:
-            sequence_number_counter = 0
-            
-            # read reference positions for this protein
-            ref_position_file_path = os.sep.join([self.ref_position_source_dir, pc.protein.entry_name + '.yaml'])
-            ref_positions = load_reference_positions(ref_position_file_path)
+        
+        # run the loop twice, once for annotated proteins, and again for those without annotations (using the closest
+        # annotated protein as a reference)
+        pclists = [pcs, []]
+        for pclist in pclists:
+            for pc in pclist:
+                sequence_number_counter = 0
+                # read reference positions for this protein
+                ref_position_file_path = os.sep.join([self.ref_position_source_dir, pc.protein.entry_name + '.yaml'])
+                ref_positions = load_reference_positions(ref_position_file_path)
 
-            # determine segment ranges, and create residues
-            nseg = len(segments)
-            for i, segment in enumerate(segments):
-                if segment.slug in settings.REFERENCE_POSITIONS:
-                    segment_start = (ref_positions[settings.REFERENCE_POSITIONS[segment.slug]]
-                        - segment_length[segment.slug]['before'])
-                    segment_end = (ref_positions[settings.REFERENCE_POSITIONS[segment.slug]]
-                        + segment_length[segment.slug]['after'])
-                else:
-                    segment_start = sequence_number_counter + 1
-                    
-                    if (i+1) < nseg:
-                        next_segment = segments[i+1]
-                        if next_segment.slug in settings.REFERENCE_POSITIONS:
-                            segment_end = (ref_positions[settings.REFERENCE_POSITIONS[next_segment.slug]]
-                            - segment_length[next_segment.slug]['before'] - 1)
-                        elif not next_segment:
-                            segment_end = len(pc.protein.sequence)
+                # check whether segments have annotated reference positions
+                if not ref_positions:
+                    # is this protein in the "not-annotated list"?
+                    if pc in pclists[1]:
+                        self.logger.info("Reference positions for {} not annotated, looking for a template".format(
+                            pc.protein))
+                        # required information about this protein
+                        up = {}
+                        up['entry_name'] = pc.protein.entry_name
+                        up['sequence'] = pc.protein.sequence
+
+                        # find closest protein to get ref positions
+                        # - level 3 parent family
+                        # - - level2 parent family
+                        # - - - level1 parent family
+                        # - - - - current proteins family
+                        # - - - - - current protein
+                        template_found = False
+
+                        # try level1 families first, then level2, then level3
+                        parent_family_levels = [pc.protein.family.parent, pc.protein.family.parent.parent,
+                            pc.protein.family.parent.parent.parent]
+                        for parent_family in parent_family_levels:
+                            if template_found:
+                                break
+                            
+                            # find sub families
+                            related_families = ProteinFamily.objects.filter(parent=parent_family)
+                            
+                            # loop through families and search for proteins to use as template
+                            for family in related_families:
+                                proteins = Protein.objects.filter(family=family)
+                                if not proteins:
+                                    proteins = Protein.objects.filter(family__parent=family)
+                                    if not proteins:
+                                        proteins = Protein.objects.filter(family__parent__parent=family)
+                                for p in proteins:
+                                    tpl_ref_position_file_path = os.sep.join([self.ref_position_source_dir,
+                                        p.entry_name + '.yaml'])
+                                    tpl_ref_positions = load_reference_positions(tpl_ref_position_file_path)
+                                    if tpl_ref_positions:
+                                        self.logger.info("Found template {}".format(p))
+                                        ref_positions = align_protein_to_reference(up, tpl_ref_position_file_path, p)
+                                        template_found = True
+                                        break
                         else:
-                            raise Exception('Not enough reference data to build alignment, aborting!')
+                            if not template_found:
+                                self.logger.error('No template reference positions found for {}'.format(pc.protein))
                     else:
-                        segment_end = len(pc.protein.sequence)
+                        pclists[1].append(pc)
 
-                # create residues for this segment
-                create_or_update_residues_in_segment(pc, segment, segment_start, segment_end, schemes,
-                    ref_positions)
-                
-                sequence_number_counter = segment_end
+                # determine segment ranges, and create residues
+                nseg = len(segments)
+                for i, segment in enumerate(segments):
+                    # is this an alignable segment?
+                    if segment.slug in settings.REFERENCE_POSITIONS:
+                        # is there a reference position available?
+                        if settings.REFERENCE_POSITIONS[segment.slug] in ref_positions:
+                            segment_start = (ref_positions[settings.REFERENCE_POSITIONS[segment.slug]]
+                                - segment_length[segment.slug]['before'])
+                            segment_end = (ref_positions[settings.REFERENCE_POSITIONS[segment.slug]]
+                                + segment_length[segment.slug]['after'])
+                        else:
+                            # skip this segment if the reference position is missing
+                            continue
+                    else:
+                        segment_start = sequence_number_counter + 1
+                        
+                        # if this is not the last segment, find next segments reference position
+                        if (i+1) < nseg:
+                            next_segment = segments[i+1]
+                            if (next_segment.slug in settings.REFERENCE_POSITIONS and 
+                                settings.REFERENCE_POSITIONS[next_segment.slug] in ref_positions):
+                                segment_end = (ref_positions[settings.REFERENCE_POSITIONS[next_segment.slug]]
+                                - segment_length[next_segment.slug]['before'] - 1)
+                                next_ref_found = True
+                            else: 
+                                continue
+                        else:
+                            # for the last segment, the end is the last residue of the sequence
+                            segment_end = len(pc.protein.sequence)
+
+                        # skip if the segment ends before it starts (can happen if the next segment is long)
+                        if segment_start > segment_end:
+                            continue
+
+                    # create residues for this segment
+                    create_or_update_residues_in_segment(pc, segment, segment_start, segment_end, schemes,
+                        ref_positions, [])
+
+                    sequence_number_counter = segment_end
 
         self.logger.info('COMPLETED CREATING RESIDUES')

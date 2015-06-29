@@ -108,20 +108,23 @@
     color: #000000;
     text-decoration: none;
 }
-.ali-first-col-div
+.ali-first-col-div, .ali-first-scroll-div
 {
-    overflow-x:scroll;
+    overflow-x: scroll;
 }
-.ali-main-div
+.ali-scroll-div, .ali-main-div
 {
-    overflow-x:scroll;
-    overflow-y:auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 920px;
 }
-.ali-scroll-div
+.ali-scroll-div, .ali-first-scroll-div
 {
-    overflow-x:scroll;
-    overflow-y:hidden;
-    height:16px;
+    height: 16px;
+}
+.dynamic-div
+{
+    display: inline-block;
 }
 ::-webkit-scrollbar {
     width: 8px;
@@ -222,4 +225,37 @@
 .res-color-_ {
     background-color: #EDEDED;
     color: #000000;
+}
+.res-cons-0 {
+    background-color: #ff0000;
+}
+.res-cons-1 {
+    background-color: #ff3300;
+}
+.res-cons-2 {
+    background-color: #ff6600;
+}
+.res-cons-3 {
+    background-color: #ff9900;
+}
+.res-cons-4 {
+    background-color: #ffcc00;
+}
+.res-cons-5 {
+    background-color: #ffff00;
+}
+.res-cons-6 {
+    background-color: #ccff00;
+}
+.res-cons-7 {
+    background-color: #99ff00;
+}
+.res-cons-8 {
+    background-color: #66ff00;
+}
+.res-cons-9 {
+    background-color: #33ff00;
+}
+.res-cons-10 {
+    background-color: #00ff00;
 }

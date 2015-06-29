@@ -54,6 +54,7 @@ class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein')
     state = models.ForeignKey('ProteinState')
     template_structure = models.ForeignKey('structure.Structure', null=True)
+    protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
 
     # non-database attributes
     identity = False # % identity to a reference sequence in an alignment
@@ -184,6 +185,7 @@ class ProteinAnomaly(models.Model):
         return self.generic_number.label
 
     class Meta():
+        ordering = ('generic_number__label', )
         db_table = 'protein_anomaly'
 
 class ProteinAnomalyType(models.Model):
