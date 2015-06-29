@@ -15,6 +15,7 @@ class Command(BuildProteins):
     help = 'Reads uniprot text files and creates protein entries of orthologs of human proteins'
 
     ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'reference_positions'])
+    auto_ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'auto_reference_positions'])
 
     def handle(self, *args, **options):
         # create proteins
@@ -59,14 +60,18 @@ class Command(BuildProteins):
 
             # check whether reference positions exist for this protein, and find them if they do not
             ref_position_file_path = os.sep.join([self.ref_position_source_dir, up['entry_name'] + '.yaml'])
+            auto_ref_position_file_path = os.sep.join([self.ref_position_source_dir, up['entry_name'] + '.yaml'])
             if not os.path.isfile(ref_position_file_path):
-                # get reference positions of human ortholog
-                template_ref_position_file_path = os.sep.join([self.ref_position_source_dir, p.entry_name + '.yaml'])
-                ref_positions = align_protein_to_reference(up, template_ref_position_file_path, p)
+                # look for the file in the automatically generated reference file dir
+                if not os.path.isfile(auto_ref_position_file_path):
+                    # get reference positions of human ortholog
+                    template_ref_position_file_path = os.sep.join([self.ref_position_source_dir,
+                        p.entry_name + '.yaml'])
+                    ref_positions = align_protein_to_reference(up, template_ref_position_file_path, p)
 
-                # write reference positions to a file
-                with open(ref_position_file_path, "w") as ref_position_file:
-                    yaml.dump(ref_positions, ref_position_file, default_flow_style=False)
+                    # write reference positions to a file
+                    with open(auto_ref_position_file_path, "w") as auto_ref_position_file:
+                        yaml.dump(ref_positions, auto_ref_position_file, default_flow_style=False)
 
             # create a database entry for the protein
             self.create_protein(p.name, p.family, p.residue_numbering_scheme, accession, up)
