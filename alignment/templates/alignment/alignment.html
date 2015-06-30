@@ -6,6 +6,18 @@
 {% endblock %}
 
 {% block content %}
+{% block buttons %}
+<!-- Download button -->
+<div class="btn-group">
+  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+    aria-expanded="false">
+    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+  </button>
+  <ul class="dropdown-menu">
+    <li><a href="/alignment/fasta">Alignment (fasta)</a></li>
+    <li><a href="/alignment/csv">Spreadsheet (csv)</a></li>
+</div>
+{% endblock %}
 <!-- sequence alignment starts -->
 <table>
     <tr>

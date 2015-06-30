@@ -461,7 +461,7 @@ class Alignment:
                     self.consensus[i][p] = [r[0][0], cons_interval,
                     r[0][0] + ' ' + str(round(r[1]/num_proteins*100)) + '%']
                 elif num_freq_aa > 1:
-                    self.consensus[i][p] = ['X', cons_interval,
+                    self.consensus[i][p] = ['+', cons_interval,
                     '/'.join(r[0]) + ' ' + str(round(r[1]/num_proteins*100)) + '%']
 
         # process amino acid frequency
