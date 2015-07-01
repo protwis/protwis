@@ -29,8 +29,16 @@ $(function() {
         create: function(event, ui) { this.focus();return false; },
         focus: function(event, ui) { return false; },
         select: function(event, ui) {
-            AddToSelection(type_of_selection, ui.item['type'], ui.item['id']);
-            $( '#selection-autocomplete' ).val('');
+            if (type_of_selection == 'browse') {
+                setTimeout(function(){window.location = '/' + ui.item['type'] + '/' + ui.item['slug'];}, 200);
+            } else {
+                AddToSelection(type_of_selection, ui.item['type'], ui.item['id']);
+                $( '#selection-autocomplete' ).val('');
+                // redirect the user if only one protein can be selected
+                if (type_of_selection == 'reference') {
+                    setTimeout(function(){window.location = redirect_url;}, 200);
+                }
+            }
             return false;
         }
     }).data("custom-catcomplete")._renderItem = function (ul, item) {
