@@ -8,4 +8,5 @@ urlpatterns = patterns('',
     url(r'^segmentselection', views.SegmentSelection.as_view(), name='segmentselection'),
     url(r'^render', views.render_alignment, name='render'),
     url(r'^fasta', views.render_fasta_alignment, name='fasta'),
+    url(r'^csv', views.render_csv_alignment, name='csv'),
 )

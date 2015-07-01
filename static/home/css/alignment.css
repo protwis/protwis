@@ -94,6 +94,7 @@
 {
     text-align: center;
     width: 10px;
+    cursor: pointer; cursor: hand;
 }
 .ali-residue-top-border
 {
