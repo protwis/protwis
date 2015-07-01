@@ -1,0 +1,64 @@
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>SEQUENCE</h4>
+    </div>
+    <div class="col-md-5">
+        <div class="row">
+            {% for rs in r_chunks %}
+            <div class="col-md-2 col-sm-2 col-xs-3">
+                <table style="width:100%">
+                    <tr>
+                    {% for r in rs %}
+                        {% if not r.1 and r.2 %}
+                        {% else %}
+                        <td class="seqv seqv-segment no-wrap
+                        {% if r.0.protein_segment.id|divisibleby:2 %}
+                         bg-success
+                        {% else %} 
+                         bg-info
+                        {% endif %}"
+                        {% if r.1 %}
+                         colspan="{{ r.0.protein_segment.slug|length }}"
+                        {% endif %}
+                        >
+                        {% if r.1 %}
+                        {{ r.0.protein_segment.slug }}
+                        {% else %}
+                        &nbsp;
+                        {% endif %}
+                        </td>
+                        {% endif %}
+                    {% endfor %}
+                    </tr>
+                    <tr>
+                    {% for r in rs %}
+                        <td class="seqv seqv-sequence">
+                            <div data-toggle="tooltip" data-placement="top" data-html="true"
+                            title="<div class='no-wrap'>{{ r.0.protein_segment.slug }}</div>
+                            <div class='no-wrap'>Sequence # {{ r.0.amino_acid }}{{ r.0.sequence_number }}<div>
+                            {% if r.0.generic_number.label %}
+                            <div class='no-wrap'>GPCRdb # {{ r.0.amino_acid }}{{ r.0.display_generic_number.label }}
+                            </div>
+                            <div class='no-wrap'>{{ r.0.generic_number.label }}</div>
+                            {% endif %}
+                            ">
+                            {{ r.0.amino_acid }}
+                            </div>
+                        </td>
+                    {% endfor %}
+                    </tr>
+                    <tr>
+                    {% for r in rs %}
+                        {% if forloop.counter = chunk_size %}
+                        <td colspan="{{ rs|length }}" class="seqv seqv-number">{{ r.0.sequence_number }}</td>
+                        {% endif %}
+                    {% endfor %}
+                    </tr>
+                </table>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-md-5 text-right text-info">
+    </div>
+</div>

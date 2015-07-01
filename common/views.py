@@ -1,15 +1,11 @@
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView
+from django.conf import settings
 
-from common.selection import SimpleSelection
-from common.selection import Selection
-from common.selection import SelectionItem
-from protein.models import Protein
-from protein.models import ProteinFamily
-from protein.models import ProteinSegment
-from protein.models import Species
-from protein.models import ProteinSource
+from common.selection import SimpleSelection, Selection, SelectionItem
+from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource
+from residue.models import ResidueGenericNumber
 
 import inspect
 from collections import OrderedDict
@@ -44,13 +40,17 @@ class AbsTargetSelection(TemplateView):
     ])
 
     # proteins and families
-    ppf = ProteinFamily.objects.get(slug='000')
-    pfs = ProteinFamily.objects.order_by('id').filter(parent=ppf.id) # FIXME move order_by to model
-    ps = Protein.objects.filter(family=ppf)
-    tree_indent_level = []
-    action = 'expand'
-    # remove the parent family (for all other families than the root of the tree, the parent should be shown)
-    del ppf
+    #try - except block prevents manage.py from crashing - circular dependencies between protein - common 
+    try:
+        ppf = ProteinFamily.objects.get(slug='000')
+        pfs = ProteinFamily.objects.filter(parent=ppf.id)
+        ps = Protein.objects.filter(family=ppf)
+        tree_indent_level = []
+        action = 'expand'
+        # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+        del ppf
+    except Exception as e:
+        pass
 
     # species
     sps = Species.objects.all()
@@ -122,7 +122,8 @@ class AbsSegmentSelection(TemplateView):
         ('segments', True),
     ])
 
-    ss = ProteinSegment.objects.all()
+    ss = ProteinSegment.objects.filter(partial=False).prefetch_related('generic_numbers')
+    ss_cats = ProteinSegment.objects.values_list('category').order_by('category').distinct('category')
     action = 'expand'
 
     def get_context_data(self, **kwargs):
@@ -161,15 +162,17 @@ def AddToSelection(request):
     if selection_type == 'reference' or selection_type == 'targets':
         if selection_subtype == 'protein':
             o = Protein.objects.get(pk=selection_id)
-
-            # include species name for proteins
-            o.name = o.name + ' [' + o.species.common_name + "]"
         elif selection_subtype == 'family':
             o = ProteinFamily.objects.get(pk=selection_id)
         elif selection_subtype == 'set':
             o = ProteinSet.objects.get(pk=selection_id)
+        elif selection_subtype == 'structure':
+            o = Protein.objects.get(entry_name=selection_id.lower())
     elif selection_type == 'segments':
-        o = ProteinSegment.objects.get(pk=selection_id)
+        if selection_subtype == 'residue':
+            o = ResidueGenericNumber.objects.get(pk=selection_id)
+        else:
+            o = ProteinSegment.objects.get(pk=selection_id)
 
     selection_object = SelectionItem(selection_subtype, o)
 
@@ -260,7 +263,7 @@ def ToggleFamilyTreeNode(request):
 
     ppf = ProteinFamily.objects.get(pk=node_id)
     if action == 'expand':
-        pfs = ProteinFamily.objects.order_by('id').filter(parent=node_id) # FIXME move order_by to model
+        pfs = ProteinFamily.objects.filter(parent=node_id)
 
         # species filter
         species_list = []
@@ -398,3 +401,14 @@ def SelectionSpeciesToggle(request):
     context['sps'] = Species.objects.all()
     
     return render(request, 'common/selection_filters_species_selector.html', context)
+
+def ExpandSegment(request):
+    """Expands a segment to show it's generic numbers"""
+    segment_id = request.GET['segment_id']
+    
+    # fetch the generic numbers
+    context = {}
+    context['generic_numbers'] = ResidueGenericNumber.objects.filter(protein_segment__id=segment_id,
+        scheme__slug=settings.DEFAULT_NUMBERING_SCHEME)
+    
+    return render(request, 'common/segment_generic_numbers.html', context)

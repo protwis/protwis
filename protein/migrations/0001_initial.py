@@ -21,21 +21,19 @@ class Migration(migrations.Migration):
                 'ordering': ('position',),
                 'db_table': 'gene',
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Protein',
             fields=[
                 ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
-                ('accession', models.CharField(max_length=100)),
-                ('entry_name', models.SlugField(unique=True, max_length=100)),
+                ('entry_name', models.SlugField(max_length=100, unique=True)),
+                ('accession', models.CharField(max_length=100, db_index=True, null=True)),
                 ('name', models.CharField(max_length=200)),
                 ('sequence', models.TextField()),
             ],
             options={
                 'db_table': 'protein',
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='ProteinAlias',
@@ -43,64 +41,120 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
                 ('name', models.CharField(max_length=200)),
                 ('position', models.SmallIntegerField()),
-                ('protein', models.ForeignKey(to='protein.Protein')),
             ],
             options={
                 'ordering': ('position',),
                 'db_table': 'protein_alias',
             },
-            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='ProteinAnomaly',
+            fields=[
+                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+            ],
+            options={
+                'db_table': 'protein_anomaly',
+            },
+        ),
+        migrations.CreateModel(
+            name='ProteinAnomalyRule',
+            fields=[
+                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('amino_acid', models.CharField(max_length=1)),
+            ],
+            options={
+                'db_table': 'protein_anomaly_rule',
+            },
+        ),
+        migrations.CreateModel(
+            name='ProteinAnomalyRuleSet',
+            fields=[
+                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('protein_anomaly', models.ForeignKey(to='protein.ProteinAnomaly')),
+            ],
+            options={
+                'db_table': 'protein_anomaly_rule_set',
+            },
+        ),
+        migrations.CreateModel(
+            name='ProteinAnomalyType',
+            fields=[
+                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('slug', models.SlugField(max_length=20)),
+                ('name', models.CharField(max_length=100)),
+            ],
+            options={
+                'db_table': 'protein_anomaly_type',
+            },
+        ),
+        migrations.CreateModel(
+            name='ProteinConformation',
+            fields=[
+                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('protein', models.ForeignKey(to='protein.Protein')),
+            ],
+            options={
+                'db_table': 'protein_conformation',
+            },
         ),
         migrations.CreateModel(
             name='ProteinFamily',
             fields=[
                 ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
-                ('slug', models.SlugField(unique=True, max_length=100)),
+                ('slug', models.SlugField(max_length=100)),
                 ('name', models.CharField(max_length=200)),
-                ('parent', models.ForeignKey(null=True, to='protein.ProteinFamily')),
+                ('parent', models.ForeignKey(to='protein.ProteinFamily', null=True)),
             ],
             options={
+                'ordering': ('id',),
                 'db_table': 'protein_family',
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
-            name='ProteinLinks',
+            name='ProteinFusion',
             fields=[
                 ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
-                ('url', models.TextField()),
+                ('name', models.CharField(max_length=100, unique=True)),
+                ('sequence', models.TextField(null=True)),
             ],
             options={
-                'db_table': 'protein_links',
+                'db_table': 'protein_fusion',
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
-            name='ProteinResource',
+            name='ProteinFusionProtein',
             fields=[
                 ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
-                ('name', models.CharField(max_length=200)),
-                ('url', models.TextField()),
+                ('protein', models.ForeignKey(to='protein.Protein')),
+                ('protein_fusion', models.ForeignKey(to='protein.ProteinFusion')),
             ],
             options={
-                'db_table': 'protein_resource',
+                'db_table': 'protein_fusion_protein',
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='ProteinSegment',
             fields=[
                 ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
-                ('slug', models.SlugField(unique=True, max_length=100)),
+                ('slug', models.SlugField(max_length=100)),
                 ('name', models.CharField(max_length=50)),
                 ('category', models.CharField(max_length=50)),
-                ('position', models.SmallIntegerField()),
             ],
             options={
-                'ordering': ('position',),
+                'ordering': ('id',),
                 'db_table': 'protein_segment',
             },
-            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='ProteinSequenceType',
+            fields=[
+                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('slug', models.SlugField(max_length=20)),
+                ('name', models.CharField(max_length=100)),
+            ],
+            options={
+                'db_table': 'protein_sequence_type',
+            },
         ),
         migrations.CreateModel(
             name='ProteinSet',
@@ -112,7 +166,6 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'protein_set',
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='ProteinSource',
@@ -123,54 +176,47 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'protein_source',
             },
-            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='ProteinState',
+            fields=[
+                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('slug', models.SlugField(max_length=20)),
+                ('name', models.CharField(max_length=100)),
+            ],
+            options={
+                'db_table': 'protein_state',
+            },
         ),
         migrations.CreateModel(
             name='Species',
             fields=[
                 ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
                 ('latin_name', models.CharField(max_length=100)),
-                ('common_name', models.CharField(max_length=100, blank=True)),
+                ('common_name', models.CharField(blank=True, max_length=100)),
             ],
             options={
                 'db_table': 'species',
             },
-            bases=(models.Model,),
         ),
         migrations.AddField(
-            model_name='proteinlinks',
-            name='resource',
-            field=models.ForeignKey(to='protein.ProteinResource'),
-            preserve_default=True,
+            model_name='proteinfusionprotein',
+            name='segment_after',
+            field=models.ForeignKey(to='protein.ProteinSegment', related_name='segment_after'),
         ),
         migrations.AddField(
-            model_name='protein',
-            name='family',
-            field=models.ForeignKey(to='protein.ProteinFamily'),
-            preserve_default=True,
+            model_name='proteinfusionprotein',
+            name='segment_before',
+            field=models.ForeignKey(to='protein.ProteinSegment', related_name='segment_before'),
         ),
         migrations.AddField(
-            model_name='protein',
-            name='source',
-            field=models.ForeignKey(to='protein.ProteinSource'),
-            preserve_default=True,
-        ),
-        migrations.AddField(
-            model_name='protein',
-            name='species',
-            field=models.ForeignKey(to='protein.Species'),
-            preserve_default=True,
-        ),
-        migrations.AddField(
-            model_name='gene',
+            model_name='proteinfusion',
             name='proteins',
-            field=models.ManyToManyField(to='protein.Protein'),
-            preserve_default=True,
+            field=models.ManyToManyField(to='protein.Protein', through='protein.ProteinFusionProtein'),
         ),
         migrations.AddField(
-            model_name='gene',
-            name='species',
-            field=models.ForeignKey(to='protein.Species'),
-            preserve_default=True,
+            model_name='proteinconformation',
+            name='state',
+            field=models.ForeignKey(to='protein.ProteinState'),
         ),
     ]

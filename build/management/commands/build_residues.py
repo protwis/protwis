@@ -1,47 +1,25 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-from django.db import connection
 
-from protein.models import Protein
-from protein.models import ProteinSegment
-from residue.models import Residue
-from residue.models import ResidueGenericNumber
-from residue.models import ResidueNumberingScheme
+from protein.models import Protein, ProteinConformation, ProteinSegment, ProteinFamily
+from residue.functions import *
 
-from optparse import make_option
-import logging, os
+import logging
+import os
+import yaml
 
 
 class Command(BaseCommand):
-    
+    help = 'Creates residue records'
 
     logger = logging.getLogger(__name__)
 
-    #avoiding pathing shenanigans
-    generic_numbers_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data'])
-    help = 'Creates residues from protein records from the filenames specifeid as arguments. The files are looked up in the directory {}'.format(generic_numbers_source_dir)
-    option_list = BaseCommand.option_list + (
-        make_option('--purge_tables',
-                    action='store_true',
-                    dest='purge',
-                    default=False,
-                    help='Truncate all the associated tables before inserting new records'),
-    #    make_option('--update-generic-numbers',
-    #                action='store_true',
-    #                dest='generic',
-    #                default=False,
-    #                help='Update the residue records with generic numbers extracted from the old gpcrdb'),
-        )
-    
+    generic_numbers_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers'])
+    ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'reference_positions'])
+    auto_ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'auto_reference_positions'])
+    default_segment_length_file_path = os.sep.join([settings.DATA_DIR, 'residue_data', 'default_segment_length.yaml'])
 
     def handle(self, *args, **options):
-        if options['purge']:
-            try:
-                self.truncate_residue_tables()
-            except Exception as msg:
-                print(msg)
-                self.logger.error(msg)
-
         # create residue records for all proteins
         try:
             self.create_residues(args)
@@ -49,114 +27,133 @@ class Command(BaseCommand):
             print(msg)
             self.logger.error(msg)
 
-    def truncate_residue_tables(self):
-        cursor = connection.cursor()
-        
-        tables_to_truncate = [
-            #Following the changes in the models - SM
-            'generic_number',
-            'residue_set',
-            'residue',
-                
-        ]
-
-        for table in tables_to_truncate:
-            cursor.execute("TRUNCATE TABLE {!s} CASCADE".format(table))
-
     def create_residues(self, args):
-        self.logger.info('CREATING RESIDUES')  
-        for arg in args:
-            residue_data = {}
-            if os.path.exists(os.sep.join([self.generic_numbers_source_dir, arg])):
-                residue_data = self.parse_residue_data_file(os.sep.join([self.generic_numbers_source_dir, arg]))
-                self.logger.info('USING DATA FROM OLD GPCRB')
-                if len(ResidueNumberingScheme.objects.all()) == 0:
-                    self.add_numbering_schemes()
-                #just a shortcut to prevent gazilion of subqueries
-                oliveira_id = ResidueNumberingScheme.objects.get(slug='oliveira')
-                bw_id = ResidueNumberingScheme.objects.get(slug='bw')
-                gpcrdb_id = ResidueNumberingScheme.objects.get(slug='gpcrdb')
-                baldwin_id = ResidueNumberingScheme.objects.get(slug='baldwin')
-            else:
-                print("Can't find {!s}".format(os.sep.join([self.generic_numbers_source_dir, arg])))
-            proteins = Protein.objects.all()
+        self.logger.info('CREATING RESIDUES')
 
-            for protein in proteins:
-                for i, aa in enumerate(protein.sequence):
-                    r = Residue()
-                    r.protein = protein
-                    r.sequence_number = i+1
-                    r.amino_acid = aa
-                    generic_numbers = []
-                
-                    if protein.entry_name in residue_data.keys():  
-                        try:
-                            r.save()
-                            self.logger.info('Created residue {:n}{!s}for protein {!s}'.format(i, aa, protein.name))
-                        except Exception as msg:
-                            print(msg)
-                            self.logger.error('Failed to create residue {:n}{!s}for protein {!s}'.format(i, aa, protein.name))
-                  
-                        for res_record in residue_data[protein.entry_name]:
-                            if int(res_record[0]) == r.sequence_number and res_record[1] == r.three_letter():
-                                r.protein_segment = ProteinSegment.objects.get(slug=res_record[6])
+        schemes = parse_scheme_tables(self.generic_numbers_source_dir)
 
-                                try:
-                                    oliveira = ResidueGenericNumber.objects.get(label=res_record[2], scheme=oliveira_id)
-                                except ResidueGenericNumber.DoesNotExist as e:
-                                    oliveira = ResidueGenericNumber(label=res_record[2], scheme=oliveira_id)
-                                    oliveira.protein_segment = r.protein_segment
-                                    oliveira.save()
-                                r.generic_number.add(oliveira)
-                                try:
-                                    bw = ResidueGenericNumber.objects.get(label=res_record[3], scheme=bw_id)
-                                except ResidueGenericNumber.DoesNotExist as e:
-                                    bw = ResidueGenericNumber(label=res_record[3], scheme=bw_id)
-                                    bw.protein_segment = r.protein_segment
-                                    bw.save()
-                                r.generic_number.add(bw)
-                                try:
-                                    gpcrdb = ResidueGenericNumber.objects.get(label=res_record[4], scheme=gpcrdb_id)
-                                except ResidueGenericNumber.DoesNotExist as e:
-                                    gpcrdb = ResidueGenericNumber(label=res_record[4], scheme=gpcrdb_id)
-                                    gpcrdb.protein_segment = r.protein_segment
-                                    gpcrdb.save()
-                                r.generic_number.add(gpcrdb)
-                                try:
-                                    baldwin = ResidueGenericNumber.objects.get(label=res_record[5], scheme=baldwin_id)
-                                except ResidueGenericNumber.DoesNotExist as e:
-                                    baldwin = ResidueGenericNumber(label=res_record[5], scheme=baldwin_id)
-                                    baldwin.protein_segment = r.protein_segment
-                                    baldwin.save()
-                                r.generic_number.add(baldwin)
+        # default segment length
+        with open(self.default_segment_length_file_path, 'r') as default_segment_length_file:
+            segment_length = yaml.load(default_segment_length_file)
 
-                        try:
-                            r.save()
-                            self.logger.info('Added generic numbers for residue {:n}{!s}for protein {!s}'.format(i, aa, protein.name))
-                        except Exception as msg:
-                            print(msg)
-                            self.logger.error('Failed to create residue {:n}{!s}for protein {!s}'.format(i, aa, protein.name))
-                self.logger.info('COMPLETED CREATING RESIDUES FROM FILE {}'.format(os.sep.join([self.generic_numbers_source_dir, arg])))
-            self.logger.info('COMPLETED CREATING RESIDUES')
+        # fetch protein conformations
+        segments = ProteinSegment.objects.filter(partial=False)
+        pcs = ProteinConformation.objects.filter(protein__sequence_type__slug='wt').select_related(
+            'protein__residue_numbering_scheme__parent')
+        
+        # run the loop twice, once for annotated proteins, and again for those without annotations (using the closest
+        # annotated protein as a reference)
+        pclists = [pcs, []]
+        for pclist in pclists:
+            for pc in pclist:
+                sequence_number_counter = 0
+                # read reference positions for this protein
+                ref_position_file_path = os.sep.join([self.ref_position_source_dir, pc.protein.entry_name + '.yaml'])
+                ref_positions = load_reference_positions(ref_position_file_path)
 
-    def parse_residue_data_file(self, file_name):
-        print('Parsing residue data from {}'.format(file_name))
-        residue_data = {}
-        residue_data_fh = open(file_name, 'r')
+                # look for automatically generated ref positions if annotations are not found
+                if not ref_positions:
+                    auto_ref_position_file_path = os.sep.join([self.auto_ref_position_source_dir,
+                        pc.protein.entry_name + '.yaml'])
+                    ref_positions = load_reference_positions(auto_ref_position_file_path)
 
-        for line in residue_data_fh:
-            id,num,res_name,family,oli,gpcrdb,bw,bs,prot_name,sec_str_name = [x.strip().strip('"') for x in line.split(',')] #double strip due to some weird bug...
-            #the data will be in dict of lists
-            if prot_name not in residue_data.keys():
-                residue_data[prot_name] = []
-            residue_data[prot_name].append([num, res_name, oli, gpcrdb, bw, bs, sec_str_name])
+                # if auto refs are not found, generate them
+                if not ref_positions:
+                    # is this protein in the "not-annotated list"?
+                    if pc in pclists[1]:
+                        self.logger.info("Reference positions for {} not annotated, looking for a template".format(
+                            pc.protein))
+                        
+                        # required information about this protein
+                        up = {}
+                        up['entry_name'] = pc.protein.entry_name
+                        up['sequence'] = pc.protein.sequence
 
-        print('done')
-        return residue_data
+                        # find closest protein (by family) to get ref positions
+                        # - level 3 parent family
+                        # - - level2 parent family
+                        # - - - level1 parent family
+                        # - - - - current proteins family
+                        # - - - - - current protein
+                        template_found = False
 
-    def add_numbering_schemes(self):
-        #FIXME temporary workaround, will be (?) in a separate file
-        rns = ResidueNumberingScheme.objects.create(slug="oliveira", name="Oliveira")
-        rns = ResidueNumberingScheme.objects.create(slug="bw", name="Ballesteros-Weinstein")
-        rns = ResidueNumberingScheme.objects.create(slug="gpcrdb", name="GPCRdb")
-        rns = ResidueNumberingScheme.objects.create(slug="baldwin", name="Baldwin-Schwartz")
+                        # try level1 families first, then level2, then level3
+                        parent_family_levels = [pc.protein.family.parent, pc.protein.family.parent.parent,
+                            pc.protein.family.parent.parent.parent]
+                        for parent_family in parent_family_levels:
+                            if template_found:
+                                break
+                            
+                            # find sub families
+                            related_families = ProteinFamily.objects.filter(parent=parent_family)
+                            
+                            # loop through families and search for proteins to use as template
+                            for family in related_families:
+                                if template_found:
+                                    break
+                                proteins = Protein.objects.filter(family=family)
+                                if not proteins:
+                                    proteins = Protein.objects.filter(family__parent=family)
+                                    if not proteins:
+                                        proteins = Protein.objects.filter(family__parent__parent=family)
+                                for p in proteins:
+                                    tpl_ref_position_file_path = os.sep.join([self.ref_position_source_dir,
+                                        p.entry_name + '.yaml'])
+                                    tpl_ref_positions = load_reference_positions(tpl_ref_position_file_path)
+                                    if tpl_ref_positions:
+                                        self.logger.info("Found template {}".format(p))
+                                        ref_positions = align_protein_to_reference(up, tpl_ref_position_file_path, p)
+                                        # write reference positions to a file
+                                        with open(auto_ref_position_file_path, "w") as auto_ref_position_file:
+                                            yaml.dump(ref_positions, auto_ref_position_file, default_flow_style=False)
+                                        template_found = True
+                                        break
+                        else:
+                            if not template_found:
+                                self.logger.error('No template reference positions found for {}'.format(pc.protein))
+                    else:
+                        pclists[1].append(pc)
+                        continue
+
+                # determine segment ranges, and create residues
+                nseg = len(segments)
+                for i, segment in enumerate(segments):
+                    # is this an alignable segment?
+                    if segment.slug in settings.REFERENCE_POSITIONS:
+                        # is there a reference position available?
+                        if settings.REFERENCE_POSITIONS[segment.slug] in ref_positions:
+                            segment_start = (ref_positions[settings.REFERENCE_POSITIONS[segment.slug]]
+                                - segment_length[segment.slug]['before'])
+                            segment_end = (ref_positions[settings.REFERENCE_POSITIONS[segment.slug]]
+                                + segment_length[segment.slug]['after'])
+                        else:
+                            # skip this segment if the reference position is missing
+                            continue
+                    else:
+                        segment_start = sequence_number_counter + 1
+                        
+                        # if this is not the last segment, find next segments reference position
+                        if (i+1) < nseg:
+                            next_segment = segments[i+1]
+                            if (next_segment.slug in settings.REFERENCE_POSITIONS and 
+                                settings.REFERENCE_POSITIONS[next_segment.slug] in ref_positions):
+                                segment_end = (ref_positions[settings.REFERENCE_POSITIONS[next_segment.slug]]
+                                - segment_length[next_segment.slug]['before'] - 1)
+                                next_ref_found = True
+                            else: 
+                                continue
+                        else:
+                            # for the last segment, the end is the last residue of the sequence
+                            segment_end = len(pc.protein.sequence)
+
+                        # skip if the segment ends before it starts (can happen if the next segment is long)
+                        if segment_start > segment_end:
+                            continue
+
+                    # create residues for this segment
+                    create_or_update_residues_in_segment(pc, segment, segment_start, segment_end, schemes,
+                        ref_positions, [])
+
+                    sequence_number_counter = segment_end
+
+        self.logger.info('COMPLETED CREATING RESIDUES')
