@@ -40,6 +40,9 @@ class Alignment:
         # gap symbols
         self.gaps = ['-', '_']
 
+        # when true, gaps at the beginning or end of a segment have a different symbol than other gaps
+        self.show_padding = True
+
     def __str__(self):
         return str(self.__dict__)
 
@@ -327,6 +330,10 @@ class Alignment:
                         # reset gap counter
                         gap_counter = 0
                     except:
+                        if self.show_padding:
+                            padding_symbol = '_'
+                        else:
+                            padding_symbol = '-'
                         if first_residue_found:
                             s.append([pos, False, '-', 0])
 
@@ -335,11 +342,12 @@ class Alignment:
 
                             # if this is the last residue and there are gaps and the end of the segment, update them to
                             # end gaps
-                            if (position_counter) == len(positions):
-                                for i in range(gap_counter):
-                                    s[len(positions)-(i+1)][2] = '_'
+                            if self.show_padding:
+                                if (position_counter) == len(positions):
+                                    for i in range(gap_counter):
+                                        s[len(positions)-(i+1)][2] = padding_symbol
                         else:
-                            s.append([pos, False, '_', 0])
+                            s.append([pos, False, padding_symbol, 0])
                     
                     # update position counter
                     position_counter += 1
@@ -453,7 +461,7 @@ class Alignment:
                     self.consensus[i][p] = [r[0][0], cons_interval,
                     r[0][0] + ' ' + str(round(r[1]/num_proteins*100)) + '%']
                 elif num_freq_aa > 1:
-                    self.consensus[i][p] = ['X', cons_interval,
+                    self.consensus[i][p] = ['+', cons_interval,
                     '/'.join(r[0]) + ' ' + str(round(r[1]/num_proteins*100)) + '%']
 
         # process amino acid frequency
@@ -537,7 +545,9 @@ class Alignment:
 
         # order protein list by similarity score
         ref = self.proteins.pop(0)
-        self.proteins.sort(key=lambda x: getattr(x, self.order_by), reverse=True)
+        order_by_value = int(getattr(self.proteins[0], self.order_by))
+        if order_by_value:
+            self.proteins.sort(key=lambda x: getattr(x, self.order_by), reverse=True)
         self.proteins.insert(0, ref)
 
     def score_match(self, pair, matrix):
