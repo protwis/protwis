@@ -18,6 +18,7 @@ class Command(BaseCommand):
 
     generic_numbers_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers'])
     ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'reference_positions'])
+    auto_ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'auto_reference_positions'])
 
     def handle(self, *args, **options):
         # find protein templates
@@ -56,13 +57,16 @@ class Command(BaseCommand):
         for pconf in pconfs:
             sequence_number_counter = 0
             
-            # read reference positions for this protein
+            # read reference positions for this protein                    
             ref_position_file_path = os.sep.join([self.ref_position_source_dir, pconf.protein.entry_name + '.yaml'])
-            if not os.path.isfile(ref_position_file_path):
-                self.logger.error("File {} not found, skipping!".format(ref_position_file_path))
-                continue
-            
             ref_positions = load_reference_positions(ref_position_file_path)
+            if not ref_positions:
+                auto_ref_position_file_path = os.sep.join([self.auto_ref_position_source_dir,
+                    pconf.protein.entry_name + '.yaml'])
+                ref_positions = load_reference_positions(auto_ref_position_file_path)
+                if not ref_positions:
+                    self.logger.error("No reference positions found for {}, skipping".format(pconf.protein))
+                    continue
 
             # check whether all segments have annotated reference positions
             if len(ref_positions) != len(settings.REFERENCE_POSITIONS):
@@ -220,7 +224,7 @@ class Command(BaseCommand):
 
             for us in update_segments:
                 # update residues for this segment
-                if 'start' in us: # FIXME take split segments into account
+                if 'start' in us and 'end' in us and us['end']: # FIXME take split segments into account
                     create_or_update_residues_in_segment(pconf, us['segment'], us['start'], us['end'], schemes,
                         ref_positions, us['protein_anomalies'])
                 

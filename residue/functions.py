@@ -8,6 +8,8 @@ from collections import OrderedDict
 import yaml
 import shlex
 import os
+from Bio import AlignIO
+from Bio.Align.Applications import ClustalOmegaCommandline
 
 def parse_scheme_tables(path):
     # get generic residue numbering schemes
@@ -32,13 +34,18 @@ def parse_scheme_tables(path):
     return schemes
 
 def load_reference_positions(path):
-    with open(path, 'r') as ref_position_file:
-        ref_positions = yaml.load(ref_position_file)
-    return ref_positions
+    try:
+        with open(path, 'r') as ref_position_file:
+            ref_positions = yaml.load(ref_position_file)
+        return ref_positions
+    except:
+        # if the file does not exists, create an empty file
+        ref_position_file = open(path, 'w')
+        ref_position_file.close()
 
 def create_or_update_residues_in_segment(protein_conformation, segment, start, end, schemes, ref_positions,
     protein_anomalies):
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger('build')
     rns_defaults = {'protein_segment': segment} # default numbering scheme for creating generic numbers
     for i, aa in enumerate(protein_conformation.protein.sequence[(start-1):end]):
         sequence_number = start + i
@@ -180,3 +187,51 @@ def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, r
                 numbers['display_generic_number'] = numbers['alternative_generic_numbers'][scheme]
 
     return numbers
+
+def align_protein_to_reference(protein, tpl_ref_pos_file_path, ref_protein):
+    logger = logging.getLogger('build')
+
+    # does the template reference position file exists?
+    if not os.path.isfile(tpl_ref_pos_file_path):
+        logger.error("File {} not found, skipping!".format(tpl_ref_pos_file_path))
+        return False
+    template_ref_positions = load_reference_positions(tpl_ref_pos_file_path)
+
+
+    # write sequences to files
+    seq_filename = "/tmp/" + protein['entry_name'] + ".fa"
+    with open(seq_filename, 'w') as seq_file:
+        seq_file.write("> ref\n")
+        seq_file.write(ref_protein.sequence + "\n")
+        seq_file.write("> seq\n")
+        seq_file.write(protein['sequence'] + "\n")
+
+    try:
+        ali_filename = "/tmp/out.fa"
+        acmd = ClustalOmegaCommandline(infile=seq_filename, outfile=ali_filename, force=True)
+        stdout, stderr = acmd()
+        a = AlignIO.read(ali_filename, "fasta")
+        logger.info("{} aligned to {}".format(protein['entry_name'], ref_protein.entry_name))
+    except:
+        logger.error('Alignment failed for {}'.format(protein['entry_name']))
+        return False
+
+    # find reference positions
+    ref_positions = {}
+    ref_positions_in_ali = {}
+    for position_generic_number, rp in template_ref_positions.items():
+        gaps = 0
+        for i, r in enumerate(a[0].seq, 1):
+            if r == "-":
+                gaps += 1
+            if i-gaps == rp:
+                ref_positions_in_ali[position_generic_number] = i
+    for position_generic_number, rp in ref_positions_in_ali.items():
+        gaps = 0
+        for i, r in enumerate(a[1].seq, 1):
+            if r == "-":
+                gaps += 1
+            if i == rp:
+                ref_positions[position_generic_number] = i - gaps
+
+    return ref_positions

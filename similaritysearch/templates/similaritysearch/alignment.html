@@ -1,6 +1,19 @@
 {% extends "alignment/alignment.html" %}
 {% load staticfiles %}
 
+{% block buttons %}
+<!-- Download button -->
+<div class="btn-group">
+  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+    aria-expanded="false">
+    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+  </button>
+  <ul class="dropdown-menu">
+    <li><a href="/similaritysearch/fasta">Alignment (fasta)</a></li>
+    <li><a href="/similaritysearch/csv">Spreadsheet (csv)</a></li>
+</div>
+{% endblock %}
+
 {% block scores %}
         <!-- similarity score column -->
         <td>
@@ -24,7 +37,7 @@
                     <!-- protein lines -->
                     {% for p in a.proteins %}
                     <tr>
-                        {% if p.identity == False %}
+                        {% if forloop.counter == 1 %}
                         <td class="ali-td ali-td-first-col">
                             %I
                         </td>
