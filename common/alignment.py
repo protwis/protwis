@@ -613,7 +613,7 @@ class AlignedReferenceTemplate(Alignment):
                     for segment in protein.alignment:
                         all_ref_positions = []
                         for res in segment:
-                            if res[1]!=False:
+                            if res[1]!=False and res[1]!='':
                                all_ref_positions.append(res[0])
                         ref_positions.append([all_ref_positions[0],all_ref_positions[-1]])
                 else:
@@ -621,7 +621,7 @@ class AlignedReferenceTemplate(Alignment):
                     for segment in protein.alignment:
                         all_temp_positions = []
                         for res in segment:
-                            if res[1]!=False:
+                            if res[1]!=False and res[1]!='':
                                all_temp_positions.append(res[0])
                         temp_positions.append([all_temp_positions[0],all_temp_positions[-1]])
                     if ref_positions==temp_positions:

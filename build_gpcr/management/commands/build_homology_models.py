@@ -317,7 +317,7 @@ class HomologyModeling(object):
                             seg[parse.gn_indecer(key, '.', +1)] = main_pdb_array[seg_id][parse.gn_indecer(key, '.', +1)]
                     out_pdb_array[seg_id] = seg
                 main_pdb_array = out_pdb_array
-        
+
         # check for inconsitencies with db
         pdb_db_inconsistencies = []
         for seg_label, segment in a.template_dict.items():
@@ -708,7 +708,7 @@ class Loops(object):
             loop_keys = list(loop_template.keys())[2:-2]
             continuous_loop = False
             for seg_label, gns in main_pdb_array.items():
-                if self.segment_order[self.loop_label]-self.segment_order[seg_label]==0.5:
+                if self.segment_order[self.loop_label]-self.segment_order[seg_label[:4]]==0.5:
                     temp_array[seg_label] = gns
                     for key in loop_keys:
                         temp_loop[key] = loop_template[key]
@@ -721,7 +721,7 @@ class Loops(object):
             loop_keys = list(loop_template.keys())[1:-1]
             continuous_loop = True
             for seg_label, gns in main_pdb_array.items():
-                if self.segment_order[self.loop_label]-self.segment_order[seg_label]==0.5:
+                if self.segment_order[self.loop_label]-self.segment_order[seg_label[:4]]==0.5:
                     temp_array[seg_label] = gns
                     for key in loop_keys:
                         temp_loop[key] = loop_template[key]
@@ -991,7 +991,7 @@ class GPCRDBParsingPDB(object):
             io = filename
         residue_array = OrderedDict()
         pdb_struct = PDB.PDBParser(PERMISSIVE=True).get_structure('structure', io)[0]
-
+        
         assign_gn = as_gn.GenericNumbering(structure=pdb_struct)
         pdb_struct = assign_gn.assign_generic_numbers()
         
