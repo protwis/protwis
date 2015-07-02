@@ -68,10 +68,6 @@ class Command(BaseCommand):
                     self.logger.error("No reference positions found for {}, skipping".format(pconf.protein))
                     continue
 
-            # check whether all segments have annotated reference positions
-            if len(ref_positions) != len(settings.REFERENCE_POSITIONS):
-                self.logger.error('Missing reference positions for {}'.format(pconf))
-
             # protein anomalies in main template
             main_tpl_pas = pconf.template_structure.protein_anomalies.all().values_list(
                     'generic_number__label', flat=True)
