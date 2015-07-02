@@ -6,17 +6,15 @@ from django.db.models import Q
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene
 from residue.models import Residue
 from common.selection import Selection
-from common.views import AbsReferenceSelection
+from common.views import AbsBrowseSelection
 
 import json
 from collections import OrderedDict
 
 
-class IndexView(generic.ListView):
-    model = Protein
-
-    def get_queryset(self):
-        return Protein.objects.all()
+class BrowseSelection(AbsBrowseSelection):
+    docs = '/docs/browse'
+    buttons = {}
         
 
 def detail(request, slug):
@@ -106,13 +104,14 @@ def SelectionAutocomplete(request):
         for protein_source in selection.annotation:
             protein_source_list.append(protein_source.item)
 
-        if type_of_selection == 'targets':
+        if type_of_selection == 'targets' or type_of_selection == 'browse':
             # find protein families
             pfs = ProteinFamily.objects.filter(name__icontains=q).exclude(slug='000')[:10]
             for pf in pfs:
                 pf_json = {}
                 pf_json['id'] = pf.id
                 pf_json['label'] = pf.name
+                pf_json['slug'] = pf.slug
                 pf_json['type'] = 'family'
                 pf_json['category'] = 'Target families'
                 results.append(pf_json)
@@ -125,6 +124,7 @@ def SelectionAutocomplete(request):
             p_json = {}
             p_json['id'] = p.id
             p_json['label'] = p.name + " [" + p.species.common_name + "]"
+            p_json['slug'] = p.entry_name
             p_json['type'] = 'protein'
             p_json['category'] = 'Targets'
             results.append(p_json)
@@ -137,6 +137,7 @@ def SelectionAutocomplete(request):
             pa_json = {}
             pa_json['id'] = pa.protein.id
             pa_json['label'] = pa.protein.name  + " [" + pa.protein.species.common_name + "]"
+            pa_json['slug'] = pa.protein.entry_name
             pa_json['type'] = 'protein'
             pa_json['category'] = 'Targets'
             if pa_json not in results:

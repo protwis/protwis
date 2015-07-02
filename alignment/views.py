@@ -73,6 +73,26 @@ def render_fasta_alignment(request):
     
     # create an alignment object
     a = Alignment()
+    a.show_padding = False
+
+    # load data from selection into the alignment
+    a.load_proteins_from_selection(simple_selection)
+    a.load_segments_from_selection(simple_selection)
+
+    # build the alignment data matrix
+    a.build_alignment()
+    
+    response = render(request, 'alignment/alignment_fasta.html', context={'a': a}, content_type='text/fasta')
+    response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.fasta"
+    return response
+
+def render_csv_alignment(request):
+    # get the user selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create an alignment object
+    a = Alignment()
+    a.show_padding = False
 
     # load data from selection into the alignment
     a.load_proteins_from_selection(simple_selection)
@@ -81,4 +101,9 @@ def render_fasta_alignment(request):
     # build the alignment data matrix
     a.build_alignment()
 
-    return render(request, 'alignment/alignment_fasta.html', {'a': a})
+    # calculate consensus sequence + amino acid and feature frequency
+    a.calculate_statistics()
+    
+    response = render(request, 'alignment/alignment_csv.html', context={'a': a}, content_type='text/csv')
+    response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.csv"
+    return response

@@ -69,7 +69,7 @@ class Command(BaseCommand):
                         up['entry_name'] = pc.protein.entry_name
                         up['sequence'] = pc.protein.sequence
 
-                        # find closest protein to get ref positions
+                        # find closest protein (by family) to get ref positions
                         # - level 3 parent family
                         # - - level2 parent family
                         # - - - level1 parent family
@@ -89,6 +89,8 @@ class Command(BaseCommand):
                             
                             # loop through families and search for proteins to use as template
                             for family in related_families:
+                                if template_found:
+                                    break
                                 proteins = Protein.objects.filter(family=family)
                                 if not proteins:
                                     proteins = Protein.objects.filter(family__parent=family)

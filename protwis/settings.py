@@ -31,6 +31,7 @@ INSTALLED_APPS = (
     'common',
     'home',
     'protein',
+    'family',
     'residue',
     'alignment',
     'similaritysearch',
