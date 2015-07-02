@@ -41,16 +41,24 @@ class Protein(models.Model):
 
 
 
+    def get_protein_family(self):
+        tmp = self.family
+        while tmp.parent.parent.parent is not None:
+            tmp = tmp.parent
+        return tmp.name
+
+
 class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein')
     state = models.ForeignKey('ProteinState')
     template_structure = models.ForeignKey('structure.Structure', null=True)
+    protein_anomalies = models.ManyToManyField('protein.ProteinAnomaly')
 
     # non-database attributes
-    identity = False # % identity to a reference sequence in an alignment
-    similarity = False # % similarity to a reference sequence in an alignment (% BLOSUM62 score > 0)
-    similarity_score = False # similarity score to a reference sequence in an alignment (sum of BLOSUM62 scores)
-    alignment = False # residues formatted for use in an Alignment class
+    identity = 0 # % identity to a reference sequence in an alignment
+    similarity = 0 # % similarity to a reference sequence in an alignment (% BLOSUM62 score > 0)
+    similarity_score = 0 # similarity score to a reference sequence in an alignment (sum of BLOSUM62 scores)
+    alignment = 0 # residues formatted for use in an Alignment class
 
     def __str__(self):
         return self.protein.entry_name + " (" + self.state.slug + ")"
@@ -175,6 +183,7 @@ class ProteinAnomaly(models.Model):
         return self.generic_number.label
 
     class Meta():
+        ordering = ('generic_number__label', )
         db_table = 'protein_anomaly'
 
 class ProteinAnomalyType(models.Model):

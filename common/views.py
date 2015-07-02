@@ -56,18 +56,26 @@ class AbsTargetSelection(TemplateView):
     sps = Species.objects.all()
 
     def get_context_data(self, **kwargs):
-        """get context from parent class (really only relevant for child classes of this class, as TemplateView does
+        """get context from parent class (really only relevant for children of this class, as TemplateView does
         not have any context variables)"""
         context = super().get_context_data(**kwargs)
 
         # get selection from session and add to context
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)
-
+        
         # create full selection and import simple selection (if it exists)
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
+
+        # on the first page of a workflow, clear the selection
+        if self.step == 1:
+            selection.clear('reference')
+            selection.clear('targets')
+            selection.clear('segments')
+            simple_selection = selection.exporter()
+            self.request.session['selection'] = simple_selection
 
         context['selection'] = {}
         for selection_box, include in self.selection_boxes.items():
@@ -90,12 +98,16 @@ class AbsReferenceSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 3
     title = 'SELECT A REFERENCE TARGET'
-    description = 'Select a reference target by searching or browsing in the right column.\n\nThe reference will be compared to the targets you select later in the workflow.\n\nOnce you have selected your reference target, click the green button.'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
+    description = 'Select a reference target by searching or browsing in the right column.\n\nThe reference will be compared to the targets you select later in the workflow.\n\nOnce you have selected your reference target, you will be redirected to the next step.'
+    selection_boxes = {}
+
+class AbsBrowseSelection(AbsTargetSelection):
+    type_of_selection = 'browse'
+    step = 1
+    number_of_steps = 1
+    title = 'SELECT A TARGET OR FAMILY'
+    description = 'Select a target or family by searching or browsing in the right column.'
+    selection_boxes = {}
 
 class AbsSegmentSelection(TemplateView):
     """An abstract class for the segment selection page used in many apps. To use it in another app, create a class 
@@ -123,6 +135,7 @@ class AbsSegmentSelection(TemplateView):
     ])
 
     ss = ProteinSegment.objects.filter(partial=False).prefetch_related('generic_numbers')
+    ss_cats = ProteinSegment.objects.values_list('category').order_by('category').distinct('category')
     action = 'expand'
 
     def get_context_data(self, **kwargs):

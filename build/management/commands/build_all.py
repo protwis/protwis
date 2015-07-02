@@ -11,6 +11,7 @@ class Command(BaseCommand):
         commands = [
             ['build_common'],
             ['build_proteins'],
+            ['build_orthologs'],
             ['build_residues'],
             ['build_constructs'],
             ['build_structures'],

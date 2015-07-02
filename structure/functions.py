@@ -1,4 +1,5 @@
 from Bio.Blast import NCBIXML
+from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import Select
 import Bio.PDB.Polypeptide as polypeptide
 
@@ -271,27 +272,31 @@ class BackboneSelector():
         [['Y'], ['AFE'], ['F']],
         [['S', 'T'], ['HBA', 'HBD'], ['S', 'T']],]
 
-    def __init__ (self, ref_pdbio_struct, fragment):
+    def __init__ (self, ref_pdbio_struct, fragment, use_similar=False):
 
         self.ref_atoms = []
         self.alt_atoms = []
         
-        self.ref_atoms = self.select_ref_atoms(fragment, ref_pdbio_struct[0])
-        self.alt_atoms = self.select_alt_atoms(PDBParser(PERMISSIVE=True).get_structure('ref', StringIO(fragment.rotamer.pdbdata)))
+        self.ref_atoms = self.select_ref_atoms(fragment, ref_pdbio_struct, use_similar)
+        self.alt_atoms = self.select_alt_atoms(PDBParser(PERMISSIVE=True).get_structure('ref', StringIO(str(fragment.rotamer.pdbdata)))[0])
         
         
     def select_ref_atoms (self, fragment, ref_pdbio_struct, use_similar=False):
 
         for chain in ref_pdbio_struct:
             for res in chain:
-                if self.get_generic_number(res) == fragment.rotamer.residue.generic_number:
-                    if use_similar:
-                        for rule in self.similarity_rules:
-                            if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and fragment.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
-                                return [res['CA'], res['N'], res['O']] 
-                    else:
-                        return [res['CA'], res['N'], res['O']] 
-
+                try:
+                    if self.get_generic_number(res) == fragment.rotamer.residue.display_generic_number.label:
+                        print("Ref {}:{}\tFragment {}:{}".format(polypeptide.three_to_one(res.resname), self.get_generic_number(res), fragment.rotamer.residue.amino_acid, fragment.rotamer.residue.display_generic_number.label))
+                        if use_similar:
+                            for rule in self.similarity_rules:
+                                if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and fragment.rotamer.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
+                                    return [res['CA'], res['N'], res['O']] 
+                        else:
+                            return [res['CA'], res['N'], res['O']] 
+                except Exception as msg:
+                    #print(msg)
+                    continue
         return []                  
 
 
@@ -308,11 +313,21 @@ class BackboneSelector():
 
     def get_generic_number (self, res):
 
+        if 'CA' not in res:
+            return 0.0
         if 0 < res['CA'].get_bfactor() < 8.1:
-            return "{:2f}x{:2f}".format(res['N'].get_bfactor(), res['CA'].get_bfactor())
+            return "{:.2f}x{!s}".format(res['N'].get_bfactor(), self._get_fraction_string(res['CA'].get_bfactor()))
         if -8.1 < res['CA'].get_bfactor() < 0:
-            return "{:2f}x{:3f}".format(res['N'].get_bfactor(), -res['CA'].get_bfactor() + 0.001)
+            return "{:.2f}x{!s}".format(res['N'].get_bfactor(),  self._get_fraction_string(res['CA'].get_bfactor() - 0.001))
         return 0.0
+
+    #TODO: Is this function really neccessary?
+    def _get_fraction_string(self, number):
+
+        if number > 0:
+            return "{:.2f}".format(number).split('.')[1]
+        else:
+            return "{:.3f}".format(number).split('.')[1]
 
 
     def get_ref_atoms (self):
