@@ -14,16 +14,9 @@ class ReferenceSelection(AbsReferenceSelection):
     step = 1
     number_of_steps = 3
     docs = '/docs/similaritysearch'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('segments', False),
-        ('targets', False),
-    ])
     buttons = {
         'continue': {
-            'label': 'Continue to next step',
             'url': '/similaritysearch/segmentselection',
-            'color': 'success',
         },
     }
 
