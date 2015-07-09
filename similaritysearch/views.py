@@ -99,9 +99,6 @@ def render_fasta_alignment(request):
     # build the alignment data matrix
     a.build_alignment()
 
-    # calculate consensus sequence + amino acid and feature frequency
-    a.calculate_statistics()
-
     # calculate identity and similarity of each row compared to the reference
     a.calculate_similarity()
 

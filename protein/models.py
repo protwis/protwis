@@ -35,11 +35,8 @@ class Protein(models.Model):
     def get_helical_box(self):
         return DrawHelixBox(self)
 
-
     def get_snake_plot(self):
         return DrawSnakePlot(self)
-
-
 
     def get_protein_family(self):
         tmp = self.family
