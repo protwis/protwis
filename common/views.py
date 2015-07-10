@@ -255,6 +255,60 @@ def ClearSelection(request):
     
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
+def SelectFullSequence(request):
+    """Adds all segments to the selection"""
+    selection_type = request.GET['selection_type']
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # get all segments
+    segments = ProteinSegment.objects.filter(partial=False)
+    for segment in segments:
+        selection_object = SelectionItem(segment.category, segment)
+        # add the selected item to the selection
+        selection.add(selection_type, segment.category, selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+    
+    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+
+def SelectAlignableSegments(request):
+    """Adds all alignable segments to the selection"""
+    selection_type = request.GET['selection_type']
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # get all segments
+    segments = ProteinSegment.objects.filter(partial=False, slug__startswith='TM')
+    for segment in segments:
+        selection_object = SelectionItem(segment.category, segment)
+        # add the selected item to the selection
+        selection.add(selection_type, segment.category, selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+    
+    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+
 def ToggleFamilyTreeNode(request):
     """Opens/closes a node in the family selection tree"""
     action = request.GET['action']
