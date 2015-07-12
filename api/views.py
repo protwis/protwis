@@ -1,7 +1,9 @@
+from django.shortcuts import render
 from rest_framework import views, generics, viewsets
 from rest_framework.response import Response
 from django.template.loader import render_to_string
 from django.db.models import Q
+from django.conf import settings
 
 from protein.models import Protein, ProteinFamily, Species, ProteinSegment
 from residue.models import Residue
@@ -16,6 +18,9 @@ import json
 # similiarity search
 # getMutations
 # numberPDBfile
+
+def index(request):
+    return render(request, 'api/index.html', {'site_title': settings.SITE_TITLE})
 
 class ProteinDetail(generics.RetrieveAPIView):
     """

@@ -30,6 +30,7 @@ INSTALLED_APPS = (
     'rest_framework_swagger',
     'django_nvd3',
     'common',
+    'api',
     'home',
     'protein',
     'family',

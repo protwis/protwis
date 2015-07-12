@@ -4,7 +4,8 @@ from rest_framework import routers
 from api import views
 
 urlpatterns = patterns('',
-    url(r'^docs/', include('rest_framework_swagger.urls')),
+    url(r'^$', views.index, name='docs'),
+    url(r'^reference/', include('rest_framework_swagger.urls')),
     url(r'^protein/accession/(?P<accession>[^/].+)/$', views.ProteinByAccessionDetail.as_view(),
         name='proteinbyaccession'),
     url(r'^protein/(?P<entry_name>[^/].+)/$', views.ProteinDetail.as_view(), name='protein-detail'),
