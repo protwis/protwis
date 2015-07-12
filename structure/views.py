@@ -32,8 +32,7 @@ class StructureBrowser(TemplateView):
 
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
-            print(type(Structure.objects.all()))
-            context['crystals'] = Structure.objects.all()
+            context['crystals'] = Structure.objects.prefetch_related()
         except Structure.DoesNotExist as e:
             pass
 
@@ -62,7 +61,7 @@ class StructureStatistics(TemplateView):
             'y_axis_format': 'f',
             }
         context['charttype'] = "multiBarChart"
-        context['chartdata'] = self.get_per_family_data_series(years, families, unique_structs)
+        context['chartdata'] = self.get_per_family_cumulative_data_series(years, families, unique_structs)
         context['extra'] = extra
 
         return context
@@ -102,6 +101,30 @@ class StructureStatistics(TemplateView):
             series['y{:n}'.format(idx+1)] = data[family]
         return series
 
+
+    def get_per_family_cumulative_data_series(self, years, families, structures):
+        """
+        Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
+        """
+        series = {'x' : years,}
+        data = {}
+        for year in years:
+            for family in families:
+                if family not in data.keys():
+                    data[family] = []
+                count = 0
+                for structure in structures:
+                    if structure.protein_conformation.protein.get_protein_family() == family and structure.publication_date.year == year:
+                        count += 1
+                if len(data[family]) > 0:
+                    data[family].append(count + data[family][-1])
+                else:
+                    data[family].append(count)
+
+        for idx, family in enumerate(data.keys()):
+            series['name{:n}'.format(idx+1)] = family
+            series['y{:n}'.format(idx+1)] = data[family]
+        return series
 
 
 class GenericNumberingIndex(TemplateView):
