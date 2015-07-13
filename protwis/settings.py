@@ -44,6 +44,7 @@ INSTALLED_APPS = (
     'mutation',
     'phylogenetic_trees',
     'build_' + SITE_NAME,
+    'construct',
 )
 
 MIDDLEWARE_CLASSES = (
