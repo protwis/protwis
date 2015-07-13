@@ -12,4 +12,6 @@ urlpatterns = patterns('',
     url(r'^selectionspeciespredefined', views.SelectionSpeciesPredefined, name='selectionspeciespredefined'),
     url(r'^selectionspeciestoggle', views.SelectionSpeciesToggle, name='selectionspeciestoggle'),
     url(r'^expandsegment', views.ExpandSegment, name='expandsegment'),
+    url(r'^selectfullsequence', views.SelectFullSequence, name='selectfullsequence'),
+    url(r'^selectalignablesegments', views.SelectAlignableSegments, name='selectalignablesegments'),
 )
