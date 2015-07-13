@@ -51,7 +51,7 @@ class Command(BaseCommand):
 
         # pre-fetch protein conformations
         segments = ProteinSegment.objects.filter(partial=False)
-        pconfs = ProteinConformation.objects.filter(protein__sequence_type__slug='wt').select_related(
+        pconfs = ProteinConformation.objects.all().select_related(
             'protein__residue_numbering_scheme__parent', 'template_structure')
         
         for pconf in pconfs:

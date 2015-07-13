@@ -41,6 +41,32 @@ function ClearSelection(selection_type) {
     });
 }
 
+function SelectFullSequence(selection_type) {
+    $.ajax({
+        'url': '/common/selectfullsequence',
+        'data': {
+            selection_type: selection_type
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}
+
+function SelectAlignableSegments(selection_type) {
+    $.ajax({
+        'url': '/common/selectalignablesegments',
+        'data': {
+            selection_type: selection_type
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}
+
 function ToggleFamilyTreeNode(action, type_of_selection, node_id, tree_indent_level) {
     $.ajax({
         'url': '/common/togglefamilytreenode',
