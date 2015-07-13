@@ -328,6 +328,7 @@ class HomologyModeling(object):
                 except:
                     if 'x' in gn:
                         pdb_db_inconsistencies.append({gn:a.template_dict[seg_label][gn]})
+        print(pdb_db_inconsistencies)
         if pdb_db_inconsistencies!=[]:
             for incons in pdb_db_inconsistencies:
                 seg = self.segment_coding[int(list(incons.keys())[0][0])]
