@@ -7,6 +7,7 @@ from residue.models import ResidueNumberingScheme
 from django.utils.safestring import mark_safe
 
 from math import cos, sin, pi, floor,sqrt
+from datetime import datetime
 
 class DrawSnakePlot(Diagram):
 
@@ -37,7 +38,10 @@ class DrawSnakePlot(Diagram):
         #$pureImage = isset($_GET['pureimage']) && $_GET['pureimage'] == 'TRUE' ? TRUE : FALSE;
         
         # get sequence, baldwin, and bw information of this receptor
+
         self.sequence = Residue.objects.filter(protein_conformation__protein__entry_name=self.receptorId).prefetch_related('protein_segment','generic_number')
+
+
         #self.residuelist = Residue.objects.values_list('generic_number', flat=True).filter(protein_conformation__protein__entry_name=self.receptorId)
         #self.segments = Residue.objects.filter(protein_conformation__protein__entry_name=self.receptorId).order_by().values_list('protein_segment__slug', flat=True).distinct()
 
@@ -95,6 +99,7 @@ class DrawSnakePlot(Diagram):
         self.traceoutput = ""
         self.helixoutput = ""
 
+
         for i in range(1,8):
             self.helixoutput += self.drawSnakePlotHelix(i)
 
@@ -106,15 +111,15 @@ class DrawSnakePlot(Diagram):
         self.drawSnakePlotLoops()
         self.drawSnakePlotTerminals()
 
-        print(self.maxY)
-        print(self.maxX)
+        #print(self.maxY)
+        #print(self.maxX)
         #self.output +=self.drawToolTip()
 
 
 
     def __str__(self):  
 
-        self.output = "<g transform='translate(0, " + str(-self.low+ self.offsetY) + ")'>" + self.traceoutput+self.output+self.helixoutput+self.drawToolTip() + "</g>"; #for resizing height
+        self.output = "<g id=snake transform='translate(0, " + str(-self.low+ self.offsetY) + ")'>" + self.traceoutput+self.output+self.helixoutput+self.drawToolTip() + "</g>"; #for resizing height
         return mark_safe(self.create(self.output,1595,self.high-self.low+self.offsetY*2))
 
     def drawSnakePlotHelix(self, helix_num):
@@ -396,14 +401,14 @@ class DrawSnakePlot(Diagram):
 
             if i=='N':
                 orientation = -1
-                y_max = self.maxY['extra']-between_residues*2
+                y_max = self.maxY['extra']-between_residues*4
                 x_max = self.maxX['right']
                 position = 'extra'
                 linked_helix = 1
                 rs.reverse()
             else:
                 orientation = 1
-                y_max = self.maxY['intra']+between_residues*2
+                y_max = self.maxY['intra']+between_residues*4
                 x_max = self.maxX['left']
                 position = 'intra'
                 linked_helix = 7
@@ -428,9 +433,9 @@ class DrawSnakePlot(Diagram):
             self.output += str("<text class='"+name+" short' onclick='toggleLoop(\"."+name+"\",\"short\");' x="+str(x2)+" y="+str(y2)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
 
-            x2 = x1-30*orientation
+            x2 = x1-90*orientation
             y2 = y_max
-            bezierX = x1+30*orientation
+            bezierX = x1+60*orientation
             bezierY = (y_max+y1)/2+60*orientation
 
             points = "M "+str(x1)+" "+str(y1)+" Q"+str(bezierX)+" "+str(bezierY)+" "+str(x2)+" "+str(y2)
@@ -443,14 +448,41 @@ class DrawSnakePlot(Diagram):
             length = self.lengthbezier([x1,y1],[bezierX,bezierY],[x2,y2],0.001)
 
             bend = 0
+            distance_between_rows = 30
+            pos_bend = 0
+            bend_direction = -1*orientation
 
             for i in range(0,len(rs)):
 
                 r = rs[i]
-                if bend<=1:
+                if pos<length:
                     where = self.wherebezier([x1,y1],[bezierX,bezierY],[x2,y2],0.001,pos)
                 else:
-                    where = self.wherebezier([x1,y1],[bezierX,bezierY],[bezierX2,bezierY2],0.001,pos,[x2,y2])
+                    if pos_bend==0 and bend!=0: #if first residue in line put in middle
+                        where[1][0] = where[1][0]-between_residues*bend_direction
+                        #where[1][0] = where[1][0]
+                        where[1][1] = where[1][1]+orientation*distance_between_rows/2
+                    elif pos_bend==between_residues and bend!=0: #if 2nd residue in line put in middle
+                         #where[1][0] = where[1][0]-between_residues*bend_direction
+                         where[1][0] = where[1][0]+between_residues*bend_direction
+                         where[1][1] = where[1][1]+orientation*distance_between_rows/2
+                    else:
+                        where[1][0] = where[1][0]+between_residues*bend_direction
+                        where[1][1] =  where[1][1]
+                    last_bend_x = where[1][0]
+                    last_bend_y = where[1][1]
+
+                    pos_bend += between_residues
+                    #print("check",pos_bend,abs(x2-x_max))
+                    if pos_bend>=abs(x2-x_max)-40: #no more bend left
+                        pos_bend = 0
+                        bend += 1
+                        if bend_direction==1: 
+                            bend_direction = -1
+                        elif bend_direction==-1: 
+                            bend_direction = 1
+
+                    #where = self.wherebezier([x1,y1],[bezierX,bezierY],[bezierX2,bezierY2],0.001,pos,[x2,y2])
 
                 if i==0: self.output += "<line class='"+name+" long' x1="+str(x1)+" y1="+str(y1)+" x2="+str(where[1][0])+" y2="+str(where[1][1])+" stroke='black' fill='none' stroke-width='2' stroke-dasharray2='1,1' />"
 
@@ -462,42 +494,42 @@ class DrawSnakePlot(Diagram):
                 if where[1][1]<self.low: self.low = where[1][1]
                 if where[1][1]>self.high: self.high = where[1][1]
 
-                if pos>length: 
-                    print('at end!',pos,length,bend)
-                    if bend==0:
-                        x1 = where[1][0]-12*orientation
-                        y1 = where[1][1]+5*orientation
-                        x2 = x_max+20*orientation
-                        y2 = y2+30*orientation
-                        bezierX = x2
-                        bezierY = (y1+y2)/2
-                        points = "M "+str(x1)+" "+str(y1)+" Q"+str(bezierX)+" "+str(bezierY)+" "+str(x2)+" "+str(y2)
-                        pos=0
-                        length = self.lengthbezier([x1,y1],[bezierX,bezierY],[x2,y2],0.001)
-                        #self.output += "<path d='" + points + "' stroke='black' fill='none' stroke-width='2'  class='"+name+" long'/>"
-                    else:
-                        y1 = where[1][1]+between_residues*orientation
-                        x1 = where[1][0]
-                        if abs(x1-self.maxX['left'])>abs(x1-self.maxX['right']):
-                            x1 = where[1][0]-5*orientation
-                            x2 = self.maxX['left']+30
-                        else:
-                            x1 = where[1][0]+5*orientation
-                            x2 = self.maxX['right']-30
+                #if pos>length: 
+                #     print('at end!',pos,length,bend)
+                #     if bend==0:
+                #         x1 = where[1][0]-12*orientation
+                #         y1 = where[1][1]+5*orientation
+                #         x2 = x_max+20*orientation
+                #         y2 = y2+30*orientation
+                #         bezierX = x2
+                #         bezierY = (y1+y2)/2
+                #         points = "M "+str(x1)+" "+str(y1)+" Q"+str(bezierX)+" "+str(bezierY)+" "+str(x2)+" "+str(y2)
+                #         pos=0
+                #         length = self.lengthbezier([x1,y1],[bezierX,bezierY],[x2,y2],0.001)
+                #         #self.output += "<path d='" + points + "' stroke='black' fill='none' stroke-width='2'  class='"+name+" long'/>"
+                #     else:
+                #         y1 = where[1][1]+between_residues*orientation
+                #         x1 = where[1][0]
+                #         if abs(x1-self.maxX['left'])>abs(x1-self.maxX['right']):
+                #             x1 = where[1][0]-5*orientation
+                #             x2 = self.maxX['left']+30
+                #         else:
+                #             x1 = where[1][0]+5*orientation
+                #             x2 = self.maxX['right']-30
 
-                        y2 = y2+35*orientation
-                        bezierX = x1
-                        bezierY = y2+20*orientation
+                #         y2 = y2+35*orientation
+                #         bezierX = x1
+                #         bezierY = y2+20*orientation
 
-                        bezierX2 = x2
-                        bezierY2 = y2-40*orientation
+                #         bezierX2 = x2
+                #         bezierY2 = y2-40*orientation
 
-                        length = self.lengthbezier([x1,y1],[bezierX,bezierY],[bezierX2,bezierY2],0.001,[x2,y2])
-                        points = "M "+str(x1)+","+str(y1)+" C"+str(bezierX)+","+str(bezierY)+" "+str(bezierX2)+","+str(bezierY2)+" "+str(x2)+","+str(y2)
-                        #self.output += "<path d='" + points + "' stroke='black' fill='none' stroke-width='2'  class='"+name+" long'/>"
-                        pos = 0
+                #         length = self.lengthbezier([x1,y1],[bezierX,bezierY],[bezierX2,bezierY2],0.001,[x2,y2])
+                #         points = "M "+str(x1)+","+str(y1)+" C"+str(bezierX)+","+str(bezierY)+" "+str(bezierX2)+","+str(bezierY2)+" "+str(x2)+","+str(y2)
+                #         #self.output += "<path d='" + points + "' stroke='black' fill='none' stroke-width='2'  class='"+name+" long'/>"
+                #         pos = 0
 
-                    bend +=1
+                    #bend +=1
 
             self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str(self.TBCoords[linked_helix][position][0]-40*orientation-25)+" y="+str((labely+self.TBCoords[linked_helix][position][1])/2-13)+" rx=5 ry=5 width='50' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
             self.output += str("<text onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str(self.TBCoords[linked_helix][position][0]-40*orientation)+" y="+str((labely+self.TBCoords[linked_helix][position][1])/2)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
@@ -525,7 +557,7 @@ class DrawSnakePlot(Diagram):
                 position = 'intra'
                 orientation = 1
                 name = "ICL"+str(number)
-            print('Loop',i,position,number,orientation)
+            #print('Loop',i,position,number,orientation)
 
             #Get positions of two  linking residues from each helix
             x1 = self.TBCoords[i][position][0]
@@ -562,7 +594,7 @@ class DrawSnakePlot(Diagram):
 
             rs = self.segments[name] #get residues
 
-            print("residues in ",name,len(rs))
+            #print("residues in ",name,len(rs))
 
             y_indent = y_indent*len(rs)/5 #get an approx need for y_indent for size of loop
 
@@ -581,21 +613,22 @@ class DrawSnakePlot(Diagram):
                 length = self.lengthbezier([x1,y1],[x1-abs(y_indent)*0.5,boxY+y_indent*0.5],[x2+abs(y_indent)*0.5,boxY+y_indent*0.5],0.001,[x2,y2])
 
 
-            tries = 0 #adjust size
-            while abs(length-length_of_residues_in_loop-70)>5:
-                #print(abs(length-length_of_residues_in_loop+100),length,length_of_residues_in_loop,tries)
-                if length-length_of_residues_in_loop-70>5:
-                    y_indent *=0.9
-                else:
-                    y_indent *=1.1
-                if len(rs)<loop_long_length:
-                    length = self.lengthbezier([x1,y1],[boxX,boxY+y_indent],[x2,y2],0.001)
-                else:
-                    length = self.lengthbezier([x1,y1],[x1-abs(y_indent)*0.5,boxY+y_indent*0.5],[x2+abs(y_indent)*0.5,boxY+y_indent*0.5],0.001,[x2,y2])
+            if len(rs)<super_loop_long_length:
+                tries = 0 #adjust size
+                while abs(length-length_of_residues_in_loop-70)>5:
+                    #print(abs(length-length_of_residues_in_loop+100),length,length_of_residues_in_loop,tries)
+                    if length-length_of_residues_in_loop-70>5:
+                        y_indent *=0.9
+                    else:
+                        y_indent *=1.1
+                    if len(rs)<loop_long_length:
+                        length = self.lengthbezier([x1,y1],[boxX,boxY+y_indent],[x2,y2],0.001)
+                    else:
+                        length = self.lengthbezier([x1,y1],[x1-abs(y_indent)*0.5,boxY+y_indent*0.5],[x2+abs(y_indent)*0.5,boxY+y_indent*0.5],0.001,[x2,y2])
 
-                tries += 1
-                if tries>100:
-                    break
+                    tries += 1
+                    if tries>100:
+                        break
 
 
             
@@ -614,54 +647,191 @@ class DrawSnakePlot(Diagram):
 
                 second_bend = round(len(rs)/2)
 
-
-                if first_bend_y>self.high: self.high = first_bend_y
-                if first_bend_y<self.low: self.low = first_bend_y
-
-                third_bend = len(rs)-first_bend
-                bezier1 = [x1-self.residue_radius,y1+40*orientation]
-                bezier2 = [x1-self.residue_radius*10,first_bend_y]
-                bezier3 = [x1+50+self.residue_radius*2,first_bend_y]
-                bezier4 = [bend_middle-self.residue_radius*2,y1+40*orientation]
-                length =  self.lengthbezier(bezier1,bezier2,bezier3,0.001,bezier4)
-                for i in range(0,first_bend):
-                    r = rs[i]
-                    #x = x1-((first_bend/2)-abs(i-first_bend/2))*2
-                    xy = self.wherebezier(bezier1,bezier2,bezier3,0.001,i*length/first_bend,bezier4)
-
-                    if i==0: self.traceoutput+= "<line class='"+name+" long' x1="+str(x1)+" y1="+str(y1)+" x2="+str(xy[1][0])+" y2="+str(xy[1][1])+" stroke='black' fill='none' stroke-width='2' stroke-dasharray2='1,1' />"
-                    self.output += self.DrawResidue(xy[1][0],xy[1][1],r[1], r[0], r[0], self.residue_radius,name+" long")
-                    first_bend_max_y = xy[1][1]
-                    first_bend_max_x = xy[1][0]
-
-
-                bezier1 = [first_bend_max_x+self.residue_radius*3,first_bend_max_y]
-                bezier2 = [first_bend_max_x,first_bend_y]
-                bezier3 = [x2+50+self.residue_radius*5,first_bend_y]
-                bezier4 = [x2,y2+40*orientation]
-                length =  self.lengthbezier(bezier1,bezier2,bezier3,0.001,bezier4)
-                for i in range(0,len(rs)-first_bend):
-                    r = rs[i+first_bend]
-                    #x = x1-((first_bend/2)-abs(i-first_bend/2))*2
-                    xy = self.wherebezier(bezier1,bezier2,bezier3,0.001,i*length/first_bend,bezier4)
-
-                    if i==0: self.traceoutput+= "<line class='"+name+" long' x1="+str(first_bend_max_x)+" y1="+str(first_bend_max_y)+" x2="+str(xy[1][0])+" y2="+str(xy[1][1])+" stroke='black' fill='none' stroke-width='2' stroke-dasharray2='1,1' />"
-                    if i==len(rs)-first_bend-1: self.traceoutput+= "<line class='"+name+" long' x1="+str(x2)+" y1="+str(y2)+" x2="+str(xy[1][0])+" y2="+str(xy[1][1])+" stroke='black' fill='none' stroke-width='2' stroke-dasharray2='1,1' />"
-                    self.output += self.DrawResidue(xy[1][0],xy[1][1],r[1], r[0], r[0], self.residue_radius,name+" long")
-                    if xy[1][1]>first_bend_max_y: 
-                        first_bend_max_y = xy[1][1]
-                        x_at_first_bend_max_y = xy[1][0]
-                    first_bend_max_x = xy[1][0]
-
-
-                self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str((x2+x1)/2-18)+" y="+str(first_bend_max_y-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
-                self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str((x2+x1)/2)+" y="+str(first_bend_max_y)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
-
-
-                if orientation==-1: 
-                    if first_bend_max_y<self.maxY[position]: self.maxY[position] = first_bend_max_y
+                if orientation==-1: #indent more if ECL
+                    x_left = 150
                 else:
-                    if first_bend_max_y>self.maxY[position]: self.maxY[position] = first_bend_max_y
+                    x_left = 30
+
+                bends = 1
+                tried = 0
+                length = 0
+                distance_between_rows = between_residues*1.7
+                temp_max_y = self.maxY[position]
+               # print("test",orientation,temp_max_y,y1,y2)
+                if orientation==1 and (temp_max_y<y1 or temp_max_y<y2):
+                    temp_max_y = max(y1,y2)
+                elif orientation==-1 and (temp_max_y>y1 or temp_max_y>y2):
+                    temp_max_y = min(y1,y2)
+                #print("test",orientation,temp_max_y,y1,y2)
+
+                while abs(length-length_of_residues_in_loop)>6: #determine length of bends etc depending on amount of loops
+                    tries +=1
+                    length_first = self.lengthbezier([x1,y1],[x1+60,temp_max_y+80*orientation],[x_left,temp_max_y+80*orientation],0.001)-60
+                    #length_first = floor(length_first / between_residues)*between_residues
+
+                    length_bend = (bends*2+1)*between_residues*2
+
+                    length_middel = (x2-x_left-80)*(bends*2+1)
+                    length_middel = floor(length_middel / between_residues)*between_residues
+
+                    length_second = self.lengthbezier([x2-between_residues-30,temp_max_y+80*orientation+(bends*2+1)*distance_between_rows*orientation],[x2+50,temp_max_y+80*orientation+(bends*2+1)*distance_between_rows*orientation],[x2,y2],0.001)-40
+
+
+                    #length_second = floor(length_second / between_residues)*between_residues
+
+                    length = length_first+length_second+length_bend+length_middel
+                    #print(tries,'length',length,length_of_residues_in_loop)
+
+                    if length-length_of_residues_in_loop>6:
+                        x_left += 0.1*(length-length_of_residues_in_loop)
+                    else:
+                        if (orientation==1 and x_left<30) or (orientation==-1 and x_left<150):
+                            bends +=1
+                            #print('add bend!',tries)
+                        else:
+                            x_left += 0.1*(length-length_of_residues_in_loop)
+                    if tries>30:
+                        break
+
+
+                #print('tries',tries,'x_left',x_left,'bends',bends)
+
+                #pos = (length-length_of_residues_in_loop)/2 #get start pos
+
+                pos = 60
+
+                points2 = "M "+str(x1)+" "+str(y1)+" Q"+str(x1+60)+" "+str(temp_max_y+80*orientation)+" "+str(x_left)+" "+str(temp_max_y+80*orientation )
+                self.output += "<path class='"+name+" long' d='" + points2 + "' stroke='black' fill='none' stroke-width='2' />"
+
+
+                #for bend in range(1,2+(bends*2)):
+                    #print(bend)
+                    #self.output += "<line class='"+name+" long' x1="+str(x_left)+" y1="+str(temp_max_y+80*orientation+bend*distance_between_rows*orientation)+" x2="+str(x2-between_residues-40)+" y2="+str(temp_max_y+80*orientation+bend*distance_between_rows*orientation)+" stroke='black' fill='none' stroke-width='2' stroke-dasharray2='1,1' />"
+
+                pos_bend = 0
+                bend = 1
+                bend_direction = 1
+                pos_last = 0
+                for i in range(0,len(rs)):
+                    r = rs[i]
+                    if pos<=length_first+61: #first branch
+                        where = self.wherebezier([x1,y1],[x1+60,temp_max_y+80*orientation],[x_left,temp_max_y+80*orientation],0.001,pos)
+                        pos += ((length_first)/floor((length_first)/between_residues))
+                        #print(i,pos,length_first)
+                    elif (bend/2)==(bends+1): #lastpart
+                        #if bends!=0 and pos_last==0:
+                            #last_bend_y = last_bend_y-orientation*distance_between_rows/4
+                        if pos_last==0:
+                            length_second = self.lengthbezier([last_bend_x+between_residues,last_bend_y],[x2+100,temp_max_y+80],[x2,y2],0.001)
+                            res_left = len(rs)-i
+                            #print('length',length_second,'res lef',res_left)
+                            points2 = "M "+str(last_bend_x+between_residues)+" "+str(last_bend_y)+" Q"+str(x2+50)+" "+str(last_bend_y)+" "+str(x2)+" "+str(y2)
+                            self.output += "<path class='"+name+" long' d='" + points2 + "' stroke='black' fill='none' stroke-width='2' />"
+
+                        where = self.wherebezier([last_bend_x+between_residues,last_bend_y],[x2+50,last_bend_y],[x2,y2],0.001,pos_last)
+
+                        #pos_last += between_residues
+                        #pos_last += (length_second-40)/res_left
+                        pos_last += between_residues
+                        #print(i,'length',length_second,'res lef',res_left, 'pos',pos_last,last_bend_y)
+                    else:
+                        #if 
+                        if pos_bend==0: #if first residue in line put in middle
+                            where[1][0] = where[1][0]-between_residues*bend_direction
+                            #where[1][0] = where[1][0]
+                            where[1][1] = where[1][1]+orientation*distance_between_rows/2
+                        # elif pos_bend==between_residues: #if 2nd residue in line put in middle
+                        #     #where[1][0] = where[1][0]-between_residues*bend_direction
+                        #     where[1][0] = where[1][0]
+                        #     where[1][1] = temp_max_y+80+bend*distance_between_rows
+                        else:
+                            where[1][0] = where[1][0]+between_residues*bend_direction
+                            where[1][1] = temp_max_y+80*orientation+bend*distance_between_rows*orientation
+                        last_bend_x = where[1][0]
+                        last_bend_y = where[1][1]
+
+                        pos_bend += between_residues
+
+                        if pos_bend>=(x2-x_left-40): #no more bend left
+                            bend +=1
+                            pos_bend = 0
+                            if bend_direction==1: 
+                                bend_direction = -1
+                            elif bend_direction==-1: 
+                                bend_direction = 1
+
+                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], where[1][0], where[1][1], self.residue_radius-1,name+" long")
+
+
+                    if orientation==-1: 
+                        if where[1][1]<self.maxY[position]: self.maxY[position] = where[1][1]
+                    else:
+                        if where[1][1]>self.maxY[position]: self.maxY[position] = where[1][1]
+
+
+                    if where[1][1]>self.high: self.high = where[1][1]
+                    if where[1][1]<self.low: self.low = where[1][1]
+
+
+                box_y = temp_max_y+80*orientation+bend*distance_between_rows*orientation+5*orientation
+
+                self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str((x2+x1)/2-18)+" y="+str(box_y-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+                self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str((x2+x1)/2)+" y="+str(box_y)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
+
+
+                if box_y>self.high: self.high = box_y
+                if box_y<self.low: self.low = box_y
+
+
+
+
+                # if first_bend_y>self.high: self.high = first_bend_y
+                # if first_bend_y<self.low: self.low = first_bend_y
+
+                # third_bend = len(rs)-first_bend
+                # bezier1 = [x1-self.residue_radius,y1+40*orientation]
+                # bezier2 = [x1-self.residue_radius*10,first_bend_y]
+                # bezier3 = [x1+50+self.residue_radius*2,first_bend_y]
+                # bezier4 = [bend_middle-self.residue_radius*2,y1+40*orientation]
+                # length =  self.lengthbezier(bezier1,bezier2,bezier3,0.001,bezier4)
+                # for i in range(0,first_bend):
+                #     r = rs[i]
+                #     #x = x1-((first_bend/2)-abs(i-first_bend/2))*2
+                #     xy = self.wherebezier(bezier1,bezier2,bezier3,0.001,i*length/first_bend,bezier4)
+
+                #     if i==0: self.traceoutput+= "<line class='"+name+" long' x1="+str(x1)+" y1="+str(y1)+" x2="+str(xy[1][0])+" y2="+str(xy[1][1])+" stroke='black' fill='none' stroke-width='2' stroke-dasharray2='1,1' />"
+                #     self.output += self.DrawResidue(xy[1][0],xy[1][1],r[1], r[0], r[0], self.residue_radius,name+" long")
+                #     first_bend_max_y = xy[1][1]
+                #     first_bend_max_x = xy[1][0]
+
+
+                # bezier1 = [first_bend_max_x+self.residue_radius*3,first_bend_max_y]
+                # bezier2 = [first_bend_max_x,first_bend_y]
+                # bezier3 = [x2+50+self.residue_radius*5,first_bend_y]
+                # bezier4 = [x2,y2+40*orientation]
+                # length =  self.lengthbezier(bezier1,bezier2,bezier3,0.001,bezier4)
+                # for i in range(0,len(rs)-first_bend):
+                #     r = rs[i+first_bend]
+                #     #x = x1-((first_bend/2)-abs(i-first_bend/2))*2
+                #     xy = self.wherebezier(bezier1,bezier2,bezier3,0.001,i*length/first_bend,bezier4)
+
+                #     if i==0: self.traceoutput+= "<line class='"+name+" long' x1="+str(first_bend_max_x)+" y1="+str(first_bend_max_y)+" x2="+str(xy[1][0])+" y2="+str(xy[1][1])+" stroke='black' fill='none' stroke-width='2' stroke-dasharray2='1,1' />"
+                #     if i==len(rs)-first_bend-1: self.traceoutput+= "<line class='"+name+" long' x1="+str(x2)+" y1="+str(y2)+" x2="+str(xy[1][0])+" y2="+str(xy[1][1])+" stroke='black' fill='none' stroke-width='2' stroke-dasharray2='1,1' />"
+                #     self.output += self.DrawResidue(xy[1][0],xy[1][1],r[1], r[0], r[0], self.residue_radius,name+" long")
+                #     if xy[1][1]>first_bend_max_y: 
+                #         first_bend_max_y = xy[1][1]
+                #         x_at_first_bend_max_y = xy[1][0]
+                #     first_bend_max_x = xy[1][0]
+
+
+                # self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str((x2+x1)/2-18)+" y="+str(first_bend_max_y-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+                # self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str((x2+x1)/2)+" y="+str(first_bend_max_y)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
+
+
+                # if orientation==-1: 
+                #     if first_bend_max_y<self.maxY[position]: self.maxY[position] = first_bend_max_y
+                # else:
+                #     if first_bend_max_y>self.maxY[position]: self.maxY[position] = first_bend_max_y
 
 
             else: #make rounded arc
@@ -751,7 +921,7 @@ class DrawHelixBox(Diagram):
         for i in range(1,len(self.plot_data[self.family]['coordinates'])):
             #fetch residues | add sort by sequence_number FIXME
             self.residuelist = Residue.objects.filter(
-                protein_segment__slug='TM'+str(i), protein_conformation__protein__entry_name=self.receptorId)
+                protein_segment__slug='TM'+str(i), protein_conformation__protein__entry_name=self.receptorId).prefetch_related('generic_number')
 
             self.output += self.DrawHelix(self.plot_data[self.family]['coordinates'][i][0],
                 self.plot_data[self.family]['coordinates'][i][1],
@@ -764,14 +934,18 @@ class DrawHelixBox(Diagram):
                 )
 
 
+
+
     def __str__(self):  
         return mark_safe(self.create(self.output,595,430))
 
     def DrawHelix(self, startX,startY,residuelist,radius,direction,helixNum,helixTopResidue,rotation):
 
         sequence = {}
+
         for r in residuelist:
             sequence[int(r.generic_number.label[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number}
+
         # box size
         numResPerSide = 5
         numResInBox = numResPerSide*4
@@ -886,7 +1060,7 @@ class DrawHelixBox(Diagram):
             # next residue
             currentResidue = nextResidue
         
-        output_backbone = self.DrawBackbone(coordinates);
+        output_backbone = self.DrawBackbone(coordinates)
 
         helix_number_svg = "<text x='"+str(startX)+"' y='"+str(startY+7)+"' text-anchor='middle' font-family='helvetica' font-size='20'>"+str(helixNum)+"</text>\n"
 
