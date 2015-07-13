@@ -16,8 +16,12 @@
     <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ ppf.id }}')"
         class="target-selection">
     {% endif %}
+    {% if type_of_selection == 'browse' %}
+    <a href="javascript:void(0)" onclick="setTimeout(function(){window.location = '/family/{{ ppf.slug }}';}, 200);"
+        class="target-selection">
+    {% endif %}
         {{ ppf.name|safe }}
-    {% if type_of_selection == 'targets' %}
+    {% if type_of_selection == 'targets' or type_of_selection == 'browse' %}
     </a>
     {% endif %}
     <br />
@@ -38,8 +42,12 @@
     <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ pf.id }}')"
         class="target-selection">
     {% endif %}
+    {% if type_of_selection == 'browse' %}
+    <a href="javascript:void(0)" onclick="setTimeout(function(){window.location = '/family/{{ pf.slug }}';}, 200);"
+        class="target-selection">
+    {% endif %}
         {{ pf.name|safe }}
-    {% if type_of_selection == 'targets' %}
+    {% if type_of_selection == 'targets' or type_of_selection == 'browse' %}
     </a>
     {% endif %}
     <br />
@@ -55,8 +63,14 @@
     {% else %}
 <span class="glyphicon glyphicon-star-empty"></span>
     {% endif %}
-<a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'protein', '{{ p.id }}')"
+    {% if type_of_selection == 'browse' %}
+<a href="javascript:void(0)" onclick="setTimeout(function(){window.location = '/protein/{{ p.entry_name }}';}, 200);"
     class="target-selection">
+    {% else %}
+<a href="javascript:void(0)" class="target-selection" onclick="AddToSelection('{{ type_of_selection }}', 'protein',
+    '{{ p.id }}');
+    if (type_of_selection == 'reference') {setTimeout(function(){window.location = redirect_url;}, 200);};">
+    {% endif %}
     {{ p.name|safe }} [{{ p.species.common_name|safe }}]
 </a><br />
 <div id="{{ p.id }}"></div>
