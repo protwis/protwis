@@ -1,0 +1,60 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+<h2 class="text-success">{{ site_title }} REST API</h2>
+<p>The API provides programmatic access to most data in {{ site_title }}.</p>
+<p>Each endpoint is described in the <a href='/api/reference/'>API reference</a>.</p>
+<h4 class="text-success">Example usage</h4>
+<strong>Python 3</strong>
+<pre>
+from urllib.request import urlopen
+import json
+
+# fetch a protein
+url = 'http://gpcrdb.org/api/protein/adrb2_human/'
+response = urlopen(url)
+protein_data = json.loads(response.read().decode('utf-8'))
+print(protein_data)
+print(protein_data['sequence'])
+
+# fetch an alignment
+url = 'http://gpcrdb.org/api/alignment/protein/adrb1_human,adrb2_human,adrb3_human/TM3,TM5,TM6/'
+response = urlopen(url)
+alignment_data = json.loads(response.read().decode('utf-8'))
+for protein, sequence in alignment_data.items():
+    print(protein)
+    print(sequence)
+</pre>
+<strong>Python 2</strong>
+<pre>
+from urllib2 import urlopen
+import json
+
+# fetch a protein
+url = 'http://gpcrdb.org/api/protein/adrb2_human/'
+response = urlopen(url)
+protein_data = json.loads(response.read())
+print protein_data
+print protein_data['sequence']
+
+# fetch an alignment
+url = 'http://gpcrdb.org/api/alignment/protein/adrb1_human,adrb2_human,adrb3_human/TM3,TM5,TM6/'
+response = urlopen(url)
+alignment_data = json.loads(response.read())
+for protein, sequence in alignment_data.iteritems():
+    print protein
+    print sequence
+</pre>
+<strong>Java</strong>
+<pre>
+# WRITEME
+</pre>
+<strong>Perl</strong>
+<pre>
+# WRITEME
+</pre>
+<strong>PHP</strong>
+<pre>
+# WRITEME
+</pre>
+{% endblock %}

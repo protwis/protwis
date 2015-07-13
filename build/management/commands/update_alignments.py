@@ -51,7 +51,7 @@ class Command(BaseCommand):
 
         # pre-fetch protein conformations
         segments = ProteinSegment.objects.filter(partial=False)
-        pconfs = ProteinConformation.objects.filter(protein__sequence_type__slug='wt').select_related(
+        pconfs = ProteinConformation.objects.all().select_related(
             'protein__residue_numbering_scheme__parent', 'template_structure')
         
         for pconf in pconfs:
@@ -67,10 +67,6 @@ class Command(BaseCommand):
                 if not ref_positions:
                     self.logger.error("No reference positions found for {}, skipping".format(pconf.protein))
                     continue
-
-            # check whether all segments have annotated reference positions
-            if len(ref_positions) != len(settings.REFERENCE_POSITIONS):
-                self.logger.error('Missing reference positions for {}'.format(pconf))
 
             # protein anomalies in main template
             main_tpl_pas = pconf.template_structure.protein_anomalies.all().values_list(
