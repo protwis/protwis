@@ -329,7 +329,7 @@ class Command(BaseCommand):
                 elif line.startswith('OS') and not os_read:
                     species_full = line[2:].strip().strip('.')
                     species_split = species_full.split('(')
-                    up['species_latin_name'] = species_split[0]
+                    up['species_latin_name'] = species_split[0].strip()
                     if len(species_split) > 1:
                         up['species_common_name'] = species_split[1].strip().strip(')')
                     else:

@@ -30,11 +30,13 @@ $(function() {
         focus: function(event, ui) { return false; },
         select: function(event, ui) {
             if (type_of_selection == 'browse') {
+                // redirect if select a target/family to browse
                 setTimeout(function(){window.location = '/' + ui.item['type'] + '/' + ui.item['slug'];}, 200);
             } else {
+                // otherwise add to selection
                 AddToSelection(type_of_selection, ui.item['type'], ui.item['id']);
                 $( '#selection-autocomplete' ).val('');
-                // redirect the user if only one protein can be selected
+                // redirect the user if only one target can be selected
                 if (type_of_selection == 'reference') {
                     setTimeout(function(){window.location = redirect_url;}, 200);
                 }
