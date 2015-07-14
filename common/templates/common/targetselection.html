@@ -52,6 +52,16 @@
             </div>
             {% endif %}
 
+            <!-- protein sets -->
+            {% if psets %}
+            <div class="col-md-12 well">
+                <h4>Predefined sets</h4>
+                <div>
+                    {% include 'common/targetselection_predefined.html' %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- target family tree -->
             {% if family_tree %}
             <div class="col-md-12 well">
