@@ -251,9 +251,9 @@ class Command(BaseCommand):
         
         # does this family already exists in db?
         try:
-            pf = ProteinFamily.objects.get(name=family_name)
+            pf = ProteinFamily.objects.get(name=family_name, parent=ppf)
         except ProteinFamily.DoesNotExist:
-            # increment the famliy counter for the current indent level
+            # increment the family counter for the current indent level
             level_family_counter[indent] += 1
             
             # protein family slug
