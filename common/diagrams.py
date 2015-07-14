@@ -18,7 +18,7 @@ def uniqid(prefix='', more_entropy=False):
 class Diagram:
     def create(self, content,sizex,sizey):
         diagram_js = self.diagramJS()
-        return "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""+str(sizex)+"\" height=\""+str(sizey)+"\">\n"+content+diagram_js+"</svg>" #width=\"595\" height=\"430\"
+        return "<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js\"></script><svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""+str(sizex)+"\" height=\""+str(sizey)+"\">\n"+content+"</svg>"+diagram_js #width=\"595\" height=\"430\"
 
     def drawToolTip(self):
         output = """<g id='tool-tip' transform='translate(0,0)' visibility='hidden'>
@@ -51,8 +51,20 @@ class Diagram:
         return output
 
     def diagramJS(self):
-        output = """<script type="text/ecmascript">
-                    <![CDATA[
+        output = """<script>
+
+                    presetColors = {'D': ['#E60A0A', '#FDFF7B'],'E': ['#E60A0A', '#FDFF7B'],
+                                    'K': ['#145AFF', '#FDFF7B'],'R': ['#145AFF', '#FDFF7B'],
+                                    'S': ['#A70CC6', '#FDFF7B'],'T': ['#A70CC6', '#FDFF7B'],
+                                    'N': ['#A70CC6', '#FDFF7B'],'Q': ['#A70CC6', '#FDFF7B'],
+                                    'V': ['#E6E600', '#000000'],'L': ['#E6E600', '#000000'],
+                                    'I': ['#E6E600', '#000000'],'A': ['#E6E600', '#000000'],
+                                    'M': ['#E6E600', '#000000'],'F': ['#18FF0B', '#000000'],
+                                    'Y': ['#18FF0B', '#000000'],'W': ['#0BCF00', '#000000'],
+                                    'H': ['#0093DD', '#000000'],'P': ['#CC0099', '#FDFF7B'],
+                                    'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
+                                    '-': ['#FFFFFF', '#000000']    
+                                    };
 
                     var translateOffset = 0;
                     function showToolTip(x, y, str,rid) {
@@ -93,17 +105,106 @@ class Diagram:
                     }
 
                     function toggleLoop(id,type) {
+                        $(id+".long").toggle();
+                        $(id+".short").toggle();
+                        maxmin();
+
+                        $(id+".long").toggle();
+                        $(id+".short").toggle();
+
                         $(id+".long").fadeToggle();
                         $(id+".short").fadeToggle();
                     }
 
-                    var elements = document.getElementsByClassName('long')
+                    function applyPresentColors() {
 
-                    for (var i = 0; i < elements.length; i++){
-                        elements[i].style.display = 'none';
+                        $("circle").each(function( index ){
+                              console.log( index + ": " + $( this ).closest(".rtext").val() );
+                              console.log( index + ": " + $( this ).text() );
+                            });
+
+                        var textElements = document.getElementsByClassName('rtext');
+                        for (var i=0; i<textElements.length; i++) {
+                            var text = textElements[i].textContent;
+                            var colorText = presetColors[text][1];
+                            var colorCircle = presetColors[text][0];
+                            textElements[i].setAttribute('fill', colorText);
+                            document.getElementById(textElements[i].id.slice(0, textElements[i].id.length-1)).setAttribute('fill', colorCircle);
+                        }
+                        
+                        var loopResidues = document.getElementsByClassName('loop-residue');
+                        for (var i=0; i<loopResidues.length; i++) {
+                            var text = loopResidues[i].textContent;
+                            loopResidues[i].setAttribute('fill', presetColors[text][0]);
+                        }
+
+                    };
+
+                    function maxmin() {
+                        margin = 50;
+                        svgmax = 0;
+                        svgmin = 0;
+                        count = 0;
+                        classmax = ''
+                        classmin = ''
+                        $('#snake').children('text').each(function () {
+                            if ($(this).is(":visible")) {
+                                count = count +1;
+                                y = parseInt($(this).attr( "y" ));
+                                classtext = $(this).attr( "class" );
+                                if (y<svgmin) {
+                                    svgmin = y; 
+                                    classmin = classtext;
+                                    }
+                                if (y>svgmax) {
+
+                                    classmax = classtext;
+                                    svgmax= y; 
+                                 }
+
+                            }   
+                        });
+                        console.log('max '+svgmax+' '+classmax+' min'+svgmin+' '+classmin+' count'+count);
+                        
+                        var svg = $('#snake').closest('svg')[0];
+                        oldheight = $(svg).attr('height');
+                       // svg.setAttribute('height', (svgmax-svgmin+margin*2));
+                        $(svg)
+                        .animate(
+                          {"min-height": (svgmax-svgmin+margin*2)},
+                          {duration: 500,
+                           step: function( top ){
+                               this.setAttribute("height", "translate(0,"+Math.round(top)+")");
+                             }
+                           });
+
+                        console.log('New height:'+ (svgmax-svgmin) +' old height:'+oldheight);
+                        console.log("Prev attr"+$('#snake').attr("transform"));
+                        //$('#snake').attr("transform", "translate(0," + (-svgmin+margin) + ")");
+                        
+                        $('#snake')
+                        .animate(
+                          {"min-height": (-svgmin+margin)},
+                          {duration: 500,
+                           step: function( top ){
+                               this.setAttribute("transform", "translate(0,"+top+")");
+                             }
+                           });
+
+                        console.log("New attr"+$('#snake').attr("transform"));
                     }
 
-                    ]]>
+                    $( document ).ready(function() {    
+                        var elements = document.getElementsByClassName('long')
+
+                        for (var i = 0; i < elements.length; i++){
+                            elements[i].style.display = 'none';
+                        }
+                        maxmin();
+                        //applyPresentColors();
+                    });
+
+
                     </script>"""
         return output
 
