@@ -3,14 +3,16 @@
 {% load structure_extras %}
 
 {% block addon_css %}
- <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<!--    <link rel="stylesheet" href="{% static 'home/css/dataTables.tableTools.min.css' %}" type="text/css" />-->
 {% endblock %}
 
 {% block addon_js %}
-    <!--<script src="{% static 'home/js/jquery.js' %}"> </script>-->
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             var table = $('#crystal_structures').DataTable({
@@ -28,25 +30,6 @@
                     "sRowSelect": "multi",
                     "aButtons": ["select_all", "select_none"]
                 },
-                //initComplete: function () {
-                //    this.api().columns().every(function () {
-                //        var column = this;
-                //        var select = $('<select width="70%"><option value=""></option></select>')
-                //            .appendTo($(column.header()).empty())
-                //            .on('change', function () {
-                //                var val = $.fn.dataTable.util.escapeRegex(
-                //                $(this).val()
-                //                );
-                //                column
-                //                    .search(val ? '^' + val + '$' : '', true, true)
-                //                    .draw();
-                //            });
-                //        column.data().unique().sort().each(function (d, j) {
-                //            select.append('<option value="' + d + '">' + d + '</option>')
-                //        });
-                //    });
-                //},
-
                 initComplete: function () {
                     $('#crystal_structures').dataTable().columnFilter({
                         sPlaceHolder: "head:after",
@@ -66,15 +49,15 @@
                     });
                 }
             });
-            table.columns.adjust().draw();
             $('#crystal_structures tbody').on('click', 'tr', function () {
                 $(this).toggleClass('selected');
             });
             $('#ref_btn').click(function () {
                 if ( table.rows('.selected').data().length != 1 ) {
-                    alert( "Can only use one reference structure!!!" );
+                    alert("Can only use one reference structure!!!");
                 }
                 else {
+                    alert('You have selected ' + table.rows('.selected').data()[0][3])
                     AddToSelection('reference', 'structure', table.rows('.selected').data()[0][3]);
                 }
 
@@ -83,6 +66,7 @@
                 var selected_data = table.rows('.selected').data();
                 for (i = 0; i < selected_data.length; i++) {
                     AddToSelection('targets', 'structure', selected_data[i][3]);
+                    alert(selected_data[i][3])
                 }
             });
             });

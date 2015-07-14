@@ -64,6 +64,10 @@ class StructureStatistics(TemplateView):
         context['chartdata'] = self.get_per_family_cumulative_data_series(years, families, unique_structs)
         context['extra'] = extra
 
+        context['charttype2'] = "multiBarChart"
+        context['chartdata2'] = self.get_per_family_data_series(years, families, unique_structs)
+        context['extra2'] = extra
+
         return context
 
 
@@ -280,6 +284,13 @@ class SuperpositionWorkflowIndex(TemplateView):
         if simple_selection:
             selection.importer(simple_selection)
 
+        #Clearing selections for fresh run
+        print(self.kwargs)
+        if 'clear' in self.kwargs.keys():
+            selection.clear('reference')
+            selection.clear('targets')
+            selection.clear('segments')
+
         context['selection'] = {}
         for selection_box, include in self.selection_boxes.items():
             if include:
@@ -323,20 +334,24 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
 
     def post (self, request, *args, **kwargs):
 
+        # create full selection and import simple selection (if it exists)
+        simple_selection = request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
         if 'exclusive' in request.POST:
             request.session['exclusive'] = True
         else:
             request.session['exclusive'] = False
         if 'ref_file' in request.FILES:
             request.session['ref_file'] = request.FILES['ref_file']
+        elif selection.reference != []:
+            print(selection.reference)
         if 'alt_files' in request.FILES:
             request.session['alt_files'] = request.FILES.getlist('alt_files')
-        simple_selection = request.session.get('selection', False)
+        elif selection.targets != []:
+            print(selection.targets)
 
-        # create full selection and import simple selection (if it exists)
-        selection = Selection()
-        if simple_selection:
-            selection.importer(simple_selection)
         
         context = super(SuperpositionWorkflowSelection, self).get_context_data(**kwargs)
         context['selection'] = {}
