@@ -57,16 +57,30 @@ class Command(BaseCommand):
         for pconf in pconfs:
             sequence_number_counter = 0
             
-            # read reference positions for this protein                    
-            ref_position_file_path = os.sep.join([self.ref_position_source_dir, pconf.protein.entry_name + '.yaml'])
-            ref_positions = load_reference_positions(ref_position_file_path)
-            if not ref_positions:
-                auto_ref_position_file_path = os.sep.join([self.auto_ref_position_source_dir,
-                    pconf.protein.entry_name + '.yaml'])
-                ref_positions = load_reference_positions(auto_ref_position_file_path)
-                if not ref_positions:
-                    self.logger.error("No reference positions found for {}, skipping".format(pconf.protein))
-                    continue
+            # read reference positions for this protein
+            ref_position_file_paths = [
+                # canonical ref positions
+                os.sep.join([self.ref_position_source_dir, pconf.protein.entry_name + '.yaml']),
+                # auto-generated ref positions
+                os.sep.join([self.auto_ref_position_source_dir, pconf.protein.entry_name + '.yaml']),
+            ]
+            if pconf.protein.parent:
+                parent_ref_position_file_paths = [
+                    # parent ref positions
+                    os.sep.join([self.ref_position_source_dir, pconf.protein.parent.entry_name + '.yaml']),
+                    # parent auto-generated ref positions
+                    os.sep.join([self.auto_ref_position_source_dir, pconf.protein.parent.entry_name + '.yaml']),
+                ]
+                ref_position_file_paths += parent_ref_position_file_paths
+
+            for file_path in ref_position_file_paths:
+                ref_positions = load_reference_positions(file_path)
+                if ref_positions:
+                    self.logger.error("Reference positions for {} found in {}".format(pconf.protein, file_path))
+                    break
+            else:
+                self.logger.error("No reference positions found for {}, skipping".format(pconf.protein))
+                continue
 
             # protein anomalies in main template
             main_tpl_pas = pconf.template_structure.protein_anomalies.all()
