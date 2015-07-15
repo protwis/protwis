@@ -3,14 +3,15 @@ from django.views.generic import TemplateView
 from django.http import HttpResponse, JsonResponse
 from django import forms
 
-from protein.models import Gene
+from protein.models import Gene, ProteinSegment
 from structure.models import Structure
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
-from common.views import AbsSegmentSelection
+from common.views import AbsSegmentSelection,AbsReferenceSelection
 from common.selection import Selection
 from common.extensions import MultiFileField
+from common.alignment import Alignment
 
 import inspect
 import os
@@ -31,7 +32,7 @@ class StructureBrowser(TemplateView):
 
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
-            context['crystals'] = Structure.objects.all()
+            context['crystals'] = Structure.objects.prefetch_related()
         except Structure.DoesNotExist as e:
             pass
 
@@ -60,8 +61,12 @@ class StructureStatistics(TemplateView):
             'y_axis_format': 'f',
             }
         context['charttype'] = "multiBarChart"
-        context['chartdata'] = self.get_per_family_data_series(years, families, unique_structs)
+        context['chartdata'] = self.get_per_family_cumulative_data_series(years, families, unique_structs)
         context['extra'] = extra
+
+        context['charttype2'] = "multiBarChart"
+        context['chartdata2'] = self.get_per_family_data_series(years, families, unique_structs)
+        context['extra2'] = extra
 
         return context
 
@@ -100,6 +105,30 @@ class StructureStatistics(TemplateView):
             series['y{:n}'.format(idx+1)] = data[family]
         return series
 
+
+    def get_per_family_cumulative_data_series(self, years, families, structures):
+        """
+        Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
+        """
+        series = {'x' : years,}
+        data = {}
+        for year in years:
+            for family in families:
+                if family not in data.keys():
+                    data[family] = []
+                count = 0
+                for structure in structures:
+                    if structure.protein_conformation.protein.get_protein_family() == family and structure.publication_date.year == year:
+                        count += 1
+                if len(data[family]) > 0:
+                    data[family].append(count + data[family][-1])
+                else:
+                    data[family].append(count)
+
+        for idx, family in enumerate(data.keys()):
+            series['name{:n}'.format(idx+1)] = family
+            series['y{:n}'.format(idx+1)] = data[family]
+        return series
 
 
 class GenericNumberingIndex(TemplateView):
@@ -255,6 +284,13 @@ class SuperpositionWorkflowIndex(TemplateView):
         if simple_selection:
             selection.importer(simple_selection)
 
+        #Clearing selections for fresh run
+        print(self.kwargs)
+        if 'clear' in self.kwargs.keys():
+            selection.clear('reference')
+            selection.clear('targets')
+            selection.clear('segments')
+
         context['selection'] = {}
         for selection_box, include in self.selection_boxes.items():
             if include:
@@ -273,8 +309,6 @@ class SuperpositionWorkflowIndex(TemplateView):
 
 #Class rendering selection box for sequence segments
 class SuperpositionWorkflowSelection(AbsSegmentSelection):
-
-    template_name = 'common/segmentselection.html'
 
     #Left panel
     step = 2
@@ -300,20 +334,24 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
 
     def post (self, request, *args, **kwargs):
 
+        # create full selection and import simple selection (if it exists)
+        simple_selection = request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
         if 'exclusive' in request.POST:
             request.session['exclusive'] = True
         else:
             request.session['exclusive'] = False
         if 'ref_file' in request.FILES:
             request.session['ref_file'] = request.FILES['ref_file']
+        elif selection.reference != []:
+            print(selection.reference[0].item)
         if 'alt_files' in request.FILES:
             request.session['alt_files'] = request.FILES.getlist('alt_files')
-        simple_selection = request.session.get('selection', False)
+        elif selection.targets != []:
+            print(selection.targets)
 
-        # create full selection and import simple selection (if it exists)
-        selection = Selection()
-        if simple_selection:
-            selection.importer(simple_selection)
         
         context = super(SuperpositionWorkflowSelection, self).get_context_data(**kwargs)
         context['selection'] = {}
@@ -350,29 +388,46 @@ class SuperpositionWorkflowResults(TemplateView):
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
-        ref_file = StringIO(self.request.session['ref_file'].file.read().decode('UTF-8'))
-        superposition = ProteinSuperpose(deepcopy(ref_file),[StringIO(alt_file.file.read().decode('UTF-8')) for alt_file in self.request.session['alt_files']], selection)
+        if 'ref_file' in self.request.session.keys():
+            ref_file = StringIO(self.request.session['ref_file'].file.read().decode('UTF-8'))
+        elif selection.reference != []:
+            ref_file = StringIO(Structure.objects.get(protein_conformation__protein = selection.reference[0].item).pdb_data.pdb)
+        if 'alt_files' in self.request.session.keys():
+            alt_files = [StringIO(alt_file.file.read().decode('UTF-8')) for alt_file in self.request.session['alt_files']]
+        elif selection.targets != []:
+            alt_files = [StringIO(Structure.objects.get(protein_conformation__protein = x.item).pdb_data.pdb) for x in selection.targets]
+        superposition = ProteinSuperpose(deepcopy(ref_file),alt_files, selection)
         out_structs = superposition.run()
-
         if len(out_structs) == 0:
             self.success = False
-        elif len(out_structs) == 1:
+        elif len(out_structs) >= 1:
             io = PDBIO()            
             out_stream = BytesIO()
             zipf = zipfile.ZipFile(out_stream, 'w')
 
-            if self.request.session['exclusive']:
+            if 'ref_file' in self.request.session.keys():
                 ref_struct = PDBParser().get_structure('ref', ref_file)[0]
+                ref_name = self.request.session['ref_file'].name
+            elif selection.reference != []:
+                ref_struct = PDBParser().get_structure('ref', StringIO(Structure.objects.get(protein_conformation__protein = selection.reference[0].item).pdb_data.pdb))[0]
+                ref_name = "{!s}.pdb".format(str(selection.reference[0].item).upper())
+
+            if 'alt_files' in self.request.session.keys():
+                alt_file_names = [x.name for x in self.request.session['alt_files']]
+            elif selection.targets != []:
+                alt_file_names = ["{!s}_superposed.pdb".format(str(y)) for y in [Structure.objects.get(protein_conformation__protein = x.item) for x in selection.targets]]
+
+            if self.request.session['exclusive']:
                 consensus_gn_set = CASelector(SelectionParser(selection), ref_struct, out_structs).get_consensus_gn_set()
                 io.set_structure(ref_struct)
                 tmp = StringIO()
                 io.save(tmp, GenericNumbersSelector(consensus_gn_set))
-                zipf.writestr(self.request.session['ref_file'].name, tmp.getvalue())
-                for alt_struct, alt_file in zip(out_structs, self.request.session['alt_files']):
+                zipf.writestr(ref_name, tmp.getvalue())
+                for alt_struct, alt_file_name in zip(out_structs, alt_file_names):
                     tmp = StringIO()
                     io.set_structure(alt_struct)
                     io.save(tmp, GenericNumbersSelector(consensus_gn_set))
-                    zipf.writestr(alt_file.name, tmp.getvalue())
+                    zipf.writestr(alt_file_name, tmp.getvalue())
                 zipf.close()
                 if len(out_stream.getvalue()) > 0:
                     self.request.session['outfile'] = { "Superposed_substructures.zip" : out_stream, }
@@ -380,11 +435,11 @@ class SuperpositionWorkflowResults(TemplateView):
                     self.success = True
                     self.zip = 'zip'
             else:
-                for alt_struct, alt_file in zip(out_structs, self.request.session['alt_files']):
+                for alt_struct, alt_file_name in zip(out_structs, alt_file_names):
                     tmp = StringIO()
                     io.set_structure(alt_struct)
                     io.save(tmp)
-                    zipf.writestr(alt_file.name, tmp.getvalue())
+                    zipf.writestr(alt_file_name, tmp.getvalue())
                 zipf.close()
                 if len(out_stream.getvalue()) > 0:
                     self.request.session['outfile'] = { "Superposed_structures.zip" : out_stream, }
@@ -521,6 +576,100 @@ class FragmentSuperpositionResults(TemplateView):
 
         return render(request, self.template_name, context)
        
+
+#==============================================================================
+class TemplateTargetSelection(AbsReferenceSelection):
+    """
+    Starting point for template selection workflow. Target selection. 
+    """
+    
+    type_of_selection = 'reference'
+    #Left panel
+    description = 'Select targets by searching or browsing in the middle column. You can select entire target families or individual targets.\n\nSelected targets will appear in the right column, where you can edit the list.\n\nOnce you have selected all your targets, either proceed with all TMs alignment ("Find template" button) or specify the sequence segments manualy ("Advanced segment selection" button).'
+    step = 1
+    number_of_steps = 2
+
+    #Mid section
+
+    #Right panel
+    buttons = {
+        'continue': {
+            'label': 'Find template',
+            'url': '/structure/template_browser',
+            'color': 'success',
+        },
+        'segments' : {
+            'label' : 'Advanced segment selection',
+            'url' : '/structure/template_segment_selection',
+            'color' : 'info',
+        },
+    }
+
+
+
+#==============================================================================
+class TemplateSegmentSelection(AbsSegmentSelection):
+    """
+    Advanced selection of sequence segments for template search.
+    """
+   #Left panel
+    step = 2
+    number_of_steps = 2
+
+    #Mid section
+    #mid_section = 'segment_selection.html'
+
+    #Right panel
+    segment_list = True
+    buttons = {
+        'continue': {
+            'label': 'Find template',
+            'url': '/structure/template_browser',
+            'color': 'success',
+        },
+    }
+    # OrderedDict to preserve the order of the boxes
+    selection_boxes = OrderedDict([('reference', True),
+        ('targets', False),
+        ('segments', True),])    
+
+
+
+#==============================================================================
+class TemplateBrowser(TemplateView):
+    """
+    Fetching Structure data and ordering by similarity
+    """
+
+    template_name = "structure_browser.html"
+
+    def get_context_data (self, **kwargs):
+
+        context = super(TemplateBrowser, self).get_context_data(**kwargs)
+
+        # get simple selection from session
+        simple_selection = self.request.session.get('selection', False)
+        a = Alignment()
+        a.load_reference_protein_from_selection(simple_selection)
+        if simple_selection.segments != []:
+            a.load_segments_from_selection(simple_selection)
+        else:
+            a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']))
+        a.load_proteins([x.protein_conformation.protein for x in list(Structure.objects.all())])
+        a.build_alignment()
+        a.calculate_similarity()
+        print(len(a.proteins[1:]))
+        context['crystals'] = []
+        for prot in a.proteins[1:]:
+            context['crystals'].append(Structure.objects.get(protein_conformation__protein__entry_name=prot.protein.entry_name))
+        print(context['crystals'])
+        #try:
+        #    context['crystals'] = Structure.objects.all()
+        #except Structure.DoesNotExist as e:
+        #    pass
+
+        return context
+
 
 #==============================================================================
 def ServePdbOutfile (request, outfile, replacement_tag):
