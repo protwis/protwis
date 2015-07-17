@@ -35,11 +35,8 @@ class Protein(models.Model):
     def get_helical_box(self):
         return DrawHelixBox(self)
 
-
     def get_snake_plot(self):
         return DrawSnakePlot(self)
-
-
 
     def get_protein_family(self):
         tmp = self.family
@@ -117,7 +114,7 @@ class ProteinAlias(models.Model):
 
 
 class ProteinSet(models.Model):
-    protein = models.ManyToManyField('Protein')
+    proteins = models.ManyToManyField('Protein')
     name = models.CharField(max_length=50)
 
     def __str__(self):

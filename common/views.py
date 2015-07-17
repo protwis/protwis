@@ -4,7 +4,7 @@ from django.views.generic import TemplateView
 from django.conf import settings
 
 from common.selection import SimpleSelection, Selection, SelectionItem
-from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource
+from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet
 from residue.models import ResidueGenericNumber
 
 import inspect
@@ -45,6 +45,7 @@ class AbsTargetSelection(TemplateView):
         ppf = ProteinFamily.objects.get(slug='000')
         pfs = ProteinFamily.objects.filter(parent=ppf.id)
         ps = Protein.objects.filter(family=ppf)
+        psets = ProteinSet.objects.all().prefetch_related('proteins')
         tree_indent_level = []
         action = 'expand'
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
@@ -56,18 +57,26 @@ class AbsTargetSelection(TemplateView):
     sps = Species.objects.all()
 
     def get_context_data(self, **kwargs):
-        """get context from parent class (really only relevant for child classes of this class, as TemplateView does
+        """get context from parent class (really only relevant for children of this class, as TemplateView does
         not have any context variables)"""
         context = super().get_context_data(**kwargs)
 
         # get selection from session and add to context
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)
-
+        
         # create full selection and import simple selection (if it exists)
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
+
+        # on the first page of a workflow, clear the selection
+        if self.step == 1:
+            selection.clear('reference')
+            selection.clear('targets')
+            selection.clear('segments')
+            simple_selection = selection.exporter()
+            self.request.session['selection'] = simple_selection
 
         context['selection'] = {}
         for selection_box, include in self.selection_boxes.items():
@@ -90,12 +99,18 @@ class AbsReferenceSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 3
     title = 'SELECT A REFERENCE TARGET'
-    description = 'Select a reference target by searching or browsing in the right column.\n\nThe reference will be compared to the targets you select later in the workflow.\n\nOnce you have selected your reference target, click the green button.'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('targets', False),
-        ('segments', False),
-    ])
+    description = 'Select a reference target by searching or browsing in the right column.\n\nThe reference will be compared to the targets you select later in the workflow.\n\nOnce you have selected your reference target, you will be redirected to the next step.'
+    selection_boxes = {}
+    psets = [] # protein sets not applicable for this selection
+
+class AbsBrowseSelection(AbsTargetSelection):
+    type_of_selection = 'browse'
+    step = 1
+    number_of_steps = 1
+    title = 'SELECT A TARGET OR FAMILY'
+    description = 'Select a target or family by searching or browsing in the right column.'
+    selection_boxes = {}
+    psets = [] # protein sets not applicable for this selection
 
 class AbsSegmentSelection(TemplateView):
     """An abstract class for the segment selection page used in many apps. To use it in another app, create a class 
@@ -159,22 +174,26 @@ def AddToSelection(request):
     selection_subtype = request.GET['selection_subtype']
     selection_id = request.GET['selection_id']
     
+    o = []
     if selection_type == 'reference' or selection_type == 'targets':
         if selection_subtype == 'protein':
-            o = Protein.objects.get(pk=selection_id)
+            o.append(Protein.objects.get(pk=selection_id))
+        elif selection_subtype == 'protein_set':
+            selection_subtype = 'protein'
+            pset = ProteinSet.objects.get(pk=selection_id)
+            for protein in pset.proteins.all():
+                o.append(protein)
         elif selection_subtype == 'family':
-            o = ProteinFamily.objects.get(pk=selection_id)
+            o.append(ProteinFamily.objects.get(pk=selection_id))
         elif selection_subtype == 'set':
-            o = ProteinSet.objects.get(pk=selection_id)
+            o.append(ProteinSet.objects.get(pk=selection_id))
         elif selection_subtype == 'structure':
-            o = Protein.objects.get(entry_name=selection_id.lower())
+            o.append(Protein.objects.get(entry_name=selection_id.lower()))
     elif selection_type == 'segments':
         if selection_subtype == 'residue':
-            o = ResidueGenericNumber.objects.get(pk=selection_id)
+            o.append(ResidueGenericNumber.objects.get(pk=selection_id))
         else:
-            o = ProteinSegment.objects.get(pk=selection_id)
-
-    selection_object = SelectionItem(selection_subtype, o)
+            o.append(ProteinSegment.objects.get(pk=selection_id))
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
@@ -184,8 +203,10 @@ def AddToSelection(request):
     if simple_selection:
         selection.importer(simple_selection)
 
-    # add the selected item to the selection
-    selection.add(selection_type, selection_subtype, selection_object)
+    for obj in o:
+        # add the selected item to the selection
+        selection_object = SelectionItem(selection_subtype, obj)
+        selection.add(selection_type, selection_subtype, selection_object)
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
@@ -234,6 +255,60 @@ def ClearSelection(request):
 
     # remove the selected item to the selection
     selection.clear(selection_type)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+    
+    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+
+def SelectFullSequence(request):
+    """Adds all segments to the selection"""
+    selection_type = request.GET['selection_type']
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # get all segments
+    segments = ProteinSegment.objects.filter(partial=False)
+    for segment in segments:
+        selection_object = SelectionItem(segment.category, segment)
+        # add the selected item to the selection
+        selection.add(selection_type, segment.category, selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+    
+    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+
+def SelectAlignableSegments(request):
+    """Adds all alignable segments to the selection"""
+    selection_type = request.GET['selection_type']
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # get all segments
+    segments = ProteinSegment.objects.filter(partial=False, slug__startswith='TM')
+    for segment in segments:
+        selection_object = SelectionItem(segment.category, segment)
+        # add the selected item to the selection
+        selection.add(selection_type, segment.category, selection_object)
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()

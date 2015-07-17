@@ -251,9 +251,9 @@ class Command(BaseCommand):
         
         # does this family already exists in db?
         try:
-            pf = ProteinFamily.objects.get(name=family_name)
+            pf = ProteinFamily.objects.get(name=family_name, parent=ppf)
         except ProteinFamily.DoesNotExist:
-            # increment the famliy counter for the current indent level
+            # increment the family counter for the current indent level
             level_family_counter[indent] += 1
             
             # protein family slug
@@ -329,7 +329,7 @@ class Command(BaseCommand):
                 elif line.startswith('OS') and not os_read:
                     species_full = line[2:].strip().strip('.')
                     species_split = species_full.split('(')
-                    up['species_latin_name'] = species_split[0]
+                    up['species_latin_name'] = species_split[0].strip()
                     if len(species_split) > 1:
                         up['species_common_name'] = species_split[1].strip().strip(')')
                     else:

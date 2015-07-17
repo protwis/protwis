@@ -14,16 +14,9 @@ class ReferenceSelection(AbsReferenceSelection):
     step = 1
     number_of_steps = 3
     docs = '/docs/similaritysearch'
-    selection_boxes = OrderedDict([
-        ('reference', True),
-        ('segments', False),
-        ('targets', False),
-    ])
     buttons = {
         'continue': {
-            'label': 'Continue to next step',
             'url': '/similaritysearch/segmentselection',
-            'color': 'success',
         },
     }
 
@@ -105,9 +98,6 @@ def render_fasta_alignment(request):
 
     # build the alignment data matrix
     a.build_alignment()
-
-    # calculate consensus sequence + amino acid and feature frequency
-    a.calculate_statistics()
 
     # calculate identity and similarity of each row compared to the reference
     a.calculate_similarity()
