@@ -57,22 +57,38 @@ class Command(BaseCommand):
         for pconf in pconfs:
             sequence_number_counter = 0
             
-            # read reference positions for this protein                    
-            ref_position_file_path = os.sep.join([self.ref_position_source_dir, pconf.protein.entry_name + '.yaml'])
-            ref_positions = load_reference_positions(ref_position_file_path)
-            if not ref_positions:
-                auto_ref_position_file_path = os.sep.join([self.auto_ref_position_source_dir,
-                    pconf.protein.entry_name + '.yaml'])
-                ref_positions = load_reference_positions(auto_ref_position_file_path)
-                if not ref_positions:
-                    self.logger.error("No reference positions found for {}, skipping".format(pconf.protein))
-                    continue
+            # read reference positions for this protein
+            ref_position_file_paths = [
+                # canonical ref positions
+                os.sep.join([self.ref_position_source_dir, pconf.protein.entry_name + '.yaml']),
+                # auto-generated ref positions
+                os.sep.join([self.auto_ref_position_source_dir, pconf.protein.entry_name + '.yaml']),
+            ]
+            if pconf.protein.parent:
+                parent_ref_position_file_paths = [
+                    # parent ref positions
+                    os.sep.join([self.ref_position_source_dir, pconf.protein.parent.entry_name + '.yaml']),
+                    # parent auto-generated ref positions
+                    os.sep.join([self.auto_ref_position_source_dir, pconf.protein.parent.entry_name + '.yaml']),
+                ]
+                ref_position_file_paths += parent_ref_position_file_paths
+
+            for file_path in ref_position_file_paths:
+                ref_positions = load_reference_positions(file_path)
+                if ref_positions:
+                    self.logger.error("Reference positions for {} found in {}".format(pconf.protein, file_path))
+                    break
+            else:
+                self.logger.error("No reference positions found for {}, skipping".format(pconf.protein))
+                continue
 
             # protein anomalies in main template
-            main_tpl_pas = pconf.template_structure.protein_anomalies.all().values_list(
-                    'generic_number__label', flat=True)
+            main_tpl_pas = pconf.template_structure.protein_anomalies.all()
+            main_tpl_pa_labels = []
+            for main_tpl_pa in main_tpl_pas:
+                main_tpl_pa_labels.append(main_tpl_pa.generic_number.label)
 
-            # dicitonary of updated segment values
+            # dictionary of updated segment values
             update_segments = []
 
             # determine segment ranges, and update residues residues
@@ -183,14 +199,22 @@ class Command(BaseCommand):
                     segment_start = ref_positions[segment_ref_position] - tpl_res_before_ref
                     segment_end = ref_positions[segment_ref_position] + tpl_res_after_ref
                     
-                    # update start and end positions based on anomalies
+                    # update start and end positions based on anomalies in this protein
+                    pa_labels = []
                     ref_generic_index = int(segment_ref_position.split("x")[1])
                     for pa in protein_anomalies:
+                        # does the anomaly belong to this segment?
+                        if pa.generic_number.protein_segment != segment:
+                            continue
+
                         # Add bulge to protein_protein_anomalies
                         pconf.protein_anomalies.add(pa)
 
-                        # do change segment borders if  this anomaly is in the main template
-                        if pa.generic_number.label in main_tpl_pas:
+                        # add to list of anomaly labels (to compare with template below)
+                        pa_labels.append(pa.generic_number.label)
+
+                        # do change segment borders if this anomaly is in the main template
+                        if pa.generic_number.label in main_tpl_pa_labels:
                             continue
                         
                         # generic number without the prime for bulges
@@ -203,6 +227,26 @@ class Command(BaseCommand):
                             segment_start -= 1
                         elif (pa_generic_index < ref_generic_index and pa.anomaly_type.slug == 'constriction'):
                             segment_start += 1
+                    # update start and end positions based on anomalies in the template
+                    for pa in main_tpl_pas:
+                        # does the anomaly belong to this segment?
+                        if pa.generic_number.protein_segment != segment:
+                            continue
+
+                        # do change segment borders if this anomaly is in the current protein
+                        if pa.generic_number.label in pa_labels:
+                            continue
+                        
+                        # generic number without the prime for bulges
+                        pa_generic_index = int(pa.generic_number.label.split("x")[1][:2])
+                        if (pa_generic_index > ref_generic_index and pa.anomaly_type.slug == 'bulge'):
+                            segment_end -= 1
+                        elif (pa_generic_index > ref_generic_index and pa.anomaly_type.slug == 'constriction'):
+                            segment_end += 1
+                        elif (pa_generic_index < ref_generic_index and pa.anomaly_type.slug == 'bulge'):
+                            segment_start += 1
+                        elif (pa_generic_index < ref_generic_index and pa.anomaly_type.slug == 'constriction'):
+                            segment_start -= 1
 
                     # update previous segment end
                     update_segments[i-1]['end'] = segment_start - 1
