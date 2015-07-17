@@ -992,12 +992,16 @@ class GPCRDBParsingPDB(object):
             io = filename
         residue_array = OrderedDict()
         pdb_struct = PDB.PDBParser(PERMISSIVE=True).get_structure('structure', io)[0]
-        
+
+        for chain in pdb_struct:
+            for res in chain:
+                print(res.get_id(), res.get_resname())
         assign_gn = as_gn.GenericNumbering(structure=pdb_struct)
         pdb_struct = assign_gn.assign_generic_numbers()
         
         for chain in pdb_struct:
             for residue in chain:
+                print(residue.get_id(), residue.get_resname(), residue['CA'].get_bfactor())
                 try:
                     if -8.1 < residue['CA'].get_bfactor() < 8.1:
                         gn = str(residue['CA'].get_bfactor())
@@ -1010,7 +1014,7 @@ class GPCRDBParsingPDB(object):
                         residue_array[str(residue.get_id()[1])] = residue.get_list()
                 except:
                     logging.warning("Unable to parse {} in {}".format(residue, structure))
-        
+
         output = OrderedDict()
         for num, label in self.segment_coding.items():
             output[label] = OrderedDict()
