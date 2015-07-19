@@ -1,5 +1,78 @@
 {% extends "home/base.html" %}
 
 {% block content %}
-{{ pf.name }}
+
+<div class="row text-success">
+    <div class="text-center">
+        <h2>{{ pf.name|safe }}</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>CLASSIFICATION</h4>
+    </div>
+    <div class="col-md-10">
+    {{ families|safeseq|join:" <span class='glyphicon glyphicon-arrow-right' aria-hidden='true'></span> " }}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>NO. OF PROTEINS</h4>
+    </div>
+    <div class="col-md-10">
+    {{ no_of_proteins }} ({{ no_of_human_proteins }} human)
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>ALIGNMENT</h4>
+    </div>
+    <div class="col-md-10">
+    <a href="/alignment/family/{{ pf.slug }}" class="btn btn-primary btn-xs">View</a>
+    <a href="/alignment/family/{{ pf.slug }}" class="btn btn-primary btn-xs">Download</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>CONSENSUS SEQUENCE</h4>
+    </div>
+    <div class="col-md-10">
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>DIAGRAMS</h4>
+    </div>
+    <div class="col-md-10">
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>MUTATIONS</h4>
+    </div>
+    <div class="col-md-10">
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>STRUCTURES</h4>
+    </div>
+    <div class="col-md-10">
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>LINKS</h4>
+    </div>
+    <div class="col-md-10">
+    </div>
+</div>
 {% endblock %}
