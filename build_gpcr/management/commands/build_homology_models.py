@@ -6,7 +6,6 @@ from structure.models import Structure, PdbData, Rotamer
 from common.alignment import Alignment, AlignedReferenceTemplate
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
-from build.management.commands.build_structures import Command as rota
 
 import Bio.PDB as PDB
 from modeller import *
@@ -16,7 +15,6 @@ import os
 import logging
 import numpy as np
 from io import StringIO
-import re
 import pprint
 
 
@@ -34,7 +32,7 @@ class Command(BaseCommand):
                 self.stdout.write(Homology_model.statistics, ending='')
                 count+=1
 
-        Homology_model = HomologyModeling('gp139_human', 'Inactive', ['Inactive'])
+        Homology_model = HomologyModeling('oprx_human', 'Inactive', ['Inactive'])
         alignment = Homology_model.run_alignment()
         Homology_model.build_homology_model(alignment)
                     
@@ -133,7 +131,10 @@ class HomologyModeling(object):
                 a.reference_dict = loop_insertion.reference_dict
                 a.template_dict = loop_insertion.template_dict
                 a.alignment_dict = loop_insertion.alignment_dict
-                loop_stat[label] = loop.loop_output_structure
+                if loop.new_label!=None:
+                    loop_stat[loop.new_label] = loop.loop_output_structure
+                else:
+                    loop_stat[label] = loop.loop_output_structure
             self.statistics.add_info('loops', loop_stat)
         
         # bulges and constrictions
@@ -298,7 +299,7 @@ class HomologyModeling(object):
                         bulge_gns.append(gn)
                 for seg_id, residues in main_pdb_array.items():
                     seg = OrderedDict()
-                    for key, value in residues:
+                    for key, value in residues.items():
                         seg[key] = value                
                         if str(key)+'1' in bulge_gns:
                             seg[str(key)+'1'] = main_pdb_array[seg_id][str(key)+'1']
@@ -314,7 +315,7 @@ class HomologyModeling(object):
                         const_gns.append(gn)
                 for seg_id, residues in main_pdb_array.items():
                     seg = OrderedDict()
-                    for key, value in residues:
+                    for key, value in residues.items():
                         seg[key] = value
                         if parse.gn_indecer(key, '.', +1) in const_gns:
                             seg[parse.gn_indecer(key, '.', +1)] = main_pdb_array[seg_id][parse.gn_indecer(key, '.', +1)]
@@ -365,13 +366,14 @@ class HomologyModeling(object):
         
         # inserting loops for free modeling
         for label, template in loop_stat.items():
-            modeling_loops = Loops(self.reference_protein, label, self.similarity_table_all, self.main_structure)
-            modeling_loops.insert_gaps_for_loops_to_arrays(main_pdb_array, a.reference_dict, a.template_dict,
-                                                           a.alignment_dict)
-            main_pdb_array = modeling_loops.main_pdb_array
-            a.reference_dict = modeling_loops.reference_dict
-            a.template_dict = modeling_loops.template_dict
-            a.alignment_dict = modeling_loops.alignment_dict
+            if template==None:
+                modeling_loops = Loops(self.reference_protein, label, self.similarity_table_all, self.main_structure)
+                modeling_loops.insert_gaps_for_loops_to_arrays(main_pdb_array, a.reference_dict, a.template_dict,
+                                                               a.alignment_dict)
+                main_pdb_array = modeling_loops.main_pdb_array
+                a.reference_dict = modeling_loops.reference_dict
+                a.template_dict = modeling_loops.template_dict
+                a.alignment_dict = modeling_loops.alignment_dict
         
         # non-conserved residue switching
         non_cons_switch = self.run_non_conserved_switcher(main_pdb_array,a.reference_dict,a.template_dict,
@@ -550,7 +552,7 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
         res_num = 0
         prev_seg = ''
         for ref_seg, temp_seg in zip(ref_temp_alignment.reference_dict, ref_temp_alignment.template_dict):
-            if model_start==False and 'cont' not in ref_seg and 'free' not in ref_seg and 'free' not in prev_seg: #and 'x' in ref_res:
+            if model_start==False and 'cont' not in ref_seg and 'cont' not in prev_seg and 'free' not in ref_seg and 'free' not in prev_seg:
                 ref_sequence+='/'
                 temp_sequence+='/'
             for ref_res, temp_res in zip(ref_temp_alignment.reference_dict[ref_seg], 
@@ -653,6 +655,7 @@ class Loops(object):
         self.loop_template_structures = loop_template_structures
         self.main_structure = main_structure
         self.loop_output_structure = None
+        self.new_label = None
     
     def fetch_loop_residues(self):
         ''' Fetch list of Atom objects of the loop when there is an available template. Returns an OrderedDict().
@@ -784,10 +787,12 @@ class Loops(object):
                         else:
                             aligned_loop_seg[r_id] = '.'
                     if continuous_loop==True:
+                        self.new_label = self.loop_label+'_cont'
                         temp_ref_dict[self.loop_label+'_cont'] = ref_loop_seg
                         temp_temp_dict[self.loop_label+'_cont'] = temp_loop_seg
                         temp_aligned_dict[self.loop_label+'_cont'] = aligned_loop_seg
                     else:
+                        self.new_label = self.loop_label+'_dis'
                         temp_ref_dict[self.loop_label+'_dis'] = ref_loop_seg
                         temp_temp_dict[self.loop_label+'_dis'] = temp_loop_seg
                         temp_aligned_dict[self.loop_label+'_dis'] = aligned_loop_seg
@@ -805,6 +810,15 @@ class Loops(object):
         return self
             
     def insert_gaps_for_loops_to_arrays(self, main_pdb_array, reference_dict, template_dict, alignment_dict):
+        ''' When there is no template for a loop region, this function inserts gaps for that region into the main 
+            template, fetches the reference residues and inserts these into the arrays. This allows for Modeller to
+            freely model these loop regions.
+            
+            @param main_pdb_array: nested OrderedDict(), output of GPCRDBParsingPDB().pdb_array_creator().
+            @param reference_dict: reference dictionary of AlignedReferenceTemplate.
+            @param template_dict: template dictionary of AlignedReferenceTemplate.
+            @param alignment_dict: alignment dictionary of AlignedReferenceTemplate.
+        '''
         residues = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
                                           protein_segment__slug=self.loop_label)
         temp_pdb_array = OrderedDict()
@@ -817,6 +831,7 @@ class Loops(object):
                     count+=1
                     temp_loop[self.loop_label+'|'+str(count)] = '-'
                 temp_pdb_array[self.loop_label+'_free'] = temp_loop
+                self.new_label = self.loop_label+'_free'
             else:
                 temp_pdb_array[seg_id] = seg
         self.main_pdb_array = temp_pdb_array
