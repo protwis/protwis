@@ -101,16 +101,13 @@ class GenericNumbering(object):
                 if resn != 0:
                     try:
                         db_res = Residue.objects.get(protein_conformation__protein=prot_id, sequence_number=subj_counter)
-                        try:
-                            self.residues[chain][resn].add_bw_number(db_res.alternative_generic_numbers.get(scheme__slug='bw').label)
-                        except:
-                            pass
-                        try:
-                            self.residues[chain][resn].add_gpcrdb_number(db_res.alternative_generic_numbers.get(scheme__slug='gpcrdb').label)
-                        except:
-                            self.residues[chain][resn].add_gpcrdb_number(db_res.generic_number.label)
+                        num = db_res.display_generic_number.label
+                        bw, gpcrdb = num.split('x')
+                        gpcrdb = "{}.{}".format(bw[0], gpcrdb)
+                        self.residues[chain][resn].add_bw_number(bw)
+                        self.residues[chain][resn].add_gpcrdb_number(gpcrdb)
                     except Exception as msg:
-                        logger.warning("Could not find residue {} in the database.\t{}".format(subj_counter, msg))
+                        logger.warning("Could not find residue {} {} in the database.\t{}".format(num, subj_counter, msg))
 
                     
                     if prot_id not in self.prot_id_list:
