@@ -18,7 +18,10 @@ def uniqid(prefix='', more_entropy=False):
 class Diagram:
     def create(self, content,sizex,sizey,name):
         #diagram_js = self.diagramJS()
-        return "<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js\"></script><svg id=\""+name+"\" xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""+str(sizex)+"\" height=\""+str(sizey)+"\" style='stroke-width: 0px; background-color: white;'>\n"+content+"</svg>" #width=\"595\" height=\"430\"
+        return ("<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js\"></script><svg id=\""+name+"\" " +
+        "xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""+str(sizex)+"\" height=\""+str(sizey)+"\" " +
+        "style='stroke-width: 0px; background-color: white;'>\n"+content+"</svg>" +
+        self.drawColorPanel() ) #width=\"595\" height=\"430\"
 
     def drawToolTip(self):
         output = """<g id='tool-tip-{}' transform='translate(0,0)' visibility='hidden'>
@@ -27,6 +30,49 @@ class Diagram:
             </g>""".format(self.type)
         
         return output
+
+    def drawColorPanel(self):
+
+        boxstyle = """<style>
+        .pick-color  {
+          display:inline-block;
+          width: 35px;
+          height: 20px;
+          margin: 1px;
+          border-radius: 5px;
+          border: 2px solid #000;
+        }
+        </style>
+        """
+
+        presetColors = {'D': ['#E60A0A', '#FDFF7B'],'E': ['#E60A0A', '#FDFF7B'],
+                                    'K': ['#145AFF', '#FDFF7B'],'R': ['#145AFF', '#FDFF7B'],
+                                    'S': ['#A70CC6', '#FDFF7B'],'T': ['#A70CC6', '#FDFF7B'],
+                                    'N': ['#A70CC6', '#FDFF7B'],'Q': ['#A70CC6', '#FDFF7B'],
+                                    'V': ['#E6E600', '#000000'],'L': ['#E6E600', '#000000'],
+                                    'I': ['#E6E600', '#000000'],'A': ['#E6E600', '#000000'],
+                                    'M': ['#E6E600', '#000000'],'F': ['#18FF0B', '#000000'],
+                                    'Y': ['#18FF0B', '#000000'],'W': ['#0BCF00', '#000000'],
+                                    'H': ['#0093DD', '#000000'],'P': ['#CC0099', '#FDFF7B'],
+                                    'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
+                                    '-': ['#FFFFFF', '#000000']    
+                                    }
+        fillcolors = [['#CCCCCC', '#000000']]
+        for key,value in presetColors.items():
+            if value not in fillcolors:
+                fillcolors.append(value)
+
+        colors = ""
+        for color in fillcolors:
+            colors += "<div class='pick-color "+self.type+" selected' id='pick-"+color[0]+"-"+color[1]+"' style='background-color: "+color[0]+";'>&nbsp;</div>"
+
+            
+        output = ("<br>Pick color:" +
+            colors )
+
+        output += '<br><button style="width:120px;" onclick="applyPresentColors(\''+self.type+'\')">Properities</button> <button style="width:120px;" onclick="resetColors(\''+self.type+'\')">Clear</button>'
+
+        return boxstyle+ output
 
     #Draws a ring of a helical wheel  
     def DrawResidue(self, x,y,aa,residue_number,label,radius, resclass = '',cfill="white", precolor = False):
@@ -41,13 +87,13 @@ class Diagram:
         #     tfill = isset(_SESSION['color_pattern'][iidtext]) ? _SESSION['color_pattern'][iidtext] : 'black'
         # }
         output =  """
-            <circle class='{}' cx='{}' cy='{}' r='{}' stroke='black' stroke-width='2' fill='{}' 
-            fill-opacity='1' id='id' class='rcircle' onclick='residueColor.setColor(evt);'
+            <circle class='{} rcircle' cx='{}' cy='{}' r='{}' stroke='black' stroke-width='2' fill='{}' 
+            fill-opacity='1' id='{}' onclick=''
             onmouseover='showToolTip({},{},"{}","id","{}");' onmouseout='hideToolTip("{}");'/>
             <text x='{}' y='{}' text-anchor='middle' font-family='helvetica' font-size='16' fill='tfill'
-            id='idtext' onclick='residueColor.setColor(evt);' class='rtext {}'
+            id='{}' class='rtext {}'
             onmouseover='showToolTip({},{},"{}","id","{}");' onmouseout='hideToolTip("{}");'>{}</text>
-            """.format(resclass,x,y,radius,cfill,x,y,label,self.type,self.type,x,y+6,resclass,x,y,label,self.type,self.type,aa) #aa
+            """.format(resclass,x,y,radius,cfill,id,x,y,label,self.type,self.type,x,y+6,idtext,resclass,x,y,label,self.type,self.type,aa) #aa
         return output
 
 
