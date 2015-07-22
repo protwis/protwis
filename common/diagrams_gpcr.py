@@ -9,10 +9,12 @@ from django.utils.safestring import mark_safe
 from math import cos, sin, pi, floor,sqrt
 from datetime import datetime
 
+
 class DrawSnakePlot(Diagram):
 
     def __init__(self, protein):
 
+        self.type = 'snakeplot'
         plot_data = {}
         plot_data['direction'] = [0,0, 1, 0, 1, 0, 1, 0]; # 0: EC->IC, 1: IC->EC
         plot_data['helixRadius'] = 70;
@@ -112,7 +114,7 @@ class DrawSnakePlot(Diagram):
         self.drawSnakePlotTerminals()
 
         #print(self.maxY)
-        #print(self.maxX)
+        print(self.maxX)
         #self.output +=self.drawToolTip()
 
 
@@ -120,7 +122,7 @@ class DrawSnakePlot(Diagram):
     def __str__(self):  
 
         self.output = "<g id=snake transform='translate(0, " + str(-self.low+ self.offsetY) + ")'>" + self.traceoutput+self.output+self.helixoutput+self.drawToolTip() + "</g>"; #for resizing height
-        return mark_safe(self.create(self.output,1595,self.high-self.low+self.offsetY*2))
+        return mark_safe(self.create(self.output,self.maxX['right']+30,self.high-self.low+self.offsetY*2,"snakeplot"))
 
     def drawSnakePlotHelix(self, helix_num):
         print('drawing helix nr',helix_num)
@@ -653,7 +655,7 @@ class DrawSnakePlot(Diagram):
                     x_left = 30
 
                 bends = 1
-                tried = 0
+                tries = 0
                 length = 0
                 distance_between_rows = between_residues*1.7
                 temp_max_y = self.maxY[position]
@@ -913,6 +915,7 @@ class DrawHelixBox(Diagram):
         self.receptorId = protein
         self.family = protein.get_protein_class()
         self.output = ''
+        self.type = 'helixbox'
 
         # Use class A as the default for now FIXME add all classes
         if self.family not in self.plot_data:
@@ -937,14 +940,14 @@ class DrawHelixBox(Diagram):
 
 
     def __str__(self):  
-        return mark_safe(self.create(self.output,595,430))
+        return mark_safe(self.create(self.output+self.drawToolTip(),595,430,"helixbox"))
 
     def DrawHelix(self, startX,startY,residuelist,radius,direction,helixNum,helixTopResidue,rotation):
 
         sequence = {}
 
         for r in residuelist:
-            sequence[int(r.generic_number.label[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number}
+            sequence[int(r.generic_number.label[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number,'generic_number':r.generic_number.label}
 
         # box size
         numResPerSide = 5
@@ -1042,7 +1045,7 @@ class DrawHelixBox(Diagram):
 
                     # Get label information of each residue.
                     residue_number = sequence[tempCurrentResidue]['residueNumber'];
-                    label = ''
+                    label = str(residue_number)+" "+sequence[tempCurrentResidue]['generic_number']
                     #label = self::getResidueLabel(receptorId, helixNum, residue_number); #FIXME IMPLEMENT
                     #label = "m: " . lineEquation["m"] . " x: " . lineEquation["x"];
                     
