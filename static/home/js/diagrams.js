@@ -62,9 +62,11 @@
                         $(id+".short").fadeToggle();
                     }
 
-                    function applyPresentColors() {
+                    function applyPresentColors(target) {
 
-                        $("circle").each(function( index ){
+                        //console.log( $('#'+target));
+
+                        $('#'+target).find("circle").each(function( index ){
                               //console.log( index + ": " + $( this ).text() );
                               aa =  $(this).next().text();
                               //console.log( index + ": " + aa );
@@ -72,22 +74,20 @@
                               $(this).next().css("fill", presetColors[aa][1]);
                             });
 
-                        var textElements = document.getElementsByClassName('rtext');
-                        for (var i=0; i<textElements.length; i++) {
-                            var text = textElements[i].textContent;
-                            var colorText = presetColors[text][1];
-                            var colorCircle = presetColors[text][0];
-                            textElements[i].setAttribute('fill', colorText);
-                            document.getElementById(textElements[i].id.slice(0, textElements[i].id.length-1)).setAttribute('fill', colorCircle);
-                        }
-                        
-                        var loopResidues = document.getElementsByClassName('loop-residue');
-                        for (var i=0; i<loopResidues.length; i++) {
-                            var text = loopResidues[i].textContent;
-                            loopResidues[i].setAttribute('fill', presetColors[text][0]);
-                        }
-
                     };
+
+                    function resetColors(target) {
+
+
+                        $('#'+target).find("circle").each(function( index ){
+                              //console.log( index + ": " + $( this ).text() );
+                              aa =  $(this).next().text();
+                              //console.log( index + ": " + aa );
+                              $(this).css("fill", 'white');
+                              $(this).next().css("fill", 'black');
+                            });
+
+                    }
 
                     function maxmin() {
                         margin = 50;
@@ -161,21 +161,52 @@
                             elements[i].style.display = 'none';
                         }
                         maxmin();
-                       
-                        applyPresentColors();
+                        
                     });
 
+                    $(".rtext").click(function() {
+                        parentid = $(this).closest('svg').attr('id');
+                        newcolor = $(".pick-color."+parentid+".selected").attr('id');
+                        newcolor = newcolor.split('-');
+
+                      $(this).css("fill", newcolor[2]);
+                      $(this).prev().css("fill", newcolor[1]);
+                    });
+                    
+                    $(".rcircle").click(function() {
+                        parentid = $(this).closest('svg').attr('id');
+                        newcolor = $(".pick-color."+parentid+".selected").attr('id');
+                        newcolor = newcolor.split('-');
+
+                      $(this).css("fill", newcolor[1]);
+                      $(this).next().css("fill", newcolor[2]);
+                   });
+
+
+
                     $("#snake_svg_link").click(function() {
-                        console.log('clicked!');
                         svgAsDataUri(document.getElementById("snakeplot"),{}, function(uri) {
                             $("#snake_svg_link").attr('href',uri);
                         });
                     });
                     $("#helix_svg_link").click(function() {
-                        console.log('clicked!');
                         svgAsDataUri(document.getElementById("helixbox"),{}, function(uri) {
                             $("#helix_svg_link").attr('href',uri);
                         });
+                    });
+
+
+                    $(".pick-color").click(function() {
+                        plottype = $(this).attr('class').split(' ')[1];
+                        
+                        console.log($(this).attr('id'));
+                        $(".pick-color."+plottype).css('borderWidth','2px');
+                        $(".pick-color."+plottype).css('height','20px');
+                        $(".pick-color."+plottype).removeClass('selected');
+                        $(this).css('borderWidth','3px');
+                        $(this).css('height','22px');
+                        $(this).addClass('selected');
+                        
                     });
 
 
