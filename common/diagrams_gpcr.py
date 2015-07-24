@@ -761,8 +761,7 @@ class DrawSnakePlot(Diagram):
                                 bend_direction = -1
                             elif bend_direction==-1: 
                                 bend_direction = 1
-
-                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], where[1][0], where[1][1], self.residue_radius-1,name+" long")
+                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], where[1][0], r[0], self.residue_radius-1,name+" long")
 
 
                     if orientation==-1: 
@@ -857,7 +856,7 @@ class DrawSnakePlot(Diagram):
                     else:
                         where = self.wherebezier([x1,y1],[boxX,boxY+y_indent],[x2,y2],0.001,pos)
 
-                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], r[0], r[2], self.residue_radius-1,name+" long")
+                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], r[0], r[0], self.residue_radius-1,name+" long")
                     pos += between_residues
 
                     if where[1][1]>self.high: self.high = where[1][1]
