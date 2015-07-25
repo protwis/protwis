@@ -1,0 +1,7 @@
+            <p>Please choose one or more numbering schemes, and click 'Save & close'.</p>
+            {% for gn in gns %}
+                <a href="javascript:void(0)" onclick="SelectionSchemesToggle('{{ gn.id }}')"
+                    class="btn btn-primary{% for sel_gns in selection.numbering_schemes %}{% if gn == sel_gns.item %} active{% endif %}{% endfor %}">
+                    {{ gn.name }}
+                </a>
+            {% endfor %}

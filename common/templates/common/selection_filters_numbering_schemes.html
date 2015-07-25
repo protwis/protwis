@@ -1,0 +1,33 @@
+<b>Numbering schemes</b>
+<div class="btn-group btn-group-sm" role="group">
+    <a href="javascript:void(0)" onclick="SelectionSchemesPredefined('gpcrdb')"
+        class="btn btn-primary{% if selection.numbering_schemes|length == 1 and selection.numbering_schemes.0.item.slug == 'gpcrdb' %} active{% endif %}">
+        GPCRdb
+    </a>
+    <a href="javascript:void(0)" onclick="SelectionSchemesPredefined('All')"
+        class="btn btn-primary{% if selection.numbering_schemes|length == gns|length %} active{% endif %}">
+        All
+    </a>
+    <a data-toggle="modal" data-target="#SchemeSelector"
+        class="btn btn-primary{% if selection.numbering_schemes|length == 1 and selection.numbering_schemes.0.item.slug != 'gpcrdb' or selection.numbering_schemes|length > 1 and selection.numbering_schemes|length < gns|length %} active{% endif %}">
+        Other..
+    </a>
+</div>
+
+    <!-- Modal -->
+<div class="modal fade" id="SchemeSelector" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">Choose numbering schemes</h4>
+            </div>
+            <div class="modal-body" id="filters-schemes-selector">
+                {% include 'common/selection_filters_numbering_schemes_selector.html' %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-dismiss="modal">Save & close</button>
+            </div>
+        </div>
+    </div>
+</div>
