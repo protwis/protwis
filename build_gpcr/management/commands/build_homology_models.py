@@ -32,15 +32,13 @@ class Command(BaseCommand):
                 self.stdout.write(Homology_model.statistics, ending='')
                 count+=1
 
-        Homology_model = HomologyModeling('oprx_human', 'Inactive', ['Inactive'])
+        Homology_model = HomologyModeling('gp139_human', 'Active', ['Active'])
         alignment = Homology_model.run_alignment()
         Homology_model.build_homology_model(alignment)
                     
-#        val = Validation()
-#        struct = Structure.objects.get(protein_conformation__protein__name="4ib4")
-#        print(val.PDB_RMSD("./structure/homology_models/GPR139_model_Mohamed.pdb", #StringIO(struct.pdb_data.pdb),
-#                "./structure/homology_models/Q6DWJ6_Inactive/Q6DWJ6_post.pdb",#.format(Homology_model.uniprot_id),
-#                assign_gns=[1]))
+        val = Validation()
+        print(val.PDB_RMSD("./structure/PDB/3AYM.pdb", "./structure/homology_models/P31356_Inactive/modeller_test.pdb",
+                           assign_gns=[1,2]))
         self.stdout.write(Homology_model.statistics, ending='')
 
 class HomologyModeling(object):
@@ -136,7 +134,7 @@ class HomologyModeling(object):
                 else:
                     loop_stat[label] = loop.loop_output_structure
             self.statistics.add_info('loops', loop_stat)
-        
+       
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
             for ref_seg, temp_seg, aligned_seg in zip(a.reference_dict, a.template_dict, a.alignment_dict):
@@ -332,7 +330,7 @@ class HomologyModeling(object):
                 except:
                     if 'x' in gn:
                         pdb_db_inconsistencies.append({gn:a.template_dict[seg_label][gn]})
-        
+
         if pdb_db_inconsistencies!=[]:
             for incons in pdb_db_inconsistencies:
                 seg = self.segment_coding[int(list(incons.keys())[0][0])]
@@ -963,7 +961,7 @@ class Constrictions(object):
             protein_object = Protein.objects.get(id=structure.protein_conformation.protein.parent.id)
             try:                            
                 for match in matches:
-                    if constriction_in_reference==True:                        
+                    if constriction_in_reference==True:
                         if (match.protein_conformation.protein.parent==protein_object and 
                             match.protein_conformation.protein.parent.entry_name not in excludee_proteins):
                             self.constriction_templates.append(structure)
@@ -972,6 +970,7 @@ class Constrictions(object):
                             self.constriction_templates.append(structure)
             except:
                 pass
+        
         for temp in self.constriction_templates:
             try:
                 if constriction_in_reference==True:
@@ -1165,12 +1164,20 @@ class Validation():
         
         pdb_array1, pdb_array2 = OrderedDict(), OrderedDict()
         
-        for chain1, chain2 in zip(pdb1, pdb2):
-            for residue1, residue2 in zip(chain1, chain2):
-                if -8.1 < residue1['CA'].get_bfactor() < 8.1:
-                    pdb_array1[residue1['CA'].get_bfactor()] = residue1
-                if -8.1 < residue2['CA'].get_bfactor() < 8.1:
-                    pdb_array2[residue2['CA'].get_bfactor()] = residue2
+        for chain1 in pdb1:
+            for residue1 in chain1:
+                try:
+                    if -8.1 < residue1['CA'].get_bfactor() < 8.1:
+                        pdb_array1[residue1['CA'].get_bfactor()] = residue1
+                except:
+                    pass
+        for chain2 in pdb2:
+            for residue2 in chain2:
+                try:
+                    if -8.1 < residue2['CA'].get_bfactor() < 8.1:
+                        pdb_array2[residue2['CA'].get_bfactor()] = residue2
+                except:
+                    pass
 
         orig_atomlist, temp_atomlist = [], []               
         for gn1, res1 in pdb_array1.items():
