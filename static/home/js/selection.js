@@ -156,7 +156,7 @@ function SelectionSchemesToggle(numbering_scheme_id) {
         },
         'type': 'GET',
         'success': function (data) {
-            $("#filters-schemes-selector").html(data);
+            $("#filters-schemes").html(data);
         }
     });
 }

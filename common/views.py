@@ -57,6 +57,9 @@ class AbsTargetSelection(TemplateView):
     # species
     sps = Species.objects.all()
 
+    # numbering schemes
+    gns = ResidueNumberingScheme.objects.all()
+
     def get_context_data(self, **kwargs):
         """get context from parent class (really only relevant for children of this class, as TemplateView does
         not have any context variables)"""
@@ -563,4 +566,4 @@ def SelectionSchemesToggle(request):
     context = selection.dict('numbering_schemes')
     context['gns'] = ResidueNumberingScheme.objects.all()
     
-    return render(request, 'common/selection_filters_numbering_schemes_selector.html', context)
+    return render(request, 'common/selection_filters_numbering_schemes.html', context)

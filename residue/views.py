@@ -7,6 +7,8 @@ from common.selection import Selection
 from protein.models import ProteinSegment
 from residue.models import Residue,ResidueNumberingScheme
 
+from collections import OrderedDict
+
 class TargetSelection(AbsTargetSelection):
     pass
 
@@ -26,7 +28,7 @@ class ResidueTablesSelection(AbsTargetSelection):
     # Buttons
     buttons = {
         'continue' : {
-            'label' : 'Select segments',
+            'label' : 'Show residue numbers',
             'url' : '/residue/residuetabledisplay',
             'color' : 'success',
             }
@@ -52,9 +54,7 @@ class ResidueTablesDisplay(TemplateView):
             selection.importer(simple_selection)
         # extract numbering schemes and proteins
         numbering_schemes = [x.item for x in selection.numbering_schemes]
-        print(numbering_schemes)
         proteins = [x.item for x in selection.targets]
-        print(proteins)
         
         # get the helices (TMs only at first)
         segments = ProteinSegment.objects.filter(category='helix')
@@ -68,24 +68,20 @@ class ResidueTablesDisplay(TemplateView):
         # each helix has a dictionary of positions
         # default_generic_number or first scheme on the list is the key
         # value is a dictionary of other gn positions and residues from selected proteins 
-        data = {}
+        data = OrderedDict()
         for segment in segments:
-            data[segment.slug] = {}
+            data[segment.slug] = OrderedDict()
             residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins).prefetch_related('generic_number','alternative_generic_numbers')
             for scheme in numbering_schemes:
                 if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
                     for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
                         data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
-                        #data[segment.slug][pos][] = pos
                 elif scheme == default_scheme:
                     for pos in list(set([x.alternative_generic_numbers.filter(scheme__slug=scheme.slug).label for x in residues if x.protein_segment == segment])):
                         data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
-                        #data[segment.slug][pos][scheme.slug] = pos
             
             for residue in residues:
                 for scheme in numbering_schemes:
-                    #if scheme == default_scheme:
-                    #    continue
                     if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
                         pos = residue.generic_number
                         if scheme == pos.scheme:
@@ -100,24 +96,13 @@ class ResidueTablesDisplay(TemplateView):
                             data[segment.slug][pos.label][scheme.slug] = residue.alternative_generic_numbers.get(scheme__slug=scheme.slug).label
                         data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
 
-        for y in segments:
-            print(y)
-            for pos in sorted([x for x in data[y.slug].keys()]):
-                try:
-                    print(data[y.slug][pos])
-                except:
-                    pass
+        # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
+        flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
+        for s in iter(flattened_data):
+            flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
+        
+        context['header'] = zip([x.short_name for x in numbering_schemes] + [x.entry_name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins])
+        context['segments'] = [x.slug for x in segments]
+        context['data'] = flattened_data
 
         return context
-
-
-def SelectionItems(request):
-
-    simple_selection = request.session.get('selection', False)
-    selection = Selection()
-    if simple_selection:
-        selection.importer(simple_selection)
-    context = {}
-    context['items'] = selection.numbering_schemes
-    print(context['items'])
-    return render(request, 'selection_view.html', context)
