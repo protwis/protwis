@@ -1,18 +1,24 @@
 from django.shortcuts import render
 from rest_framework import views, generics, viewsets
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser, FileUploadParser
 from django.template.loader import render_to_string
+from django.core.servers.basehttp import FileWrapper
 from django.db.models import Q
 from django.conf import settings
 
 from protein.models import Protein, ProteinFamily, Species, ProteinSegment
 from residue.models import Residue
 from structure.models import Structure
+from structure.assign_generic_numbers_gpcr import GenericNumbering
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
     ResidueExtendedSerializer, StructureSerializer)
+from api.renderers import PDBRenderer
 from common.alignment import Alignment
 
-import json
+import json, os
+from io import StringIO
+from Bio.PDB import PDBIO
 
 # FIXME add
 # similiarity search
@@ -358,3 +364,26 @@ class StructureTemplatePartial(StructureTemplate):
     \n{segments} is a comma separated list of protein segment identifiers, e.g. TM3,TM5,TM6
     """
 
+
+class StructureAssignGenericNumbers(views.APIView):
+    """
+    Assign generic residue numbers (Ballesteros-Weinstein and GPCRdb schemes) to an uploaded pdb file.
+    \n/structure/assign_generic_numbers\n
+    e.g. 
+    curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/api/structure/assign_generic_numbers
+    """
+    parser_classes = (FileUploadParser,)
+    renderer_classes = (PDBRenderer, )
+
+    def post(self, request):
+
+        root, ext = os.path.splitext(request.FILES['pdb_file'].name)
+        generic_numbering = GenericNumbering(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8',"ignore")))
+        out_struct = generic_numbering.assign_generic_numbers()
+        out_stream = StringIO()
+        io = PDBIO()
+        io.set_structure(out_struct)
+        io.save(out_stream)
+        print(len(out_stream.getvalue()))
+        # filename="{}_GPCRdb.pdb".format(root)
+        return Response(out_stream.getvalue())

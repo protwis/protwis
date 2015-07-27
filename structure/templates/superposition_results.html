@@ -10,11 +10,13 @@
     </div>
     <br />
     <hr />
-    {% if outfile %}
-        <div>
-            <a class="btn btn-small" href="/structure/{{ zip }}output/{{ outfile }}/{{ replacement_tag }}">
-                <i class="icon-download">Output file<i>
-            </a>
-        </div>
+    {% if success %}
+        {% if outfile %}
+            <div>
+                <a class="btn btn-small" href="/structure/{{ zip }}output/{{ outfile }}/{{ replacement_tag }}">
+                    <i class="icon-download">Output file<i>
+                </a>
+            </div>
+        {% endif %}
     {% endif %}
 {% endblock %}

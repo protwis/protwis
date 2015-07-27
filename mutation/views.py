@@ -22,7 +22,7 @@ def index(request):
 
 def importmutation(request):
 
-	rows = loaddatafromexcel('/vagrant/shared/protwis/mutation/import.xlsx')
+	rows = loaddatafromexcel('/vagrant/protwis/mutation/import.xlsx')
 
 	rows = analyse_rows(rows)
 

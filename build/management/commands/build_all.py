@@ -10,13 +10,14 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         commands = [
             ['build_common'],
-            ['build_proteins'],
+            ['build_human_proteins'],
             ['build_orthologs'],
             ['build_residues'],
             ['build_constructs'],
             ['build_structures'],
             ['find_protein_templates'],
             ['update_alignments'],
+            ['build_protein_sets'],
         ]
 
         for c in commands:

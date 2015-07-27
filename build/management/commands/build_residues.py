@@ -38,7 +38,7 @@ class Command(BaseCommand):
 
         # fetch protein conformations
         segments = ProteinSegment.objects.filter(partial=False)
-        pcs = ProteinConformation.objects.filter(protein__sequence_type__slug='wt').select_related(
+        pcs = ProteinConformation.objects.all().select_related(
             'protein__residue_numbering_scheme__parent')
         
         # run the loop twice, once for annotated proteins, and again for those without annotations (using the closest

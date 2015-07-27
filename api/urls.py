@@ -36,6 +36,8 @@ urlpatterns = patterns('',
         name='structuretemplate'),
     url(r'^structure/template/(?P<entry_name>[^/]+)/(?P<segments>[^/]+)/$', views.StructureTemplatePartial.as_view(),
         name='structuretemplate-partial'),
+    url(r'structure/assign_generic_numbers$', views.StructureAssignGenericNumbers.as_view(),
+        name='assign_generic_numbers'),
 
     url(r'^species/$', views.SpeciesList.as_view(), name='species-list'),
     url(r'^species/(?P<latin_name>[^/]+)/$', views.SpeciesDetail.as_view(), name='species-detail'),
