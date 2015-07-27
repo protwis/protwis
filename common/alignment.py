@@ -572,6 +572,7 @@ class AlignedReferenceTemplate(Alignment):
         super(AlignedReferenceTemplate, self).__init__()
         self.query_states = query_states
         self.order_by = order_by
+        self.reference_protein = reference_protein
         self.load_reference_protein(reference_protein)
         self.load_proteins_by_structure()
         self.load_segments(ProteinSegment.objects.filter(slug__in=segments))
@@ -609,7 +610,7 @@ class AlignedReferenceTemplate(Alignment):
         ''' Loads proteins into alignment based on available structures in the database.
         '''
         self.structures_data = Structure.objects.filter(state__name__in=self.query_states).order_by(
-            'protein_conformation__protein__parent','resolution').distinct('protein_conformation__protein__parent')#.exclude(protein_conformation__protein__parent__family__parent=self.reference.family.parent_id)
+            'protein_conformation__protein__parent','resolution').distinct('protein_conformation__protein__parent')
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
   
@@ -623,7 +624,7 @@ class AlignedReferenceTemplate(Alignment):
                     for segment in protein.alignment:
                         all_ref_positions = []
                         for res in segment:
-                            if res[1]!=False:
+                            if res[1]!=False and res[1]!='':
                                all_ref_positions.append(res[0])
                         ref_positions.append([all_ref_positions[0],all_ref_positions[-1]])
                 else:
@@ -631,7 +632,7 @@ class AlignedReferenceTemplate(Alignment):
                     for segment in protein.alignment:
                         all_temp_positions = []
                         for res in segment:
-                            if res[1]!=False:
+                            if res[1]!=False and res[1]!='':
                                all_temp_positions.append(res[0])
                         temp_positions.append([all_temp_positions[0],all_temp_positions[-1]])
                     if ref_positions==temp_positions:
