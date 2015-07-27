@@ -6,7 +6,6 @@
 {% endblock %}
 
 {% block content %}
-
 <div class="row text-success">
     <div class="text-center">
         <h2>{{ p.name|safe }} ({{ p.entry_name }})</h2>
@@ -23,7 +22,13 @@
     </div>
     <div class="col-md-10">
     {{ p.get_helical_box }}
+    <br>
+    <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_{{ p.entry_name }}.png');"> Download as PNG (right-click)</a>
+    <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_{{ p.entry_name }}"> Download as SVG (right-click)</a>
     {{ p.get_snake_plot }}
+    <br>
+    <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ p.entry_name }}.png');"> Download as PNG (right-click)</a>
+    <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_{{ p.entry_name }}"> Download as SVG (right-click)</a>
     </div>
 </div>
 
@@ -62,4 +67,6 @@
 
 {% block addon_js %}
 <script src="{% static 'home/js/sequenceviewer.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/diagrams.js' %}"></script>
 {% endblock %}

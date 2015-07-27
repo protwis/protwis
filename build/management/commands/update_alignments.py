@@ -51,7 +51,7 @@ class Command(BaseCommand):
 
         # pre-fetch protein conformations
         segments = ProteinSegment.objects.filter(partial=False)
-        pconfs = ProteinConformation.objects.all().select_related(
+        pconfs = ProteinConformation.objects.order_by('protein__parent').select_related(
             'protein__residue_numbering_scheme__parent', 'template_structure')
         
         for pconf in pconfs:
@@ -76,7 +76,7 @@ class Command(BaseCommand):
             for file_path in ref_position_file_paths:
                 ref_positions = load_reference_positions(file_path)
                 if ref_positions:
-                    self.logger.error("Reference positions for {} found in {}".format(pconf.protein, file_path))
+                    self.logger.info("Reference positions for {} found in {}".format(pconf.protein, file_path))
                     break
             else:
                 self.logger.error("No reference positions found for {}, skipping".format(pconf.protein))
@@ -103,6 +103,11 @@ class Command(BaseCommand):
                 # protein anomalies to include
                 protein_anomalies = []
 
+                # get a list of generic numbers in main template
+                main_tpl_gn_labels = Residue.objects.filter(
+                    protein_conformation=pconf.template_structure.protein_conformation, generic_number__isnull=False,
+                    protein_segment=segment).values_list('generic_number__label', flat=True)
+
                 # find template segment (for segments borders)
                 try:
                     main_tpl_ss = StructureSegment.objects.get(structure=pconf.template_structure,
@@ -124,6 +129,12 @@ class Command(BaseCommand):
                     # protein anomaly rules
                     if segment.slug in anomaly_rule_sets:
                         for pa, parss in anomaly_rule_sets[segment.slug].items():
+                            # check whether this anomaly is inside the segment borders
+                            if not generic_number_within_segment_borders(pa, main_tpl_gn_labels):
+                                self.logger.info("Anomaly {} excluded for {} (outside segment borders)".format(pa, 
+                                    pconf))
+                                continue
+
                             # use similarity to decide on anomaly, rules can override this
                             use_similarity = True
 
@@ -169,16 +180,16 @@ class Command(BaseCommand):
                                     
                                     # add it to the list of anomalies for this segment
                                     protein_anomalies.append(anomalies[pa])
-                                    self.logger.info("Anomaly {} included by similarity to {} in {}".format(pa,
-                                        tplpas.structure, pconf))
+                                    self.logger.info("Anomaly {} included for {} (similarity to {})".format(pa,
+                                        pconf, tplpas.structure))
                                 else:
-                                    self.logger.info("Anomaly {} excluded by similarity to {} in {}".format(pa,
-                                        tplpas.structure, pconf))
+                                    self.logger.info("Anomaly {} excluded for {} (similarity to {})".format(pa,
+                                        pconf, tplpas.structure))
                             else:
                                 if anomalies[pa] in protein_anomalies:
-                                    self.logger.info("Anomaly {} included by rule in {}".format(pa, pconf))
+                                    self.logger.info("Anomaly {} included for {} (rule)".format(pa, pconf))
                                 else:
-                                    self.logger.info("Anomaly {} excluded by rule in {}".format(pa, pconf))
+                                    self.logger.info("Anomaly {} excluded for {} (rule)".format(pa, pconf))
 
                     # template segment reference residue number
                     try:
@@ -193,12 +204,10 @@ class Command(BaseCommand):
                     # number of residues before and after the reference position
                     tpl_res_before_ref = tsrrn.sequence_number - main_tpl_ss.start
                     tpl_res_after_ref = main_tpl_ss.end - tsrrn.sequence_number
-
-                    # FIXME check whether this segments actually needs an update
-
                     segment_start = ref_positions[segment_ref_position] - tpl_res_before_ref
                     segment_end = ref_positions[segment_ref_position] + tpl_res_after_ref
                     
+                    # FIXME check whether this segments actually needs an update
                     # update start and end positions based on anomalies in this protein
                     pa_labels = []
                     ref_generic_index = int(segment_ref_position.split("x")[1])
