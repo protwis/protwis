@@ -1,4 +1,5 @@
 ﻿from django.shortcuts import render
+from django.conf import settings
 from django.views.generic import TemplateView
 from django.http import HttpResponse, JsonResponse
 from django import forms
@@ -11,7 +12,7 @@ from structure.structural_superposition import ProteinSuperpose,FragmentSuperpos
 from common.views import AbsSegmentSelection,AbsReferenceSelection
 from common.selection import Selection
 from common.extensions import MultiFileField
-from common.alignment import Alignment
+Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 import inspect
 import os
@@ -661,7 +662,7 @@ class TemplateBrowser(TemplateView):
     Fetching Structure data and ordering by similarity
     """
 
-    template_name = "structure_browser.html"
+    template_name = "template_browser.html"
 
     def get_context_data (self, **kwargs):
 
@@ -671,6 +672,7 @@ class TemplateBrowser(TemplateView):
         simple_selection = self.request.session.get('selection', False)
         a = Alignment()
         a.load_reference_protein_from_selection(simple_selection)
+        print(simple_selection)
         if simple_selection.segments != []:
             a.load_segments_from_selection(simple_selection)
         else:
@@ -682,7 +684,7 @@ class TemplateBrowser(TemplateView):
         context['crystals'] = []
         for prot in a.proteins[1:]:
             context['crystals'].append(Structure.objects.get(protein_conformation__protein__entry_name=prot.protein.entry_name))
-        print(context['crystals'])
+        print([x.similarity for x in a.proteins[1:]])
         #try:
         #    context['crystals'] = Structure.objects.all()
         #except Structure.DoesNotExist as e:
