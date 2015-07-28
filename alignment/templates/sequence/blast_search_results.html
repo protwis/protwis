@@ -1,0 +1,13 @@
+﻿{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<h4>Results for your query: </h4>
+<div class='row-fluid well well-small selection-box'>
+    {% for r in results %}
+
+        {{ r.0 }}
+        {{ r.0.entry_name }}
+    {% endfor %}
+</div>
+{% endblock %}
