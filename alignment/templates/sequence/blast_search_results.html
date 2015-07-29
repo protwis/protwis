@@ -26,7 +26,7 @@
         <!--<div class="dynamic-div">-->
             <table>
                 <tr>
-                    <td>BLAST hit</td>
+                    <td class="ali-td" nowrap>BLAST hit</td>
                     <td class="ali-td">{{ hsps.sbjct_start }}</td>
                     {% for r in hsps.sbjct|make_list %}
                     <td class="ali-td ali-residue res-color-{{r}}">{{r}}</td>
@@ -34,7 +34,7 @@
                     <td class="ali-td">{{ hsps.sbjct|make_list|length|add:hsps.sbjct_start }}  </td>
                 </tr>
                 <tr>
-                    <td>Query</td>
+                    <td class="ali-td" nowrap>Query</td>
                     <td class="ali-td">{{ hsps.query_start }}</td>
                     {% for r in hsps.query|make_list %}
                     <td class="ali-td ali-residue res-color-{{r}}">{{r}}</td>
@@ -42,7 +42,7 @@
                     <td class="ali-td">{{ hsps.query|make_list|length|add:hsps.query_start }}  </td>
                 </tr>
                 <tr>
-                    <td>Match</td>
+                    <td class="ali-td" nowrap>Match</td>
                     <td></td>
                     {% for r in hsps.match|make_list %}
                     <td class="ali-td ali-residue res-color-{{r}}">{{r}}</td>
