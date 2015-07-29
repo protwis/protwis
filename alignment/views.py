@@ -60,15 +60,9 @@ class BlastSearchResults(TemplateView):
         blast = BlastSearch(top_results=5)
         blast_out = blast.run(request.POST['input_seq'])
 
-        print(len(results))
-        context = super(BlastSearchResults, self).get_context_data(**kwargs)
-        context['results'] = [(Protein.objects.get(pk=x[0]), x[1]) for x in results]
-        self.results = [(Protein.objects.get(pk=x[0]), x[1]) for x in blast_out]
-
-        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
-        for a in attributes:
-            if not(a[0].startswith('__') and a[0].endswith('__')):
-                context[a[0]] = a[1]
+        context = {}
+        context['results'] = [(Protein.objects.get(pk=x[0]), x[1]) for x in blast_out]
+        context["input"] = request.POST['input_seq']
 
         return render(request, self.template_name, context)
 

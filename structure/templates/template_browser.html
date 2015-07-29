@@ -34,8 +34,8 @@
                     $('#crystal_structures').dataTable().columnFilter({
                         sPlaceHolder: "head:after",
                         aoColumns: [
-                            { type: "number" }, // sequence identity
                             { type: "number" }, // sequence similarity
+                            { type: "number" }, // sequence identity
                             { type: "select" }, //protein name
                             { type: "select" }, //class
                             { type: "select" }, //specie
@@ -68,8 +68,8 @@
 
             <thead>
                 <tr>
-                    <th>Sequence identity</th>
                     <th>Sequence similarity</th>
+                    <th>Sequence identity</th>
                     <th>Protein name</th>
                     <th>Protein class</th>
                     <th>Species</th>
@@ -115,8 +115,8 @@
             </thead>
             <tfoot>
                 <tr>
-                    <th>Sequence identity</th>
                     <th>Sequence similarity</th>
+                    <th>Sequence identity</th>
                     <th>Protein name</th>
                     <th>Protein class</th>
                     <th>Species</th>
@@ -132,8 +132,8 @@
             </tfoot>
             {% for crystal in crystals %}
             <tr>
-                <td>{{ crystal.protein_conformation.identity }}</td>
                 <td>{{ crystal.protein_conformation.similarity }}</td>
+                <td>{{ crystal.protein_conformation.identity }}</td>
                 <td>{{ crystal.protein_conformation.protein.family.name|safe }}</td>
                 <td>{{ crystal.protein_conformation.protein.get_protein_class }}</td>
                 <td>{{ crystal.protein_conformation.protein.species.latin_name }}</td>

@@ -625,6 +625,9 @@ class TemplateTargetSelection(AbsReferenceSelection):
             'color' : 'info',
         },
     }
+    selection_boxes = OrderedDict([('reference', True),
+        ('targets', False),
+        ('segments', False),])
 
 
 
@@ -672,7 +675,6 @@ class TemplateBrowser(TemplateView):
         simple_selection = self.request.session.get('selection', False)
         a = Alignment()
         a.load_reference_protein_from_selection(simple_selection)
-        print(simple_selection)
         if simple_selection.segments != []:
             a.load_segments_from_selection(simple_selection)
         else:
@@ -680,15 +682,9 @@ class TemplateBrowser(TemplateView):
         a.load_proteins([x.protein_conformation.protein for x in list(Structure.objects.all())])
         a.build_alignment()
         a.calculate_similarity()
-        print(len(a.proteins[1:]))
         context['crystals'] = []
         for prot in a.proteins[1:]:
             context['crystals'].append(Structure.objects.get(protein_conformation__protein__entry_name=prot.protein.entry_name))
-        print([x.similarity for x in a.proteins[1:]])
-        #try:
-        #    context['crystals'] = Structure.objects.all()
-        #except Structure.DoesNotExist as e:
-        #    pass
 
         return context
 
