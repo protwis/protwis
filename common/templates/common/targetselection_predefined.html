@@ -1,0 +1,6 @@
+{% for pset in psets %}
+    <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'protein_set', '{{ pset.id }}')"
+        class="btn btn-primary btn-sm">
+        {{ pset.name }}
+    </a>
+{% endfor %}

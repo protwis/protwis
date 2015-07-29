@@ -16,17 +16,63 @@ def uniqid(prefix='', more_entropy=False):
     return uniqid
 
 class Diagram:
-    def create(self, content,sizex,sizey):
-        diagram_js = self.diagramJS()
-        return "<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js\"></script><svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""+str(sizex)+"\" height=\""+str(sizey)+"\">\n"+content+"</svg>"+diagram_js #width=\"595\" height=\"430\"
+    def create(self, content,sizex,sizey,name):
+        #diagram_js = self.diagramJS()
+        return ("<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js\"></script><svg id=\""+name+"\" " +
+        "xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""+str(sizex)+"\" height=\""+str(sizey)+"\" " +
+        "style='stroke-width: 0px; background-color: white;'>\n"+content+"</svg>" +
+        self.drawColorPanel() ) #width=\"595\" height=\"430\"
 
     def drawToolTip(self):
-        output = """<g id='tool-tip' transform='translate(0,0)' visibility='hidden'>
+        output = """<g id='tool-tip-{}' transform='translate(0,0)' visibility='hidden'>
             <rect x='0' y='-40' width='1' height='25' stroke='black' fill='white' stroke-width='1' />
             <text x='0' y='-23' text-anchor='middle' font-family='Arial' font-size='12' fill='black'></text>
-            </g>"""
+            </g>""".format(self.type)
         
         return output
+
+    def drawColorPanel(self):
+
+        boxstyle = """<style>
+        .pick-color  {
+          display:inline-block;
+          width: 35px;
+          height: 20px;
+          margin: 1px;
+          border-radius: 5px;
+          border: 2px solid #000;
+        }
+        </style>
+        """
+
+        presetColors = {'D': ['#E60A0A', '#FDFF7B'],'E': ['#E60A0A', '#FDFF7B'],
+                                    'K': ['#145AFF', '#FDFF7B'],'R': ['#145AFF', '#FDFF7B'],
+                                    'S': ['#A70CC6', '#FDFF7B'],'T': ['#A70CC6', '#FDFF7B'],
+                                    'N': ['#A70CC6', '#FDFF7B'],'Q': ['#A70CC6', '#FDFF7B'],
+                                    'V': ['#E6E600', '#000000'],'L': ['#E6E600', '#000000'],
+                                    'I': ['#E6E600', '#000000'],'A': ['#E6E600', '#000000'],
+                                    'M': ['#E6E600', '#000000'],'F': ['#18FF0B', '#000000'],
+                                    'Y': ['#18FF0B', '#000000'],'W': ['#0BCF00', '#000000'],
+                                    'H': ['#0093DD', '#000000'],'P': ['#CC0099', '#FDFF7B'],
+                                    'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
+                                    '-': ['#FFFFFF', '#000000']    
+                                    }
+        fillcolors = [['#CCCCCC', '#000000']]
+        for key,value in presetColors.items():
+            if value not in fillcolors:
+                fillcolors.append(value)
+
+        colors = ""
+        for color in fillcolors:
+            colors += "<div class='pick-color "+self.type+" selected' id='pick-"+color[0]+"-"+color[1]+"' style='background-color: "+color[0]+";'>&nbsp;</div>"
+
+            
+        output = ("<br>Pick color:" +
+            colors )
+
+        output += '<br><button style="width:120px;" onclick="applyPresentColors(\''+self.type+'\')">Properities</button> <button style="width:120px;" onclick="resetColors(\''+self.type+'\')">Clear</button>'
+
+        return boxstyle+ output
 
     #Draws a ring of a helical wheel  
     def DrawResidue(self, x,y,aa,residue_number,label,radius, resclass = '',cfill="white", precolor = False):
@@ -41,172 +87,15 @@ class Diagram:
         #     tfill = isset(_SESSION['color_pattern'][iidtext]) ? _SESSION['color_pattern'][iidtext] : 'black'
         # }
         output =  """
-            <circle class='{}' cx='{}' cy='{}' r='{}' stroke='black' stroke-width='2' fill='{}' 
-            fill-opacity='1' id='id' class='rcircle' onclick='residueColor.setColor(evt);'
-            onmouseover='showToolTip({},{},"{}","id");' onmouseout='hideToolTip();'/>
+            <circle class='{} rcircle' cx='{}' cy='{}' r='{}' stroke='black' stroke-width='2' fill='{}' 
+            fill-opacity='1' id='{}' onclick=''
+            onmouseover='showToolTip({},{},"{}","id","{}");' onmouseout='hideToolTip("{}");'/>
             <text x='{}' y='{}' text-anchor='middle' font-family='helvetica' font-size='16' fill='tfill'
-            id='idtext' onclick='residueColor.setColor(evt);' class='rtext {}'
-            onmouseover='showToolTip({},{},"{}","id");' onmouseout='hideToolTip();'>{}</text>
-            """.format(resclass,x,y,radius,cfill,x,y,label,x,y+6,resclass,x,y,label,aa) #aa
+            id='{}' class='rtext {}'
+            onmouseover='showToolTip({},{},"{}","id","{}");' onmouseout='hideToolTip("{}");'>{}</text>
+            """.format(resclass,x,y,radius,cfill,id,x,y,label,self.type,self.type,x,y+6,idtext,resclass,x,y,label,self.type,self.type,aa) #aa
         return output
 
-    def diagramJS(self):
-        output = """<script>
-
-                    presetColors = {'D': ['#E60A0A', '#FDFF7B'],'E': ['#E60A0A', '#FDFF7B'],
-                                    'K': ['#145AFF', '#FDFF7B'],'R': ['#145AFF', '#FDFF7B'],
-                                    'S': ['#A70CC6', '#FDFF7B'],'T': ['#A70CC6', '#FDFF7B'],
-                                    'N': ['#A70CC6', '#FDFF7B'],'Q': ['#A70CC6', '#FDFF7B'],
-                                    'V': ['#E6E600', '#000000'],'L': ['#E6E600', '#000000'],
-                                    'I': ['#E6E600', '#000000'],'A': ['#E6E600', '#000000'],
-                                    'M': ['#E6E600', '#000000'],'F': ['#18FF0B', '#000000'],
-                                    'Y': ['#18FF0B', '#000000'],'W': ['#0BCF00', '#000000'],
-                                    'H': ['#0093DD', '#000000'],'P': ['#CC0099', '#FDFF7B'],
-                                    'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
-                                    '-': ['#FFFFFF', '#000000']    
-                                    };
-
-                    var translateOffset = 0;
-                    function showToolTip(x, y, str,rid) {
-                        var tipElement = document.getElementById('tool-tip');
-
-                        var rect = tipElement.childNodes[1];
-                        var text = tipElement.childNodes[3];
-
-                        while (text.lastChild) {
-                            text.removeChild(text.lastChild);
-                        }
-                        
-                        var NS = "http://www.w3.org/2000/svg";
-
-
-                        //text.textContent =  str;
-                            var text_tspan = document.createElementNS(NS, "tspan");
-
-
-                            rect.setAttribute('height', 25);
-                            rect.setAttribute('y', -40);
-                            text_tspan.textContent = String(str);
-                            text.appendChild(text_tspan);
-                        
-                        
-                        var bbox = text.getBBox();
-                        rect.setAttribute('width', bbox.width + 8);
-                        rect.setAttribute('x', -bbox.width/2 - 4);
-
-                        var transX = (x <= (bbox.width + 8) / 2) ? (bbox.width + 8) / 2 : x;
-                        tipElement.setAttribute('transform', 'translate(' + transX + ',' + (y + translateOffset) + ')');
-                        tipElement.setAttribute('visibility', 'visible');
-                    }
-
-                    function hideToolTip() {
-                        var tipElement = document.getElementById('tool-tip');
-                        tipElement.setAttribute('visibility', 'hidden');
-                    }
-
-                    function toggleLoop(id,type) {
-                        $(id+".long").toggle();
-                        $(id+".short").toggle();
-                        maxmin();
-
-                        $(id+".long").toggle();
-                        $(id+".short").toggle();
-
-                        $(id+".long").fadeToggle();
-                        $(id+".short").fadeToggle();
-                    }
-
-                    function applyPresentColors() {
-
-                        $("circle").each(function( index ){
-                              console.log( index + ": " + $( this ).closest(".rtext").val() );
-                              console.log( index + ": " + $( this ).text() );
-                            });
-
-                        var textElements = document.getElementsByClassName('rtext');
-                        for (var i=0; i<textElements.length; i++) {
-                            var text = textElements[i].textContent;
-                            var colorText = presetColors[text][1];
-                            var colorCircle = presetColors[text][0];
-                            textElements[i].setAttribute('fill', colorText);
-                            document.getElementById(textElements[i].id.slice(0, textElements[i].id.length-1)).setAttribute('fill', colorCircle);
-                        }
-                        
-                        var loopResidues = document.getElementsByClassName('loop-residue');
-                        for (var i=0; i<loopResidues.length; i++) {
-                            var text = loopResidues[i].textContent;
-                            loopResidues[i].setAttribute('fill', presetColors[text][0]);
-                        }
-
-                    };
-
-                    function maxmin() {
-                        margin = 50;
-                        svgmax = 0;
-                        svgmin = 0;
-                        count = 0;
-                        classmax = ''
-                        classmin = ''
-                        $('#snake').children('text').each(function () {
-                            if ($(this).is(":visible")) {
-                                count = count +1;
-                                y = parseInt($(this).attr( "y" ));
-                                classtext = $(this).attr( "class" );
-                                if (y<svgmin) {
-                                    svgmin = y; 
-                                    classmin = classtext;
-                                    }
-                                if (y>svgmax) {
-
-                                    classmax = classtext;
-                                    svgmax= y; 
-                                 }
-
-                            }   
-                        });
-                        console.log('max '+svgmax+' '+classmax+' min'+svgmin+' '+classmin+' count'+count);
-                        
-                        var svg = $('#snake').closest('svg')[0];
-                        oldheight = $(svg).attr('height');
-                       // svg.setAttribute('height', (svgmax-svgmin+margin*2));
-                        $(svg)
-                        .animate(
-                          {"min-height": (svgmax-svgmin+margin*2)},
-                          {duration: 500,
-                           step: function( top ){
-                               this.setAttribute("height", "translate(0,"+Math.round(top)+")");
-                             }
-                           });
-
-                        console.log('New height:'+ (svgmax-svgmin) +' old height:'+oldheight);
-                        console.log("Prev attr"+$('#snake').attr("transform"));
-                        //$('#snake').attr("transform", "translate(0," + (-svgmin+margin) + ")");
-                        
-                        $('#snake')
-                        .animate(
-                          {"min-height": (-svgmin+margin)},
-                          {duration: 500,
-                           step: function( top ){
-                               this.setAttribute("transform", "translate(0,"+top+")");
-                             }
-                           });
-
-                        console.log("New attr"+$('#snake').attr("transform"));
-                    }
-
-                    $( document ).ready(function() {    
-                        var elements = document.getElementsByClassName('long')
-
-                        for (var i = 0; i < elements.length; i++){
-                            elements[i].style.display = 'none';
-                        }
-                        maxmin();
-                        //applyPresentColors();
-                    });
-
-
-                    </script>"""
-        return output
 
     def deg2rad(self,degrees):
         radians = pi * degrees / 180

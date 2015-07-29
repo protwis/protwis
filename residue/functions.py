@@ -197,7 +197,6 @@ def align_protein_to_reference(protein, tpl_ref_pos_file_path, ref_protein):
         return False
     template_ref_positions = load_reference_positions(tpl_ref_pos_file_path)
 
-
     # write sequences to files
     seq_filename = "/tmp/" + protein['entry_name'] + ".fa"
     with open(seq_filename, 'w') as seq_file:
@@ -235,3 +234,13 @@ def align_protein_to_reference(protein, tpl_ref_pos_file_path, ref_protein):
                 ref_positions[position_generic_number] = i - gaps
 
     return ref_positions
+
+def generic_number_within_segment_borders(generic_number, list_of_tpl_generic_numbers):
+    generic_index = generic_number.split('x')[1][:2]
+    start_index = list_of_tpl_generic_numbers[0].split('x')[1][:2]
+    end_index = list_of_tpl_generic_numbers[len(list_of_tpl_generic_numbers)-1].split('x')[1][:2]
+
+    if generic_index >= start_index and generic_index <= end_index:
+        return True
+    else:
+        return False
