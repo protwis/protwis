@@ -13,5 +13,5 @@ def constructs(request):
 
     context = {'constructs': construct}
 
-    return render(request,'structure/index_construct.html',context)
+    return render(request,'construct/index_construct.html',context)
 
