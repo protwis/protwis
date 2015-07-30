@@ -114,7 +114,7 @@ class ProteinAlias(models.Model):
 
 
 class ProteinSet(models.Model):
-    protein = models.ManyToManyField('Protein')
+    proteins = models.ManyToManyField('Protein')
     name = models.CharField(max_length=50)
 
     def __str__(self):

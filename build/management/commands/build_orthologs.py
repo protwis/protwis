@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
 
-from build.management.commands.build_proteins import Command as BuildProteins
+from build.management.commands.build_human_proteins import Command as BuildHumanProteins
 from residue.functions import *
 from protein.models import Protein, Gene
 
@@ -11,7 +11,7 @@ import os
 import yaml
 
 
-class Command(BuildProteins):
+class Command(BuildHumanProteins):
     help = 'Reads uniprot text files and creates protein entries of orthologs of human proteins'
 
     ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'reference_positions'])
@@ -42,7 +42,7 @@ class Command(BuildProteins):
                 continue
             except Protein.DoesNotExist:
                 p = None
-                # get human ortholog
+                # get human ortholog using gene name
                 for gene in up['genes']:
                     try:
                         g = Gene.objects.get(name__iexact=gene, species__id=1, position=0)
@@ -53,6 +53,17 @@ class Command(BuildProteins):
                     except Gene.DoesNotExist:
                         self.logger.info("No gene found for {}".format(gene))
                         continue
+                # if gene name not found, try using entry name
+                if not p:
+                    split_entry_name = up['entry_name'].split('_')
+
+                    # add _ to the split entry name to avoid e.g. gp1 matching gp139
+                    entry_name_query = split_entry_name[0] + '_'
+                    try:
+                        p = Protein.objects.get(entry_name__startswith=entry_name_query, species__id=1)
+                        self.logger.info("Human ortholog found: {}".format(p.entry_name))
+                    except Protein.DoesNotExist:
+                        self.logger.info("No match found for {}".format(entry_name_query))
 
             # skip if no ortholog is found FIXME use a profile to find a good template
             if not p:
