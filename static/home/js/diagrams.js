@@ -15,6 +15,10 @@
                     function showToolTip(x, y, str,rid,plotid) {
                         var tipElement = document.getElementById('tool-tip-'+plotid);
 
+                        var originalCircle = $('#'+plotid).find("#"+rid);
+
+                        console.log(originalCircle.attr('extra'));
+                        //originalCircle.attr('extra');
 
                         var rect = tipElement.childNodes[1];
                         var text = tipElement.childNodes[3];
@@ -23,17 +27,30 @@
                             text.removeChild(text.lastChild);
                         }
                         
-                        var NS = "http://www.w3.org/2000/svg";
+                        // var NS = "http://www.w3.org/2000/svg";
 
 
-                        //text.textContent =  str;
-                            var text_tspan = document.createElementNS(NS, "tspan");
+                        // //text.textContent =  str;
+                        //     var text_tspan = document.createElementNS(NS, "tspan");
 
 
+                        //     rect.setAttribute('height', 25);
+                        //     rect.setAttribute('y', -40);
+                        //     text_tspan.textContent = String(str);
+                        //     text.appendChild(text_tspan);
+
+                        if (originalCircle.attr('extra')) { //Only display if mutateddata flag is on and there is info
+
+                            text.innerHTML =  "<tspan  x=\"0\" y=\"-33\">" + str + "</tspan>";
+                            //text.innerHTML =  text.innerHTML + "<tspan  x=\"0\" y=\"-20\">" + residueColor.mutatedCalc[rid][0] + " mutations" + " | " + residueColor.mutatedCalc[rid][1] + " maxFold"+ " | " + residueColor.mutatedCalc[rid][2] + " minFold </tspan>";
+                            text.innerHTML =  text.innerHTML + "<tspan  x=\"0\" y=\"-20\">" + originalCircle.attr('extra') + " </tspan>";
+                            rect.setAttribute('height', 35);
+                            rect.setAttribute('y', -50);
+                        } else {
+                            text.innerHTML =  "<tspan  x=\"0\" y=\"-23\">" + str + "</tspan>";
                             rect.setAttribute('height', 25);
                             rect.setAttribute('y', -40);
-                            text_tspan.textContent = String(str);
-                            text.appendChild(text_tspan);
+                        }
                         
                         
                         var bbox = text.getBBox();
@@ -194,6 +211,55 @@
                             $("#helix_svg_link").attr('href',uri);
                         });
                     });
+
+                    function ajaxMutants(plotid,protein) {
+
+                        $.getJSON( '/mutations/ajax/'+protein+'/', function( data ) {
+                          $.each( data, function( key, val ) {
+
+                             max = String(Math.max.apply(null, val));
+                             min = String(Math.min.apply(null, val));
+                             extra = String(val.length) + " mutations | "+ max +" maxFold | "+ min +" minFold";
+
+                             $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
+                             $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+                             $('#'+plotid).find("#"+key).attr('extra',extra);
+
+
+                          });
+    
+                        });
+                    }
+
+                    function ajaxInteractions(plotid,protein) {
+
+                        $.getJSON( '/interaction/ajax/'+protein+'/', function( data ) {
+                          $.each( data, function( key, val ) {
+
+                            var flags = [], falgsAA = [], output = [], outputAA = [], l = val.length, i;
+                            for( i=0; i<l; i++) {
+                                if( flags[val[i][1]]) continue;
+                                flags[val[i][1]] = true;
+                                output.push(val[i][1]);
+                            }
+                            for( i=0; i<l; i++) {
+                                if( flags[val[i][0]]) continue;
+                                flags[val[i][0]] = true;
+                                outputAA.push(val[i][0]);
+                            }
+                             
+                             extra = String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
+
+
+                             $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
+                             $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+                             $('#'+plotid).find("#"+key).attr('extra',extra);
+
+
+                          });
+    
+                        });
+                    }
 
 
                     $(".pick-color").click(function() {

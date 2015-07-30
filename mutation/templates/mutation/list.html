@@ -35,6 +35,7 @@
                             { type: "select" }, //protein name
                             { type: "select" }, //Alt Position
                             { type: "select" }, //Position
+                            { type: "select" }, //Segment
                             { type: "text" }, //Mutation
                             { type: "text" }, //Foldchange
                             { type: "text" }, //Exp type
@@ -74,6 +75,7 @@
                         <th>Protein name</th>
                         <th>Alt. Position</th>
                         <th>Position</th>
+                        <th>Segment</th>
                         <th>Mutation</th>
                         <th>FoldChange or Qual</th>
                         <th>Exp Type</th>
@@ -91,8 +93,10 @@
                         <th></th>
                         <th></th>
                         <th></th>
+                        <th></th>
                     </tr>
                     <tr>
+                        <th></th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -119,9 +123,10 @@
                 </tfoot>
                 {% for mutation in mutations.select_related.all %}
                 <tr>
-                <td>{{mutation.protein.entry_name}}</td>
+                <td><a href="/protein/{{mutation.protein.entry_name}}">{{mutation.protein.entry_name}}</a></td>
                 <td>{{mutation.residue.display_generic_number.label}}</td>
                 <td>{{mutation.residue.sequence_number}}</td>
+                <td>{{mutation.residue.protein_segment.slug}}</td>
                 <td>{{mutation.mutation_to}}</td>
 
                 <td>{{mutation.foldchange}}</td>
