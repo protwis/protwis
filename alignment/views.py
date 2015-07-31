@@ -1,11 +1,15 @@
-from django.shortcuts import render
+﻿from django.shortcuts import render
 from django.conf import settings
+from django.views.generic import TemplateView
 
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
+from structure.functions import BlastSearch
+from protein.models import Protein
 # from common.alignment_SITE_NAME import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
+import inspect
 from collections import OrderedDict
 
 
@@ -43,6 +47,25 @@ class SegmentSelection(AbsSegmentSelection):
             'color': 'success',
         },
     }
+
+
+class BlastSearchResults(TemplateView):
+    """
+    An interface for blast similarity search of the input sequence.
+    """
+    template_name="sequence/blast_search_results.html"
+
+    def post(self, request, *args, **kwargs):
+
+        blast = BlastSearch(top_results=5)
+        blast_out = blast.run(request.POST['input_seq'])
+
+        context = {}
+        context['results'] = [(Protein.objects.get(pk=x[0]), x[1]) for x in blast_out]
+        context["input"] = request.POST['input_seq']
+
+        return render(request, self.template_name, context)
+
 
 def render_alignment(request):
     # get the user selection from session

@@ -1,5 +1,6 @@
-from protein.models import Species
+﻿from protein.models import Species
 from protein.models import ProteinSource
+from residue.models import ResidueNumberingScheme
 
 
 class SimpleSelection:
@@ -19,6 +20,11 @@ class SimpleSelection:
         o = SelectionItem('protein_source', ps)
         self.annotation = [o]
 
+        # numbering schemes
+        gn = ResidueNumberingScheme.objects.get(slug='gpcrdb')
+        o = SelectionItem('numbering_schemes', gn)
+        self.numbering_schemes = [o]
+
     def __str__(self):
         return str(self.__dict__)
 
@@ -33,6 +39,7 @@ class Selection(SimpleSelection):
         self.segments = simple_selection.segments
         self.species = simple_selection.species
         self.annotation = simple_selection.annotation
+        self.numbering_schemes = simple_selection.numbering_schemes
 
     def exporter(self):
         """Exports the attributes of Selection to a SimpleSelection object, and returns it"""
@@ -42,6 +49,7 @@ class Selection(SimpleSelection):
         ss.segments = self.segments
         ss.species = self.species
         ss.annotation = self.annotation
+        ss.numbering_schemes = self.numbering_schemes
         return ss
 
     def add(self, selection_type, selection_subtype, selection_object):

@@ -1,4 +1,5 @@
-from django.conf.urls import patterns, url
+﻿from django.conf.urls import patterns, url
+from django.views.generic import TemplateView
 
 from alignment import views
 
@@ -9,4 +10,6 @@ urlpatterns = patterns('',
     url(r'^render', views.render_alignment, name='render'),
     url(r'^fasta', views.render_fasta_alignment, name='fasta'),
     url(r'^csv', views.render_csv_alignment, name='csv'),
+    url(r'blastsearch$', TemplateView.as_view(template_name='sequence/blast_search.html'), name='blastsearch'),
+    url(r'blastsearchresults', views.BlastSearchResults.as_view(), name='blastsearch'),
 )
