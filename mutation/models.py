@@ -4,10 +4,10 @@ from django.db import models
 class Mutation(models.Model):
 
 	#links
-    refs = models.ForeignKey('MutationRefs') #Change to a common model?
+    refs = models.ForeignKey('MutationRefs', null=True) #Change to a common model?
     protein = models.ForeignKey('protein.Protein')
     residue = models.ForeignKey('residue.Residue')
-    ligand = models.ForeignKey('MutationLigand') #Change to a ligand model?
+    ligand = models.ForeignKey('MutationLigand', null=True) #Change to a ligand model?
     ligand_class = models.ForeignKey('MutationLigandClass') #Change to a ligand model?
     ligand_ref = models.ForeignKey('MutationLigandRef') #Change to a ligand model?
     raw = models.ForeignKey('MutationRaw')
@@ -24,7 +24,13 @@ class Mutation(models.Model):
     wt_unit = models.CharField(max_length=10)
     mu_value = models.DecimalField(max_digits=10, decimal_places=2)
     mu_sign = models.CharField(max_length=2)
-    foldchange = models.DecimalField(max_digits=10, decimal_places=2)
+    foldchange = models.FloatField()
+
+    def citation(self):
+
+        temp = self.refs.citation.split(',')
+        
+        return temp[0] + " et al"
     
     class Meta():
         db_table = 'mutation'
