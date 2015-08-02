@@ -13,4 +13,5 @@ urlpatterns = patterns('',
     url(r'^view', views.view, name='view'),
     url(r'^ligand', views.ligand, name='ligand'),
     url(r'^fragment', views.fragment, name='fragment'),
+    url(r'^ajax/(?P<slug>[-\w]+)/$', views.ajax, name='ajax'),
 )

@@ -70,7 +70,11 @@ class Diagram:
         output = ("<br>Pick color:" +
             colors )
 
+        print(str(self.receptorId))
+
         output += '<br><button style="width:120px;" onclick="applyPresentColors(\''+self.type+'\')">Properities</button> <button style="width:120px;" onclick="resetColors(\''+self.type+'\')">Clear</button>'
+        output += '<br><button style="width:120px;" onclick="ajaxMutants(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Mutants</button>'
+        output += ' <button style="width:220px;" onclick="ajaxInteractions(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Interactions from Crystals</button>'
 
         return boxstyle+ output
 
@@ -89,11 +93,11 @@ class Diagram:
         output =  """
             <circle class='{} rcircle' cx='{}' cy='{}' r='{}' stroke='black' stroke-width='2' fill='{}' 
             fill-opacity='1' id='{}' onclick=''
-            onmouseover='showToolTip({},{},"{}","id","{}");' onmouseout='hideToolTip("{}");'/>
+            onmouseover='showToolTip({},{},"{}",{},"{}");' onmouseout='hideToolTip("{}");'/>
             <text x='{}' y='{}' text-anchor='middle' font-family='helvetica' font-size='16' fill='tfill'
             id='{}' class='rtext {}'
-            onmouseover='showToolTip({},{},"{}","id","{}");' onmouseout='hideToolTip("{}");'>{}</text>
-            """.format(resclass,x,y,radius,cfill,id,x,y,label,self.type,self.type,x,y+6,idtext,resclass,x,y,label,self.type,self.type,aa) #aa
+            onmouseover='showToolTip({},{},"{}",{},"{}");' onmouseout='hideToolTip("{}");'>{}</text>
+            """.format(resclass,x,y,radius,cfill,id,x,y,label,residue_number,self.type,self.type,x,y+6,idtext,resclass,x,y,label,residue_number,self.type,self.type,aa) #aa
         return output
 
 
