@@ -25,6 +25,7 @@
                 dom: 'T<"clear">lfrtip',
                 "aoColumnDefs": [
                     { "sType": "string", "aTargets": [0] },
+                    { "sType": "string", "aTargets": [9] },
                 ],
                 tableTools: {
                     "sRowSelect": "multi",
@@ -42,13 +43,15 @@
                             { type: "number-range" }, //resolution
                             { type: "text" }, //x-ray ligand
                             { type: "text" }, //preferred chain
-                            { type: "date-range" }, //publication date
                             { type: "text" }, //pmid
+                            { type: "date-range" }, //publication date
                             { type: "text" }, //stabilizing agent - left as type-in for now
                         ]
                     });
                 }
             });
+            $.datepicker.regional[""].dateFormat = "M d, yyyy";
+            $.datepicker.setDefaults($.datepicker.regional['']);
             $('#crystal_structures tbody').on('click', 'tr', function () {
                 $(this).toggleClass('selected');
             });

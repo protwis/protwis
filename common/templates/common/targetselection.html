@@ -42,6 +42,16 @@
             </div>
             {% endif %}
 
+            <!-- generic numbering schemes -->
+            {% if numbering_schemes %}
+            <div class="col-md-12 well">
+                <h4>Numbering schemes</h4>
+                <div id="filters-schemes">
+                    {% include 'common/selection_filters_numbering_schemes.html' %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- target search -->
             {% if search %}
             <div class="col-md-12 well">

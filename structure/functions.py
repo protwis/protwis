@@ -1,4 +1,4 @@
-from Bio.Blast import NCBIXML
+﻿from Bio.Blast import NCBIXML
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import Select
 import Bio.PDB.Polypeptide as polypeptide
@@ -354,12 +354,15 @@ def check_gn (pdb_struct):
 
 
 #==============================================================================
-def get_segment_template (protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']):
+def get_segment_template (protein, segments=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7'], state=None):
 
     a = Alignment()
     a.load_reference_protein(protein)
     #You are so gonna love it...
-    a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id))])
+    if state:
+        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id, protein_conformation__state=state))])
+    else:
+        a.load_proteins([x.protein_conformation.protein.parent for x in list(Structure.objects.order_by('protein_conformation__protein__parent','resolution').exclude(protein_conformation__protein=protein.id))])
     a.load_segments(ProteinSegment.objects.filter(slug__in=segments))
     a.build_alignment()
     a.calculate_similarity()
