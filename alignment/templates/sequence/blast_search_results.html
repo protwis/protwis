@@ -1,0 +1,63 @@
+﻿{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block addon_css %}
+<link href="{% static 'home/css/alignment.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<h4>Your input:</h4>
+<div class='row-fluid well well-small selection-box'>
+    {{ input }}
+</div>
+<h4>Results for your query (5 top scored hits): </h4>
+<!--<div class='row-fluid well well-small selection-box'>-->
+    {% for protein, aln in results %}
+    <a href="/protein/{% if protein.sequence_type.slug == 'wt' %}{{protein.entry_name}}{% else %}{{protein.parent.entry_name}}{% endif %}">
+    {{ protein.entry_name }} {% if protein.sequence_type.slug != 'wt' %}({{protein.parent.entry_name}}){% endif %}</a><br />
+    {% for hsps in aln.hsps %}
+    <p>E value: {{hsps.expect}}</p>
+    <div class="ali-scroll-div">
+        <div class="internal-scroll-div">
+            &nbsp;
+        </div>
+    </div>
+    <div class="ali-main-div">
+        <!--<div class="dynamic-div">-->
+            <table>
+                <tr>
+                    <td class="ali-td" nowrap>BLAST hit</td>
+                    <td class="ali-td">{{ hsps.sbjct_start }}</td>
+                    {% for r in hsps.sbjct|make_list %}
+                    <td class="ali-td ali-residue res-color-{{r}}">{{r}}</td>
+                    {% endfor %}
+                    <td class="ali-td">{{ hsps.sbjct|make_list|length|add:hsps.sbjct_start }}  </td>
+                </tr>
+                <tr>
+                    <td class="ali-td" nowrap>Query</td>
+                    <td class="ali-td">{{ hsps.query_start }}</td>
+                    {% for r in hsps.query|make_list %}
+                    <td class="ali-td ali-residue res-color-{{r}}">{{r}}</td>
+                    {% endfor %}
+                    <td class="ali-td">{{ hsps.query|make_list|length|add:hsps.query_start }}  </td>
+                </tr>
+                <tr>
+                    <td class="ali-td" nowrap>Match</td>
+                    <td></td>
+                    {% for r in hsps.match|make_list %}
+                    <td class="ali-td ali-residue res-color-{{r}}">{{r}}</td>
+                    {% endfor %}
+                    <td></td>
+                </tr>
+
+            </table>
+            <!--</div>-->
+        </div><br /><br />
+            {% endfor %}
+            {% endfor %}
+<!--        </div>-->
+        {% endblock %}
+
+        {% block addon_js %}
+        <script src="{% static 'home/js/alignment.js' %}"></script>
+        {% endblock %}

@@ -423,13 +423,13 @@ class DrawSnakePlot(Diagram):
             #print('Loop',i,position,number)
 
             #Get positions of two  linking residues from each helix
-            x2 = x1+30*orientation
+            x2 = x1-30
             y2 = y1+60*orientation
 
             #print([x1,y1],[x2,y2])
 
             #Make line and box for short version
-            points = "M "+str(x1)+" "+str(y1)+" Q"+str(x1-30*orientation)+" "+str(y2)+" "+str(x2)+" "+str(y2)
+            points = "M "+str(x1)+" "+str(y1)+" Q"+str(x1+30)+" "+str(y2)+" "+str(x2)+" "+str(y2)
             self.output += "<path class='"+name+" short' d='" + points + "' stroke='black' fill='none' stroke-width='2' />"
             self.output += "<rect class='"+name+" short' onclick='toggleLoop(\"."+name+"\",\"short\");' x="+str(x2-25)+" y="+str(y2-13)+" rx=5 ry=5 width='50' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
             self.output += str("<text class='"+name+" short' onclick='toggleLoop(\"."+name+"\",\"short\");' x="+str(x2)+" y="+str(y2)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")

@@ -1,4 +1,4 @@
-import os,sys,math,logging
+﻿import os,sys,math,logging
 from io import StringIO
 from collections import OrderedDict
 import numpy as np
@@ -121,11 +121,11 @@ class FragmentSuperpose(object):
             return None
 
 
-    def superpose_fragments(self, representative=False, use_similar=False):
+    def superpose_fragments(self, representative=False, use_similar=False, state='inactive'):
 
         superposed_frags = [] #list of (fragment, superposed pdbdata) pairs
         if representative:
-            fragments = self.get_representative_fragments()
+            fragments = self.get_representative_fragments(state)
         else:
             fragments = self.get_all_fragments()
 
@@ -144,9 +144,9 @@ class FragmentSuperpose(object):
         return superposed_frags
 
 
-    def get_representative_fragments(self):
+    def get_representative_fragments(self, state):
         
-        template = get_segment_template(self.target)
+        template = get_segment_template(self.target, state)
         return list(ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__protein_conformation__protein=template.id))
 
 

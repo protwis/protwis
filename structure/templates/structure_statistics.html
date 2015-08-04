@@ -19,6 +19,17 @@
     <p>The number of unique receptors crystallized each year.</p>
     {% load_chart charttype2 chartdata2 "multibarchart_container2" extra2 %}
     {% include_container "multibarchart_container2" 600 800 %}
+    <br />
+    <br />
+    <p>The number of crystal structures available each year</p>
+    {% load_chart charttype chartdata_all "multibarchart_container3" extra_all %}
+    {% include_container "multibarchart_container3" 600 800 %}
+    <br />
+    <br />
+    <p>Resolution distribution of the available crystal structures</p>
+    {% load_chart charttype_reso chartdata_reso "multibarchart_container4" extra_reso %}
+    {% include_container "multibarchart_container4" 600 800 %}
+
 
 
 {% endblock %}
