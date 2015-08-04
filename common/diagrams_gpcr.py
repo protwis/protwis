@@ -56,8 +56,11 @@ class DrawSnakePlot(Diagram):
             segment = str(r.protein_segment.slug)
             if segment not in self.segments: self.segments[segment] = []
             label = ''
+            displaylabel = ''
             if r.generic_number: label = r.generic_number.label
-            self.segments[segment].append([r.sequence_number,r.amino_acid,label])
+            if r.display_generic_number: displaylabel = r.display_generic_number.label
+            displaylabel = r.amino_acid + str(r.sequence_number) + " <br> " + displaylabel
+            self.segments[segment].append([r.sequence_number,r.amino_acid,label,displaylabel])
             #print(segment,len(self.segments[segment]))
             #print(r.sequence_number,r.amino_acid,r.protein_segment.slug)
             i += 1
@@ -186,7 +189,7 @@ class DrawSnakePlot(Diagram):
                 #bulgeY = 0
             x = round(startX-row_pos*self.residue_radius*1.6+indentX+bulgeX) #move left as you go down a row
             y = round(startY+row*self.residue_radius*2.4+row_pos*self.residue_radius*0.5+indentY+bulgeY) #Move down with right amount
-            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], str(rs[i][0])+" "+rs[i][2], self.residue_radius)
+            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], rs[i][3], self.residue_radius)
 
 
             if x<self.maxX['left']: self.maxX['left'] = x
@@ -319,7 +322,7 @@ class DrawSnakePlot(Diagram):
             y = round(startY+row*self.residue_radius*2.4+row_pos*self.residue_radius*0.5+indentY+bulgeY) #Move down with right amount
             x = round(startX+row*self.residue_radius*2.4-row_pos*self.residue_radius*0.5+indentY+bulgeY) #move left as you go down a row
             y = round(startY+row_pos*self.residue_radius*1.6+indentX+bulgeX) #Move down with right amount
-            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], str(rs[i][0])+" "+rs[i][2], self.residue_radius)
+            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], rs[i][3], self.residue_radius)
 
 
             if x<self.maxX['left']: self.maxX['left'] = x
@@ -490,7 +493,7 @@ class DrawSnakePlot(Diagram):
 
                 if bend==0: labely = where[1][1]
 
-                self.output += self.DrawResidue(where[1][0],where[1][1],r[1], r[0], r[0], self.residue_radius-1,name+" long")
+                self.output += self.DrawResidue(where[1][0],where[1][1],r[1], r[0], rs[i][3], self.residue_radius-1,name+" long")
                 pos += between_residues
 
                 if where[1][1]<self.low: self.low = where[1][1]
@@ -761,7 +764,7 @@ class DrawSnakePlot(Diagram):
                                 bend_direction = -1
                             elif bend_direction==-1: 
                                 bend_direction = 1
-                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], where[1][0], r[0], self.residue_radius-1,name+" long")
+                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], where[1][0], r[3], self.residue_radius-1,name+" long")
 
 
                     if orientation==-1: 
@@ -856,7 +859,7 @@ class DrawSnakePlot(Diagram):
                     else:
                         where = self.wherebezier([x1,y1],[boxX,boxY+y_indent],[x2,y2],0.001,pos)
 
-                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], r[0], r[0], self.residue_radius-1,name+" long")
+                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], r[0], r[3], self.residue_radius-1,name+" long")
                     pos += between_residues
 
                     if where[1][1]>self.high: self.high = where[1][1]
@@ -946,7 +949,7 @@ class DrawHelixBox(Diagram):
         sequence = {}
 
         for r in residuelist:
-            sequence[int(r.generic_number.label[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number,'generic_number':r.generic_number.label}
+            sequence[int(r.generic_number.label[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number,'generic_number':r.generic_number.label,'displaylabel':r.amino_acid+str(r.sequence_number)+"<br>"+r.display_generic_number.label}
 
         # box size
         numResPerSide = 5
@@ -1044,7 +1047,7 @@ class DrawHelixBox(Diagram):
 
                     # Get label information of each residue.
                     residue_number = sequence[tempCurrentResidue]['residueNumber'];
-                    label = str(residue_number)+" "+sequence[tempCurrentResidue]['generic_number']
+                    label = sequence[tempCurrentResidue]['displaylabel']
                     #label = self::getResidueLabel(receptorId, helixNum, residue_number); #FIXME IMPLEMENT
                     #label = "m: " . lineEquation["m"] . " x: " . lineEquation["x"];
                     

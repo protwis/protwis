@@ -55,7 +55,7 @@
                             { type: "select" }, //Segment
                             { type: "text" }, //Mutation
                             { type: "text" }, //Foldchange
-                            { type: "text" }, //Exp type
+                            { type: "select" }, //Exp type
                             { type: "text" }, //ligand
                             { type: "text" }, //reference
                         ]
@@ -144,7 +144,7 @@
                 <td>{{mutation.residue.protein_segment.slug}}</td>
                 <td>{{mutation.residue.amino_acid}} => {{mutation.mutation_to}}</td>
 
-                <td><a href="#" data-toogle="tooltip"  data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="{{mutation.getCalculation}}" data-placement="top"> {{mutation.getFoldorQual|safe}}</a></td>
+                <td><a href="#" data-toogle="tooltip"   data-container="body" data-html="true" data-original-title="{{mutation.getCalculation}}" data-placement="top"> {{mutation.getFoldorQual|safe}}</a></td>
 
                 <td>{{mutation.exp_type.type}} ({{mutation.exp_func.func}})</td>
                 <td>

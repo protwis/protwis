@@ -17,14 +17,14 @@
 
                         var originalCircle = $('#'+plotid).find("#"+rid);
 
-                        console.log(originalCircle.attr('extra'));
+                        //console.log(originalCircle.attr('extra'));
                         //originalCircle.attr('extra');
 
                         var rect = tipElement.childNodes[1];
                         var text = tipElement.childNodes[3];
 
                         while (text.lastChild) {
-                            text.removeChild(text.lastChild);
+                           text.removeChild(text.lastChild);
                         }
                         
                         // var NS = "http://www.w3.org/2000/svg";
@@ -51,7 +51,6 @@
                             rect.setAttribute('height', 25);
                             rect.setAttribute('y', -40);
                         }
-                        
                         
                         var bbox = text.getBBox();
                         rect.setAttribute('width', bbox.width + 8);
@@ -178,6 +177,44 @@
                             elements[i].style.display = 'none';
                         }
                         maxmin();
+
+
+                        $('rect').each(function(){
+                            
+                            rectclass = $(this).attr('class');
+                            if (rectclass) {
+                                if (rectclass.indexOf("CL") >= 0 && rectclass.indexOf("long") >= 0) {
+
+                                    numResidues = ($('.'+rectclass.replace(/ /g,".")).length-3)/2
+
+                                    console.log('class:'+rectclass+' count'+numResidues);
+
+                                    if (numResidues<10) {
+                                        toggleLoop('.'+rectclass.split(' ')[0],'');
+                                    }
+                                }
+                            }
+                        });
+
+                        $("text").tooltip({
+                            'container': 'body',
+                            'placement': 'top',
+                            'animation': false,
+                            'html' : true
+                        });
+
+
+                        $("circle").tooltip({
+                            'container': 'body',
+                            'placement': 'top',
+                            'animation': false,
+                            'html' : true
+                        });
+
+                        $("circle").hover(function(){
+                            $('.tooltip').css('top',parseInt($('.tooltip').css('top')) + 2.8 + 'px')
+                        });
+
                         
                     });
 
@@ -219,14 +256,20 @@
 
                              max = String(Math.max.apply(null, val));
                              min = String(Math.min.apply(null, val));
-                             extra = String(val.length) + " mutations | "+ max +" maxFold | "+ min +" minFold";
+                             extra = "<br>" + String(val.length) + " mutations | "+ max +" maxFold | "+ min +" minFold";
+
+
+                             original_title = $('#'+plotid).find("#"+key).attr('original_title')
 
                              $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
                              $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
-                             $('#'+plotid).find("#"+key).attr('extra',extra);
+                             $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
 
 
                           });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
     
                         });
                     }
@@ -248,15 +291,22 @@
                                 outputAA.push(val[i][0]);
                             }
                              
-                             extra = String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
+                             extra = "<br>" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
 
 
                              $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
                              $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
-                             $('#'+plotid).find("#"+key).attr('extra',extra);
+
+                             original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+
+                             $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
 
 
                           });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
     
                         });
                     }
