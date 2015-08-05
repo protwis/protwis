@@ -59,7 +59,7 @@ class DrawSnakePlot(Diagram):
             displaylabel = ''
             if r.generic_number: label = r.generic_number.label
             if r.display_generic_number: displaylabel = r.display_generic_number.label
-            displaylabel = r.amino_acid + str(r.sequence_number) + " <br> " + displaylabel
+            displaylabel = r.amino_acid + str(r.sequence_number) + " \n " + displaylabel
             self.segments[segment].append([r.sequence_number,r.amino_acid,label,displaylabel])
             #print(segment,len(self.segments[segment]))
             #print(r.sequence_number,r.amino_acid,r.protein_segment.slug)
@@ -949,7 +949,7 @@ class DrawHelixBox(Diagram):
         sequence = {}
 
         for r in residuelist:
-            sequence[int(r.generic_number.label[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number,'generic_number':r.generic_number.label,'displaylabel':r.amino_acid+str(r.sequence_number)+"<br>"+r.display_generic_number.label}
+            sequence[int(r.generic_number.label[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number,'generic_number':r.generic_number.label,'displaylabel':r.amino_acid+str(r.sequence_number)+"\n"+r.display_generic_number.label}
 
         # box size
         numResPerSide = 5
