@@ -26,7 +26,7 @@ class Diagram:
     def drawToolTip(self):
         output = """<g id='tool-tip-{}' transform='translate(0,0)' visibility='hidden'>
             <rect x='0' y='-40' width='1' height='25' stroke='black' fill='white' stroke-width='1' />
-            <text x='0' y='-23' text-anchor='middle' font-family='Arial' font-size='12' fill='black'>lala </text>
+            <text x='0' y='-23' text-anchor='middle' font-family='Arial' font-size='12' fill='black'></text>
             </g>""".format(self.type)
         
         return output
@@ -41,6 +41,10 @@ class Diagram:
           margin: 1px;
           border-radius: 5px;
           border: 2px solid #000;
+        }
+
+        .long {
+          display: none
         }
         </style>
         """
@@ -93,7 +97,7 @@ class Diagram:
         output =  """
             <circle class='{} rcircle' cx='{}' cy='{}' r='{}' stroke='black' stroke-width='2' fill='{}' 
             fill-opacity='1' id='{}' title='{}' original_title='{}'/>
-            <text x='{}' y='{}' text-anchor='middle' font-family='helvetica' font-size='16' fill='tfill'
+            <text x='{}' y='{}' text-anchor='middle' font-family='helvetica' font-size='16' fill=''
             id='{}' class='rtext {}' title='{}' original_title='{}'> {} </text>
             """.format(resclass,x,y,radius,cfill,id,label,label,x,y+6,idtext,resclass,label,label,aa) #aa
         return output

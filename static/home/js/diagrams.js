@@ -66,16 +66,29 @@
                         tipElement.setAttribute('visibility', 'hidden');
                     }
 
-                    function toggleLoop(id,type) {
-                        $(id+".long").toggle();
-                        $(id+".short").toggle();
-                        maxmin();
-
+                    function toggleLoop(id,type, skipmaxmin) {
                         $(id+".long").toggle();
                         $(id+".short").toggle();
 
-                        $(id+".long").fadeToggle();
-                        $(id+".short").fadeToggle();
+                        // $(id+".long").each(function () {
+                        //     curr = $(this).css("display");
+                        //     if (curr == 'none') $(this).removeAttr("display");
+                        //     if (!curr) $(this).css("display", "none");
+                        // });
+
+                        // $(id+".short").each(function () {
+                        //     curr = $(this).css("display");
+                        //     if (curr == 'none') $(this).removeAttr("display");
+                        //     if (!curr) $(this).css("display", "none");
+                        // });
+
+                        if (skipmaxmin!=1) maxmin();
+
+                        // $(id+".long").toggle();
+                        // $(id+".short").toggle();
+
+                        // $(id+".long").fadeToggle();
+                        // $(id+".short").fadeToggle();
                     }
 
                     function applyPresentColors(target) {
@@ -110,19 +123,23 @@
                         svgmax = 0;
                         svgmin = 0;
                         count = 0;
-                        classmax = ''
-                        classmin = ''
-                        $('#snake').children('text').each(function () {
-                            if ($(this).is(":visible")) {
+                        classmax = '';
+                        classmin = '';
+                        counter = 0;
+                        $('#snake').children('.rtext').each(function () {
+                            counter += 1;
+                            y = parseInt($(this).attr( "y" ));
+                            classtext = $(this).attr( "class" );
+                            test = $(this).attr("original_title");
+                            test2 = $(this).css("display");
+                            //if (classtext=='rtext N-term long') console.log(counter + test + " " + test2 + " " + classtext + " " );
+                            if ($(this).css("display")!='none') {
                                 count = count +1;
-                                y = parseInt($(this).attr( "y" ));
-                                classtext = $(this).attr( "class" );
                                 if (y<svgmin) {
                                     svgmin = y; 
                                     classmin = classtext;
                                     }
                                 if (y>svgmax) {
-
                                     classmax = classtext;
                                     svgmax= y; 
                                  }
@@ -171,12 +188,12 @@
                     }
 
                     $( document ).ready(function() {    
-                        var elements = document.getElementsByClassName('long')
+                        // var elements = document.getElementsByClassName('long')
 
-                        for (var i = 0; i < elements.length; i++){
-                            elements[i].style.display = 'none';
-                        }
-                        maxmin();
+                        // for (var i = 0; i < elements.length; i++){
+                        //     elements[i].style.display = 'none';
+                        // }
+                        $(".long").hide();
 
 
                         $('rect').each(function(){
@@ -190,11 +207,13 @@
                                     console.log('class:'+rectclass+' count'+numResidues);
 
                                     if (numResidues<10) {
-                                        toggleLoop('.'+rectclass.split(' ')[0],'');
+                                        toggleLoop('.'+rectclass.split(' ')[0],'',1);
                                     }
                                 }
                             }
                         });
+
+                        maxmin();
 
                         $("text").tooltip({
                             'container': 'body',
