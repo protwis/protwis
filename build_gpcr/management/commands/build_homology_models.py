@@ -32,13 +32,13 @@ class Command(BaseCommand):
                 self.stdout.write(Homology_model.statistics, ending='')
                 count+=1
 
-        Homology_model = HomologyModeling('gp139_human', 'Active', ['Active'])
+        Homology_model = HomologyModeling('adrb1_melga', 'Inactive', ['Inactive'])
         alignment = Homology_model.run_alignment()
         Homology_model.build_homology_model(alignment)
-                    
-        val = Validation()
-        print(val.PDB_RMSD("./structure/PDB/3AYM.pdb", "./structure/homology_models/P31356_Inactive/modeller_test.pdb",
-                           assign_gns=[1,2]))
+                                        
+#        val = Validation()
+#        print(val.PDB_RMSD("./structure/PDB/4YAY.pdb", "./structure/homology_models/P30556_Inactive/modeller_test.pdb",
+#                           assign_gns=[1,2], gn_list=['1x39','2x60','3x32','3x33','0x1','7x38'], seq_nums1=[35,84,108,109,167,288], seq_nums2=[9,58,82,83,141,262]))
         self.stdout.write(Homology_model.statistics, ending='')
 
 class HomologyModeling(object):
@@ -116,7 +116,7 @@ class HomologyModeling(object):
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
         main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
-
+        
         # loops
         if loops==True:
             loop_stat = OrderedDict()
@@ -134,7 +134,7 @@ class HomologyModeling(object):
                 else:
                     loop_stat[label] = loop.loop_output_structure
             self.statistics.add_info('loops', loop_stat)
-       
+
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
             for ref_seg, temp_seg, aligned_seg in zip(a.reference_dict, a.template_dict, a.alignment_dict):
@@ -325,12 +325,13 @@ class HomologyModeling(object):
         for seg_label, segment in a.template_dict.items():
             for gn, res in segment.items():
                 try:
-                    PDB.Polypeptide.three_to_one(
-                                        main_pdb_array[seg_label][gn.replace('x','.')][0].get_parent().get_resname())
-                except:
-                    if 'x' in gn:
+                    if res==PDB.Polypeptide.three_to_one(
+                                        main_pdb_array[seg_label][gn.replace('x','.')][0].get_parent().get_resname()):
+                        pass
+                    elif 'x' in gn:
                         pdb_db_inconsistencies.append({gn:a.template_dict[seg_label][gn]})
-
+                except:
+                    pass
         if pdb_db_inconsistencies!=[]:
             for incons in pdb_db_inconsistencies:
                 seg = self.segment_coding[int(list(incons.keys())[0][0])]
@@ -392,6 +393,10 @@ class HomologyModeling(object):
         self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
                           self.uniprot_id, 1, "modeller_test.pdb", atom_dict=trimmed_res_nums)
+        
+        with open('./structure/homology_models/{}_Inactive/{}.stat.txt'.format(self.uniprot_id, self.uniprot_id), 'w') as stat_file:
+            for label, info in self.statistics.items():
+                stat_file.write('{} : {}\n'.format(label, info))
         return a       
     
     def run_non_conserved_switcher(self, main_pdb_array, reference_dict, template_dict, alignment_dict):
@@ -491,6 +496,8 @@ class HomologyModeling(object):
         '''
         model_start = True
         key = ''
+#        self.starting_res_num = list(Residue.objects.filter(protein_segment=2, protein_conformation__protein=self.reference_protein))[0].sequence_number
+#        res_num = self.starting_res_num-1
         res_num = 0
         atom_num = 0
         trimmed_resi_nums = OrderedDict()
@@ -505,7 +512,7 @@ class HomologyModeling(object):
                         res_num+=1
                         if key in trimmed_residues:
                             trimmed_segment[key] = res_num
-                            if '|' in key:
+                            if '?' in key:
                                 continue
                         for atom in main_pdb_array[seg_id][key]:    
                             atom_num+=1
@@ -593,7 +600,7 @@ sequence:{uniprot}::::::::
             @param number_of_models: int, number of models to be built \n
             @param output_file_name: str, name of output file
         '''
-        log.verbose()
+#        log.verbose()
         env = environ(rand_seed=80851) #!!random number generator
         
         if atom_dict==None:
@@ -742,8 +749,10 @@ class Loops(object):
             for seg_label, gns in main_pdb_array.items():
                 if self.segment_order[self.loop_label]-self.segment_order[seg_label[:4]]==0.5:
                     temp_array[seg_label] = gns
+                    l_res = 0
                     for key in loop_keys:
-                        temp_loop[key] = loop_template[key]
+                        l_res+=1
+                        temp_loop[self.loop_label+'|'+str(l_res)] = loop_template[key]
                     temp_array[self.loop_label+'_dis'] = temp_loop
                 else:
                     temp_array[seg_label] = gns
@@ -755,8 +764,10 @@ class Loops(object):
             for seg_label, gns in main_pdb_array.items():
                 if self.segment_order[self.loop_label]-self.segment_order[seg_label[:4]]==0.5:
                     temp_array[seg_label] = gns
+                    l_res = 0
                     for key in loop_keys:
-                        temp_loop[key] = loop_template[key]
+                        l_res+=1
+                        temp_loop[self.loop_label+'|'+str(l_res)] = loop_template[key]
                     temp_array[self.loop_label+'_cont'] = temp_loop
                 else:
                     temp_array[seg_label] = gns
@@ -777,13 +788,15 @@ class Loops(object):
                     else:
                         input_residues = list(loop_template.keys())[2:-2]
                     ref_loop_seg, temp_loop_seg, aligned_loop_seg = OrderedDict(),OrderedDict(),OrderedDict()
+                    l_res=0
                     for r_res, r_id in zip(ref_residues, input_residues):
-                        ref_loop_seg[r_id] = r_res.amino_acid
-                        temp_loop_seg[r_id] = PDB.Polypeptide.three_to_one(loop_template[r_id][0].get_parent().get_resname())
-                        if ref_loop_seg[r_id]==temp_loop_seg[r_id]:                        
-                            aligned_loop_seg[r_id] = ref_loop_seg[r_id]
+                        l_res+=1
+                        ref_loop_seg[self.loop_label+'|'+str(l_res)] = r_res.amino_acid
+                        temp_loop_seg[self.loop_label+'|'+str(l_res)] = PDB.Polypeptide.three_to_one(loop_template[r_id][0].get_parent().get_resname())
+                        if ref_loop_seg[self.loop_label+'|'+str(l_res)]==temp_loop_seg[self.loop_label+'|'+str(l_res)]:                        
+                            aligned_loop_seg[self.loop_label+'|'+str(l_res)] = ref_loop_seg[self.loop_label+'|'+str(l_res)]
                         else:
-                            aligned_loop_seg[r_id] = '.'
+                            aligned_loop_seg[self.loop_label+'|'+str(l_res)] = '.'
                     if continuous_loop==True:
                         self.new_label = self.loop_label+'_cont'
                         temp_ref_dict[self.loop_label+'_cont'] = ref_loop_seg
@@ -827,7 +840,7 @@ class Loops(object):
                 temp_pdb_array[seg_id] = seg
                 for r in residues:
                     count+=1
-                    temp_loop[self.loop_label+'|'+str(count)] = '-'
+                    temp_loop[self.loop_label+'?'+str(count)] = '-'
                 temp_pdb_array[self.loop_label+'_free'] = temp_loop
                 self.new_label = self.loop_label+'_free'
             else:
@@ -843,9 +856,9 @@ class Loops(object):
                 count=0
                 for r in residues:
                     count+=1
-                    temp_ref_loop[self.loop_label+'|'+str(count)] = r.amino_acid
-                    temp_temp_loop[self.loop_label+'|'+str(count)] = '-'
-                    temp_aligned_loop[self.loop_label+'|'+str(count)] = '.'
+                    temp_ref_loop[self.loop_label+'?'+str(count)] = r.amino_acid
+                    temp_temp_loop[self.loop_label+'?'+str(count)] = '-'
+                    temp_aligned_loop[self.loop_label+'?'+str(count)] = '.'
                 temp_ref_dict[self.loop_label+'_free'] = temp_ref_loop
                 temp_temp_dict[self.loop_label+'_free'] = temp_temp_loop
                 temp_aligned_dict[self.loop_label+'_free'] = temp_aligned_loop
@@ -1042,10 +1055,10 @@ class GPCRDBParsingPDB(object):
         for gn in generic_numbers:
             try:
                 rotamer = Rotamer.objects.get(structure__protein_conformation=structure.protein_conformation, 
-                                                                          residue__generic_number__label=gn)
+                                              residue__generic_number__label=gn, structure__preferred_chain=structure.preferred_chain)
             except:
                 rotamer = Rotamer.objects.get(structure__protein_conformation=structure.protein_conformation, 
-                                                                          residue__sequence_number=gn)
+                                              residue__sequence_number=gn, structure__preferred_chain=structure.preferred_chain)
             io = StringIO(rotamer.pdbdata.pdb)
             rota_struct = PDB.PDBParser().get_structure('structure', io)[0]
             for chain in rota_struct:
@@ -1079,21 +1092,21 @@ class GPCRDBParsingPDB(object):
         assign_gn = as_gn.GenericNumbering(structure=pdb_struct)
         pdb_struct = assign_gn.assign_generic_numbers()
         
-        for chain in pdb_struct:
-            for residue in chain:
-                try:
-                    if -8.1 < residue['CA'].get_bfactor() < 8.1:
-                        gn = str(residue['CA'].get_bfactor())
-                        if gn[0]=='-':
-                            gn = gn[1:]+'1'
-                        elif len(gn)==3:
-                            gn = gn+'0'
-                        residue_array[gn] = residue.get_list()
-                    else:
-                        residue_array[str(residue.get_id()[1])] = residue.get_list()
-                except:
-                    logging.warning("Unable to parse {} in {}".format(residue, structure))
-
+        pref_chain = structure.preferred_chain
+        for residue in pdb_struct[pref_chain]:
+            try:
+                if -8.1 < residue['CA'].get_bfactor() < 8.1:
+                    gn = str(residue['CA'].get_bfactor())
+                    if gn[0]=='-':
+                        gn = gn[1:]+'1'
+                    elif len(gn)==3:
+                        gn = gn+'0'
+                    residue_array[gn] = residue.get_list()
+                else:
+                    residue_array[str(residue.get_id()[1])] = residue.get_list()
+            except:
+                logging.warning("Unable to parse {} in {}".format(residue, structure))
+        
         output = OrderedDict()
         for num, label in self.segment_coding.items():
             output[label] = OrderedDict()
@@ -1104,13 +1117,15 @@ class GPCRDBParsingPDB(object):
                 output[seg_label][gn] = res
             else:
                 try:
-                    if (-8.1 < list(residue_array.values())[counter-1][0].get_bfactor() < 8.1 and
-                        -8.1 < list(residue_array.values())[counter+1][0].get_bfactor() < 8.1):
-                        output[seg_label][gn] = res
+                    found_res = Residue.objects.get(protein_conformation__protein=structure.protein_conformation.protein.parent,
+                                            sequence_number=gn)
+                    found_gn = str(found_res.generic_number.label).replace('x','.')
+                    if -8.1 < float(found_gn) < 8.1:
+                        seg_label = self.segment_coding[int(found_gn[0])]
+                        output[seg_label][found_gn] = res
                 except:
                     pass
             counter+=1
-
         return output
    
 class CreateStatistics(object):
@@ -1122,6 +1137,11 @@ class CreateStatistics(object):
     
     def __repr__(self):
         return "<{} \n {} \n>".format(self.reference, self.info_dict)
+        
+    def items(self):
+        ''' Returns the OrderedDict().items().
+        '''
+        return self.info_dict.items()
     
     def add_info(self, info_name, info):
         ''' Adds new information to the statistics dictionary.
@@ -1137,12 +1157,14 @@ class Validation():
     def __init__(self):
         pass
     
-    def PDB_RMSD(self, pdb_file1, pdb_file2, assign_gns=[1,2]):
+    def PDB_RMSD(self, pdb_file1, pdb_file2, assign_gns=[1,2], gn_list=[], seq_nums1=[], seq_nums2=[]):
         ''' Calculates root-mean-square deviation between the coordinates of two model PDB files. The two files
             must have the same number of atoms.
             
             @param pdb_file1: str, file name of first file with path \n
-            @param pdb_file2: str, file name of second file with path
+            @param pdb_file2: str, file name of second file with path \n
+            @param assign_gns: list, use generic number assigning for pdb_file1 or pdb_file2 or both \n
+            @param gn_list: list, use RMSD only with these generic numbers
         '''
         array1, array2 = np.array([0,0,0]), np.array([0,0,0])
         parser = PDB.PDBParser()
@@ -1166,19 +1188,45 @@ class Validation():
         
         for chain1 in pdb1:
             for residue1 in chain1:
+                gn=''
+                count1=0
                 try:
                     if -8.1 < residue1['CA'].get_bfactor() < 8.1:
-                        pdb_array1[residue1['CA'].get_bfactor()] = residue1
+                        gn = residue1['CA'].get_bfactor()
+                        if str(gn)[0]=='-':
+                            gn = str(gn)[1:].replace('.','x')+'1'
+                        else:
+                            gn = str(gn).replace('.','x')
+                        if len(gn_list)>0 and gn in gn_list:
+                            pdb_array1[residue1['CA'].get_bfactor()] = residue1
+                    seq_num = int(residue1.get_id()[1])
+                    if seq_num in seq_nums1:
+                        if float(gn_list[seq_nums1.index(seq_num)].replace('x','.')) not in pdb_array1:
+                            pdb_array1[float(gn_list[seq_nums1.index(seq_num)].replace('x','.'))] = residue1
+                        count1+=1
                 except:
                     pass
         for chain2 in pdb2:
             for residue2 in chain2:
+                gn=''
+                count2=0
                 try:
                     if -8.1 < residue2['CA'].get_bfactor() < 8.1:
-                        pdb_array2[residue2['CA'].get_bfactor()] = residue2
+                        gn = residue2['CA'].get_bfactor()
+                        if str(gn)[0]=='-':
+                            gn = str(gn)[1:].replace('.','x')+'1'
+                        else:
+                            gn = str(gn).replace('.','x')
+                        if len(gn_list)>0 and gn in gn_list:
+                            pdb_array2[residue2['CA'].get_bfactor()] = residue2
+                    seq_num = int(residue2.get_id()[1])
+                    if seq_num in seq_nums2:
+                        if float(gn_list[seq_nums2.index(seq_num)].replace('x','.')) not in pdb_array2:
+                            pdb_array2[float(gn_list[seq_nums2.index(seq_num)].replace('x','.'))] = residue2
+                        count2+=1
                 except:
                     pass
-
+        
         orig_atomlist, temp_atomlist = [], []               
         for gn1, res1 in pdb_array1.items():
             for gn2, res2 in pdb_array2.items():
