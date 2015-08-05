@@ -219,7 +219,6 @@
                             'container': 'body',
                             'placement': 'top',
                             'animation': false,
-                            'html' : true
                         });
 
 
@@ -227,14 +226,12 @@
                             'container': 'body',
                             'placement': 'top',
                             'animation': false,
-                            'html' : true
                         });
 
                         $("circle").hover(function(){
                             $('.tooltip').css('top',parseInt($('.tooltip').css('top')) + 2.8 + 'px')
                         });
 
-                        
                     });
 
                     $(".rtext").click(function() {
