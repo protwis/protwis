@@ -272,7 +272,7 @@
 
                              max = String(Math.max.apply(null, val));
                              min = String(Math.min.apply(null, val));
-                             extra = "<br>" + String(val.length) + " mutations | "+ max +" maxFold | "+ min +" minFold";
+                             extra = "\n" + String(val.length) + " mutations | "+ max +" maxFold | "+ min +" minFold";
 
 
                              original_title = $('#'+plotid).find("#"+key).attr('original_title')
@@ -307,7 +307,7 @@
                                 outputAA.push(val[i][0]);
                             }
                              
-                             extra = "<br>" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
+                             extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
 
 
                              $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
@@ -340,7 +340,3 @@
                         $(this).addClass('selected');
                         
                     });
-
-
-
-                    
