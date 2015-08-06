@@ -1,11 +1,11 @@
-from django.http import HttpResponse
+﻿from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.conf import settings
 
 from common.selection import SimpleSelection, Selection, SelectionItem
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet
-from residue.models import ResidueGenericNumber
+from residue.models import ResidueGenericNumber, ResidueNumberingScheme
 
 import inspect
 from collections import OrderedDict
@@ -23,6 +23,7 @@ class AbsTargetSelection(TemplateView):
     description = 'Select targets by searching or browsing in the middle column. You can select entire target families or individual targets.\n\nSelected targets will appear in the right column, where you can edit the list.\n\nOnce you have selected all your targets, click the green button.'
     docs = False
     filters = True
+    numbering_schemes = False
     search = True
     family_tree = True
     buttons = {
@@ -55,6 +56,9 @@ class AbsTargetSelection(TemplateView):
 
     # species
     sps = Species.objects.all()
+
+    # numbering schemes
+    gns = ResidueNumberingScheme.objects.all()
 
     def get_context_data(self, **kwargs):
         """get context from parent class (really only relevant for children of this class, as TemplateView does
@@ -487,3 +491,79 @@ def ExpandSegment(request):
         scheme__slug=settings.DEFAULT_NUMBERING_SCHEME)
     
     return render(request, 'common/segment_generic_numbers.html', context)
+
+def SelectionSchemesPredefined(request):
+    """Updates the selected numbering_schemes to predefined sets (GPCRdb and All)"""
+    numbering_schemes = request.GET['numbering_schemes']
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+    
+    all_gns = ResidueNumberingScheme.objects.all()
+    gns = False
+    if numbering_schemes == 'All':
+        gns = all_gns
+    elif numbering_schemes:
+        gns = ResidueNumberingScheme.objects.filter(slug=numbering_schemes)
+    elif not selection.numbering_schemes:
+        gns = ResidueNumberingScheme.objects.filter(slug='gpcrdb') # if nothing is selected, select gpcrdb
+
+    if gns:
+        # reset the species selection
+        selection.clear('numbering_schemes')
+
+        # add the selected items to the selection
+        for gn in gns:
+            selection_object = SelectionItem('numbering_schemes', gn)
+            selection.add('numbering_schemes', 'numbering_schemes', selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # add all species objects to context (for comparison to selected species)
+    context = selection.dict('numbering_schemes')
+    context['gns'] = all_gns
+    
+    return render(request, 'common/selection_filters_numbering_schemes.html', context)
+
+def SelectionSchemesToggle(request):
+    """Updates the selected numbering schemes arbitrary selections"""
+    numbering_scheme_id = request.GET['numbering_scheme_id']
+    print(numbering_scheme_id)
+    all_gns = ResidueNumberingScheme.objects.all()
+    gns = ResidueNumberingScheme.objects.filter(pk=numbering_scheme_id)
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # add the selected items to the selection
+    for gn in gns:
+        exists = selection.remove('numbering_schemes', 'numbering_schemes', numbering_scheme_id)
+        if not exists:
+            selection_object = SelectionItem('numbering_schemes', gn)
+            selection.add('numbering_schemes', 'numbering_schemes', selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # add all species objects to context (for comparison to selected species)
+    context = selection.dict('numbering_schemes')
+    context['gns'] = ResidueNumberingScheme.objects.all()
+    
+    return render(request, 'common/selection_filters_numbering_schemes.html', context)

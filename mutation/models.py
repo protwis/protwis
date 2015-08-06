@@ -4,10 +4,10 @@ from django.db import models
 class Mutation(models.Model):
 
 	#links
-    refs = models.ForeignKey('MutationRefs') #Change to a common model?
+    refs = models.ForeignKey('MutationRefs', null=True) #Change to a common model?
     protein = models.ForeignKey('protein.Protein')
     residue = models.ForeignKey('residue.Residue')
-    ligand = models.ForeignKey('MutationLigand') #Change to a ligand model?
+    ligand = models.ForeignKey('MutationLigand', null=True) #Change to a ligand model?
     ligand_class = models.ForeignKey('MutationLigandClass') #Change to a ligand model?
     ligand_ref = models.ForeignKey('MutationLigandRef') #Change to a ligand model?
     raw = models.ForeignKey('MutationRaw')
@@ -24,7 +24,52 @@ class Mutation(models.Model):
     wt_unit = models.CharField(max_length=10)
     mu_value = models.DecimalField(max_digits=10, decimal_places=2)
     mu_sign = models.CharField(max_length=2)
-    foldchange = models.DecimalField(max_digits=10, decimal_places=2)
+    foldchange = models.FloatField()
+
+    def citation(self):
+
+        temp = self.refs.citation.split(',')
+        
+        return temp[0] + " et al ("+str(self.refs.year)+")"
+
+    def getCalculation(self):
+
+        temp = ("Type: "+ self.exp_measure.measure + " <br> Measure: "+self.exp_type.type+" <br> Unit: " + str(self.wt_unit) +  " <br> WT: " + str(self.wt_value) + " <br> Mu: "+ str(self.mu_value) +" <br> Foldchange: "+str(self.foldchange))
+        
+        # if ($this->mut_effect_qual_id!=0) {
+        #     $temp .= "\n".$this->mut_effect_qual->effect_qual. " ". $this->mut_effect_qual->effect_prop;    
+
+        # }
+        return temp
+
+    def getFoldorQual(self):
+        temp = self.exp_measure.measure
+        if self.wt_value>0:
+            if self.exp_measure.measure=='Activity/affinity':
+                temp = round(self.mu_value/self.wt_value,2)
+            elif self.exp_measure.measure=='Fold effect (mut/wt)':
+                temp = round(self.mu_value,2)
+            sign = ''
+            if self.mu_sign!="=": sign = self.mu_sign
+            
+            if self.exp_measure.measure!='Qualitative effect': temp = round(self.foldchange,2) #use saved foldchange instaed
+            
+            if self.exp_measure.measure!='Qualitative effect' and temp!=0:
+                
+                if temp>1: 
+                    temp =  "<font color='green'>"+sign + str(temp) + "↑</font>"
+                elif temp<1:
+                    temp =  "<font color='red'>"+sign + str(-temp) + "↓</font>"
+                
+            if self.exp_qual.qual:
+                temp = self.exp_qual.qual +  " " +  self.exp_qual.prop  
+
+        elif self.exp_qual.qual: #only display those with qual_id
+            temp = self.exp_qual.qual +  " " + self.exp_qual.prop  
+        
+        return temp
+    
+    
     
     class Meta():
         db_table = 'mutation'
