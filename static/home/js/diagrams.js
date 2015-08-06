@@ -17,14 +17,14 @@
 
                         var originalCircle = $('#'+plotid).find("#"+rid);
 
-                        console.log(originalCircle.attr('extra'));
+                        //console.log(originalCircle.attr('extra'));
                         //originalCircle.attr('extra');
 
                         var rect = tipElement.childNodes[1];
                         var text = tipElement.childNodes[3];
 
                         while (text.lastChild) {
-                            text.removeChild(text.lastChild);
+                           text.removeChild(text.lastChild);
                         }
                         
                         // var NS = "http://www.w3.org/2000/svg";
@@ -52,7 +52,6 @@
                             rect.setAttribute('y', -40);
                         }
                         
-                        
                         var bbox = text.getBBox();
                         rect.setAttribute('width', bbox.width + 8);
                         rect.setAttribute('x', -bbox.width/2 - 4);
@@ -67,16 +66,29 @@
                         tipElement.setAttribute('visibility', 'hidden');
                     }
 
-                    function toggleLoop(id,type) {
-                        $(id+".long").toggle();
-                        $(id+".short").toggle();
-                        maxmin();
-
+                    function toggleLoop(id,type, skipmaxmin) {
                         $(id+".long").toggle();
                         $(id+".short").toggle();
 
-                        $(id+".long").fadeToggle();
-                        $(id+".short").fadeToggle();
+                        // $(id+".long").each(function () {
+                        //     curr = $(this).css("display");
+                        //     if (curr == 'none') $(this).removeAttr("display");
+                        //     if (!curr) $(this).css("display", "none");
+                        // });
+
+                        // $(id+".short").each(function () {
+                        //     curr = $(this).css("display");
+                        //     if (curr == 'none') $(this).removeAttr("display");
+                        //     if (!curr) $(this).css("display", "none");
+                        // });
+
+                        if (skipmaxmin!=1) maxmin();
+
+                        // $(id+".long").toggle();
+                        // $(id+".short").toggle();
+
+                        // $(id+".long").fadeToggle();
+                        // $(id+".short").fadeToggle();
                     }
 
                     function applyPresentColors(target) {
@@ -111,19 +123,23 @@
                         svgmax = 0;
                         svgmin = 0;
                         count = 0;
-                        classmax = ''
-                        classmin = ''
-                        $('#snake').children('text').each(function () {
-                            if ($(this).is(":visible")) {
+                        classmax = '';
+                        classmin = '';
+                        counter = 0;
+                        $('#snake').children('.rtext').each(function () {
+                            counter += 1;
+                            y = parseInt($(this).attr( "y" ));
+                            classtext = $(this).attr( "class" );
+                            test = $(this).attr("original_title");
+                            test2 = $(this).css("display");
+                            //if (classtext=='rtext N-term long') console.log(counter + test + " " + test2 + " " + classtext + " " );
+                            if ($(this).css("display")!='none') {
                                 count = count +1;
-                                y = parseInt($(this).attr( "y" ));
-                                classtext = $(this).attr( "class" );
                                 if (y<svgmin) {
                                     svgmin = y; 
                                     classmin = classtext;
                                     }
                                 if (y>svgmax) {
-
                                     classmax = classtext;
                                     svgmax= y; 
                                  }
@@ -172,13 +188,50 @@
                     }
 
                     $( document ).ready(function() {    
-                        var elements = document.getElementsByClassName('long')
+                        // var elements = document.getElementsByClassName('long')
 
-                        for (var i = 0; i < elements.length; i++){
-                            elements[i].style.display = 'none';
-                        }
+                        // for (var i = 0; i < elements.length; i++){
+                        //     elements[i].style.display = 'none';
+                        // }
+                        $(".long").hide();
+
+
+                        $('rect').each(function(){
+                            
+                            rectclass = $(this).attr('class');
+                            if (rectclass) {
+                                if (rectclass.indexOf("CL") >= 0 && rectclass.indexOf("long") >= 0) {
+
+                                    numResidues = ($('.'+rectclass.replace(/ /g,".")).length-3)/2
+
+                                    console.log('class:'+rectclass+' count'+numResidues);
+
+                                    if (numResidues<10) {
+                                        toggleLoop('.'+rectclass.split(' ')[0],'',1);
+                                    }
+                                }
+                            }
+                        });
+
                         maxmin();
-                        
+
+                        $("text").tooltip({
+                            'container': 'body',
+                            'placement': 'top',
+                            'animation': false,
+                        });
+
+
+                        $("circle").tooltip({
+                            'container': 'body',
+                            'placement': 'top',
+                            'animation': false,
+                        });
+
+                        $("circle").hover(function(){
+                            $('.tooltip').css('top',parseInt($('.tooltip').css('top')) + 2.8 + 'px')
+                        });
+
                     });
 
                     $(".rtext").click(function() {
@@ -219,14 +272,20 @@
 
                              max = String(Math.max.apply(null, val));
                              min = String(Math.min.apply(null, val));
-                             extra = String(val.length) + " mutations | "+ max +" maxFold | "+ min +" minFold";
+                             extra = "\n" + String(val.length) + " mutations | "+ max +" maxFold | "+ min +" minFold";
+
+
+                             original_title = $('#'+plotid).find("#"+key).attr('original_title')
 
                              $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
                              $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
-                             $('#'+plotid).find("#"+key).attr('extra',extra);
+                             $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
 
 
                           });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
     
                         });
                     }
@@ -248,15 +307,22 @@
                                 outputAA.push(val[i][0]);
                             }
                              
-                             extra = String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
+                             extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
 
 
                              $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
                              $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
-                             $('#'+plotid).find("#"+key).attr('extra',extra);
+
+                             original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+
+                             $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
 
 
                           });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
     
                         });
                     }
@@ -274,7 +340,3 @@
                         $(this).addClass('selected');
                         
                     });
-
-
-
-                    

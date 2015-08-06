@@ -8,6 +8,7 @@ from structure.functions import BlastSearch
 from protein.models import Protein
 # from common.alignment_SITE_NAME import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
+from protein.models import Protein, ProteinSegment
 
 import inspect
 from collections import OrderedDict
@@ -90,6 +91,30 @@ def render_alignment(request):
     return render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
         'num_residue_columns': num_residue_columns})
 
+def render_family_alignment(request, slug):
+    # create an alignment object
+    a = Alignment()
+
+    # fetch proteins and segments
+    proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt')
+    segments = ProteinSegment.objects.filter(partial=False)
+    
+    # load data into the alignment
+    a.load_proteins(proteins)
+    a.load_segments(segments)
+
+    # build the alignment data matrix
+    a.build_alignment()
+
+    # calculate consensus sequence + amino acid and feature frequency
+    a.calculate_statistics()
+
+    num_of_sequences = len(a.proteins)
+    num_residue_columns = len(a.positions) + len(a.segments)
+
+    return render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
+        'num_residue_columns': num_residue_columns})
+
 def render_fasta_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
@@ -108,6 +133,27 @@ def render_fasta_alignment(request):
     response = render(request, 'alignment/alignment_fasta.html', context={'a': a}, content_type='text/fasta')
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.fasta"
     return response
+
+def render_fasta_family_alignment(request, slug):
+    # create an alignment object
+    a = Alignment()
+    a.show_padding = False
+
+    # fetch proteins and segments
+    proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt')
+    segments = ProteinSegment.objects.filter(partial=False)
+    
+    # load data into the alignment
+    a.load_proteins(proteins)
+    a.load_segments(segments)
+    
+    # build the alignment data matrix
+    a.build_alignment()
+    
+    response = render(request, 'alignment/alignment_fasta.html', context={'a': a}, content_type='text/fasta')
+    response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.fasta"
+    return response
+
 
 def render_csv_alignment(request):
     # get the user selection from session

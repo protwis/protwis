@@ -89,7 +89,7 @@ def render_mutations(request):
 
     print(segments)
 
-    mutations = Mutation.objects.filter(protein__in=proteins, residue__protein_segment__in=segments).prefetch_related('protein' ,'residue__display_generic_number', 'residue', 'exp_type', 'ligand_class', 'ligand')
+    mutations = Mutation.objects.filter(protein__in=proteins, residue__protein_segment__in=segments).prefetch_related('protein', 'residue__protein_segment','residue__display_generic_number', 'residue', 'exp_type', 'ligand_class', 'ligand','refs')
 
 
     return render(request, 'mutation/list.html', {'mutations': mutations})
