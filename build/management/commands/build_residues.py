@@ -128,6 +128,7 @@ class Command(BaseCommand):
                                 + segment_length[segment.slug]['after'])
                         else:
                             # skip this segment if the reference position is missing
+                            self.logger.warning('Reference position missing for segment {} in {}'.format(segment, pc))
                             continue
                     else:
                         segment_start = sequence_number_counter + 1
@@ -148,11 +149,12 @@ class Command(BaseCommand):
 
                         # skip if the segment ends before it starts (can happen if the next segment is long)
                         if segment_start > segment_end:
+                            self.logger.warning('Start of segment {} is larger than its end'.format(segment))
                             continue
 
                     # create residues for this segment
                     create_or_update_residues_in_segment(pc, segment, segment_start, segment_end, schemes,
-                        ref_positions, [])
+                        ref_positions, [], True)
 
                     sequence_number_counter = segment_end
 
