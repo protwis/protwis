@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db.models import Q
 
 from protein.models import ProteinAnomaly
 from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme
@@ -44,16 +45,27 @@ def load_reference_positions(path):
         ref_position_file.close()
 
 def create_or_update_residues_in_segment(protein_conformation, segment, start, end, schemes, ref_positions,
-    protein_anomalies):
+    protein_anomalies, disregard_db_residues):
     logger = logging.getLogger('build')
     rns_defaults = {'protein_segment': segment} # default numbering scheme for creating generic numbers
-    for i, aa in enumerate(protein_conformation.protein.sequence[(start-1):end]):
-        sequence_number = start + i
+
+    # fetch the residues that should be updated
+    residues_to_update = Residue.objects.filter(Q(sequence_number__gte=start) & Q(sequence_number__lte=end),
+        protein_conformation=protein_conformation).values_list('sequence_number', 'amino_acid')
+
+    # if the residue records have not been created, use the sequence string instead
+    if disregard_db_residues or not residues_to_update.exists():
+        residues_to_update = []
+        for i, aa in enumerate(protein_conformation.protein.sequence[(start-1):end]):
+            residues_to_update.append((start+i, aa)) # replicate the format from values_list
+    
+    for residue in residues_to_update:
+        sequence_number = residue[0]
         
         # dictionary of values for updating/creating a residue
         rvalues = {}
         rvalues['protein_segment'] = segment
-        rvalues['amino_acid'] = aa
+        rvalues['amino_acid'] = residue[1]
 
         # generic numbers
         if (segment.slug in settings.REFERENCE_POSITIONS and

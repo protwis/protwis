@@ -43,7 +43,7 @@ class Command(BaseCommand):
             pconf_class = pconf.protein.family.slug[:3]
             class_sps = structures.filter(protein_conformation__protein__parent__family__slug__startswith=pconf_class)
             sps = []
-            for structure in structures:
+            for structure in class_sps:
                 sps.append(structure.protein_conformation.protein.parent) # use the wild-type sequence
 
             # overall

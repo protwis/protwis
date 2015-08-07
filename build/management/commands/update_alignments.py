@@ -55,7 +55,12 @@ class Command(BaseCommand):
             'protein__residue_numbering_scheme__parent', 'template_structure')
         
         for pconf in pconfs:
-            sequence_number_counter = 0
+            # get the sequence number of the first residue for this protein conformation
+            pconf_residues = Residue.objects.filter(protein_conformation=pconf)
+            if pconf_residues.exists():
+                sequence_number_counter = pconf_residues[0].sequence_number
+            else:
+                sequence_number_counter = 0
             
             # read reference positions for this protein
             ref_position_file_paths = [
@@ -275,7 +280,7 @@ class Command(BaseCommand):
                 # update residues for this segment
                 if 'start' in us and 'end' in us and us['end']: # FIXME take split segments into account
                     create_or_update_residues_in_segment(pconf, us['segment'], us['start'], us['end'], schemes,
-                        ref_positions, us['protein_anomalies'])
+                        ref_positions, us['protein_anomalies'], False)
                 
 
         self.logger.info('COMPLETED UPDATING PROTEIN ALIGNMENTS')
