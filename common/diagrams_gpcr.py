@@ -60,6 +60,8 @@ class DrawSnakePlot(Diagram):
             if r.generic_number: label = r.generic_number.label
             if r.display_generic_number: displaylabel = r.display_generic_number.label
             displaylabel = r.amino_acid + str(r.sequence_number) + " \n " + displaylabel
+            if hasattr(r, 'extra'):
+                displaylabel = displaylabel + "\n" + r.extra
             self.segments[segment].append([r.sequence_number,r.amino_acid,label,displaylabel])
             #print(segment,len(self.segments[segment]))
             #print(r.sequence_number,r.amino_acid,r.protein_segment.slug)
@@ -929,10 +931,21 @@ class DrawHelixBox(Diagram):
         if self.family not in self.plot_data:
             self.family = 'Class A'
 
+        segment_lists = {}
+        for r in residue_list:
+            if r.protein_segment:
+                if r.protein_segment.slug not in segment_lists:
+                    segment_lists[r.protein_segment.slug] = []
+
+                segment_lists[r.protein_segment.slug].append(r)
+
+
         for i in range(1,len(self.plot_data[self.family]['coordinates'])):
             #fetch residues | add sort by sequence_number FIXME
-            self.residuelist = residue_list.filter(
-                protein_segment__slug='TM'+str(i)).prefetch_related('display_generic_number','generic_number')
+            # self.residuelist = residue_list.filter(
+            #     protein_segment__slug='TM'+str(i)).prefetch_related('display_generic_number','generic_number')
+
+            self.residuelist = segment_lists['TM'+str(i)]
 
             self.output += self.DrawHelix(self.plot_data[self.family]['coordinates'][i][0],
                 self.plot_data[self.family]['coordinates'][i][1],
@@ -955,7 +968,10 @@ class DrawHelixBox(Diagram):
         sequence = {}
 
         for r in residuelist:
-            sequence[int(r.generic_number.label[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number,'generic_number':r.generic_number.label,'displaylabel':r.amino_acid+str(r.sequence_number)+"\n"+r.display_generic_number.label}
+            displaylabel = r.amino_acid+str(r.sequence_number)
+            if r.display_generic_number: displaylabel += "\n"+r.display_generic_number.label
+            if hasattr(r, 'extra'): displaylabel += "\n" + r.extra
+            sequence[int(r.generic_number.label[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number,'generic_number':r.generic_number.label,'displaylabel':displaylabel}
 
         # box size
         numResPerSide = 5
