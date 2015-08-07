@@ -47,6 +47,10 @@ class Diagram:
         .long {
           display: none
         }
+        .tooltip-inner {
+            white-space:pre-wrap;
+            max-width:none;
+        }
         </style>
         """
 
