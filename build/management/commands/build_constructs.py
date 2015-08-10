@@ -132,7 +132,7 @@ class Command(BaseCommand):
 
                     # fusion proteins
                     split_segments = {}
-                    if sd['fusion_proteins']:
+                    if 'fusion_proteins' in sd and sd['fusion_proteins']:
                         for fp in sd['fusion_proteins']:
                             fp_start = Residue.objects.get(protein_conformation=ppc,
                                 sequence_number=fp['positions'][0])

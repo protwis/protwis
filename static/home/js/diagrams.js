@@ -8,7 +8,8 @@
                                     'Y': ['#18FF0B', '#000000'],'W': ['#0BCF00', '#000000'],
                                     'H': ['#0093DD', '#000000'],'P': ['#CC0099', '#FDFF7B'],
                                     'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
-                                    '-': ['#FFFFFF', '#000000']    
+                                    '-': ['#FFFFFF', '#000000'],
+                                    '+': ['#FFFFFF', '#000000']        
                                     };
 
                     var translateOffset = 0;
@@ -97,7 +98,7 @@
 
                         $('#'+target).find("circle").each(function( index ){
                               //console.log( index + ": " + $( this ).text() );
-                              aa =  $(this).next().text();
+                              aa =  $(this).next().text().trim();
                               //console.log( index + ": " + aa );
                               $(this).css("fill", presetColors[aa][0]);
                               $(this).next().css("fill", presetColors[aa][1]);
