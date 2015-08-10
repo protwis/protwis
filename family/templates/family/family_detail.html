@@ -1,4 +1,5 @@
 {% extends "home/base.html" %}
+{% load staticfiles %}
 
 {% block content %}
 
@@ -41,6 +42,21 @@
         <h4>CONSENSUS SEQUENCE</h4>
     </div>
     <div class="col-md-10">
+    <table>
+     <tr>
+                            {% for s in a.consensus %}
+                                {% for p, r in s.items %}
+                                    <td class="ali-td ali-residue res-cons-{{ r.1 }}">
+                                        <div data-toggle="tooltip" data-placement="top" data-html="true"
+                                        title="{{ r.2 }}">
+                                            {{ r.0 }}
+                                        </div>
+                                    </td>
+                                {% endfor %}
+                                <td class="ali-td">&nbsp;</td>
+                            {% endfor %}
+                        </tr>
+                        </table>
     </div>
 </div>
 
@@ -49,6 +65,14 @@
         <h4>DIAGRAMS</h4>
     </div>
     <div class="col-md-10">
+    {{ HelixBox }}
+    <br>
+    <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_{{ p.entry_name }}.png', {scale: 3});"> Download as PNG</a>
+    <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_{{ p.entry_name }}"> Download as SVG</a>
+    {{ SnakePlot }}
+    <br>
+    <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ p.entry_name }}.png', {scale: 3});"> Download as PNG</a>
+    <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_{{ p.entry_name }}"> Download as SVG</a>
     </div>
 </div>
 
@@ -75,4 +99,9 @@
     <div class="col-md-10">
     </div>
 </div>
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/diagrams.js' %}"></script>
 {% endblock %}
