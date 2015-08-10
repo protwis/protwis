@@ -2,6 +2,20 @@ from django.db import models
 
 # Create your models here.
 class Mutation(models.Model):
+    mutation_to = models.CharField(max_length=1) #amino acid one-letter
+    protein = models.ForeignKey('protein.Protein') 
+    residue = models.ForeignKey('residue.Residue', null=True) #If auxilliary it will be null
+    mutation_type = models.ForeignKey('MutationType')
+
+
+class MutationType(models.Model):
+
+    type = models.CharField(max_length=100) #type of mutation, eg thermostabilization, expression-increasing..
+
+    class Meta():
+        db_table = 'mutation_type'
+
+class MutationExperiment(models.Model):
 
 	#links
     refs = models.ForeignKey('MutationRefs', null=True) #Change to a common model?
@@ -12,7 +26,7 @@ class Mutation(models.Model):
     ligand_ref = models.ForeignKey('MutationLigandRef') #Change to a ligand model?
     raw = models.ForeignKey('MutationRaw')
     optional = models.ForeignKey('MutationOptional')
-    exp_type = models.ForeignKey('MutationType')
+    exp_type = models.ForeignKey('MutationExperimentalType')
     exp_func= models.ForeignKey('MutationFunc')
     exp_measure = models.ForeignKey('MutationMeasure')
     exp_qual = models.ForeignKey('MutationQual')
@@ -72,7 +86,7 @@ class Mutation(models.Model):
     
     
     class Meta():
-        db_table = 'mutation'
+        db_table = 'mutation_experiment'
 
 
 
@@ -186,12 +200,12 @@ class MutationFunc(models.Model):
 		db_table = 'mutation_func'
 
 
-class MutationType(models.Model):
+class MutationExperimentalType(models.Model):
 
 	type = models.CharField(max_length=100)
 
 	class Meta():
-		db_table = 'mutation_type'
+		db_table = 'mutation_experimental_type'
 
 
 class MutationLigandClass(models.Model):
