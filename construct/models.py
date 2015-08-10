@@ -1,24 +1,25 @@
 from django.db import models
 
+from protein.models import Protein
+from residue.models import Residue
+#from mutation.models import Mutation, MutationType ## check ??
+
 # include models for Construct, prtn_order, exprssn, solubilisation, purifcn, and crystallisation 
 
 class Construct(models.Model):
 
     protein = models.ForeignKey('protein.Protein')
-    name = models.CharField('protein.Protein',max_length=200)
-    sequence = models.TextField('protein.Protein')
-    source = models.ForeignKey('protein.ProteinSource')
-    uniprot_id = models.CharField(max_length=10)
-    pdbcode = models.CharField(max_length=4)
-    resolution = models.DecimalField(max_digits=3, decimal_places=2)
-    ligand = models.ForeignKey('mutation.MutationLigand')
+#    name = models.CharField('protein.Protein',max_length=200) # can get details like name,seq,pdbcode, ligand etc. from protein model
     mutation = models.TextField(max_length=100) # how to show [position & reasons]?  ###comma separated data for listing many mutations
+####    mutation_to = models.ForeignKey('mutation.mutation_to')
+####    mutation_reason = models.ForeignKey('mutation.MutationType')
+
     deletion = models.TextField(max_length=100)  #comma separated data
-    aux_ptn = models.ForeignKey('AuxProtein') 
+    aux_protein = models.ForeignKey('AuxProtein') 
     expression = models.ForeignKey('ConstructExpression') 
-    solubilisation = models.ForeignKey('ConstructSolubilisation')
+    solubilization = models.ForeignKey('ConstructSolubilization')
     purification = models.ForeignKey('ConstructPurification')
-    crystallization = models.ForeignKey('ConstructCrystallisation')## NOTE: If you need to create a relationship on a model that has not yet been defined, you can use the name of the model, rather than the model object itself
+    crystallization = models.ForeignKey('ConstructCrystallization')## NOTE: If you need to create a relationship on a model that has not yet been defined, you can use the name of the model, rather than the model object itself
 
     class Meta():
         db_table = 'construct'
@@ -29,8 +30,10 @@ class AuxProtein(models.Model):
     ptn_type = models.ForeignKey('AuxProteinType')
     name = models.CharField(max_length=100, blank=True)
     sequence = models.TextField(blank=True)
-    fusion_mutation = models.TextField(max_length=100, blank=True) #comma separated data
-    fusion_deletion = models.TextField(max_length=100, blank=True) #comma separated data
+    mutation = models.TextField(max_length=100, blank=True) #comma separated data
+####    mutation_to = models.ForeignKey('mutation.mutation_to')
+####    mutation_reason = models.ForeignKey('mutation.MutationType')
+    deletion = models.TextField(max_length=100, blank=True) #comma separated data
     position = models.TextField(max_length=20, blank=True) # aa_modfcn like position of disulfide bond is imp to show (is it shown already in GPCRdb Sites page??) For 3 linkers, values will be 1,2,3
     remarks = models.TextField()
 
@@ -54,7 +57,7 @@ class AuxProteinType(models.Model):
 class Chemical(models.Model):
 
     chemical_type = models.ForeignKey('ChemicalType')
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=200)
     
     class Meta():
         db_table = 'chemical'
@@ -93,11 +96,11 @@ class ChemicalModification(models.Model):  # can have more than one chem_modfcn 
         db_table = 'chemical_modification'
 
 
-class EnzymaticModification(models.Model): # can have more than one enzymatic_modfcn as comma separated fields
+class EnzymeModification(models.Model): # can have more than one enzymatic_modfcn as comma separated fields
     description =  models.TextField()
 
     class Meta():
-        db_table = 'enzymatic_modification'
+        db_table = 'enzyme_modification'
 
 
 class ChromatographyType(models.Model):
@@ -119,20 +122,20 @@ class ConstructExpression(models.Model):
         db_table = 'construct_expression'
 
 
-class ConstructSolubilisation(models.Model):
+class ConstructSolubilization(models.Model):
 
     chemical_list = models.ForeignKey('ChemicalList') #includes chem name, type[detergent & solubilisation_lipid]  and concentration
     chemical_modification = models.ForeignKey('ChemicalModification')#more than one chem_modfcn ## remove field, not easily searchable?
     remarks = models.TextField()
 
     class Meta():
-        db_table = 'construct_solubilisation'
+        db_table = 'construct_solubilization'
 
 
 class ConstructPurification(models.Model):
 
     chromatography_type = models.ForeignKey('ChromatographyType') 
-    enzyme_modification = models.ForeignKey('EnzymaticModification')
+    enzyme_modification = models.ForeignKey('EnzymeModification')
     chemical_modification = models.ForeignKey('ChemicalModification')
     remarks = models.TextField()
 
@@ -140,23 +143,23 @@ class ConstructPurification(models.Model):
         db_table = 'construct_purification'
 
 
-class ConstructCrystallisation(models.Model):
+class ConstructCrystallization(models.Model):
 
-    crystal_type = models.ForeignKey('CrystalMethodTypes') # if Many crystallography types for one construct :named as separate Xtal Exp
+    crystal_type = models.ForeignKey('CrystallizationMethodTypes') # if Many crystallography types for one construct :named as separate Xtal Exp
     chemical_list =  models.ForeignKey('ChemicalList') #chemical type= LCPlipid for LCP exp, else type= lipid for in surfo exp --- includes info on lcp_lipidic_condition, protein_component etc.
     method = models.TextField(max_length=100) # more than one solved by comma separated
     settings = models.TextField(max_length=100)# can have more than one
     remarks = models.TextField()
-    ptn_conc =  models.SlugField(max_length=20,blank=True)
+    protein_conc =  models.SlugField(max_length=20,blank=True)
     ligands = models.ManyToManyField('ligand.Ligand', through='ConstructCrystallizationLigandConc')
-    aqueous_soln_lipid_ratio=  models.SlugField(max_length=20,blank=True)
-    lcp_bolus_vol =  models.SlugField(max_length=20,blank=True)
-    precipitant_soln_vol =  models.SlugField(max_length=20,blank=True)
+    aqueous_solution_lipid_ratio=  models.SlugField(max_length=20,blank=True)
+    lcp_bolus_volume =  models.SlugField(max_length=20,blank=True)
+    precipitant_solution_volume =  models.SlugField(max_length=20,blank=True)
 #   condition = models.ForeignKey('XtalCondition')
 
 
     class Meta():
-        db_table = 'construct_crystallisation'
+        db_table = 'construct_crystallization'
 
 
 class ConstructCrystallizationLigandConc(models.Model):
@@ -164,9 +167,9 @@ class ConstructCrystallizationLigandConc(models.Model):
     ligand_conc = models.TextField()
 
     class Meta():
-        db_table = 'ligand_conc_of_crystallisation'
+        db_table = 'ligand_conc_of_crystallization'
 
-class CrystalMethodTypes(models.Model):
+class CrystallizationMethodTypes(models.Model):
 
     name = models.CharField(max_length=100) #LCP/ in surfo/bicelles
 
@@ -174,15 +177,15 @@ class CrystalMethodTypes(models.Model):
         return self.name
 
     class Meta():
-        db_table = 'crystal_method_types'  
+        db_table = 'crystallization_method_types'  
 
 
-class CrystalCondition(models.Model):   #called one or many times when explicitly fetched within ConstructCrystallisation
+class CrystallizationCondition(models.Model):   #called one or many times when explicitly fetched within ConstructCrystallization
 
     experiment = models.ForeignKey('ConstructCrystallisation')
     temp = models.CharField(max_length=5)
-    pH = models.DecimalField(max_digits=2,decimal_places=2)
+    ph = models.DecimalField(max_digits=2,decimal_places=2)
     chemical_list =  models.ForeignKey('ChemicalList') # can have many chemicals and their concentration listed
 
     class Meta():
-        db_table = 'crystal_condition'
+        db_table = 'crystallization_condition'

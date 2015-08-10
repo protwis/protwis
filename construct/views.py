@@ -1,6 +1,6 @@
 from django.shortcuts import render
 
-from structure.models import Construct
+from construct.models import Construct
 
 from datetime import datetime
 
