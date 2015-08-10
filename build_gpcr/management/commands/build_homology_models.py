@@ -15,7 +15,9 @@ import os
 import logging
 import numpy as np
 from io import StringIO
+import sys
 import pprint
+from multiprocessing import Process
 
 
 class Command(BaseCommand):
@@ -32,13 +34,16 @@ class Command(BaseCommand):
                 self.stdout.write(Homology_model.statistics, ending='')
                 count+=1
 
-        Homology_model = HomologyModeling('adrb1_melga', 'Inactive', ['Inactive'])
+        Homology_model = HomologyModeling('agtr1_human', 'Inactive', ['Inactive'])
         alignment = Homology_model.run_alignment()
-        Homology_model.build_homology_model(alignment)
+        Homology_model.build_homology_model(alignment, switch_bulges=False, switch_constrictions=False, switch_rotamers=False)
                                         
 #        val = Validation()
-#        print(val.PDB_RMSD("./structure/PDB/4YAY.pdb", "./structure/homology_models/P30556_Inactive/modeller_test.pdb",
-#                           assign_gns=[1,2], gn_list=['1x39','2x60','3x32','3x33','0x1','7x38'], seq_nums1=[35,84,108,109,167,288], seq_nums2=[9,58,82,83,141,262]))
+#        print('7TM RMSD: ', val.PDB_RMSD("./structure/PDB/3AYM.pdb", "./structure/homology_models/P31356_Inactive/modeller_test.pdb",
+#                            assign_gns=[1,2]))
+#        print('binding pocket RMSD: ', val.PDB_RMSD("./structure/PDB/3AYM.pdb", "./structure/homology_models/P31356_Inactive/modeller_test.pdb",
+#                           assign_gns=[1,2], gn_list=['2x53', '2x57', '3x33', '3x37', 'ECL2|14', 'ECL2|15', 'ECL2|16', 'ECL2|17', '5x44', '5x47', '6x48', '6x52', '7x38', '7x42'], seq_nums1=[83, 87, 116, 120, 185, 186, 187, 188, 205, 209, 274, 278, 301, 305], seq_nums2=[57, 61, 90, 94, 159, 160, 161, 162, 179, 183, 248, 252, 275, 279]))
+
         self.stdout.write(Homology_model.statistics, ending='')
 
 class HomologyModeling(object):
@@ -103,7 +108,8 @@ class HomologyModeling(object):
             self.statistics.add_info('loops',self.loop_template_table)           
         return alignment
         
-    def build_homology_model(self, ref_temp_alignment, switch_bulges=True, switch_constrictions=True, loops=True):
+    def build_homology_model(self, ref_temp_alignment, switch_bulges=True, switch_constrictions=True, loops=True, 
+                             switch_rotamers=True):
         ''' Function to identify and switch non conserved residues in the alignment. Optionally,
             it can identify and switch bulge and constriction sites too. 
             
@@ -375,13 +381,19 @@ class HomologyModeling(object):
                 a.alignment_dict = modeling_loops.alignment_dict
         
         # non-conserved residue switching
-        non_cons_switch = self.run_non_conserved_switcher(main_pdb_array,a.reference_dict,a.template_dict,
-                                                          a.alignment_dict)
-        main_pdb_array = non_cons_switch[0]
-        a.reference_dict = non_cons_switch[1]
-        a.template_dict = non_cons_switch[2]
-        a.alignment_dict = non_cons_switch[3]
-        trimmed_residues = non_cons_switch[4]
+        if switch_rotamers==True:
+            non_cons_switch = self.run_non_conserved_switcher(main_pdb_array,a.reference_dict,a.template_dict,
+                                                              a.alignment_dict)
+            main_pdb_array = non_cons_switch[0]
+            a.reference_dict = non_cons_switch[1]
+            a.template_dict = non_cons_switch[2]
+            a.alignment_dict = non_cons_switch[3]
+            trimmed_residues = non_cons_switch[4]
+        else:
+            trimmed_residues=[]
+            for seg_id, seg in main_pdb_array.items():
+                for key in seg:
+                    trimmed_residues.append(key)
         
         # write to file
         path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
@@ -392,7 +404,7 @@ class HomologyModeling(object):
         # Model with MODELLER
         self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
-                          self.uniprot_id, 1, "modeller_test.pdb", atom_dict=trimmed_res_nums)
+                          self.uniprot_id, 100, "modeller_test.pdb", atom_dict=trimmed_res_nums)
         
         with open('./structure/homology_models/{}_Inactive/{}.stat.txt'.format(self.uniprot_id, self.uniprot_id), 'w') as stat_file:
             for label, info in self.statistics.items():
@@ -483,7 +495,7 @@ class HomologyModeling(object):
         self.statistics.add_info('conserved_residues', conserved_residues)
         self.statistics.add_info('non_conserved_residue_templates', non_cons_res_templates)
         self.statistics.add_info('trimmed_residues', trimmed_residues)
-        
+
         return [main_pdb_array, reference_dict, template_dict, alignment_dict, trimmed_residues]
     
     def write_homology_model_pdb(self, filename, main_pdb_array, ref_temp_alignment, trimmed_residues=[]):
@@ -604,27 +616,49 @@ sequence:{uniprot}::::::::
         env = environ(rand_seed=80851) #!!random number generator
         
         if atom_dict==None:
-            a = automodel(env, alnfile = pir_file, knowns = template, sequence = reference)
+            a = automodel(env, alnfile = pir_file, knowns = template, sequence = reference, 
+                          assess_methods=(assess.DOPE, assess.GA341))
         else:
             a = HomologyMODELLER(env, alnfile = pir_file, knowns = template, sequence = reference, 
-                                 atom_selection=atom_dict)
+                                 assess_methods=(assess.DOPE, assess.GA341), atom_selection=atom_dict)
         a.starting_model = 1
         a.ending_model = number_of_models
         a.md_level = refine.very_slow
         path = "./structure/homology_models/{}".format(reference+"_"+self.state)
         if not os.path.exists(path):
             os.mkdir(path)
-        a.make()
+#        a.make()
+        
+        p = Process(target=a.make())
+        p.start()
+        p.join()
+            
+        # Get a list of all successfully built models from a.outputs
+        ok_models = [x for x in a.outputs if x['failure'] is None]
+
+        # Rank the models by DOPE score
+        key = 'DOPE score'
+        if sys.version_info[:2] == (2,3):
+            # Python 2.3's sort doesn't have a 'key' argument
+            ok_models.sort(lambda a,b: cmp(a[key], b[key]))
+        else:
+            ok_models.sort(key=lambda a: a[key])
+        
+        # Get top model
+        m = ok_models[0]
+        print("Top model: %s (DOPE score %.3f)" % (m['name'], m[key]))        
+        
         for file in os.listdir("./"):
-            if file.startswith(self.uniprot_id) and file.endswith(".pdb"):
+            if file==m['name']:
                 os.rename("./"+file, "./structure/homology_models/{}_{}/".format(self.uniprot_id,
                                                                                  self.state)+output_file_name)
             elif file.startswith(self.uniprot_id):
-                os.rename("./"+file, "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)+file)
+                os.remove("./"+file)#, "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)+file)
             
 class HomologyMODELLER(automodel):
-    def __init__(self, env, alnfile, knowns, sequence, atom_selection):
-        super(HomologyMODELLER, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence)
+    def __init__(self, env, alnfile, knowns, sequence, assess_methods, atom_selection):
+        super(HomologyMODELLER, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence, 
+                                               assess_methods=assess_methods)
         self.atom_dict = atom_selection
         
     def select_atoms(self):
@@ -1199,6 +1233,8 @@ class Validation():
                             gn = str(gn).replace('.','x')
                         if len(gn_list)>0 and gn in gn_list:
                             pdb_array1[residue1['CA'].get_bfactor()] = residue1
+                        elif len(gn_list)==0:
+                            pdb_array1[residue1['CA'].get_bfactor()] = residue1
                     seq_num = int(residue1.get_id()[1])
                     if seq_num in seq_nums1:
                         if float(gn_list[seq_nums1.index(seq_num)].replace('x','.')) not in pdb_array1:
@@ -1219,6 +1255,8 @@ class Validation():
                             gn = str(gn).replace('.','x')
                         if len(gn_list)>0 and gn in gn_list:
                             pdb_array2[residue2['CA'].get_bfactor()] = residue2
+                        elif len(gn_list)==0:
+                            pdb_array2[residue2['CA'].get_bfactor()] = residue2
                     seq_num = int(residue2.get_id()[1])
                     if seq_num in seq_nums2:
                         if float(gn_list[seq_nums2.index(seq_num)].replace('x','.')) not in pdb_array2:
@@ -1226,7 +1264,7 @@ class Validation():
                         count2+=1
                 except:
                     pass
-        
+ 
         orig_atomlist, temp_atomlist = [], []               
         for gn1, res1 in pdb_array1.items():
             for gn2, res2 in pdb_array2.items():
