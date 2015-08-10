@@ -43,8 +43,12 @@ class Command(BaseCommand):
             pconf_class = pconf.protein.family.slug[:3]
             class_sps = structures.filter(protein_conformation__protein__parent__family__slug__startswith=pconf_class)
             sps = []
-            for structure in class_sps:
-                sps.append(structure.protein_conformation.protein.parent) # use the wild-type sequence
+            if class_sps.exists():
+                for structure in class_sps:
+                    sps.append(structure.protein_conformation.protein.parent) # use the wild-type sequence
+            else:
+                for structure in structures:
+                    sps.append(structure.protein_conformation.protein.parent) # use the wild-type sequence
 
             # overall
             template = self.find_segment_template(pconf, sps, segments)
