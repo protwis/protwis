@@ -20,7 +20,7 @@ Hi please select the pdb file to analyse:
 
 </td><td>
 {% for structure in structures %}
-    <a href="ligand?pdb={{pdbname}}&ligand={{structure.ligand.name}}">{{structure.ligand.name}}</a> Has {{structure.numRes}} residues interacting<br>
+   <a href="ligand?pdb={{pdbname}}&ligand={{structure.structure_ligand_pair__ligand__name}}">{{structure.structure_ligand_pair__ligand__name}}</a> Has {{structure.numRes}} residues interacting<br>
 {% empty %}
     No structures yet.
 {% endfor %}

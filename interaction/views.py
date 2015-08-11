@@ -56,7 +56,7 @@ def index(request):
 def list(request):
     form = PDBform()
     #structures = ResidueFragmentInteraction.objects.distinct('structure_ligand_pair__structure').all()
-    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index').annotate(num_ligands=Count('structure_ligand_pair', distinct = True),num_interactions=Count('pk', distinct = True))
+    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index','structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate( num_ligands=Count('structure_ligand_pair', distinct = True),num_interactions=Count('pk', distinct = True)).order_by('structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name')
     #structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index','structure_ligand_pair__structure').annotate(Count('structure_ligand_pair__ligand'))
     print(structures.count())
     for structure in structures:
@@ -70,7 +70,8 @@ def list(request):
 def view(request):
     pdbname = request.GET.get('pdb')
     form = PDBform()
-    structures = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).annotate(numRes = Count('residuefragmentinteraction__rotamer', distinct = True)).order_by('-numRes')
+    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name').filter(structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
+    print(structures)
     return render(request,'interaction/view.html',{'form': form, 'pdbname': pdbname, 'structures': structures})
 
 def ligand(request):
@@ -402,7 +403,7 @@ def download(request):
     pdbname = request.GET.get('pdb')
     ligand = request.GET.get('ligand')
 
-    pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(ligand__name=ligand).get()
+    pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(ligand__name=ligand).exclude(pdb_file__isnull=True).get()
     response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
     return response
 
