@@ -11,7 +11,7 @@ Hi please select the pdb file to analyse:
 
 
 {% for structure in structures %}
-    <a href="view?pdb={{structure.structure.pdb_code.index}}">{{structure.structure.pdb_code.index}} <br>
+    <a href="view?pdb={{structure.structure_ligand_pair__structure__pdb_code__index}}">{{structure.structure_ligand_pair__structure__pdb_code__index}}</a> | {{structure.num_ligands}} | {{structure.num_interactions}} <br>
 {% empty %}
     No structures yet.
 {% endfor %}
