@@ -34,15 +34,36 @@ class Command(BaseCommand):
                 self.stdout.write(Homology_model.statistics, ending='')
                 count+=1
 
-        Homology_model = HomologyModeling('agtr1_human', 'Inactive', ['Inactive'])
+        Homology_model = HomologyModeling('adrb1_melga', 'Inactive', ['Inactive'])
         alignment = Homology_model.run_alignment()
-        Homology_model.build_homology_model(alignment, switch_bulges=False, switch_constrictions=False, switch_rotamers=False)
+        Homology_model.build_homology_model(alignment)
                                         
-#        val = Validation()
-#        print('7TM RMSD: ', val.PDB_RMSD("./structure/PDB/3AYM.pdb", "./structure/homology_models/P31356_Inactive/modeller_test.pdb",
+        val = Validation()
+        # opsd_todpa
+#        print('7TM RMSD: ', val.PDB_RMSD("./structure/PDB/3AYM.pdb", "./structure/homology_models/P31356_Inactive/opsd_todpa_maestro.pdb",
 #                            assign_gns=[1,2]))
-#        print('binding pocket RMSD: ', val.PDB_RMSD("./structure/PDB/3AYM.pdb", "./structure/homology_models/P31356_Inactive/modeller_test.pdb",
+#        print('binding pocket RMSD: ', val.PDB_RMSD("./structure/PDB/3AYM.pdb", "./structure/homology_models/P31356_Inactive/opsd_todpa_maestro.pdb",
 #                           assign_gns=[1,2], gn_list=['2x53', '2x57', '3x33', '3x37', 'ECL2|14', 'ECL2|15', 'ECL2|16', 'ECL2|17', '5x44', '5x47', '6x48', '6x52', '7x38', '7x42'], seq_nums1=[83, 87, 116, 120, 185, 186, 187, 188, 205, 209, 274, 278, 301, 305], seq_nums2=[57, 61, 90, 94, 159, 160, 161, 162, 179, 183, 248, 252, 275, 279]))
+
+        # opsd_bovin
+#        print('7TM RMSD: ', val.PDB_RMSD("./structure/PDB/1U19.pdb", "./structure/homology_models/P02699_Inactive/opsd_bovin_maestro.pdb",
+#                            assign_gns=[1,2]))
+#        print('binding pocket RMSD: ', val.PDB_RMSD("./structure/PDB/1U19.pdb", "./structure/homology_models/P02699_Inactive/opsd_bovin_maestro.pdb",
+#                           assign_gns=[1,2], gn_list=['3x28', '3x32', '3x33', '3x37', '5x43', '5x47', '6x44', '6x48', '6x51', '7x43'], seq_nums1=[113,117,118,122,207,212,261,265,268,296], seq_nums2=[79,83,84,88,173,178,227,231,234,262]))
+
+
+        # lpar1_human
+#        print('7TM RMSD: ', val.PDB_RMSD("./structure/PDB/4Z34.pdb", "./structure/homology_models/Q92633_Inactive/lpar1_modeller_test3_1.pdb",
+#                            assign_gns=[1,2]))
+#        print('binding pocket RMSD: ', val.PDB_RMSD("./structure/PDB/4Z34.pdb", "./structure/homology_models/Q92633_Inactive/lpar1_modeller_test3_1.pdb",
+#                           assign_gns=[1,2], gn_list=['1x35', '2x57', '3x28', '3x29', '3x32', '3x33', '3x36', '5x40', '5x43', '6x48', '6x51', '6x54', '6x55', '7x35', '7x37', '7x38'], seq_nums1=[52, 102, 124, 125, 128, 129, 132, 207, 210, 271, 274, 277, 278, 294, 296, 297], seq_nums2=[7, 57, 79, 80, 83, 84, 87, 162, 165, 226, 229, 232, 233, 249, 251, 252]))
+
+        #agtr1_human
+#        print('7TM RMSD: ', val.PDB_RMSD("./structure/PDB/4YAY.pdb", "./structure/homology_models/P30556_Inactive/prime_bldstruct_run1_agtr1-out.pdb",
+#                            assign_gns=[1,2]))
+#        print('binding pocket RMSD: ', val.PDB_RMSD("./structure/PDB/4YAY.pdb", "./structure/homology_models/P30556_Inactive/prime_bldstruct_run1_agtr1-out.pdb",
+#                            assign_gns=[1,2], gn_list=['1x39', '2x53', '2x60', '2x64', '3x29', '3x32', '3x33', '3x36', '4x60', '7x35', '7x38', '7x42'], seq_nums1=[35, 77, 84, 88, 105, 108, 109, 112, 163, 285, 288, 292], seq_nums2=[9, 51, 58, 62, 79, 82, 83, 86, 137, 259, 262, 266]))
+
 
         self.stdout.write(Homology_model.statistics, ending='')
 
@@ -122,6 +143,8 @@ class HomologyModeling(object):
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
         main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
+        pprint.pprint(main_pdb_array)
+        print(self.main_structure)   
         
         # loops
         if loops==True:
@@ -393,8 +416,9 @@ class HomologyModeling(object):
             trimmed_residues=[]
             for seg_id, seg in main_pdb_array.items():
                 for key in seg:
-                    trimmed_residues.append(key)
-        
+                    if a.reference_dict[seg_id][str(key).replace('.','x')]!='-':
+                        trimmed_residues.append(key)
+                    
         # write to file
         path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
         if not os.path.exists(path):
@@ -404,7 +428,7 @@ class HomologyModeling(object):
         # Model with MODELLER
         self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
-                          self.uniprot_id, 100, "modeller_test.pdb", atom_dict=trimmed_res_nums)
+                          self.uniprot_id, 1, "modeller_test.pdb", atom_dict=trimmed_res_nums)
         
         with open('./structure/homology_models/{}_Inactive/{}.stat.txt'.format(self.uniprot_id, self.uniprot_id), 'w') as stat_file:
             for label, info in self.statistics.items():
@@ -627,12 +651,12 @@ sequence:{uniprot}::::::::
         path = "./structure/homology_models/{}".format(reference+"_"+self.state)
         if not os.path.exists(path):
             os.mkdir(path)
-#        a.make()
+        a.make()
         
-        p = Process(target=a.make())
-        p.start()
-        p.join()
-            
+#        p = Process(target=a.make())
+#        p.start()
+#        p.join()
+#            
         # Get a list of all successfully built models from a.outputs
         ok_models = [x for x in a.outputs if x['failure'] is None]
 
