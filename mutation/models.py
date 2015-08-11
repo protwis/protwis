@@ -2,10 +2,14 @@ from django.db import models
 
 # Create your models here.
 class Mutation(models.Model):
-    mutation_to = models.CharField(max_length=1) #amino acid one-letter
     protein = models.ForeignKey('protein.Protein') 
     residue = models.ForeignKey('residue.Residue', null=True) #If auxilliary it will be null
-    mutation_type = models.ForeignKey('MutationType')
+    mutation_type = models.ForeignKey('MutationType', null=True)
+
+    amino_acid = models.CharField(max_length=1) #amino acid one-letter
+
+    class Meta():
+        db_table = 'mutation'
 
 
 class MutationType(models.Model):
@@ -21,6 +25,7 @@ class MutationExperiment(models.Model):
     refs = models.ForeignKey('MutationRefs', null=True) #Change to a common model?
     protein = models.ForeignKey('protein.Protein')
     residue = models.ForeignKey('residue.Residue')
+    mutation = models.ForeignKey('Mutation')
     ligand = models.ForeignKey('MutationLigand', null=True) #Change to a ligand model?
     ligand_class = models.ForeignKey('MutationLigandClass') #Change to a ligand model?
     ligand_ref = models.ForeignKey('MutationLigandRef') #Change to a ligand model?
@@ -31,9 +36,7 @@ class MutationExperiment(models.Model):
     exp_measure = models.ForeignKey('MutationMeasure')
     exp_qual = models.ForeignKey('MutationQual')
 
-
     #Values
-    mutation_to = models.CharField(max_length=1)
     wt_value = models.DecimalField(max_digits=10, decimal_places=2)
     wt_unit = models.CharField(max_length=10)
     mu_value = models.DecimalField(max_digits=10, decimal_places=2)
@@ -43,7 +46,6 @@ class MutationExperiment(models.Model):
     def citation(self):
 
         temp = self.refs.citation.split(',')
-        
         return temp[0] + " et al ("+str(self.refs.year)+")"
 
     def getCalculation(self):
