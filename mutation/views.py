@@ -89,9 +89,9 @@ def render_mutations(request):
 
     print(segments)
 
-    mutations = Mutation.objects.filter(protein__in=proteins, residue__protein_segment__in=segments).prefetch_related('protein', 'residue__protein_segment','residue__display_generic_number', 'residue', 'exp_type', 'ligand_class', 'ligand','refs')
+    mutations = MutationExperiment.objects.filter(protein__in=proteins, residue__protein_segment__in=segments).prefetch_related('protein', 'residue__protein_segment','residue__display_generic_number', 'residue', 'exp_type', 'ligand_class', 'ligand','refs')
 
-
+    print(mutations)
     return render(request, 'mutation/list.html', {'mutations': mutations})
 
 # Create your views here.
@@ -101,8 +101,8 @@ def index(request):
 
 # Create your views here.
 def ajax(request, slug, **response_kwargs):
-    mutations = Mutation.objects.filter(protein__entry_name=slug).order_by('residue__sequence_number')
-    print(mutations)
+    mutations = MutationExperiment.objects.filter(protein__entry_name=slug).order_by('residue__sequence_number')
+    #print(mutations)
     #return HttpResponse("Hello, world. You're at the polls index. "+slug)
     jsondata = {}
     for mutation in mutations:
@@ -125,7 +125,7 @@ def importmutation(request):
     inserted = 0
     for r in rows:
         print(inserted,skipped)
-        print(r)
+        #print(r)
         raw_id = insert_raw(r)
         ref_id = check_reference(r['reference'])
         lig_id = get_ligand(r)
@@ -164,11 +164,10 @@ def importmutation(request):
         obj, created = MutationLigandClass.objects.get_or_create(classname=r['ligand_class'])
         ligclass_id = obj
 
-
         obj, created = MutationLigandRef.objects.get_or_create(reference=r['exp_mu_ligand_ref'])
         ligref_id = obj
 
-        obj, created = MutationType.objects.get_or_create(type=r['exp_type'])
+        obj, created = MutationExperimentalType.objects.get_or_create(type=r['exp_type'])
         exp_type_id = obj
 
         obj, created = MutationFunc.objects.get_or_create(func=r['exp_func'])
@@ -185,6 +184,9 @@ def importmutation(request):
 
         obj, created =  MutationOptional.objects.get_or_create(type=r['opt_type'], wt=r['opt_wt'], mu=r['opt_mu'], sign=r['opt_sign'], percentage=r['opt_percentage'], qual=r['opt_qual'], agonist=r['opt_agonist'])
         exp_opt_id = obj
+
+        obj, created =  Mutation.objects.get_or_create(amino_acid=r['mutation_to'],protein=protein_id, residue=residue_id)
+        mutation_id = obj
 
 
         
@@ -210,7 +212,7 @@ def importmutation(request):
                 if foldchange<1: foldchange = -round((1/foldchange),3);
         
 
-        obj, created = Mutation.objects.get_or_create(
+        obj, created = MutationExperiment.objects.get_or_create(
         refs=ref_id, 
         protein=protein_id, 
         residue=residue_id, #MISSING 
@@ -224,8 +226,7 @@ def importmutation(request):
         exp_measure = exp_measure_id,
         exp_qual = exp_qual_id,
 
-
-        mutation_to=r['mutation_to'], 
+        mutation=mutation_id, 
         wt_value=r['exp_wt_value'], #
         wt_unit=r['exp_wt_unit'], 
 
@@ -237,7 +238,7 @@ def importmutation(request):
         #added_by='munk', 
         #added_date=datetime.now()
         )
-        print(foldchange)
+        #print(foldchange)
         mut_id = obj.id
 
 

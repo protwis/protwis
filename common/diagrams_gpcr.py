@@ -53,11 +53,18 @@ class DrawSnakePlot(Diagram):
         print("residues",len(self.sequence))
         i = 0
         for r in self.sequence:
-            segment = str(r.protein_segment.slug)
+            if r.protein_segment:
+                segment = str(r.protein_segment.slug)
+            elif r.segment_slug: #from family aligment
+                segment = str(r.segment_slug)
+
             if segment not in self.segments: self.segments[segment] = []
             label = ''
             displaylabel = ''
-            if r.generic_number: label = r.generic_number.label
+            if r.generic_number: 
+                label = r.generic_number.label
+            elif hasattr(r, 'family_generic_number'):
+                label = r.family_generic_number
             if r.display_generic_number: displaylabel = r.display_generic_number.label
             displaylabel = r.amino_acid + str(r.sequence_number) + " \n " + displaylabel
             if hasattr(r, 'extra'):
@@ -599,8 +606,8 @@ class DrawSnakePlot(Diagram):
             self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"short\");' class='"+name+" short' x="+str(Fx)+" y="+str(Fy)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
 
+            if name not in self.segments: continue
             rs = self.segments[name] #get residues
-
             #print("residues in ",name,len(rs))
 
             y_indent = y_indent*len(rs)/5 #get an approx need for y_indent for size of loop
@@ -938,6 +945,12 @@ class DrawHelixBox(Diagram):
                     segment_lists[r.protein_segment.slug] = []
 
                 segment_lists[r.protein_segment.slug].append(r)
+            elif r.segment_slug: #from aligment
+                if r.segment_slug not in segment_lists:
+                    segment_lists[r.segment_slug] = []
+
+                segment_lists[r.segment_slug].append(r)
+
 
 
         for i in range(1,len(self.plot_data[self.family]['coordinates'])):
@@ -969,9 +982,14 @@ class DrawHelixBox(Diagram):
 
         for r in residuelist:
             displaylabel = r.amino_acid+str(r.sequence_number)
+            generic_number = ''
+            if r.generic_number: 
+                generic_number = r.generic_number.label
+            elif r.family_generic_number:
+                generic_number = r.family_generic_number
             if r.display_generic_number: displaylabel += "\n"+r.display_generic_number.label
             if hasattr(r, 'extra'): displaylabel += "\n" + r.extra
-            sequence[int(r.generic_number.label[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number,'generic_number':r.generic_number.label,'displaylabel':displaylabel}
+            sequence[int(generic_number[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number,'generic_number':generic_number,'displaylabel':displaylabel}
 
         # box size
         numResPerSide = 5
