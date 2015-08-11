@@ -4,7 +4,7 @@
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-<!--    <link rel="stylesheet" href="{% static 'home/css/dataTables.tableTools.min.css' %}" type="text/css" />-->
+    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
 {% endblock %}
 
 {% block addon_js %}
@@ -34,6 +34,7 @@
                 initComplete: function () {
                     $('#crystal_structures').dataTable().columnFilter({
                         sPlaceHolder: "head:after",
+                        sRangeFormat: "{from}:{to}",
                         aoColumns: [
                             { type: "select" }, //protein name
                             { type: "select" }, //class
@@ -50,7 +51,7 @@
                     });
                 }
             });
-            $.datepicker.regional[""].dateFormat = "M d, yyyy";
+            $.datepicker.regional[""].dateFormat = "yy-mm-dd";
             $.datepicker.setDefaults($.datepicker.regional['']);
             $('#crystal_structures tbody').on('click', 'tr', function () {
                 $(this).toggleClass('selected');
@@ -163,7 +164,7 @@
                     <!--<td>{{ crystal.ligand.role.role }}</td>-->
                     <td>{{ crystal.preferred_chain }}</td>
                     <td>{{ crystal.publication.web_link.index }}</td>
-                    <td>{{ crystal.publication_date }}</td>
+                    <td>{{ crystal.publication_date|date:"Y-m-d" }}</td>
                     <td>{{ crystal.stabilizing_agents.all|join_attr:"name" }}</td>
                 </tr>
                 {% endfor %}
