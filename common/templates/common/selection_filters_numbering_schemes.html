@@ -1,0 +1,13 @@
+<b>Numbering schemes</b>
+<div class="btn-group btn-group-sm" role="group">
+   <a href="javascript:void(0)" onclick="SelectionSchemesPredefined('All')"
+        class="btn btn-primary{% if selection.numbering_schemes|length == gns|length %} active{% endif %}">
+        All
+    </a><br /><br />
+    {% for gn in gns %}
+    <a href="javascript:void(0)" onclick="SelectionSchemesToggle('{{ gn.id }}')"
+       class="btn btn-primary {% for sel_gns in selection.numbering_schemes %}{% if gn == sel_gns.item %} active {% endif %}{% endfor %}">
+        {{ gn.name }}
+    </a>
+    {% endfor %}
+</div>

@@ -1,0 +1,165 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block addon_css %}
+<link href="{% static 'home/css/alignment.css' %}" rel="stylesheet">
+<style>
+.smiles-tooltip + .tooltip > .tooltip-inner {
+    max-width: 350px;
+    /* If max-width does not work, try using width instead */
+    width: 350px; 
+    height: 350px; 
+    background-color: #F5F5F5;
+    color: #202020;
+}
+
+.citation-tooltip + .tooltip > .tooltip-inner {
+
+    background-color: #F5F5F5;
+    color: #202020;
+}
+</style>
+
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            var table = $('#mutations').DataTable({
+                "scrollX": true,
+                "scrollY": 600,
+                "bScrollCollapse": true,
+                'paging': false,
+                orderCellsTop: true,
+                "autoWidth": true,
+                dom: 'T<"clear">lfrtip',
+                "aoColumnDefs": [
+                    { "sType": "string", "aTargets": [0] },
+                ],
+                tableTools: {
+                    "sRowSelect": "multi",
+                    
+                },
+                initComplete: function () {
+                    $('#mutations').dataTable().columnFilter({
+                        sPlaceHolder: "head:after",
+                        aoColumns: [
+                            { type: "select" }, //protein name
+                            { type: "select" }, //Alt Position
+                            { type: "select" }, //Position
+                            { type: "select" }, //Segment
+                            { type: "text" }, //Mutation
+                            { type: "text" }, //Foldchange
+                            { type: "select" }, //Exp type
+                            { type: "text" }, //ligand
+                            { type: "text" }, //reference
+                        ]
+                    });
+                }
+            });
+
+            $('[data-toggle="tooltip"]').tooltip(); 
+            //$('[data-toggle="tooltip"]').tooltip({html:true});
+
+            });
+    </script> 
+{% endblock %}
+
+{% block content %}
+{% block buttons %}
+<!-- Download button -->
+<div class="btn-group">
+  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+    aria-expanded="false">
+    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+  </button>
+  <ul class="dropdown-menu">
+    <li><a href="/alignment/fasta">Alignment (fasta)</a></li>
+    <li><a href="/alignment/csv">Spreadsheet (csv)</a></li>
+</div>
+{% endblock %}
+<!-- sequence alignment starts -->
+
+    {% if mutations %}              
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+            <table width="100%" class="display" id="mutations">
+
+                <thead>
+                    <tr>
+                        <th>Protein name</th>
+                        <th>Alt. Position</th>
+                        <th>Position</th>
+                        <th>Segment</th>
+                        <th>Mutation</th>
+                        <th>FoldChange or Qual</th>
+                        <th>Exp Type</th>
+                        <th>Ligand</th>
+                        <th>Reference</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th>Protein name</th>
+                        <th>Alt. Position</th>
+                        <th>Position</th>
+                        <th>Mutation</th>
+                        <th>FoldChange or Qual</th>
+                        <th>Exp Type</th>
+                        <th>Ligand</th>
+                        <th>Reference</th>
+                    </tr>
+                </tfoot>
+                {% for mutation in mutations.select_related.all %}
+                <tr>
+                <td><a href="/protein/{{mutation.protein.entry_name}}">{{mutation.protein.entry_name}}</a></td>
+                <td>{{mutation.residue.display_generic_number.label}}</td>
+                <td>{{mutation.residue.sequence_number}}</td>
+                <td>{{mutation.residue.protein_segment.slug}}</td>
+                <td>{{mutation.residue.amino_acid}} => {{mutation.mutation_to}}</td>
+
+                <td><a href="#" data-toogle="tooltip"   data-container="body" data-html="true" data-original-title="{{mutation.getCalculation}}" data-placement="top"> {{mutation.getFoldorQual|safe}}</a></td>
+
+                <td>{{mutation.exp_type.type}} ({{mutation.exp_func.func}})</td>
+                <td>
+                <a class="smiles-tooltip" data-toggle="tooltip"  data-html="true" data-original-title="<img src='http://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/{{mutation.ligand.longseq|urlencode}}/PNG'><br>{{mutation.ligand.name}}<br>{{mutation.ligand_class.classname}}" data-placement="right">{{mutation.ligand.name}}</a></td>
+               <!--  <td>{{mutation.ligand_class.classname}}</td> -->
+                <td>
+                <a class="citation-tooltip" target="_blank" href="{{mutation.refs.link}}" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="{{mutation.refs.title}}" data-placement="left" >{{mutation.citation}}</a></td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    {% else %}
+        <p> Ooops! There is no data to show here yet. </p>
+    {% endif %}
+
+<!-- sequence alignment ends -->
+{% endblock %}
+

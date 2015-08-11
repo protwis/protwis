@@ -320,8 +320,13 @@ class Alignment:
 
                         # append the residue to the matrix
                         if r.generic_number:
+                            # FIXME this is only for making it easier to assign X.50 numbers, REMOVE THIS
+                            gen_num = int(pos.split('x')[1])
+                            class_gen_num = int(r.display_generic_number.label.split('x')[1])
+                            x50_seq_num = r.sequence_number + (class_gen_num - gen_num)
+
                             s.append([pos, r.display_generic_number.label, r.amino_acid,
-                                r.display_generic_number.scheme.short_name, r.sequence_number])
+                                r.display_generic_number.scheme.short_name, r.sequence_number, x50_seq_num])
                         else:
                             s.append([pos, "", r.amino_acid, "", r.sequence_number])
 

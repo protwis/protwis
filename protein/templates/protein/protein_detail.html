@@ -23,12 +23,12 @@
     <div class="col-md-10">
     {{ p.get_helical_box }}
     <br>
-    <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_{{ p.entry_name }}.png');"> Download as PNG (right-click)</a>
-    <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_{{ p.entry_name }}"> Download as SVG (right-click)</a>
+    <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_{{ p.entry_name }}.png', {scale: 3});"> Download as PNG</a>
+    <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_{{ p.entry_name }}"> Download as SVG</a>
     {{ p.get_snake_plot }}
     <br>
-    <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ p.entry_name }}.png');"> Download as PNG (right-click)</a>
-    <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_{{ p.entry_name }}"> Download as SVG (right-click)</a>
+    <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ p.entry_name }}.png', {scale: 3});"> Download as PNG</a>
+    <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_{{ p.entry_name }}"> Download as SVG</a>
     </div>
 </div>
 

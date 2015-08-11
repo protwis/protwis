@@ -18,16 +18,17 @@ def uniqid(prefix='', more_entropy=False):
 class Diagram:
     def create(self, content,sizex,sizey,name):
         #diagram_js = self.diagramJS()
-        return ("<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js\"></script><svg id=\""+name+"\" " +
+        return ("<svg id=\""+name+"\" " +
         "xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""+str(sizex)+"\" height=\""+str(sizey)+"\" " +
         "style='stroke-width: 0px; background-color: white;'>\n"+content+"</svg>" +
         self.drawColorPanel() ) #width=\"595\" height=\"430\"
 
     def drawToolTip(self):
-        output = """<g id='tool-tip-{}' transform='translate(0,0)' visibility='hidden'>
+        output2 = """<g id='tool-tip-{}' transform='translate(0,0)' visibility='hidden'>
             <rect x='0' y='-40' width='1' height='25' stroke='black' fill='white' stroke-width='1' />
             <text x='0' y='-23' text-anchor='middle' font-family='Arial' font-size='12' fill='black'></text>
             </g>""".format(self.type)
+        output= ""
         
         return output
 
@@ -41,6 +42,14 @@ class Diagram:
           margin: 1px;
           border-radius: 5px;
           border: 2px solid #000;
+        }
+
+        .long {
+          display: none
+        }
+        .tooltip-inner {
+            white-space:pre-wrap;
+            max-width:none;
         }
         </style>
         """
@@ -70,7 +79,11 @@ class Diagram:
         output = ("<br>Pick color:" +
             colors )
 
+        print(str(self.receptorId))
+
         output += '<br><button style="width:120px;" onclick="applyPresentColors(\''+self.type+'\')">Properities</button> <button style="width:120px;" onclick="resetColors(\''+self.type+'\')">Clear</button>'
+        output += '<br><button style="width:120px;" onclick="ajaxMutants(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Mutants</button>'
+        output += ' <button style="width:220px;" onclick="ajaxInteractions(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Interactions from Crystals</button>'
 
         return boxstyle+ output
 
@@ -88,12 +101,10 @@ class Diagram:
         # }
         output =  """
             <circle class='{} rcircle' cx='{}' cy='{}' r='{}' stroke='black' stroke-width='2' fill='{}' 
-            fill-opacity='1' id='{}' onclick=''
-            onmouseover='showToolTip({},{},"{}","id","{}");' onmouseout='hideToolTip("{}");'/>
-            <text x='{}' y='{}' text-anchor='middle' font-family='helvetica' font-size='16' fill='tfill'
-            id='{}' class='rtext {}'
-            onmouseover='showToolTip({},{},"{}","id","{}");' onmouseout='hideToolTip("{}");'>{}</text>
-            """.format(resclass,x,y,radius,cfill,id,x,y,label,self.type,self.type,x,y+6,idtext,resclass,x,y,label,self.type,self.type,aa) #aa
+            fill-opacity='1' id='{}' title='{}' original_title='{}'/>
+            <text x='{}' y='{}' text-anchor='middle' font-family='helvetica' font-size='16' fill=''
+            id='{}' class='rtext {}' title='{}' original_title='{}'> {} </text>
+            """.format(resclass,x,y,radius,cfill,id,label,label,x,y+6,idtext,resclass,label,label,aa) #aa
         return output
 
 

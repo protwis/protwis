@@ -147,7 +147,9 @@ def check_reference(r):
 			#return e.id
 			return e
 		else:
-			return 0
+			print('No reference?')
+			print(r)
+			return None
 
 def get_ligand(r):
 	
@@ -178,7 +180,7 @@ def get_ligand(r):
 			e.save()
 			return e
 		else:
-			return 0
+			return None
 
 
 		#$q = "INSERT INTO ligands (idtype,name,idid,longseq) VALUES ('$ligand_type','$ligand_name','$ligand_id','$smiles')";

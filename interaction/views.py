@@ -25,6 +25,7 @@ import yaml
 from operator import itemgetter
 from datetime import datetime
 import re
+import json
 
 AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
      'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
@@ -372,6 +373,22 @@ def download(request):
     pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(ligand__name=ligand).get()
     response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
     return response
+
+def ajax(request, slug, **response_kwargs):
+    interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name=slug).order_by('rotamer__residue__sequence_number')
+    print(interactions)
+    #return HttpResponse("Hello, world. You're at the polls index. "+slug)
+    jsondata = {}
+    for interaction in interactions:
+        sequence_number = interaction.rotamer.residue.sequence_number
+        aa = interaction.rotamer.residue.amino_acid
+        interactiontype = interaction.interaction_type.name
+        if sequence_number not in jsondata: jsondata[sequence_number] = []
+        jsondata[sequence_number].append([aa,interactiontype])
+
+    jsondata = json.dumps(jsondata)
+    response_kwargs['content_type'] = 'application/json'
+    return HttpResponse(jsondata, **response_kwargs)
 
 def pdbfragment(request):      
     pdbname = request.GET.get('pdb')

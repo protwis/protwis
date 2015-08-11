@@ -1,0 +1,39 @@
+﻿{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block addon_css %}
+<link href="{% static 'home/css/residue_table.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<table>
+    <!-- Header -->
+    <thead><tr>
+    {% for elem, tooltip in header %}
+        <th class="rt-header">
+        <div data-toggle="tootltip" data-placement="top" data-html="true" title="{{ tooltip|safe }}">
+            {{ elem }}
+        </div>
+        </th>
+    {% endfor %}
+    </tr></thead>
+    {% for segment in segments %}
+        <tr><td colspan="{{ header|length }}">{{ segment }}</td></tr>
+            {% for key, data_row in data.items %}
+                {% if key == segment %}
+                    {% for row in data_row %}
+                        <tr>
+                        {% for gn in row %}
+                            <td class="{% if forloop.parentloop.counter|divisibleby:2 %}rt-row-even{% else %}rt-row-odd{% endif %}">{{ gn }}</td>
+                        {% endfor %}
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+    {% endfor %}
+</table>
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/alignment.js' %}"></script>
+{% endblock %}
