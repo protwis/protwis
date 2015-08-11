@@ -2,24 +2,25 @@ from django.db import models
 
 from protein.models import Protein
 from residue.models import Residue
-#from mutation.models import Mutation, MutationType ## check ??
+from mutation.models import Mutation ## check ??
 
 # include models for Construct, prtn_order, exprssn, solubilisation, purifcn, and crystallisation 
 
 class Construct(models.Model):
 
-    protein = models.ForeignKey('protein.Protein')
+    parent = models.ForeignKey('self', null=True)
+    protein = models.ForeignKey('protein.Protein') 
 #    name = models.CharField('protein.Protein',max_length=200) # can get details like name,seq,pdbcode, ligand etc. from protein model
     mutation = models.TextField(max_length=100) # how to show [position & reasons]?  ###comma separated data for listing many mutations
-####    mutation_to = models.ForeignKey('mutation.mutation_to')
-####    mutation_reason = models.ForeignKey('mutation.MutationType')
+####    mutation_to = models.ForeignKey('mutation.amino_acid') ## linked from Protein model
+####    mutation_reason = models.ForeignKey('mutation.type')
 
     deletion = models.TextField(max_length=100)  #comma separated data
     aux_protein = models.ForeignKey('AuxProtein') 
-    expression = models.ForeignKey('ConstructExpression') 
-    solubilization = models.ForeignKey('ConstructSolubilization')
-    purification = models.ForeignKey('ConstructPurification')
-    crystallization = models.ForeignKey('ConstructCrystallization')## NOTE: If you need to create a relationship on a model that has not yet been defined, you can use the name of the model, rather than the model object itself
+#   expression = models.ForeignKey('ConstructExpression') 
+ #  solubilization = models.ForeignKey('ConstructSolubilization')
+  # purification = models.ForeignKey('ConstructPurification')
+   #crystallization = models.ForeignKey('ConstructCrystallization')## NOTE: If you need to create a relationship on a model that has not yet been defined, you can use the name of the model, rather than the model object itself
 
      def __str__(self):
         return self.protein.slug
@@ -143,6 +144,7 @@ class ChromatographyType(models.Model):
 
 class ConstructExpression(models.Model):
 
+    construct_sequence = models.ForeignKey('Construct') #since Expression construct can vary from  crystallization construct so the experiments refer to construct instead
     expression_method = models.CharField(max_length=100)
     host_cell_type = models.CharField(max_length=100)
     host_cell = models.CharField(max_length=100)
@@ -157,6 +159,7 @@ class ConstructExpression(models.Model):
 
 class ConstructSolubilization(models.Model):
 
+    construct_sequence = models.ForeignKey('Construct')
     chemical_list = models.ForeignKey('ChemicalList') #includes chem name, type[detergent & solubilisation_lipid]  and concentration
     chemical_modification = models.ForeignKey('ChemicalModification')#more than one chem_modfcn ## remove field, not easily searchable?
     remarks = models.TextField()
@@ -170,6 +173,7 @@ class ConstructSolubilization(models.Model):
 
 class ConstructPurification(models.Model):
 
+    construct_sequence = models.ForeignKey('Construct')
     chromatography_type = models.ForeignKey('ChromatographyType') 
     enzyme_modification = models.ForeignKey('EnzymeModification')
     chemical_modification = models.ForeignKey('ChemicalModification')
@@ -184,6 +188,7 @@ class ConstructPurification(models.Model):
 
 class ConstructCrystallization(models.Model):
 
+    construct_sequence = models.ForeignKey('Construct')
     crystal_type = models.ForeignKey('CrystallizationMethodTypes') # if Many crystallography types for one construct :named as separate Xtal Exp
     chemical_list =  models.ForeignKey('ChemicalList') #chemical type= LCPlipid for LCP exp, else type= lipid for in surfo exp --- includes info on lcp_lipidic_condition, protein_component etc.
     method = models.TextField(max_length=100) # more than one solved by comma separated
@@ -223,6 +228,8 @@ class CrystallizationMethodTypes(models.Model):
     class Meta():
         db_table = 'crystallization_method_types'  
 
+
+## Construct refers to Expression Construct (longer seq) and is parent class. Crystallization construct is often shorter (removal of linkers, tags) and maybe "child" of the Construct class thus inheriting all features of it but present only if crystallizationConstruct sequence different than that of ExpressionConstruct sequence
 
 class CrystallizationCondition(models.Model):   #called one or many times when explicitly fetched within ConstructCrystallization
 
