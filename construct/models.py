@@ -10,8 +10,8 @@ class Construct(models.Model):
 
     parent = models.ForeignKey('self', null=True)
     protein = models.ForeignKey('protein.Protein') 
-#    name = models.CharField('protein.Protein',max_length=200) # can get details like name,seq,pdbcode, ligand etc. from protein model
-    mutation = models.TextField(max_length=100) # how to show [position & reasons]?  ###comma separated data for listing many mutations
+## Can get details like name,seq,pdbcode, ligand etc. from protein model
+## Mutation data can also be extracted from protein entry [since here 2 protein entries will be made during db buildup : Expression construct protein n Cyrstallzn construct protein] both position & reasons of mutation can be accessed from "mutation.Mutation()" class/model in VIEWS.py! 
 ####    mutation_to = models.ForeignKey('mutation.amino_acid') ## linked from Protein model
 ####    mutation_reason = models.ForeignKey('mutation.type')
 
@@ -20,9 +20,10 @@ class Construct(models.Model):
 #   expression = models.ForeignKey('ConstructExpression') 
  #  solubilization = models.ForeignKey('ConstructSolubilization')
   # purification = models.ForeignKey('ConstructPurification')
-   #crystallization = models.ForeignKey('ConstructCrystallization')## NOTE: If you need to create a relationship on a model that has not yet been defined, you can use the name of the model, rather than the model object itself
+   #crystallization = models.ForeignKey('ConstructCrystallization')
+## NOTE: If you need to create a relationship on a model that has not yet been defined, you can use the name of the model, rather than the model object itself
 
-     def __str__(self):
+    def __str__(self):
         return self.protein.slug
     
     class Meta():
@@ -31,10 +32,11 @@ class Construct(models.Model):
 
 class AuxProtein(models.Model):
 
-    ptn_type = models.ForeignKey('AuxProteinType')
+    protein_type = models.ForeignKey('AuxProteinType')
     name = models.CharField(max_length=100, blank=True)
     sequence = models.TextField(blank=True)
-    mutation = models.TextField(max_length=100, blank=True) #comma separated data
+## ???? AuxProtein mutation info also accessed from Protein model  ???
+#    mutation = models.TextField(max_length=100, blank=True) #comma separated data
 ####    mutation_to = models.ForeignKey('mutation.mutation_to')
 ####    mutation_reason = models.ForeignKey('mutation.MutationType')
     deletion = models.TextField(max_length=100, blank=True) #comma separated data
