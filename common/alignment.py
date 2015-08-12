@@ -514,39 +514,14 @@ class Alignment:
             if i == 0:
                 continue
 
-            identities = []
-            similarities = []
-            similarity_scores = []
-            for j, s in enumerate(protein.alignment):
-                for k, p in enumerate(s):
-                    reference_residue = self.proteins[0].alignment[j][k][2]
-                    protein_residue = self.proteins[i].alignment[j][k][2]
-                    if not (reference_residue in self.gaps and protein_residue in self.gaps):
-                        # identity
-                        if protein_residue == reference_residue:
-                            identities.append(1)
-                        else:
-                            identities.append(0)
-
-                        # similarity
-                        if reference_residue in self.gaps or protein_residue in self.gaps:
-                            similarities.append(0)
-                            similarity_scores.append(0)
-                        else:
-                            pair = (protein_residue, reference_residue)
-                            similarity = self.score_match(pair, MatrixInfo.blosum62)
-                            if similarity > 0:
-                                similarities.append(1)
-                            else:
-                                similarities.append(0)
-                            similarity_scores.append(similarity)
+            # calculate identity, similarity and similarity score to the reference
+            calc_values = self.pairwise_similarity(self.proteins[0], self.proteins[i])
             
             # update the protein
-            if identities:
-                self.proteins[i].identity = "{:10.0f}".format(sum(identities) / len(identities) * 100)
-            if similarities:
-                self.proteins[i].similarity = "{:10.0f}".format(sum(similarities) / len(similarities) * 100)
-                self.proteins[i].similarity_score = sum(similarity_scores)
+            if calc_values:
+                self.proteins[i].identity = calc_values[0]
+                self.proteins[i].similarity = calc_values[1]
+                self.proteins[i].similarity_score = calc_values[2]
 
         # order protein list by similarity score
         ref = self.proteins.pop(0)
@@ -554,6 +529,44 @@ class Alignment:
         if order_by_value:
             self.proteins.sort(key=lambda x: getattr(x, self.order_by), reverse=True)
         self.proteins.insert(0, ref)
+
+    def pairwise_similarity(self, protein_1, protein_2):
+        """Calculate the identity, similarity and similarity score between a pair of proteins"""
+        identities = []
+        similarities = []
+        similarity_scores = []
+        for j, s in enumerate(protein_2.alignment):
+            for k, p in enumerate(s):
+                reference_residue = protein_1.alignment[j][k][2]
+                protein_residue = protein_2.alignment[j][k][2]
+                if not (reference_residue in self.gaps and protein_residue in self.gaps):
+                    # identity
+                    if protein_residue == reference_residue:
+                        identities.append(1)
+                    else:
+                        identities.append(0)
+
+                    # similarity
+                    if reference_residue in self.gaps or protein_residue in self.gaps:
+                        similarities.append(0)
+                        similarity_scores.append(0)
+                    else:
+                        pair = (protein_residue, reference_residue)
+                        similarity = self.score_match(pair, MatrixInfo.blosum62)
+                        if similarity > 0:
+                            similarities.append(1)
+                        else:
+                            similarities.append(0)
+                        similarity_scores.append(similarity)
+        
+        # format the calculated values
+        if identities and similarities:
+            identity = "{:10.0f}".format(sum(identities) / len(identities) * 100)
+            similarity = "{:10.0f}".format(sum(similarities) / len(similarities) * 100)
+            similarity_score = sum(similarity_scores)
+            return identity, similarity, similarity_score
+        else:
+            return False
 
     def score_match(self, pair, matrix):
         if pair not in matrix:
