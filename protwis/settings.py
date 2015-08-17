@@ -37,6 +37,7 @@ INSTALLED_APPS = (
     'residue',
     'alignment',
     'similaritysearch',
+    'similaritymatrix',
     'structure',
     'ligand',
     'interaction',

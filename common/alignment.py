@@ -24,6 +24,7 @@ class Alignment:
         self.generic_numbers = OrderedDict()
         self.positions = []
         self.consensus = []
+        self.similarity_matrix = OrderedDict()
         self.amino_acids = []
         self.amino_acid_stats = []
         self.features = []
@@ -529,6 +530,32 @@ class Alignment:
         if order_by_value:
             self.proteins.sort(key=lambda x: getattr(x, self.order_by), reverse=True)
         self.proteins.insert(0, ref)
+
+    def calculate_similarity_matrix(self):
+        """Calculate a matrix of sequence identity/similarity for every selected protein"""
+        self.similarity_matrix = OrderedDict()
+        for i, protein in enumerate(self.proteins):
+            protein_key = protein.protein.entry_name
+            protein_name = "[" + protein.protein.species.common_name + "] " + protein.protein.name
+            self.similarity_matrix[protein_key] = {'name': protein_name, 'values': []}
+            for k, protein in enumerate(self.proteins):
+                # calculate identity, similarity and similarity score to the reference
+                calc_values = self.pairwise_similarity(self.proteins[i], self.proteins[k])
+                if k == i:
+                    value = '-'
+                elif k < i:
+                    value = calc_values[1].strip()
+                elif k > i:
+                    value = calc_values[0].strip()
+                
+                if value == '-':
+                    color_class = "-"
+                else:
+                    if int(value) < 10:
+                        color_class = 0
+                    else:
+                        color_class = str(value)[:-1]
+                self.similarity_matrix[protein_key]['values'].append([value, color_class])
 
     def pairwise_similarity(self, protein_1, protein_2):
         """Calculate the identity, similarity and similarity score between a pair of proteins"""

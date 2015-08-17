@@ -15,6 +15,7 @@ urlpatterns = patterns('',
     url(r'^residue/', include('residue.urls')),
     url(r'^alignment/', include('alignment.urls')),
     url(r'^similaritysearch/', include('similaritysearch.urls')),
+    url(r'^similaritymatrix/', include('similaritymatrix.urls')),
     url(r'^structure/',include('structure.urls')),
 )
 
