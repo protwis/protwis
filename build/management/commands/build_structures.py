@@ -228,8 +228,7 @@ class Command(BaseCommand):
                             s.publication = p
                     
                     
-                    # # get the PDB file and save to DB
-
+                    # get the PDB file and save to DB
                     url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
                     pdbdata = urlopen(url).read().decode('utf-8')
                     pdbdata, created = PdbData.objects.get_or_create(pdb=pdbdata)
@@ -275,6 +274,7 @@ class Command(BaseCommand):
                                     l.ambigious_alias = False
                                     l.save()
                                     l.load_by_name(ligand['name'])
+                            # save ligand
                                 l.save()
 
                             # elif ligand['inchi']:
@@ -282,7 +282,6 @@ class Command(BaseCommand):
                             else:
                                 continue
 
-                            # save ligandΩ
 
                             if l:
                                 if ligand['role']:
@@ -308,9 +307,9 @@ class Command(BaseCommand):
                             'name': 'Bulge'})
                         for segment, bulges in sd['bulges'].items():
                             for bulge in bulges:
-                                gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge, defaults={
-                                    'protein_segment': ProteinSegment.objects.get(slug=segment),
-                                    'scheme': ResidueNumberingScheme.objects.get(slug=scheme.slug)})
+                                print(bulge)
+                                gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge, scheme__slug=scheme.slug, defaults={
+                                    'protein_segment': ProteinSegment.objects.get(slug=segment)})
                                 pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pab, generic_number=gn)
                                 s.protein_anomalies.add(pa)
                     if 'constrictions' in sd and sd['constrictions']:
@@ -318,9 +317,9 @@ class Command(BaseCommand):
                             'name': 'Constriction'})
                         for segment, constrictions in sd['constrictions'].items():
                             for constriction in constrictions:
-                                gn, created = ResidueGenericNumber.objects.get_or_create(label=constriction, defaults={
-                                    'protein_segment': ProteinSegment.objects.get(slug=segment),
-                                    'scheme': ResidueNumberingScheme.objects.get(slug=scheme.slug)})
+                                print(constriction)
+                                gn, created = ResidueGenericNumber.objects.get_or_create(label=constriction, scheme__slug=scheme.slug, defaults={
+                                    'protein_segment': ProteinSegment.objects.get(slug=segment)})
                                 pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pac, generic_number=gn)
                                 s.protein_anomalies.add(pa)
                     
