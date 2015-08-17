@@ -33,7 +33,7 @@ class Command(BaseCommand):
     logger = logging.getLogger(__name__)
 
     # source file directory
-    structure_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdb_structures'])
+    structure_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
 
     def handle(self, *args, **options):
         # delete any existing structure data
@@ -229,8 +229,16 @@ class Command(BaseCommand):
                     
                     
                     # get the PDB file and save to DB
-                    url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
-                    pdbdata = urlopen(url).read().decode('utf-8')
+                    pdb_path = self.structure_data_dir+'/../pdbs/'+sd['pdb']+'.pdb'
+                    if not os.path.isfile(pdb_path):
+                        url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
+                        pdbdata = urlopen(url).read().decode('utf-8')
+                        f=open(pdb_path,'w')
+                        f.write(pdbdata)
+                        f.close();
+                    else:
+                        pdbdata = open(pdb_path, 'r').read()
+                    
                     pdbdata, created = PdbData.objects.get_or_create(pdb=pdbdata)
                     s.pdb_data = pdbdata
 
@@ -307,9 +315,9 @@ class Command(BaseCommand):
                             'name': 'Bulge'})
                         for segment, bulges in sd['bulges'].items():
                             for bulge in bulges:
-                                print(bulge)
-                                gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge, scheme__slug=scheme.slug, defaults={
-                                    'protein_segment': ProteinSegment.objects.get(slug=segment)})
+                                gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge, defaults={
+                                    'protein_segment': ProteinSegment.objects.get(slug=segment),
+                                    'scheme': ResidueNumberingScheme.objects.get(slug=scheme.slug)})
                                 pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pab, generic_number=gn)
                                 s.protein_anomalies.add(pa)
                     if 'constrictions' in sd and sd['constrictions']:
@@ -317,9 +325,9 @@ class Command(BaseCommand):
                             'name': 'Constriction'})
                         for segment, constrictions in sd['constrictions'].items():
                             for constriction in constrictions:
-                                print(constriction)
-                                gn, created = ResidueGenericNumber.objects.get_or_create(label=constriction, scheme__slug=scheme.slug, defaults={
-                                    'protein_segment': ProteinSegment.objects.get(slug=segment)})
+                                gn, created = ResidueGenericNumber.objects.get_or_create(label=constriction, defaults={
+                                    'protein_segment': ProteinSegment.objects.get(slug=segment),
+                                    'scheme': ResidueNumberingScheme.objects.get(slug=scheme.slug)})
                                 pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pac, generic_number=gn)
                                 s.protein_anomalies.add(pa)
                     
