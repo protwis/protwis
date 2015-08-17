@@ -9,8 +9,9 @@ from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue
 from common.models import WebLink, WebResource, Publication
 from structure.models import (Structure, StructureType, StructureSegment, StructureStabilizingAgent,PdbData,
     Rotamer)
-from ligand.models import Ligand, LigandType, LigandRole
-from interaction.models import StructureLigandInteraction
+from ligand.models import Ligand, LigandType, LigandRole, LigandProperities
+from interaction.models import *
+from interaction.views import runcalculation,parsecalculation
 
 from optparse import make_option
 from datetime import datetime
@@ -61,6 +62,11 @@ class Command(BaseCommand):
             cursor.execute("TRUNCATE TABLE {!s} CASCADE".format(table))
 
     def create_rotamers(self, structure):
+        AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
+     'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
+     'HIS':'H', 'ILE':'I', 'LEU':'L', 'LYS':'K',
+     'MET':'M', 'PHE':'F', 'PRO':'P', 'SER':'S',
+     'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V'}
         pdb = structure.pdb_data.pdb
         protein_conformation=structure.protein_conformation
         preferred_chain = structure.preferred_chain
@@ -81,7 +87,10 @@ class Command(BaseCommand):
                         residue=Residue.objects.get(protein_conformation=protein_conformation, sequence_number=check)
                         if not residue_name==residue.three_letter():
                             #print('Residue not found in '+structure.pdb_code.index+', skipping! '+residue_name+' vs '+residue.three_letter()+ ' at position '+residue_number)
-                            errors += 1
+                            #errors += 1
+                            self.logger.error("Changing WT residue amino_acid for sequence_number "+str(residue.sequence_number)+" from "+residue.amino_acid+" to "+AA[residue_name.upper()])
+                            residue.amino_acid = AA[residue_name.upper()]
+                            residue.save()
                         else:
                             rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
                             rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
@@ -89,6 +98,7 @@ class Command(BaseCommand):
                         #print('Residue not found in '+structure.pdb_code.index+' ' +residue_name+' at position '+residue_number)
                         residue = None
                         errors += 1
+                        #self.logger.error("No residue found for sequence_number "+str(check))
                     
                     temp = line + "\n"
                 check = residue_number
@@ -97,7 +107,10 @@ class Command(BaseCommand):
             residue=Residue.objects.get(protein_conformation=protein_conformation, sequence_number=check)
             if not residue_name==residue.three_letter():
                 #print('Residue not found in '+structure.pdb_code.index+', skipping! '+residue_name+' vs '+residue.three_letter()+ ' at position '+residue_number)
-                errors += 1
+                #prerrors += 1
+                self.logger.error("Changing WT residue amino_acid for sequence_number "+str(residue.sequence_number)+" from "+residue.amino_acid+" to "+AA[residue_name.upper()])
+                residue.amino_acid = AA[residue_name.upper()]
+                residue.save()
             else:
                 rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
                 rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
@@ -105,6 +118,7 @@ class Command(BaseCommand):
             #print('Residue not found in '+structure.pdb_code.index+' ' +residue_name+' at position '+residue_number)
             residue = None
             errors += 1
+            #self.logger.error("No residue found for sequence_number "+str(check))
         if errors:
             self.logger.error(structure.pdb_code.index + " had " + str(errors) + " residues that did not match in the database")
         return None
@@ -123,6 +137,7 @@ class Command(BaseCommand):
                 # read the yaml file
                 with open(source_file_path, 'r') as f:
                     sd = yaml.load(f)
+                    print("Parsing "+sd['pdb'])
 
                     # is there a construct?
                     if 'construct' not in sd:
@@ -213,7 +228,8 @@ class Command(BaseCommand):
                             s.publication = p
                     
                     
-                    # get the PDB file and save to DB
+                    # # get the PDB file and save to DB
+
                     url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
                     pdbdata = urlopen(url).read().decode('utf-8')
                     pdbdata, created = PdbData.objects.get_or_create(pdb=pdbdata)
@@ -232,23 +248,47 @@ class Command(BaseCommand):
                             ligands = [sd['ligand']]
                         for ligand in ligands:
                             l = False
-                            if ligand['name']:
-                                l, created = Ligand.objects.get_or_create(name=ligand['name'])
-                                if created:
+                            if ligand['name'] and ligand['name']!='None': #some inserted as none.
+                                if Ligand.objects.filter(name=ligand['name'], canonical=True).exists(): #if this name is canonical and it has a ligand record already
+                                    l = Ligand.objects.get(name=ligand['name'], canonical=True)
+                                elif Ligand.objects.filter(name=ligand['name'], canonical=False, ambigious_alias=False).exists(): #if this matches an alias that only has "one" parent canonical name - eg distinct
+                                    l = Ligand.objects.get(name=ligand['name'], canonical=False, ambigious_alias=False)
+                                elif Ligand.objects.filter(name=ligand['name'], canonical=False, ambigious_alias=True).exists(): #if this matches an alias that only has several canonical parents, must investigate, start with empty.
+                                    #print('Inserting '+ligand['name']+" for "+sd['pdb'])
+                                    lp = LigandProperities()
+                                    lp.save()
+                                    l = Ligand()
+                                    l.properities = lp
+                                    l.name = ligand['name']
+                                    l.canonical = False
+                                    l.ambigious_alias = True
+                                    l.save()
                                     l.load_by_name(ligand['name'])
+                                else: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.
+                                    print('Inserting '+ligand['name']+" for "+sd['pdb'])
+                                    lp = LigandProperities()
+                                    lp.save()
+                                    l = Ligand()
+                                    l.properities = lp
+                                    l.name = ligand['name']
+                                    l.canonical = True
+                                    l.ambigious_alias = False
+                                    l.save()
+                                    l.load_by_name(ligand['name'])
+                                l.save()
+
                             # elif ligand['inchi']:
                             #     pass # FIXME write!
                             else:
                                 continue
 
-                            # save ligand
-                            l.save()
+                            # save ligandΩ
 
                             if l:
                                 if ligand['role']:
                                     lr, created = LigandRole.objects.get_or_create(slug=slugify(ligand['role']),
                                         defaults={'name': ligand['role']})
-                                    i = StructureLigandInteraction.objects.create(structure=s, ligand=l,
+                                    i, created = StructureLigandInteraction.objects.get_or_create(structure=s, ligand=l,
                                         ligand_role=lr)
                     
                     # structure segments
@@ -298,5 +338,13 @@ class Command(BaseCommand):
 
                     # save structure
                     s.save()
+
+                    self.logger.info('Calculate interactions')
+
+                    #print('interactions '+sd['pdb'])
+                    runcalculation(sd['pdb'])
+                    parsecalculation(sd['pdb'],False)
+
+
 
         self.logger.info('COMPLETED CREATING PDB STRUCTURES')
