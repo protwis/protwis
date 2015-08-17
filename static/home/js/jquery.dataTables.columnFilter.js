@@ -185,7 +185,7 @@
             var to = $('<input type="text" class="number_range_filter form-control" id="' + sToId + '" rel="' + i + '"/>');
             th.append(to);
             th.append(_fnRangeLabelPart(2));
-            th.wrapInner('<span class="filter_column filter_number_range form-control" />');
+            th.wrapInner('<span class="filter_column filter_number_range" />');
             var index = i;
             aiCustomSearch_Indexes.push(i);
 
