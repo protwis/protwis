@@ -229,6 +229,8 @@ class Command(BaseCommand):
                     
                     
                     # get the PDB file and save to DB
+                    if not os.path.exists(self.structure_data_dir+'/../pdbs/'):
+                        os.makedirs(self.structure_data_dir+'/../pdbs/')
                     pdb_path = self.structure_data_dir+'/../pdbs/'+sd['pdb']+'.pdb'
                     if not os.path.isfile(pdb_path):
                         url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
