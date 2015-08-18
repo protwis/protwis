@@ -26,14 +26,10 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'debug_toolbar',
-    'rest_framework',
-    'rest_framework_swagger',
-    'django_nvd3',
+    # 'tastypie',
     'common',
-    'api',
     'home',
     'protein',
-    'family',
     'residue',
     'alignment',
     'similaritysearch',
@@ -41,6 +37,8 @@ INSTALLED_APPS = (
     'ligand',
     'interaction',
     'mutation',
+    'phylogenetic_trees',
+    #'javascript_settings',
     'build_' + SITE_NAME,
 )
 
@@ -108,13 +106,19 @@ LOGGING = {
        'build': {
            'level': 'DEBUG',
            'class': 'logging.FileHandler',
-           'filename': 'logs/build.log',
+           'filename': 'logs/protwis_build.log',
            'formatter': 'verbose'
        },
        'protwis': {
            'level': 'DEBUG',
            'class': 'logging.FileHandler',
            'filename': 'logs/protwis.log',
+           'formatter': 'verbose'
+       },
+       'structure': {
+           'level': 'DEBUG',
+           'class': 'logging.FileHandler',
+           'filename': 'logs/structure.log',
            'formatter': 'verbose'
        },
    },
@@ -130,6 +134,10 @@ LOGGING = {
        },
        'protwis': {
            'handlers': ['protwis'],
+           'level': 'DEBUG',
+       },
+       'structure': {
+           'handlers': ['structure'],
            'level': 'DEBUG',
        },
    }

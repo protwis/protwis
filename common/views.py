@@ -67,6 +67,8 @@ class AbsTargetSelection(TemplateView):
 
         # get selection from session and add to context
         # get simple selection from session
+        print(self.request.session.keys())
+        #print(self.request.session['selection'])
         simple_selection = self.request.session.get('selection', False)
         
         # create full selection and import simple selection (if it exists)
@@ -171,6 +173,52 @@ class AbsSegmentSelection(TemplateView):
                 context[a[0]] = a[1]
         return context
 
+class AbsSettingsSelection(TemplateView):
+    """An abstract class for the settings selection page used in phylogenetic trees."""
+    template_name = 'common/tree_options.html'
+    step = 3
+    number_of_steps = 3
+    title = 'SELECT TREE OPTIONS'
+    description = 'Select options for tree generation in the middle column.\nOnce you have selected all your segments, click the green button.'
+    docs = '/docs/trees'
+    buttons = {
+        'continue': {
+            'label': 'Show alignment',
+            'url': '/alignment/render',
+            'color': 'success',
+        },
+    }
+    # OrderedDict to preserve the order of the boxes
+    selection_boxes = OrderedDict([
+        ('tree_settings', True),
+        ('targets', True),
+        ('segments', True),
+    ])
+    def get_context_data(self, **kwargs):
+        """get context from parent class (really only relevant for child classes of this class, as TemplateView does
+        not have any context variables)"""
+        context = super().get_context_data(**kwargs)
+
+        # get selection from session and add to context
+        # get simple selection from session
+        simple_selection = self.request.session.get('selection', False)
+
+        # create full selection and import simple selection (if it exists)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+        self.current = simple_selection.tree_settings
+        context['selection'] = {}
+        for selection_box, include in self.selection_boxes.items():
+            if include:
+                context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
+
+        # get attributes of this class and add them to the context
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+        return context
 
 def AddToSelection(request):
     """Receives a selection request, adds the selected item to session, and returns the updated selection"""
@@ -292,6 +340,25 @@ def SelectFullSequence(request):
 
     # add simple selection to session
     request.session['selection'] = simple_selection
+    
+    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+
+def SetTreeSelection(request):
+    """Adds all alignable segments to the selection"""
+    option_no = request.GET['option_no']
+    option_id = request.GET['option_id']
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+    selection.tree_settings[int(option_no)]=option_id
+    simple_selection = selection.exporter()
+    print(selection.tree_settings)
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+    selection_type = 'tree_settings'
     
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 

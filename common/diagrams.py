@@ -1,4 +1,4 @@
-
+﻿
 
 from math import cos, sin, tan, pi, sqrt, pow
 import string, time, math, random
