@@ -4,22 +4,42 @@
             </a>
             <ul class="dropdown-menu" role="menu">
                 <li class="nav-header disabled"><a>INFORMATION</a></li>
-                <li><a href="#">GPCRDB Poster</a></li>
-                <li><a href="#">Documentation</a></li>
+                <li class="disabled"><a href="#">GPCRDB Poster</a></li>
+                <li class="disabled"><a href="#">Documentation</a></li>
+                <li class="nav-header disabled"><a>FOR DEVELOPERS</a></li>
+                <li><a href="/api">API</a></li>
                 <li class="nav-header disabled"><a>UPDATES</a></li>
-                <li><a href="#">News</a></li>
-                <li><a href="#">Meetings</a></li>
-                <li><a href="#">Update history</a></li>
+                <li class="disabled"><a href="#">News</a></li>
+                <li class="disabled"><a href="#">Meetings</a></li>
+                <li class="disabled"><a href="#">Update history</a></li>
                 <li class="nav-header disabled"><a>ABOUT GPCRDB</a></li>
-                <li><a href="#">Committees</a></li>
-                <li><a href="#">Contributors</a></li>
-                <li><a href="#">Contact</a></li>
-                <li><a href="#">Citing GPCRDB</a></li>
+                <li class="disabled"><a href="#">Committees</a></li>
+                <li class="disabled"><a href="#">Contributors</a></li>
+                <li class="disabled"><a href="#">Contact</a></li>
+                <li class="disabled"><a href="#">Citing GPCRDB</a></li>
             </ul>
         </li>
         
+        <!-- BROWSE -->
         <li><a href="/protein">Browse</a></li>
         
+        <!-- STRUCTURES -->
+        <li>
+            <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                Structures<span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu" role="menu">
+                <li class="nav-header disabled"><a>DATA</a></li>
+                <li><a href="/structure">Structure browser</a></li>
+                <li><a href="/structure/statistics">Structure statistics</a></li>
+                <li class="disabled"><a href="/structure/coverage">Structure coverage</a></li>
+                <li class="nav-header disabled"><a>TOOLS</a></li>
+                <li><a href="/structure/superposition_workflow_index/true">Structure superposition tool</a></li>
+                <li><a href="/structure/template_selection">Template selection tool</a></li>
+            </ul>
+        </li>
+
+        <!-- SEQUENCES -->
         <li>
             <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
                 Sequences<span class="caret"></span>
@@ -27,42 +47,41 @@
             <ul class="dropdown-menu" role="menu">
                 <li class="nav-header disabled"><a>DATA</a></li>
                 <li><a href="/alignment/targetselection">Structure-based alignments</a></li>
-                <li class="nav-header disabled"><a>TOOLS - SIMILARITY</a></li>
-                <li><a href="/similaritysearch/referenceselection">Similarity search with a reference receptor</a></li>
-                <li><a href="#">Similarity matrix</a></li>
+                <li><a href="/similaritymatrix/targetselection">Similarity matrix</a></li>
+                <li class="nav-header disabled"><a>TOOLS</a></li>
+                <li><a href="/similaritysearch/referenceselection">Similarity search tool</a></li>
                 <li><a href="#">Phylogenetic trees</a></li>
-                <li><a href="#">Sequence motif search</a></li>
-                <li><a href="/alignment/blastsearch">BLAST search</a></li>
+                <li class="disabled"><a href="/alignment/blastsearch">BLAST search</a></li>
             </ul>
         </li>
         
+        <!-- MUTANTS -->
         <li>
             <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                Structures<span class="caret"></span>
+                Mutants<span class="caret"></span>
             </a>
             <ul class="dropdown-menu" role="menu">
                 <li class="nav-header disabled"><a>DATA</a></li>
-                <li><a href="/structure/statistics">Crystal structure statistics</a></li>
-                <li><a href="/structure">Crystal structure browser</a></li>
-                <li class="nav-header disabled"><a>TOOLS - GENERIC</a></li>
-                <li><a href="/structure/generic_numbering_index">Assign generic residue numbers to a PDB file</a></li>
-                <li><a href="/structure/superposition_workflow_index/true">Superpose structures</a></li>
-                <li class="nav-header disabled"><a>TOOLS - MODELING</a></li>
-                <li><a href="/structure/template_selection">Homology model template selection</a></li>
-                <li><a href="/structure/fragment_superposition_index">Pharmacophore generation from crystal structures</a></li>
+                <li><a href="/mutations">Mutant browser</a></li>
+                <li class="disabled"><a href="/mutations">Residue tables</a></li>
+                <li class="disabled"><a href="#">Contribute to the GPCRDB collection of mutant data</a></li>
             </ul>
         </li>
 
+        <!-- SITES -->
         <li>
             <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                Mutations<span class="caret"></span>
+                Sites<span class="caret"></span>
             </a>
             <ul class="dropdown-menu" role="menu">
-                <li><a href="/mutations">Mutation browser</a></li>
-                <li><a href="#">Contribute to the GPCRDB collection of mutant data</a></li>
+                <li class="nav-header disabled"><a>TOOLS</a></li>
+                <li class="disabled"><a href="/sitesearch">Site search tool</a></li>
+                <li><a href="/structure/fragment_superposition_index">Pharmacophore generation tool</a></li>
+                <li class="disabled"><a href="/sitesearch">Ligand interaction diagrams</a></li>
             </ul>
         </li>
 
+        <!-- RESIDUE NUMBERES -->
         <li>
             <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
                 Residue numbers<span class="caret"></span>
@@ -71,17 +90,18 @@
                 <li class="nav-header disabled"><a>DATA</a></li>
                 <li><a href="/residue/residuetable">Generic residue number tables</a></li>
                 <li class="nav-header disabled"><a>TOOLS</a></li>
-                <li><a href="/structure/generic_numbering_index">Assign generic residue numbers to a PDB file</a></li>
-                <li><a href="#">GPCR specific PDF reader</a></li>
+                <li><a href="/structure/generic_numbering_index">PDB file residue numbering tool</a></li>
+                <li class="disabled"><a href="#">GPCR specific PDF reader</a></li>
             </ul>
         </li>
 
+        <!-- LINKS -->
         <li>
             <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
                 Links<span class="caret"></span>
             </a>
             <ul class="dropdown-menu" role="menu">
-                <li><a href="#">GPCR specific PDF reader</a></li>
-                <li><a href="#">External GPCR modeling servers</a></li>
+                <li class="disabled"><a href="#">GPCR specific PDF reader</a></li>
+                <li class="disabled"><a href="#">External GPCR modeling servers</a></li>
             </ul>
         </li>

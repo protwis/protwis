@@ -1,0 +1,2 @@
+,{% for p in m %}{{ forloop.counter }},{% endfor %}{% for p, v in m.items %}
+{{ forloop.counter }}. {{ v.name|safe }},{% for col in v.values %}{{ col.0 }},{% endfor %}{% endfor %}
