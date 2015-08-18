@@ -15,11 +15,33 @@ from interaction.views import runcalculation,parsecalculation
 
 from optparse import make_option
 from datetime import datetime
-import logging, os
+import logging, os, re
 import yaml
+from collections import OrderedDict
 import json
 from urllib.request import urlopen
 
+
+from Bio.PDB import parse_pdb_header
+
+## FOR VIGNIR ORDERED DICT YAML IMPORT/DUMP
+_mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
+def dict_constructor(loader, node):
+    return OrderedDict(loader.construct_pairs(node))
+
+def represent_ordereddict(dumper, data):
+    value = []
+
+    for item_key, item_value in data.items():
+        node_key = dumper.represent_data(item_key)
+        node_value = dumper.represent_data(item_value)
+
+        value.append((node_key, node_value))
+
+    return yaml.nodes.MappingNode(u'tag:yaml.org,2002:map', value)
+
+yaml.add_representer(OrderedDict, represent_ordereddict)
+yaml.add_constructor(_mapping_tag, dict_constructor)
 
 class Command(BaseCommand):
     help = 'Reads source data and creates pdb structure records'
@@ -157,6 +179,74 @@ class Command(BaseCommand):
                     except Structure.DoesNotExist:
                         s = Structure()
 
+                    # get the PDB file and save to DB
+                    if not os.path.exists(self.structure_data_dir+'/../pdbs/'):
+                        os.makedirs(self.structure_data_dir+'/../pdbs/')
+                    pdb_path = self.structure_data_dir+'/../pdbs/'+sd['pdb']+'.pdb'
+                    if not os.path.isfile(pdb_path):
+                        url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
+                        pdbdata_raw = urlopen(url).read().decode('utf-8')
+                        f=open(pdb_path,'w')
+                        f.write(pdbdata_raw)
+                        f.close();
+                    else:
+                        pdbdata_raw = open(pdb_path, 'r').read()
+                    
+                    pdbdata, created = PdbData.objects.get_or_create(pdb=pdbdata_raw)
+                    s.pdb_data = pdbdata
+
+
+                    #### UPDATE HETSYN with its PDB reference instead + GRAB PUB DATE, PUMBEDID AND RESOLUTION #####
+                    hetsyn = {}
+                    hetsyn_reverse = {}
+                    for line in pdbdata_raw.splitlines():
+                        if line.startswith('HETSYN'): 
+                            m = re.match("HETSYN[\s]+([\w]{3})[\s]+(.+)",line) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+                            if (m):
+                                hetsyn[m.group(2).strip()] = m.group(1).upper()
+                                hetsyn_reverse[m.group(1)] = m.group(2).strip().upper()
+                        if line.startswith('HETNAM'): 
+                            m = re.match("HETNAM[\s]+([\w]{3})[\s]+(.+)",line) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+                            if (m):
+                                hetsyn[m.group(2).strip()] = m.group(1).upper()
+                                hetsyn_reverse[m.group(1)] = m.group(2).strip().upper()
+                        if line.startswith('REVDAT   1'):
+                            sd['publication_date'] = line[13:22]
+                        if line.startswith('JRNL        PMID'):
+                            sd['pubmed_id'] = line[19:].strip()
+
+                    if len(hetsyn) == 0:
+                        print("PDB file contained NO hetsyn")
+
+                    header=open(pdb_path,'r')
+                    header_dict=parse_pdb_header(header)
+                    header.close()
+                    sd['publication_date'] = header_dict['release_date']
+                    sd['resolution'] = str(header_dict['resolution']).strip()
+
+                    #print(hetsyn)
+                    matched = 0
+                    if 'ligand' in sd:
+                        if isinstance(sd['ligand'], list):
+                            ligands = sd['ligand']
+                        else:
+                            ligands = [sd['ligand']]
+                        for ligand in ligands:
+                            if ligand['name'].upper() in hetsyn:
+                                print('match')
+                                matched = 1
+                                ligand['name'] = hetsyn[ligand['name'].upper()]
+                            elif ligand['name'].upper() in hetsyn_reverse:
+                                matched = 1
+
+                    if matched==0 and len(hetsyn)>0:
+                        print('No ligand names found in HET in structure')
+                        print(hetsyn)
+                        print(ligands)
+
+                    yaml.dump(sd,open(source_file_path, 'w'),indent=4)
+
+
                     # pdb code
                     if 'pdb' in sd:
                         try:
@@ -226,29 +316,9 @@ class Command(BaseCommand):
                             p.update_from_pubmed_data(index=sd['pubmed_id'])
                             p.save()
                             s.publication = p
-                    
-                    
-                    # get the PDB file and save to DB
-                    if not os.path.exists(self.structure_data_dir+'/../pdbs/'):
-                        os.makedirs(self.structure_data_dir+'/../pdbs/')
-                    pdb_path = self.structure_data_dir+'/../pdbs/'+sd['pdb']+'.pdb'
-                    if not os.path.isfile(pdb_path):
-                        url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
-                        pdbdata = urlopen(url).read().decode('utf-8')
-                        f=open(pdb_path,'w')
-                        f.write(pdbdata)
-                        f.close();
-                    else:
-                        pdbdata = open(pdb_path, 'r').read()
-                    
-                    pdbdata, created = PdbData.objects.get_or_create(pdb=pdbdata)
-                    s.pdb_data = pdbdata
 
                     # save structure before adding M2M relations
                     s.save()
-
-                    self.create_rotamers(s)
-
                     # ligands
                     if 'ligand' in sd:
                         if isinstance(sd['ligand'], list):
@@ -258,6 +328,10 @@ class Command(BaseCommand):
                         for ligand in ligands:
                             l = False
                             if ligand['name'] and ligand['name']!='None': #some inserted as none.
+
+                                if ligand['name'] in hetsyn_reverse: ligand['name'] = hetsyn_reverse[ligand['name']] #USE HETSYN NAME, not 3letter pdb reference
+                                pdb_reference = None
+                                if ligand['name'] in hetsyn: pdb_reference = hetsyn[ligand['name']]
                                 if Ligand.objects.filter(name=ligand['name'], canonical=True).exists(): #if this name is canonical and it has a ligand record already
                                     l = Ligand.objects.get(name=ligand['name'], canonical=True)
                                 elif Ligand.objects.filter(name=ligand['name'], canonical=False, ambigious_alias=False).exists(): #if this matches an alias that only has "one" parent canonical name - eg distinct
@@ -297,8 +371,8 @@ class Command(BaseCommand):
                                 if ligand['role']:
                                     lr, created = LigandRole.objects.get_or_create(slug=slugify(ligand['role']),
                                         defaults={'name': ligand['role']})
-                                    i, created = StructureLigandInteraction.objects.get_or_create(structure=s, ligand=l,
-                                        ligand_role=lr)
+                                    i, created = StructureLigandInteraction.objects.get_or_create(pdb_reference=pdb_reference, structure=s, ligand=l,
+                                        ligand_role=lr, annotated=True)
                     
                     # structure segments
                     if 'segments' in sd and sd['segments']:
@@ -348,6 +422,7 @@ class Command(BaseCommand):
                     # save structure
                     s.save()
 
+                    self.create_rotamers(s)
                     self.logger.info('Calculate interactions')
 
                     #print('interactions '+sd['pdb'])

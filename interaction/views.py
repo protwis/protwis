@@ -203,9 +203,9 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                     ligand.load_by_name(output['prettyname'])
                     ligand.save()
 
-                    if ligand.canonical== False: 
+                    #if ligand.canonical== False: 
                         #print('looking for '+output['inchikey'].strip())
-                        ligand = Ligand.objects.get(properities__inchikey=output['inchikey'].strip(), canonical=True)
+                        #ligand = Ligand.objects.get(properities__inchikey=output['inchikey'].strip(), canonical=True)
              
                 #proteinligand, created = ProteinLigandInteraction.objects.get_or_create(protein=protein,ligand=ligand)
 
@@ -222,6 +222,13 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                     structureligandinteraction = structureligandinteraction.get()
                     structureligandinteraction.pdb_file = pdbdata
                     structureligandinteraction.pdb_reference = temp[1]
+                elif StructureLigandInteraction.objects.filter(pdb_reference=temp[1],structure=structure).exists(): #incase defined reference doesn't match on inchikey
+                    structureligandinteraction = StructureLigandInteraction.objects.filter(pdb_reference=temp[1],structure=structure).get()
+                    structureligandinteraction.pdb_file = pdbdata
+                    if structureligandinteraction.ligand.properities.inchikey is None:
+                        print('Old ligand didnt get inchikey -- error in naming, using inchikey/properities from structure')
+                        structureligandinteraction.ligand.delete()
+                        structureligandinteraction.ligand = ligand
                 else:
                     ligandrole, created = LigandRole.objects.get_or_create(name='unknown',slug='unknown')
                     structureligandinteraction = StructureLigandInteraction()
