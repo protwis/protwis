@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, include, url
+﻿from django.conf.urls import patterns, include, url
 from django.contrib import admin
 from django.conf import settings
 # from tastypie.api import Api
@@ -32,6 +32,7 @@ urlpatterns = patterns('',
     url(r'^alignment/', include('alignment.urls')),
     url(r'^similaritysearch/', include('similaritysearch.urls')),
     url(r'^phylogenetic_trees/', include('phylogenetic_trees.urls')),
+    url(r'^similaritymatrix/', include('similaritymatrix.urls')),
     url(r'^structure/',include('structure.urls')),
 )
 
