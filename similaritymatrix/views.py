@@ -9,6 +9,24 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 from collections import OrderedDict
 
 
+class TargetSelection(AbsTargetSelection):
+    step = 1
+    number_of_steps = 2
+    docs = '/docs/similaritymatrix'
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', True),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Continue to next step',
+            'url': '/similaritymatrix/segmentselection',
+            'color': 'success',
+        },
+    }
+
+
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
@@ -26,23 +44,6 @@ class SegmentSelection(AbsSegmentSelection):
         },
     }
 
-
-class TargetSelection(AbsTargetSelection):
-    step = 1
-    number_of_steps = 2
-    docs = '/docs/similaritymatrix'
-    selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', True),
-    ])
-    buttons = {
-        'continue': {
-            'label': 'Continue to next step',
-            'url': '/similaritymatrix/segmentselection',
-            'color': 'success',
-        },
-    }
 
 def render_matrix(request):
     # get the user selection from session
