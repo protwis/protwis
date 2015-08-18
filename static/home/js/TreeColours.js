@@ -1,8 +1,6 @@
 
  function colours() {
 
-    console.log($(".bgfield").length);
-    console.log('were done loading!');
     presetColors = {
         'D': ['#E60A0A', '#FDFF7B'], 'E': ['#E60A0A', '#FDFF7B'],
         'K': ['#145AFF', '#FDFF7B'], 'R': ['#145AFF', '#FDFF7B'],
@@ -28,7 +26,6 @@
 
 
     $(".bgfield").click(function () {
-        console.log('klik');
         parentid = $(this).closest('svg').attr('id');
         newcolor = $(".pick-color.selected").attr('id');
         newcolor = newcolor.split('-');
@@ -39,7 +36,6 @@
         //$(this).next().css("fill", newcolor[2]);
     });
     $(".chart").click(function () {
-        console.log('klik');
         id = $(this).attr('id');
          
         newcolor = $(".pick-color.selected").attr('id');
@@ -63,8 +59,6 @@
  
  }
  function resetColors(defs) {
-     console.log($(".bgfield").length);
-
      $('#svgCanvas').find(".bgfield").each(function (index) {
          $(this).css("fill", '#EEE');
      });
@@ -78,7 +72,6 @@
 
  function toggleLegend() {
      $('#svgCanvas').find(".chart").each(function (index) {
-         console.log($(this).css('visibility'));
          if ($(this).css("visibility") == 'hidden') {
              $(this).css("visibility", 'visible');
          } else {
@@ -86,7 +79,6 @@
          };
      });
     $('#svgCanvas').find(".legend").each(function (index) {
-        console.log($(this).css('visibility'));
         if ($(this).css("visibility")== 'hidden') {
             $(this).css("visibility", 'visible');
         } else {
@@ -111,12 +103,9 @@
      SVG.setAttribute('height', (h + h2));
      for (i = 0; i < legend.children.length; i++) {
          legend.children[i].setAttribute('transform', 'translate ('+new_w.toString()+' ' + h.toString()+')');
-         console.log(legend.children[i]);
          $(SVG).append(legend.children[i]);
      }
-     
-     console.log(legend.children);
-     console.log($(SVG).attr('height'));
+
 
      //console.log(svg1.css('height'));
      //console.log(svg1);
@@ -125,7 +114,6 @@
 $( document ).ready(function (){
 
     $(".pick-color").click(function () {
-        console.log($(this).attr('id'));
         $(".pick-color").css('borderWidth', '2px');
         $(".pick-color").css('height', '20px');
         $(".pick-color").removeClass('selected');
