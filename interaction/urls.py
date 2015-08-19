@@ -16,5 +16,5 @@ urlpatterns = patterns('',
     url(r'^ligand', views.ligand, name='ligand'),
     url(r'^fragment', views.fragment, name='fragment'),
     url(r'^ajax/(?P<slug>[-\w]+)/$', views.ajax, name='ajax'),
-    url(r'^ajaxLigand/(?P<slug>[-\w]+)/(?P<ligand>[-\w]+)$', views.ajaxLigand, name='ajax'),
+    url(r'^ajaxLigand/(?P<slug>[-\w]+)/(?P<ligand>.+)$', views.ajaxLigand, name='ajax'),
 )
