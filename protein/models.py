@@ -1,4 +1,4 @@
-from django.db import models
+﻿from django.db import models
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from residue.models import Residue
 
