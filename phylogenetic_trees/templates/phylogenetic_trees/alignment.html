@@ -1,0 +1,62 @@
+﻿{% extends "home/base.html" %}
+{% load staticfiles %}
+    {% block addon_css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'home/css/unitip.css' %}">
+    {% endblock %}
+    {% block addon_js %}
+    <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+    <script src="{% static 'home/js/unitip.js' %}"></script>
+    <script src="{% static 'home/js/raphael-min.js' %}"></script>
+    <script src="{% static 'home/js/TreeColours.js' %}"></script>
+
+    {% if branch == 1 %}
+    <script src="{% static 'home/js/jsphylosvg2.js' %}"></script>
+    {% else %}
+    <script src="{% static 'home/js/jsphylosvg.js' %}"></script>
+    {% endif %}
+    {% if ttype == 1 %}
+    <script type="text/javascript">
+        window.onload = function(){
+            var dataObject = { phyloxml: "{{ phylo|safe }}" };
+            phylocanvas = new Smits.PhyloCanvas(
+            dataObject,
+            "svgCanvas",
+            950, {{ count }}/4*100
+            )
+            colours();
+            mergeSVG();
+        };
+    </script>
+    {% else %}
+    <script type="text/javascript">
+        window.onload = function(){
+            var dataObject = { phyloxml: "{{ phylo|safe }}" };
+            phylocanvas = new Smits.PhyloCanvas(
+                            dataObject,
+                            "svgCanvas",
+                            900 + {{ count }}*10, 900 + {{ count }}*10,
+                            'circular'
+                            )
+            colours();
+            mergeSVG();
+        };
+
+
+
+    </script>
+    {% endif %}
+<div style="text-align:center">
+    <div id="svgCanvas"> </div>
+    <div id="legend" class="hidden">{{ leg|safe }} </div>
+    <div>{{ b|safe }}
+       <br><button style="width:120px;" onclick="resetColors({{ default }})">Clear</button>
+       <button style="width:250px;" onclick="toggleLegend()">Toggle Outer Rings</button>
+    </div>
+    <a href="javascript:saveSvgAsPng(document.getElementById('svgtree')+document.getElementById('legendSVG'), 'tree.png', {scale: 3});"> Download as PNG</a>
+    <a id=tree_svg_link href-lang="image/svg+xml" href="" download="tree"> Download as SVG</a>
+    
+
+
+    {% endblock %}
+
+</div>

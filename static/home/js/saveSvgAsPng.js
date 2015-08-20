@@ -148,7 +148,6 @@
     options = options || {};
     out$.svgAsDataUri(el, options, function(uri) {
       var image = new Image();
-      console.log('create image');
       image.onload = function() {
         var canvas = document.createElement('canvas');
         canvas.width = image.width;
