@@ -24,6 +24,7 @@ class Alignment:
         self.generic_numbers = OrderedDict()
         self.positions = []
         self.consensus = []
+        self.forced_consensus = [] # consensus sequence where all conflicts are solved by rules
         self.similarity_matrix = OrderedDict()
         self.amino_acids = []
         self.amino_acid_stats = []
@@ -455,6 +456,7 @@ class Alignment:
         num_proteins = len(self.proteins)
         for i, s in enumerate(most_freq_aa):
             self.consensus.append(OrderedDict())
+            self.forced_consensus.append([])
             for p, r in s.items():
                 conservation = str(round(r[1]/num_proteins*100))
                 if len(conservation) == 1:
@@ -462,6 +464,11 @@ class Alignment:
                 else:
                     # the intervals are defined as 0-10, where 0 is 0-9, 1 is 10-19 etc. Used for colors.
                     cons_interval = conservation[:-1]
+                
+                # forced consensus sequence uses the first residue to break ties
+                self.forced_consensus[i].append([p, r[0][0]])
+
+                # consensus sequence displays + in tie situations
                 num_freq_aa = len(r[0])
                 if num_freq_aa == 1:
                     self.consensus[i][p] = [r[0][0], cons_interval,
