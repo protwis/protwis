@@ -67,8 +67,6 @@ class AbsTargetSelection(TemplateView):
 
         # get selection from session and add to context
         # get simple selection from session
-        print(self.request.session.keys())
-        #print(self.request.session['selection'])
         simple_selection = self.request.session.get('selection', False)
         
         # create full selection and import simple selection (if it exists)

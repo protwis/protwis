@@ -5,9 +5,9 @@ from django.conf import settings
 
 urlpatterns = patterns('',
     url(r'^$', include('home.urls')),
+    url(r'^api/', include('api_' + settings.SITE_NAME + '.urls')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^common/', include('common.urls')),
-    url(r'^api/', include(rest_api.urls)),
     url(r'^protein/', include('protein.urls')),
     url(r'^family/', include('family.urls')),
     url(r'^mutations/', include('mutation.urls')),
