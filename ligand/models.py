@@ -19,6 +19,22 @@ class Ligand(models.Model):
     class Meta():
         db_table = 'ligand'
 
+    def update_by_PubChemId(self, pubchem_id):
+        #IUPACName,
+        pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + pubchem_id + '/property/CanonicalSMILES,InChIKey/json'
+
+        #pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + quote(pubchem_name) + '/json'
+        try:
+            req = urlopen(pubchem_url)
+            pubchem = json.loads(req.read().decode('UTF-8'))
+        except: #JSON failed
+            return
+
+        pubchem_smiles = pubchem['PropertyTable']['Properties'][0]['CanonicalSMILES']
+        pubchem_inchikey = pubchem['PropertyTable']['Properties'][0]['InChIKey']
+
+
+
     def load_by_name(self, name):
         #print('load_by_name on '+name)
         # fetch ligand info from pubchem - start by getting name and 'canonical' name
@@ -37,10 +53,10 @@ class Ligand(models.Model):
                     pubchem = req.read().decode('UTF-8').splitlines()
                     pubchem_name = pubchem[0]
                 except: #name not matched in pubchem - exit cos something is wrong
-                    print('Ligand not found by InchiKey in pubchem: ' + self.properities.inchikey)
+                    print('Ligand not found by InchiKey in pubchem: ' + str(self.properities.inchikey))
                     return
             else: #if name not found and no inchikey, then no point in looking further
-                print('Ligand not found in pubchem by name (Consider renaming): ' + name)
+                print('Ligand not found in pubchem by name (Consider renaming): ' + str(name))
                 return
 
         pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + quote(pubchem_name) + '/property/CanonicalSMILES,InChIKey/json'
