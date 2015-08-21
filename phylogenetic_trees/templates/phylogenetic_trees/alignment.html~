@@ -1,0 +1,39 @@
+﻿{% extends "home/base.html" %}
+{% load staticfiles %}
+
+<div>phylo</div>
+{% block addon_css %}
+<link rel="stylesheet" type="text/css" href="{% static 'home/css/unitip.css' %}"> 
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/raphael-min.js' %}"></script>
+{% if branch == 'Even' %}
+	<script src="{% static 'home/js/jsphylosvg-min2.js' %}"></script>
+	{% else %}
+	<script src="{% static 'home/js/jsphylosvg-min.js' %}"></script>
+	{% endif %}
+<script src="{% static 'home/js/unitip.js' %}"></script> 		
+{% if ttype == 'ladder' %}
+        <script type="text/javascript">
+	window.onload = function(){
+        var dataObject = { phyloxml: "{{ phylo|safe }}" };
+	phylocanvas = new Smits.PhyloCanvas(
+	dataObject,
+	"svgCanvas",
+	950, {{ count }}/4*100
+	)};
+        </script>
+	{% else %}
+	<script type="text/javascript">
+	window.onload = function(){
+        var dataObject = { phyloxml: "{{ phylo|safe }}" };
+	phylocanvas = new Smits.PhyloCanvas(
+                    dataObject,
+                    "svgCanvas",
+                    700 + {{ count }}*10, 700 + {{ count }}*10,
+                    'circular'
+                    )};
+        </script>
+	{% endif %}
+{% endblock %}
+<div id="svgCanvas"> </div>

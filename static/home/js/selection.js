@@ -160,3 +160,19 @@ function SelectionSchemesToggle(numbering_scheme_id) {
         }
     });
 }
+
+function SetTreeSelection(option_no, option_id) {
+    console.log(option_no)
+    console.log(option_id)
+    $.ajax({
+        'url': '/common/settreeselection',
+        'data': {
+            option_no: option_no,
+            option_id: option_id
+        },
+        'type': 'GET',
+        'success': function (data) {
+            $("#tree_selection").html(data);
+        }
+    });
+}

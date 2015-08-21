@@ -37,10 +37,12 @@ INSTALLED_APPS = (
     'residue',
     'alignment',
     'similaritysearch',
+    'similaritymatrix',
     'structure',
     'ligand',
     'interaction',
     'mutation',
+    'phylogenetic_trees',
     'build_' + SITE_NAME,
 )
 
@@ -76,10 +78,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 
 STATIC_URL = '/static/'
-STATIC_ROOT = '/vagrant/protwis/static_root'
+STATIC_ROOT = '/web/static/protwis'
 STATICFILES_DIRS = (os.sep.join([BASE_DIR, "static"]),)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/vagrant/protwis/media'
+MEDIA_ROOT = '/web/media/protwis'
 
 
 # Serializer
