@@ -582,8 +582,8 @@ class Command(BaseCommand):
 
         sorted_missing_proteins = sorted(missing_proteins.items(), key=operator.itemgetter(1),reverse=True)
         sorted_mutants_for_proteins = sorted(mutants_for_proteins.items(), key=operator.itemgetter(1),reverse=True)
-        print(sorted_missing_proteins)
-        print(sorted_mutants_for_proteins)
+        #print(sorted_missing_proteins)
+        #print(sorted_mutants_for_proteins)
 
 
 
