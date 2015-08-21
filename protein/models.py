@@ -59,6 +59,7 @@ class ProteinConformation(models.Model):
     similarity = 0 # % similarity to a reference sequence in an alignment (% BLOSUM62 score > 0)
     similarity_score = 0 # similarity score to a reference sequence in an alignment (sum of BLOSUM62 scores)
     alignment = 0 # residues formatted for use in an Alignment class
+    alignment_list = 0 # FIXME redundant, remove when dependecies are removed
 
     def __str__(self):
         return self.protein.entry_name + " (" + self.state.slug + ")"

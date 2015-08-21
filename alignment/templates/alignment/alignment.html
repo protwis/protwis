@@ -133,7 +133,7 @@
                         <!-- sequence lines -->
                         {% for row in a.proteins %}
                         <tr>
-                            {% for s in row.alignment %}
+                            {% for segment, s in row.alignment.items %}
                                 {% for r in s %}
                                     <td class="ali-td ali-residue res-color-{{ r.2 }}
                                     {% if forloop.parentloop.parentloop.counter = 1 %}
@@ -175,7 +175,7 @@
                         {% if a.consensus %}
                         <!-- consensus sequence -->
                         <tr>
-                            {% for s in a.consensus %}
+                            {% for segment, s in a.consensus.items %}
                                 {% for p, r in s.items %}
                                     <td class="ali-td ali-residue res-cons-{{ r.1 }}">
                                         <div data-toggle="tooltip" data-placement="top" data-html="true"
