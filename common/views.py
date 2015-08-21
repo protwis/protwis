@@ -1,11 +1,11 @@
-from django.http import HttpResponse
+﻿from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.conf import settings
 
 from common.selection import SimpleSelection, Selection, SelectionItem
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet
-from residue.models import ResidueGenericNumber
+from residue.models import ResidueGenericNumber, ResidueNumberingScheme
 
 import inspect
 from collections import OrderedDict
@@ -23,6 +23,7 @@ class AbsTargetSelection(TemplateView):
     description = 'Select targets by searching or browsing in the middle column. You can select entire target families or individual targets.\n\nSelected targets will appear in the right column, where you can edit the list.\n\nOnce you have selected all your targets, click the green button.'
     docs = False
     filters = True
+    numbering_schemes = False
     search = True
     family_tree = True
     buttons = {
@@ -55,6 +56,9 @@ class AbsTargetSelection(TemplateView):
 
     # species
     sps = Species.objects.all()
+
+    # numbering schemes
+    gns = ResidueNumberingScheme.objects.all()
 
     def get_context_data(self, **kwargs):
         """get context from parent class (really only relevant for children of this class, as TemplateView does
@@ -167,6 +171,52 @@ class AbsSegmentSelection(TemplateView):
                 context[a[0]] = a[1]
         return context
 
+class AbsSettingsSelection(TemplateView):
+    """An abstract class for the settings selection page used in phylogenetic trees."""
+    template_name = 'common/tree_options.html'
+    step = 3
+    number_of_steps = 3
+    title = 'SELECT TREE OPTIONS'
+    description = 'Select options for tree generation in the middle column.\nOnce you have selected all your segments, click the green button.'
+    docs = '/docs/trees'
+    buttons = {
+        'continue': {
+            'label': 'Show alignment',
+            'url': '/alignment/render',
+            'color': 'success',
+        },
+    }
+    # OrderedDict to preserve the order of the boxes
+    selection_boxes = OrderedDict([
+        ('tree_settings', True),
+        ('targets', True),
+        ('segments', True),
+    ])
+    def get_context_data(self, **kwargs):
+        """get context from parent class (really only relevant for child classes of this class, as TemplateView does
+        not have any context variables)"""
+        context = super().get_context_data(**kwargs)
+
+        # get selection from session and add to context
+        # get simple selection from session
+        simple_selection = self.request.session.get('selection', False)
+
+        # create full selection and import simple selection (if it exists)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+        self.current = simple_selection.tree_settings
+        context['selection'] = {}
+        for selection_box, include in self.selection_boxes.items():
+            if include:
+                context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
+
+        # get attributes of this class and add them to the context
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+        return context
 
 def AddToSelection(request):
     """Receives a selection request, adds the selected item to session, and returns the updated selection"""
@@ -288,6 +338,25 @@ def SelectFullSequence(request):
 
     # add simple selection to session
     request.session['selection'] = simple_selection
+    
+    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+
+def SetTreeSelection(request):
+    """Adds all alignable segments to the selection"""
+    option_no = request.GET['option_no']
+    option_id = request.GET['option_id']
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+    selection.tree_settings[int(option_no)]=option_id
+    simple_selection = selection.exporter()
+    print(selection.tree_settings)
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+    selection_type = 'tree_settings'
     
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
@@ -487,3 +556,79 @@ def ExpandSegment(request):
         scheme__slug=settings.DEFAULT_NUMBERING_SCHEME)
     
     return render(request, 'common/segment_generic_numbers.html', context)
+
+def SelectionSchemesPredefined(request):
+    """Updates the selected numbering_schemes to predefined sets (GPCRdb and All)"""
+    numbering_schemes = request.GET['numbering_schemes']
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+    
+    all_gns = ResidueNumberingScheme.objects.all()
+    gns = False
+    if numbering_schemes == 'All':
+        gns = all_gns
+    elif numbering_schemes:
+        gns = ResidueNumberingScheme.objects.filter(slug=numbering_schemes)
+    elif not selection.numbering_schemes:
+        gns = ResidueNumberingScheme.objects.filter(slug='gpcrdb') # if nothing is selected, select gpcrdb
+
+    if gns:
+        # reset the species selection
+        selection.clear('numbering_schemes')
+
+        # add the selected items to the selection
+        for gn in gns:
+            selection_object = SelectionItem('numbering_schemes', gn)
+            selection.add('numbering_schemes', 'numbering_schemes', selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # add all species objects to context (for comparison to selected species)
+    context = selection.dict('numbering_schemes')
+    context['gns'] = all_gns
+    
+    return render(request, 'common/selection_filters_numbering_schemes.html', context)
+
+def SelectionSchemesToggle(request):
+    """Updates the selected numbering schemes arbitrary selections"""
+    numbering_scheme_id = request.GET['numbering_scheme_id']
+    print(numbering_scheme_id)
+    all_gns = ResidueNumberingScheme.objects.all()
+    gns = ResidueNumberingScheme.objects.filter(pk=numbering_scheme_id)
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # add the selected items to the selection
+    for gn in gns:
+        exists = selection.remove('numbering_schemes', 'numbering_schemes', numbering_scheme_id)
+        if not exists:
+            selection_object = SelectionItem('numbering_schemes', gn)
+            selection.add('numbering_schemes', 'numbering_schemes', selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # add all species objects to context (for comparison to selected species)
+    context = selection.dict('numbering_schemes')
+    context['gns'] = ResidueNumberingScheme.objects.all()
+    
+    return render(request, 'common/selection_filters_numbering_schemes.html', context)

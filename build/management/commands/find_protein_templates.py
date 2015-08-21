@@ -35,13 +35,21 @@ class Command(BaseCommand):
 
         # fetch wild-type sequences of receptors with available structures
         structures = Structure.objects.order_by('protein_conformation__protein__parent', 'resolution').distinct(
-            'protein_conformation__protein__parent').select_related('protein_conformation__protein__parent')
-        sps = []
-        for structure in structures:
-            sps.append(structure.protein_conformation.protein.parent) # use the wild-type sequence
+            'protein_conformation__protein__parent').select_related('protein_conformation__protein__parent__family')
 
         # find templates
         for pconf in pconfs:
+            # filter structure sequence queryset to include only sequences from within the same class
+            pconf_class = pconf.protein.family.slug[:3]
+            class_sps = structures.filter(protein_conformation__protein__parent__family__slug__startswith=pconf_class)
+            sps = []
+            if class_sps.exists():
+                for structure in class_sps:
+                    sps.append(structure.protein_conformation.protein.parent) # use the wild-type sequence
+            else:
+                for structure in structures:
+                    sps.append(structure.protein_conformation.protein.parent) # use the wild-type sequence
+
             # overall
             template = self.find_segment_template(pconf, sps, segments)
             template_structure = self.fetch_template_structure(structures, template.protein.entry_name)

@@ -1,5 +1,6 @@
-from django.db import models
+﻿from django.db import models
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
+from residue.models import Residue
 
 class Protein(models.Model):
     parent = models.ForeignKey('self', null=True)
@@ -33,10 +34,12 @@ class Protein(models.Model):
         return tmp.name
 
     def get_helical_box(self):
-        return DrawHelixBox(self)
+        residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
+        return DrawHelixBox(residuelist,self.get_protein_class(),str(self))
 
     def get_snake_plot(self):
-        return DrawSnakePlot(self)
+        residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
+        return DrawSnakePlot(residuelist,self.get_protein_class(),str(self))
 
     def get_protein_family(self):
         tmp = self.family
@@ -56,6 +59,7 @@ class ProteinConformation(models.Model):
     similarity = 0 # % similarity to a reference sequence in an alignment (% BLOSUM62 score > 0)
     similarity_score = 0 # similarity score to a reference sequence in an alignment (sum of BLOSUM62 scores)
     alignment = 0 # residues formatted for use in an Alignment class
+    alignment_list = 0 # FIXME redundant, remove when dependecies are removed
 
     def __str__(self):
         return self.protein.entry_name + " (" + self.state.slug + ")"

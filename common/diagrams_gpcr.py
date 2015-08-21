@@ -12,7 +12,7 @@ from datetime import datetime
 
 class DrawSnakePlot(Diagram):
 
-    def __init__(self, protein):
+    def __init__(self, residue_list, protein_class,protein_name):
 
         self.type = 'snakeplot'
         plot_data = {}
@@ -30,8 +30,8 @@ class DrawSnakePlot(Diagram):
         plot_data['Class C']['coordinates'] = [0, [455,231],[390,108],[245,118],[105,105],[75,241],[193,320],[328,303]]
         plot_data['Class C']['helixTopResidues'] = [0, 34, 61, 26, 61, 38, 57, 35]
 
-        self.receptorId = protein
-        self.family = protein.get_protein_class()
+        self.receptorId = protein_name
+        self.family = protein_class
         self.output = ''
         residueType = 'sp'
 
@@ -41,7 +41,7 @@ class DrawSnakePlot(Diagram):
         
         # get sequence, baldwin, and bw information of this receptor
 
-        self.sequence = Residue.objects.filter(protein_conformation__protein__entry_name=self.receptorId).prefetch_related('protein_segment','generic_number')
+        self.sequence = residue_list
 
 
         #self.residuelist = Residue.objects.values_list('generic_number', flat=True).filter(protein_conformation__protein__entry_name=self.receptorId)
@@ -53,11 +53,23 @@ class DrawSnakePlot(Diagram):
         print("residues",len(self.sequence))
         i = 0
         for r in self.sequence:
-            segment = str(r.protein_segment.slug)
+            if r.protein_segment:
+                segment = str(r.protein_segment.slug)
+            elif r.segment_slug: #from family aligment
+                segment = str(r.segment_slug)
+
             if segment not in self.segments: self.segments[segment] = []
             label = ''
-            if r.generic_number: label = r.generic_number.label
-            self.segments[segment].append([r.sequence_number,r.amino_acid,label])
+            displaylabel = ''
+            if r.generic_number: 
+                label = r.generic_number.label
+            elif hasattr(r, 'family_generic_number'):
+                label = r.family_generic_number
+            if r.display_generic_number: displaylabel = r.display_generic_number.label
+            displaylabel = r.amino_acid + str(r.sequence_number) + " \n " + displaylabel
+            if hasattr(r, 'extra'):
+                displaylabel = displaylabel + "\n" + r.extra
+            self.segments[segment].append([r.sequence_number,r.amino_acid,label,displaylabel])
             #print(segment,len(self.segments[segment]))
             #print(r.sequence_number,r.amino_acid,r.protein_segment.slug)
             i += 1
@@ -186,7 +198,7 @@ class DrawSnakePlot(Diagram):
                 #bulgeY = 0
             x = round(startX-row_pos*self.residue_radius*1.6+indentX+bulgeX) #move left as you go down a row
             y = round(startY+row*self.residue_radius*2.4+row_pos*self.residue_radius*0.5+indentY+bulgeY) #Move down with right amount
-            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], str(rs[i][0])+" "+rs[i][2], self.residue_radius)
+            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], rs[i][3], self.residue_radius)
 
 
             if x<self.maxX['left']: self.maxX['left'] = x
@@ -319,7 +331,7 @@ class DrawSnakePlot(Diagram):
             y = round(startY+row*self.residue_radius*2.4+row_pos*self.residue_radius*0.5+indentY+bulgeY) #Move down with right amount
             x = round(startX+row*self.residue_radius*2.4-row_pos*self.residue_radius*0.5+indentY+bulgeY) #move left as you go down a row
             y = round(startY+row_pos*self.residue_radius*1.6+indentX+bulgeX) #Move down with right amount
-            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], str(rs[i][0])+" "+rs[i][2], self.residue_radius)
+            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], rs[i][3], self.residue_radius)
 
 
             if x<self.maxX['left']: self.maxX['left'] = x
@@ -423,13 +435,13 @@ class DrawSnakePlot(Diagram):
             #print('Loop',i,position,number)
 
             #Get positions of two  linking residues from each helix
-            x2 = x1+30*orientation
+            x2 = x1-30
             y2 = y1+60*orientation
 
             #print([x1,y1],[x2,y2])
 
             #Make line and box for short version
-            points = "M "+str(x1)+" "+str(y1)+" Q"+str(x1-30*orientation)+" "+str(y2)+" "+str(x2)+" "+str(y2)
+            points = "M "+str(x1)+" "+str(y1)+" Q"+str(x1+30)+" "+str(y2)+" "+str(x2)+" "+str(y2)
             self.output += "<path class='"+name+" short' d='" + points + "' stroke='black' fill='none' stroke-width='2' />"
             self.output += "<rect class='"+name+" short' onclick='toggleLoop(\"."+name+"\",\"short\");' x="+str(x2-25)+" y="+str(y2-13)+" rx=5 ry=5 width='50' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
             self.output += str("<text class='"+name+" short' onclick='toggleLoop(\"."+name+"\",\"short\");' x="+str(x2)+" y="+str(y2)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
@@ -490,7 +502,7 @@ class DrawSnakePlot(Diagram):
 
                 if bend==0: labely = where[1][1]
 
-                self.output += self.DrawResidue(where[1][0],where[1][1],r[1], r[0], r[0], self.residue_radius-1,name+" long")
+                self.output += self.DrawResidue(where[1][0],where[1][1],r[1], r[0], rs[i][3], self.residue_radius-1,name+" long")
                 pos += between_residues
 
                 if where[1][1]<self.low: self.low = where[1][1]
@@ -594,8 +606,8 @@ class DrawSnakePlot(Diagram):
             self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"short\");' class='"+name+" short' x="+str(Fx)+" y="+str(Fy)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
 
+            if name not in self.segments: continue
             rs = self.segments[name] #get residues
-
             #print("residues in ",name,len(rs))
 
             y_indent = y_indent*len(rs)/5 #get an approx need for y_indent for size of loop
@@ -761,7 +773,7 @@ class DrawSnakePlot(Diagram):
                                 bend_direction = -1
                             elif bend_direction==-1: 
                                 bend_direction = 1
-                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], where[1][0], r[0], self.residue_radius-1,name+" long")
+                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], where[1][0], r[3], self.residue_radius-1,name+" long")
 
 
                     if orientation==-1: 
@@ -856,7 +868,7 @@ class DrawSnakePlot(Diagram):
                     else:
                         where = self.wherebezier([x1,y1],[boxX,boxY+y_indent],[x2,y2],0.001,pos)
 
-                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], r[0], r[0], self.residue_radius-1,name+" long")
+                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], r[0], r[3], self.residue_radius-1,name+" long")
                     pos += between_residues
 
                     if where[1][1]>self.high: self.high = where[1][1]
@@ -910,9 +922,15 @@ class DrawHelixBox(Diagram):
     plot_data['Class C']['rotation'] = [0, 170, 200, 290, 145, 250, 210, 310] # in degrees
 
 
-    def __init__(self, protein):
-        self.receptorId = protein
-        self.family = protein.get_protein_class()
+    def __init__(self, residue_list, protein_class,protein_name):
+
+        self.receptorId = protein_name
+        self.family = protein_class
+
+        self.sequence = residue_list
+
+        #self.receptorId = protein
+        #self.family = protein.get_protein_class()
         self.output = ''
         self.type = 'helixbox'
 
@@ -920,10 +938,27 @@ class DrawHelixBox(Diagram):
         if self.family not in self.plot_data:
             self.family = 'Class A'
 
+        segment_lists = {}
+        for r in residue_list:
+            if r.protein_segment:
+                if r.protein_segment.slug not in segment_lists:
+                    segment_lists[r.protein_segment.slug] = []
+
+                segment_lists[r.protein_segment.slug].append(r)
+            elif r.segment_slug: #from aligment
+                if r.segment_slug not in segment_lists:
+                    segment_lists[r.segment_slug] = []
+
+                segment_lists[r.segment_slug].append(r)
+
+
+
         for i in range(1,len(self.plot_data[self.family]['coordinates'])):
             #fetch residues | add sort by sequence_number FIXME
-            self.residuelist = Residue.objects.filter(
-                protein_segment__slug='TM'+str(i), protein_conformation__protein__entry_name=self.receptorId).prefetch_related('generic_number')
+            # self.residuelist = residue_list.filter(
+            #     protein_segment__slug='TM'+str(i)).prefetch_related('display_generic_number','generic_number')
+
+            self.residuelist = segment_lists['TM'+str(i)]
 
             self.output += self.DrawHelix(self.plot_data[self.family]['coordinates'][i][0],
                 self.plot_data[self.family]['coordinates'][i][1],
@@ -946,7 +981,15 @@ class DrawHelixBox(Diagram):
         sequence = {}
 
         for r in residuelist:
-            sequence[int(r.generic_number.label[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number,'generic_number':r.generic_number.label}
+            displaylabel = r.amino_acid+str(r.sequence_number)
+            generic_number = ''
+            if r.generic_number: 
+                generic_number = r.generic_number.label
+            elif r.family_generic_number:
+                generic_number = r.family_generic_number
+            if r.display_generic_number: displaylabel += "\n"+r.display_generic_number.label
+            if hasattr(r, 'extra'): displaylabel += "\n" + r.extra
+            sequence[int(generic_number[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number,'generic_number':generic_number,'displaylabel':displaylabel}
 
         # box size
         numResPerSide = 5
@@ -1044,7 +1087,7 @@ class DrawHelixBox(Diagram):
 
                     # Get label information of each residue.
                     residue_number = sequence[tempCurrentResidue]['residueNumber'];
-                    label = str(residue_number)+" "+sequence[tempCurrentResidue]['generic_number']
+                    label = sequence[tempCurrentResidue]['displaylabel']
                     #label = self::getResidueLabel(receptorId, helixNum, residue_number); #FIXME IMPLEMENT
                     #label = "m: " . lineEquation["m"] . " x: " . lineEquation["x"];
                     

@@ -4,7 +4,7 @@
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-<!--    <link rel="stylesheet" href="{% static 'home/css/dataTables.tableTools.min.css' %}" type="text/css" />-->
+    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
 {% endblock %}
 
 {% block addon_js %}
@@ -25,6 +25,7 @@
                 dom: 'T<"clear">lfrtip',
                 "aoColumnDefs": [
                     { "sType": "string", "aTargets": [0] },
+                    { "sType": "string", "aTargets": [9] },
                 ],
                 tableTools: {
                     "sRowSelect": "multi",
@@ -33,6 +34,7 @@
                 initComplete: function () {
                     $('#crystal_structures').dataTable().columnFilter({
                         sPlaceHolder: "head:after",
+                        sRangeFormat: "{from}:{to}",
                         aoColumns: [
                             { type: "select" }, //protein name
                             { type: "select" }, //class
@@ -42,13 +44,15 @@
                             { type: "number-range" }, //resolution
                             { type: "text" }, //x-ray ligand
                             { type: "text" }, //preferred chain
-                            { type: "date-range" }, //publication date
                             { type: "text" }, //pmid
+                            { type: "date-range" }, //publication date
                             { type: "text" }, //stabilizing agent - left as type-in for now
                         ]
                     });
                 }
             });
+            $.datepicker.regional[""].dateFormat = "yy-mm-dd";
+            $.datepicker.setDefaults($.datepicker.regional['']);
             $('#crystal_structures tbody').on('click', 'tr', function () {
                 $(this).toggleClass('selected');
             });
@@ -160,7 +164,7 @@
                     <!--<td>{{ crystal.ligand.role.role }}</td>-->
                     <td>{{ crystal.preferred_chain }}</td>
                     <td>{{ crystal.publication.web_link.index }}</td>
-                    <td>{{ crystal.publication_date }}</td>
+                    <td>{{ crystal.publication_date|date:"Y-m-d" }}</td>
                     <td>{{ crystal.stabilizing_agents.all|join_attr:"name" }}</td>
                 </tr>
                 {% endfor %}

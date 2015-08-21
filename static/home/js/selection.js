@@ -134,3 +134,45 @@ function ExpandSegment(segment_id) {
         }
     });
 }
+
+function SelectionSchemesPredefined(numbering_schemes) {
+    $.ajax({
+        'url': '/common/selectionschemespredefined',
+        'data': {
+            numbering_schemes: numbering_schemes
+        },
+        'type': 'GET',
+        'success': function (data) {
+            $("#filters-schemes").html(data);
+        }
+    });
+}
+
+function SelectionSchemesToggle(numbering_scheme_id) {
+    $.ajax({
+        'url': '/common/selectionschemestoggle',
+        'data': {
+            numbering_scheme_id: numbering_scheme_id
+        },
+        'type': 'GET',
+        'success': function (data) {
+            $("#filters-schemes").html(data);
+        }
+    });
+}
+
+function SetTreeSelection(option_no, option_id) {
+    console.log(option_no)
+    console.log(option_id)
+    $.ajax({
+        'url': '/common/settreeselection',
+        'data': {
+            option_no: option_no,
+            option_id: option_id
+        },
+        'type': 'GET',
+        'success': function (data) {
+            $("#tree_selection").html(data);
+        }
+    });
+}

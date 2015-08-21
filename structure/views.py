@@ -1,4 +1,5 @@
-from django.shortcuts import render
+﻿from django.shortcuts import render
+from django.conf import settings
 from django.views.generic import TemplateView
 from django.http import HttpResponse, JsonResponse
 from django import forms
@@ -11,11 +12,12 @@ from structure.structural_superposition import ProteinSuperpose,FragmentSuperpos
 from common.views import AbsSegmentSelection,AbsReferenceSelection
 from common.selection import Selection
 from common.extensions import MultiFileField
-from common.alignment import Alignment
+Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 import inspect
 import os
 import zipfile
+import math
 from copy import deepcopy
 from io import StringIO, BytesIO
 from collections import OrderedDict
@@ -32,7 +34,7 @@ class StructureBrowser(TemplateView):
 
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
-            context['crystals'] = Structure.objects.prefetch_related()
+            context['crystals'] = Structure.objects.all().prefetch_related("protein_conformation__protein", "protein_conformation__protein__endogenous_ligands", "publication__web_link", "stabilizing_agents")
         except Structure.DoesNotExist as e:
             pass
 
@@ -51,9 +53,10 @@ class StructureStatistics(TemplateView):
         context = super(StructureStatistics, self).get_context_data(**kwargs)
 
         #Prepare chart with unique crystallized receptors by year
-        all_structs = list(Structure.objects.all())
+        all_structs = list(Structure.objects.all().prefetch_related('protein_conformation__protein'))
         years = list(set([x.publication_date.year for x in all_structs]))
-        unique_structs = self.get_unique_structures(all_structs)
+        unique_structs = list(Structure.objects.order_by('protein_conformation__protein__parent', 'state',
+            'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein'))
         families = list(set([x.protein_conformation.protein.get_protein_family() for x in unique_structs]))
         
         extra = {
@@ -68,21 +71,14 @@ class StructureStatistics(TemplateView):
         context['chartdata2'] = self.get_per_family_data_series(years, families, unique_structs)
         context['extra2'] = extra
 
+        context['chartdata_all'] = self.get_per_family_cumulative_data_series(years, families, all_structs)
+        context['extra_all'] = extra
+
+        context['charttype_reso'] = "discreteBarChart"
+        context['chartdata_reso'] = self.get_resolution_coverage_data_series(all_structs)
+        context['extra_reso'] = extra#{'x_axis_format': '[]', 'y_axis_format': 'f'}
+
         return context
-
-
-    def get_unique_structures(self, structures):
-        """
-        Prepare a list of unique crystallized receptors. Uniqueness is evaluated by Gene object.
-        """
-        uniques = []
-        genes = Gene.objects.all()
-        for gene in genes:
-            coded_proteins = [x.entry_name for x in gene.proteins.all()]
-            for struct in structures:
-                if struct.protein_conformation.protein.parent.entry_name in coded_proteins and struct not in uniques:
-                    uniques.append(struct)
-        return uniques
 
 
     def get_per_family_data_series(self, years, families, structures):
@@ -129,6 +125,30 @@ class StructureStatistics(TemplateView):
             series['name{:n}'.format(idx+1)] = family
             series['y{:n}'.format(idx+1)] = data[family]
         return series
+
+
+    def get_resolution_coverage_data_series(self, structures):
+        """
+        Prepare data for multiBarGraph of resolution coverage of available crystal structures.
+        """
+        #Resolutions boundaries
+        reso_min = float(min([round(x.resolution, 1) for x in structures]))
+        reso_max = float(max([round(x.resolution, 1) for x in structures]))
+        step = (reso_max - reso_min)/10
+
+        brackets = [reso_min + step*x for x in range(10)] + [reso_max]
+
+        reso_count = []
+        for idx, bracket in enumerate(brackets):
+            if idx == 0:
+                reso_count.append(len([x for x in structures if x.resolution <= bracket]))
+            else:
+                reso_count.append(len([x for x in structures if bracket-step < x.resolution <= bracket]))
+        
+        print(["{:.2f}".format(x) for x in brackets])
+        return {'x': ["{:.2f}".format(x) for x in brackets], 'y': reso_count}
+            
+
 
 
 class GenericNumberingIndex(TemplateView):
@@ -481,6 +501,7 @@ class FragmentSuperpositionIndex(TemplateView):
             widget=forms.RadioSelect())),
         ("representative", forms.ChoiceField(choices=(('closest','Use fragments from the evolutionary closest crystal structure'),
                      ('any','Use all available fragments')), widget=forms.RadioSelect())),
+        ("state", forms.ChoiceField(choices=(('active', 'Agonist-bound structures'),('inactive', 'Antagonist-bound structures')),widget=forms.Select()))
         ])
     form_code = forms.Form()
     form_code.fields = upload_form_data
@@ -532,13 +553,13 @@ class FragmentSuperpositionResults(TemplateView):
             if request.POST['representative'] == 'any':
                 superposed_fragments = frag_sp.superpose_fragments()
             else:
-                superposed_fragments_repr = frag_sp.superpose_fragments(representative=True)
+                superposed_fragments_repr = frag_sp.superpose_fragments(representative=True, state=request.POST['state'])
                 superposed_fragments = frag_sp.superpose_fragments()
         else:
             if request.POST['representative'] == 'any':
                 superposed_fragments = frag_sp.superpose_fragments(use_similar=True)
             else:
-                superposed_fragments_repr = frag_sp.superpose_fragments(representative=True, use_similar=True)
+                superposed_fragments_repr = frag_sp.superpose_fragments(representative=True, use_similar=True, state=request.POST['state'])
                 superposed_fragments = frag_sp.superpose_fragments(use_similar=True)
         if superposed_fragments == []:
             self.message = "No fragments were aligned."
@@ -604,6 +625,9 @@ class TemplateTargetSelection(AbsReferenceSelection):
             'color' : 'info',
         },
     }
+    selection_boxes = OrderedDict([('reference', True),
+        ('targets', False),
+        ('segments', False),])
 
 
 
@@ -641,7 +665,7 @@ class TemplateBrowser(TemplateView):
     Fetching Structure data and ordering by similarity
     """
 
-    template_name = "structure_browser.html"
+    template_name = "template_browser.html"
 
     def get_context_data (self, **kwargs):
 
@@ -658,15 +682,9 @@ class TemplateBrowser(TemplateView):
         a.load_proteins([x.protein_conformation.protein for x in list(Structure.objects.all())])
         a.build_alignment()
         a.calculate_similarity()
-        print(len(a.proteins[1:]))
         context['crystals'] = []
         for prot in a.proteins[1:]:
             context['crystals'].append(Structure.objects.get(protein_conformation__protein__entry_name=prot.protein.entry_name))
-        print(context['crystals'])
-        #try:
-        #    context['crystals'] = Structure.objects.all()
-        #except Structure.DoesNotExist as e:
-        #    pass
 
         return context
 

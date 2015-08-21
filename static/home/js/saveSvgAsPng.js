@@ -81,7 +81,6 @@
   }
 
   out$.svgAsDataUri = function(el, options, cb) {
-    console.log(el);
     options = options || {};
     options.scale = options.scale || 1;
     var xmlns = "http://www.w3.org/2000/xmlns/";
@@ -92,12 +91,12 @@
       var width, height;
       if(el.tagName == 'svg') {
         var box = el.getBoundingClientRect();
-        width = box.width ||
-          parseInt(clone.getAttribute('width') ||
+        width = parseInt(clone.getAttribute('width') ||
+          box.width ||
           clone.style.width ||
           out$.getComputedStyle(el).getPropertyValue('width'));
-        height = box.height ||
-          parseInt(clone.getAttribute('height') ||
+        height = parseInt(clone.getAttribute('height') ||
+          box.height ||
           clone.style.height ||
           out$.getComputedStyle(el).getPropertyValue('height'));
         if (width === undefined || 
@@ -120,13 +119,6 @@
         svg.appendChild(clone)
         clone = svg;
       }
-
-      console.log(width);
-      width = el.getAttribute('width');
-      height = el.getAttribute('height');
-      console.log(width);
-      console.log(width * options.scale);
-      console.log(options);
 
       clone.setAttribute("version", "1.1");
       clone.setAttributeNS(xmlns, "xmlns", "http://www.w3.org/2000/svg");
@@ -156,7 +148,6 @@
     options = options || {};
     out$.svgAsDataUri(el, options, function(uri) {
       var image = new Image();
-      image.src = uri;
       image.onload = function() {
         var canvas = document.createElement('canvas');
         canvas.width = image.width;
@@ -173,6 +164,7 @@
         });
         a.click();
       }
+      image.src = uri;
     });
   }
 })();

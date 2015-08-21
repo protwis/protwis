@@ -44,6 +44,19 @@ class Command(BaseCommand):
         self.logger.info('CREATING PROTEINS')
         self.logger.info('Parsing file ' + self.protein_source_file)
 
+        # get/create protein sequence type
+        # Wild-type for all sequences from source file, isoforms handled separately
+        try:
+            sequence_type, created = ProteinSequenceType.objects.get_or_create(slug='wt',
+                defaults={
+                'slug': 'wt',
+                'name': 'Wild-type',
+                })
+            if created:
+                self.logger.info('Created protein sequence type Wild-type')
+        except:
+                self.logger.error('Failed creating protein sequence type Wild-type')
+
         with open(self.protein_source_file, "r", encoding='UTF-8') as protein_file:
             # family hierarchy is determined by indent
             spaces_per_indent_level = 4
@@ -145,11 +158,12 @@ class Command(BaseCommand):
                             self.logger.error('Failed parsing uniprot file for protein ' + protein_name + ', skipping')
                             continue
 
-                        self.create_protein(protein_name, pf, residue_numbering_scheme, protein_accession, up)
+                        self.create_protein(protein_name, pf, sequence_type, residue_numbering_scheme,
+                            protein_accession, up)
 
         self.logger.info('COMPLETED CREATING PROTEINS')
 
-    def create_protein(self, name, family, residue_numbering_scheme, accession, uniprot):
+    def create_protein(self, name, family, sequence_type, residue_numbering_scheme, accession, uniprot):
         # get/create protein source
         try:
             source, created = ProteinSource.objects.get_or_create(name=uniprot['source'],
@@ -163,26 +177,12 @@ class Command(BaseCommand):
         try:
             species, created = Species.objects.get_or_create(latin_name=uniprot['species_latin_name'],
                 defaults={
-                'latin_name': uniprot['species_latin_name'],
                 'common_name': uniprot['species_common_name'],
                 })
             if created:
                 self.logger.info('Created species ' + species.latin_name)
         except:
                 self.logger.error('Failed creating species ' + species.latin_name)
-        
-        # get/create protein sequence type
-        # Wild-type for all sequences from source file, isoforms handled separately
-        try:
-            sequence_type, created = ProteinSequenceType.objects.get_or_create(slug='wt',
-                defaults={
-                'slug': 'wt',
-                'name': 'Wild-type',
-                })
-            if created:
-                self.logger.info('Created protein sequence type Wild-type')
-        except:
-                self.logger.error('Failed creating protein sequence type Wild-type')
 
         # create protein
         p = Protein()
@@ -191,16 +191,17 @@ class Command(BaseCommand):
         p.source = source
         p.residue_numbering_scheme = residue_numbering_scheme
         p.sequence_type = sequence_type
-        p.accession = accession
+        if accession:
+            p.accession = accession
         p.entry_name = uniprot['entry_name']
         p.name = name
         p.sequence = uniprot['sequence']
 
         try:
             p.save()
-            self.logger.info('Created protein ' + p.entry_name + ', ' + p.accession)
+            self.logger.info('Created protein {}'.format(p.entry_name))
         except:
-            self.logger.error('Failed creating protein ' + p.entry_name + ', ' + p.accession)
+            self.logger.error('Failed creating protein {}'.format(p.entry_name))
 
         # protein conformations
         ps, created = ProteinState.objects.get_or_create(slug=settings.DEFAULT_PROTEIN_STATE,
