@@ -70,6 +70,8 @@ class Publication(models.Model):
             self.title = record['TI']
             self.authors = record['AU']
             self.year = record['DA'][:4]
+            record['JT'] = record['JT'][:29] #not allowed longer by model. FIXME
+            record['TA'] = record['TA'][:29] #not allowed longer by model. FIXME
             try:
                 self.journal = PublicationJournal.objects.get(slug=record['TA'], name=record['JT'])
             except PublicationJournal.DoesNotExist:

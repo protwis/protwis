@@ -22,11 +22,11 @@ from urllib.request import urlopen, quote
 import re
 import math
 import xlrd
+import operator
 
 from optparse import make_option
 import logging, os, re
 import yaml
-
 
 ## FOR VIGNIR ORDERED DICT YAML IMPORT/DUMP
 _mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
@@ -44,8 +44,8 @@ def represent_ordereddict(dumper, data):
 
     return yaml.nodes.MappingNode(u'tag:yaml.org,2002:map', value)
 
-yaml.add_representer(OrderedDict, represent_ordereddict)
-yaml.add_constructor(_mapping_tag, dict_constructor)
+#yaml.add_representer(OrderedDict, represent_ordereddict)
+#yaml.add_constructor(_mapping_tag, dict_constructor)
 
 class Command(BaseCommand):
     help = 'Reads source data and creates pdb structure records'
@@ -59,7 +59,7 @@ class Command(BaseCommand):
     logger = logging.getLogger(__name__)
 
     # source file directory
-    structure_data_dir = os.sep.join([settings.DATA_DIR, 'mutant_data', 'xls'])
+    structure_data_dir = os.sep.join([settings.DATA_DIR, 'mutant_data'])
 
     def handle(self, *args, **options):
         # delete any existing structure data
@@ -202,6 +202,10 @@ class Command(BaseCommand):
         return raw_id
 
 
+    def load_mutant_from_yaml(self,filename):
+        pass
+
+
 
     def create_mutant_data(self, filenames):
         self.logger.info('CREATING MUTANT DATA')
@@ -210,36 +214,96 @@ class Command(BaseCommand):
         if not filenames:
             filenames = os.listdir(self.structure_data_dir)
 
+        missing_proteins = {}
+        mutants_for_proteins = {}
+
         for source_file in filenames:
             source_file_path = os.sep.join([self.structure_data_dir, source_file])
             if os.path.isfile(source_file_path) and source_file[0] != '.':
                 self.logger.info('Reading file {}'.format(source_file_path))
                 print("Reading "+source_file_path)
                 # read the yaml file
-                rows = self.loaddatafromexcel(source_file_path)
-                rows = self.analyse_rows(rows)
+
+                if source_file[-4:]=='xlsx' or source_file[-3:]=='xls':
+                    print('xls!',source_file)
+                    rows = self.loaddatafromexcel(source_file_path)
+                    rows = self.analyse_rows(rows)
+                    continue
+                elif source_file[-4:]=='yaml':
+                    print('yaml!',source_file)
+                    rows = yaml.load(open(source_file_path, 'r'))
+                    temp = []
+                    for r in rows:
+                        d = {}
+                        d['reference'] = r['pubmed']
+                        d['protein'] = r['entry_name'].replace("__","_").lower()
+                        d['mutation_pos'] = r['seq']
+                        d['mutation_from'] = r['from_res']
+                        d['mutation_to'] = r['to_res']
+                        d['ligand_name'] = ''
+                        d['ligand_type'] = ''
+                        d['ligand_id'] = ''
+                        d['ligand_class'] = ''
+                        d['exp_type'] = ''
+                        d['exp_func'] = ''
+                        d['exp_wt_value'] = 0
+                        d['exp_wt_unit'] = ''
+                        d['exp_mu_effect_type'] = ''
+                        d['exp_mu_effect_sign'] = ''
+                        d['exp_mu_value_raw'] = 0
+                        d['exp_mu_effect_qual'] = ''
+                        d['exp_mu_effect_ligand_prop'] = ''
+                        d['exp_mu_ligand_ref'] = ''
+                        d['opt_type'] = ''
+                        d['opt_wt'] = 0
+                        d['opt_mu'] = 0
+                        d['opt_sign'] = ''
+                        d['opt_percentage'] = 0
+                        d['opt_qual'] = ''
+                        d['opt_agonist'] = ''
+                        if len(d['mutation_to'])>1 or len(d['mutation_from'])>1: #if something is off with amino acid
+                            continue
+                        temp.append(d)
+                    rows = temp
+                else:
+                    print('unknown format'.source_file)
+                    continue
 
                 c = 0
                 skipped = 0
                 inserted = 0
                 for r in rows:
-                    print("Inserted",inserted,"Skipped",skipped)
+                    c += 1
                     #print(r)
                     raw_experiment = self.insert_raw(r)
 
                     # publication
+
+                    if r['reference'].isdigit(): #assume pubmed
+                        pub_type = 'pubmed'
+                    else: #assume doi
+                        pub_type = 'doi'
+
                     try:
-                        pub = Publication.objects.get(web_link__index=r['reference'])
+                        pub = Publication.objects.get(web_link__index=r['reference'], web_link__web_resource__slug=pub_type)
                     except Publication.DoesNotExist as e:
                         pub = Publication()
                         try:
-                            pub.web_link = WebLink.objects.get(index=r['reference'], web_resource__slug='doi')
+                            pub.web_link = WebLink.objects.get(index=r['reference'], web_resource__slug=pub_type)
                         except WebLink.DoesNotExist:
                             wl = WebLink.objects.create(index=r['reference'],
-                                web_resource = WebResource.objects.get(slug='doi'))
+                                web_resource = WebResource.objects.get(slug=pub_type))
                             pub.web_link = wl
-                        pub.update_from_doi(doi=r['reference'])
-                        pub.save()
+
+                        if pub_type == 'doi':
+                            pub.update_from_doi(doi=r['reference'])
+                        elif pub_type == 'pubmed':
+                            pub.update_from_pubmed_data(index=r['reference'])
+                        try:
+                            pub.save()
+                        except:
+                            print('error with reference ',r['reference'],pub_type)
+                            continue #if something off with publication, skip.
 
                     if r['ligand_type']=='PubChem CID':
                         print('inserting by pubchem id')
@@ -349,7 +413,7 @@ class Command(BaseCommand):
                                 l.ambigious_alias = False
                                 l.save()
                                 #l.load_by_name(str(r['ligand_name']))
-                    else:
+                    elif r['ligand_name']:
                         print('inserting by something else',r['ligand_type'],r['ligand_name'],r['ligand_id'])
                         if Ligand.objects.filter(name=r['ligand_name'], canonical=True).exists(): #if this name is canonical and it has a ligand record already
                             l = Ligand.objects.get(name=r['ligand_name'], canonical=True)
@@ -377,7 +441,8 @@ class Command(BaseCommand):
                             l.ambigious_alias = False
                             l.save()
                             l.load_by_name(str(r['ligand_name']))
-                    l.save()
+                    else:
+                        l = None
 
                     if Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=True).exists(): #if this name is canonical and it has a ligand record already
                         l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=True)
@@ -394,7 +459,8 @@ class Command(BaseCommand):
                         l_ref.ambigious_alias = True
                         l_ref.save()
                         l_ref.load_by_name(r['exp_mu_ligand_ref'])
-                    else: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.
+                        l_ref.save()
+                    elif r['exp_mu_ligand_ref']: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.
                         print('Inserting ref '+str(r['exp_mu_ligand_ref']))
                         lp = LigandProperities()
                         lp.save()
@@ -405,7 +471,9 @@ class Command(BaseCommand):
                         l_ref.ambigious_alias = False
                         l_ref.save()
                         l_ref.load_by_name(r['exp_mu_ligand_ref'])
-                    l_ref.save()
+                        l_ref.save()
+                    else:
+                        l_ref = None
 
                     protein_id = 0
                     residue_id = 0
@@ -413,16 +481,25 @@ class Command(BaseCommand):
                     protein=Protein.objects.filter(entry_name=r['protein'])
                     if protein.exists():
                         protein=protein.get()
+                        if r['protein'] in mutants_for_proteins:
+                            mutants_for_proteins[r['protein']] += 1
+                        else:
+                            mutants_for_proteins[r['protein']] = 1
+
                     else:
-                        whattoreturn.append(['Skipped due to no protein',r['protein']])
+                        print(['Skipped due to no protein',r['protein']])
                         skipped += 1
+                        if r['protein'] in missing_proteins:
+                            missing_proteins[r['protein']] += 1
+                        else:
+                            missing_proteins[r['protein']] = 1
                         continue
 
                     res=Residue.objects.filter(protein_conformation__protein=protein,sequence_number=r['mutation_pos'])
                     if res.exists():
                         res=res.get()
                     else:
-                        whattoreturn.append(['Skipped due to no residue',r['protein'],r['mutation_pos']])
+                        print(['Skipped due to no residue',r['protein'],r['mutation_pos']])
                         skipped += 1
                         continue
 
@@ -497,11 +574,16 @@ class Command(BaseCommand):
                     )
                     #print(foldchange)
                     mut_id = obj.id
-                    print('added with id',mut_id)
+                    if created: print('added with id',mut_id)
 
                     #whattoreturn.append([protein_id,residue_id,raw_id,ref_id,lig_id,ligclass_id,exp_type_id,exp_func_id,exp_measure_id,exp_qual_id,typefold,foldchange,mut_id])
                     inserted += 1
-                    c += 1
+                    print("Parsed",c,"Skipped",skipped)
+
+        sorted_missing_proteins = sorted(missing_proteins.items(), key=operator.itemgetter(1),reverse=True)
+        sorted_mutants_for_proteins = sorted(mutants_for_proteins.items(), key=operator.itemgetter(1),reverse=True)
+        print(sorted_missing_proteins)
+        print(sorted_mutants_for_proteins)
 
 
 
