@@ -680,7 +680,7 @@ class AlignedReferenceTemplate(Alignment):
             for protein in self.ordered_proteins:
                 if protein.protein==self.reference_protein.protein:
                     ref_positions = []
-                    for segment in protein.alignment:
+                    for seg_label, segment in protein.alignment.items():
                         all_ref_positions = []
                         for res in segment:
                             if res[1]!=False and res[1]!='':
@@ -688,7 +688,7 @@ class AlignedReferenceTemplate(Alignment):
                         ref_positions.append([all_ref_positions[0],all_ref_positions[-1]])
                 else:
                     temp_positions = []
-                    for segment in protein.alignment:
+                    for seg_label, segment in protein.alignment.items():
                         all_temp_positions = []
                         for res in segment:
                             if res[1]!=False and res[1]!='':
@@ -729,22 +729,24 @@ class AlignedReferenceTemplate(Alignment):
                                     p.protein==self.main_template_structure.protein_conformation.protein.parent][0]
         for protein in self.proteins:
             if protein.protein==self.reference_protein.protein:
-                ref_length = 0
-                for res in protein.alignment_list[0]:
-                    if res[1]!=False:
-                        ref_length.append(res[0])
+                ref_length = []
+                for seglab, segment in protein.alignment.items():
+                    for res in segment:
+                        if res[1]!=False:
+                            ref_length.append(res[0])
             elif protein.protein==self.main_template_protein.protein:
                 main_temp_length = []
                 main_struct_sim = int(protein.similarity)
-                for res in protein.alignment_list[0]:
-                    if res[1]!=False:
-                        main_temp_length.append(res[0])
+                for seglab, segment in protein.alignment.items():
+                    for res in segment:
+                        if res[1]!=False:
+                            main_temp_length.append(res[0])
             else:
-                temp_length = 0
-                matches = self.structures_data.filter(protein_conformation__protein__parent__id=protein.protein.id)
-                for res in protein.alignment_list[0]:
-                    if res[1]!=False:
-                        temp_length.append(res[0])
+                temp_length = []
+                for seglab, segment in protein.alignment.items():
+                    for res in segment:
+                        if res[1]!=False:
+                            temp_length.append(res[0])
                 if self.provide_similarity_table==None:
                     match = self.structures_data.filter(protein_conformation__protein__parent__id=protein.protein.id)
                     temp_list.append((list(match)[0], temp_length, int(protein.similarity), 
@@ -787,11 +789,11 @@ class AlignedReferenceTemplate(Alignment):
         "No main template with same helix endings. No homology model will be built for {}.".format(self.reference_protein))
         segment_count = 0
 
-        for ref_segment, temp_segment in zip(self.reference_protein.alignment_list,
-            self.main_template_protein.alignment_list):
+        for ref_seglab, temp_seglab in zip(self.reference_protein.alignment, self.main_template_protein.alignment):
             segment_count+=1
             ref_segment_dict,temp_segment_dict,align_segment_dict = OrderedDict(), OrderedDict(), OrderedDict()
-            for ref_position, temp_position in zip(ref_segment,temp_segment):
+            for ref_position, temp_position in zip(self.reference_protein.alignment[ref_seglab],
+                                                   self.main_template_protein.alignment[temp_seglab]):
                 if ref_position[1]!=False and temp_position[1]!=False:
                     if ref_position[0]==temp_position[0]:
                         ref_segment_dict[ref_position[0]]=ref_position[2]
@@ -817,6 +819,6 @@ class AlignedReferenceTemplate(Alignment):
                     temp_segment_dict[temp_position[0]]=temp_position[2]
                     align_segment_dict[ref_position[0]]='-'
 
-            self.reference_dict[segment_label] = ref_segment_dict
-            self.template_dict[segment_label] = temp_segment_dict
-            self.alignment_dict[segment_label] = align_segment_dict
+            self.reference_dict[ref_seglab] = ref_segment_dict
+            self.template_dict[ref_seglab] = temp_segment_dict
+            self.alignment_dict[ref_seglab] = align_segment_dict
