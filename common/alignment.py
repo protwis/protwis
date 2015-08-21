@@ -736,7 +736,6 @@ class AlignedReferenceTemplate(Alignment):
             segment_count+=1
             ref_segment_dict,temp_segment_dict,align_segment_dict = OrderedDict(), OrderedDict(), OrderedDict()
             for ref_position, temp_position in zip(ref_segment,temp_segment):
-                print(ref_position, temp_position)
                 if ref_position[1]!=False and temp_position[1]!=False:
                     if ref_position[0]==temp_position[0]:
                         ref_segment_dict[ref_position[0]]=ref_position[2]
