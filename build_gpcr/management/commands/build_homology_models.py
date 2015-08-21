@@ -15,6 +15,7 @@ import os
 import logging
 import numpy as np
 from io import StringIO
+import sys
 import pprint
 
 
@@ -32,13 +33,10 @@ class Command(BaseCommand):
                 self.stdout.write(Homology_model.statistics, ending='')
                 count+=1
 
-        Homology_model = HomologyModeling('adrb1_melga', 'Inactive', ['Inactive'])
+        Homology_model = HomologyModeling('v1br_human', 'Inactive', ['Inactive'])
         alignment = Homology_model.run_alignment()
-        Homology_model.build_homology_model(alignment)
-                                        
-#        val = Validation()
-#        print(val.PDB_RMSD("./structure/PDB/4YAY.pdb", "./structure/homology_models/P30556_Inactive/modeller_test.pdb",
-#                           assign_gns=[1,2], gn_list=['1x39','2x60','3x32','3x33','0x1','7x38'], seq_nums1=[35,84,108,109,167,288], seq_nums2=[9,58,82,83,141,262]))
+        Homology_model.build_homology_model(alignment)#, switch_bulges=False, switch_constrictions=False, switch_rotamers=False)
+
         self.stdout.write(Homology_model.statistics, ending='')
 
 class HomologyModeling(object):
@@ -103,7 +101,8 @@ class HomologyModeling(object):
             self.statistics.add_info('loops',self.loop_template_table)           
         return alignment
         
-    def build_homology_model(self, ref_temp_alignment, switch_bulges=True, switch_constrictions=True, loops=True):
+    def build_homology_model(self, ref_temp_alignment, switch_bulges=True, switch_constrictions=True, loops=True, 
+                             switch_rotamers=True):
         ''' Function to identify and switch non conserved residues in the alignment. Optionally,
             it can identify and switch bulge and constriction sites too. 
             
@@ -191,12 +190,17 @@ class HomologyModeling(object):
                                         constriction_template = Const.find_constriction_template(
                                                                                         self.similarity_table_all,
                                                                                         constriction_in_reference=True)
-                                        constriction_site = parse.fetch_residues_from_pdb(self.main_structure,
-                                                                                          [parse.gn_indecer(gn,'x',-2),
-                                                                                           parse.gn_indecer(gn,'x',-1),
-                                                                                           gn,
-                                                                                           parse.gn_indecer(gn,'x',+1),
-                                                                                           parse.gn_indecer(gn,'x',+2)])
+#                                        constriction_site = parse.fetch_residues_from_pdb(self.main_structure,
+#                                                                                          [parse.gn_indecer(gn,'x',-2),
+#                                                                                           parse.gn_indecer(gn,'x',-1),
+#                                                                                           gn,
+#                                                                                           parse.gn_indecer(gn,'x',+1),
+#                                                                                           parse.gn_indecer(gn,'x',+2)])
+                                        constriction_site = OrderedDict([(parse.gn_indecer(gn,'x',-2).replace('x','.'), main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-2).replace('x','.')]),
+                                                                         (parse.gn_indecer(gn,'x',-1).replace('x','.'), main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-1).replace('x','.')]),
+                                                                         (gn.replace('x','.'), main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-2).replace('x','.')]),
+                                                                         (parse.gn_indecer(gn,'x',+1).replace('x','.'), main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+1).replace('x','.')]),
+                                                                         (parse.gn_indecer(gn,'x',+2).replace('x','.'), main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+2).replace('x','.')])])
                                         superpose = sp.BulgeConstrictionSuperpose(constriction_site, 
                                                                                   constriction_template)
                                         new_residues = superpose.run()                                  
@@ -323,15 +327,18 @@ class HomologyModeling(object):
         # check for inconsitencies with db
         pdb_db_inconsistencies = []
         for seg_label, segment in a.template_dict.items():
-            for gn, res in segment.items():
-                try:
-                    if res==PDB.Polypeptide.three_to_one(
-                                        main_pdb_array[seg_label][gn.replace('x','.')][0].get_parent().get_resname()):
+            try:
+                for gn, res in segment.items():
+                    try:
+                        if res==PDB.Polypeptide.three_to_one(
+                                            main_pdb_array[seg_label][gn.replace('x','.')][0].get_parent().get_resname()):
+                            pass
+                        elif 'x' in gn:
+                            pdb_db_inconsistencies.append({gn:a.template_dict[seg_label][gn]})
+                    except:
                         pass
-                    elif 'x' in gn:
-                        pdb_db_inconsistencies.append({gn:a.template_dict[seg_label][gn]})
-                except:
-                    pass
+            except:
+                pass
         if pdb_db_inconsistencies!=[]:
             for incons in pdb_db_inconsistencies:
                 seg = self.segment_coding[int(list(incons.keys())[0][0])]
@@ -375,14 +382,21 @@ class HomologyModeling(object):
                 a.alignment_dict = modeling_loops.alignment_dict
         
         # non-conserved residue switching
-        non_cons_switch = self.run_non_conserved_switcher(main_pdb_array,a.reference_dict,a.template_dict,
-                                                          a.alignment_dict)
-        main_pdb_array = non_cons_switch[0]
-        a.reference_dict = non_cons_switch[1]
-        a.template_dict = non_cons_switch[2]
-        a.alignment_dict = non_cons_switch[3]
-        trimmed_residues = non_cons_switch[4]
-        
+        if switch_rotamers==True:
+            non_cons_switch = self.run_non_conserved_switcher(main_pdb_array,a.reference_dict,a.template_dict,
+                                                              a.alignment_dict)
+            main_pdb_array = non_cons_switch[0]
+            a.reference_dict = non_cons_switch[1]
+            a.template_dict = non_cons_switch[2]
+            a.alignment_dict = non_cons_switch[3]
+            trimmed_residues = non_cons_switch[4]
+        else:
+            trimmed_residues=[]
+            for seg_id, seg in main_pdb_array.items():
+                for key in seg:
+                    if a.reference_dict[seg_id][str(key).replace('.','x')]!='-':
+                        trimmed_residues.append(key)
+
         # write to file
         path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
         if not os.path.exists(path):
@@ -417,6 +431,7 @@ class HomologyModeling(object):
         switched_count = 0
         non_cons_res_templates, conserved_residues = OrderedDict(), OrderedDict()
         trimmed_residues = []
+        res_list = []
         for ref_seg, temp_seg, aligned_seg in zip(reference_dict, template_dict, alignment_dict):
             for ref_res, temp_res, aligned_res in zip(reference_dict[ref_seg], template_dict[temp_seg], 
                                                       alignment_dict[aligned_seg]):
@@ -431,7 +446,7 @@ class HomologyModeling(object):
                 gn = ref_res
     
                 if (alignment_dict[aligned_seg][aligned_res]=='.' and 
-                    reference_dict[ref_seg][gn]!=template_dict[temp_seg][gn]):
+                    reference_dict[ref_seg][gn]!=template_dict[temp_seg][gn]) and reference_dict[ref_seg][gn]!='x':
                     non_cons_count+=1
                     try:
                         residues = Residue.objects.filter(generic_number__label=ref_res)
@@ -458,6 +473,8 @@ class HomologyModeling(object):
                                     template_dict[temp_seg][gn] = reference_dict[ref_seg][gn]
                                     switched_count+=1                     
                                     non_cons_res_templates[ref_res] = struct
+                                    res=Residue.objects.get(protein_conformation__protein=self.reference_protein, generic_number__label=ref_res)
+                                    res_list.append(res.sequence_number)
                                     no_match = False
                                     break
                             except:
@@ -474,7 +491,7 @@ class HomologyModeling(object):
                                 trimmed_res_num+=1
                         except:
                             logging.warning("Missing atoms in {} at {}".format(self.main_structure,gn))
-        
+
         self.statistics.add_info('ref_seq_length', ref_length)
         self.statistics.add_info('conserved_num', conserved_count)
         self.statistics.add_info('non_conserved_num', non_cons_count)
@@ -483,7 +500,7 @@ class HomologyModeling(object):
         self.statistics.add_info('conserved_residues', conserved_residues)
         self.statistics.add_info('non_conserved_residue_templates', non_cons_res_templates)
         self.statistics.add_info('trimmed_residues', trimmed_residues)
-        
+
         return [main_pdb_array, reference_dict, template_dict, alignment_dict, trimmed_residues]
     
     def write_homology_model_pdb(self, filename, main_pdb_array, ref_temp_alignment, trimmed_residues=[]):
@@ -494,27 +511,28 @@ class HomologyModeling(object):
             values are list of atoms. Output of GPCRDBParsingPDB.pdb_array_creator().
             @param ref_temp_alignment: AlignedReferenceAndTemplate, only writes residues that are in ref_temp_alignment.
         '''
-        model_start = True
         key = ''
 #        self.starting_res_num = list(Residue.objects.filter(protein_segment=2, protein_conformation__protein=self.reference_protein))[0].sequence_number
 #        res_num = self.starting_res_num-1
         res_num = 0
         atom_num = 0
         trimmed_resi_nums = OrderedDict()
-        prev_seg = ''
         with open(filename,'w+') as f:
             for seg_id, segment in main_pdb_array.items():
                 trimmed_segment = OrderedDict()
-                if model_start==False and 'dis' in seg_id and 'dis' in prev_seg:
-                    f.write("\nTER")
                 for key in segment:
-                    if str(key).replace('.','x') in ref_temp_alignment.reference_dict[seg_id]:
+                    if str(key).replace('.','x') :#in ref_temp_alignment.reference_dict[seg_id]:
                         res_num+=1
                         if key in trimmed_residues:
                             trimmed_segment[key] = res_num
+                            if 'x' in segment[key]:
+                                f.write("\nTER")
                             if '?' in key:
                                 continue
-                        for atom in main_pdb_array[seg_id][key]:    
+                        if 'x' in segment[key]:
+                            f.write("\nTER")
+                            continue
+                        for atom in main_pdb_array[seg_id][key]: 
                             atom_num+=1
                             coord = list(atom.get_coord())
                             coord1 = "%8.3f"% (coord[0])
@@ -541,8 +559,6 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
                                      "bfactor":str(bfact).rjust(4), "atom_s":str(str(atom.get_id())[0]).rjust(12)}
                             f.write(template.format(**context))
                 trimmed_resi_nums[seg_id] = trimmed_segment
-                prev_seg = seg_id
-                model_start=False
             f.write("\nTER\nEND")
         return trimmed_resi_nums
                     
@@ -553,13 +569,8 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
             @template_file: str, name of template file with path
         '''
         ref_sequence, temp_sequence = '',''
-        model_start = True
         res_num = 0
-        prev_seg = ''
         for ref_seg, temp_seg in zip(ref_temp_alignment.reference_dict, ref_temp_alignment.template_dict):
-            if model_start==False and 'cont' not in ref_seg and 'cont' not in prev_seg and 'free' not in ref_seg and 'free' not in prev_seg:
-                ref_sequence+='/'
-                temp_sequence+='/'
             for ref_res, temp_res in zip(ref_temp_alignment.reference_dict[ref_seg], 
                                          ref_temp_alignment.template_dict[temp_seg]):
                 res_num+=1
@@ -571,8 +582,6 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
                     temp_sequence+='-'
                 else:
                     temp_sequence+=ref_temp_alignment.template_dict[temp_seg][temp_res]
-            model_start=False
-            prev_seg = ref_seg
         with open("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", 'w+') as output_file:
             template="""
 >P1;{temp_file}
@@ -604,10 +613,11 @@ sequence:{uniprot}::::::::
         env = environ(rand_seed=80851) #!!random number generator
         
         if atom_dict==None:
-            a = automodel(env, alnfile = pir_file, knowns = template, sequence = reference)
+            a = automodel(env, alnfile = pir_file, knowns = template, sequence = reference, 
+                          assess_methods=(assess.DOPE, assess.GA341))
         else:
             a = HomologyMODELLER(env, alnfile = pir_file, knowns = template, sequence = reference, 
-                                 atom_selection=atom_dict)
+                                 assess_methods=(assess.DOPE, assess.GA341), atom_selection=atom_dict)
         a.starting_model = 1
         a.ending_model = number_of_models
         a.md_level = refine.very_slow
@@ -615,38 +625,40 @@ sequence:{uniprot}::::::::
         if not os.path.exists(path):
             os.mkdir(path)
         a.make()
+        
+        # Get a list of all successfully built models from a.outputs
+        ok_models = [x for x in a.outputs if x['failure'] is None]
+
+        # Rank the models by DOPE score
+        key = 'DOPE score'
+        if sys.version_info[:2] == (2,3):
+            # Python 2.3's sort doesn't have a 'key' argument
+            ok_models.sort(lambda a,b: cmp(a[key], b[key]))
+        else:
+            ok_models.sort(key=lambda a: a[key])
+        
+        # Get top model
+        m = ok_models[0]
+        print("Top model: %s (DOPE score %.3f)" % (m['name'], m[key]))        
+        
         for file in os.listdir("./"):
-            if file.startswith(self.uniprot_id) and file.endswith(".pdb"):
+            if file==m['name']:
                 os.rename("./"+file, "./structure/homology_models/{}_{}/".format(self.uniprot_id,
                                                                                  self.state)+output_file_name)
             elif file.startswith(self.uniprot_id):
-                os.rename("./"+file, "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)+file)
+                os.remove("./"+file)#, "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)+file)
             
 class HomologyMODELLER(automodel):
-    def __init__(self, env, alnfile, knowns, sequence, atom_selection):
-        super(HomologyMODELLER, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence)
+    def __init__(self, env, alnfile, knowns, sequence, assess_methods, atom_selection):
+        super(HomologyMODELLER, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence, 
+                                               assess_methods=assess_methods)
         self.atom_dict = atom_selection
         
     def select_atoms(self):
-        discont_loop = False
-        for seg_id, segment in self.atom_dict.items():
-            if 'dis' in seg_id:
-                discont_loop = True
-        chains = ['A','B','C','D','E','F','G']
         selection_out = []
-        chain_count = 0
-        model_start = True
-        prev_seg = ''
         for seg_id, segment in self.atom_dict.items():
-            if model_start==False and 'cont' not in seg_id and 'cont' not in prev_seg and 'free' not in seg_id and 'free' not in prev_seg:
-                chain_count+=1
             for gn, atom in segment.items():
-                if discont_loop==True:
-                    selection_out.append(self.residues[str(atom)+":"+chains[chain_count]])
-                else:
-                    selection_out.append(self.residues[str(atom)])
-            model_start=False
-            prev_seg = seg_id
+                selection_out.append(self.residues[str(atom)])
         return selection(selection_out)
 
 class Loops(object):
@@ -718,7 +730,7 @@ class Loops(object):
                     orig_residues = parse.fetch_residues_from_pdb(self.main_structure, 
                                                                   orig_before_gns+orig_after_gns)
                     superpose = sp.LoopSuperpose(orig_residues, alt_residues)
-                    new_residues = superpose.run()                            
+                    new_residues = superpose.run()
                     key_list = list(new_residues.keys())[7:-7]
                     for key in key_list:
                         output[key] = new_residues[key]
@@ -749,10 +761,12 @@ class Loops(object):
             for seg_label, gns in main_pdb_array.items():
                 if self.segment_order[self.loop_label]-self.segment_order[seg_label[:4]]==0.5:
                     temp_array[seg_label] = gns
-                    l_res = 0
+                    l_res = 1
+                    temp_loop[self.loop_label+'?'+'1'] = 'x'
                     for key in loop_keys:
                         l_res+=1
                         temp_loop[self.loop_label+'|'+str(l_res)] = loop_template[key]
+                    temp_loop[self.loop_label+'?'+str(l_res+1)] = 'x'
                     temp_array[self.loop_label+'_dis'] = temp_loop
                 else:
                     temp_array[seg_label] = gns
@@ -776,33 +790,45 @@ class Loops(object):
             self.main_pdb_array = main_pdb_array
         if loop_template!=None:
             temp_ref_dict, temp_temp_dict, temp_aligned_dict = OrderedDict(),OrderedDict(),OrderedDict()
-            ref_residues = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
-                                                  protein_segment__slug=self.loop_label)
+            ref_residues = list(Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
+                                                  protein_segment__slug=self.loop_label))
             for ref_seg, temp_seg, aligned_seg in zip(reference_dict, template_dict, alignment_dict):
                 if ref_seg[0]=='T' and ref_seg[-1]==list(loop_template.keys())[0][0]:
                     temp_ref_dict[ref_seg] = reference_dict[ref_seg]
                     temp_temp_dict[temp_seg] = template_dict[temp_seg]
                     temp_aligned_dict[aligned_seg] = alignment_dict[aligned_seg]
-                    if continuous_loop==True:
-                        input_residues = list(loop_template.keys())[1:-1]
-                    else:
-                        input_residues = list(loop_template.keys())[2:-2]
+                    input_residues = list(loop_template.keys())[1:-1]
                     ref_loop_seg, temp_loop_seg, aligned_loop_seg = OrderedDict(),OrderedDict(),OrderedDict()
-                    l_res=0
-                    for r_res, r_id in zip(ref_residues, input_residues):
-                        l_res+=1
-                        ref_loop_seg[self.loop_label+'|'+str(l_res)] = r_res.amino_acid
-                        temp_loop_seg[self.loop_label+'|'+str(l_res)] = PDB.Polypeptide.three_to_one(loop_template[r_id][0].get_parent().get_resname())
-                        if ref_loop_seg[self.loop_label+'|'+str(l_res)]==temp_loop_seg[self.loop_label+'|'+str(l_res)]:                        
-                            aligned_loop_seg[self.loop_label+'|'+str(l_res)] = ref_loop_seg[self.loop_label+'|'+str(l_res)]
-                        else:
-                            aligned_loop_seg[self.loop_label+'|'+str(l_res)] = '.'
                     if continuous_loop==True:
+                        l_res=0
+                        for r_res, r_id in zip(ref_residues, input_residues):
+                            l_res+=1
+                            ref_loop_seg[self.loop_label+'|'+str(l_res)] = r_res.amino_acid
+                            temp_loop_seg[self.loop_label+'|'+str(l_res)] = PDB.Polypeptide.three_to_one(loop_template[r_id][0].get_parent().get_resname())
+                            if ref_loop_seg[self.loop_label+'|'+str(l_res)]==temp_loop_seg[self.loop_label+'|'+str(l_res)]:                        
+                                aligned_loop_seg[self.loop_label+'|'+str(l_res)] = ref_loop_seg[self.loop_label+'|'+str(l_res)]
+                            else:
+                                aligned_loop_seg[self.loop_label+'|'+str(l_res)] = '.'    
                         self.new_label = self.loop_label+'_cont'
                         temp_ref_dict[self.loop_label+'_cont'] = ref_loop_seg
                         temp_temp_dict[self.loop_label+'_cont'] = temp_loop_seg
                         temp_aligned_dict[self.loop_label+'_cont'] = aligned_loop_seg
                     else:
+                        l_res=1
+                        ref_loop_seg[self.loop_label+'?'+'1'] = ref_residues[0].amino_acid
+                        temp_loop_seg[self.loop_label+'?'+'1'] = 'x'
+                        aligned_loop_seg[self.loop_label+'?'+'1'] = '.'
+                        for r_res, r_id in zip(ref_residues[1:-1], input_residues[1:-1]):
+                            l_res+=1
+                            ref_loop_seg[self.loop_label+'|'+str(l_res)] = r_res.amino_acid
+                            temp_loop_seg[self.loop_label+'|'+str(l_res)] = PDB.Polypeptide.three_to_one(loop_template[r_id][0].get_parent().get_resname())
+                            if ref_loop_seg[self.loop_label+'|'+str(l_res)]==temp_loop_seg[self.loop_label+'|'+str(l_res)]:                        
+                                aligned_loop_seg[self.loop_label+'|'+str(l_res)] = ref_loop_seg[self.loop_label+'|'+str(l_res)]
+                            else:
+                                aligned_loop_seg[self.loop_label+'|'+str(l_res)] = '.'
+                        ref_loop_seg[self.loop_label+'?'+str(l_res+1)] = ref_residues[-1].amino_acid
+                        temp_loop_seg[self.loop_label+'?'+str(l_res+1)] = 'x'
+                        aligned_loop_seg[self.loop_label+'?'+str(l_res+1)] = '.'
                         self.new_label = self.loop_label+'_dis'
                         temp_ref_dict[self.loop_label+'_dis'] = ref_loop_seg
                         temp_temp_dict[self.loop_label+'_dis'] = temp_loop_seg
@@ -1151,101 +1177,3 @@ class CreateStatistics(object):
         '''
         self.info_dict[info_name] = info
 
-class Validation():
-    ''' Class to validate homology models.
-    '''
-    def __init__(self):
-        pass
-    
-    def PDB_RMSD(self, pdb_file1, pdb_file2, assign_gns=[1,2], gn_list=[], seq_nums1=[], seq_nums2=[]):
-        ''' Calculates root-mean-square deviation between the coordinates of two model PDB files. The two files
-            must have the same number of atoms.
-            
-            @param pdb_file1: str, file name of first file with path \n
-            @param pdb_file2: str, file name of second file with path \n
-            @param assign_gns: list, use generic number assigning for pdb_file1 or pdb_file2 or both \n
-            @param gn_list: list, use RMSD only with these generic numbers
-        '''
-        array1, array2 = np.array([0,0,0]), np.array([0,0,0])
-        parser = PDB.PDBParser()
-                
-        pdb1 = parser.get_structure('struct1', pdb_file1)[0]
-        pdb2 = parser.get_structure('struct2', pdb_file2)[0]
-        
-        if assign_gns==[1]:
-            assign_gn1 = as_gn.GenericNumbering(structure=pdb1)
-            pdb1 = assign_gn1.assign_generic_numbers()
-        elif assign_gns==[2]:
-            assign_gn2 = as_gn.GenericNumbering(structure=pdb2)
-            pdb2 = assign_gn2.assign_generic_numbers()
-        elif assign_gns==[1,2]:
-            assign_gn1 = as_gn.GenericNumbering(structure=pdb1)
-            pdb1 = assign_gn1.assign_generic_numbers()
-            assign_gn2 = as_gn.GenericNumbering(structure=pdb2)
-            pdb2 = assign_gn2.assign_generic_numbers()    
-        
-        pdb_array1, pdb_array2 = OrderedDict(), OrderedDict()
-        
-        for chain1 in pdb1:
-            for residue1 in chain1:
-                gn=''
-                count1=0
-                try:
-                    if -8.1 < residue1['CA'].get_bfactor() < 8.1:
-                        gn = residue1['CA'].get_bfactor()
-                        if str(gn)[0]=='-':
-                            gn = str(gn)[1:].replace('.','x')+'1'
-                        else:
-                            gn = str(gn).replace('.','x')
-                        if len(gn_list)>0 and gn in gn_list:
-                            pdb_array1[residue1['CA'].get_bfactor()] = residue1
-                    seq_num = int(residue1.get_id()[1])
-                    if seq_num in seq_nums1:
-                        if float(gn_list[seq_nums1.index(seq_num)].replace('x','.')) not in pdb_array1:
-                            pdb_array1[float(gn_list[seq_nums1.index(seq_num)].replace('x','.'))] = residue1
-                        count1+=1
-                except:
-                    pass
-        for chain2 in pdb2:
-            for residue2 in chain2:
-                gn=''
-                count2=0
-                try:
-                    if -8.1 < residue2['CA'].get_bfactor() < 8.1:
-                        gn = residue2['CA'].get_bfactor()
-                        if str(gn)[0]=='-':
-                            gn = str(gn)[1:].replace('.','x')+'1'
-                        else:
-                            gn = str(gn).replace('.','x')
-                        if len(gn_list)>0 and gn in gn_list:
-                            pdb_array2[residue2['CA'].get_bfactor()] = residue2
-                    seq_num = int(residue2.get_id()[1])
-                    if seq_num in seq_nums2:
-                        if float(gn_list[seq_nums2.index(seq_num)].replace('x','.')) not in pdb_array2:
-                            pdb_array2[float(gn_list[seq_nums2.index(seq_num)].replace('x','.'))] = residue2
-                        count2+=1
-                except:
-                    pass
-        
-        orig_atomlist, temp_atomlist = [], []               
-        for gn1, res1 in pdb_array1.items():
-            for gn2, res2 in pdb_array2.items():
-                if gn1==gn2 and res1.get_resname()==res2.get_resname():
-                    for atom1 in res1:
-                        for atom2 in res2:
-                            if atom1.get_id()==atom2.get_id():
-                                orig_atomlist.append(atom1)
-                                temp_atomlist.append(atom2)
-                elif gn1==gn2:
-                    for atom1 in res1:
-                        for atom2 in res2:
-                            if atom1.get_id()==atom2.get_id() and atom1.get_id() in ['N','CA','C','O']:
-                                orig_atomlist.append(atom1)
-                                temp_atomlist.append(atom2)
-        superpose = sp.RotamerSuperpose(orig_atomlist, temp_atomlist)
-        temp_atomlist = superpose.run()
-        for a1, a2 in zip(orig_atomlist, temp_atomlist):
-            array1 = np.vstack((array1, list(a1.get_coord())))
-            array2 = np.vstack((array2, list(a2.get_coord())))
-        rmsd = np.sqrt(((array1[1:]-array2[1:])**2).mean())
-        return rmsd
