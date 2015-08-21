@@ -51,7 +51,7 @@ hydrophob_radius = 4.5
 ignore_het = ['NA','W'] #ignore sodium and water
 
 
-
+debug = False
 
 def fetch_pdb(id):
   url = 'http://www.rcsb.org/pdb/files/%s.pdb' % id
@@ -143,7 +143,7 @@ def checkdirs():
         os.makedirs(directory)
 
 def fragment_library(ligand,atomvector,atomname,residuenr,chain,typeinteraction):
-    print "Make fragment pdb file for ligand:",ligand,"atom vector",atomvector,"atomname",atomname,"residuenr from protein", residuenr,typeinteraction,'chain',chain
+    if debug: print "Make fragment pdb file for ligand:",ligand,"atom vector",atomvector,"atomname",atomname,"residuenr from protein", residuenr,typeinteraction,'chain',chain
 
     ligand_pdb = projectdir+'results/'+pdbname+'/ligand/'+ligand+'_'+pdbname+'.pdb'
     #print "Look in",ligand_pdb
@@ -167,7 +167,7 @@ def fragment_library(ligand,atomvector,atomname,residuenr,chain,typeinteraction)
                    neighbor2 = pybel.Atom(neighbour_atom2)
                    #print "Neighbour2:",neighbour_atom2.GetType(),Vector(getattr(neighbor2,'coords'))
                    listofvectors.append(Vector(getattr(neighbor2,'coords')))
-        print "vectors:",listofvectors
+        if debug: print "vectors:",listofvectors
 
     pdbfile = projectdir+'pdbs/'+pdbname+'.pdb'
 
@@ -245,7 +245,7 @@ def fragment_library(ligand,atomvector,atomname,residuenr,chain,typeinteraction)
 
 
     filename = projectdir + 'results/'+pdbname+'/fragments/'+pdbname+"_"+ligand+"_"+residuename+residuenr+chain+"_"+atomname+"_"+typeinteraction+".pdb"
-    print filename
+    if debug: print filename
     f_in.close();
     f=open(filename,'w')
     f.write(tempstr)
@@ -711,7 +711,7 @@ def find_interactions():
 
                     if sum>1 and aa_resname in AROMATIC:
                         #print aaatomlist
-                        print "Need to analyse aromatic ring in ",aaname#, get_ring_atoms(aaatomlist)
+                        if debug: print "Need to analyse aromatic ring in ",aaname#, get_ring_atoms(aaatomlist)
                         #aaring = get_ring_atoms(aaatomlist)
                         aaring = get_ring_from_aa(aa_seqid)
                         if not aaring:
@@ -743,7 +743,7 @@ def find_interactions():
                             #print "angleaa",aaring[2],"anglelig",ring[2]
                             angle_degrees = [round(degrees(angle),1),round(degrees(angle2),1)]
                             distance = (center-ring[1]).norm()
-                            print "Ring #",count,"Distance:",round(distance,2), "Angle:",angle_degrees,'Shortest res->ligcenter',shortest_center_het_ring_to_res_atom,'Shortest lig->rescenter',shortest_center_aa_ring_to_het_atom
+                            if debug: print "Ring #",count,"Distance:",round(distance,2), "Angle:",angle_degrees,'Shortest res->ligcenter',shortest_center_het_ring_to_res_atom,'Shortest lig->rescenter',shortest_center_aa_ring_to_het_atom
                             if distance<5: #poseview uses <5
                                 #print "Ring #",count,"Distance:",round(distance,2), "Angle:",round(angle_degrees,2)
                                 summary_results[hetflag]['aromatic'].append([aaname,count,round(distance,2),angle_degrees])
@@ -758,7 +758,7 @@ def find_interactions():
                         for charged in ligand_charged[hetflag]:
                             distance = (center-charged[1]).norm()
                             if distance<4.2 and charged[2]>0: ### needs max 4.2 distance to make aromatic+
-                                print "Ring #",count,"Distance:",round(distance,2), "Angle:",round(angle_degrees,2)
+                                if debug: print "Ring #",count,"Distance:",round(distance,2), "Angle:",round(angle_degrees,2)
                                 summary_results[hetflag]['aromaticplus'].append([aaname,count,round(distance,2),charged])
                     #print aaname, ligand_rings,hetflag
                     if sum>2 and aa_resname in CHARGEDAA and ligand_rings[hetflag]:
@@ -790,7 +790,7 @@ def analyze_interactions():
                 hbondconfirmed = []
                 if entry[2]<3.3:
                     
-                    print "Likely H-Bond",entry
+                    if debug: print "Likely H-Bond",entry
 
 
                     if entry[0][0] == 'C' or entry[1][0] == 'C': 

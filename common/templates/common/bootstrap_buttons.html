@@ -1,0 +1,42 @@
+﻿<h5>Bootstraping</h5>
+    <div class="btn-group">
+        <a href="javascript:void(0)"  onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm 
+            {% if current.0 == '0' %} active{% endif %}
+           ">No bootstrapping</a>
+        <a href="javascript:void(0)"  onclick="SetTreeSelection(0,1)" class="btn btn-primary btn-sm
+           {% if current.0 == '1' %} active{% endif %}
+           ">10 replicas</a>
+        <a href="javascript:void(0)" id="3" onclick="SetTreeSelection(0,2)" class="btn btn-primary btn-sm
+           {% if current.0 == '2' %} active{% endif %}
+           ">100 replicas</a>
+    </div>
+
+    <h5>Distance calculation method</h5>
+    <div class="btn-group">
+        <a href="javascript:void(0)"  onclick="SetTreeSelection(1,0)" class="btn btn-primary
+           {% if current.1 == '0' %} active{% endif %}
+           ">Neighbor-joining</a>
+        <a href="javascript:void(0)"  onclick="SetTreeSelection(1,1)" class="btn btn-primary
+           {% if current.1 == '1' %} active{% endif %}
+           ">UPGMA</a>
+    </div>
+
+    <h5>Branch lengths</h5>
+    <div class="btn-group">
+        <a href="javascript:void(0)"  onclick="SetTreeSelection(2,0)" class="btn btn-primary
+           {% if current.2 == '0' %} active{% endif %}
+           ">Regular</a>
+        <a href="javascript:void(0)" onclick="SetTreeSelection(2,1)" class="btn btn-primary
+           {% if current.2 == '1' %} active{% endif %}
+           ">Even</a>
+    </div>
+
+    <h5>Tree type</h5>
+    <div class="btn-group">
+        <a href="javascript:void(0)"  onclick="SetTreeSelection(3,0)" class="btn btn-primary
+           {% if current.3 == '0' %} active{% endif %}
+           ">Circular</a>
+        <a href="javascript:void(0)"  onclick="SetTreeSelection(3,1)" class="btn btn-primary
+           {% if current.3 == '1' %} active{% endif %}
+           ">Ladder</a>
+    </div>

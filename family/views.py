@@ -54,7 +54,7 @@ def detail(request, slug):
                 generic_numbers.append(aa[0])
 
     generic_ids = Residue.objects.filter(generic_number__label__in=generic_numbers).values('id').distinct('generic_number__label').order_by('generic_number__label')
-    rs = Residue.objects.filter(id__in=generic_ids).prefetch_related('protein_segment','display_generic_number','generic_number')
+    rs = Residue.objects.filter(id__in=generic_ids).prefetch_related('display_generic_number','generic_number')
 
     for r in rs:
         reference_generic_numbers[r.generic_number.label] = r
@@ -64,15 +64,24 @@ def detail(request, slug):
             r = Residue()
             r.sequence_number =  count
             if "x" in aa[0]:
-                r.generic_number = reference_generic_numbers[aa[0]].generic_number
+                #r.generic_number = reference_generic_numbers[aa[0]].generic_number
                 r.display_generic_number = reference_generic_numbers[aa[0]].display_generic_number
-                r.protein_segment = reference_generic_numbers[aa[0]].protein_segment
+                #r.protein_segment = reference_generic_numbers[aa[0]].protein_segment
+                #print(aa[0][0])
+                if int(aa[0][0])<8:
+                    segment_slug = "TM"+str(aa[0][0])
+                elif aa[0][0]=='8':
+                    segment_slug = "H"+str(aa[0][0])
+                r.segment_slug = segment_slug
+                r.family_generic_number = aa[0]
             else:
                 segment_slug = aa[0][:-5] #remove -0001 from slug
-                if segment_slug not in reference_segments:
-                    reference_residue = Residue.objects.filter(protein_segment__slug=segment_slug).prefetch_related('protein_segment')[:1].get()
-                    reference_segments[segment_slug] = reference_residue
-                r.protein_segment = reference_segments[segment_slug].protein_segment
+                r.segment_slug = segment_slug
+                r.family_generic_number = aa[0]
+                # if segment_slug not in reference_segments:
+                #     reference_residue = Residue.objects.filter(protein_segment__slug=segment_slug).prefetch_related('protein_segment')[:1].get()
+                #     reference_segments[segment_slug] = reference_residue
+                # r.protein_segment = reference_segments[segment_slug].protein_segment
             r.amino_acid = aa[1][0]
             r.extra = aa[1][2]
             residue_list.append(r)
