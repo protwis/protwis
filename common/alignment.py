@@ -320,8 +320,13 @@ class Alignment:
 
                         # append the residue to the matrix
                         if r.generic_number:
+                            # FIXME this is only for making it easier to assign X.50 numbers, REMOVE THIS
+                            gen_num = int(pos.split('x')[1])
+                            class_gen_num = int(r.display_generic_number.label.split('x')[1])
+                            x50_seq_num = r.sequence_number + (class_gen_num - gen_num)
+
                             s.append([pos, r.display_generic_number.label, r.amino_acid,
-                                r.display_generic_number.scheme.short_name, r.sequence_number])
+                                r.display_generic_number.scheme.short_name, r.sequence_number, x50_seq_num])
                         else:
                             s.append([pos, "", r.amino_acid, "", r.sequence_number])
 
@@ -727,7 +732,7 @@ class AlignedReferenceTemplate(Alignment):
         "No main template with same helix endings. No homology model will be built for {}.".format(self.reference_protein))
         segment_count = 0
         for ref_segment, temp_segment, segment_label in zip(self.reference_protein.alignment,
-                                                            self.main_template_protein.alignment, self.segment_labels):
+                                                            self.main_template_protein.alignment, self.segment_labels):                                                        
             segment_count+=1
             ref_segment_dict,temp_segment_dict,align_segment_dict = OrderedDict(), OrderedDict(), OrderedDict()
             for ref_position, temp_position in zip(ref_segment,temp_segment):
