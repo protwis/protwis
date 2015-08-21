@@ -23,8 +23,8 @@ class Alignment:
         self.numbering_schemes = {}
         self.generic_numbers = OrderedDict()
         self.positions = []
-        self.consensus = []
-        self.forced_consensus = [] # consensus sequence where all conflicts are solved by rules
+        self.consensus = OrderedDict()
+        self.forced_consensus = OrderedDict() # consensus sequence where all conflicts are solved by rules
         self.similarity_matrix = OrderedDict()
         self.amino_acids = []
         self.amino_acid_stats = []
@@ -281,7 +281,8 @@ class Alignment:
                     del self.generic_numbers[ns][segment]
 
         for pc in self.proteins:
-            row = []
+            row = OrderedDict()
+            row_list = [] # FIXME redundant, remove when dependecies are removed
             for segment, positions in self.segments.items():
                 s = []
                 first_residue_found = False
@@ -358,8 +359,10 @@ class Alignment:
                     
                     # update position counter
                     position_counter += 1
-                row.append(s)
+                row[segment] = s
+                row_list.append(s) # FIXME redundant, remove when dependecies are removed
             pc.alignment = row
+            pc.alignment_list = row_list # FIXME redundant, remove when dependecies are removed
         self.merge_generic_numbers()
         self.clear_empty_positions()
 
@@ -382,7 +385,7 @@ class Alignment:
         # proteins
         proteins = deepcopy(self.proteins) # deepcopy is required because the list changes during the loop
         for i, protein in enumerate(proteins):
-            for j, s in enumerate(protein.alignment):
+            for j, s in protein.alignment.items():
                 for p in s:
                     if p[0] not in self.positions:
                         self.proteins[i].alignment[j].remove(p)
@@ -407,19 +410,19 @@ class Alignment:
 
     def calculate_statistics(self):
         """Calculate consesus sequence and amino acid and feature frequency"""
-        aa_count = []
-        feature_count = []
-        most_freq_aa = []
+        aa_count = OrderedDict()
+        feature_count = OrderedDict()
+        most_freq_aa = OrderedDict()
         amino_acids = OrderedDict([(a, 0) for a in AMINO_ACIDS]) # from common.definitions
         self.amino_acids = AMINO_ACIDS.keys()
         features = OrderedDict([(a, 0) for a in AMINO_ACID_GROUPS])
         self.features = AMINO_ACID_GROUP_NAMES.values()
         for i, p in enumerate(self.proteins):
-            for j, s in enumerate(p.alignment):
+            for j, s in p.alignment.items():
                 if i == 0:
-                    aa_count.append(OrderedDict())
-                    feature_count.append(OrderedDict())
-                    most_freq_aa.append(OrderedDict())
+                    aa_count[j] = OrderedDict()
+                    feature_count[j] = OrderedDict()
+                    most_freq_aa[j] = OrderedDict()
                 for p in s:
                     generic_number = p[0]
                     amino_acid = p[2]
@@ -454,9 +457,9 @@ class Alignment:
 
         # merge the amino acid counts into a consensus sequence
         num_proteins = len(self.proteins)
-        for i, s in enumerate(most_freq_aa):
-            self.consensus.append(OrderedDict())
-            self.forced_consensus.append([])
+        for i, s in most_freq_aa.items():
+            self.consensus[i] = OrderedDict()
+            self.forced_consensus[i] = OrderedDict()
             for p, r in s.items():
                 conservation = str(round(r[1]/num_proteins*100))
                 if len(conservation) == 1:
@@ -466,7 +469,7 @@ class Alignment:
                     cons_interval = conservation[:-1]
                 
                 # forced consensus sequence uses the first residue to break ties
-                self.forced_consensus[i].append([p, r[0][0]])
+                self.forced_consensus[i][p] = r[0][0]
 
                 # consensus sequence displays + in tie situations
                 num_freq_aa = len(r[0])
@@ -480,7 +483,8 @@ class Alignment:
         # process amino acid frequency
         for i, amino_acid in enumerate(AMINO_ACIDS):
             self.amino_acid_stats.append([])
-            for j, segment_num in enumerate(aa_count):
+            j = 0
+            for segment, segment_num in aa_count.items():
                 self.amino_acid_stats[i].append([])
                 k = 0
                 for gn, aas in segment_num.items():
@@ -495,11 +499,13 @@ class Alignment:
                                 freq_interval = frequency[:-1]
                             self.amino_acid_stats[i][j][k] = [frequency, freq_interval]
                     k += 1
+                j += 1
 
         # process feature frequency
         for i, feature in enumerate(AMINO_ACID_GROUPS):
             self.feature_stats.append([])
-            for j, segment_num in enumerate(feature_count):
+            j = 0
+            for segment, segment_num in feature_count.items():
                 self.feature_stats[i].append([])
                 k = 0
                 for gn, fs in segment_num.items():
@@ -514,6 +520,7 @@ class Alignment:
                                 freq_interval = frequency[:-1]
                             self.feature_stats[i][j][k] = [frequency, freq_interval]
                     k += 1
+                j += 1
 
     def calculate_similarity(self):
         """Calculate the sequence identity/similarity of every selected protein compared to a selected reference"""
@@ -569,7 +576,7 @@ class Alignment:
         identities = []
         similarities = []
         similarity_scores = []
-        for j, s in enumerate(protein_2.alignment):
+        for j, s in protein_2.alignment.items():
             for k, p in enumerate(s):
                 reference_residue = protein_1.alignment[j][k][2]
                 protein_residue = protein_2.alignment[j][k][2]
@@ -693,19 +700,19 @@ class AlignedReferenceTemplate(Alignment):
         for protein in self.proteins:
             if protein.protein==self.reference_protein.protein:
                 ref_length = 0
-                for res in protein.alignment[0]:
+                for res in protein.alignment_list[0]:
                     if res[1]!=False:
                         ref_length+=1
             elif protein.protein==self.main_template_protein.protein:
                 main_temp_length = 0
                 main_struct_sim = int(protein.similarity)
-                for res in protein.alignment[0]:
+                for res in protein.alignment_list[0]:
                     if res[1]!=False:
                         main_temp_length+=1
             else:
                 temp_length = 0
                 matches = self.structures_data.filter(protein_conformation__protein__parent__id=protein.protein.id)
-                for res in protein.alignment[0]:
+                for res in protein.alignment_list[0]:
                     if res[1]!=False:
                         temp_length+=1
                 temp_list.append((list(matches)[0], temp_length, int(protein.similarity), 
@@ -733,7 +740,8 @@ class AlignedReferenceTemplate(Alignment):
         '''
         segment_count = 0
 
-        for ref_segment, temp_segment in zip(self.reference_protein.alignment,self.main_template_protein.alignment):
+        for ref_segment, temp_segment in zip(self.reference_protein.alignment_list,
+            self.main_template_protein.alignment_list):
             segment_count+=1
             for ref_position, temp_position in zip(ref_segment,temp_segment):
                 if ref_position[1]!=False and temp_position[1]!=False:
