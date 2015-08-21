@@ -37,7 +37,7 @@
             phylocanvas = new Smits.PhyloCanvas(
                             dataObject,
                             "svgCanvas",
-                            900 + {{ count }}*20, 900 + {{ count }}*20,
+                            1000 + {{ count }}*20, 1000 + {{ count }}*20,
                             'circular'
                             )
             mergeSVG();
@@ -47,7 +47,9 @@
 
     </script>
     {% endif %}
-<div style="text-align:center">
+{% endblock %}
+
+{% block content %}
     <div id="svgCanvas"> </div>
     <div id="legend" class="hidden">{{ leg|safe }} </div>
     <div>
@@ -64,7 +66,8 @@
     <a href="javascript:saveSvgAsPng(document.getElementById('svgtree'), 'tree.png', {scale: 3});"> Download as PNG</a>
     <a id=tree_svg_link href-lang="image/svg+xml" href="" download="tree"> Download as SVG</a>
 </div>
+<br />
+{% include 'phylogenetic_trees/tree_options.html' %}
 
+{% endblock %}
 
-
-    {% endblock %}

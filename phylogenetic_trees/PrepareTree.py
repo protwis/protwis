@@ -108,6 +108,8 @@ class PrepareTree:
             return m-256
         else:
             return m
+    def modify_rings(options):
+        pass
 
     def get_colours(self,inp):
         #cl = {'A':'Class A','B':'Class B','C':'Class C','D':'Class F','E':'cAMP Receptors','K':'Vomeronasal','L':'Taste'}
@@ -143,7 +145,6 @@ class PrepareTree:
                 inp[acc]['type']='_'.join(fam[:3])
                 if not '_'.join(fam[:3]) in self.families:
                     self.families.append('_'.join(fam[:3]))
-        print(self.classes)
         self.data = inp
                 
     #### Get colours ####
@@ -159,6 +160,7 @@ class PrepareTree:
         current_hue = 0
         hue_range = [start_hue,start_hue+hue_step]
         for a in sorted(self.ligands):
+            print(a)
             colour = self.HSV_2_RGB((int(self.trim_colour(current_hue)),127,200))
             self.styles+=('<%s fill=\'#%s\' stroke=\'#%s\' class=\'chart1\' id=\'%s\'/>' %(a,colour,'000000',a))
             self.defaultColours[a]=['#'+colour,'#000000']
@@ -193,7 +195,6 @@ class PrepareTree:
             hue_count +=1
                
         v_step = 180/nclasses
-        print(v_step)
         v_count = 0
         for a in sorted(self.classes):
             colour = self.HSV_2_RGB((0,0,10+(v_count*int(v_step))))
@@ -260,6 +261,8 @@ class PrepareTree:
         w = open(d+'/rong','w').write(z.replace('-',''))
         raw = open(d+'/raw.xml','w')
         Phylo.convert(d+'/rong','newick',raw,'phyloxml')
+        #tree1 = Phylo.read(z, 'newick')
+        #Phylo.write(tree1, raw, 'phyloxml')
         raw.close()
         xml = open(d+'/raw.xml','r').readlines()
         out = open(d+'/out.xml','w')
@@ -272,6 +275,7 @@ class PrepareTree:
         charts += "<ligand type='binary' thickness='10' bufferInner='1'/>"
         charts += "<class type='binary' thickness='10' bufferInner='1' bufferOuter='1'/>"
         charts = '<charts>'+charts+'</charts>'
+
         for line in xml:
             if stylesflag == True:
                 out.write("<render>"+charts+"<styles>"+self.styles+"</styles></render>")
@@ -304,16 +308,15 @@ class PrepareTree:
                 chart += '</chart>'
                 flag2 = [name,chart]
                 line = line.replace(name,self.data[name]['name']).replace('<name', "<name bgStyle='%s'" %self.data[name]['family'])
-#                if recname in crystalized_ligands:
-#                    line = line.replace('<name>','<name bgStyle=\'cryst\'>')
-#                else:
-#                    line = line.replace('<name>','<name bgStyle=\'none\'>')
             ############## Add annotations and descriptions #############
             if '<branch_length>' in line:
+                line=line.replace('>1E05<','>0.00001<').replace('-','')
+                if '>0.0<' in line and flag == True:
+                    line=line.replace('>0.0<','>0.00001<')
                 if flag2 != '':
                     line = line.strip('\n')+' <annotation><desc>'+self.data[flag2[0]]['description']+' ('+self.data[flag2[0]]['species']+')'+'</desc><uri>http://tools.gpcr.org/visualise/protein/'+self.data[flag2[0]]['link']+'</uri> </annotation>'+flag2[1]
                     flag2=''
-            out.write(line.strip('\n'))
+            out.write(line)#.strip('\n'))
         ###SVG legend###
         column = 200
         verse = 20

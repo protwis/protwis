@@ -1,0 +1,25 @@
+﻿{% load staticfiles %}
+
+<div id="phylos" visibility="hidden">
+    <?xml version="1.0" standalone="no"?><svg id="legendSVG" width="450px" height="20px" version="1.1" xmlns="http://www.w3.org/2000/svg">
+        <circle class="Class" id="A" cx="10" cy="10" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="13" font-family="Verdana" font-size="10" >Class A</text>
+        <circle class="Class" id="B" cx="80" cy="10" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="90" y="13" font-family="Verdana" font-size="10">Class B</text>
+        <circle class="Class" id="C" cx="150" cy="10" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="160" y="13" font-family="Verdana" font-size="10">Class C</text>
+        <circle class="Class" id="D" cx="220" cy="10" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="230" y="13" font-family="Verdana" font-size="10">Frizzled</text>
+        <circle class="Class" id="E" cx="290" cy="10" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="300" y="13" font-family="Verdana" font-size="10">Adhesion</text>
+        <circle class="Class" id="F" cx="360" cy="10" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="370" y="13" font-family="Verdana" font-size="10">Other</text>
+    </svg>
+<div id="A" class="container" style="display: none;"><object data="{% static 'home/images/Class_A_crystallized.svg' %}" type="image/svg+xml"></object>
+</div><div id="B" class="container" style="display: none;"><object data="{% static 'home/images/Class_B_crystallized.svg' %}" type="image/svg+xml"></object>
+</div><div id="C" class="container" style="display: none;"><object data="{% static 'home/images/Class_C_crystallized.svg' %}" type="image/svg+xml"></object>
+</div> <div id="D" class="container" style="display: none;"><object data="{% static 'home/images/Frizzled_crystallized.svg' %}" type="image/svg+xml"></object>
+</div><div id="E" class="container" style="display: none;"> <object data="{% static 'home/images/Adhesion_crystallized.svg' %}" type="image/svg+xml"></object>
+</div><div id="F" class="container" style="display: none;"> <object data="{% static 'home/images/Other_crystallized.svg' %}" type="image/svg+xml"></object>
+</div>
+</div>
