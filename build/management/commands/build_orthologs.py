@@ -85,6 +85,6 @@ class Command(BuildHumanProteins):
                         yaml.dump(ref_positions, auto_ref_position_file, default_flow_style=False)
 
             # create a database entry for the protein
-            self.create_protein(p.name, p.family, p.residue_numbering_scheme, accession, up)
+            self.create_protein(p.name, p.family, p.sequence_type, p.residue_numbering_scheme, accession, up)
 
         self.logger.info('COMPLETED ORTHOLOGS')
