@@ -7,18 +7,27 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('residue', '0001_initial'),
-        ('protein', '0001_initial'),
+        ('interaction', '0001_initial'),
         ('structure', '0001_initial'),
         ('ligand', '0001_initial'),
-        ('interaction', '0001_initial'),
+        ('protein', '0001_initial'),
     ]
 
     operations = [
         migrations.AddField(
             model_name='structureligandinteraction',
+            name='pdb_file',
+            field=models.ForeignKey(null=True, to='structure.PdbData'),
+        ),
+        migrations.AddField(
+            model_name='structureligandinteraction',
             name='structure',
             field=models.ForeignKey(to='structure.Structure'),
+        ),
+        migrations.AddField(
+            model_name='residuefragmentinteraction',
+            name='fragment',
+            field=models.ForeignKey(to='structure.Fragment'),
         ),
         migrations.AddField(
             model_name='residuefragmentinteraction',
@@ -27,18 +36,23 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='residuefragmentinteraction',
-            name='ligand',
-            field=models.ForeignKey(to='ligand.Ligand'),
+            name='rotamer',
+            field=models.ForeignKey(to='structure.Rotamer'),
         ),
         migrations.AddField(
             model_name='residuefragmentinteraction',
-            name='residue',
-            field=models.ForeignKey(to='residue.Residue'),
+            name='structure_ligand_pair',
+            field=models.ForeignKey(to='interaction.StructureLigandInteraction'),
         ),
         migrations.AddField(
-            model_name='residuefragmentinteraction',
-            name='structure',
-            field=models.ForeignKey(to='structure.Structure'),
+            model_name='residuefragmentatom',
+            name='interaction',
+            field=models.ForeignKey(null=True, to='interaction.ResidueFragmentInteraction'),
+        ),
+        migrations.AddField(
+            model_name='residuefragmentatom',
+            name='structureligandpair',
+            field=models.ForeignKey(to='interaction.StructureLigandInteraction'),
         ),
         migrations.AddField(
             model_name='proteinligandinteraction',
@@ -48,6 +62,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='proteinligandinteraction',
             name='protein',
-            field=models.ForeignKey(to='protein.Protein'),
+            field=models.ForeignKey(to='protein.ProteinConformation'),
         ),
     ]
