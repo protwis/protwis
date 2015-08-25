@@ -167,4 +167,54 @@
       image.src = uri;
     });
   }
+
+  out$.saveSvgAsJpg = function(el, name, options) {
+    options = options || {};
+    out$.svgAsDataUri(el, options, function(uri) {
+      var image = new Image();
+      console.log('create image');
+      image.onload = function() {
+        var canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        var context = canvas.getContext('2d');
+        context.drawImage(image, 0, 0);
+
+        var a = document.createElement('a');
+        a.download = name;
+        a.href = canvas.toDataURL('image/jpg');
+        document.body.appendChild(a);
+        a.addEventListener("click", function(e) {
+          a.parentNode.removeChild(a);
+        });
+        a.click();
+      }
+      image.src = uri;
+    });
+  }
+
+  out$.saveSvgAsTiff = function(el, name, options) {
+    options = options || {};
+    out$.svgAsDataUri(el, options, function(uri) {
+      var image = new Image();
+      console.log('create image');
+      image.onload = function() {
+        var canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        var context = canvas.getContext('2d');
+        context.drawImage(image, 0, 0);
+
+        var a = document.createElement('a');
+        a.download = name;
+        a.href = canvas.toDataURL('image/tiff');
+        document.body.appendChild(a);
+        a.addEventListener("click", function(e) {
+          a.parentNode.removeChild(a);
+        });
+        a.click();
+      }
+      image.src = uri;
+    });
+  }
 })();
