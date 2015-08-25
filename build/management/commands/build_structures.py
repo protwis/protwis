@@ -183,6 +183,7 @@ class Command(BaseCommand):
                         os.makedirs(self.structure_data_dir+'/../pdbs/')
                     pdb_path = self.structure_data_dir+'/../pdbs/'+sd['pdb']+'.pdb'
                     if not os.path.isfile(pdb_path):
+                        self.logger.info('Fetching PDB file {}'.format(sd['pdb']))
                         url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
                         pdbdata_raw = urlopen(url).read().decode('utf-8')
                         f=open(pdb_path,'w')
@@ -223,7 +224,6 @@ class Command(BaseCommand):
                     sd['publication_date'] = header_dict['release_date']
                     sd['resolution'] = str(header_dict['resolution']).strip()
 
-                    #print(hetsyn)
                     matched = 0
                     if 'ligand' in sd:
                         if isinstance(sd['ligand'], list):
@@ -336,7 +336,6 @@ class Command(BaseCommand):
                                 elif Ligand.objects.filter(name=ligand['name'], canonical=False, ambigious_alias=False).exists(): #if this matches an alias that only has "one" parent canonical name - eg distinct
                                     l = Ligand.objects.get(name=ligand['name'], canonical=False, ambigious_alias=False)
                                 elif Ligand.objects.filter(name=ligand['name'], canonical=False, ambigious_alias=True).exists(): #if this matches an alias that only has several canonical parents, must investigate, start with empty.
-                                    #print('Inserting '+ligand['name']+" for "+sd['pdb'])
                                     lp = LigandProperities()
                                     lp.save()
                                     l = Ligand()
@@ -346,7 +345,8 @@ class Command(BaseCommand):
                                     l.ambigious_alias = True
                                     l.save()
                                     l.load_by_name(ligand['name'])
-                                else: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.                        
+                                else: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.
+                                    self.logger.info('Inserting '+ligand['name']+" for "+sd['pdb'])
                                     lp = LigandProperities()
                                     lp.save()
                                     l = Ligand()
@@ -369,8 +369,8 @@ class Command(BaseCommand):
                                 if ligand['role']:
                                     lr, created = LigandRole.objects.get_or_create(slug=slugify(ligand['role']),
                                         defaults={'name': ligand['role']})
-                                    i, created = StructureLigandInteraction.objects.get_or_create(structure=s, ligand=l,
-                                        ligand_role=lr, annotated=True, defaults={'pdb_reference':pdb_reference})
+                                    i, created = StructureLigandInteraction.objects.get_or_create(pdb_reference=pdb_reference, structure=s, ligand=l,
+                                        ligand_role=lr, annotated=True)
                     
                     # structure segments
                     if 'segments' in sd and sd['segments']:
@@ -389,9 +389,8 @@ class Command(BaseCommand):
                             'name': 'Bulge'})
                         for segment, bulges in sd['bulges'].items():
                             for bulge in bulges:
-                                gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge, defaults={
-                                    'protein_segment': ProteinSegment.objects.get(slug=segment),
-                                    'scheme': ResidueNumberingScheme.objects.get(slug=scheme.slug)})
+                                gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge, scheme=scheme,
+                                    defaults={'protein_segment': ProteinSegment.objects.get(slug=segment)})
                                 pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pab, generic_number=gn)
                                 s.protein_anomalies.add(pa)
                     if 'constrictions' in sd and sd['constrictions']:
@@ -423,10 +422,7 @@ class Command(BaseCommand):
                     self.create_rotamers(s)
                     self.logger.info('Calculate interactions')
 
-                    #print('interactions '+sd['pdb'])
                     runcalculation(sd['pdb'])
                     parsecalculation(sd['pdb'],False)
-
-
 
         self.logger.info('COMPLETED CREATING PDB STRUCTURES')
