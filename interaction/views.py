@@ -131,6 +131,7 @@ def runcalculation(pdbname):
 
 def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #consider skipping non hetsym ligands FIXME
     mypath = module_dir+'/temp/results/'+pdbname+'/output'
+    mypath = '/tmp/interactions/results/'+pdbname+'/output'
     results = []
     web_resource, created = WebResource.objects.get_or_create(slug='pdb',url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
     web_link, created = WebLink.objects.get_or_create(web_resource=web_resource,index=pdbname)

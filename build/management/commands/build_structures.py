@@ -369,8 +369,8 @@ class Command(BaseCommand):
                                 if ligand['role']:
                                     lr, created = LigandRole.objects.get_or_create(slug=slugify(ligand['role']),
                                         defaults={'name': ligand['role']})
-                                    i, created = StructureLigandInteraction.objects.get_or_create(pdb_reference=pdb_reference, structure=s, ligand=l,
-                                        ligand_role=lr, annotated=True)
+                                    i, created = StructureLigandInteraction.objects.get_or_create(structure=s, ligand=l,
+                                        ligand_role=lr, annotated=True, defaults={'pdb_reference':pdb_reference})
                     
                     # structure segments
                     if 'segments' in sd and sd['segments']:
