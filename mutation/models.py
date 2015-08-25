@@ -95,33 +95,6 @@ class MutationExperiment(models.Model):
 
 
 
-class MutationRefs(models.Model):
-
-	year = models.SmallIntegerField()
-	journal = models.CharField(max_length=100)
-	title = models.TextField()
-	citation = models.TextField()
-	link = models.URLField()
-	ref_type = models.CharField(max_length=100)
-	reference  = models.CharField(max_length=100)
-
-	def __str__(self):
-		return self.link
-
-	class Meta():
-		db_table = 'mutation_refs'
-		
-class MutationLigand(models.Model):
-
-	idtype = models.CharField(max_length=100)
-	name = models.CharField(max_length=100)
-	idid = models.CharField(max_length=100)
-	longseq = models.TextField()
-
-	class Meta():
-		db_table = 'mutation_ligands'
-
-
 class MutationOptional(models.Model):
 
 	type = models.CharField(max_length=100)
