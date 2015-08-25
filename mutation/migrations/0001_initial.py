@@ -7,28 +7,48 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
+        ('ligand', '0001_initial'),
     ]
 
     operations = [
         migrations.CreateModel(
             name='Mutation',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
-                ('mutation_to', models.CharField(max_length=1)),
-                ('wt_value', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('wt_unit', models.CharField(max_length=10)),
-                ('mu_value', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('mu_sign', models.CharField(max_length=2)),
-                ('foldchange', models.DecimalField(decimal_places=2, max_digits=10)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
+                ('amino_acid', models.CharField(max_length=1)),
             ],
             options={
                 'db_table': 'mutation',
             },
         ),
         migrations.CreateModel(
+            name='MutationExperiment',
+            fields=[
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
+                ('wt_value', models.DecimalField(max_digits=10, decimal_places=2)),
+                ('wt_unit', models.CharField(max_length=10)),
+                ('mu_value', models.DecimalField(max_digits=10, decimal_places=2)),
+                ('mu_sign', models.CharField(max_length=2)),
+                ('foldchange', models.FloatField()),
+            ],
+            options={
+                'db_table': 'mutation_experiment',
+            },
+        ),
+        migrations.CreateModel(
+            name='MutationExperimentalType',
+            fields=[
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
+                ('type', models.CharField(max_length=100)),
+            ],
+            options={
+                'db_table': 'mutation_experimental_type',
+            },
+        ),
+        migrations.CreateModel(
             name='MutationFunc',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('func', models.CharField(max_length=100)),
             ],
             options={
@@ -38,7 +58,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='MutationLigand',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('idtype', models.CharField(max_length=100)),
                 ('name', models.CharField(max_length=100)),
                 ('idid', models.CharField(max_length=100)),
@@ -51,7 +71,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='MutationLigandClass',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('classname', models.CharField(max_length=100)),
             ],
             options={
@@ -61,7 +81,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='MutationLigandRef',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('reference', models.CharField(max_length=100)),
             ],
             options={
@@ -71,7 +91,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='MutationMeasure',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('measure', models.CharField(max_length=100)),
             ],
             options={
@@ -81,12 +101,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='MutationOptional',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('type', models.CharField(max_length=100)),
-                ('wt', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('mu', models.DecimalField(decimal_places=2, max_digits=10)),
+                ('wt', models.DecimalField(max_digits=10, decimal_places=2)),
+                ('mu', models.DecimalField(max_digits=10, decimal_places=2)),
                 ('sign', models.CharField(max_length=2)),
-                ('percentage', models.DecimalField(decimal_places=2, max_digits=10)),
+                ('percentage', models.DecimalField(max_digits=10, decimal_places=2)),
                 ('qual', models.CharField(max_length=100)),
                 ('agonist', models.CharField(max_length=100)),
             ],
@@ -97,7 +117,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='MutationQual',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('qual', models.CharField(max_length=100)),
                 ('prop', models.CharField(max_length=100)),
             ],
@@ -108,7 +128,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='MutationRaw',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('reference', models.CharField(max_length=100)),
                 ('protein', models.CharField(max_length=100)),
                 ('mutation_pos', models.SmallIntegerField()),
@@ -120,19 +140,19 @@ class Migration(migrations.Migration):
                 ('ligand_class', models.CharField(max_length=100)),
                 ('exp_type', models.CharField(max_length=100)),
                 ('exp_func', models.CharField(max_length=100)),
-                ('exp_wt_value', models.DecimalField(decimal_places=2, max_digits=10)),
+                ('exp_wt_value', models.DecimalField(max_digits=10, decimal_places=2)),
                 ('exp_wt_unit', models.CharField(max_length=10)),
                 ('exp_mu_effect_type', models.CharField(max_length=100)),
                 ('exp_mu_effect_sign', models.CharField(max_length=2)),
-                ('exp_mu_effect_value', models.DecimalField(decimal_places=2, max_digits=10)),
+                ('exp_mu_effect_value', models.DecimalField(max_digits=10, decimal_places=2)),
                 ('exp_mu_effect_qual', models.CharField(max_length=100)),
                 ('exp_mu_effect_ligand_prop', models.CharField(max_length=100)),
                 ('exp_mu_ligand_ref', models.CharField(max_length=100)),
                 ('opt_type', models.CharField(max_length=100)),
-                ('opt_wt', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('opt_mu', models.DecimalField(decimal_places=2, max_digits=10)),
+                ('opt_wt', models.DecimalField(max_digits=10, decimal_places=2)),
+                ('opt_mu', models.DecimalField(max_digits=10, decimal_places=2)),
                 ('opt_sign', models.CharField(max_length=5)),
-                ('opt_percentage', models.DecimalField(decimal_places=2, max_digits=10)),
+                ('opt_percentage', models.DecimalField(max_digits=10, decimal_places=2)),
                 ('opt_qual', models.CharField(max_length=100)),
                 ('opt_agonist', models.CharField(max_length=100)),
                 ('added_by', models.CharField(max_length=100)),
@@ -145,7 +165,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='MutationRefs',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('year', models.SmallIntegerField()),
                 ('journal', models.CharField(max_length=100)),
                 ('title', models.TextField()),
@@ -161,7 +181,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='MutationType',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('type', models.CharField(max_length=100)),
             ],
             options={
@@ -169,42 +189,47 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.AddField(
-            model_name='mutation',
+            model_name='mutationexperiment',
             name='exp_func',
             field=models.ForeignKey(to='mutation.MutationFunc'),
         ),
         migrations.AddField(
-            model_name='mutation',
+            model_name='mutationexperiment',
             name='exp_measure',
             field=models.ForeignKey(to='mutation.MutationMeasure'),
         ),
         migrations.AddField(
-            model_name='mutation',
+            model_name='mutationexperiment',
             name='exp_qual',
             field=models.ForeignKey(to='mutation.MutationQual'),
         ),
         migrations.AddField(
-            model_name='mutation',
+            model_name='mutationexperiment',
             name='exp_type',
-            field=models.ForeignKey(to='mutation.MutationType'),
+            field=models.ForeignKey(to='mutation.MutationExperimentalType'),
         ),
         migrations.AddField(
-            model_name='mutation',
+            model_name='mutationexperiment',
             name='ligand',
-            field=models.ForeignKey(to='mutation.MutationLigand'),
+            field=models.ForeignKey(null=True, to='ligand.Ligand', related_name='ligand'),
         ),
         migrations.AddField(
-            model_name='mutation',
-            name='ligand_class',
-            field=models.ForeignKey(to='mutation.MutationLigandClass'),
-        ),
-        migrations.AddField(
-            model_name='mutation',
+            model_name='mutationexperiment',
             name='ligand_ref',
-            field=models.ForeignKey(to='mutation.MutationLigandRef'),
+            field=models.ForeignKey(null=True, to='ligand.Ligand', related_name='reference_ligand'),
         ),
         migrations.AddField(
-            model_name='mutation',
+            model_name='mutationexperiment',
+            name='ligand_role',
+            field=models.ForeignKey(null=True, to='ligand.LigandRole'),
+        ),
+        migrations.AddField(
+            model_name='mutationexperiment',
+            name='mutation',
+            field=models.ForeignKey(to='mutation.Mutation'),
+        ),
+        migrations.AddField(
+            model_name='mutationexperiment',
             name='optional',
             field=models.ForeignKey(to='mutation.MutationOptional'),
         ),

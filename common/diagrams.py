@@ -1,6 +1,4 @@
-
-
-from math import cos, sin, tan, pi, sqrt, pow
+﻿from math import cos, sin, tan, pi, sqrt, pow
 import string, time, math, random
 
 def uniqid(prefix='', more_entropy=False):

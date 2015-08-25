@@ -42,6 +42,7 @@ INSTALLED_APPS = (
     'ligand',
     'interaction',
     'mutation',
+    'phylogenetic_trees',
     'build_' + SITE_NAME,
 )
 
