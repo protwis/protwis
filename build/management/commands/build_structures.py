@@ -346,8 +346,7 @@ class Command(BaseCommand):
                                     l.ambigious_alias = True
                                     l.save()
                                     l.load_by_name(ligand['name'])
-                                else: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.
-                                    self.logger.info('Inserting '+ligand['name']+" for "+sd['pdb'])                                    
+                                else: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.                        
                                     lp = LigandProperities()
                                     lp.save()
                                     l = Ligand()
