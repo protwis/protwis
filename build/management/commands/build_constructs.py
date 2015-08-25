@@ -118,17 +118,19 @@ class Command(BaseCommand):
 
                     # create residue records
                     truncations = []
-                    for t in sd['truncations']:
-                        truncations += list(range(t[0],t[1]+1))
+                    if 'truncations' in sd and s['truncations']:
+                        for t in sd['truncations']:
+                            truncations += list(range(t[0],t[1]+1))
 
                     mutations = {}
-                    for m in sd['mutations']:
-                        res_num = m[1:-1]
-                        mutations[res_num] = {
-                            'wt_res': m[0],
-                            'mut_res': m[-1],
-                            'full': m,
-                        }
+                    if 'mutations' in sd and s['mutations']:
+                        for m in sd['mutations']:
+                            res_num = m[1:-1]
+                            mutations[res_num] = {
+                                'wt_res': m[0],
+                                'mut_res': m[-1],
+                                'full': m,
+                            }
 
                     # fusion proteins
                     split_segments = {}
