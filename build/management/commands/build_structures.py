@@ -159,7 +159,6 @@ class Command(BaseCommand):
                 # read the yaml file
                 with open(source_file_path, 'r') as f:
                     sd = yaml.load(f)
-                    print("Parsing "+sd['pdb'])
 
                     # is there a construct?
                     if 'construct' not in sd:
@@ -184,6 +183,7 @@ class Command(BaseCommand):
                         os.makedirs(self.structure_data_dir+'/../pdbs/')
                     pdb_path = self.structure_data_dir+'/../pdbs/'+sd['pdb']+'.pdb'
                     if not os.path.isfile(pdb_path):
+                        self.logger.info('Fetching PDB file {}'.format(sd['pdb']))
                         url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
                         pdbdata_raw = urlopen(url).read().decode('utf-8')
                         f=open(pdb_path,'w')
@@ -216,7 +216,7 @@ class Command(BaseCommand):
                             sd['pubmed_id'] = line[19:].strip()
 
                     if len(hetsyn) == 0:
-                        print("PDB file contained NO hetsyn")
+                        self.logger.info("PDB file contained NO hetsyn")
 
                     header=open(pdb_path,'r')
                     header_dict=parse_pdb_header(header)
@@ -224,7 +224,6 @@ class Command(BaseCommand):
                     sd['publication_date'] = header_dict['release_date']
                     sd['resolution'] = str(header_dict['resolution']).strip()
 
-                    #print(hetsyn)
                     matched = 0
                     if 'ligand' in sd:
                         if isinstance(sd['ligand'], list):
@@ -233,16 +232,16 @@ class Command(BaseCommand):
                             ligands = [sd['ligand']]
                         for ligand in ligands:
                             if ligand['name'].upper() in hetsyn:
-                                print('match')
+                                self.logger.info('match')
                                 matched = 1
                                 ligand['name'] = hetsyn[ligand['name'].upper()]
                             elif ligand['name'].upper() in hetsyn_reverse:
                                 matched = 1
 
                     if matched==0 and len(hetsyn)>0:
-                        print('No ligand names found in HET in structure')
-                        print(hetsyn)
-                        print(ligands)
+                        self.logger.info('No ligand names found in HET in structure')
+                        self.logger.info(hetsyn)
+                        self.logger.info(ligands)
 
                     yaml.dump(sd,open(source_file_path, 'w'),indent=4)
 
@@ -337,7 +336,6 @@ class Command(BaseCommand):
                                 elif Ligand.objects.filter(name=ligand['name'], canonical=False, ambigious_alias=False).exists(): #if this matches an alias that only has "one" parent canonical name - eg distinct
                                     l = Ligand.objects.get(name=ligand['name'], canonical=False, ambigious_alias=False)
                                 elif Ligand.objects.filter(name=ligand['name'], canonical=False, ambigious_alias=True).exists(): #if this matches an alias that only has several canonical parents, must investigate, start with empty.
-                                    #print('Inserting '+ligand['name']+" for "+sd['pdb'])
                                     lp = LigandProperities()
                                     lp.save()
                                     l = Ligand()
@@ -348,7 +346,7 @@ class Command(BaseCommand):
                                     l.save()
                                     l.load_by_name(ligand['name'])
                                 else: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.
-                                    print('Inserting '+ligand['name']+" for "+sd['pdb'])
+                                    self.logger.info('Inserting '+ligand['name']+" for "+sd['pdb'])
                                     lp = LigandProperities()
                                     lp.save()
                                     l = Ligand()
@@ -391,9 +389,8 @@ class Command(BaseCommand):
                             'name': 'Bulge'})
                         for segment, bulges in sd['bulges'].items():
                             for bulge in bulges:
-                                gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge, defaults={
-                                    'protein_segment': ProteinSegment.objects.get(slug=segment),
-                                    'scheme': ResidueNumberingScheme.objects.get(slug=scheme.slug)})
+                                gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge, scheme=scheme,
+                                    defaults={'protein_segment': ProteinSegment.objects.get(slug=segment)})
                                 pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pab, generic_number=gn)
                                 s.protein_anomalies.add(pa)
                     if 'constrictions' in sd and sd['constrictions']:
@@ -425,10 +422,7 @@ class Command(BaseCommand):
                     self.create_rotamers(s)
                     self.logger.info('Calculate interactions')
 
-                    #print('interactions '+sd['pdb'])
                     runcalculation(sd['pdb'])
                     parsecalculation(sd['pdb'],False)
-
-
 
         self.logger.info('COMPLETED CREATING PDB STRUCTURES')
