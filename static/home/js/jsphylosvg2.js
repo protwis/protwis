@@ -1252,8 +1252,6 @@ Smits.PhyloCanvas.Render.SVG.prototype = {
 	},
 	
 	draw: function (instruct) {
-	//    console.log(instruct)
-
 		var obj, 
 			param;
 	   if(instruct.type == 'line'){
@@ -1261,7 +1259,15 @@ Smits.PhyloCanvas.Render.SVG.prototype = {
 	   } else if (instruct.type == 'path') {
 	       obj = this.svg.path(instruct.path).attr(instruct.attr);
 	       obj.node.id = instruct.attr['id'];
-	       obj.node.setAttribute('class', instruct.attr['class']);
+	       if (typeof instruct.attr['class'] === 'undefined') {
+	           if (obj.node.getAttribute('stroke-dasharray') !== null) {
+	               obj.node.setAttribute('class', 'path2');
+	               obj.node.setAttribute('stroke-width', '2');
+	           } else {
+	               obj.node.setAttribute('class', 'path');
+	               obj.node.setAttribute('stroke-width', '2');
+	           }
+	       } else { obj.node.setAttribute('class', instruct.attr['class']); };
 		} else if(instruct.type == 'circle'){
 			obj = this.svg.circle(instruct.x, instruct.y, instruct.radius).attr({
 				"stroke": 'red'

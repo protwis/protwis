@@ -16,9 +16,6 @@
         '+': ['#FFFFFF', '#000000']
     };
 
-
-
-    
     $('#svgCanvas').find('svg').attr('id', 'svgtree');
     $('#svgCanvas').find('svg').attr('class', 'svgtree');
     $('#svgCanvas').find('svg').removeAttr('xmlns:xlink');
@@ -29,64 +26,94 @@
         parentid = $(this).closest('svg').attr('id');
         newcolor = $(".pick-color.selected").attr('id');
         newcolor = newcolor.split('-');
-
         $(this).css("fill", newcolor[1]);
-
-
-        //$(this).next().css("fill", newcolor[2]);
     });
-    $(".chart").click(function () {
-        id = $(this).attr('id');
-         
-        newcolor = $(".pick-color.selected").attr('id');
-        newcolor = newcolor.split('-');
-        $('#svgCanvas').find(".chart").each(function (index) {
+    $("[class^=chart]").click(function () {
+        if ($(this).attr('id')) {
+            id = $(this).attr('id');
+            newcolor = $(".pick-color.selected").attr('id');
+            newcolor = newcolor.split('-');
+            $("[class^=chart]").each(function (index) {
+                if ($(this).attr('id')) {
+                    if ($(this).attr("id") == id && id.length != 1) {
+                        $(this).css("fill", newcolor[1]);
+                    };
+                };
+            });
 
-            if ($(this).attr("id") == id && id.length != 1) {
-                $(this).css("fill", newcolor[1]);
-            };
-            // $(this).next().css("fill", 'black');
-        });
-        $('#legend').find(".chart").each(function (index) {
-
-            if ($(this).attr("id") == id && id.length != 1) {
-                $(this).css("fill", newcolor[1]);
-            };
-            // $(this).next().css("fill", 'black');
-        });
+        }
     });
-
- 
  }
- function resetColors(defs) {
+
+ function colour_lines() {
+     $(".path").click(function () {
+         newcolor = $(".pick-color.selected").attr('id');
+         newcolor = newcolor.split('-');
+
+         $(this).css("stroke", newcolor[1]);
+         $(this).css("stroke-width", '4');
+     });
+     $(".path2").click(function () {
+         newcolor = $(".pick-color.selected").attr('id');
+         newcolor = newcolor.split('-');
+
+         $(this).css("stroke", newcolor[1]);
+         $(this).css("stroke-width", '4');
+     });
+ };
+ function predefined_colours(defs, colours) {
+     resetColors(defs);
      $('#svgCanvas').find(".bgfield").each(function (index) {
-         $(this).css("fill", '#EEE');
+         if (colours['proteins'].indexOf($(this).attr("id")) > -1) {
+             $(this).css("fill", colours['colours'][0]);
+         };
      });
-     $('#svgCanvas').find(".chart").each(function (index) {
-         $(this).css("fill", defs[$(this).attr('id')][0]);
+ };
+ function resetColors(defs) {
+     $('#svgCanvas').find(".path").each(function (index) {
+         $(this).css("stroke", '');
+         $(this).css("stroke-width", '');
      });
-     $('#legend').find(".chart").each(function (index) {
-         $(this).css("fill", defs[$(this).attr('id')][0]);
+     $('#svgCanvas').find(".path2").each(function (index) {
+         $(this).css("stroke", '');
+         $(this).css("stroke-width", '');
      });
+     $('#svgCanvas').find(".bgfield").each(function (index) {
+         $(this).css("fill", '');
+         $(this).css("stroke", '');
+     });
+     $("[class^=chart]").each(function (index) {
+         if ($(this).attr('id')) {
+             $(this).css("fill", defs[$(this).attr('id')][0]);
+         };
+     });
+
+
  };
 
  function toggleLegend() {
-     $('#svgCanvas').find(".chart").each(function (index) {
+     var chart0 = $('#svgCanvas').find(".chart0")
+     var chart1 = $('#svgCanvas').find(".chart1")
+     var chart2 = $('#svgCanvas').find(".chart2")
+     if ($(chart0).css("visibility") == 'hidden' && $(chart1).css("visibility") == 'hidden' && $(chart2).css("visibility") == 'hidden') {
+         $(chart0).css("visibility", 'visible');
+         $(chart1).css("visibility", 'visible');
+         $(chart2).css("visibility", 'visible');
+     } else {
+         $(chart0).css("visibility", 'hidden');
+         $(chart1).css("visibility", 'hidden');
+         $(chart2).css("visibility", 'hidden');
+     };
+ };
+
+
+ function toggleRings(ring) {
+     $('#svgCanvas').find("." + ring).each(function (index) {
          if ($(this).css("visibility") == 'hidden') {
              $(this).css("visibility", 'visible');
          } else {
              $(this).css("visibility", 'hidden');
          };
-     });
-    $('#svgCanvas').find(".legend").each(function (index) {
-        if ($(this).css("visibility")== 'hidden') {
-            $(this).css("visibility", 'visible');
-        } else {
-            $(this).css("visibility", 'hidden');
-
-        };
-         
-
      });
  };
 
@@ -94,9 +121,7 @@
      var SVG = $('#svgCanvas').find('svg')[0];
      h = parseInt($(SVG).attr('height'));
      w = parseInt($(SVG).attr('width'));
-     // new_h = h+
      var legend = $('#legend').find('svg')[0];
-    // legend.setAttribute('transform', 'translate (' + h + 20 + ' 0)');
      h2 = parseInt($(legend).attr('height'));
      w2 = parseInt($(legend).attr('width'));
      new_w = (w-w2)/2
@@ -106,10 +131,6 @@
          $(SVG).append(legend.children[i]);
      }
 
-
-     //console.log(svg1.css('height'));
-     //console.log(svg1);
-     //console.log(newSVG);
  };
 $( document ).ready(function (){
 
