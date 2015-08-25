@@ -85,16 +85,16 @@ def render_tree(request):
     simple_selection=request.session.get('selection', False)
     cons_prots = []
 ################################## FOR BUILDING STATISTICS ONLY
-    for n in Protein.objects.filter(sequence_type_id=3):
-        if n.family.slug.startswith('001') and len(n.family.slug.split('_'))==2:
-            cons_prots.append(n)
-    for n in simple_selection.targets:
-        if n.item.family.slug.startswith('001_'):
-            continue
-        else:
-            simple_selection.targets.remove(n)
-    for n in cons_prots:
-        simple_selection.targets.append(SelectionItem('protein',n))
+#    for n in Protein.objects.filter(sequence_type_id=3):
+#        if n.family.slug.startswith('001') and len(n.family.slug.split('_'))==2:
+#            cons_prots.append(n)
+#    for n in simple_selection.targets:
+#        if n.item.family.slug.startswith('001_'):
+#            continue
+#        else:
+#            simple_selection.targets.remove(n)
+#    for n in cons_prots:
+#        simple_selection.targets.append(SelectionItem('protein',n))
 #####################################################
     a.load_proteins_from_selection(simple_selection)
     if len(a.proteins) == 0:
@@ -119,7 +119,7 @@ def render_tree(request):
     dirname = unique_filename = uuid.uuid4()
     os.mkdir('/tmp/%s' %dirname)
     infile = open('/tmp/%s/infile' %dirname,'w')
-    infile.write('\t'+str(total)+'\t'+str(total_length)+'\n')
+    infile.write('    '+str(total)+'    '+str(total_length)+'\n')
     family = {}
     Additional_info['crystal']={'proteins':[],'colours':['#6dcde1','#6dcde1']}
     ####Get additional protein information
@@ -148,7 +148,7 @@ def render_tree(request):
         ####Write PHYLIP input
         sequence = ''
         for chain in n.alignment:
-            for residue in chain:
+            for residue in n.alignment[chain]:
                 sequence += residue[2].replace('_','-')
             sequence += '-'
         infile.write(acc+' '*9+sequence+'\n')

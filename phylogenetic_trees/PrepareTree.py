@@ -236,7 +236,7 @@ class PrepareTree:
                                     'Y': ['#18FF0B', '#000000'],'W': ['#0BCF00', '#000000'],
                                     'H': ['#0093DD', '#000000'],'P': ['#CC0099', '#FDFF7B'],
                                     'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
-                                    '-': ['#FFFFFF', '#000000']    
+                                    '-': ['#000000', '#000000']    
                                     }
         fillcolors = [['#EEEEEE', '#000000']]
         for key,value in presetColors.items():

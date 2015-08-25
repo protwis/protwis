@@ -63,8 +63,12 @@
         <br><button style="width:250px;" onclick="predefined_colours({{ default }},{{ add.crystal }})">Highlight crystallized receptors</button>
 
     </div>
-    <a href="javascript:saveSvgAsPng(document.getElementById('svgtree'), 'tree.png', {scale: 3});"> Download as PNG</a>
-    <a id=tree_svg_link href-lang="image/svg+xml" href="" download="tree"> Download as SVG</a>
+    <br>Download:
+    <a href="javascript:saveSvgAsPng(document.getElementById('svgtree'), 'tree.png', {scale: 3});">PNG</a>
+    <a href="javascript:saveSvgAsJpg(document.getElementById('svgtree'), 'tree.jpg', {scale: 3});">JPG</a>
+    <a href="javascript:saveSvgAsTiff(document.getElementById('svgtree'), 'tree.tiff', {scale: 3});">TIFF</a>
+
+    <a id=tree_svg_link href-lang="image/svg+xml" href="" download="tree">SVG</a>
 </div>
 <br />
 {% include 'phylogenetic_trees/tree_options.html' %}
