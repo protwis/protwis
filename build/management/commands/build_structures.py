@@ -159,7 +159,6 @@ class Command(BaseCommand):
                 # read the yaml file
                 with open(source_file_path, 'r') as f:
                     sd = yaml.load(f)
-                    print("Parsing "+sd['pdb'])
 
                     # is there a construct?
                     if 'construct' not in sd:
@@ -216,7 +215,7 @@ class Command(BaseCommand):
                             sd['pubmed_id'] = line[19:].strip()
 
                     if len(hetsyn) == 0:
-                        print("PDB file contained NO hetsyn")
+                        self.logger.error("PDB file contained NO hetsyn")
 
                     header=open(pdb_path,'r')
                     header_dict=parse_pdb_header(header)
@@ -233,16 +232,15 @@ class Command(BaseCommand):
                             ligands = [sd['ligand']]
                         for ligand in ligands:
                             if ligand['name'].upper() in hetsyn:
-                                print('match')
                                 matched = 1
                                 ligand['name'] = hetsyn[ligand['name'].upper()]
                             elif ligand['name'].upper() in hetsyn_reverse:
                                 matched = 1
 
                     if matched==0 and len(hetsyn)>0:
-                        print('No ligand names found in HET in structure')
-                        print(hetsyn)
-                        print(ligands)
+                        self.logger.error('No ligand names found in HET in structure')
+                        self.logger.error(hetsyn)
+                        self.logger.error(ligands)
 
                     yaml.dump(sd,open(source_file_path, 'w'),indent=4)
 
@@ -348,7 +346,6 @@ class Command(BaseCommand):
                                     l.save()
                                     l.load_by_name(ligand['name'])
                                 else: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.
-                                    print('Inserting '+ligand['name']+" for "+sd['pdb'])
                                     lp = LigandProperities()
                                     lp.save()
                                     l = Ligand()
@@ -371,8 +368,8 @@ class Command(BaseCommand):
                                 if ligand['role']:
                                     lr, created = LigandRole.objects.get_or_create(slug=slugify(ligand['role']),
                                         defaults={'name': ligand['role']})
-                                    i, created = StructureLigandInteraction.objects.get_or_create(pdb_reference=pdb_reference, structure=s, ligand=l,
-                                        ligand_role=lr, annotated=True)
+                                    i, created = StructureLigandInteraction.objects.get_or_create(structure=s, ligand=l,
+                                        ligand_role=lr, annotated=True, defaults={'pdb_reference':pdb_reference})
                     
                     # structure segments
                     if 'segments' in sd and sd['segments']:

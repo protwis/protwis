@@ -33,11 +33,11 @@ class MutationExperiment(models.Model):
     ligand_role = models.ForeignKey('ligand.LigandRole', null=True) #Change to a ligand model?
     ligand_ref = models.ForeignKey('ligand.Ligand', null=True, related_name='reference_ligand') #Change to a ligand model?
     raw = models.ForeignKey('MutationRaw')
-    optional = models.ForeignKey('MutationOptional')
-    exp_type = models.ForeignKey('MutationExperimentalType')
-    exp_func= models.ForeignKey('MutationFunc')
-    exp_measure = models.ForeignKey('MutationMeasure')
-    exp_qual = models.ForeignKey('MutationQual')
+    optional = models.ForeignKey('MutationOptional', null=True)
+    exp_type = models.ForeignKey('MutationExperimentalType', null=True)
+    exp_func= models.ForeignKey('MutationFunc', null=True)
+    exp_measure = models.ForeignKey('MutationMeasure', null=True)
+    exp_qual = models.ForeignKey('MutationQual', null=True)
 
     #Values
     wt_value = models.DecimalField(max_digits=10, decimal_places=2)
