@@ -1,7 +1,7 @@
 from django.shortcuts import render
 
 from django.http import HttpResponse
-from mutation.testing import *
+from mutation.functions import *
 from mutation.models import *
 
 from common.views import AbsTargetSelection
@@ -89,7 +89,7 @@ def render_mutations(request):
 
     print(segments)
 
-    mutations = MutationExperiment.objects.filter(protein__in=proteins, residue__protein_segment__in=segments).prefetch_related('protein', 'residue__protein_segment','residue__display_generic_number', 'residue', 'exp_type', 'ligand_class', 'ligand','refs')
+    mutations = MutationExperiment.objects.filter(protein__in=proteins, residue__protein_segment__in=segments).prefetch_related('protein', 'residue__protein_segment','residue__display_generic_number', 'residue', 'exp_type', 'ligand_role', 'ligand','refs')
 
     print(mutations)
     return render(request, 'mutation/list.html', {'mutations': mutations})

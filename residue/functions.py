@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db.models import Q
 
 from protein.models import ProteinAnomaly
-from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme
+from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 
 import logging
 from collections import OrderedDict
@@ -58,6 +58,10 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
         residues_to_update = []
         for i, aa in enumerate(protein_conformation.protein.sequence[(start-1):end]):
             residues_to_update.append((start+i, aa)) # replicate the format from values_list
+
+    # default numbering scheme
+    ns = settings.DEFAULT_NUMBERING_SCHEME
+    ns_obj = ResidueNumberingScheme.objects.get(slug=ns)
     
     for residue in residues_to_update:
         sequence_number = residue[0]
@@ -75,17 +79,26 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
                 ref_positions[settings.REFERENCE_POSITIONS[segment.slug]], protein_anomalies)
             
             # main generic number
-            ns = settings.DEFAULT_NUMBERING_SCHEME
             gnl = numbers['generic_number']
             if gnl in schemes[ns]['generic_numbers']:
                 rvalues['generic_number'] = schemes[ns]['generic_numbers'][gnl]
             else:
                 gn, created = ResidueGenericNumber.objects.get_or_create(
-                    scheme=ResidueNumberingScheme.objects.get(slug=ns),
-                    label=gnl, defaults=rns_defaults)
+                    scheme=ns_obj, label=gnl, defaults=rns_defaults)
                 rvalues['generic_number'] = schemes[ns]['generic_numbers'][gnl] = gn
                 if created:
                     logger.info('Created generic number {}'.format(gn.label))
+
+            # equivalent to main generic number
+            if 'equivalent' in numbers:
+                gn_equivalent, created = ResidueGenericNumberEquivalent.objects.get_or_create(
+                    default_generic_number=rvalues['generic_number'],
+                    scheme=protein_conformation.protein.residue_numbering_scheme,
+                    defaults={'label': numbers['equivalent']})
+                if created:
+                    logger.info('Created generic number equivalent {} ({}) for scheme {}'.format(
+                        numbers['equivalent'], numbers['generic_number'],
+                        protein_conformation.protein.residue_numbering_scheme))
             
             # display generic number
             ns = protein_conformation.protein.residue_numbering_scheme.slug
@@ -182,6 +195,11 @@ def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, r
     generic_number = segment_index + "x" + str(generic_index)
     structure_corrected_generic_number = segment_index + "x" + str(structure_corrected_generic_index)
     numbers['generic_number'] = structure_corrected_generic_number + prime
+
+    # update generic numbers equivalents
+    if 'table' in schemes[residue_numbering_scheme.slug]:
+        equivalent = schemes[residue_numbering_scheme.slug]['table'][structure_corrected_generic_number]
+        numbers['equivalent'] = equivalent + prime
 
     # alternative schemes
     numbers['alternative_generic_numbers'] = {}

@@ -328,6 +328,45 @@
                         });
                     }
 
+                    function ajaxInteractionsLigand(protein,ligand) {
+
+                        resetColors('snakeplot');
+                        resetColors('helixbox');
+
+                        $.getJSON( '/interaction/ajaxLigand/'+protein+'/'+ligand, function( data ) {
+                          $.each( data, function( key, val ) {
+
+                            var flags = [], falgsAA = [], output = [], outputAA = [], l = val.length, i;
+                            for( i=0; i<l; i++) {
+                                if( flags[val[i][1]]) continue;
+                                flags[val[i][1]] = true;
+                                output.push(val[i][1]);
+                            }
+                            for( i=0; i<l; i++) {
+                                if( flags[val[i][0]]) continue;
+                                flags[val[i][0]] = true;
+                                outputAA.push(val[i][0]);
+                            }
+                             
+                             extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
+
+
+                             $('[id='+key+']').css("fill", "#E60A0A");
+                             $('[id='+key+']').next().css("fill", "#FDFF7B");
+
+                             original_title = $("#"+key).attr('original_title')
+
+                             $('[id='+key+']').attr('title',original_title+extra);
+                             $('[id='+key+'t]').attr('title',original_title+extra);
+
+
+                          });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
+    
+                        });
+                    }
+
 
                     $(".pick-color").click(function() {
                         plottype = $(this).attr('class').split(' ')[1];
