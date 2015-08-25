@@ -118,12 +118,12 @@ class Command(BaseCommand):
 
                     # create residue records
                     truncations = []
-                    if 'truncations' in sd and s['truncations']:
+                    if 'truncations' in sd and sd['truncations']:
                         for t in sd['truncations']:
                             truncations += list(range(t[0],t[1]+1))
 
                     mutations = {}
-                    if 'mutations' in sd and s['mutations']:
+                    if 'mutations' in sd and sd['mutations']:
                         for m in sd['mutations']:
                             res_num = m[1:-1]
                             mutations[res_num] = {
