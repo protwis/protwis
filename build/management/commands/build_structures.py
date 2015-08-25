@@ -215,7 +215,7 @@ class Command(BaseCommand):
                             sd['pubmed_id'] = line[19:].strip()
 
                     if len(hetsyn) == 0:
-                        self.logger.error("PDB file contained NO hetsyn")
+                        self.logger.info("PDB file contained NO hetsyn")
 
                     header=open(pdb_path,'r')
                     header_dict=parse_pdb_header(header)
@@ -232,15 +232,16 @@ class Command(BaseCommand):
                             ligands = [sd['ligand']]
                         for ligand in ligands:
                             if ligand['name'].upper() in hetsyn:
+                                self.logger.info('match')
                                 matched = 1
                                 ligand['name'] = hetsyn[ligand['name'].upper()]
                             elif ligand['name'].upper() in hetsyn_reverse:
                                 matched = 1
 
                     if matched==0 and len(hetsyn)>0:
-                        self.logger.error('No ligand names found in HET in structure')
-                        self.logger.error(hetsyn)
-                        self.logger.error(ligands)
+                        self.logger.info('No ligand names found in HET in structure')
+                        self.logger.info(hetsyn)
+                        self.logger.info(ligands)
 
                     yaml.dump(sd,open(source_file_path, 'w'),indent=4)
 
@@ -346,6 +347,7 @@ class Command(BaseCommand):
                                     l.save()
                                     l.load_by_name(ligand['name'])
                                 else: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.
+                                    self.logger.info('Inserting '+ligand['name']+" for "+sd['pdb'])                                    
                                     lp = LigandProperities()
                                     lp.save()
                                     l = Ligand()
