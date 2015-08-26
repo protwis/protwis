@@ -66,8 +66,26 @@ class Publication(models.Model):
                     retmode="text"
                     )
         except Exception as e:
-            logger.error("Failed to retrieve data for pubmed id: {}".format(index))
-            return
+            logger.error("Failed 1x to retrieve data for pubmed id: {} - trying again".format(index))
+            try:
+                Entrez.email = 'info@gpcrdb.org'
+                if index:
+                    handle = Entrez.efetch(
+                        db="pubmed", 
+                        id=str(index), 
+                        rettype="medline", 
+                        retmode="text"
+                        )
+                else:
+                    handle = Entrez.efetch(
+                        db="pubmed", 
+                        id=str(self.web_link.index),
+                        rettype="medline",
+                        retmode="text"
+                        )
+            except Exception as e:
+                logger.error("Failed 2x to retrieve data for pubmed id: {}".format(index))
+                return
         try:
             record = Medline.read(handle)
             self.title = record['TI']

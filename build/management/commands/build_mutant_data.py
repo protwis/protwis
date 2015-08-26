@@ -270,6 +270,8 @@ class Command(BaseCommand):
                 inserted = 0
                 for r in rows:
                     c += 1
+                    if c%1000==0: 
+                        self.logger.info('Parsed '+str(c)+' mutant data entries')
 
                     # publication
 
@@ -568,8 +570,6 @@ class Command(BaseCommand):
                     #print(foldchange)
                     mut_id = obj.id
                     inserted += 1
-                    if c%1000==0: 
-                        self.logger.info('Parsed '+str(c)+' mutant data entries')
 
                 self.logger.info('Parsed '+str(c)+' mutant data entries. Skipped '+str(skipped))
 

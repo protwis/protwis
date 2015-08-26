@@ -18,17 +18,44 @@ class Command(BuildHumanProteins):
 
     ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'reference_positions'])
     auto_ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'auto_reference_positions'])
+    generic_numbers_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers'])
 
     def handle(self, *args, **options):
         # create proteins
         try:
+            self.purge_consensus_sequences()
             self.create_consensus_sequences()
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
 
+    def purge_consensus_sequences(self):
+        Protein.objects.filter(sequence_type__slug='consensus').delete()
+
+    def get_segment_residue_information(self, consensus_sequence):
+        ref_positions = dict()
+        segment_starts = dict()
+        segment_ends = dict()
+        sequence_num = 1
+        for segment_slug, s in consensus_sequence.items():
+            segment = ProteinSegment.objects.get(slug=segment_slug)
+            i = 1
+            for gn, aa in s.items():
+                if segment_slug in settings.REFERENCE_POSITIONS and gn[-2:] == '50':
+                    ref_positions[gn] = sequence_num
+                if i == 1:
+                    segment_starts[segment_slug] = sequence_num
+                if i == len(s):
+                    segment_ends[segment_slug] = sequence_num
+                sequence_num += 1
+                i += 1
+        return ref_positions, segment_starts, segment_ends
+
     def create_consensus_sequences(self):
         self.logger.info('CREATING CONSENSUS SEQUENCES')
+
+        # numbering scheme tables
+        schemes = parse_scheme_tables(self.generic_numbers_source_dir)
 
         # fetch families
         families = ProteinFamily.objects.all()
@@ -48,14 +75,13 @@ class Command(BuildHumanProteins):
             a.load_proteins(proteins)
             a.load_segments(segments)
             a.build_alignment()
-            a.calculate_statistics
+            a.calculate_statistics()
 
-            # FIXME use this sequence
             # get (forced) consensus sequence from alignment object
-            # family_consensus = str()
-            # for segment in a.forced_consensus:
-            #     for aa in segment:
-            #         family_consensus += aa[1]
+            family_consensus = str()
+            for segment, s in a.forced_consensus.items():
+                for gn, aa in s.items():
+                    family_consensus += aa
 
             # create sequence type 'consensus'
             sequence_type, created = ProteinSequenceType.objects.get_or_create(slug='consensus',
@@ -73,33 +99,63 @@ class Command(BuildHumanProteins):
             up['source'] = "OTHER"
             up['species_latin_name'] = proteins[0].species.latin_name
             up['species_common_name'] = proteins[0].species.common_name
-            up['sequence'] = proteins[0].sequence
+            up['sequence'] = family_consensus
 
             up['names'] = up['genes'] = []
             self.create_protein(consensus_name, family, sequence_type, residue_numbering_scheme, False, up)
 
-            # create residues FIXME use actual consensus
+            # get protein anomalies in family
+            all_constrictions = []
+            constriction_freq = dict()
+            consensus_pas = dict() # a constriction has to be in all sequences to be included in the consensus
+            pcs = ProteinConformation.objects.filter(protein__in=proteins, state__slug=settings.DEFAULT_PROTEIN_STATE)
+            for pc in pcs:
+                pas = pc.protein_anomalies.all()
+                for pa in pas:
+                    pa_label = pa.generic_number.label
+                    pa_type = pa.anomaly_type.slug
+                    pa_segment_slug = pa.generic_number.protein_segment.slug
+                    
+                    # bulges are directly added to the consensus list
+                    if pa_type == 'bulge':
+                        if pa_segment_slug not in consensus_pas:
+                            consensus_pas[pa_segment_slug] = []
+                        if pa not in consensus_pas[pa_segment_slug]:
+                            consensus_pas[pa_segment_slug].append(pa)
+
+                    # a constriction's frequency is counted
+                    else:
+                        if pa not in all_constrictions:
+                            all_constrictions.append(pa)
+                        if pa_label in constriction_freq:
+                            constriction_freq[pa_label] += 1
+                        else:
+                            constriction_freq[pa_label] = 1
+            
+            # go through constrictions to see which ones should be included in the consensus
+            for pa in all_constrictions:
+                pa_label = pa.generic_number.label
+                pa_segment_slug = pa.generic_number.protein_segment.slug
+                freq = constriction_freq[pa_label]
+
+                # is the constriction in all sequences?
+                if freq == len(all_constrictions):
+                    if pa_segment_slug not in consensus_pas:
+                        consensus_pas[pa_segment_slug] = []
+                    consensus_pas[pa_segment_slug].append(pa)
+
+            # create residues
             pc = ProteinConformation.objects.get(protein__entry_name=up['entry_name'],
                 state__slug=settings.DEFAULT_PROTEIN_STATE)
-            ppc = ProteinConformation.objects.get(protein=proteins[0], state__slug=settings.DEFAULT_PROTEIN_STATE)
-            prs = Residue.objects.filter(protein_conformation=ppc).prefetch_related(
-                        'protein_conformation__protein', 'protein_segment', 'generic_number',
-                        'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
-            for pr in prs:
-                r = Residue()
-                r.protein_conformation = pc
-                r.generic_number = pr.generic_number
-                r.display_generic_number = pr.display_generic_number
-                r.sequence_number = pr.sequence_number
-                r.protein_segment = pr.protein_segment
-                r.amino_acid = pr.amino_acid
-
-                # save residue before populating M2M relations
-                r.save()
-
-                # alternative generic numbers
-                agns = pr.alternative_generic_numbers.all()
-                for agn in agns:
-                    r.alternative_generic_numbers.add(agn)
+            ref_positions, segment_starts, segment_ends = self.get_segment_residue_information(a.forced_consensus)
+            for segment_slug, s in a.forced_consensus.items():
+                segment = ProteinSegment.objects.get(slug=segment_slug)
+                if segment_slug in consensus_pas:
+                    protein_anomalies = consensus_pas[segment_slug]
+                else:
+                    protein_anomalies = []
+                if segment_slug in segment_starts:
+                    create_or_update_residues_in_segment(pc, segment, segment_starts[segment_slug],
+                        segment_ends[segment_slug], schemes, ref_positions, protein_anomalies, True)
 
         self.logger.info('COMPLETED CREATING CONSENSUS SEQUENCES')
