@@ -433,10 +433,10 @@ class Command(BaseCommand):
                     # save structure
                     s.save()
 
-                    # self.create_rotamers(s)
-                    # self.logger.info('Calculate interactions')
+                    self.create_rotamers(s)
+                    self.logger.info('Calculate interactions')
 
-                    # runcalculation(sd['pdb'])
-                    # parsecalculation(sd['pdb'],False)
+                    runcalculation(sd['pdb'])
+                    parsecalculation(sd['pdb'],False)
 
         self.logger.info('COMPLETED CREATING PDB STRUCTURES')
