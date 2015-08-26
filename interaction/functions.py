@@ -43,6 +43,8 @@ projectdir = module_dir + '/temp/'
 projectdir = '/tmp/interactions/'
 if not os.path.exists(projectdir):
         os.makedirs(projectdir)
+if not os.path.exists(projectdir + '/temp/'):
+        os.makedirs(projectdir + '/temp/')
 ignore_het = ['NA','W'] #ignore sodium and water
 
 
