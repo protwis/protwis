@@ -114,6 +114,7 @@ class Ligand(models.Model):
         if pubchem_name!=name: #if not canonical name
             #print("canonical error "+pubchem_name +" vs "+ name)
             self.canonical = False
+            self.save()
             canonical_entry = Ligand.objects.filter(name=pubchem_name, properities__inchikey=pubchem_inchikey) #NEED TO CHECK BY INCHI KEY - SOME CANONICAL NAMES HAVE MANY ICHIKEYS (DOXEPIN)
             if canonical_entry.exists():
                 return
