@@ -270,8 +270,6 @@ class Command(BaseCommand):
                 inserted = 0
                 for r in rows:
                     c += 1
-                    #print(r)
-                    raw_experiment = self.insert_raw(r)
 
                     # publication
 
@@ -540,6 +538,7 @@ class Command(BaseCommand):
                             if foldchange<1: foldchange = -round((1/foldchange),3);
                     
 
+                    raw_experiment = self.insert_raw(r)
                     obj, created = MutationExperiment.objects.get_or_create(
                     refs=pub, 
                     protein=protein, 
