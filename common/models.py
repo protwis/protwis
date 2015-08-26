@@ -4,6 +4,8 @@ from string import Template
 
 import urllib.request,json
 
+import logging
+
 
 class WebResource(models.Model):
     slug = models.SlugField(max_length=20)
@@ -46,6 +48,7 @@ class Publication(models.Model):
         db_table = 'publication'
 
     def update_from_pubmed_data(self, index=None):
+        logger = logging.getLogger('build')
         try:
             Entrez.email = 'info@gpcrdb.org'
             if index:
@@ -63,7 +66,7 @@ class Publication(models.Model):
                     retmode="text"
                     )
         except Exception as e:
-            print("Failed to retrieve data for pubmed id: {}".format(index))
+            logger.error("Failed to retrieve data for pubmed id: {}".format(index))
             return
         try:
             record = Medline.read(handle)
@@ -87,10 +90,10 @@ class Publication(models.Model):
             if 'PG' in record:
                 self.reference += ":" + record['PG']
         except Exception as msg:
-            print(msg)
+            logger.error("Publication update on pubmed error! Pubmed: "+index+" error:" + str(msg) )
 
     def update_from_doi(self, doi):
-
+        logger = logging.getLogger('build')
         #Pubmed by doi
         try:
             Entrez.email = 'info@gpcrdb.org'

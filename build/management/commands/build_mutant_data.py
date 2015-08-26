@@ -65,7 +65,7 @@ class Command(BaseCommand):
         # delete any existing structure data
         if options['purge']:
             try:
-                self.truncate_structure_tables()
+                self.truncate_structure_tables() #FIXME
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
@@ -76,7 +76,7 @@ class Command(BaseCommand):
             print(msg)
             self.logger.error(msg)
     
-    def truncate_structure_tables(self):
+    def truncate_structure_tables(self): #FIXME
         cursor = connection.cursor()
         
         tables_to_truncate = [
@@ -221,16 +221,12 @@ class Command(BaseCommand):
             source_file_path = os.sep.join([self.structure_data_dir, source_file])
             if os.path.isfile(source_file_path) and source_file[0] != '.':
                 self.logger.info('Reading file {}'.format(source_file_path))
-                print("Reading "+source_file_path)
                 # read the yaml file
 
                 if source_file[-4:]=='xlsx' or source_file[-3:]=='xls':
-                    print('xls!',source_file)
                     rows = self.loaddatafromexcel(source_file_path)
                     rows = self.analyse_rows(rows)
-                    continue
                 elif source_file[-4:]=='yaml':
-                    print('yaml!',source_file)
                     rows = yaml.load(open(source_file_path, 'r'))
                     temp = []
                     for r in rows:
@@ -266,7 +262,7 @@ class Command(BaseCommand):
                         temp.append(d)
                     rows = temp
                 else:
-                    print('unknown format'.source_file)
+                    self.logger.info('unknown format'.source_file)
                     continue
 
                 c = 0
@@ -274,8 +270,6 @@ class Command(BaseCommand):
                 inserted = 0
                 for r in rows:
                     c += 1
-                    #print(r)
-                    raw_experiment = self.insert_raw(r)
 
                     # publication
 
@@ -302,21 +296,18 @@ class Command(BaseCommand):
                         try:
                             pub.save()
                         except:
-                            print('error with reference ',r['reference'],pub_type)
+                            self.logger.error('error with reference ' + str(r['reference']) + ' ' + pub_type)
                             continue #if something off with publication, skip.
 
                     if r['ligand_type']=='PubChem CID':
-                        print('inserting by pubchem id')
                         try:
                             web_resource = WebResource.objects.get(slug='pubchem')
                         except:
                             # abort if pdb resource is not found
                             raise Exception('PubChem resource not found, aborting!')
 
-                        test = LigandProperities.objects.filter(web_links__web_resource=web_resource, web_links__index=r['ligand_id'])
                         if Ligand.objects.filter(name=r['ligand_name'], properities__web_links__web_resource=web_resource, properities__web_links__index=r['ligand_id']).exists(): #if this name is canonical and it has a ligand record already
                             l = Ligand.objects.get(name=r['ligand_name'], properities__web_links__web_resource=web_resource, properities__web_links__index=r['ligand_id'])
-                            print('found by pubchem id')
                         elif Ligand.objects.filter(properities__web_links__web_resource=web_resource, properities__web_links__index=r['ligand_id'], canonical=True).exists(): #if exists under different name
                             l_canonical = Ligand.objects.get(properities__web_links__web_resource=web_resource, properities__web_links__index=r['ligand_id'], canonical=True)
                             l = Ligand()
@@ -324,11 +315,8 @@ class Command(BaseCommand):
                             l.name = str(r['ligand_name'])
                             l.canonical = False
                             l.save()
-                            print('found by pubchem id, added alias')
                         else:
-                            print('pubchem id not found, adding',r['ligand_id'])
                             pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + str(r['ligand_id']) + '/property/CanonicalSMILES,InChIKey/json'
-                            print(pubchem_url)
                             try:
                                 req = urlopen(pubchem_url)
                                 pubchem = json.loads(req.read().decode('UTF-8'))
@@ -367,8 +355,6 @@ class Command(BaseCommand):
                                 raise Exception('JSON failed, aborting!')
                         
                     elif r['ligand_type']=='SMILES':
-                        print('inserting by smiles')
-
                         if Ligand.objects.filter(name=r['ligand_name'], properities__smiles=r['ligand_id']).exists(): #if this name is canonical and it has a ligand record already
                             l = Ligand.objects.get(name=r['ligand_name'], properities__smiles=r['ligand_id'])
                         elif Ligand.objects.filter(properities__smiles=r['ligand_id'], canonical=True).exists(): #if exists under different name
@@ -381,7 +367,6 @@ class Command(BaseCommand):
                         else: #if neither found by SMILES
 
                             pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/' + str(r['ligand_id']) + '/property/CanonicalSMILES,InChIKey/json'
-                            print(pubchem_url)
                             try:
                                 req = urlopen(pubchem_url)
                                 pubchem = json.loads(req.read().decode('UTF-8'))
@@ -401,8 +386,6 @@ class Command(BaseCommand):
                                 l.save()
                                 l.load_by_name(str(r['ligand_name']))
                             except:
-                                #raise Exception('JSON failed, aborting!')
-                                print('Inserting '+str(r['ligand_name']))
                                 lp = LigandProperities()
                                 lp.smiles = str(r['ligand_id'])
                                 lp.save()
@@ -414,7 +397,6 @@ class Command(BaseCommand):
                                 l.save()
                                 #l.load_by_name(str(r['ligand_name']))
                     elif r['ligand_name']:
-                        print('inserting by something else',r['ligand_type'],r['ligand_name'],r['ligand_id'])
                         if Ligand.objects.filter(name=r['ligand_name'], canonical=True).exists(): #if this name is canonical and it has a ligand record already
                             l = Ligand.objects.get(name=r['ligand_name'], canonical=True)
                         elif Ligand.objects.filter(name=r['ligand_name'], canonical=False, ambigious_alias=False).exists(): #if this matches an alias that only has "one" parent canonical name - eg distinct
@@ -431,7 +413,6 @@ class Command(BaseCommand):
                             l.save()
                             l.load_by_name(r['ligand_name'])
                         else: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.
-                            print('Inserting '+str(r['ligand_name']))
                             lp = LigandProperities()
                             lp.save()
                             l = Ligand()
@@ -461,7 +442,6 @@ class Command(BaseCommand):
                         l_ref.load_by_name(r['exp_mu_ligand_ref'])
                         l_ref.save()
                     elif r['exp_mu_ligand_ref']: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.
-                        print('Inserting ref '+str(r['exp_mu_ligand_ref']))
                         lp = LigandProperities()
                         lp.save()
                         l_ref = Ligand()
@@ -487,39 +467,51 @@ class Command(BaseCommand):
                             mutants_for_proteins[r['protein']] = 1
 
                     else:
-                        print(['Skipped due to no protein',r['protein']])
                         skipped += 1
                         if r['protein'] in missing_proteins:
                             missing_proteins[r['protein']] += 1
                         else:
                             missing_proteins[r['protein']] = 1
+                            self.logger.error('Skipped due to no protein '+ r['protein'])
                         continue
 
                     res=Residue.objects.filter(protein_conformation__protein=protein,sequence_number=r['mutation_pos'])
                     if res.exists():
                         res=res.get()
                     else:
-                        print(['Skipped due to no residue',r['protein'],r['mutation_pos']])
+                        self.logger.error('Skipped due to no residue ' + r['protein'] + ' pos:'+str(r['mutation_pos']))
                         skipped += 1
                         continue
 
-                    l_role, created = LigandRole.objects.get_or_create(name=r['ligand_class'])
+                    if r['ligand_class']:
+                        l_role, created = LigandRole.objects.get_or_create(name=r['ligand_class'])
+                    else:
+                        l_role = None
 
-                    #obj, created = MutationLigandRef.objects.get_or_create(reference=r['exp_mu_ligand_ref'])
-                    #ligref_id = obj
+                    if r['exp_type']:
+                        exp_type_id, created = MutationExperimentalType.objects.get_or_create(type=r['exp_type'])
+                    else:
+                        exp_type_id = None
 
-                    exp_type_id, created = MutationExperimentalType.objects.get_or_create(type=r['exp_type'])
+                    if r['exp_func']:
+                        exp_func_id, created = MutationFunc.objects.get_or_create(func=r['exp_func'])
+                    else:
+                        exp_func_id = None
 
-                    exp_func_id, created = MutationFunc.objects.get_or_create(func=r['exp_func'])
+                    if r['exp_mu_effect_type']:
+                        exp_measure_id, created = MutationMeasure.objects.get_or_create(measure=r['exp_mu_effect_type'])
+                    else:
+                        exp_measure_id = None
 
-                    exp_measure_id, created = MutationMeasure.objects.get_or_create(measure=r['exp_mu_effect_type'])
+                    if r['exp_mu_effect_ligand_prop'] or r['exp_mu_effect_qual']:
+                        exp_qual_id, created = MutationQual.objects.get_or_create(qual=r['exp_mu_effect_qual'], prop=r['exp_mu_effect_ligand_prop'])
+                    else:
+                        exp_qual_id = None
 
-                    exp_qual_id, created = MutationQual.objects.get_or_create(qual=r['exp_mu_effect_qual'], prop=r['exp_mu_effect_ligand_prop'])
-
-                    #obj, created = MutationLigandRef.objects.get_or_create(reference=r['exp_mu_ligand_ref'])
-                    #effect_ligand_reference_id = obj
-
-                    exp_opt_id, created =  MutationOptional.objects.get_or_create(type=r['opt_type'], wt=r['opt_wt'], mu=r['opt_mu'], sign=r['opt_sign'], percentage=r['opt_percentage'], qual=r['opt_qual'], agonist=r['opt_agonist'])
+                    if r['opt_type'] or r['opt_wt'] or r['opt_mu'] or r['opt_sign'] or r['opt_percentage'] or r['opt_qual'] or r['opt_agonist']:
+                        exp_opt_id, created =  MutationOptional.objects.get_or_create(type=r['opt_type'], wt=r['opt_wt'], mu=r['opt_mu'], sign=r['opt_sign'], percentage=r['opt_percentage'], qual=r['opt_qual'], agonist=r['opt_agonist'])
+                    else:
+                        exp_opt_id = None
 
                     mutation, created =  Mutation.objects.get_or_create(amino_acid=r['mutation_to'],protein=protein, residue=res)
 
@@ -546,6 +538,7 @@ class Command(BaseCommand):
                             if foldchange<1: foldchange = -round((1/foldchange),3);
                     
 
+                    raw_experiment = self.insert_raw(r)
                     obj, created = MutationExperiment.objects.get_or_create(
                     refs=pub, 
                     protein=protein, 
@@ -574,17 +567,15 @@ class Command(BaseCommand):
                     )
                     #print(foldchange)
                     mut_id = obj.id
-                    if created: print('added with id',mut_id)
-
-                    #whattoreturn.append([protein_id,residue_id,raw_id,ref_id,lig_id,ligclass_id,exp_type_id,exp_func_id,exp_measure_id,exp_qual_id,typefold,foldchange,mut_id])
                     inserted += 1
-                    print("Parsed",c,"Skipped",skipped)
+                    if c%1000==0: 
+                        self.logger.info('Parsed '+str(c)+' mutant data entries')
+
+                self.logger.info('Parsed '+str(c)+' mutant data entries. Skipped '+str(skipped))
 
         sorted_missing_proteins = sorted(missing_proteins.items(), key=operator.itemgetter(1),reverse=True)
         sorted_mutants_for_proteins = sorted(mutants_for_proteins.items(), key=operator.itemgetter(1),reverse=True)
         #print(sorted_missing_proteins)
         #print(sorted_mutants_for_proteins)
-
-
 
         self.logger.info('COMPLETED CREATING MUTANTS')

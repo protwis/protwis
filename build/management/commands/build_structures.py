@@ -369,12 +369,26 @@ class Command(BaseCommand):
                                 if ligand['role']:
                                     lr, created = LigandRole.objects.get_or_create(slug=slugify(ligand['role']),
                                         defaults={'name': ligand['role']})
-                                    i, created = StructureLigandInteraction.objects.get_or_create(pdb_reference=pdb_reference, structure=s, ligand=l,
-                                        ligand_role=lr, annotated=True)
+                                    i, created = StructureLigandInteraction.objects.get_or_create(structure=s, ligand=l,
+                                        ligand_role=lr, annotated=True, defaults={'pdb_reference':pdb_reference})
                     
                     # structure segments
                     if 'segments' in sd and sd['segments']:
                         for segment, positions in sd['segments'].items():
+                            # fetch (create if needed) sequence segment
+                            try:
+                                protein_segment = ProteinSegment.objects.get(slug=segment)
+                            except ProteinSegment.DoesNotExist:
+                                try:
+                                    parent_slug = segment.split('_')[0]
+                                    parent_protein_segment = ProteinSegment.objects.get(slug=parent_slug)
+                                    protein_segment = ProteinSegment.objects.create(slug=segment,
+                                        name=parent_protein_segment.name, category=parent_protein_segment.category,
+                                        partial=True)
+                                    self.logger.info('Created protein segment {}'.format(segment))
+                                except:
+                                    self.logger.error('Protein segment {} could not be created'.format(segment))
+                                    continue
                             ps = StructureSegment()
                             ps.structure = s
                             ps.protein_segment = ProteinSegment.objects.get(slug=segment)
@@ -419,10 +433,10 @@ class Command(BaseCommand):
                     # save structure
                     s.save()
 
-                    self.create_rotamers(s)
-                    self.logger.info('Calculate interactions')
+                    # self.create_rotamers(s)
+                    # self.logger.info('Calculate interactions')
 
-                    runcalculation(sd['pdb'])
-                    parsecalculation(sd['pdb'],False)
+                    # runcalculation(sd['pdb'])
+                    # parsecalculation(sd['pdb'],False)
 
         self.logger.info('COMPLETED CREATING PDB STRUCTURES')
