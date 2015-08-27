@@ -93,6 +93,8 @@ class Command(BuildHumanProteins):
 
             # create a protein record
             consensus_name = family.name + " consensus"
+            if Protein.objects.filter(entry_name=consensus_name).exists():
+                consensus_name += " " + family.slug.split('_')[0]
             residue_numbering_scheme = proteins[0].residue_numbering_scheme
             up = dict()
             up['entry_name'] = slugify(consensus_name)
