@@ -96,6 +96,8 @@ class Command(BuildHumanProteins):
             residue_numbering_scheme = proteins[0].residue_numbering_scheme
             up = dict()
             up['entry_name'] = slugify(consensus_name)
+            if Protein.objects.filter(entry_name=up['entry_name']).exists():
+                up['entry_name'] += " " + family.slug.split('_')[0]
             up['source'] = "OTHER"
             up['species_latin_name'] = proteins[0].species.latin_name
             up['species_common_name'] = proteins[0].species.common_name
