@@ -15,9 +15,11 @@ class Command(BaseCommand):
             ['build_residues'],
             ['build_constructs'],
             ['build_structures'],
+            ['build_mutant_data'],
             ['find_protein_templates'],
             ['update_alignments'],
             ['build_protein_sets'],
+            ['build_consensus_sequences'],
         ]
 
         for c in commands:

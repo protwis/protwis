@@ -26,6 +26,8 @@ from operator import itemgetter
 from datetime import datetime
 import re
 import json
+import logging
+from subprocess import Popen, DEVNULL
 
 AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
      'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
@@ -126,11 +128,14 @@ def updateall(request):
     #return render(request,'interaction/view.html',{'form': form, 'pdbname': pdbname, 'structures': structures})
 
 def runcalculation(pdbname):
-    call(["python", "interaction/functions.py","-p",pdbname])
+    #call(["python", "interaction/functions.py","-p",pdbname])
+    process = Popen(["python", "interaction/functions.py","-p",pdbname], stdout=DEVNULL, stderr=DEVNULL)
     return None
 
 def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #consider skipping non hetsym ligands FIXME
+    logger = logging.getLogger('build')
     mypath = module_dir+'/temp/results/'+pdbname+'/output'
+    mypath = '/tmp/interactions/results/'+pdbname+'/output'
     results = []
     web_resource, created = WebResource.objects.get_or_create(slug='pdb',url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
     web_link, created = WebLink.objects.get_or_create(web_resource=web_resource,index=pdbname)
@@ -226,7 +231,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                     structureligandinteraction = StructureLigandInteraction.objects.filter(pdb_reference=temp[1],structure=structure).get()
                     structureligandinteraction.pdb_file = pdbdata
                     if structureligandinteraction.ligand.properities.inchikey is None:
-                        print('Old ligand didnt get inchikey -- error in naming, using inchikey/properities from structure')
+                        logger.info('Old ligand didnt get inchikey -- error in naming, using inchikey/properities from structure')
                         structureligandinteraction.ligand.delete()
                         structureligandinteraction.ligand = ligand
                 else:
@@ -306,11 +311,11 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                             if residue.exists():
                                 residue=Residue.objects.get(protein_conformation=protein, sequence_number=pos)
                                 if residue.amino_acid!=aa:
-                                    if debug: print("Updated amino acid from",residue.amino_acid,"to",aa)
+                                    if debug: logger.info("Updated amino acid from",residue.amino_acid,"to",aa)
                                     residue.amino_acid = aa
                                     residue.save()
                             else:
-                                if debug: print("Not found residue!",pdbname,pos,aa)
+                                if debug: logger.info("Not found residue!",pdbname,pos,aa)
                                 residue, created=Residue.objects.get_or_create(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
                                 #continue #SKIP THESE -- mostly fusion residues that aren't mapped yet.
 
@@ -356,11 +361,11 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                             if residue.exists():
                                 residue=Residue.objects.get(protein_conformation=protein, sequence_number=pos)
                                 if residue.amino_acid!=aa:
-                                    if debug: print("Updated amino acid from",residue.amino_acid,"to",aa)
+                                    if debug: logger.info("Updated amino acid from",residue.amino_acid,"to",aa)
                                     residue.amino_acid = aa
                                     residue.save()
                             else:
-                                if debug: print("Not found residue!",pdbname,pos,aa)
+                                if debug: logger.info("Not found residue!",pdbname,pos,aa)
                                 residue, created=Residue.objects.get_or_create(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
                                 #continue #SKIP THESE -- mostly fusion residues that aren't mapped yet.
 
@@ -369,7 +374,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                             f = module_dir+"/temp/results/"+pdbname+"/ligand/"+temp[1]+"_"+pdbname+".pdb"
                             if isfile(f):      
                                 liganddata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read()) #does this close the file?
-                                if debug: print("Hydro Found file"+f)
+                                if debug: logger.info("Hydro Found file"+f)
                             else:
                                 quit()
 
@@ -385,7 +390,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                             fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure_ligand_pair=structureligandinteraction,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
                     elif interactiontype=='aromaticplus' or interactiontype=='aromatic' or interactiontype=='aromaticfe':
                         for entry in interactionlist:
-                            if debug: print(entry)
+                            if debug: logger.info(entry)
                             aa = entry[0]
                             aa,pos,chain = regexaa(aa)
                             fragment = entry[1]
@@ -394,17 +399,17 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                             if residue.exists():
                                 residue=Residue.objects.get(protein_conformation=protein, sequence_number=pos)
                                 if residue.amino_acid!=aa:
-                                    if debug: print("Updated amino acid from",residue.amino_acid,"to",aa)
+                                    if debug: logger.info("Updated amino acid from",residue.amino_acid,"to",aa)
                                     residue.amino_acid = aa
                                     residue.save()
                             else:
-                                if debug: print("Not found residue!",pdbname,pos,aa)
+                                if debug: logger.info("Not found residue!",pdbname,pos,aa)
                                 residue, created=Residue.objects.get_or_create(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
                                 #continue #SKIP THESE -- mostly fusion residues that aren't mapped yet.
 
                             f = module_dir+"/temp/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_aromatic_"+str(entry[1])+".pdb"
                             if isfile(f):      
-                                if debug: print("Found file"+f)
+                                if debug: logger.info("Found file"+f)
                                 f_in = open(f, 'r')
                                 rotamer_pdb = ''
                                 fragment_pdb = ''
@@ -431,7 +436,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                             fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure_ligand_pair=structureligandinteraction,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
 
     else:
-        if debug: print("Structure not in DB?!??!")
+        if debug: logger.info("Structure not in DB?!??!")
         for f in listdir(mypath):
             if isfile(join(mypath,f)):       
                 result = yaml.load(open(mypath+"/"+f, 'rb'))

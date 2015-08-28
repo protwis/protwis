@@ -40,9 +40,11 @@ CHARGEDAA = {'ARG','LYS','ASP','GLU'} #skip ,'HIS'
 
 module_dir = os.path.dirname(__file__)
 projectdir = module_dir + '/temp/'
+projectdir = '/tmp/interactions/'
 if not os.path.exists(projectdir):
         os.makedirs(projectdir)
-        os.makedirs(projectdir+'/temp/')
+if not os.path.exists(projectdir + '/temp/'):
+        os.makedirs(projectdir + '/temp/')
 ignore_het = ['NA','W'] #ignore sodium and water
 
 
@@ -1014,7 +1016,6 @@ def calculate_interactions(pdb):
     build_ligand_info()
     find_interactions()
     analyze_interactions()
-
     pretty_results()
 
 def main(argv): 

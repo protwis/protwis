@@ -5,7 +5,7 @@ from common.models import WebLink
 
 from urllib.request import urlopen, quote
 import json
-
+import logging
 
 class Ligand(models.Model):
     properities = models.ForeignKey('LigandProperities')
@@ -36,7 +36,7 @@ class Ligand(models.Model):
 
 
     def load_by_name(self, name):
-        #print('load_by_name on '+name)
+        logger = logging.getLogger('build')
         # fetch ligand info from pubchem - start by getting name and 'canonical' name
         pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + name + '/synonyms/TXT'
         if self.properities.inchikey: #if inchikey has been added use this -- especially to avoid updating a wrong inchikey to a synonym. 
@@ -53,10 +53,10 @@ class Ligand(models.Model):
                     pubchem = req.read().decode('UTF-8').splitlines()
                     pubchem_name = pubchem[0]
                 except: #name not matched in pubchem - exit cos something is wrong
-                    print('Ligand not found by InchiKey in pubchem: ' + str(self.properities.inchikey))
+                    logger.info('Ligand not found by InchiKey in pubchem: ' + str(self.properities.inchikey))
                     return
             else: #if name not found and no inchikey, then no point in looking further
-                print('Ligand not found in pubchem by name (Consider renaming): ' + str(name))
+                logger.info('Ligand not found in pubchem by name (Consider renaming): ' + str(name))
                 return
 
         pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + quote(pubchem_name) + '/property/CanonicalSMILES,InChIKey/json'
@@ -64,17 +64,13 @@ class Ligand(models.Model):
         if self.properities.inchikey:
             pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/inChiKey/' + self.properities.inchikey + '/property/CanonicalSMILES,InChIKey/json'
 
-        #pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + quote(pubchem_name) + '/json'
         try:
             req = urlopen(pubchem_url)
             pubchem = json.loads(req.read().decode('UTF-8'))
         except: #JSON failed
             return
 
-        #print(pubchem)
-
         # weblink
-        #pubchem_id = pubchem['PC_Compounds'][0]['id']['id']['cid']
         pubchem_id = pubchem['PropertyTable']['Properties'][0]['CID']
         try:
             web_resource = WebResource.objects.get(slug='pubchem')
@@ -88,20 +84,8 @@ class Ligand(models.Model):
         # SMILES
         pubchem_smiles = pubchem['PropertyTable']['Properties'][0]['CanonicalSMILES']
 
-        # for prop in pubchem['PC_Compounds'][0]['props']:
-        #     if prop['urn']['label'] == 'SMILES' and prop['urn']['name'] == 'Canonical':
-        #         pubchem_smiles = prop['value']['sval']
-        #         break
-
         # InChIKey
-
         pubchem_inchikey = pubchem['PropertyTable']['Properties'][0]['InChIKey']
-        # for prop in pubchem['PC_Compounds'][0]['props']:
-        #     if prop['urn']['label'] == 'InChIKey':
-        #         pubchem_inchikey = prop['value']['sval']
-        #         break
-
-        #if self.properities: print(pubchem_inchikey+"vs"+self.properities.inchikey)
 
         wl, created = WebLink.objects.get_or_create(index=pubchem_id, web_resource=web_resource)
         self.properities.web_links.add(wl)
@@ -112,8 +96,9 @@ class Ligand(models.Model):
         self.properities.save()
 
         if pubchem_name!=name: #if not canonical name
-            #print("canonical error "+pubchem_name +" vs "+ name)
+            logger.info("Updating canonical flag to Pubchem. PubChem canonical: "+pubchem_name +". DB canonical: "+ name)
             self.canonical = False
+            self.save()
             canonical_entry = Ligand.objects.filter(name=pubchem_name, properities__inchikey=pubchem_inchikey) #NEED TO CHECK BY INCHI KEY - SOME CANONICAL NAMES HAVE MANY ICHIKEYS (DOXEPIN)
             if canonical_entry.exists():
                 return

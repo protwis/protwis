@@ -33,11 +33,11 @@ class MutationExperiment(models.Model):
     ligand_role = models.ForeignKey('ligand.LigandRole', null=True) #Change to a ligand model?
     ligand_ref = models.ForeignKey('ligand.Ligand', null=True, related_name='reference_ligand') #Change to a ligand model?
     raw = models.ForeignKey('MutationRaw')
-    optional = models.ForeignKey('MutationOptional')
-    exp_type = models.ForeignKey('MutationExperimentalType')
-    exp_func= models.ForeignKey('MutationFunc')
-    exp_measure = models.ForeignKey('MutationMeasure')
-    exp_qual = models.ForeignKey('MutationQual')
+    optional = models.ForeignKey('MutationOptional', null=True)
+    exp_type = models.ForeignKey('MutationExperimentalType', null=True)
+    exp_func= models.ForeignKey('MutationFunc', null=True)
+    exp_measure = models.ForeignKey('MutationMeasure', null=True)
+    exp_qual = models.ForeignKey('MutationQual', null=True)
 
     #Values
     wt_value = models.DecimalField(max_digits=10, decimal_places=2)
@@ -93,33 +93,6 @@ class MutationExperiment(models.Model):
     class Meta():
         db_table = 'mutation_experiment'
 
-
-
-class MutationRefs(models.Model):
-
-	year = models.SmallIntegerField()
-	journal = models.CharField(max_length=100)
-	title = models.TextField()
-	citation = models.TextField()
-	link = models.URLField()
-	ref_type = models.CharField(max_length=100)
-	reference  = models.CharField(max_length=100)
-
-	def __str__(self):
-		return self.link
-
-	class Meta():
-		db_table = 'mutation_refs'
-		
-class MutationLigand(models.Model):
-
-	idtype = models.CharField(max_length=100)
-	name = models.CharField(max_length=100)
-	idid = models.CharField(max_length=100)
-	longseq = models.TextField()
-
-	class Meta():
-		db_table = 'mutation_ligands'
 
 
 class MutationOptional(models.Model):
