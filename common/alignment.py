@@ -164,7 +164,7 @@ class Alignment:
                 self.generic_numbers[ns[0]] = OrderedDict()
             self.generic_numbers[ns[0]][segment_slug] = OrderedDict()
             for segment_residue in residues:
-                self.generic_numbers[ns[0]][segment_slug][segment_residue.label] = []
+                self.generic_numbers[ns[0]][segment_slug][segment_residue.default_generic_number.label] = []
 
     def update_numbering_schemes(self):
         """Update numbering scheme list"""
