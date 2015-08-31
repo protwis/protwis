@@ -128,8 +128,9 @@ def updateall(request):
     #return render(request,'interaction/view.html',{'form': form, 'pdbname': pdbname, 'structures': structures})
 
 def runcalculation(pdbname):
-    #call(["python", "interaction/functions.py","-p",pdbname])
-    process = Popen(["python", "interaction/functions.py","-p",pdbname], stdout=DEVNULL, stderr=DEVNULL)
+    call(["python", "interaction/functions.py","-p",pdbname])
+    #process = Popen(["python", "interaction/functions.py","-p",pdbname], stdout=DEVNULL, stderr=DEVNULL)
+    #process.communicate() #now wait
     return None
 
 def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #consider skipping non hetsym ligands FIXME
