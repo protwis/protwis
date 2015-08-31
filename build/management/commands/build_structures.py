@@ -61,7 +61,7 @@ class Command(BaseCommand):
         # delete any existing structure data
         if options['purge']:
             try:
-                self.truncate_structure_tables()
+                self.purge_structures()
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
@@ -72,16 +72,8 @@ class Command(BaseCommand):
             print(msg)
             self.logger.error(msg)
     
-    def truncate_structure_tables(self):
-        cursor = connection.cursor()
-        
-        tables_to_truncate = [
-            #Following the changes in the models - SM
-            'structure',                
-        ]
-
-        for table in tables_to_truncate:
-            cursor.execute("TRUNCATE TABLE {!s} CASCADE".format(table))
+    def purge_structures(self):
+        Structure.objects.all().delete()
 
     def create_rotamers(self, structure):
         AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
