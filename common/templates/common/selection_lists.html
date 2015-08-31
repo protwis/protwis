@@ -12,7 +12,7 @@
         <div class="target-selection">
             {% if selection_type == 'segments' %}
                 {% if selected_item.type == 'residue' %}
-                    {{ selected_item.item.label|safe }}
+                    {{ selected_item.item.label|safe }} [{{ selected_item.item.scheme.short_name|safe }}]
                 {% else %}
                     {{ selected_item.item.slug|safe }}
                 {% endif %}

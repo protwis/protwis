@@ -4,7 +4,7 @@ from common.selection import Selection
 from common.definitions import *
 from protein.models import Protein, ProteinConformation, ProteinState, ProteinSegment, ProteinFusionProtein
 from residue.models import Residue
-from residue.models import ResidueGenericNumber
+from residue.models import ResidueGenericNumber, ResidueGenericNumberEquivalent
 from residue.models import ResidueNumberingScheme
 from structure.models import Structure
 
@@ -120,7 +120,7 @@ class Alignment:
         selected_residue_positions = []
         for s in segments:
             # handle residue positions separately
-            if s.__class__.__name__ == 'ResidueGenericNumber':
+            if s.__class__.__name__ == 'ResidueGenericNumberEquivalent':
                 selected_residue_positions.append(s)
                 continue
             # fetch split segments (e.g. ICL3_1 and ICL3_2)
@@ -142,7 +142,7 @@ class Alignment:
             if self.custom_segment_label not in self.segments:
                 self.segments[self.custom_segment_label] = []
             for residue_position in selected_residue_positions:
-                self.segments[self.custom_segment_label].append(residue_position.label)
+                self.segments[self.custom_segment_label].append(residue_position.default_generic_number.label)
             self.load_generic_numbers(self.custom_segment_label, selected_residue_positions)
 
     def load_segments_from_selection(self, simple_selection):
