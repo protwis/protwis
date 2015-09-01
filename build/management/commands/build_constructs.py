@@ -126,9 +126,16 @@ class Command(BaseCommand):
 =======
                     deletions = []
                     deletions_list = []
+<<<<<<< HEAD
                     for t in sd['deletions']:
                         deletions += list(range(t[0],t[1]+1))
                         deletions_list.append(str(t[0])+'-'+str(t[1]))
+=======
+                    if 'deletions' in sd and sd['deletions']:
+                        for t in sd['deletions']:
+                            deletions += list(range(t[0],t[1]+1))
+                            deletions_list.append(str(t[0])+'-'+str(t[1])) 
+>>>>>>> Pull request fro construct folder
                         
                     s = ","
                     deletion_string = s.join(deletions_list)
@@ -152,10 +159,10 @@ class Command(BaseCommand):
                     c.protein_conformation = pc
                     c.deletions =  deletion_string
                     c.save()
-
+                      
                      # create expression records
                     if 'expression_sys' in sd and sd['expression_sys']:
-                        ce = ConstructExpression()                
+                        ce = ConstructExpression()           
                         ce.construct = c
                         ce.expression_system, created = ConstructExpressionSystem.objects.get_or_create(expression_method = sd['expression_sys']['expression_method'], host_cell_type = sd['expression_sys']['host_cell_type'], host_cell = sd['expression_sys']['host_cell'])
                         if 'remarks' in sd:
@@ -197,7 +204,7 @@ class Command(BaseCommand):
                         pu.construct = c
                         if 'remarks' in sd['purification']:
                             pu.remarks = sd['purification']['remarks']
-                        pu.save() #saved before assigning 'pu' object to 'pust'
+                        pu.save() 
                         for step in sd['purification']['steps']:
                             if 'type' in step and 'description' in step:
                                 pust = PurificationStep()
@@ -206,7 +213,6 @@ class Command(BaseCommand):
                                 pust.purification_type, created = PurificationStepType.objects.get_or_create(name = step['type'] ) # 2 values returned by get_or_create
                                 if created: 
                                     self.logger.info('Created purification step type {}'.format(pust.purification_type))
-                                
                                 pust.save()
 
                             else:
@@ -220,7 +226,7 @@ class Command(BaseCommand):
                         cy = ConstructCrystallization()
                         cy.construct = c
                         cyt = CrystallizationMethodTypes.objects.create()
-                        cy.crystal_type = cyt # shown where in db???
+                        cy.crystal_type = cyt
                         cy.method = sd['crystallization']['method']
                         cy.settings = sd['crystallization']['settings']
                         cy.protein_conc = sd['crystallization']['protein_conc']
@@ -243,7 +249,6 @@ class Command(BaseCommand):
                             else:
                                 self.logger.error('Crystallization step incorrectly defined for {}'.format(p))                        
 
-###                     cy.ligands = sd['crystallization']['method']  Maybe included in chemical list due to conc requirement ??? 
                         cy.aqueous_solution_lipid_ratio = sd['crystallization']['aqueous_solution_lipid_ratio_LCP']
                         cy.lcp_bolus_volume = sd['crystallization']['LCP_bolus_volume']
                         cy.precipitant_solution_volume = sd['crystallization']['precipitant_solution_volume']

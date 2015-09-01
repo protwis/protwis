@@ -15,7 +15,7 @@ class Construct(models.Model):
 ####    mutation_to = models.ForeignKey('mutation.amino_acid') ## linked from Protein model
 ####    mutation_reason = models.ForeignKey('mutation.type')
 
-    deletions = models.TextField(max_length=100)  #comma separated data
+    deletions = models.TextField(max_length=100, null=True)  #comma separated data
 #    aux_protein = models.ForeignKey('AuxProtein') 
 #    expression = models.ForeignKey('ConstructExpression') 
  #  solubilization = models.ForeignKey('ConstructSolubilization')
@@ -34,15 +34,15 @@ class AuxProtein(models.Model):
     
     construct = models.ForeignKey('Construct')
     protein_type = models.ForeignKey('AuxProteinType')
-    name = models.CharField(max_length=100, blank=True)
+    name = models.CharField(max_length=100, null=True)
     uniprot_id = models.CharField(max_length=20)
-    sequence = models.TextField(blank=True)
+    sequence = models.TextField(null=True)
 ## AuxProtein mutation info also accessed from Protein model  ??? YES
 #    mutation = models.TextField(max_length=100, blank=True) #comma separated data
 ####    mutation_to = models.ForeignKey('mutation.mutation_to')
 ####    mutation_reason = models.ForeignKey('mutation.MutationType')
-    deletions = models.TextField(max_length=100, blank=True) #comma separated data
-    position = models.TextField(max_length=20, blank=True) # aa_modfcn like position of disulfide bond is imp to show (is it shown already in GPCRdb Sites page??) For 3 linkers, values will be 1,2,3
+    deletions = models.TextField(max_length=100, null=True) #comma separated data
+    position = models.TextField(max_length=20, null=True) # aa_modfcn like position of disulfide bond is imp to show (is it shown already in GPCRdb Sites page??) For 3 linkers, values will be 1,2,3
     remarks = models.TextField(null=True)
 
     def __str__(self):
@@ -54,7 +54,7 @@ class AuxProtein(models.Model):
 
 class AuxProteinType(models.Model):
 
-    name = models.TextField(max_length=50) #values like FUsion, tag, linkers,signal_peptide,prtn_Cleavage_site, aa_modfcn  #comma separated data
+    name = models.TextField(max_length=50, null=True) #values like FUsion, tag, linkers,signal_peptide,prtn_Cleavage_site, aa_modfcn  #comma separated data
 
     def __str__(self):
         return self.name
@@ -72,7 +72,7 @@ class AuxProteinType(models.Model):
 class Chemical(models.Model):
 
     chemical_type = models.ForeignKey('ChemicalType')
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, null=True)
 
     def __str__(self):
         return self.name
@@ -83,7 +83,7 @@ class Chemical(models.Model):
 
 class ChemicalType(models.Model):
 
-    name = models.CharField(max_length=100) # type like detergent, lipid  ## If there is no type present in database then Django creates another type
+    name = models.CharField(max_length=100, null=True) # type like detergent, lipid  ## If there is no type present in database then Django creates another type
 
     def __str__(self):
         return self.name
@@ -157,7 +157,7 @@ class PurificationStep(models.Model):
 
 class PurificationStepType(models.Model):
 
-    name = models.TextField() # Chromatography/Enzyme modification/Chem modification    IMAC/Flag tag/1D4/Alprenolol/Strep tag/Ligand affinity
+    name = models.TextField(null=True) # Chromatography/Enzyme modification/Chem modification    IMAC/Flag tag/1D4/Alprenolol/Strep tag/Ligand affinity
 
     def __str__(self):            
 
@@ -234,7 +234,7 @@ class ConstructCrystallization(models.Model):
     chemical_list =  models.ForeignKey('ChemicalList') #chemical type= LCPlipid for LCP exp, else type= lipid for in surfo exp --- includes info on lcp_lipidic_condition, protein_component etc.
     method = models.TextField(max_length=100,null=True) # more than one solved by comma separated
     settings = models.TextField(max_length=100,null=True)# can have more than one
-    remarks = models.TextField(null=True)
+    remarks = models.TextField(max_length=1000, null=True)
     protein_conc =  models.SlugField(max_length=20,blank=True)
     ligands = models.ManyToManyField('ligand.Ligand', through='ConstructCrystallizationLigandConc')
     aqueous_solution_lipid_ratio=  models.SlugField(max_length=20,null=True)
