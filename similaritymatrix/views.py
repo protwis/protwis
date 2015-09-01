@@ -16,7 +16,7 @@ class TargetSelection(AbsTargetSelection):
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
-        ('segments', True),
+        ('segments', False),
     ])
     buttons = {
         'continue': {
