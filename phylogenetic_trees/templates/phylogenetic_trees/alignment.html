@@ -1,5 +1,6 @@
 ﻿{% extends "home/base.html" %}
 {% load staticfiles %}
+
     {% block addon_css %}
     <link rel="stylesheet" type="text/css" href="{% static 'home/css/unitip.css' %}">
     {% endblock %}
@@ -23,8 +24,10 @@
             "svgCanvas",
             950, {{ count }}/4*100
             )
-            colours();
             mergeSVG();
+            colours();
+            colour_lines();
+
         };
     </script>
     {% else %}
@@ -34,29 +37,37 @@
             phylocanvas = new Smits.PhyloCanvas(
                             dataObject,
                             "svgCanvas",
-                            900 + {{ count }}*10, 900 + {{ count }}*10,
+                            1000 + {{ count }}*20, 1000 + {{ count }}*20,
                             'circular'
                             )
-            colours();
             mergeSVG();
+            colours();
+            colour_lines();
         };
-
-
 
     </script>
     {% endif %}
-<div style="text-align:center">
+{% endblock %}
+
+{% block content %}
     <div id="svgCanvas"> </div>
     <div id="legend" class="hidden">{{ leg|safe }} </div>
-    <div>{{ b|safe }}
-       <br><button style="width:120px;" onclick="resetColors({{ default }})">Clear</button>
-       <button style="width:250px;" onclick="toggleLegend()">Toggle Outer Rings</button>
+    <div>
+        {{ b|safe }}
+        <br><button style="width:120px;" onclick="resetColors({{ default }})">Clear</button>
+        <button style="width:250px;" onclick="toggleLegend()">Toggle All Rings</button>
+        <br /><button style="width:150px;" onclick="toggleRings('chart0')">Toggle Class Ring</button>
+        <button style="width:150px;" onclick="toggleRings('chart1')">Toggle Family Ring</button>
+        <button style="width:150px;" onclick="toggleRings('chart2')">Toggle Ligand Ring</button>
+
+        <br><button style="width:250px;" onclick="predefined_colours({{ default }},{{ add.crystal }})">Highlight crystallized receptors</button>
+
     </div>
-    <a href="javascript:saveSvgAsPng(document.getElementById('svgtree')+document.getElementById('legendSVG'), 'tree.png', {scale: 3});"> Download as PNG</a>
+    <a href="javascript:saveSvgAsPng(document.getElementById('svgtree'), 'tree.png', {scale: 3});"> Download as PNG</a>
     <a id=tree_svg_link href-lang="image/svg+xml" href="" download="tree"> Download as SVG</a>
-    
-
-
-    {% endblock %}
-
 </div>
+<br />
+{% include 'phylogenetic_trees/tree_options.html' %}
+
+{% endblock %}
+

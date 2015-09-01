@@ -40,9 +40,11 @@ CHARGEDAA = {'ARG','LYS','ASP','GLU'} #skip ,'HIS'
 
 module_dir = os.path.dirname(__file__)
 projectdir = module_dir + '/temp/'
+projectdir = '/tmp/interactions/'
 if not os.path.exists(projectdir):
         os.makedirs(projectdir)
-        os.makedirs(projectdir+'/temp/')
+if not os.path.exists(projectdir + '/temp/'):
+        os.makedirs(projectdir + '/temp/')
 ignore_het = ['NA','W'] #ignore sodium and water
 
 
@@ -141,6 +143,20 @@ def checkdirs():
     directory = projectdir + 'results/'+pdbname+'/fragments'
     if not os.path.exists(directory):
         os.makedirs(directory)
+
+def find_ligand_full_names():
+    pdbfile = projectdir+'pdbs/'+pdbname+'.pdb'
+    residuename = ''
+
+    f_in = open(pdbfile, 'r')
+    d = {}
+
+    for line in f_in:
+        if line.startswith('HETSYN'): 
+            m = re.match("HETSYN[\s]+([\w]{3})[\s]+(.+)",line) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            if (m):
+                d[m.group(1)] = m.group(2).strip()
+    return d
 
 def fragment_library(ligand,atomvector,atomname,residuenr,chain,typeinteraction):
     if debug: print "Make fragment pdb file for ligand:",ligand,"atom vector",atomvector,"atomname",atomname,"residuenr from protein", residuenr,typeinteraction,'chain',chain
@@ -931,6 +947,8 @@ def analyze_interactions():
         summary_results[ligand]['score'].append([ligscore])
         summary_results[ligand]['inchikey'] = inchikeys[ligand]
         summary_results[ligand]['smiles'] = smiles[ligand]
+        summary_results[ligand]['smiles'] = smiles[ligand]
+        if ligand in hetlist_display: summary_results[ligand]['prettyname'] = hetlist_display[ligand]
         #print ligand,"Ligand score:"+str(ligscore) 
 
         sortedresults = sorted(sortedresults, key=itemgetter(1), reverse=True)  
@@ -974,9 +992,10 @@ def pretty_results():
 
 
 def calculate_interactions(pdb):
-    global pdbname,hetlist,ligand_atoms,ligand_charged,ligandcenter,ligand_rings,ligand_donors,results,sortedresults,summary_results,inchikeys,smiles
+    global pdbname,hetlist,hetlist_display,ligand_atoms,ligand_charged,ligandcenter,ligand_rings,ligand_donors,results,sortedresults,summary_results,inchikeys,smiles
 
     hetlist = {}
+    hetlist_display = {}
     ligand_atoms = {}
     ligand_charged = {}
     ligandcenter = {}
@@ -992,11 +1011,11 @@ def calculate_interactions(pdb):
     #print "checking ",pdbname
     check_pdb()
     checkdirs()
+    hetlist_display = find_ligand_full_names()
     create_ligands_and_poseview()
     build_ligand_info()
     find_interactions()
     analyze_interactions()
-
     pretty_results()
 
 def main(argv): 

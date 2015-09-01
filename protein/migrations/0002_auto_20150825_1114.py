@@ -8,12 +8,43 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('residue', '0001_initial'),
+        ('structure', '0001_initial'),
+        ('ligand', '0001_initial'),
         ('common', '0001_initial'),
         ('protein', '0001_initial'),
-        ('ligand', '0001_initial'),
     ]
 
     operations = [
+        migrations.AddField(
+            model_name='proteinconformationtemplatestructure',
+            name='structure',
+            field=models.ForeignKey(to='structure.Structure'),
+        ),
+        migrations.AddField(
+            model_name='proteinconformation',
+            name='protein',
+            field=models.ForeignKey(to='protein.Protein'),
+        ),
+        migrations.AddField(
+            model_name='proteinconformation',
+            name='protein_anomalies',
+            field=models.ManyToManyField(to='protein.ProteinAnomaly'),
+        ),
+        migrations.AddField(
+            model_name='proteinconformation',
+            name='state',
+            field=models.ForeignKey(to='protein.ProteinState'),
+        ),
+        migrations.AddField(
+            model_name='proteinconformation',
+            name='template_structure',
+            field=models.ForeignKey(null=True, to='structure.Structure'),
+        ),
+        migrations.AddField(
+            model_name='proteinanomalyruleset',
+            name='protein_anomaly',
+            field=models.ForeignKey(related_name='rulesets', to='protein.ProteinAnomaly'),
+        ),
         migrations.AddField(
             model_name='proteinanomalyrule',
             name='generic_number',
@@ -22,7 +53,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='proteinanomalyrule',
             name='rule_set',
-            field=models.ForeignKey(to='protein.ProteinAnomalyRuleSet'),
+            field=models.ForeignKey(related_name='rules', to='protein.ProteinAnomalyRuleSet'),
         ),
         migrations.AddField(
             model_name='proteinanomaly',
@@ -52,7 +83,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='protein',
             name='parent',
-            field=models.ForeignKey(to='protein.Protein', null=True),
+            field=models.ForeignKey(null=True, to='protein.Protein'),
         ),
         migrations.AddField(
             model_name='protein',

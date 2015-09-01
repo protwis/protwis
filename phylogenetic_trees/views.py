@@ -1,10 +1,11 @@
 ﻿from django.shortcuts import render
 from django.conf import settings
 from django.core.files import File
-from protein.models import ProteinFamily, ProteinAlias
+from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein
 from common.views import AbsSettingsSelection
 from common.views import AbsSegmentSelection
 from common.views import AbsTargetSelection
+from common.selection import SelectionItem
 import os, shutil, subprocess
 import uuid
 
@@ -66,18 +67,44 @@ class TargetSelection(AbsTargetSelection):
         },
     }
 
+class ButtonSelection():
+    """
+    """
+
 def render_tree(request):
+    Additional_info = {}
     Tree = PrepareTree()
+    sets = ProteinSet.objects.all()
+    crysts=[]
+    for n in sets:
+        if n.id==1:
+            for prot in n.proteins.all():
+                crysts.append(prot.accession)
     # get the user selection from session
     a=Alignment()
     simple_selection=request.session.get('selection', False)
+    cons_prots = []
+################################## FOR BUILDING STATISTICS ONLY
+    for n in Protein.objects.filter(sequence_type_id=3):
+        if n.family.slug.startswith('001') and len(n.family.slug.split('_'))==2:
+            cons_prots.append(n)
+    for n in simple_selection.targets:
+        if n.item.family.slug.startswith('001_'):
+            continue
+        else:
+            simple_selection.targets.remove(n)
+    for n in cons_prots:
+        simple_selection.targets.append(SelectionItem('protein',n))
+#####################################################
     a.load_proteins_from_selection(simple_selection)
+    if len(a.proteins) == 0:
+        return render(request, 'phylogenetic_trees/alignment.html', {'phylo': 'None', 'branch':None, 'ttype': None, 'count':None, 'leg':None, 'b':None, 'default':None })  
     a.load_segments_from_selection(simple_selection)
     bootstrap,UPGMA,branches,ttype = map(int,simple_selection.tree_settings)
     bootstrap=10^int(bootstrap)
     if bootstrap==1:
         bootstrap=0 
-    # create an alignment object
+    #### Create an alignment object
     a.build_alignment()
     a.calculate_statistics()
     a.calculate_similarity()
@@ -88,21 +115,37 @@ def render_tree(request):
     famdict = {}
     for n in families:
         famdict[Tree.trans_0_2_A(n.slug)]=n.name
+   
     dirname = unique_filename = uuid.uuid4()
     os.mkdir('/tmp/%s' %dirname)
-    #os.chdir('/tmp/%s' %dirname)
     infile = open('/tmp/%s/infile' %dirname,'w')
     infile.write('\t'+str(total)+'\t'+str(total_length)+'\n')
     family = {}
+    Additional_info['crystal']={'proteins':[],'colours':['#6dcde1','#6dcde1']}
+    ####Get additional protein information
     for n in a.proteins:
         link = n.protein.entry_name
-        name = n.protein.name.replace('<sub>','').replace('</sub>','')
+        name = n.protein.name.replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')
+        if '&' in name and ';' in name:
+            name = name.replace('&','').replace(';',' ')
         fam = n.protein.family.slug
         acc = n.protein.accession
+        if acc:
+            acc = acc.replace('-','_')
+        else:
+            acc = link.replace('-','_')[:6]
         spec = str(n.protein.species)
-        desc = str(ProteinAlias.objects.filter(protein__in=[n.id])[0])
+        try:
+            desc = str(ProteinAlias.objects.filter(protein__in=[n.id])[0])
+        except IndexError:
+            desc = ''
         fam = Tree.trans_0_2_A(fam)
+        if acc in crysts:
+            Additional_info['crystal']['proteins'].append(fam)
+        if len(name)>25:
+            name=name[:25]+'...'
         family[acc] = {'name':name,'family':fam,'description':desc,'species':spec,'class':'','ligand':'','type':'','link': link}
+        ####Write PHYLIP input
         sequence = ''
         for chain in n.alignment:
             for residue in chain:
@@ -123,7 +166,6 @@ def render_tree(request):
 
         os.rename('/tmp/%s/infile' %dirname, 'sequence')
         os.rename('/tmp/%s/outfile' %dirname, 'infile')
-        #os.system('cp bootstrap_outfile infile')
     ### Write phylip input options
     
     inp = open('/tmp/%s/temp' %dirname,'w')
@@ -133,10 +175,9 @@ def render_tree(request):
         inp.write('y\n')
     inp.close()
     ###
-    subprocess.check_output(['phylip protdist<temp'], shell=True, cwd = '/tmp/%s' %dirname)
+    subprocess.check_output(['phylip protdist<temp>>log'], shell=True, cwd = '/tmp/%s' %dirname)
     os.rename('/tmp/%s/infile' %dirname, '/tmp/%s/dupa' %dirname)
     os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
-    #os.system('cp protdist_out infile')
     inp = open('/tmp/%s/temp' %dirname,'w')
     if bootstrap:
     ### Write phylip input options
@@ -154,7 +195,6 @@ def render_tree(request):
     subprocess.check_output(['phylip neighbor<temp'], shell=True, cwd = '/tmp/%s' %dirname)
     os.remove('/tmp/%s/infile' %dirname)
     os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
-    #os.system('cp neighbor_out infile')
     if bootstrap:
         os.rename('/tmp/%s/outtree' %dirname, '/tmp/%s/intree' %dirname)
     ### Write phylip input options
@@ -165,6 +205,5 @@ def render_tree(request):
 
     Tree.treeDo('/tmp/%s/outtree' %dirname,branches,family,famdict)
     phylogeny_input = open('/tmp/%s/out.xml' %dirname,'r').read().replace('\n','')
-    #shutil.rmtree('/tmp/%s' %dirname)
-    
-    return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':str(Tree.legend), 'b':Tree.box, 'default':Tree.defaultColours })
+    shutil.rmtree('/tmp/%s' %dirname)
+    return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':str(Tree.legend), 'b':Tree.box, 'default':Tree.defaultColours, 'add':Additional_info })
