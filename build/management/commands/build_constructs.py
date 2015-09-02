@@ -118,29 +118,15 @@ class Command(BaseCommand):
                             p.entry_name))
 
                     # create residue records
-<<<<<<< HEAD
-                    truncations = []
-                    if 'truncations' in sd and sd['truncations']:
-                        for t in sd['truncations']:
-                            truncations += list(range(t[0],t[1]+1))
-=======
                     deletions = []
                     deletions_list = []
-<<<<<<< HEAD
-                    for t in sd['deletions']:
-                        deletions += list(range(t[0],t[1]+1))
-                        deletions_list.append(str(t[0])+'-'+str(t[1]))
-=======
                     if 'deletions' in sd and sd['deletions']:
                         for t in sd['deletions']:
                             deletions += list(range(t[0],t[1]+1))
                             deletions_list.append(str(t[0])+'-'+str(t[1])) 
->>>>>>> Pull request fro construct folder
-                        
                     s = ","
                     deletion_string = s.join(deletions_list)
                          
->>>>>>> Again adding...
 
                     mutations = {}
                     if 'mutations' in sd and sd['mutations']:
@@ -151,8 +137,6 @@ class Command(BaseCommand):
                                 'mut_res': m[-1],
                                 'full': m,
                             }
-<<<<<<< HEAD
-=======
                     
                     # Create construct record
                     c = Construct()            
@@ -160,6 +144,31 @@ class Command(BaseCommand):
                     c.deletions =  deletion_string
                     c.save()
                       
+
+                    # Create Auxiliary proteins
+#                    if 'auxiliary_proteins' in sd and sd['auxiliary_proteins']:
+#                        ap = AuxProtein()
+#                        ap.construct = c
+                        
+
+#                        for step in sd['auxiliary_proteins']:
+#                            if 'type' in step and 'name' in step and'sequence' in step:
+#                                ap.protein_type, created = AuxProteinType.objects.get_or_create()
+#                                ap.name = sd['auxiliary_proteins']['name']
+#                                ap.uniprot_id = sd['auxiliary_proteins']['uniprot_id']
+#                                ap.sequence = sd['auxiliary_proteins']['sequence']
+                                #mutations if any to be included from mutation model along with reason of mutation
+#                                ap.position = sd['auxiliary_proteins']['position']
+#                                ap.deletions = sd['auxiliary_proteins']['deletions']
+                                
+#                            else:
+#                                self.logger.error('Auxiliary protein step incorrectly defined for {}'.format(p))
+
+#                        if 'remarks' in sd['auxiliary_proteins']:
+#                            ap.remarks = sd['auxiliary_proteins']['remarks']
+#                        ap.save()
+
+
                      # create expression records
                     if 'expression_sys' in sd and sd['expression_sys']:
                         ce = ConstructExpression()           
@@ -259,7 +268,6 @@ class Command(BaseCommand):
                         if 'remarks' in sd['crystallization']:
                             cy.remarks = sd['crystallization']['remarks']
                         cy.save()
->>>>>>> Again adding...
 
                                      
                     # fusion proteins

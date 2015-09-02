@@ -20,6 +20,7 @@ def detail(request, slug):
     # get constructs
     c = Construct.objects.get(protein_conformation=pc)
     e = ConstructExpression.objects.filter(construct=c)
+#    aux = AuxProtein.objects.get(construct=c)
     exprsn = ConstructExpressionSystem.objects.get()
     sol = ConstructSolubilization.objects.get(construct=c)
     
@@ -31,6 +32,6 @@ def detail(request, slug):
     crystalexp = ConstructCrystallization.objects.get(construct=c)
      
 
-    context = {'c':c,'pc': pc,'mut':mut, 'exprsn': exprsn,'cl':cl,'sol':sol,'pur':pur,'purstep':purstep,  'crystalexp': crystalexp}
+    context = {'c':c,'pc': pc,'mut':mut,'exprsn': exprsn,'cl':cl,'sol':sol,'pur':pur,'purstep':purstep,  'crystalexp': crystalexp}
     return render(request,'construct/construct_detail.html',context)
 
