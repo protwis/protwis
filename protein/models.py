@@ -65,6 +65,7 @@ class ProteinConformation(models.Model):
         return self.protein.entry_name + " (" + self.state.slug + ")"
 
     class Meta():
+        ordering = ('id', )
         db_table = "protein_conformation"
 
 
