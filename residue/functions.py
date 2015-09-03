@@ -83,22 +83,30 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
             if gnl in schemes[ns]['generic_numbers']:
                 rvalues['generic_number'] = schemes[ns]['generic_numbers'][gnl]
             else:
-                gn, created = ResidueGenericNumber.objects.get_or_create(
-                    scheme=ns_obj, label=gnl, defaults=rns_defaults)
+                try:
+                    gn, created = ResidueGenericNumber.objects.get_or_create(
+                        scheme=ns_obj, label=gnl, defaults=rns_defaults)
+                    if created:
+                        logger.info('Created generic number {}'.format(gn.label))
+                except IntegrityError:
+                    gn = ResidueGenericNumber.objects.get(scheme=ns_obj, label=gnl)
                 rvalues['generic_number'] = schemes[ns]['generic_numbers'][gnl] = gn
-                if created:
-                    logger.info('Created generic number {}'.format(gn.label))
 
             # equivalent to main generic number
             if 'equivalent' in numbers:
-                gn_equivalent, created = ResidueGenericNumberEquivalent.objects.get_or_create(
-                    default_generic_number=rvalues['generic_number'],
-                    scheme=protein_conformation.protein.residue_numbering_scheme,
-                    defaults={'label': numbers['equivalent']})
-                if created:
-                    logger.info('Created generic number equivalent {} ({}) for scheme {}'.format(
-                        numbers['equivalent'], numbers['generic_number'],
-                        protein_conformation.protein.residue_numbering_scheme))
+                try:
+                    gn_equivalent, created = ResidueGenericNumberEquivalent.objects.get_or_create(
+                        default_generic_number=rvalues['generic_number'],
+                        scheme=protein_conformation.protein.residue_numbering_scheme,
+                        defaults={'label': numbers['equivalent']})
+                    if created:
+                        logger.info('Created generic number equivalent {} ({}) for scheme {}'.format(
+                            numbers['equivalent'], numbers['generic_number'],
+                            protein_conformation.protein.residue_numbering_scheme))
+                except IntegrityError:
+                    gn_equivalent = ResidueGenericNumberEquivalent.objects.get(
+                        default_generic_number=rvalues['generic_number'],
+                        scheme=protein_conformation.protein.residue_numbering_scheme)
             
             # display generic number
             ns = protein_conformation.protein.residue_numbering_scheme.slug
@@ -106,12 +114,16 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
             if gnl in schemes[ns]['generic_numbers']:
                 rvalues['display_generic_number'] = schemes[ns]['generic_numbers'][gnl]
             else:
-                gn, created = ResidueGenericNumber.objects.get_or_create(
-                    scheme=protein_conformation.protein.residue_numbering_scheme,
-                    label=gnl, defaults=rns_defaults)
+                try:
+                    gn, created = ResidueGenericNumber.objects.get_or_create(
+                        scheme=protein_conformation.protein.residue_numbering_scheme,
+                        label=gnl, defaults=rns_defaults)
+                    if created:
+                        logger.info('Created generic number {}'.format(gn.label))
+                except IntegrityError:
+                    gn = ResidueGenericNumber.objects.get(
+                        scheme=protein_conformation.protein.residue_numbering_scheme, label=gnl)
                 rvalues['display_generic_number'] = schemes[ns]['generic_numbers'][gnl] = gn
-                if created:
-                    logger.info('Created generic number {}'.format(gn.label))
         else:
             rvalues['generic_number'] = None
             rvalues['display_generic_number'] = None
@@ -137,9 +149,13 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
                 if alt_num in schemes[alt_scheme]['generic_numbers']:
                     argn = schemes[alt_scheme]['generic_numbers'][alt_num]
                 else:
-                    argn, created = ResidueGenericNumber.objects.get_or_create(
-                        scheme=ResidueNumberingScheme.objects.get(slug=alt_scheme), label=alt_num,
-                        defaults=rns_defaults)
+                    try:
+                        argn, created = ResidueGenericNumber.objects.get_or_create(
+                            scheme=ResidueNumberingScheme.objects.get(slug=alt_scheme), label=alt_num,
+                            defaults=rns_defaults)
+                    except IntegrityError:
+                        argn = ResidueGenericNumber.objects.get(
+                            scheme=ResidueNumberingScheme.objects.get(slug=alt_scheme), label=alt_num)
                     schemes[alt_scheme]['generic_numbers'][alt_num] = argn
                 r.alternative_generic_numbers.add(argn)
 

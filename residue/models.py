@@ -43,6 +43,7 @@ class ResidueGenericNumber(models.Model):
     
     class Meta():
         db_table = 'residue_generic_number'
+        unique_together = ('scheme', 'label')
 
 
 class ResidueNumberingScheme(models.Model):
@@ -68,3 +69,4 @@ class ResidueGenericNumberEquivalent(models.Model):
     
     class Meta():
         db_table = 'residue_generic_number_equivalent'
+        unique_together = ('scheme', 'label')
