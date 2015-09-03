@@ -220,17 +220,17 @@ class Treeclass:
 def modify_tree(request):
     arg = request.GET['arg[]']
     value = request.GET['value[]']
-    Tree_class=request.session['Tree']
+    Treeclass=request.session['Tree']
     for n in range(arg):
-        Tree_class.Additional_info[arg[n].replace('_btn','')]['include']==value[n]
-    phylogeny_input = Tree_class.get_phylogeny()
-    branches, ttype, total, legend, box, Additional_info=Tree_class.get_data()
+        Treeclass.Additional_info[arg[n].replace('_btn','')]['include']==value[n]
+    phylogeny_input = Treeclass.get_phylogeny()
+    branches, ttype, total, legend, box, Additional_info=Treeclass.get_data()
     return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info })
 
 def render_tree(request):
-    Tree_class=Treeclass()
-    phylogeny_input, branches, ttype, total, legend, box, Additional_info=Tree_class.Prepare_file(request)
-    request.session['Tree']=Tree_class
+    Treeclass=Treeclass()
+    phylogeny_input, branches, ttype, total, legend, box, Additional_info=Treeclass.Prepare_file(request)
+    request.session['Tree']=Treeclass
     return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info })
 
 

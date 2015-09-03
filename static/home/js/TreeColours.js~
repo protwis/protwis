@@ -157,9 +157,9 @@ function toggleLegend() {
         value: values
     },
     'type': 'GET',
-    //'success': function (data) {
-     //   $("#tree_buttons").html(data);
-     //    }
+    'success': function (data) {
+        $("#tree_buttons").html(data);
+         }
      });
        };
 

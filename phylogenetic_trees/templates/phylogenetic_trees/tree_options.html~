@@ -132,6 +132,6 @@
 
    </table>
 <br>
-Show the selected properties as: <a href="javascript:void(0)" id="rings_btn" onclick="GetRings()" class="btn btn-primary">Rings</a><a href="javascript:void(0)" id="fields_btn" onclick="DeselectButtons('crystal_btn')" class="btn btn-primary">Field colours</a>
+Show the selected properties as: <a href="javascript:void(0)" id="rings_btn" onclick="DeselectButtons('crystal_btn')" class="btn btn-primary">Rings</a><a href="javascript:void(0)" id="fields_btn" onclick="DeselectButtons('crystal_btn')" class="btn btn-primary">Field colours</a>
 </div>
 </div>

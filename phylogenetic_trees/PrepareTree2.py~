@@ -273,7 +273,7 @@ class PrepareTree:
     def treeDo(self,infile,branches,family,Additional_info, famdict=None):
         self.famdict=famdict
         d = '/'.join(infile.split('/')[:-1])
-        z = infile#= open(infile,'r').read()
+        z infile#= open(infile,'r').read()
         w = open(d+'/rong','w').write(z.replace('-',''))
         raw = open(d+'/raw.xml','w')
         Phylo.convert(d+'/rong','newick',raw,'phyloxml')
