@@ -1,18 +1,24 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
+from django.db import connection
 
 from protein.models import ProteinConformation, ProteinSegment, ProteinAnomaly, ProteinConformationTemplateStructure
 from structure.models import StructureSegment
 from residue.models import Residue
 from residue.functions import *
+from common.alignment import Alignment
 
 import logging
 import os
 from collections import OrderedDict
+from multiprocessing import Queue, Process
 
 
 class Command(BaseCommand):
     help = 'Updates protein alignments based on structure data'
+
+    def add_arguments(self, parser):
+        parser.add_argument('--njobs', action='store', dest='njobs', help='Number of jobs to run')
 
     logger = logging.getLogger(__name__)
 
@@ -20,16 +26,57 @@ class Command(BaseCommand):
     ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'reference_positions'])
     auto_ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'auto_reference_positions'])
 
+    pconfs = ProteinConformation.objects.order_by('protein__parent', 'id').select_related(
+            'protein__residue_numbering_scheme__parent', 'template_structure')
+
     def handle(self, *args, **options):
-        # find protein templates
+        # how many jobs to run?
+        if 'njobs' in options and options['njobs']:
+            njobs = int(options['njobs'])
+        else:
+            njobs = 1
+
         try:
-            self.update_alignments()
+            self.prepare_input(njobs)
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
 
-    def update_alignments(self):
+    def prepare_input(self, njobs):
         self.logger.info('UPDATING PROTEIN ALIGNMENTS')
+       
+        q = Queue()
+        procs = list()
+        num_pconfs = self.pconfs.count()
+        
+        # make sure not to use more njobs than proteins (chunk size will be 0, which is not good)
+        if njobs > num_pconfs:
+            njobs = num_pconfs
+
+        chunk_size = int(num_pconfs / njobs)
+        connection.close()
+        for i in range(0, njobs):
+            first = chunk_size * i
+            if i == njobs - 1:
+                last = False
+            else:
+                last = chunk_size * (i + 1)
+    
+            p = Process(target=self.update_alignments, args=([(first, last)]))
+            procs.append(p)
+            p.start()
+
+        for p in procs:
+            p.join()
+
+        self.logger.info('COMPLETED UPDATING PROTEIN ALIGNMENTS')
+
+    def update_alignments(self, positions):
+        # pconfs
+        if not positions[1]:
+            pconfs = self.pconfs[positions[0]:]
+        else:
+            pconfs = self.pconfs[positions[0]:positions[1]]
 
         schemes = parse_scheme_tables(self.generic_numbers_source_dir)
 
@@ -51,10 +98,12 @@ class Command(BaseCommand):
 
         # pre-fetch protein conformations
         segments = ProteinSegment.objects.filter(partial=False)
-        pconfs = ProteinConformation.objects.order_by('protein__parent').select_related(
-            'protein__residue_numbering_scheme__parent', 'template_structure')
         
         for pconf in pconfs:
+            # skip protein conformations without a template (consensus sequences)
+            if not pconf.template_structure:
+                continue
+
             # get the sequence number of the first residue for this protein conformation
             pconf_residues = Residue.objects.filter(protein_conformation=pconf)
             if pconf_residues.exists():
@@ -134,6 +183,30 @@ class Command(BaseCommand):
                     # protein anomaly rules
                     if segment.slug in anomaly_rule_sets:
                         for pa, parss in anomaly_rule_sets[segment.slug].items():
+                            # if there exists a structure for this particular protein, don't use the rules
+                            ignore_rules = False
+                            current_protein = pconf.protein
+                            template_structure_protein = pconf.template_structure.protein_conformation.protein.parent
+                            if current_protein == template_structure_protein:
+                                ignore_rules = True
+                                self.logger.info('Ignoring anomaly rules because structure of protein {} exists'
+                                    .format(current_protein))
+                            else:
+                                # check similarity of protein and template
+                                a = Alignment()
+                                a.load_reference_protein(current_protein)
+                                a.load_proteins([template_structure_protein])
+                                a.load_segments([segment])
+                                a.build_alignment()
+                                a.calculate_similarity()
+                                
+                                # apply a similarity cut-off
+                                similarity = int(a.proteins[1].similarity)
+                                if similarity > 50:
+                                    ignore_rules = True
+                                    self.logger.info('Ignoring anomaly rules for {} due to high similarity ({}%) to {}'
+                                        .format(current_protein, similarity, template_structure_protein))
+
                             # check whether this anomaly is inside the segment borders
                             if not generic_number_within_segment_borders(pa, main_tpl_gn_labels):
                                 self.logger.info("Anomaly {} excluded for {} (outside segment borders)".format(pa, 
@@ -144,34 +217,36 @@ class Command(BaseCommand):
                             use_similarity = True
 
                             # go through rule sets
-                            for pars in parss:
-                                # fetch rules in this rule set
-                                rules = pars.rules.all()
-                                for rule in rules:
-                                    # fetch the residue in question
-                                    try:
-                                        r = Residue.objects.get(protein_conformation=pconf,
-                                            generic_number=rule.generic_number)
-                                    except Residue.DoesNotExist:
-                                        self.logger.warning('Residue {} in {} not found, skipping'.format(
-                                            rule.generic_number.label, pconf.protein.entry_name))
-                                        continue
-                                    
-                                    # does the rule break the set? Then go to next set..
-                                    if ((r.amino_acid == rule.amino_acid and rule.negative) or
-                                        (r.amino_acid != rule.amino_acid and not rule.negative)):
+                            if not ignore_rules:
+                                for pars in parss:
+                                    # fetch rules in this rule set
+                                    rules = pars.rules.all()
+                                    for rule in rules:
+                                        # fetch the residue in question
+                                        try:
+                                            r = Residue.objects.get(protein_conformation=pconf,
+                                                generic_number=rule.generic_number)
+                                        except Residue.DoesNotExist:
+                                            self.logger.warning('Residue {} in {} not found, skipping'.format(
+                                                rule.generic_number.label, pconf.protein.entry_name))
+                                            continue
+                                        
+                                        # does the rule break the set? Then go to next set..
+                                        if ((r.amino_acid == rule.amino_acid and rule.negative) or
+                                            (r.amino_acid != rule.amino_acid and not rule.negative)):
+                                            break
+                                    # if the loop was not broken, all rules passed, and the set controls the anomaly
+                                    else:
+                                        # do not use similarity, since a rule matched
+                                        use_similarity = False
+                                        
+                                        # add the anomaly to the list for this segment (if the rule set is not 
+                                        # exclusive)
+                                        if not pars.exclusive:
+                                            protein_anomalies.append(anomalies[pa])
+                                        
+                                        # break the set loop, because one set match is enough for a decision
                                         break
-                                # if the loop was not broken, all rules passed, and the set controls the anomaly
-                                else:
-                                    # do not use similarity, since a rule matched
-                                    use_similarity = False
-                                    
-                                    # add the anomaly to the list for this segment (if the rule set is not exclusive)
-                                    if not pars.exclusive:
-                                        protein_anomalies.append(anomalies[pa])
-                                    
-                                    # break the set loop, because one set match is enough for a decision
-                                    break
 
                             # use similarity?
                             if use_similarity:
@@ -281,6 +356,3 @@ class Command(BaseCommand):
                 if 'start' in us and 'end' in us and us['end']: # FIXME take split segments into account
                     create_or_update_residues_in_segment(pconf, us['segment'], us['start'], us['end'], schemes,
                         ref_positions, us['protein_anomalies'], False)
-                
-
-        self.logger.info('COMPLETED UPDATING PROTEIN ALIGNMENTS')
