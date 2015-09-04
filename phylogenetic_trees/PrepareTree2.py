@@ -18,7 +18,10 @@ class PrepareTree:
 
     def get_grayscale_colours(self, itemlist):
         colours_dict = {}
-        v_step = 180/len(itemlist)
+        if itemlist:
+            v_step = 180/len(itemlist)
+        else:
+            v_step = 0
         v_count = 0
         for a in itemlist:
             colour = self.HSV_2_RGB((0,0,10+(v_count*int(v_step))))
@@ -29,7 +32,10 @@ class PrepareTree:
 
     def get_spectrum_colours(self, itemlist,range=(0,255)):
         colours_dict = {}
-        v_step = (range[1]-range[0])/len(itemlist)
+        if itemlist:
+            v_step = (range[1]-range[0])/len(itemlist)
+        else:
+            v_step = 0    
         v_count = 0
         for a in itemlist:
             colour = self.HSV_2_RGB((int(range[0]+v_step*v_count),127,200))
@@ -270,9 +276,9 @@ class PrepareTree:
 
 
 
-    def treeDo(self,infile,branches,family,Additional_info, famdict=None):
+    def treeDo(self,d, infile,branches,family,Additional_info, famdict=None):
         self.famdict=famdict
-        d = '/'.join(infile.split('/')[:-1])
+        d = '/'.join(d.split('/'))
         z = infile#= open(infile,'r').read()
         w = open(d+'/rong','w').write(z.replace('-',''))
         raw = open(d+'/raw.xml','w')
@@ -281,11 +287,17 @@ class PrepareTree:
         xml = open(d+'/raw.xml','r').readlines()
         out = open(d+'/out.xml','w')
         self.get_tree_data(Additional_info)
+        print('1')
         self.get_family_meta(family)
+        print('2')
         charts=self.get_charts()
+        print('3')
         self.get_colours()
+        print('4')
         self.build_legend()
+        print('5')
         self.get_styles()
+        print('6')
         flag = False
         flag2 = ''
         stylesflag=False
@@ -315,6 +327,7 @@ class PrepareTree:
             if '<name>' in line:
                 name = line.split('<')[1].split('>')[1]
                 chart = '<chart>'
+                print('7')
                 for ring in self.rings:
                     if self.rings[ring]['include']=='True':
                         if self.rings[ring]['color_type']=='single':
@@ -323,7 +336,9 @@ class PrepareTree:
                             else:
                                 chart += '<%s>d</%s>' %(ring,ring)
                         else:
+                            print('8')
                             chart += '<'+ring+'>'+self.prots[name][ring]+'</'+ring+'>'
+                            print('9')
                 chart += '</chart>'
                 flag2 = [name,chart]
                 line = line.replace(name,self.prots[name]['name']).replace('<name', "<name bgStyle='%s'" %self.prots[name]['acc'])

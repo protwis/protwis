@@ -71,7 +71,7 @@ class Treeclass:
     family = {}
     phylip = None
     dir = ''
-    Additional_info = {'crystal':{'proteins':[],'colours':{'n':'#6dcde1', 'd':'#EEE'},'include':'True'},
+    Additional_info = {'crystal':{'proteins':[],'colours':{'n':'#6dcde1', 'd':'#EEE'},'include':'False'},
             'class': {'include':'True', 'colours':{}, 'proteins':[]},
             'family': {'include':'True', 'colours':{}, 'proteins':[]},
             'ligand': {'include':'True', 'colours':{}, 'proteins':[]},
@@ -203,13 +203,14 @@ class Treeclass:
         ###
             subprocess.check_output(['phylip consense<temp'], shell=True, cwd = '/tmp/%s' %dirname)
         self.phylip = open('/tmp/%s/outtree' %dirname).read()
+        phylogeny_input = self.get_phylogeny('/tmp/%s/' %dirname)
         shutil.rmtree('/tmp/%s' %dirname)
-        phylogeny_input = self.get_phylogeny()
         return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info
         
-    def get_phylogeny(self):
-        self.Tree.treeDo(self.phylip,self.branches,self.family,self.Additional_info, self.famdict)
-        phylogeny_input = open('/tmp/%s/out.xml' %dirname,'r').read().replace('\n','')
+    def get_phylogeny(self, dirname):
+        print(self.family)
+        self.Tree.treeDo(dirname, self.phylip,self.branches,self.family,self.Additional_info, self.famdict)
+        phylogeny_input = open('%s/out.xml' %dirname,'r').read().replace('\n','')
         return phylogeny_input
     
     def get_data(self):
@@ -218,12 +219,12 @@ class Treeclass:
         
 
 def modify_tree(request):
-    arg = request.GET['arg[]']
-    value = request.GET['value[]']
+    arg = request.POST.getlist('arg[]')
+    value = request.POST.getlist('value[]')
     Tree_class=request.session['Tree']
-    for n in range(arg):
+    for n in range(len(arg)):
         Tree_class.Additional_info[arg[n].replace('_btn','')]['include']==value[n]
-    phylogeny_input = Tree_class.get_phylogeny()
+    phylogeny_input = Tree_class.get_phylogeny('/tmp')
     branches, ttype, total, legend, box, Additional_info=Tree_class.get_data()
     return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info })
 

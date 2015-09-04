@@ -141,6 +141,7 @@ function toggleLegend() {
      var values = [];
      $('.button_container').find('.btn-default').each(function (index) {
          if ($(this).css("display") != 'none'){
+             console.log($(this));
              args.push($(this).attr('id'));
              values.push('True');
          } else if ($(this).css("display") == 'none'){
@@ -148,8 +149,6 @@ function toggleLegend() {
              values.push('False');
          };
      });
-    console.log(args);
-    console.log(values);
     $.ajax({
     'url': '/phylogenetic_trees/showrings',
     'data': {
@@ -157,9 +156,9 @@ function toggleLegend() {
         value: values
     },
     'type': 'GET',
-    //'success': function (data) {
-     //   $("#tree_buttons").html(data);
-     //    }
+    'success': function(data) {
+           $("#main").html(data);
+       }
      });
        };
 

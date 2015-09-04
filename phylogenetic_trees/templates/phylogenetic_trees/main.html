@@ -1,10 +1,4 @@
-﻿{% extends "home/base.html" %}
-{% load staticfiles %}
-
-    <div id='main'>
-    {% include 'phylogenetic_trees/main.html' %}
-
-    {% block addon_js %}
+{% block addon_js %}
     <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
     <script src="{% static 'home/js/unitip.js' %}"></script>
     <script src="{% static 'home/js/raphael-min.js' %}"></script>
@@ -73,5 +67,3 @@
 <br />
 {% include 'phylogenetic_trees/tree_options.html' %}
 {% endblock %}
-</div>
-
