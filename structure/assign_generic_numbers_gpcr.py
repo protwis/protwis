@@ -1,4 +1,4 @@
-﻿from django.conf import settings
+from django.conf import settings
 
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
