@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
+from django.db import connection 
 
 from protein.models import (Protein, ProteinConformation, ProteinSequenceType, ProteinSegment,
     ProteinConformationTemplateStructure)
@@ -7,35 +8,89 @@ from structure.models import Structure
 from common.alignment import Alignment
 
 import logging
-
+from cProfile import Profile
+from optparse import make_option
+from multiprocessing import Queue, Process
 
 class Command(BaseCommand):
     help = 'Goes though all protein records and finds the best structural templates for the whole 7TM domain, and ' \
         + 'each helix individually'
 
+    def add_arguments(self, parser):
+        parser.add_argument('--njobs', action='store', dest='njobs', help='Number of jobs to run')
+        parser.add_argument('--profile', action='store_true', dest='profile', default=False,
+            help='Profile the script with cProfile')
+
     logger = logging.getLogger(__name__)
 
+    # fetch all protein conformations
+    pconfs = ProteinConformation.objects.all().prefetch_related('protein__family', 'template_structure')
+
     def handle(self, *args, **options):
-        # find protein templates
+        # run with profiling
+        if options['profile']:
+            profiler = Profile()
+            profiler.runcall(self._handle, *args, **options)
+            profiler.print_stats()
+        # run without profiling
+        else:
+            self._handle(*args, **options)
+
+    def _handle(self, *args, **options):
+        # how many jobs to run?
+        if 'njobs' in options and options['njobs']:
+            njobs = int(options['njobs'])
+        else:
+            njobs = 1
+
         try:
-            self.find_protein_templates()
+            self.prepare_input(njobs)
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
 
-    def find_protein_templates(self):
+    def prepare_input(self, njobs):
         self.logger.info('ASSIGNING STRUCTURE TEMPLATES FOR PROTEINS')
+        
+        q = Queue()
+        procs = list()
+        num_pconfs = self.pconfs.count()
+        
+        # make sure not to use more jobs than proteins (chunk size will be 0, which is not good)
+        if njobs > num_pconfs:
+            njobs = num_pconfs
+
+        chunk_size = int(num_pconfs / njobs)
+        connection.close()
+        for i in range(0, njobs):
+            first = chunk_size * i
+            if i == njobs - 1:
+                last = False
+            else:
+                last = chunk_size * (i + 1)
+    
+            p = Process(target=self.find_protein_templates, args=([(first, last)]))
+            procs.append(p)
+            p.start()
+
+        for p in procs:
+            p.join()
+
+        self.logger.info('COMPLETED ASSIGNING STRUCTURE TEMPLATES FOR PROTEINS')
+
+    def find_protein_templates(self, positions):
+        # pconfs
+        if not positions[1]:
+            pconfs = self.pconfs[positions[0]:]
+        else:
+            pconfs = self.pconfs[positions[0]:positions[1]]
 
         # segments
         segments = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS)
 
-        # fetch all conformations of wild-type proteins
-        pconfs = ProteinConformation.objects.all().select_related(
-            'protein')
-
         # fetch wild-type sequences of receptors with available structures
         structures = Structure.objects.order_by('protein_conformation__protein__parent', 'resolution').distinct(
-            'protein_conformation__protein__parent').select_related('protein_conformation__protein__parent__family')
+            'protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__parent__family')
 
         # find templates
         for pconf in pconfs:
@@ -67,8 +122,6 @@ class Command(BaseCommand):
                     pcts.structure = template_structure
                     pcts.save()
                 self.logger.info("Assigned {} as {} template for {}".format(template_structure, segment, pconf))
-
-        self.logger.info('COMPLETED ASSIGNING STRUCTURE TEMPLATES FOR PROTEINS')
 
     def find_segment_template(self, pconf, sconfs, segments):
             a = Alignment()

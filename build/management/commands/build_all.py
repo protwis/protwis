@@ -7,24 +7,34 @@ import datetime
 class Command(BaseCommand):
     help = 'Runs all build functions'
 
+    def add_arguments(self, parser):
+        parser.add_argument('--njobs', action='store', dest='njobs', help='Number of jobs to run')
+
     def handle(self, *args, **options):
+        # how many jobs to run?
+        if 'njobs' in options and options['njobs']:
+            njobs = int(options['njobs'])
+        else:
+            njobs = 1
+
         commands = [
             ['build_common'],
             ['build_human_proteins'],
-            ['build_residues'],
-#            ['build_constructs'],
-#            ['build_structures'],
-#            ['build_mutant_data'],
-#            ['find_protein_templates'],
-#            ['update_alignments'],
-#            ['build_protein_sets'],
-#            ['build_consensus_sequences'],
+            ['build_orthologs'],
+            ['build_residues', {'njobs': njobs}],
+            ['build_constructs'],
+            ['build_structures'],
+            ['build_mutant_data'],
+            ['find_protein_templates', {'njobs': njobs}],
+            ['update_alignments', {'njobs': njobs}],
+            ['build_protein_sets'],
+            ['build_consensus_sequences'],
         ]
 
         for c in commands:
             print('{} Running {}'.format(
                 datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), c[0]))
             if len(c) > 1:
-                call_command(c[0],c[1])
+                call_command(c[0], **c[1])
             else:
                 call_command(c[0])
