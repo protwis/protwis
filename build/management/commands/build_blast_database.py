@@ -8,50 +8,53 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 from Bio.Seq import Seq
 
-import logging,sys,os
-from subprocess import Popen,PIPE
+import logging, sys, os
+from subprocess import Popen, PIPE
 
 class Command(BaseCommand):
+    help = 'Generates Blast database from sequences deposited within protwis dataset. The sequences are indexed by ' \
+        + 'Protein.id to speed up searching and make querying easier.'
 
     logger = logging.getLogger(__name__)
     
-    #The command puts blastdb in the first directory from common static directories
+    # The command puts blastdb in the first directory from common static directories
     blast_database_dir = os.sep.join([settings.STATICFILES_DIRS[0], 'blast'])
-    help = 'Generates Blast database from sequences deposited within protwis dataset. The sequences are indexed by Protein.Id to speed up searching and make querying easier.'
+    db_file_path = os.sep.join([blast_database_dir, 'protwis_blastdb'])
+    tmp_file_path = os.sep.join(['/tmp', 'temp.fa'])
 
     def handle(self, *args, **options):
+        self.logger.info('BUILDING BLAST DATABASE')
 
         sequences = []
-        print(self.blast_database_dir)
-        print('Fetching sequence data and saving it into temp file')
-        self.logger.info('Attempting to fetch protein objects...')
-        try:
-            proteins = Protein.objects.all()
-        except Exception as e:
-            print(e)
-            self.logger.error('Something went wrong while fetching proteins!')
-        for protein in proteins:
-            sequences.append(SeqRecord(Seq(protein.sequence, IUPAC.protein), id=str(protein.id), description=protein.entry_name))
-        self.logger.info('Saving sequences into temp file')
-        try:
-            if os.path.exists(os.sep.join([self.blast_database_dir, 'temp.fa'])):
-                os.unlink(os.sep.join([self.blast_database_dir, 'temp.fa']))
-            SeqIO.write(sequences, os.sep.join([self.blast_database_dir, 'temp.fa']), 'fasta')
-        except Exception as e:
-            print(e)
-            self.logger.error('Failed saving the sequences')
+        self.logger.info('Building blast database in {}'.format(self.blast_database_dir))
         
-        print('Running makeblastdb')
-        self.logger.info('Issuing makeblastdb')
+        # fetch proteins
+        proteins = Protein.objects.all()
+        for protein in proteins:
+            sequences.append(SeqRecord(Seq(protein.sequence, IUPAC.protein), id=str(protein.id),
+                description=protein.entry_name))
         try:
-            #No need to unlink the previously existing database - makeblastdb overwrites it
-            makeblastdb = Popen("makeblastdb -in {} -dbtype prot -title protwis_blastdb -out {} -parse_seqids".format(os.sep.join([self.blast_database_dir, 'temp.fa']), os.sep.join([self.blast_database_dir, 'protwis_blastdb'])), universal_newlines=True, stdout=PIPE, shell=True, stderr=PIPE)
+            if os.path.exists(self.tmp_file_path):
+                os.unlink(self.tmp_file_path)
+            SeqIO.write(sequences, self.tmp_file_path, 'fasta')
+            self.logger.info('Saving sequences into {}'.format(self.tmp_file_path))
         except Exception as e:
-            print(e)
-            self.logger.error('Failed to launch makeblastdb')
-        out, err = makeblastdb.communicate()
-        if len(err) != 0:
-            print(err)
-        if os.path.exists(os.sep.join([self.blast_database_dir, 'temp.fa'])):
-            os.unlink(os.sep.join([self.blast_database_dir, 'temp.fa']))
-        print('Success')
+            self.logger.error('Saving the sequences failed')
+        
+        self.logger.info('Running makeblastdb')
+        try:
+            # No need to unlink the previously existing database - makeblastdb overwrites it
+            makeblastdb = Popen("makeblastdb -in {} -dbtype prot -title protwis_blastdb -out {} -parse_seqids".format(
+                self.tmp_file_path, self.db_file_path), universal_newlines=True, stdout=PIPE, shell=True, stderr=PIPE)
+            out, err = makeblastdb.communicate()
+            if len(err) != 0:
+                self.logger.error(err)
+        except Exception as e:
+            self.logger.error('Makeblastdb failed')
+
+        
+        # remove tmp sequence file
+        if os.path.exists(self.tmp_file_path):
+            os.unlink(self.tmp_file_path)
+
+        self.logger.info('COMPLETED BUILDING BLAST DATABASE')

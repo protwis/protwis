@@ -561,8 +561,8 @@ def ExpandSegment(request):
         else:
             first_item = simple_selection.targets[0]
         if first_item.type == 'family':
-            protein = Protein.objects.get(family=first_item.item, sequence_type__slug='consensus')
-            numbering_scheme = protein.residue_numbering_scheme
+            proteins = Protein.objects.filter(family__slug__startswith=first_item.item.slug)
+            numbering_scheme = proteins[0].residue_numbering_scheme
         elif first_item.type == 'protein':
             numbering_scheme = first_item.item.residue_numbering_scheme
     else:
