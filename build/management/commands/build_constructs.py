@@ -149,11 +149,18 @@ class Command(BaseCommand):
 #                    if 'auxiliary_proteins' in sd and sd['auxiliary_proteins']:
 #                        ap = AuxProtein()
 #                        ap.construct = c
-                        
+#                        apct = AuxProteinType.objects.create()
+                       # ap.protein_type = apct 
+#                        apct.save()
+#                        if 'remarks' in sd['auxiliary_proteins']:
+#                            ap.remarks = sd['auxiliary_proteins']['remarks']
+#                        ap.save()
+ 
 
 #                        for step in sd['auxiliary_proteins']:
 #                            if 'type' in step and 'name' in step and'sequence' in step:
-#                                ap.protein_type, created = AuxProteinType.objects.get_or_create()
+#                                ap.protein_type = apct
+                 #              ap.protein_type, created = AuxProteinType.objects.get_or_create()
 #                                ap.name = sd['auxiliary_proteins']['name']
 #                                ap.uniprot_id = sd['auxiliary_proteins']['uniprot_id']
 #                                ap.sequence = sd['auxiliary_proteins']['sequence']
@@ -164,9 +171,6 @@ class Command(BaseCommand):
 #                            else:
 #                                self.logger.error('Auxiliary protein step incorrectly defined for {}'.format(p))
 
-#                        if 'remarks' in sd['auxiliary_proteins']:
-#                            ap.remarks = sd['auxiliary_proteins']['remarks']
-#                        ap.save()
 
 
                      # create expression records
