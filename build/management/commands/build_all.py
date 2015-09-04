@@ -22,6 +22,7 @@ class Command(BaseCommand):
             ['build_human_proteins'],
             ['build_orthologs'],
             ['build_residues', {'njobs': njobs}],
+            ['build_blast_database'],
             ['build_constructs'],
             ['build_structures'],
             ['build_mutant_data'],
