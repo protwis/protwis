@@ -62,7 +62,7 @@ class Command(BuildHumanProteins):
         for family in families:
             # get proteins in this family
             proteins = Protein.objects.filter(family__slug__startswith=family.slug, sequence_type__slug='wt',
-                species__id=1)
+                species__id=1).prefetch_related('species', 'residue_numbering_scheme')
 
             if len(proteins) <= 1:
                 continue
@@ -111,8 +111,9 @@ class Command(BuildHumanProteins):
             constriction_freq = dict()
             consensus_pas = dict() # a constriction has to be in all sequences to be included in the consensus
             pcs = ProteinConformation.objects.filter(protein__in=proteins, state__slug=settings.DEFAULT_PROTEIN_STATE)
+                .prefetch('protein_anomalies')
             for pc in pcs:
-                pas = pc.protein_anomalies.all()
+                pas = pc.protein_anomalies.all().prefetch_related('generic_number__protein_segment', 'anomaly_type')
                 for pa in pas:
                     pa_label = pa.generic_number.label
                     pa_type = pa.anomaly_type.slug
