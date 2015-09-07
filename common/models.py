@@ -148,7 +148,7 @@ class Publication(models.Model):
             self.reference = "{}{}:{}".format(vol,issue,pages)    
         except Exception as msg:
             #Crossref doi search
-            logger.error("Publication update on doi error - trying pubmed! DOI: "+index+" error:" + str(msg) )
+            logger.error("Publication update on doi error - trying pubmed! DOI: "+doi+" error:" + str(msg) )
             try:
                 Entrez.email = 'info@gpcrdb.org'
                 record = Entrez.read(Entrez.esearch(
@@ -159,7 +159,7 @@ class Publication(models.Model):
                 self.update_from_pubmed_data(record['IdList'][0])
 
             except Exception as e:
-                logger.error("Publication update on pubmed error! DOI: "+index+" error:" + str(e) )
+                logger.error("Publication update on pubmed error! DOI: "+doi+" error:" + str(e) )
                 pass
 
 
