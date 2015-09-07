@@ -6,25 +6,29 @@
 {% endblock %}
 
 {% block content %}
-<table>
+
+<button style="width:120px;" onclick="applyPresentColors()">Properities</button> 
+<button style="width:120px;" onclick="resetColors()">Clear</button>
+<br><button style="width:120px;" onclick="ajaxMutants()">Show Mutants</button>
+<button style="width:220px;" onclick="ajaxInteractions()">Show Interactions from Crystals</button>
+
+<table class="table-header-rotated">
     <!-- Header -->
     <thead><tr>
     {% for elem, tooltip in header %}
-        <th class="rt-header">
-        <div data-toggle="tootltip" data-placement="top" data-html="true" title="{{ tooltip|safe }}">
-            {{ elem }}
-        </div>
+        <th class="rotate{% if forloop.counter <= number_of_schemes %} scheme{% else %} protein{% endif %}">
+        <div><span>{{ elem }}</span></div>
         </th>
     {% endfor %}
     </tr></thead>
     {% for segment in segments %}
-        <tr><td colspan="{{ header|length }}">{{ segment }}</td></tr>
+        <tr><th colspan="{{ header|length }}" class="row-header">{{ segment }}</td></tr>
             {% for key, data_row in data.items %}
                 {% if key == segment %}
                     {% for row in data_row %}
                         <tr>
                         {% for gn in row %}
-                            <td class="{% if forloop.parentloop.counter|divisibleby:2 %}rt-row-even{% else %}rt-row-odd{% endif %}">{{ gn }}</td>
+                            <td id="P{{forloop.counter}}R{{gn|slice:"1:"}}" class="{% if forloop.counter <= number_of_schemes %}info text-center{% else %}text-center residue{% endif %}">{{ gn }}</td>
                         {% endfor %}
                         </tr>
                     {% endfor %}
@@ -36,4 +40,5 @@
 
 {% block addon_js %}
 <script src="{% static 'home/js/alignment.js' %}"></script>
+<script src="{% static 'home/js/residuetable.js' %}"></script>
 {% endblock %}
