@@ -114,52 +114,52 @@ class Publication(models.Model):
         logger = logging.getLogger('build')
         #Pubmed by doi
         try:
-            Entrez.email = 'info@gpcrdb.org'
-            record = Entrez.read(Entrez.esearch(
-                db='pubmed',
-                retmax=1,
-                term=doi
-                ))
-            self.update_from_pubmed_data(record['IdList'][0])
+            url = "http://search.crossref.org/dois?q={}".format(doi)
+            pub = json.loads(urllib.request.urlopen(url).read().decode('ascii', "ignore"))
+            self.title = pub[0]['title'].strip()
+            self.year = pub[0]['year'].strip()
+            full_cit = [x.strip() for x in reversed(pub[0]['fullCitation'].split(','))]
+            tmp_authors = []   
+            p = re.compile(r'\d\d\d\d') #FIXME SOMETHING ERRORS HERE
+            item = full_cit.pop()  
+            while item.strip()[0] != "'" and p.match(item.strip()) is None:
+                tmp_authors.append(item.strip())
+                item = full_cit.pop()
+            self.authors = ','.join(tmp_authors)      
+            pages = ''
+            vol = ''
+            issue = ''    
+            for i in full_cit:
+                if '<i>' in i:
+                    try:
+                        self.journal = PublicationJournal.objects.get(name=i.replace('<i>','').replace('</i>',''))
+                    except PublicationJournal.DoesNotExist:
+                        j = PublicationJournal(name=i.replace('<i>','').replace('</i>',''))
+                        j.save()
+                        self.journal = j
+                if i.replace("'",'').strip() == title:
+                    continue
+                if i.startswith('pp.'):
+                    pages = i.replace('pp. ','')
+                if i.startswith('no.'):
+                    issue = '({})'.format(i.replace('no. ',''))
+                if i.startswith('vol.'):
+                    vol = i.replace('vol. ','')
+            self.reference = "{}{}:{}".format(vol,issue,pages)    
         except Exception as msg:
             #Crossref doi search
+            logger.error("Publication update on doi error - trying pubmed! DOI: "+index+" error:" + str(msg) )
             try:
-                ulr = "http://search.crossref.org/dois?q={}".format(doi)
-                pub = json.loads(urllib.request.urlopen(url).read().decode('ascii', "ignore"))
-                self.title = pub[0]['title'].strip()
-                self.year = pub[0]['year'].strip()
-                
-                full_cit = [x.strip() for x in reversed(pub[0]['fullCitation'].split(','))]
-                tmp_authors = []
-                p = re.compile(r'\d\d\d\d')
-                item = full_cit.pop()
-                while item.strip()[0] != "'" and p.match(item.strip()) is None:
-                    tmp_authors.append(item.strip())
-                    item = full_cit.pop()
-                self.authors = ','.join(tmp_authors)
-
-                pages = ''
-                vol = ''
-                issue = ''
-                for i in full_cit:
-                    if '<i>' in i:
-                        try:
-                            self.journal = PublicationJournal.objects.get(name=i.replace('<i>','').replace('</i>',''))
-                        except PublicationJournal.DoesNotExist:
-                            j = PublicationJournal(name=i.replace('<i>','').replace('</i>',''))
-                            j.save()
-                            self.journal = j
-                    if i.replace("'",'').strip() == title:
-                        continue
-                    if i.startswith('pp.'):
-                        pages = i.replace('pp. ','')
-                    if i.startswith('no.'):
-                        issue = '({})'.format(i.replace('no. ',''))
-                    if i.startswith('vol.'):
-                        vol = i.replace('vol. ','')
-                self.reference = "{}{}:{}".format(vol,issue,pages)
+                Entrez.email = 'info@gpcrdb.org'
+                record = Entrez.read(Entrez.esearch(
+                    db='pubmed',
+                    retmax=1,
+                    term=doi
+                    ))
+                self.update_from_pubmed_data(record['IdList'][0])
 
             except Exception as e:
+                logger.error("Publication update on pubmed error! DOI: "+index+" error:" + str(e) )
                 pass
 
 

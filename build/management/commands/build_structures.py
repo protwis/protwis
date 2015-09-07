@@ -299,9 +299,7 @@ class Command(BaseCommand):
                         if 'doi_id' in sd:
                             try:
                                 s.publication = Publication.objects.get(web_link__index=sd['doi_id'])
-                                print('foudn!')
                             except Publication.DoesNotExist as e:
-                                print('addding!')
                                 p = Publication()
                                 try:
                                     p.web_link = WebLink.objects.get(index=sd['doi_id'], web_resource__slug='doi')
@@ -309,7 +307,6 @@ class Command(BaseCommand):
                                     wl = WebLink.objects.create(index=sd['doi_id'],
                                         web_resource = WebResource.objects.get(slug='doi'))
                                     p.web_link = wl
-                                print('updateing!',sd['doi_id'])
                                 p.update_from_doi(doi=sd['doi_id'])
                                 p.save()
                                 s.publication = p
