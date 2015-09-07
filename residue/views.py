@@ -132,5 +132,6 @@ class ResidueTablesDisplay(TemplateView):
         context['header'] = zip([x.short_name for x in numbering_schemes] + [x.entry_name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins])
         context['segments'] = [x.slug for x in segments]
         context['data'] = flattened_data
+        context['number_of_schemes'] = len(numbering_schemes)
 
         return context

@@ -87,11 +87,11 @@ def render_mutations(request):
     for segment in simple_selection.segments:
         segments.append(segment.item)
 
-    print(segments)
+    #print(segments)
 
     mutations = MutationExperiment.objects.filter(protein__in=proteins, residue__protein_segment__in=segments).prefetch_related('protein', 'residue__protein_segment','residue__display_generic_number', 'residue', 'exp_type', 'ligand_role', 'ligand','refs')
 
-    print(mutations)
+    #print(mutations)
     return render(request, 'mutation/list.html', {'mutations': mutations})
 
 # Create your views here.
