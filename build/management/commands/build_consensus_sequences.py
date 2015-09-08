@@ -20,11 +20,27 @@ class Command(BuildHumanProteins):
     auto_ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'auto_reference_positions'])
     generic_numbers_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers'])
 
+    # numbering scheme tables
+    schemes = parse_scheme_tables(generic_numbers_source_dir)
+
+    # get all segments
+    segments = ProteinSegment.objects.filter(partial=False)
+
+    # fetch families
+    families = ProteinFamily.objects.all()
+
     def handle(self, *args, **options):
-        # create proteins
+        # how many jobs to run?
+        if 'njobs' in options and options['njobs']:
+            njobs = int(options['njobs'])
+        else:
+            njobs = 1
+        
         try:
             self.purge_consensus_sequences()
-            self.create_consensus_sequences()
+            self.logger.info('CREATING CONSENSUS SEQUENCES')
+            self.prepare_input(njobs, self.families)
+            self.logger.info('COMPLETED CREATING CONSENSUS SEQUENCES')
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
@@ -51,31 +67,28 @@ class Command(BuildHumanProteins):
                 i += 1
         return ref_positions, segment_starts, segment_ends
 
-    def create_consensus_sequences(self):
-        self.logger.info('CREATING CONSENSUS SEQUENCES')
+    def main_func(self, positions):
+        # families
+        if not positions[1]:
+            families = self.families[positions[0]:]
+        else:
+            families = self.families[positions[0]:positions[1]]
 
-        # numbering scheme tables
-        schemes = parse_scheme_tables(self.generic_numbers_source_dir)
-
-        # fetch families
-        families = ProteinFamily.objects.all()
         for family in families:
             # get proteins in this family
             proteins = Protein.objects.filter(family__slug__startswith=family.slug, sequence_type__slug='wt',
-                species__id=1)
+                species__id=1).prefetch_related('species', 'residue_numbering_scheme')
 
-            if len(proteins) <= 1:
+            if proteins.count() <= 1:
                 continue
-
-            # get all segments
-            segments = ProteinSegment.objects.filter(partial=False)
-
+            self.logger.info('Building alignment for {}'.format(family))
             # create alignment
             a = Alignment()
             a.load_proteins(proteins)
-            a.load_segments(segments)
+            a.load_segments(self.segments)
             a.build_alignment()
             a.calculate_statistics()
+            self.logger.info('Completed building alignment for {}'.format(family))
 
             # get (forced) consensus sequence from alignment object
             family_consensus = str()
@@ -85,9 +98,7 @@ class Command(BuildHumanProteins):
 
             # create sequence type 'consensus'
             sequence_type, created = ProteinSequenceType.objects.get_or_create(slug='consensus',
-                defaults={
-                'name': 'Consensus',
-                })
+                defaults={'name': 'Consensus',})
             if created:
                 self.logger.info('Created protein sequence type {}'.format(sequence_type.name))
 
@@ -97,7 +108,7 @@ class Command(BuildHumanProteins):
             up = dict()
             up['entry_name'] = slugify(consensus_name)
             if Protein.objects.filter(entry_name=up['entry_name']).exists():
-                up['entry_name'] += " " + family.slug.split('_')[0]
+                up['entry_name'] += "-" + family.slug.split('_')[0]
             up['source'] = "OTHER"
             up['species_latin_name'] = proteins[0].species.latin_name
             up['species_common_name'] = proteins[0].species.common_name
@@ -110,9 +121,10 @@ class Command(BuildHumanProteins):
             all_constrictions = []
             constriction_freq = dict()
             consensus_pas = dict() # a constriction has to be in all sequences to be included in the consensus
-            pcs = ProteinConformation.objects.filter(protein__in=proteins, state__slug=settings.DEFAULT_PROTEIN_STATE)
+            pcs = ProteinConformation.objects.filter(protein__in=proteins,
+                state__slug=settings.DEFAULT_PROTEIN_STATE).prefetch_related('protein_anomalies')
             for pc in pcs:
-                pas = pc.protein_anomalies.all()
+                pas = pc.protein_anomalies.all().prefetch_related('generic_number__protein_segment', 'anomaly_type')
                 for pa in pas:
                     pa_label = pa.generic_number.label
                     pa_type = pa.anomaly_type.slug
@@ -158,6 +170,4 @@ class Command(BuildHumanProteins):
                     protein_anomalies = []
                 if segment_slug in segment_starts:
                     create_or_update_residues_in_segment(pc, segment, segment_starts[segment_slug],
-                        segment_ends[segment_slug], schemes, ref_positions, protein_anomalies, True)
-
-        self.logger.info('COMPLETED CREATING CONSENSUS SEQUENCES')
+                        segment_ends[segment_slug], self.schemes, ref_positions, protein_anomalies, True)
