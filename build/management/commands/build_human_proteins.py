@@ -2,24 +2,22 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
 
+from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource)
 from residue.models import ResidueNumberingScheme
 
-import logging
 import shlex
 import os
 from urllib.request import urlopen
 
-class Command(BaseCommand):
-    help = 'Reads source data and creates protein families, proteins, and associated tables'
 
-    logger = logging.getLogger(__name__)
+class Command(BaseBuild):
+    help = 'Reads source data and creates protein families, proteins, and associated tables'
 
     protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'proteins_and_families.txt'])
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'uniprot', 'txt'])
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
-
 
     def handle(self, *args, **options):
         # create parent protein family, 000

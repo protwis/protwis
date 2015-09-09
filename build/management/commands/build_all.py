@@ -29,7 +29,7 @@ class Command(BaseCommand):
             ['find_protein_templates', {'njobs': njobs}],
             ['update_alignments', {'njobs': njobs}],
             ['build_protein_sets'],
-            ['build_consensus_sequences'],
+            ['build_consensus_sequences', {'njobs': njobs}],
         ]
 
         for c in commands:
@@ -39,3 +39,5 @@ class Command(BaseCommand):
                 call_command(c[0], **c[1])
             else:
                 call_command(c[0])
+
+        print('{} Build completed'.format(datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')))

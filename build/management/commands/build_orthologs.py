@@ -71,7 +71,7 @@ class Command(BuildHumanProteins):
 
             # check whether reference positions exist for this protein, and find them if they do not
             ref_position_file_path = os.sep.join([self.ref_position_source_dir, up['entry_name'] + '.yaml'])
-            auto_ref_position_file_path = os.sep.join([self.ref_position_source_dir, up['entry_name'] + '.yaml'])
+            auto_ref_position_file_path = os.sep.join([self.auto_ref_position_source_dir, up['entry_name'] + '.yaml'])
             if not os.path.isfile(ref_position_file_path):
                 # look for the file in the automatically generated reference file dir
                 if not os.path.isfile(auto_ref_position_file_path):
