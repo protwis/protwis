@@ -19,7 +19,7 @@ from common.models import WebResource
 from common.models import WebLink
 
 
-from os import path, listdir
+from os import path, listdir, devnull
 from os.path import isfile, join
 import yaml
 from operator import itemgetter
@@ -126,9 +126,7 @@ def updateall(request):
     #return render(request,'interaction/view.html',{'form': form, 'pdbname': pdbname, 'structures': structures})
 
 def runcalculation(pdbname):
-    call(["python", "interaction/functions.py","-p",pdbname])
-    #process = Popen(["python", "interaction/functions.py","-p",pdbname], stdout=DEVNULL, stderr=DEVNULL)
-    #process.communicate() #now wait
+    call(["python", "interaction/functions.py","-p",pdbname], stdout=open(devnull, 'wb'), stderr=open(devnull, 'wb'))
     return None
 
 def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #consider skipping non hetsym ligands FIXME
