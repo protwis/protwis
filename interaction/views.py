@@ -35,8 +35,6 @@ AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
      'MET':'M', 'PHE':'F', 'PRO':'P', 'SER':'S',
      'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V'}
 
-module_dir = path.dirname(__file__)
-
 def regexaa(aa):
     aaPattern = re.compile(r'^(\w{3})(\d+)(\w+)$') 
     result = aaPattern.search(aa).groups() #Splits the string into AA number CHAIN : LEU339A => ('LEU', '339', 'A')
@@ -135,8 +133,8 @@ def runcalculation(pdbname):
 
 def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #consider skipping non hetsym ligands FIXME
     logger = logging.getLogger('build')
-    mypath = module_dir+'/temp/results/'+pdbname+'/output'
     mypath = '/tmp/interactions/results/'+pdbname+'/output'
+    module_dir = '/tmp/interactions'
     results = []
     web_resource, created = WebResource.objects.get_or_create(slug='pdb',url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
     web_link, created = WebLink.objects.get_or_create(web_resource=web_resource,index=pdbname)
@@ -149,10 +147,11 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
         #quit() #quit!
 
         if structure.pdb_data is None:
-            f = module_dir+"/temp/pdbs/"+pdbname+".pdb"
+            f = module_dir+"/pdbs/"+pdbname+".pdb"
             if isfile(f):      
                 pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read()) #does this close the file?
             else:
+                print('quitting due to no pdb in filesystem')
                 quit()
             structure.pdb_data = pdbdata
             structure.save()
@@ -215,11 +214,12 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
              
                 #proteinligand, created = ProteinLigandInteraction.objects.get_or_create(protein=protein,ligand=ligand)
 
-                f = module_dir+"/temp/results/"+pdbname+"/interaction"+"/"+pdbname+"_"+temp[1]+".pdb"
+                f = module_dir+"/results/"+pdbname+"/interaction"+"/"+pdbname+"_"+temp[1]+".pdb"
                 if isfile(f):      
                     pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read()) #does this close the file?
                     if debug: print("Found file"+f)
                 else:
+                    print('quitting due to no pdb for fragment in filesystem',f)
                     quit()
 
 
@@ -272,8 +272,8 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                             for pair in entry[3]:
                                 fragment = pair[0] #NEED TO EXPAND THIS TO INCLUDE MORE INFO
 
-                                f = module_dir+"/temp/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_"+fragment+"_HB.pdb"
-                                if interactiontype=='hbondplus':  f = module_dir+"/temp/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_"+fragment+"_HBC.pdb"
+                                f = module_dir+"/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_"+fragment+"_HB.pdb"
+                                if interactiontype=='hbondplus':  f = module_dir+"/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_"+fragment+"_HBC.pdb"
                                 if isfile(f):      
                                     if debug: print("Found file"+f)
                                     f_in = open(f, 'r')
@@ -324,7 +324,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                                 fragment = pair[1] #NEED TO EXPAND THIS TO INCLUDE MORE INFO
 
                                 #mypath = module_dir+'/temp/results/'+pdbname+'/fragments'
-                                f = module_dir+"/temp/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_"+fragment+"_HB.pdb"
+                                f = module_dir+"/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_"+fragment+"_HB.pdb"
                                 if isfile(f):      
                                     if debug: print("Found file"+f)
                                     f_in = open(f, 'r')
@@ -372,14 +372,14 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
 
                             fragment = '' #NEED TO EXPAND THIS TO INCLUDE MORE INFO
 
-                            f = module_dir+"/temp/results/"+pdbname+"/ligand/"+temp[1]+"_"+pdbname+".pdb"
+                            f = module_dir+"/results/"+pdbname+"/ligand/"+temp[1]+"_"+pdbname+".pdb"
                             if isfile(f):      
                                 liganddata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read()) #does this close the file?
                                 if debug: logger.info("Hydro Found file"+f)
                             else:
                                 quit()
 
-                            f = module_dir+"/temp/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"__hydrop.pdb"
+                            f = module_dir+"/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"__hydrop.pdb"
                             rotamer_data, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read())
 
                             rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
@@ -408,7 +408,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                                 residue, created=Residue.objects.get_or_create(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
                                 #continue #SKIP THESE -- mostly fusion residues that aren't mapped yet.
 
-                            f = module_dir+"/temp/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_aromatic_"+str(entry[1])+".pdb"
+                            f = module_dir+"/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_aromatic_"+str(entry[1])+".pdb"
                             if isfile(f):      
                                 if debug: logger.info("Found file"+f)
                                 f_in = open(f, 'r')
