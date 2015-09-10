@@ -8,6 +8,8 @@ from residue.functions import *
 
 import os
 import yaml
+from optparse import make_option
+from multiprocessing import Queue, Process
 
 class Command(BaseBuild):
     help = 'Creates residue records'

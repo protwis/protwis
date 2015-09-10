@@ -27,7 +27,7 @@ class Command(BaseCommand):
                 self.purge_files()
                 self.separate(filename)
         else:
-            self.logger.info()
+            self.logger.error('No filename specified, aborting')
 
     def purge_files(self):
         shutil.rmtree(self.local_uniprot_dir)
