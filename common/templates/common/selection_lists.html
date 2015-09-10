@@ -11,9 +11,16 @@
         {% for selected_item in selected_items %}
         <div class="target-selection">
             {% if selection_type == 'segments' %}
-                {{ selected_item.item.slug|safe }}
+                {% if selected_item.type == 'residue' %}
+                    {{ selected_item.item.label|safe }} [{{ selected_item.item.scheme.short_name|safe }}]
+                {% else %}
+                    {{ selected_item.item.slug|safe }}
+                {% endif %}
             {% else %}
                 {{ selected_item.item.name|safe }}
+                {% if selected_item.item.species.common_name %}
+                    [{{ selected_item.item.species.common_name|safe }}]
+                {% endif %}
             {% endif %}
 
             ({{ selected_item.type_title }})

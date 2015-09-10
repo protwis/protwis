@@ -1,6 +1,37 @@
-{% for s in ss %}
-    <a href="javascript:void(0)" onclick="AddToSelection('segments', '{{ s.category }}', '{{ s.id }}')"
-    class="btn btn-primary btn-sm">
-        {{ s.slug }}
-    </a>
+    <h5>Predefined selections</h5>
+    <div class="btn-group" role="group">
+        <a href="javascript:void(0)" onclick="SelectFullSequence('segments')"
+        class="btn btn-primary btn-sm">
+            Full sequence
+        </a>
+    </div>
+    <div class="btn-group" role="group">
+        <a href="javascript:void(0)" onclick="SelectAlignableSegments('segments')"
+        class="btn btn-primary btn-sm">
+            All TMs
+        </a>
+    </div>
+{% for ss_cat in ss_cats %}
+    <h5>{{ ss_cat.0.title }}</h5>
+    {% for s in ss %}
+        {% if s.category = ss_cat.0 %}
+        <div class="btn-group" role="group">
+            <a href="javascript:void(0)" onclick="AddToSelection('segments', '{{ s.category }}', '{{ s.id }}')"
+            class="btn btn-primary btn-sm">
+                {{ s.slug }}
+            </a>
+            {% if s.generic_numbers.all %}
+            <a href="javascript:void(0)" onclick="ExpandSegment('{{ s.id }}')"
+            class="btn btn-primary btn-sm">
+                <span class="glyphicon glyphicon-arrow-down"></span>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% endfor %}
 {% endfor %}
+
+<p>
+<div id='segment-generic-numbers'>
+</div>
+</p>

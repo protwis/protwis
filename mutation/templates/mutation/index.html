@@ -1,0 +1,10 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+Inserted {{ inserted }} |  Skipped {{ skipped }}
+        <ul>
+    {% for r in rows %}
+        <li>{{ r }}</li>
+    {% endfor %}
+    </ul>
+{% endblock %}

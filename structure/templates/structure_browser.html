@@ -1,0 +1,177 @@
+﻿{% extends "home/base.html" %}
+{% load staticfiles %}
+{% load structure_extras %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            var table = $('#crystal_structures').DataTable({
+                "scrollX": true,
+                "scrollY": 600,
+                "bScrollCollapse": true,
+                'paging': false,
+                orderCellsTop: true,
+                "autoWidth": true,
+                dom: 'T<"clear">lfrtip',
+                "aoColumnDefs": [
+                    { "sType": "string", "aTargets": [0] },
+                    { "sType": "string", "aTargets": [9] },
+                ],
+                tableTools: {
+                    "sRowSelect": "multi",
+                    "aButtons": ["select_all", "select_none"]
+                },
+                initComplete: function () {
+                    $('#crystal_structures').dataTable().columnFilter({
+                        sPlaceHolder: "head:after",
+                        sRangeFormat: "{from}:{to}",
+                        aoColumns: [
+                            { type: "select" }, //protein name
+                            { type: "select" }, //class
+                            { type: "select" }, //specie
+                            { type: "text" }, //pdb code
+                            { type: "text" }, //endogenous ligand name
+                            { type: "number-range" }, //resolution
+                            { type: "text" }, //x-ray ligand
+                            { type: "text" }, //preferred chain
+                            { type: "text" }, //pmid
+                            { type: "date-range" }, //publication date
+                            { type: "text" }, //stabilizing agent - left as type-in for now
+                        ]
+                    });
+                }
+            });
+            $.datepicker.regional[""].dateFormat = "yy-mm-dd";
+            $.datepicker.setDefaults($.datepicker.regional['']);
+            $('#crystal_structures tbody').on('click', 'tr', function () {
+                $(this).toggleClass('selected');
+            });
+            $('#ref_btn').click(function () {
+                if ( table.rows('.selected').data().length != 1 ) {
+                    alert("Can only use one reference structure!!!");
+                }
+                else {
+                    alert('You have selected ' + table.rows('.selected').data()[0][3])
+                    AddToSelection('reference', 'structure', table.rows('.selected').data()[0][3]);
+                }
+
+            });
+            $('#alt_btn').click(function () {
+                var selected_data = table.rows('.selected').data();
+                for (i = 0; i < selected_data.length; i++) {
+                    AddToSelection('targets', 'structure', selected_data[i][3]);
+                    alert(selected_data[i][3])
+                }
+            });
+            });
+    </script> 
+{% endblock %}
+
+{% block content %}
+
+    <div class="btn-group">
+        <a id="ref_btn" class="btn btn-primary btn-mini" href="#"><i class="icon-download icon-white"></i>Select as reference</a>
+    </div>
+    <div class="btn-group">
+        <a id="alt_btn" class="btn btn-primary btn-mini " href="#"><i class="icon-download icon-white"></i>Select as altering</a>
+    </div>
+    <div class="btn-group">
+        <a class="btn btn-primary btn-mini " href="/structure/superposition_workflow_index">Go to superposition workflow</a>
+    </div>
+    <br />
+    <br />
+    {% if crystals %}              
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+            <table width="100%" class="display" id="crystal_structures">
+
+                <thead>
+                    <tr>
+                        <th>Protein name</th>
+                        <th>Protein class</th>
+                        <th>Species</th>
+                        <th>PDB code</th>
+                        <th>Endogenous ligand</th>
+                        <th>Resolution</th>
+                        <th>X-ray ligand</th>
+                        <th>Preferred chain</th>
+                        <th>PMID</th>
+                        <th>Publication date</th>
+                        <th>Stabilizing agents</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th>Protein name</th>
+                        <th>Protein class</th>
+                        <th>Species</th>
+                        <th>PDB code</th>
+                        <th>Endogenous ligand</th>
+                        <th>Resolution</th>
+                        <th>X-ray ligand</th>
+                        <!--<th>Ligand function</th>-->
+                        <th>Preferred chain</th>
+                        <th>PMID</th>
+                        <th>Publication date</th>
+                        <!--<th>G protein-bound</th>-->
+                        <th>Stabilizing agents</th>
+                    </tr>
+                </tfoot>
+                {% for crystal in crystals.select_related.all %}
+                <tr>
+                    <td>{{ crystal.protein_conformation.protein.family.name|safe }}</td>
+                    <td>{{ crystal.protein_conformation.protein.get_protein_class }}</td>
+                    <td>{{ crystal.protein_conformation.protein.species.latin_name }}</td>
+                    <td><a href="{{ crystal.pdb_code.index}}">{{ crystal.pdb_code.index}}</a></td>
+                    <td>{{ crystal.protein_conformation.protein.endogenous_ligands.all|join_attr:"name" }}</td>
+                    <td>{{ crystal.resolution}}</td>
+                    <td>{{ crystal.ligands.all|join_attr:"name" }}</td>
+                    <!--<td>{{ crystal.ligand.role.role }}</td>-->
+                    <td>{{ crystal.preferred_chain }}</td>
+                    <td>{{ crystal.publication.web_link.index }}</td>
+                    <td>{{ crystal.publication_date|date:"Y-m-d" }}</td>
+                    <td>{{ crystal.stabilizing_agents.all|join_attr:"name" }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    {% else %}
+        <p> Ooops! There is no data to show here yet. </p>
+    {% endif %}
+
+{% endblock %}

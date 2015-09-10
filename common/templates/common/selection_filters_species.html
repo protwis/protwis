@@ -1,15 +1,15 @@
 <b>Species</b>
 <div class="btn-group btn-group-sm" role="group">
     <a href="javascript:void(0)" onclick="SelectionSpeciesPredefined('Human')"
-        class="btn btn-default{% if selection.species|length == 1 and selection.species.0.item.common_name == 'Human' %} active{% endif %}">
+        class="btn btn-primary{% if selection.species|length == 1 and selection.species.0.item.common_name == 'Human' %} active{% endif %}">
         Human
     </a>
     <a href="javascript:void(0)" onclick="SelectionSpeciesPredefined('All')"
-        class="btn btn-default{% if selection.species|length == sps|length %} active{% endif %}">
+        class="btn btn-primary{% if selection.species|length == sps|length %} active{% endif %}">
         All
     </a>
     <a data-toggle="modal" data-target="#SpeciesSelector"
-        class="btn btn-default{% if selection.species|length == 1 and selection.species.0.item.common_name != 'Human' or selection.species|length > 1 and selection.species|length < sps|length %} active{% endif %}">
+        class="btn btn-primary{% if selection.species|length == 1 and selection.species.0.item.common_name != 'Human' or selection.species|length > 1 and selection.species|length < sps|length %} active{% endif %}">
         Other..
     </a>
 </div>

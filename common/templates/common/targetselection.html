@@ -9,7 +9,7 @@
 
             <!-- main description -->
             <div class="col-md-12 well">
-                {% if step and number_of_steps %}
+                {% if step and number_of_steps and number_of_steps > 1 %}
                 <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
                 {% endif %}
                 <h4>{{ title }}</h4>
@@ -42,12 +42,32 @@
             </div>
             {% endif %}
 
+            <!-- generic numbering schemes -->
+            {% if numbering_schemes %}
+            <div class="col-md-12 well">
+                <h4>Numbering schemes</h4>
+                <div id="filters-schemes">
+                    {% include 'common/selection_filters_numbering_schemes.html' %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- target search -->
             {% if search %}
             <div class="col-md-12 well">
                 <h4>Search</h4>
                 <div class="ui-widget">
                     <input id="selection-autocomplete" size="30">
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- protein sets -->
+            {% if psets %}
+            <div class="col-md-12 well">
+                <h4>Predefined sets</h4>
+                <div>
+                    {% include 'common/targetselection_predefined.html' %}
                 </div>
             </div>
             {% endif %}
@@ -68,7 +88,7 @@
         <div class="col-md-4">
 
             <!-- button(s) -->
-            {% if buttons %}
+            {% if buttons.continue.label %}
             <div id="selection-buttons">
                 {% include 'common/selection_buttons.html' %}
             </div>
@@ -92,6 +112,7 @@
 {% block addon_js %}
     <script type="text/javascript">
         var type_of_selection = '{{ type_of_selection }}';
+        var redirect_url = '{{ buttons.continue.url }}'
     </script>
     <script src="{% static 'home/js/selection-autocomplete.js' %}"></script>
     <script src="{% static 'home/js/selection-filters.js' %}"></script>

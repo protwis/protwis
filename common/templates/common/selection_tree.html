@@ -16,13 +16,18 @@
     <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ ppf.id }}')"
         class="target-selection">
     {% endif %}
+    {% if type_of_selection == 'browse' %}
+    <a href="javascript:void(0)" onclick="setTimeout(function(){window.location = '/family/{{ ppf.slug }}';}, 200);"
+        class="target-selection">
+    {% endif %}
         {{ ppf.name|safe }}
-    {% if type_of_selection == 'targets' %}
+    {% if type_of_selection == 'targets' or type_of_selection == 'browse' %}
     </a>
     {% endif %}
     <br />
 </div>
 {% endif %}
+
 {% for pf in pfs %}
 <div id="{{ pf.id }}">
     {% for i in tree_indent_level %}
@@ -37,8 +42,12 @@
     <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ pf.id }}')"
         class="target-selection">
     {% endif %}
+    {% if type_of_selection == 'browse' %}
+    <a href="javascript:void(0)" onclick="setTimeout(function(){window.location = '/family/{{ pf.slug }}';}, 200);"
+        class="target-selection">
+    {% endif %}
         {{ pf.name|safe }}
-    {% if type_of_selection == 'targets' %}
+    {% if type_of_selection == 'targets' or type_of_selection == 'browse' %}
     </a>
     {% endif %}
     <br />
@@ -49,9 +58,24 @@
     {% for i in tree_indent_level %}
         &nbsp;&nbsp
     {% endfor %}
-<span class="glyphicon glyphicon-record"></span>
-<a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'protein', '{{ p.id }}')"
+    {% if p.source.name == 'SWISSPROT' %}
+<span class="glyphicon glyphicon-star"></span>
+    {% elif p.sequence_type.slug == 'mod' %}
+<span class="glyphicon glyphicon-edit"></span>
+    {% elif p.sequence_type.slug == 'consensus' %}
+<span class="glyphicon glyphicon-compressed"></span>
+    {% else %}
+    }
+<span class="glyphicon glyphicon-star-empty"></span>
+    {% endif %}
+    {% if type_of_selection == 'browse' %}
+<a href="javascript:void(0)" onclick="setTimeout(function(){window.location = '/protein/{{ p.entry_name }}';}, 200);"
     class="target-selection">
+    {% else %}
+<a href="javascript:void(0)" class="target-selection" onclick="AddToSelection('{{ type_of_selection }}', 'protein',
+    '{{ p.id }}');
+    if (type_of_selection == 'reference') {setTimeout(function(){window.location = redirect_url;}, 200);};">
+    {% endif %}
     {{ p.name|safe }} [{{ p.species.common_name|safe }}]
 </a><br />
 <div id="{{ p.id }}"></div>

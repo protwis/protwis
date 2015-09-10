@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, url, include
+﻿from django.conf.urls import patterns, url, include
 
 from common import views
 
@@ -11,4 +11,10 @@ urlpatterns = patterns('',
     url(r'^selectionannotation', views.SelectionAnnotation, name='selectionannotation'),
     url(r'^selectionspeciespredefined', views.SelectionSpeciesPredefined, name='selectionspeciespredefined'),
     url(r'^selectionspeciestoggle', views.SelectionSpeciesToggle, name='selectionspeciestoggle'),
+    url(r'^expandsegment', views.ExpandSegment, name='expandsegment'),
+    url(r'^selectfullsequence', views.SelectFullSequence, name='selectfullsequence'),
+    url(r'^selectalignablesegments', views.SelectAlignableSegments, name='selectalignablesegments'),
+    url(r'selectionschemespredefined', views.SelectionSchemesPredefined, name='selectionschemespredefined'),
+    url(r'selectionschemestoggle', views.SelectionSchemesToggle, name='selectionschemestoggle'),
+    url(r'settreeselection', views.SetTreeSelection, name='settreeselection'),
 )

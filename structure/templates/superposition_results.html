@@ -1,0 +1,22 @@
+﻿{% block superposition_results %}
+    <h4>Results for your query: </h4>
+    <div class='row-fluid well well-small selection-box'>
+        {% if success %}
+            Structures superposed successufully.
+        {% else %}
+            Failed to superpose onto structure {{ input_file }}
+        {% endif %}
+        {{ message }}
+    </div>
+    <br />
+    <hr />
+    {% if success %}
+        {% if outfile %}
+            <div>
+                <a class="btn btn-small" href="/structure/{{ zip }}output/{{ outfile }}/{{ replacement_tag }}">
+                    <i class="icon-download">Output file<i>
+                </a>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endblock %}

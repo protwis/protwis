@@ -1,0 +1,20 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+Hi please select the pdb file to analyse:
+<form action="calculate" method="post">
+{% csrf_token %}
+    <label for="pdbname">PDBname</label>
+    <input id="pdbname" type="text" name="pdbname" value="">
+    <input type="submit" value="OK">
+</form>
+
+
+{% for structure in structures %}
+    {{structure.structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name}}  | <a href="crystal?pdb={{structure.structure_ligand_pair__structure__pdb_code__index}}">{{structure.structure_ligand_pair__structure__pdb_code__index}}</a> | {{structure.num_ligands}} | {{structure.num_interactions}} <br>
+{% empty %}
+    No structures yet.
+{% endfor %}
+
+
+{% endblock %}

@@ -1,0 +1,56 @@
+﻿{% extends "home/base.html" %}
+{% load staticfiles %}
+
+
+{% block addon_js %}
+    <script src="/static/home/js/selection.js"></script>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+
+        <!-- description boxes -->
+        <div class="col-md-4">
+
+            <!-- main description -->
+            {% if step and number_of_steps %}
+                <div class="col-md-12 well">
+                    <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
+                    {% endif %}
+                    <h4>{{ title }}</h4>
+                    {{ description|safe|linebreaks }}
+                </div>
+
+            <!-- link to docs -->
+            {% if docs %}
+            <div class="col-md-12 well">
+                <p>For more information on this tool, see the <a href="{{ docs }}">docs</a>.</p>
+            </div>
+            {% endif %}
+
+        </div>
+        <div id="middle_col">
+        {% include mid_section %}
+        </div>
+
+        <div class="col-md-4">       
+            <!-- button(s) -->
+            {% if buttons %}
+                <div id="selection-buttons">
+                    {% include 'submit_buttons.html' %}
+                </div>
+            {% endif %}
+
+            <!-- show the selection -->
+            {% for selection_box, include in selection_boxes.items %}
+                {% if include %}
+                <div class="col-md-12 well" id="selection-{{ selection_box }}">
+                    {% with selection_type=selection_box %}
+                        {% include 'common/selection_lists.html' %}
+                    {% endwith %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+{% endblock %}

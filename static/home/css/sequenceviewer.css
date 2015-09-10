@@ -1,0 +1,26 @@
+.seqv {
+    font-family: Lucida Console, monospace;
+    padding: 0px;
+    margin: 0px;
+    text-decoration: none;
+    cursor: pointer; cursor: hand;
+}
+.seqv-segment {
+    font-size: 10px;
+    line-height: 10px;
+}
+.seqv-sequence {
+    
+    font-size: 11px;
+}
+.seqv-number {
+    font-size: 8px;
+    line-height: 10px;
+    text-align: right;
+}
+.col-md-1 {
+    padding: 0;
+}
+.no-wrap {
+    white-space: nowrap;
+}

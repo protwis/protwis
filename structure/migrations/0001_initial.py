@@ -7,68 +7,141 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('common', '0002_auto_20150224_0901'),
-        ('ligand', '0002_auto_20150225_1441'),
-        ('protein', '0003_delete_proteinresource'),
+        ('interaction', '0001_initial'),
+        ('residue', '0001_initial'),
+        ('ligand', '0001_initial'),
+        ('common', '0001_initial'),
+        ('protein', '0001_initial'),
     ]
 
     operations = [
+        migrations.CreateModel(
+            name='Fragment',
+            fields=[
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
+                ('ligand', models.ForeignKey(to='ligand.Ligand')),
+            ],
+            options={
+                'db_table': 'structure_fragment',
+            },
+        ),
+        migrations.CreateModel(
+            name='PdbData',
+            fields=[
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
+                ('pdb', models.TextField()),
+            ],
+            options={
+                'db_table': 'structure_pdb_data',
+            },
+        ),
+        migrations.CreateModel(
+            name='Rotamer',
+            fields=[
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
+                ('pdbdata', models.ForeignKey(to='structure.PdbData')),
+                ('residue', models.ForeignKey(to='residue.Residue')),
+            ],
+            options={
+                'db_table': 'structure_rotamer',
+            },
+        ),
         migrations.CreateModel(
             name='Structure',
             fields=[
                 ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('preferred_chain', models.CharField(max_length=20)),
-                ('resolution', models.DecimalField(decimal_places=3, max_digits=5)),
-                ('publication', models.CharField(max_length=20)),
-                ('pdb_publication_date', models.DateField()),
-                ('endogenous_ligand', models.ForeignKey(related_name='endogenous_ligand', null=True, to='ligand.Ligand')),
+                ('resolution', models.DecimalField(max_digits=5, decimal_places=3)),
+                ('publication_date', models.DateField()),
+                ('ligands', models.ManyToManyField(to='ligand.Ligand', through='interaction.StructureLigandInteraction')),
                 ('pdb_code', models.ForeignKey(to='common.WebLink')),
-                ('protein', models.ForeignKey(to='protein.Protein')),
+                ('pdb_data', models.ForeignKey(null=True, to='structure.PdbData')),
+                ('protein_anomalies', models.ManyToManyField(to='protein.ProteinAnomaly')),
+                ('protein_conformation', models.ForeignKey(to='protein.ProteinConformation')),
+                ('publication', models.ForeignKey(null=True, to='common.Publication')),
             ],
             options={
                 'db_table': 'structure',
             },
-            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='StructureModel',
+            fields=[
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
+                ('protein', models.ForeignKey(to='protein.Protein')),
+            ],
+            options={
+                'db_table': 'structure_model',
+            },
+        ),
+        migrations.CreateModel(
+            name='StructureSegment',
+            fields=[
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
+                ('start', models.IntegerField()),
+                ('end', models.IntegerField()),
+                ('protein_segment', models.ForeignKey(to='protein.ProteinSegment')),
+                ('structure', models.ForeignKey(to='structure.Structure')),
+            ],
+            options={
+                'db_table': 'structure_segment',
+            },
         ),
         migrations.CreateModel(
             name='StructureStabilizingAgent',
             fields=[
                 ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('slug', models.SlugField(max_length=20)),
+                ('name', models.CharField(max_length=100)),
             ],
             options={
                 'db_table': 'structure_stabilizing_agent',
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='StructureType',
             fields=[
                 ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('slug', models.SlugField(max_length=20)),
-                ('description', models.TextField()),
+                ('name', models.CharField(max_length=100)),
             ],
             options={
                 'db_table': 'structure_type',
             },
-            bases=(models.Model,),
         ),
         migrations.AddField(
             model_name='structure',
             name='stabilizing_agents',
-            field=models.ManyToManyField(null=True, to='structure.StructureStabilizingAgent'),
-            preserve_default=True,
+            field=models.ManyToManyField(to='structure.StructureStabilizingAgent'),
+        ),
+        migrations.AddField(
+            model_name='structure',
+            name='state',
+            field=models.ForeignKey(to='protein.ProteinState'),
         ),
         migrations.AddField(
             model_name='structure',
             name='structure_type',
             field=models.ForeignKey(to='structure.StructureType'),
-            preserve_default=True,
         ),
         migrations.AddField(
-            model_name='structure',
-            name='xray_ligand',
-            field=models.ForeignKey(related_name='xray_ligand', null=True, to='ligand.Ligand'),
-            preserve_default=True,
+            model_name='rotamer',
+            name='structure',
+            field=models.ForeignKey(to='structure.Structure'),
+        ),
+        migrations.AddField(
+            model_name='fragment',
+            name='pdbdata',
+            field=models.ForeignKey(to='structure.PdbData'),
+        ),
+        migrations.AddField(
+            model_name='fragment',
+            name='residue',
+            field=models.ForeignKey(to='residue.Residue'),
+        ),
+        migrations.AddField(
+            model_name='fragment',
+            name='structure',
+            field=models.ForeignKey(to='structure.Structure'),
         ),
     ]

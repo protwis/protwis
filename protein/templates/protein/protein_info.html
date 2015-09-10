@@ -1,0 +1,42 @@
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>FAMILY</h4>
+    </div>
+    <div class="col-md-10">
+        <h4><small>
+            {{ families|safeseq|join:" <span class='glyphicon glyphicon-arrow-right' aria-hidden='true'></span> " }}
+        </h4></small>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>GENE</h4>
+    </div>
+    <div class="col-md-10">
+        <h4><small>{{ gene }} {% if alt_genes %} ({{ alt_genes|join:", " }}){% endif %}</small></h4>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>ORGANISM</h4>
+    </div>
+    <div class="col-md-10">
+        <h4><small>{{ p.species.common_name }} ({{ p.species.latin_name.strip }})</small></h4>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>ALT. NAMES</h4>
+    </div>
+    <div class="col-md-10">
+        <h4><small>{{ aliases|join:", " }}</small></h4>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>SOURCE</h4>
+    </div>
+    <div class="col-md-10">
+        <h4><small>{{ p.source.name }}</small></h4>
+    </div>
+</div>
