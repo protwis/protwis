@@ -33,8 +33,16 @@ class Command(BuildHumanProteins):
         for source_file in filenames:
             source_file_name = os.sep.join([self.local_uniprot_dir, source_file])
             self.logger.info('Processing accession ' + source_file)
-            accession = source_file.split(".")[0]
+            split_filename = source_file.split(".")
+            accession = split_filename[0]
+            extension = split_filename[1]
+            if extension != 'txt':
+                continue
             up = self.parse_uniprot_file(accession)
+
+            # skip human proteins
+            if 'species_latin_name' in up and up['species_latin_name'] == 'Homo sapiens':
+                continue
 
             # is there already an entry for this protein?
             try:
