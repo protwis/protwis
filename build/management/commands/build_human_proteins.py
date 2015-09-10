@@ -16,7 +16,7 @@ class Command(BaseBuild):
     help = 'Reads source data and creates protein families, proteins, and associated tables'
 
     protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'proteins_and_families.txt'])
-    local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'uniprot', 'txt'])
+    local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
 
     def handle(self, *args, **options):
