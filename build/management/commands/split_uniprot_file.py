@@ -27,8 +27,7 @@ class Command(BaseCommand):
                 self.purge_files()
                 self.separate(filename)
         else:
-            njobs = 1
-        self.separate()
+            self.logger.info()
 
     def purge_files(self):
         shutil.rmtree(self.local_uniprot_dir)
