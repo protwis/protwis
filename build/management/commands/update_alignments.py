@@ -185,27 +185,19 @@ class Command(BaseCommand):
                         for pa, parss in anomaly_rule_sets[segment.slug].items():
                             # if there exists a structure for this particular protein, don't use the rules
                             ignore_rules = False
-                            current_protein = pconf.protein
-                            template_structure_protein = pconf.template_structure.protein_conformation.protein.parent
-                            if current_protein == template_structure_protein:
-                                ignore_rules = True
-                                self.logger.info('Ignoring anomaly rules because structure of protein {} exists'
-                                    .format(current_protein))
+
+                            if pconf.protein.parent:
+                                # use parent protein for constructs and other non wild-type sequences
+                                current_protein = pconf.protein.parent
                             else:
-                                # check similarity of protein and template
-                                a = Alignment()
-                                a.load_reference_protein(current_protein)
-                                a.load_proteins([template_structure_protein])
-                                a.load_segments([segment])
-                                a.build_alignment()
-                                a.calculate_similarity()
-                                
-                                # apply a similarity cut-off
-                                similarity = int(a.proteins[1].similarity)
-                                if similarity > 50:
-                                    ignore_rules = True
-                                    self.logger.info('Ignoring anomaly rules for {} due to high similarity ({}%) to {}'
-                                        .format(current_protein, similarity, template_structure_protein))
+                                current_protein = pconf.protein
+                            current_gene = current_protein.gene_set.order_by('position')[0]
+                            template_structure_protein = pconf.template_structure.protein_conformation.protein.parent
+                            template_structure_gene = template_structure_protein.gene_set.order_by('position')[0]
+                            if current_gene == template_structure_gene:
+                                ignore_rules = True
+                                self.logger.info('Ignoring anomaly rules because of {} structure'
+                                    .format(template_structure_protein))
 
                             # check whether this anomaly is inside the segment borders
                             if not generic_number_within_segment_borders(pa, main_tpl_gn_labels):
