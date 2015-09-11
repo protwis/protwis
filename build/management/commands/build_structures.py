@@ -458,6 +458,6 @@ class Command(BaseCommand):
                     try:
                         parsecalculation(sd['pdb'],False)
                     except:
-                        self.logger.error('Error parsing interactions output for '.sd['pdb'])
+                        self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
 
         self.logger.info('COMPLETED CREATING PDB STRUCTURES')
