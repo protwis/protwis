@@ -343,7 +343,14 @@ class Command(BaseCommand):
                                 pdb_reference = None
                                 if ligand['name'] in hetsyn: pdb_reference = hetsyn[ligand['name']]
                                 if Ligand.objects.filter(name=ligand['name'], canonical=True).exists(): #if this name is canonical and it has a ligand record already
-                                    l = Ligand.objects.get(name=ligand['name'], canonical=True)
+                                    try:
+                                        l = Ligand.objects.get(name=ligand['name'], canonical=True)
+                                    except: 
+                                        try:
+                                            l = Ligand.objects.filter(name=ligand['name'], canonical=True, properities__inchikey__isnull=False)[0]
+                                        except:
+                                            self.logger.error('Skipping '+ligand['name']+" for "+sd['pdb'] +' Something wrong with getting ligand from DB')
+                                            continue
                                 elif Ligand.objects.filter(name=ligand['name'], canonical=False, ambigious_alias=False).exists(): #if this matches an alias that only has "one" parent canonical name - eg distinct
                                     l = Ligand.objects.get(name=ligand['name'], canonical=False, ambigious_alias=False)
                                 elif Ligand.objects.filter(name=ligand['name'], canonical=False, ambigious_alias=True).exists(): #if this matches an alias that only has several canonical parents, must investigate, start with empty.
