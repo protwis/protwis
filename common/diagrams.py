@@ -79,7 +79,7 @@ class Diagram:
 
         print(str(self.receptorId))
 
-        output += '<br><button style="width:120px;" onclick="applyPresentColors(\''+self.type+'\')">Properities</button> <button style="width:120px;" onclick="resetColors(\''+self.type+'\')">Clear</button>'
+        output += '<br><button style="width:120px;" onclick="applyPresentColors(\''+self.type+'\')">Properties</button> <button style="width:120px;" onclick="resetColors(\''+self.type+'\')">Clear</button>'
         output += '<br><button style="width:120px;" onclick="ajaxMutants(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Mutants</button>'
         output += ' <button style="width:220px;" onclick="ajaxInteractions(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Interactions from Crystals</button>'
 
