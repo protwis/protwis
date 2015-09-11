@@ -349,7 +349,7 @@ class Command(BaseCommand):
                                         try:
                                             l = Ligand.objects.filter(name=ligand['name'], canonical=True, properities__inchikey__isnull=False)[0]
                                         except:
-                                            self.logger.error("Skipping "+ligand['name']+" for "+sd['pdb'] +" Something wrong with getting ligand from DB")
+                                            self.logger.error('Skipping '+ligand['name']+" for "+sd['pdb'] +' Something wrong with getting ligand from DB')
                                             continue
                                 elif Ligand.objects.filter(name=ligand['name'], canonical=False, ambigious_alias=False).exists(): #if this matches an alias that only has "one" parent canonical name - eg distinct
                                     l = Ligand.objects.get(name=ligand['name'], canonical=False, ambigious_alias=False)
@@ -364,7 +364,7 @@ class Command(BaseCommand):
                                     l.save()
                                     l.load_by_name(ligand['name'])
                                 else: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.
-                                    self.logger.info("Inserting "+ligand['name']+" for "+sd['pdb'])
+                                    self.logger.info('Inserting '+ligand['name']+" for "+sd['pdb'])
                                     lp = LigandProperities()
                                     lp.save()
                                     l = Ligand()
@@ -458,6 +458,6 @@ class Command(BaseCommand):
                     try:
                         parsecalculation(sd['pdb'],False)
                     except:
-                        self.logger.error('Error parsing interactions output for '+sd['pdb'])
+                        self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
 
         self.logger.info('COMPLETED CREATING PDB STRUCTURES')
