@@ -191,13 +191,15 @@ class Command(BaseCommand):
                                 current_protein = pconf.protein.parent
                             else:
                                 current_protein = pconf.protein
-                            current_gene = current_protein.gene_set.order_by('position')[0]
-                            template_structure_protein = pconf.template_structure.protein_conformation.protein.parent
-                            template_structure_gene = template_structure_protein.gene_set.order_by('position')[0]
-                            if current_gene == template_structure_gene:
-                                ignore_rules = True
-                                self.logger.info('Ignoring anomaly rules because of {} structure'
-                                    .format(template_structure_protein))
+                            current_protein_genes = current_protein.gene_set.order_by('position')
+                            if current_protein_genes.count():
+                                current_gene = current_protein_genes[0]
+                                template_structure_protein = pconf.template_structure.protein_conformation.protein.parent
+                                template_structure_gene = template_structure_protein.gene_set.order_by('position')[0]
+                                if current_gene == template_structure_gene:
+                                    ignore_rules = True
+                                    self.logger.info('Ignoring anomaly rules because of {} structure'
+                                        .format(template_structure_protein))
 
                             # check whether this anomaly is inside the segment borders
                             if not generic_number_within_segment_borders(pa, main_tpl_gn_labels):
