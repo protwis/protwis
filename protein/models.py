@@ -81,7 +81,7 @@ class ProteinState(models.Model):
 
 
 class Gene(models.Model):
-    proteins = models.ManyToManyField('Protein')
+    proteins = models.ManyToManyField('Protein', related_name='genes')
     species = models.ForeignKey('Species')
     name = models.CharField(max_length=100)
     position = models.SmallIntegerField()

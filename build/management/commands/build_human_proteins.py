@@ -221,17 +221,14 @@ class Command(BaseBuild):
 
         # genes
         for i, gene in enumerate(uniprot['genes']):
-            g = Gene()
-            g.species = species
-            g.name = gene
-            g.position = i
-
             try:
-                g.save()
+                g, created = Gene.objects.get_or_create(name=gene, species=species, position=i)
                 g.proteins.add(p)
-                self.logger.info('Created gene ' + g.name + ' for protein ' + p.name)
+
+                if created:
+                    self.logger.info('Created gene ' + g.name + ' for protein ' + p.name)
             except:
-                self.logger.error('Failed creating gene ' + g.name + ' for protein ' + p.name)
+                self.logger.error('Failed creating gene {} for protein {}'.format(gene, p.name))
 
     def create_protein_family(self, family_name, indent, parent_family, level_family_counter):
         # find the parent family
@@ -294,6 +291,9 @@ class Command(BaseBuild):
         # record whether organism has been read
         os_read = False
 
+        # should local file be written?
+        local_file = False
+
         try:
             if os.path.isfile(local_file_path):
                 uf = open(local_file_path, 'r')
@@ -302,6 +302,7 @@ class Command(BaseBuild):
                 uf = urlopen(remote_file_path)
                 remote = True
                 self.logger.info('Reading remote file ' + remote_file_path)
+                local_file = open(local_file_path, 'w')
             
             for raw_line in uf:
                 # line format
@@ -309,6 +310,10 @@ class Command(BaseBuild):
                     line = raw_line.decode('UTF-8')
                 else:
                     line = raw_line
+
+                # write to local file if appropriate
+                if local_file:
+                    local_file.write(line)
                 
                 # end of file
                 if line.startswith('//'):
@@ -366,5 +371,9 @@ class Command(BaseBuild):
             uf.close()
         except:
             return False
+
+        # close the local file if appropriate
+        if local_file:
+            local_file.close()
 
         return up
