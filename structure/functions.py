@@ -27,7 +27,8 @@ ATOM_FORMAT_STRING="%s%5i %-4s%c%3s %c%4i%c   %8.3f%8.3f%8.3f%s%6.2f      %4s%2s
 class BlastSearch(object):
     
     
-    def __init__ (self, blast_path='blastp', blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']), top_results=1):
+    def __init__ (self, blast_path='blastp',
+        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']), top_results=1):
   
         self.blast_path = blast_path
         self.blastdb = blastdb
@@ -47,11 +48,13 @@ class BlastSearch(object):
             logger.debug("Running Blast with sequence: {}".format(input_seq))
             tmp.write(bytes(str(input_seq) + '\n', 'latin1'))
             tmp.seek(0)
-            blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, stdin=tmp, stdout=PIPE, stderr=PIPE)
+            blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, stdin=tmp,
+                stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate()
         else:
         #Rest of the world:
-            blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, shell=True,
+                stdin=PIPE, stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate(input=str(input_seq))
         if len(blast_err) != 0:
             logger.debug(blast_err)
