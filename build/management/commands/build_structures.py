@@ -170,6 +170,12 @@ class Command(BaseCommand):
                     except Structure.DoesNotExist:
                         s = Structure()
 
+                    # is this a representative structure (will be used to guide structure-based alignments)?
+                    representative = False
+                    if 'representative' in sd and sd['representative']:
+                        representative = True
+                        s.representative = True
+
                     # get the PDB file and save to DB
                     if not os.path.exists(self.structure_data_dir+'/../pdbs/'):
                         os.makedirs(self.structure_data_dir+'/../pdbs/')
@@ -187,8 +193,7 @@ class Command(BaseCommand):
                     pdbdata, created = PdbData.objects.get_or_create(pdb=pdbdata_raw)
                     s.pdb_data = pdbdata
 
-
-                    #### UPDATE HETSYN with its PDB reference instead + GRAB PUB DATE, PUMBEDID AND RESOLUTION #####
+                    # UPDATE HETSYN with its PDB reference instead + GRAB PUB DATE, PMID, DOI AND RESOLUTION
                     hetsyn = {}
                     hetsyn_reverse = {}
                     for line in pdbdata_raw.splitlines():
@@ -212,8 +217,8 @@ class Command(BaseCommand):
                     if len(hetsyn) == 0:
                         self.logger.info("PDB file contained NO hetsyn")
 
-                    header=open(pdb_path,'r')
-                    header_dict=parse_pdb_header(header)
+                    header = open(pdb_path,'r')
+                    header_dict = parse_pdb_header(header)
                     header.close()
                     sd['publication_date'] = header_dict['release_date']
                     sd['resolution'] = str(header_dict['resolution']).strip()
@@ -237,8 +242,13 @@ class Command(BaseCommand):
                         self.logger.info(hetsyn)
                         self.logger.info(ligands)
 
-                    yaml.dump(sd,open(source_file_path, 'w'),indent=4)
+                    # endogenous ligand(s)
+                    if 'endogenous_ligand' in sd and sd['endogenous_ligand']:
+                        # name, id
+                        pass
 
+                    # REMOVE? can be used to dump structure files with updated ligands
+                    # yaml.dump(sd, open(source_file_path, 'w'), indent=4)
 
                     # pdb code
                     if 'pdb' in sd:
@@ -329,6 +339,7 @@ class Command(BaseCommand):
 
                     # save structure before adding M2M relations
                     s.save()
+                    
                     # ligands
                     if 'ligand' in sd:
                         if isinstance(sd['ligand'], list):
@@ -413,6 +424,8 @@ class Command(BaseCommand):
                             ps.start = positions[0]
                             ps.end = positions[1]
                             ps.save()
+                    elif representative:
+                        self.logger.warning('Segments not defined for representative structure {}'.format(sd['pdb']))
 
                     # protein anomalies
                     if 'bulges' in sd and sd['bulges']:
