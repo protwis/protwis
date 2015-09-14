@@ -197,7 +197,7 @@ class Command(BaseCommand):
                             current_gene = current_protein_genes[0]
                             template_structure_protein = template_structure.protein_conformation.protein.parent
                             template_structure_gene = template_structure_protein.genes.order_by('position')[0]
-                            if current_gene == template_structure_gene:
+                            if current_gene.name.lower() == template_structure_gene.name.lower():
                                 ignore_rules = True
                                 self.logger.info('Ignoring anomaly rules because of {} structure'
                                     .format(template_structure_protein))
