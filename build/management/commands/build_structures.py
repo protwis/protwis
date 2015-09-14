@@ -3,6 +3,7 @@ from django.conf import settings
 from django.db import connection
 from django.utils.text import slugify
 
+from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinAnomaly, ProteinAnomalyType,
     ProteinSegment)
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue
@@ -20,8 +21,6 @@ import yaml
 from collections import OrderedDict
 import json
 from urllib.request import urlopen
-
-
 from Bio.PDB import parse_pdb_header
 
 ## FOR VIGNIR ORDERED DICT YAML IMPORT/DUMP
@@ -43,19 +42,21 @@ def represent_ordereddict(dumper, data):
 yaml.add_representer(OrderedDict, represent_ordereddict)
 yaml.add_constructor(_mapping_tag, dict_constructor)
 
-class Command(BaseCommand):
+class Command(BaseBuild):
     help = 'Reads source data and creates pdb structure records'
     
     def add_arguments(self, parser):
+        parser.add_argument('--njobs', action='store', dest='njobs', help='Number of jobs to run')
         parser.add_argument('--filename', action='append', dest='filename',
             help='Filename to import. Can be used multiple times')
         parser.add_argument('--purge', action='store_true', dest='purge', default=False,
             help='Purge existing construct records')
 
-    logger = logging.getLogger(__name__)
-
     # source file directory
     structure_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
+
+    # read source files
+    filenames = os.listdir(structure_data_dir)
 
     def handle(self, *args, **options):
         # delete any existing structure data
@@ -65,9 +66,21 @@ class Command(BaseCommand):
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
-        # import the structure data
+
+        # how many jobs to run?
+        if 'njobs' in options and options['njobs']:
+            njobs = int(options['njobs'])
+        else:
+            njobs = 1
+
+        # where filenames specified?
+        if options['filename']:
+            self.filenames = options['filename']
+
         try:
-            self.create_structures(options['filename'])
+            self.logger.info('CREATING STRUCTURES')
+            self.prepare_input(njobs, self.filenames)
+            self.logger.info('COMPLETED CREATING STRUCTURES')
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
@@ -137,12 +150,12 @@ class Command(BaseCommand):
             self.logger.error(structure.pdb_code.index + " had " + str(errors) + " residues that did not match in the database")
         return None
 
-    def create_structures(self, filenames):
-        self.logger.info('CREATING PDB STRUCTURES')
-        
-        # what files should be parsed?
-        if not filenames:
-            filenames = os.listdir(self.structure_data_dir)
+    def main_func(self, positions):
+        # filenames
+        if not positions[1]:
+            filenames = self.filenames[positions[0]:]
+        else:
+            filenames = self.filenames[positions[0]:positions[1]]
 
         for source_file in filenames:
             source_file_path = os.sep.join([self.structure_data_dir, source_file])
@@ -339,7 +352,7 @@ class Command(BaseCommand):
 
                     # save structure before adding M2M relations
                     s.save()
-                    
+
                     # ligands
                     if 'ligand' in sd:
                         if isinstance(sd['ligand'], list):
@@ -472,5 +485,3 @@ class Command(BaseCommand):
                         parsecalculation(sd['pdb'],False)
                     except:
                         self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
-
-        self.logger.info('COMPLETED CREATING PDB STRUCTURES')
