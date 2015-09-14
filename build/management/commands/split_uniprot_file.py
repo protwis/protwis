@@ -24,14 +24,9 @@ class Command(BaseCommand):
         if 'filename' in options and options['filename']:
             filename = options['filename']
             if os.path.isfile(filename):
-                self.purge_files()
                 self.separate(filename)
         else:
             self.logger.error('No filename specified, aborting')
-
-    def purge_files(self):
-        shutil.rmtree(self.local_uniprot_dir)
-        os.makedirs(self.local_uniprot_dir)
 
     def separate(self, input_filename):
         with open(input_filename) as input_file:
