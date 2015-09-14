@@ -679,6 +679,10 @@ def find_interactions():
                 #print aaname
                 for hetflag, atomlist in hetlist.iteritems(): #could probably make a check here to see if this residue was anywhere near the ligand, otherwise skip the check per atom
                     #print aa_resname
+
+                    if not 'CA' in residue: #prevent errors
+                        continue
+
                     ca = residue['CA'].get_vector()
                     if (ca-ligandcenter[hetflag][0]).norm()>ligandcenter[hetflag][1]:
                         #print "skipping"

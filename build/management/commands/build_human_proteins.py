@@ -2,24 +2,22 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
 
+from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource)
 from residue.models import ResidueNumberingScheme
 
-import logging
 import shlex
 import os
 from urllib.request import urlopen
 
-class Command(BaseCommand):
+
+class Command(BaseBuild):
     help = 'Reads source data and creates protein families, proteins, and associated tables'
 
-    logger = logging.getLogger(__name__)
-
     protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'proteins_and_families.txt'])
-    local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'uniprot', 'txt'])
+    local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
-
 
     def handle(self, *args, **options):
         # create parent protein family, 000
@@ -223,17 +221,14 @@ class Command(BaseCommand):
 
         # genes
         for i, gene in enumerate(uniprot['genes']):
-            g = Gene()
-            g.species = species
-            g.name = gene
-            g.position = i
-
             try:
-                g.save()
+                g, created = Gene.objects.get_or_create(name=gene, species=species, position=i)
                 g.proteins.add(p)
-                self.logger.info('Created gene ' + g.name + ' for protein ' + p.name)
+
+                if created:
+                    self.logger.info('Created gene ' + g.name + ' for protein ' + p.name)
             except:
-                self.logger.error('Failed creating gene ' + g.name + ' for protein ' + p.name)
+                self.logger.error('Failed creating gene {} for protein {}'.format(gene, p.name))
 
     def create_protein_family(self, family_name, indent, parent_family, level_family_counter):
         # find the parent family
@@ -296,6 +291,9 @@ class Command(BaseCommand):
         # record whether organism has been read
         os_read = False
 
+        # should local file be written?
+        local_file = False
+
         try:
             if os.path.isfile(local_file_path):
                 uf = open(local_file_path, 'r')
@@ -304,6 +302,7 @@ class Command(BaseCommand):
                 uf = urlopen(remote_file_path)
                 remote = True
                 self.logger.info('Reading remote file ' + remote_file_path)
+                local_file = open(local_file_path, 'w')
             
             for raw_line in uf:
                 # line format
@@ -311,6 +310,10 @@ class Command(BaseCommand):
                     line = raw_line.decode('UTF-8')
                 else:
                     line = raw_line
+
+                # write to local file if appropriate
+                if local_file:
+                    local_file.write(line)
                 
                 # end of file
                 if line.startswith('//'):
@@ -368,5 +371,9 @@ class Command(BaseCommand):
             uf.close()
         except:
             return False
+
+        # close the local file if appropriate
+        if local_file:
+            local_file.close()
 
         return up

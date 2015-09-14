@@ -206,6 +206,8 @@ class Command(BaseCommand):
                             sd['publication_date'] = line[13:22]
                         if line.startswith('JRNL        PMID'):
                             sd['pubmed_id'] = line[19:].strip()
+                        if line.startswith('JRNL        DOI'):
+                            sd['doi_id'] = line[19:].strip()
 
                     if len(hetsyn) == 0:
                         self.logger.info("PDB file contained NO hetsyn")
@@ -293,20 +295,37 @@ class Command(BaseCommand):
                     s.structure_type = st
 
                     # publication
-                    if 'pubmed_id' in sd:
-                        try:
-                            s.publication = Publication.objects.get(web_link__index=sd['pubmed_id'])
-                        except Publication.DoesNotExist as e:
-                            p = Publication()
+                    try:                     
+                        if 'doi_id' in sd:
                             try:
-                                p.web_link = WebLink.objects.get(index=sd['pubmed_id'], web_resource__slug='pubmed')
-                            except WebLink.DoesNotExist:
-                                wl = WebLink.objects.create(index=sd['pubmed_id'],
-                                    web_resource = WebResource.objects.get(slug='pubmed'))
-                                p.web_link = wl
-                            p.update_from_pubmed_data(index=sd['pubmed_id'])
-                            p.save()
-                            s.publication = p
+                                s.publication = Publication.objects.get(web_link__index=sd['doi_id'])
+                            except Publication.DoesNotExist as e:
+                                p = Publication()
+                                try:
+                                    p.web_link = WebLink.objects.get(index=sd['doi_id'], web_resource__slug='doi')
+                                except WebLink.DoesNotExist:
+                                    wl = WebLink.objects.create(index=sd['doi_id'],
+                                        web_resource = WebResource.objects.get(slug='doi'))
+                                    p.web_link = wl
+                                p.update_from_doi(doi=sd['doi_id'])
+                                p.save()
+                                s.publication = p
+                        elif 'pubmed_id' in sd:
+                            try:
+                                s.publication = Publication.objects.get(web_link__index=sd['pubmed_id'])
+                            except Publication.DoesNotExist as e:
+                                p = Publication()
+                                try:
+                                    p.web_link = WebLink.objects.get(index=sd['pubmed_id'], web_resource__slug='pubmed')
+                                except WebLink.DoesNotExist:
+                                    wl = WebLink.objects.create(index=sd['pubmed_id'],
+                                        web_resource = WebResource.objects.get(slug='pubmed'))
+                                    p.web_link = wl
+                                p.update_from_pubmed_data(index=sd['pubmed_id'])
+                                p.save()
+                                s.publication = p
+                    except:
+                        self.logger.error('Error saving publication'.format(ps.name))
 
                     # save structure before adding M2M relations
                     s.save()
@@ -324,7 +343,14 @@ class Command(BaseCommand):
                                 pdb_reference = None
                                 if ligand['name'] in hetsyn: pdb_reference = hetsyn[ligand['name']]
                                 if Ligand.objects.filter(name=ligand['name'], canonical=True).exists(): #if this name is canonical and it has a ligand record already
-                                    l = Ligand.objects.get(name=ligand['name'], canonical=True)
+                                    try:
+                                        l = Ligand.objects.get(name=ligand['name'], canonical=True)
+                                    except: 
+                                        try:
+                                            l = Ligand.objects.filter(name=ligand['name'], canonical=True, properities__inchikey__isnull=False)[0]
+                                        except:
+                                            self.logger.error('Skipping '+ligand['name']+" for "+sd['pdb'] +' Something wrong with getting ligand from DB')
+                                            continue
                                 elif Ligand.objects.filter(name=ligand['name'], canonical=False, ambigious_alias=False).exists(): #if this matches an alias that only has "one" parent canonical name - eg distinct
                                     l = Ligand.objects.get(name=ligand['name'], canonical=False, ambigious_alias=False)
                                 elif Ligand.objects.filter(name=ligand['name'], canonical=False, ambigious_alias=True).exists(): #if this matches an alias that only has several canonical parents, must investigate, start with empty.
@@ -429,6 +455,9 @@ class Command(BaseCommand):
                     self.logger.info('Calculate interactions')
 
                     runcalculation(sd['pdb'])
-                    parsecalculation(sd['pdb'],False)
+                    try:
+                        parsecalculation(sd['pdb'],False)
+                    except:
+                        self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
 
         self.logger.info('COMPLETED CREATING PDB STRUCTURES')

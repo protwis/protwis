@@ -63,6 +63,7 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
     ns = settings.DEFAULT_NUMBERING_SCHEME
     ns_obj = ResidueNumberingScheme.objects.get(slug=ns)
     
+    created_residues = 0
     for residue in residues_to_update:
         sequence_number = residue[0]
         
@@ -129,17 +130,10 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
             rvalues['display_generic_number'] = None
             
         # UPDATE or CREATE the residue
-        r, created = Residue.objects.update_or_create(
-            protein_conformation=protein_conformation,
-            sequence_number=sequence_number,
-            defaults = rvalues)
+        r, created = Residue.objects.update_or_create(protein_conformation=protein_conformation,
+            sequence_number=sequence_number, defaults = rvalues)
         if created:
-            if r.generic_number:
-                logger.info('Created residue {}{}({}) for protein {}'.format(r.amino_acid, r.sequence_number,
-                    r.generic_number.label, protein_conformation.protein.entry_name))
-            else:
-                logger.info('Created residue {}{} for protein {}'.format(r.amino_acid, r.sequence_number,
-                    protein_conformation.protein.entry_name))
+            created_residues += 1
 
         # alternative generic numbers
         r.alternative_generic_numbers.clear() # remove any existing relations
@@ -158,6 +152,9 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
                             scheme=ResidueNumberingScheme.objects.get(slug=alt_scheme), label=alt_num)
                     schemes[alt_scheme]['generic_numbers'][alt_num] = argn
                 r.alternative_generic_numbers.add(argn)
+
+    if created_residues:
+        logger.info('Created {} residues for {} of {}'.format(created_residues, segment, protein_conformation))
 
 def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, ref_position, ref_residue,
     protein_anomalies):
