@@ -21,24 +21,8 @@
         </li>
         
         <!-- BROWSE -->
-        <li><a href="/protein">Browse</a></li>
+        <li><a href="/protein">Receptors</a></li>
        
-        <!-- STRUCTURES -->
-        <li>
-            <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                Structures<span class="caret"></span>
-            </a>
-            <ul class="dropdown-menu" role="menu">
-                <li class="nav-header disabled"><a>DATA</a></li>
-                <li><a href="/structure">Structure browser</a></li>
-                <li><a href="/structure/statistics">Structure statistics</a></li>
-                <li class="disabled"><a href="/structure/coverage">Structure coverage</a></li>
-                <li class="nav-header disabled"><a>TOOLS</a></li>
-                <li><a href="/structure/superposition_workflow_index/true">Structure superposition tool</a></li>
-                <li><a href="/structure/template_selection">Template selection tool</a></li>
-            </ul>
-        </li>
-
         <!-- SEQUENCES -->
         <li>
             <a href="/"class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
@@ -51,10 +35,27 @@
                 <li class="nav-header disabled"><a>TOOLS</a></li>
                 <li><a href="/similaritysearch/referenceselection">Similarity search tool</a></li>
                 <li><a href="/phylogenetic_trees/targetselection">Phylogenetic trees</a></li>
-                <li class="disabled"><a href="/alignment/blastsearch">BLAST search</a></li>
+                <li><a href="/alignment/blastsearch">BLAST search</a></li>
             </ul>
         </li>
         
+        <!-- STRUCTURES -->
+        <li>
+            <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                Structures<span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu" role="menu">
+                <li class="nav-header disabled"><a>DATA</a></li>
+                <li><a href="/structure">Structure browser</a></li>
+                <li><a href="/structure/statistics">Structure statistics</a></li>
+                <li class="disabled"><a href="/structure/coverage">Structure coverage</a></li>
+                <li class="nav-header disabled"><a>TOOLS</a></li>
+                <li><a href="/structure/superposition_workflow_index/true">Structure superposition</a></li>
+                <li><a href="/structure/generic_numbering_index">PDB file residue numbering</a></li>
+                <li><a href="/structure/template_selection">Template selection</a></li>
+            </ul>
+        </li>
+
         <!-- MUTANTS -->
         <li>
             <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
@@ -64,7 +65,7 @@
                 <li class="nav-header disabled"><a>DATA</a></li>
                 <li><a href="/mutations">Mutant browser</a></li>
                 <li class="disabled"><a href="/mutations">Residue tables</a></li>
-                <li class="disabled"><a href="#">Contribute to the GPCRDB collection of mutant data</a></li>
+                <li class="disabled"><a href="#">Mutant data submission</a></li>
             </ul>
         </li>
 
@@ -75,9 +76,11 @@
             </a>
             <ul class="dropdown-menu" role="menu">
                 <li class="nav-header disabled"><a>TOOLS</a></li>
-                <li class="disabled"><a href="/sitesearch">Site search tool</a></li>
-                <li><a href="/structure/fragment_superposition_index">Pharmacophore generation tool</a></li>
-                <li class="disabled"><a href="/sitesearch">Ligand interaction diagrams</a></li>
+                <li class="disabled"><a href="/sitesearch">Site search</a></li>
+                <li><a href="/structure/fragment_superposition_index">Pharmacophore generation</a></li>
+                <li class="disabled"><a href="#">Ligand interaction diagrams</a></li>
+                <li class="disabled"><a href="#">Residue tables</a></li>
+                <li class="disabled"><a href="#">Residue diagrams</a></li>
             </ul>
         </li>
 
@@ -88,9 +91,9 @@
             </a>
             <ul class="dropdown-menu" role="menu">
                 <li class="nav-header disabled"><a>DATA</a></li>
-                <li><a href="/residue/residuetable">Generic residue number tables</a></li>
+                <li><a href="/residue/residuetable">Residue tables</a></li>
                 <li class="nav-header disabled"><a>TOOLS</a></li>
-                <li><a href="/structure/generic_numbering_index">PDB file residue numbering tool</a></li>
+                <li><a href="/structure/generic_numbering_index">PDB file residue numbering</a></li>
                 <li class="disabled"><a href="#">GPCR specific PDF reader</a></li>
             </ul>
         </li>

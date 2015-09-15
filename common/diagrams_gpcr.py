@@ -115,7 +115,15 @@ class DrawSnakePlot(Diagram):
 
 
         for i in range(1,8):
-            self.helixoutput += self.drawSnakePlotHelix(i)
+            try:
+                self.helixoutput += self.drawSnakePlotHelix(i)
+            except:
+                self.TBCoords[i] = {}
+                startX = self.helixWidth+self.offsetX+(self.margin+self.helixWidth)*(i-1)
+                startY = self.offsetY
+                self.TBCoords[i]['extra'] = [startX,startY]
+                self.TBCoords[i]['intra'] = [startX,startY+140]
+                pass
 
         if "H8" in self.segments: #if helix8
             self.helixoutput += self.drawSnakePlotHelix8()
@@ -958,17 +966,22 @@ class DrawHelixBox(Diagram):
             # self.residuelist = residue_list.filter(
             #     protein_segment__slug='TM'+str(i)).prefetch_related('display_generic_number','generic_number')
 
-            self.residuelist = segment_lists['TM'+str(i)]
 
-            self.output += self.DrawHelix(self.plot_data[self.family]['coordinates'][i][0],
-                self.plot_data[self.family]['coordinates'][i][1],
-                self.residuelist,
-                self.plot_data['helixRadius'],
-                self.plot_data['direction'][i],
-                i,
-                self.plot_data[self.family]['helixTopResidues'][i],
-                self.plot_data[self.family]['rotation'][i]
-                )
+            try:
+
+                self.residuelist = segment_lists['TM'+str(i)]
+
+                self.output += self.DrawHelix(self.plot_data[self.family]['coordinates'][i][0],
+                    self.plot_data[self.family]['coordinates'][i][1],
+                    self.residuelist,
+                    self.plot_data['helixRadius'],
+                    self.plot_data['direction'][i],
+                    i,
+                    self.plot_data[self.family]['helixTopResidues'][i],
+                    self.plot_data[self.family]['rotation'][i]
+                    )
+            except:
+                pass
 
 
 

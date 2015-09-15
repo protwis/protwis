@@ -2,31 +2,35 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
 
+from build.management.commands.base_build import Command as BaseBuild
 from protein.models import Protein, ProteinConformation, ProteinSegment, ProteinFamily
 from residue.functions import *
 
-import logging
 import os
 import yaml
 from optparse import make_option
 from multiprocessing import Queue, Process
 
-
-class Command(BaseCommand):
+class Command(BaseBuild):
     help = 'Creates residue records'
 
     def add_arguments(self, parser):
         parser.add_argument('--njobs', action='store', dest='njobs', help='Number of jobs to run')
-
-    logger = logging.getLogger(__name__)
 
     generic_numbers_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers'])
     ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'reference_positions'])
     auto_ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'auto_reference_positions'])
     default_segment_length_file_path = os.sep.join([settings.DATA_DIR, 'residue_data', 'default_segment_length.yaml'])
 
+    segments = ProteinSegment.objects.filter(partial=False)
     pconfs = ProteinConformation.objects.all().select_related('protein__residue_numbering_scheme__parent')
     pconfs_without_reference = []
+
+    schemes = parse_scheme_tables(generic_numbers_source_dir)
+
+    # default segment length
+    with open(default_segment_length_file_path, 'r') as default_segment_length_file:
+        segment_length = yaml.load(default_segment_length_file)  
 
     def handle(self, *args, **options):
         # how many jobs to run?
@@ -80,16 +84,7 @@ class Command(BaseCommand):
         if not positions[1]:
             pconfs = self.pconfs[positions[0]:]
         else:
-            pconfs = self.pconfs[positions[0]:positions[1]]
-
-        schemes = parse_scheme_tables(self.generic_numbers_source_dir)
-
-        # default segment length
-        with open(self.default_segment_length_file_path, 'r') as default_segment_length_file:
-            segment_length = yaml.load(default_segment_length_file)
-
-        # fetch protein conformations
-        segments = ProteinSegment.objects.filter(partial=False)
+            pconfs = self.pconfs[positions[0]:positions[1]]   
         
         for pconf in pconfs:
             sequence_number_counter = 0
@@ -162,16 +157,16 @@ class Command(BaseCommand):
                     continue
 
             # determine segment ranges, and create residues
-            nseg = len(segments)
-            for i, segment in enumerate(segments):
+            nseg = self.segments.count()
+            for i, segment in enumerate(self.segments):
                 # is this an alignable segment?
                 if segment.slug in settings.REFERENCE_POSITIONS:
                     # is there a reference position available?
                     if settings.REFERENCE_POSITIONS[segment.slug] in ref_positions:
                         segment_start = (ref_positions[settings.REFERENCE_POSITIONS[segment.slug]]
-                            - segment_length[segment.slug]['before'])
+                            - self.segment_length[segment.slug]['before'])
                         segment_end = (ref_positions[settings.REFERENCE_POSITIONS[segment.slug]]
-                            + segment_length[segment.slug]['after'])
+                            + self.segment_length[segment.slug]['after'])
                     else:
                         # skip this segment if the reference position is missing
                         self.logger.warning('Reference position missing for segment {} in {}'.format(segment, pconf))
@@ -181,11 +176,11 @@ class Command(BaseCommand):
                     
                     # if this is not the last segment, find next segments reference position
                     if (i+1) < nseg:
-                        next_segment = segments[i+1]
+                        next_segment = self.segments[i+1]
                         if (next_segment.slug in settings.REFERENCE_POSITIONS and 
                             settings.REFERENCE_POSITIONS[next_segment.slug] in ref_positions):
                             segment_end = (ref_positions[settings.REFERENCE_POSITIONS[next_segment.slug]]
-                            - segment_length[next_segment.slug]['before'] - 1)
+                            - self.segment_length[next_segment.slug]['before'] - 1)
                             next_ref_found = True
                         else: 
                             continue
@@ -199,7 +194,7 @@ class Command(BaseCommand):
                         continue
 
                 # create residues for this segment
-                create_or_update_residues_in_segment(pconf, segment, segment_start, segment_end, schemes,
+                create_or_update_residues_in_segment(pconf, segment, segment_start, segment_end, self.schemes,
                     ref_positions, [], True)
 
                 sequence_number_counter = segment_end

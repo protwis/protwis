@@ -14,10 +14,19 @@ window.onload = function(){
         $('#phylos').find(".container").each(function (index) {
             $(this).css("display", 'none');
         });
+        $('#charts').find(".Class").each(function (index) {
+            $(this).css("fill", '');
+        });
+        $('#charts').find(".container").each(function (index) {
+            $(this).css("display", 'none');
+        });
     };
     $(document).ready(function () {
         $('#A.Class').css("fill", '#000000');
         $('#A.container').css("display", '');
+        $('#unique.Class').css("fill", '#000000');
+        $('#unique.container').css("display", '');
+
     });
         
 };

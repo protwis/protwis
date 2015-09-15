@@ -26,8 +26,8 @@ class Command(BaseCommand):
     ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'reference_positions'])
     auto_ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'auto_reference_positions'])
 
-    pconfs = ProteinConformation.objects.order_by('protein__parent', 'id').select_related(
-            'protein__residue_numbering_scheme__parent', 'template_structure')
+    pconfs = ProteinConformation.objects.order_by('protein__parent', 'id').prefetch_related(
+            'protein__residue_numbering_scheme__parent', 'protein__genes', 'template_structure')
 
     def handle(self, *args, **options):
         # how many jobs to run?
@@ -103,6 +103,8 @@ class Command(BaseCommand):
             # skip protein conformations without a template (consensus sequences)
             if not pconf.template_structure:
                 continue
+            else:
+                template_structure = pconf.template_structure
 
             # get the sequence number of the first residue for this protein conformation
             pconf_residues = Residue.objects.filter(protein_conformation=pconf)
@@ -137,7 +139,7 @@ class Command(BaseCommand):
                 continue
 
             # protein anomalies in main template
-            main_tpl_pas = pconf.template_structure.protein_anomalies.all()
+            main_tpl_pas = template_structure.protein_anomalies.all()
             main_tpl_pa_labels = []
             for main_tpl_pa in main_tpl_pas:
                 main_tpl_pa_labels.append(main_tpl_pa.generic_number.label)
@@ -149,7 +151,7 @@ class Command(BaseCommand):
             nseg = len(segments)
             for i, segment in enumerate(segments):
                 self.logger.info("Updating segment borders for {} of {}, using template {}".format(segment.slug, pconf,
-                    pconf.template_structure))
+                    template_structure))
 
                 # add segment to updated values
                 update_segments.append({'segment': segment})
@@ -159,16 +161,16 @@ class Command(BaseCommand):
 
                 # get a list of generic numbers in main template
                 main_tpl_gn_labels = Residue.objects.filter(
-                    protein_conformation=pconf.template_structure.protein_conformation, generic_number__isnull=False,
+                    protein_conformation=template_structure.protein_conformation, generic_number__isnull=False,
                     protein_segment=segment).values_list('generic_number__label', flat=True)
 
                 # find template segment (for segments borders)
                 try:
-                    main_tpl_ss = StructureSegment.objects.get(structure=pconf.template_structure,
+                    main_tpl_ss = StructureSegment.objects.get(structure=template_structure,
                         protein_segment=segment)
                 except StructureSegment.DoesNotExist:
                     self.logger.warning('Segment records not found for {} in template structure {}, skipping!'.format(
-                        segment, pconf.template_structure))
+                        segment, template_structure))
                     continue
 
                 if segment.slug in settings.REFERENCE_POSITIONS:
@@ -182,31 +184,25 @@ class Command(BaseCommand):
 
                     # protein anomaly rules
                     if segment.slug in anomaly_rule_sets:
-                        for pa, parss in anomaly_rule_sets[segment.slug].items():
-                            # if there exists a structure for this particular protein, don't use the rules
-                            ignore_rules = False
-                            current_protein = pconf.protein
-                            template_structure_protein = pconf.template_structure.protein_conformation.protein.parent
-                            if current_protein == template_structure_protein:
-                                ignore_rules = True
-                                self.logger.info('Ignoring anomaly rules because structure of protein {} exists'
-                                    .format(current_protein))
-                            else:
-                                # check similarity of protein and template
-                                a = Alignment()
-                                a.load_reference_protein(current_protein)
-                                a.load_proteins([template_structure_protein])
-                                a.load_segments([segment])
-                                a.build_alignment()
-                                a.calculate_similarity()
-                                
-                                # apply a similarity cut-off
-                                similarity = int(a.proteins[1].similarity)
-                                if similarity > 50:
-                                    ignore_rules = True
-                                    self.logger.info('Ignoring anomaly rules for {} due to high similarity ({}%) to {}'
-                                        .format(current_protein, similarity, template_structure_protein))
+                        # if there exists a structure for this particular protein, don't use the rules
+                        ignore_rules = False
 
+                        if pconf.protein.parent:
+                            # use parent protein for constructs and other non wild-type sequences
+                            current_protein = pconf.protein.parent
+                        else:
+                            current_protein = pconf.protein
+                        current_protein_genes = current_protein.genes.order_by('position')
+                        if current_protein_genes.count():
+                            current_gene = current_protein_genes[0]
+                            template_structure_protein = template_structure.protein_conformation.protein.parent
+                            template_structure_gene = template_structure_protein.genes.order_by('position')[0]
+                            if current_gene.name.lower() == template_structure_gene.name.lower():
+                                ignore_rules = True
+                                self.logger.info('Ignoring anomaly rules because of {} structure'
+                                    .format(template_structure_protein))
+
+                        for pa, parss in anomaly_rule_sets[segment.slug].items():
                             # check whether this anomaly is inside the segment borders
                             if not generic_number_within_segment_borders(pa, main_tpl_gn_labels):
                                 self.logger.info("Anomaly {} excluded for {} (outside segment borders)".format(pa, 
@@ -274,7 +270,7 @@ class Command(BaseCommand):
                     # template segment reference residue number
                     try:
                         tsrrn = Residue.objects.get(
-                            protein_conformation=pconf.template_structure.protein_conformation,
+                            protein_conformation=template_structure.protein_conformation,
                             generic_number__label=segment_ref_position)
                     except Residue.DoesNotExist:
                         self.logger.warning("Template residues for {} in {} not found, skipping!".format(segment,
@@ -288,6 +284,7 @@ class Command(BaseCommand):
                     segment_end = ref_positions[segment_ref_position] + tpl_res_after_ref
                     
                     # FIXME check whether this segments actually needs an update
+                    
                     # update start and end positions based on anomalies in this protein
                     pa_labels = []
                     ref_generic_index = int(segment_ref_position.split("x")[1])

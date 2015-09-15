@@ -2,24 +2,22 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
 
+from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource)
 from residue.models import ResidueNumberingScheme
 
-import logging
 import shlex
 import os
 from urllib.request import urlopen
 
-class Command(BaseCommand):
+
+class Command(BaseBuild):
     help = 'Reads source data and creates protein families, proteins, and associated tables'
 
-    logger = logging.getLogger(__name__)
-
     protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'proteins_and_families.txt'])
-    local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'uniprot', 'txt'])
+    local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
-
 
     def handle(self, *args, **options):
         # create parent protein family, 000
@@ -170,8 +168,8 @@ class Command(BaseCommand):
                 defaults={'name': uniprot['source']})
             if created:
                 self.logger.info('Created protein source ' + source.name)
-        except:
-                self.logger.error('Failed creating protein source ' + source.name)
+        except IntegrityError:
+            source = ProteinSource.objects.get(name=uniprot['source'])
 
         # get/create species
         try:
@@ -181,8 +179,8 @@ class Command(BaseCommand):
                 })
             if created:
                 self.logger.info('Created species ' + species.latin_name)
-        except:
-                self.logger.error('Failed creating species ' + species.latin_name)
+        except IntegrityError:
+            species = Species.objects.get(latin_name=uniprot['species_latin_name'])
 
         # create protein
         p = Protein()
@@ -204,8 +202,12 @@ class Command(BaseCommand):
             self.logger.error('Failed creating protein {}'.format(p.entry_name))
 
         # protein conformations
-        ps, created = ProteinState.objects.get_or_create(slug=settings.DEFAULT_PROTEIN_STATE,
-            defaults={'name': settings.DEFAULT_PROTEIN_STATE.title()})
+        try:
+            ps, created = ProteinState.objects.get_or_create(slug=settings.DEFAULT_PROTEIN_STATE,
+                defaults={'name': settings.DEFAULT_PROTEIN_STATE.title()})
+        except IntegrityError:
+            ps = ProteinState.objects.get(slug=settings.DEFAULT_PROTEIN_STATE)
+
         pc = ProteinConformation.objects.create(protein=p, state=ps)
 
         # protein aliases
@@ -223,17 +225,16 @@ class Command(BaseCommand):
 
         # genes
         for i, gene in enumerate(uniprot['genes']):
-            g = Gene()
-            g.species = species
-            g.name = gene
-            g.position = i
-
+            g = False
             try:
-                g.save()
+                g, created = Gene.objects.get_or_create(name=gene, species=species, position=i)
+                if created:
+                    self.logger.info('Created gene ' + g.name + ' for protein ' + p.name)
+            except IntegrityError:
+                g = Gene.objects.get(name=gene, species=species, position=i)
+            
+            if g:
                 g.proteins.add(p)
-                self.logger.info('Created gene ' + g.name + ' for protein ' + p.name)
-            except:
-                self.logger.error('Failed creating gene ' + g.name + ' for protein ' + p.name)
 
     def create_protein_family(self, family_name, indent, parent_family, level_family_counter):
         # find the parent family
@@ -296,6 +297,9 @@ class Command(BaseCommand):
         # record whether organism has been read
         os_read = False
 
+        # should local file be written?
+        local_file = False
+
         try:
             if os.path.isfile(local_file_path):
                 uf = open(local_file_path, 'r')
@@ -304,6 +308,7 @@ class Command(BaseCommand):
                 uf = urlopen(remote_file_path)
                 remote = True
                 self.logger.info('Reading remote file ' + remote_file_path)
+                local_file = open(local_file_path, 'w')
             
             for raw_line in uf:
                 # line format
@@ -311,6 +316,10 @@ class Command(BaseCommand):
                     line = raw_line.decode('UTF-8')
                 else:
                     line = raw_line
+
+                # write to local file if appropriate
+                if local_file:
+                    local_file.write(line)
                 
                 # end of file
                 if line.startswith('//'):
@@ -368,5 +377,9 @@ class Command(BaseCommand):
             uf.close()
         except:
             return False
+
+        # close the local file if appropriate
+        if local_file:
+            local_file.close()
 
         return up

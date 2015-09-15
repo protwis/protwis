@@ -22,13 +22,14 @@ class Command(BaseCommand):
             ['build_human_proteins'],
             ['build_orthologs'],
             ['build_residues', {'njobs': njobs}],
-            ['build_constructs'],
-            ['build_structures'],
+            ['build_blast_database'],
+            ['build_construct_proteins', {'njobs': njobs}],
+            ['build_structures', {'njobs': njobs}],
             ['build_mutant_data'],
             ['find_protein_templates', {'njobs': njobs}],
             ['update_alignments', {'njobs': njobs}],
             ['build_protein_sets'],
-            ['build_consensus_sequences'],
+            ['build_consensus_sequences', {'njobs': njobs}],
         ]
 
         for c in commands:
@@ -38,3 +39,5 @@ class Command(BaseCommand):
                 call_command(c[0], **c[1])
             else:
                 call_command(c[0])
+
+        print('{} Build completed'.format(datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')))

@@ -4,7 +4,7 @@ from django.views.generic import TemplateView
 
 from common.views import AbsTargetSelection
 from common.selection import Selection
-from protein.models import ProteinSegment
+from protein.models import ProteinSegment, Protein
 from residue.models import Residue,ResidueNumberingScheme
 
 from collections import OrderedDict
@@ -47,16 +47,41 @@ class ResidueTablesDisplay(TemplateView):
         """
         context = super().get_context_data(**kwargs)
 
-        # get the selection from session
+        # get the user selection from session
         simple_selection = self.request.session.get('selection', False)
+        
+         # local protein list
+        proteins = []
+
+        # flatten the selection into individual proteins
+        for target in simple_selection.targets:
+            if target.type == 'protein':
+                proteins.append(target.item)
+            elif target.type == 'family':
+                # species filter
+                species_list = []
+                for species in simple_selection.species:
+                    species_list.append(species.item)
+
+                # annotation filter
+                protein_source_list = []
+                for protein_source in simple_selection.annotation:
+                    protein_source_list.append(protein_source.item)
+                    
+                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                    species__in=(species_list),
+                    source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                for fp in family_proteins:
+                    proteins.append(fp)
+
+        # get the selection from session
         selection = Selection()
         if simple_selection:
-            selection.importer(simple_selection)
-        # extract numbering schemes and proteins
+             selection.importer(simple_selection)
+        # # extract numbering schemes and proteins
         numbering_schemes = [x.item for x in selection.numbering_schemes]
-        proteins = [x.item for x in selection.targets]
         
-        # get the helices (TMs only at first)
+        # # get the helices (TMs only at first)
         segments = ProteinSegment.objects.filter(category='helix')
 
         if ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME) in numbering_schemes:
@@ -71,7 +96,8 @@ class ResidueTablesDisplay(TemplateView):
         data = OrderedDict()
         for segment in segments:
             data[segment.slug] = OrderedDict()
-            residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins).prefetch_related('generic_number','alternative_generic_numbers')
+            residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins).prefetch_related('protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
+                'generic_number__scheme', 'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
             for scheme in numbering_schemes:
                 if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
                     for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
@@ -81,19 +107,21 @@ class ResidueTablesDisplay(TemplateView):
                         data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
             
             for residue in residues:
-                for scheme in numbering_schemes:
+                alternatives = residue.alternative_generic_numbers.all()
+                for alternative in alternatives:
+                    scheme = alternative.scheme
                     if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
                         pos = residue.generic_number
                         if scheme == pos.scheme:
                             data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
                         else:
                             if scheme.slug not in data[segment.slug][pos.label].keys():
-                                data[segment.slug][pos.label][scheme.slug] = residue.alternative_generic_numbers.get(scheme__slug=scheme.slug).label
+                                data[segment.slug][pos.label][scheme.slug] = alternative.label
                             data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
                     else:
                         pos = residue.alternative_generic_numbers.get(scheme__slug=default_scheme.slug)
                         if scheme.slug not in data[segment.slug][pos.label].keys():
-                            data[segment.slug][pos.label][scheme.slug] = residue.alternative_generic_numbers.get(scheme__slug=scheme.slug).label
+                            data[segment.slug][pos.label][scheme.slug] = alternative.label
                         data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
 
         # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
@@ -104,5 +132,6 @@ class ResidueTablesDisplay(TemplateView):
         context['header'] = zip([x.short_name for x in numbering_schemes] + [x.entry_name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins])
         context['segments'] = [x.slug for x in segments]
         context['data'] = flattened_data
+        context['number_of_schemes'] = len(numbering_schemes)
 
         return context
