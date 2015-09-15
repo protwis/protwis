@@ -23,8 +23,10 @@ class Command(BaseBuild):
     segments = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS)
 
     # fetch wild-type sequences of receptors with available structures
-    structures = Structure.objects.order_by('protein_conformation__protein__parent', 'resolution').distinct(
-        'protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__parent__family')
+    # structures = Structure.objects.order_by('protein_conformation__protein__parent', 'resolution').distinct(
+    #     'protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__parent__family')
+    structures = Structure.objects.filter(representative=True).prefetch_related(
+        'protein_conformation__protein__parent__family')
 
     # fetch all protein conformations
     pconfs = ProteinConformation.objects.all().prefetch_related('protein__family', 'template_structure')

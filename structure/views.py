@@ -92,14 +92,15 @@ class StructureStatistics(TemplateView):
 
         #Prepare chart with unique crystallized receptors by year
         all_structs = list(Structure.objects.all().prefetch_related('protein_conformation__protein'))
-        years = list(set([x.publication_date.year for x in all_structs]))
+        years = self.get_years_range(list(set([x.publication_date.year for x in all_structs])))
         unique_structs = list(Structure.objects.order_by('protein_conformation__protein__parent', 'state',
-            'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein'))
+            'publication_date', 'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein'))
         families = list(set([x.protein_conformation.protein.get_protein_family() for x in unique_structs]))
         
         extra = {
             'x_axis_format': '',
             'y_axis_format': 'f',
+            'stacked': 'True',
             }
         context['charttype'] = "multiBarChart"
         context['chartdata'] = self.get_per_family_cumulative_data_series(years, families, unique_structs)
@@ -117,6 +118,13 @@ class StructureStatistics(TemplateView):
         context['extra_reso'] = extra#{'x_axis_format': '[]', 'y_axis_format': 'f'}
 
         return context
+
+
+    def get_years_range(self, years_list):
+
+        min_y = min(years_list)
+        max_y = max(years_list)
+        return range(min_y, max_y+1)
 
 
     def get_per_family_data_series(self, years, families, structures):
