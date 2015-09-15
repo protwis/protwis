@@ -19,7 +19,7 @@ from common.models import WebResource
 from common.models import WebLink
 
 
-from os import path, listdir, devnull
+from os import path, listdir, devnull,makedirs
 from os.path import isfile, join
 import yaml
 from operator import itemgetter
@@ -58,13 +58,36 @@ def list(request):
     #structures = ResidueFragmentInteraction.objects.distinct('structure_ligand_pair__structure').all()
     structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index','structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate( num_ligands=Count('structure_ligand_pair', distinct = True),num_interactions=Count('pk', distinct = True)).order_by('structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name')
     #structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index','structure_ligand_pair__structure').annotate(Count('structure_ligand_pair__ligand'))
-    print(structures.count())
+    #print(structures.count())
+    genes = {}
+    countligands = {}
+    totalligands = 0
+    totalinteractions = 0
+    totaltopinteractions = 0
     for structure in structures:
-        print(structure)
+        #print(structure)
+        if structure['structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name'] not in genes:
+            genes[structure['structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name']] = 1
+        totalligands += structure['num_ligands']
+        totalinteractions += structure['num_interactions']
+        ligands = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name').filter(structure_ligand_pair__structure__pdb_code__index=structure['structure_ligand_pair__structure__pdb_code__index']).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
+        for ligand in ligands:
+            totaltopinteractions += ligand['numRes']
+            if ligand['structure_ligand_pair__ligand__name'] not in countligands:
+                countligands[ligand['structure_ligand_pair__ligand__name']] = 1
+            break
+
         #print(structure.structure_ligand_pair.structure.pdb_code.index)
         #print(structure.numRes)
     #objects = Model.objects.filter(id__in=object_ids)
     #context = {}
+    print('Structures with ligand information:' + str(structures.count()))
+    print('Distinct genes:' + str(len(genes)))
+    #print('ligands:' + str(totalligands))
+    print('interactions:' + str(totalinteractions))
+    print('interactions from top ligands:' + str(totaltopinteractions))
+    print('Distinct ligands as top ligand:' + str(len(countligands)))
+
     return render(request,'interaction/list.html',{'form': form, 'structures': structures})
 
 def crystal(request):
@@ -455,24 +478,105 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
 
     return results
 
-def calculate(request):     
+def runusercalculation(filename,session):
+    call(["python", "interaction/functions.py","-p",filename,"-s",session])
+    return None
+
+def parseusercalculation(pdbname,session, debug = True, ignore_ligand_preset = False, ): #consider skipping non hetsym ligands FIXME
+    logger = logging.getLogger('build')
+    mypath = '/tmp/interactions/'+session+'/results/'+pdbname+'/output'
+    module_dir = '/tmp/interactions/'+session
+    results = []
+   
+
+    for f in listdir(mypath):
+        if isfile(join(mypath,f)):       
+            result = yaml.load(open(mypath+"/"+f, 'rb'))
+            output = result
+
+            temp = f.replace('.yaml','').split("_")
+            #print(output)
+            temp.append([output])
+            temp.append(round(output['score'][0][0]))
+            temp.append((output['inchikey']).strip())
+            temp.append((output['smiles']).strip())
+            results.append(temp)
+
+            if 'prettyname' not in output:
+                output['prettyname'] = temp[1]
+                #continue
+
+            #print(' start ligand ' + output['prettyname'])
+        
+            #print(results)
+    results = sorted(results,key=itemgetter(3), reverse=True)
+
+    return results
+
+def calculate(request):   
     if request.method == 'POST':
-        form = PDBform(request.POST)
+        form = PDBform(request.POST, request.FILES)
         if form.is_valid():
+
             pdbname = form.cleaned_data['pdbname'].strip()
-            t1 = datetime.now()
-            runcalculation(pdbname)
-            t2 = datetime.now()
-            delta = t2 - t1
-            seconds = delta.total_seconds()
-            print("Total time "+str(seconds)+" seconds")
+            results = ''
 
-            results = parsecalculation(pdbname)
+            if 'file' in request.FILES:
 
-            return render(request,'interaction/calculate.html',{'result' : "Looking at "+pdbname, 'outputs' : results })
+                f = request.FILES['file']
+
+                print(f)
+                pdbname = path.splitext(str(f))[0]
+
+                module_dir = '/tmp/interactions/' + request.session.session_key
+
+                if not path.exists('/tmp/interactions/'):
+                    makedirs('/tmp/interactions/')
+                if not path.exists('/tmp/interactions/'+ request.session.session_key):
+                    makedirs('/tmp/interactions/'+ request.session.session_key)
+                if not path.exists('/tmp/interactions/'+ request.session.session_key+'/pdbs'):
+                    makedirs('/tmp/interactions/'+ request.session.session_key+'/pdbs')
+                if not path.exists('/tmp/interactions/'+ request.session.session_key+'/temp'):
+                    makedirs('/tmp/interactions/'+ request.session.session_key+'/temp')
+
+                print(module_dir)
+
+                with open(module_dir+'/pdbs/'+str(f), 'wb+') as destination:
+                     for chunk in f.chunks():
+                         destination.write(chunk)
+
+                runusercalculation(pdbname,request.session.session_key)
+
+            # pdbname = form.cleaned_data['pdbname'].strip()
+            # t1 = datetime.now()
+            # runcalculation(pdbname)
+            # t2 = datetime.now()
+            # delta = t2 - t1
+            # seconds = delta.total_seconds()
+            # print("Total time "+str(seconds)+" seconds")
+
+                results = parseusercalculation(pdbname,request.session.session_key)
+
+                #print(results)
+                simple = {}
+                for ligand in results:
+                    print(ligand[1])
+                    simple[ligand[1]] = {'score':ligand[2][0]['score'][0][0]}
+                    for key,values in ligand[2][0].items():
+                        if key in ['aromatic','aromaticplus','hbond','hbond_confirmed','hydrophobic', 'hbondplus', 'aromaticfe','waals']:
+                            print(key)
+                            for value in values:
+                                print(value[0])
+                                if value[0] in simple[ligand[1]]:
+                                    simple[ligand[1]][value[0]].append(key)
+                                else:
+                                    simple[ligand[1]][value[0]] = [key]
+                print(simple)
+            return render(request,'interaction/calculate.html',{'result' : "Looking at "+pdbname, 'outputs' : results, 'simple' : simple })
 
         else:
-            return HttpResponse("Error with form")
+            print(form.errors)
+            return HttpResponse("Error with form ")
     else:
         return HttpResponse("Ooops how did you get here?")
 
@@ -481,8 +585,16 @@ def download(request):
     pdbname = request.GET.get('pdb')
     ligand = request.GET.get('ligand')
 
-    pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(Q(ligand__properities__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
-    response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
+    session = request.GET.get('session')
+
+    if session:
+        session = request.session.session_key
+        pdbdata = open('/tmp/interactions/'+session+'/results/'+pdbname+'/interaction/'+pdbname+'_'+ligand+'.pdb', 'r').read()
+        response=HttpResponse(pdbdata, content_type='text/plain')
+    else:
+
+        pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(Q(ligand__properities__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
+        response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
     return response
 
 def ajax(request, slug, **response_kwargs):
@@ -529,23 +641,28 @@ def pdbfragment(request):
 
 def pdb(request):       
     pdbname = request.GET.get('pdb')
+    session = request.GET.get('session')
     # response = HttpResponse(mimetype='application/force-download')
     # #response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(file_name)
     # response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(pdbname+'_'+ligand+'.pdb')
     # mypath = module_dir+'/temp/results/'+pdbname+'/interaction/'+pdbname+'_'+ligand+'.pdb'
     # response['X-Sendfile'] = smart_str(mypath)
-
-    web_resource, created = WebResource.objects.get_or_create(slug='pdb',url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
-    web_link, created = WebLink.objects.get_or_create(web_resource=web_resource,index=pdbname)
-
-    structure=Structure.objects.filter(pdb_code=web_link) 
-    if structure.exists():
-        structure=Structure.objects.get(pdb_code=web_link)
+    if session:
+        session = request.session.session_key
+        pdbdata = open('/tmp/interactions/'+session+'/pdbs/'+pdbname+'.pdb', 'r').read()
+        response=HttpResponse(pdbdata, content_type='text/plain')
     else:
-         quit() #quit!
+        web_resource, created = WebResource.objects.get_or_create(slug='pdb',url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
+        web_link, created = WebLink.objects.get_or_create(web_resource=web_resource,index=pdbname)
 
-    if structure.pdb_data is None:
-        quit()
+        structure=Structure.objects.filter(pdb_code=web_link) 
+        if structure.exists():
+            structure=Structure.objects.get(pdb_code=web_link)
+        else:
+             quit() #quit!
 
-    response = HttpResponse(structure.pdb_data.pdb, content_type='text/plain')
+        if structure.pdb_data is None:
+            quit()
+
+        response = HttpResponse(structure.pdb_data.pdb, content_type='text/plain')
     return response
