@@ -87,7 +87,7 @@ class Command(BaseBuild):
 
                     # fetch the parent protein
                     try:
-                        ppc = ProteinConformation.objects.select_related('protein__family', 'protein__species',
+                        ppc = ProteinConformation.objects.prefetch_related('protein__family', 'protein__species',
                             'protein__residue_numbering_scheme').get(protein__entry_name=sd['protein'],
                             state__slug=settings.DEFAULT_PROTEIN_STATE)
                     except ProteinConformation.DoesNotExist:
@@ -96,15 +96,31 @@ class Command(BaseBuild):
                             sd['protein'], sd['name']))
                         continue
 
+                    # sequence type
+                    try:
+                        sequence_type, created = ProteinSequenceType.objects.get_or_create(slug='mod',
+                            defaults={'name': 'Modified'})
+                        if created:
+                            self.logger.info('Created sequence type {}'.format(sequence_type))
+                    except IntegrityError:
+                        sequence_type = ProteinSequenceType.objects.get(slug='mod')
+
+                    # protein source
+                    try:
+                        protein_source, created = ProteinSource.objects.get_or_create(name='OTHER')
+                        if created:
+                            self.logger.info('Created protein source {}'.format(protein_source))
+                    except IntegrityError:
+                        protein_source = ProteinSource.objects.get(name='OTHER')
+
                     # create a protein record
                     p = Protein()
                     p.parent = ppc.protein
                     p.family = ppc.protein.family
                     p.species = ppc.protein.species
                     p.residue_numbering_scheme = ppc.protein.residue_numbering_scheme
-                    p.sequence_type, created = ProteinSequenceType.objects.get_or_create(slug='mod',
-                        defaults={'name': 'Modified'})
-                    p.source, created = ProteinSource.objects.get_or_create(name='OTHER')
+                    p.sequence_type= sequence_type
+                    p.source = protein_source
                     p.entry_name = slugify(strip_tags(sd['name']))
                     p.name = sd['name']
                     p.sequence = ppc.protein.sequence
@@ -157,16 +173,25 @@ class Command(BaseBuild):
                             # segment into two segments
                             if fp_start and fp_start.protein_segment == fp_end.protein_segment:
                                 # get/create split protein segments
-                                segment_before, created = ProteinSegment.objects.get_or_create(
-                                    slug=fp_start.protein_segment.slug+"_1", defaults={
-                                    'name': fp_start.protein_segment.name,
-                                    'category': fp_start.protein_segment.category,
-                                    'partial': True})
-                                segment_after, created = ProteinSegment.objects.get_or_create(
-                                    slug=fp_start.protein_segment.slug+"_2", defaults={
-                                    'name': fp_start.protein_segment.name,
-                                    'category': fp_start.protein_segment.category,
-                                    'partial': True})
+                                slug_1 = fp_start.protein_segment.slug + "_1"
+                                try:
+                                    segment_before, created = ProteinSegment.objects.get_or_create(slug=slug_1,
+                                        defaults={'name': fp_start.protein_segment.name,
+                                        'category': fp_start.protein_segment.category, 'partial': True})
+                                    if created:
+                                        self.logger.info('Created protein segment {}'.format(segment_before))
+                                except IntegrityError:
+                                    segment_before = ProteinSegment.objects.get(slug=slug_1)
+
+                                slug_2 = fp_start.protein_segment.slug + "_2"
+                                try:
+                                    segment_after, created = ProteinSegment.objects.get_or_create(slug=slug_2,
+                                        defaults={'name': fp_start.protein_segment.name,
+                                        'category': fp_start.protein_segment.category, 'partial': True})
+                                    if created:
+                                        self.logger.info('Created protein segment {}'.format(segment_after))
+                                except IntegrityError:
+                                    segment_after = ProteinSegment.objects.get(slug=slug_2)
 
                                 # keep track of  information about split segments
                                 split_segments[fp_start.protein_segment.slug] = {
