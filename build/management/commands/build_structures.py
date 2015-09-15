@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
 from django.utils.text import slugify
+from django.db import IntegrityError
 
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinAnomaly, ProteinAnomalyType,
@@ -278,26 +279,29 @@ class Command(BaseBuild):
 
                     # protein state
                     if 'state' not in sd:
-                        self.logger.error('State not defined, using default state {}'.format(
+                        self.logger.warning('State not defined, using default state {}'.format(
                             settings.DEFAULT_PROTEIN_STATE))
                         state = settings.DEFAULT_STATE.title()
                     else:
                         state = sd['state']
-                    ps, created = ProteinState.objects.get_or_create(slug=slugify(state), defaults={'name': state})
-                    if created:
-                        self.logger.info('Created protein state {}'.format(ps.name))
+
+                    state_slug = slugify(state)
+                    try:
+                        ps, created = ProteinState.objects.get_or_create(slug=state_slug, defaults={'name': state})
+                        if created:
+                            self.logger.info('Created protein state {}'.format(ps.name))
+                    except IntegrityError:
+                        ps = ProteinState.objects.get(slug=state_slug)
                     s.state = ps
 
                     # protein conformation
                     try:
-                        s.protein_conformation, created = ProteinConformation.objects.get_or_create(protein=con,
-                            state=ps)
-                        if created:
-                            self.logger.info('Created conformation {} for protein {}'.format(ps.name, con.name))
-                    except Protein.DoesNotExist:
-                        self.logger.error('Construct {} for structure {} does not exists, skipping!'.format(
-                            sd['construct'], sd['pdb']))
+                        s.protein_conformation = ProteinConformation.objects.get(protein=con)
+                    except ProteinConformation.DoesNotExist:
+                        self.logger.error('Construct {} does not exists'.format(con))
                         continue
+                    if s.protein_conformation.state is not state:
+                        ProteinConformation.objects.filter(protein=con).update(state=ps)
 
                     # insert into plain text fields
                     if 'preferred_chain' in sd:
@@ -314,7 +318,15 @@ class Command(BaseBuild):
                         self.logger.warning('Publication date not specified for structure {}'.format(sd['pdb']))
 
                     # structure type
-                    st, created = StructureType.objects.get_or_create(slug='xray', defaults={'name': 'X-ray'})
+                    structure_type = 'X-ray'
+                    structure_type_slug = 'xray'
+                    try:
+                        st, created = StructureType.objects.get_or_create(slug=structure_type_slug,
+                            defaults={'name': structure_type})
+                        if created:
+                            self.logger.info('Created structure type {}'.format(st))
+                    except IntegrityError:
+                        st = StructureType.objects.get(slug=structure_type_slug)
                     s.structure_type = st
 
                     # publication
@@ -409,10 +421,18 @@ class Command(BaseBuild):
 
                             if l:
                                 if ligand['role']:
-                                    lr, created = LigandRole.objects.get_or_create(slug=slugify(ligand['role']),
+                                    role_slug = slugify(ligand['role'])
+                                    try:
+                                        lr, created = LigandRole.objects.get_or_create(slug=role_slug,
                                         defaults={'name': ligand['role']})
-                                    i, created = StructureLigandInteraction.objects.get_or_create(structure=s, ligand=l,
-                                        ligand_role=lr, annotated=True, defaults={'pdb_reference':pdb_reference})
+                                        if created:
+                                            self.logger.info('Created ligand role {}'.format(ligand['role']))
+                                    except IntegrityError:
+                                        lr = LigandRole.objects.get(slug=role_slug)
+
+                                    i, created = StructureLigandInteraction.objects.get_or_create(structure=s,
+                                        ligand=l, ligand_role=lr, annotated=True,
+                                        defaults={'pdb_reference':pdb_reference})
                     
                     # structure segments
                     if 'segments' in sd and sd['segments']:
@@ -441,25 +461,66 @@ class Command(BaseBuild):
                         self.logger.warning('Segments not defined for representative structure {}'.format(sd['pdb']))
 
                     # protein anomalies
+                    scheme = s.protein_conformation.protein.residue_numbering_scheme
                     if 'bulges' in sd and sd['bulges']:
-                        scheme = s.protein_conformation.protein.residue_numbering_scheme
-                        pab, created = ProteinAnomalyType.objects.get_or_create(slug='bulge', defaults={
-                            'name': 'Bulge'})
+                        pa_slug = 'bulge'
+                        try:
+                            pab, created = ProteinAnomalyType.objects.get_or_create(slug=pa_slug, defaults={
+                                'name': 'Bulge'})
+                            if created:
+                                self.logger.info('Created protein anomaly type {}'.format(pab))
+                        except IntegrityError:
+                            pab = ProteinAnomalyType.objects.get(slug=pa_slug)
+                        
                         for segment, bulges in sd['bulges'].items():
                             for bulge in bulges:
-                                gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge, scheme=scheme,
-                                    defaults={'protein_segment': ProteinSegment.objects.get(slug=segment)})
-                                pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pab, generic_number=gn)
+                                try:
+                                    gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge,
+                                        scheme=scheme, defaults={'protein_segment': ProteinSegment.objects.get(
+                                        slug=segment)})
+                                    if created:
+                                        self.logger.info('Created generic number {}'.format(gn))
+                                except IntegrityError:
+                                    gn =  ResidueGenericNumber.objects.get(label=bulge, scheme=scheme)
+
+                                try:
+                                    pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pab,
+                                        generic_number=gn)
+                                    if created:
+                                        self.logger.info('Created protein anomaly {}'.format(pa))
+                                except IntegrityError:
+                                    pa, created = ProteinAnomaly.objects.get(anomaly_type=pab, generic_number=gn)
+
                                 s.protein_anomalies.add(pa)
                     if 'constrictions' in sd and sd['constrictions']:
-                        pac, created = ProteinAnomalyType.objects.get_or_create(slug='constriction', defaults={
-                            'name': 'Constriction'})
+                        pa_slug = 'constriction'
+                        try:
+                            pac, created = ProteinAnomalyType.objects.get_or_create(slug=pa_slug, defaults={
+                                'name': 'Constriction'})
+                            if created:
+                                self.logger.info('Created protein anomaly type {}'.format(pac))
+                        except IntegrityError:
+                            pac = ProteinAnomalyType.objects.get(slug=pa_slug)
+                        
                         for segment, constrictions in sd['constrictions'].items():
                             for constriction in constrictions:
-                                gn, created = ResidueGenericNumber.objects.get_or_create(label=constriction, defaults={
-                                    'protein_segment': ProteinSegment.objects.get(slug=segment),
-                                    'scheme': ResidueNumberingScheme.objects.get(slug=scheme.slug)})
-                                pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pac, generic_number=gn)
+                                try:
+                                    gn, created = ResidueGenericNumber.objects.get_or_create(label=constriction,
+                                        scheme=scheme, defaults={'protein_segment': ProteinSegment.objects.get(
+                                        slug=segment)})
+                                    if created:
+                                        self.logger.info('Created generic number {}'.format(gn))
+                                except IntegrityError:
+                                    gn =  ResidueGenericNumber.objects.get(label=constriction, scheme=scheme)
+
+                                try:
+                                    pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pac,
+                                        generic_number=gn)
+                                    if created:
+                                        self.logger.info('Created protein anomaly {}'.format(pa))
+                                except IntegrityError:
+                                    pa, created = ProteinAnomaly.objects.get(anomaly_type=pac, generic_number=gn)
+
                                 s.protein_anomalies.add(pa)
                     
                     # stabilizing agents

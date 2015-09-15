@@ -73,8 +73,6 @@ class Command(BuildHumanProteins):
             if 'protein' not in sd:
                 continue
 
-            print(sd['protein'])
-
             # append entry_name to lookup list
             construct_entry_names.append(sd['protein'])
 
