@@ -487,7 +487,7 @@ class Command(BaseCommand):
 
                     if r['ligand_class']:
                         l_role, created = LigandRole.objects.get_or_create(name=r['ligand_class'],
-                            defaults={'slug': slugify(r['ligand_class'])})
+                            defaults={'slug': slugify(r['ligand_class'])[:50]}) # FIXME this should not be needed
                     else:
                         l_role = None
 
