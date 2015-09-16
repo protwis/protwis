@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db.models import Q
+from django.db import IntegrityError
 
 from protein.models import ProteinAnomaly
 from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
@@ -40,9 +41,7 @@ def load_reference_positions(path):
             ref_positions = yaml.load(ref_position_file)
         return ref_positions
     except:
-        # if the file does not exists, create an empty file
-        ref_position_file = open(path, 'w')
-        ref_position_file.close()
+        return False
 
 def create_or_update_residues_in_segment(protein_conformation, segment, start, end, schemes, ref_positions,
     protein_anomalies, disregard_db_residues):
@@ -63,7 +62,7 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
     ns = settings.DEFAULT_NUMBERING_SCHEME
     ns_obj = ResidueNumberingScheme.objects.get(slug=ns)
     
-    updated_residues = 0
+    created_residues = 0
     for residue in residues_to_update:
         sequence_number = residue[0]
         
@@ -130,12 +129,10 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
             rvalues['display_generic_number'] = None
             
         # UPDATE or CREATE the residue
-        r, created = Residue.objects.update_or_create(
-            protein_conformation=protein_conformation,
-            sequence_number=sequence_number,
-            defaults = rvalues)
+        r, created = Residue.objects.update_or_create(protein_conformation=protein_conformation,
+            sequence_number=sequence_number, defaults = rvalues)
         if created:
-            updated_residues += 1
+            created_residues += 1
 
         # alternative generic numbers
         r.alternative_generic_numbers.clear() # remove any existing relations
@@ -155,7 +152,8 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
                     schemes[alt_scheme]['generic_numbers'][alt_num] = argn
                 r.alternative_generic_numbers.add(argn)
 
-    logger.info('Created {} residues for {} of {}'.format(updated_residues, segment, protein_conformation))
+    if created_residues:
+        logger.info('Created {} residues for {} of {}'.format(created_residues, segment, protein_conformation))
 
 def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, ref_position, ref_residue,
     protein_anomalies):

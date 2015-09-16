@@ -121,13 +121,8 @@ def check_pdb():
 
 
 def checkdirs():
-    if not os.path.isfile(projectdir+'pdbs/'+pdbname+'.pdb'):
-        pdbfile = fetch_pdb(pdbname)
-        temp_path = projectdir+'pdbs/'+pdbname+'.pdb'
-        f=open(temp_path,'w')
-        f.write(pdbfile)
-        f.close();
 
+    #print(projectdir)
     directory = projectdir + 'results/'+pdbname+'/interaction'
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -995,8 +990,8 @@ def pretty_results():
 
 
 
-def calculate_interactions(pdb):
-    global pdbname,hetlist,hetlist_display,ligand_atoms,ligand_charged,ligandcenter,ligand_rings,ligand_donors,results,sortedresults,summary_results,inchikeys,smiles
+def calculate_interactions(pdb, session=None):
+    global pdbname,hetlist,hetlist_display,ligand_atoms,ligand_charged,ligandcenter,ligand_rings,ligand_donors,results,sortedresults,summary_results,inchikeys,smiles, projectdir
 
     hetlist = {}
     hetlist_display = {}
@@ -1011,35 +1006,55 @@ def calculate_interactions(pdb):
     inchikeys = {}
     smiles = {}
 
-    pdbname = pdb
-    #print "checking ",pdbname
-    check_pdb()
-    checkdirs()
-    hetlist_display = find_ligand_full_names()
-    create_ligands_and_poseview()
-    build_ligand_info()
-    find_interactions()
-    analyze_interactions()
-    pretty_results()
+    if not session:
+        pdbname = pdb
+        #print "checking normal ",pdbname
+        check_pdb()
+        checkdirs()
+        hetlist_display = find_ligand_full_names()
+        create_ligands_and_poseview()
+        build_ligand_info()
+        find_interactions()
+        analyze_interactions()
+        pretty_results()
+    else:
+        pdbname = pdb
+        #print "checking ",pdbname
+        projectdir = '/tmp/interactions/'+session+"/"
+        checkdirs()
+        hetlist_display = find_ligand_full_names()
+        create_ligands_and_poseview()
+        build_ligand_info()
+        find_interactions()
+        analyze_interactions()
+        pretty_results()   
 
 def main(argv): 
     pdbname = ''                             
-    try:                                
-        opts, args = getopt.getopt(argv, "p:", ["pdb"]) 
-    except getopt.GetoptError:           
-        print "Remember PDB name -p "                      
+    try:
+        #print 'ARGV      :', argv                                
+        opts, args = getopt.getopt(argv, "p:s:", ["pdb"]) 
+    except getopt.GetoptError as err:           
+        print "Remember PDB name -p "
+        print err                     
         sys.exit(2)
 
+    session = None
     for opt, arg in opts:                
         if opt in ("-p"):      
-            pdbname = arg    
+            pdbname = arg                  
+        elif opt in ("-s"):      
+            session = arg    
 
     if not pdbname:
         print "Remember PDB name -p "                      
         sys.exit(2)
-    #print "looking for",pdbname
+    
+    if session:
+        calculate_interactions(pdbname,session)                    
+    else:
+        calculate_interactions(pdbname)
 
-    calculate_interactions(pdbname)
 
 
 if __name__ == "__main__":
