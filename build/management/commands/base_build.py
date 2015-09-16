@@ -20,7 +20,7 @@ class Command(BaseCommand):
     def prepare_input(self, njobs, items):
         q = Queue()
         procs = list()
-        num_items = items.count()
+        num_items = len(items)
         
         # make sure not to use more jobs than proteins (chunk size will be 0, which is not good)
         if njobs > num_items:

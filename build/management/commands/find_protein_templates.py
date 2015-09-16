@@ -22,9 +22,10 @@ class Command(BaseBuild):
     # segments
     segments = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS)
 
-    # fetch wild-type sequences of receptors with available structures
-    structures = Structure.objects.order_by('protein_conformation__protein__parent', 'resolution').distinct(
-        'protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__parent__family')
+    # fetch representative (inactive) structures FIXME add active structure??
+    structures = Structure.objects.filter(representative=True,
+        protein_conformation__state__slug=settings.DEFAULT_PROTEIN_STATE).prefetch_related(
+        'protein_conformation__protein__parent__family')
 
     # fetch all protein conformations
     pconfs = ProteinConformation.objects.all().prefetch_related('protein__family', 'template_structure')

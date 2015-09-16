@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db.models import Q
+from django.db import IntegrityError
 
 from protein.models import ProteinAnomaly
 from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
@@ -40,9 +41,7 @@ def load_reference_positions(path):
             ref_positions = yaml.load(ref_position_file)
         return ref_positions
     except:
-        # if the file does not exists, create an empty file
-        ref_position_file = open(path, 'w')
-        ref_position_file.close()
+        return False
 
 def create_or_update_residues_in_segment(protein_conformation, segment, start, end, schemes, ref_positions,
     protein_anomalies, disregard_db_residues):

@@ -112,6 +112,7 @@ class Command(BaseCommand):
         self.logger.info('CREATING PUBLICATIONS')
         self.logger.info('Parsing file ' + self.publications_source_file)
 
+        num_created = 0
         with open(self.publications_source_file, 'r') as f:
             ps = yaml.load(f)
             for p in ps:
@@ -124,10 +125,13 @@ class Command(BaseCommand):
 
                 wl, created = WebLink.objects.get_or_create(index=p['weblink_index'], web_resource=web_resource)
                 j, created = PublicationJournal.objects.get_or_create(slug=p['journal_slug'], name=p['journal_name'])
-                pub, created = Publication.objects.get_or_create(title=p['title'] , authors=p['authors'] , year=p['year'] , reference=p['reference'] , journal=j, web_link=wl)
+                pub, created = Publication.objects.get_or_create(title=p['title'], authors=p['authors'],
+                    year=p['year'] , reference=p['reference'] , journal=j, web_link=wl)
 
                 if created:
-                    self.logger.info('Created publication ' + p['title'])
+                    num_created += 1
+        
+        self.logger.info('Created {} publications'.format(str(num_created)))
 
         self.logger.info('COMPLETED CREATING PUBLICATIONS')
 

@@ -70,7 +70,7 @@ class ResidueTablesDisplay(TemplateView):
                     
                 family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
                     species__in=(species_list),
-                    source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                    source__in=(protein_source_list)).prefetch_related('residue_numbering_scheme', 'species')
                 for fp in family_proteins:
                     proteins.append(fp)
 

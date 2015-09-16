@@ -1,11 +1,13 @@
 {% extends "home/base.html" %}
 
 {% block content %}
-Hi please select the pdb file to analyse:
-<form action="calculate" method="post">
+Enter a PDB name to analyse:
+<form action="calculate" method="post" enctype="multipart/form-data">
 {% csrf_token %}
     <label for="pdbname">PDBname</label>
-    <input id="pdbname" type="text" name="pdbname" value="">
+    {{ form.pdbname }} <br> or 
+    <p>{{ form.file.label_tag }}  </p> {{ form.file }}
+    <br>
     <input type="submit" value="OK">
 </form>
 {% endblock %}

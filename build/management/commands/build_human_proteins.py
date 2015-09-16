@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
+from django.db import IntegrityError
 
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
@@ -168,8 +169,8 @@ class Command(BaseBuild):
                 defaults={'name': uniprot['source']})
             if created:
                 self.logger.info('Created protein source ' + source.name)
-        except:
-                self.logger.error('Failed creating protein source ' + source.name)
+        except IntegrityError:
+            source = ProteinSource.objects.get(name=uniprot['source'])
 
         # get/create species
         try:
@@ -179,8 +180,8 @@ class Command(BaseBuild):
                 })
             if created:
                 self.logger.info('Created species ' + species.latin_name)
-        except:
-                self.logger.error('Failed creating species ' + species.latin_name)
+        except IntegrityError:
+            species = Species.objects.get(latin_name=uniprot['species_latin_name'])
 
         # create protein
         p = Protein()
@@ -202,8 +203,12 @@ class Command(BaseBuild):
             self.logger.error('Failed creating protein {}'.format(p.entry_name))
 
         # protein conformations
-        ps, created = ProteinState.objects.get_or_create(slug=settings.DEFAULT_PROTEIN_STATE,
-            defaults={'name': settings.DEFAULT_PROTEIN_STATE.title()})
+        try:
+            ps, created = ProteinState.objects.get_or_create(slug=settings.DEFAULT_PROTEIN_STATE,
+                defaults={'name': settings.DEFAULT_PROTEIN_STATE.title()})
+        except IntegrityError:
+            ps = ProteinState.objects.get(slug=settings.DEFAULT_PROTEIN_STATE)
+
         pc = ProteinConformation.objects.create(protein=p, state=ps)
 
         # protein aliases
@@ -221,14 +226,16 @@ class Command(BaseBuild):
 
         # genes
         for i, gene in enumerate(uniprot['genes']):
+            g = False
             try:
                 g, created = Gene.objects.get_or_create(name=gene, species=species, position=i)
-                g.proteins.add(p)
-
                 if created:
                     self.logger.info('Created gene ' + g.name + ' for protein ' + p.name)
-            except:
-                self.logger.error('Failed creating gene {} for protein {}'.format(gene, p.name))
+            except IntegrityError:
+                g = Gene.objects.get(name=gene, species=species, position=i)
+            
+            if g:
+                g.proteins.add(p)
 
     def create_protein_family(self, family_name, indent, parent_family, level_family_counter):
         # find the parent family

@@ -159,11 +159,6 @@ class Command(BaseCommand):
                 # protein anomalies to include
                 protein_anomalies = []
 
-                # get a list of generic numbers in main template
-                main_tpl_gn_labels = Residue.objects.filter(
-                    protein_conformation=template_structure.protein_conformation, generic_number__isnull=False,
-                    protein_segment=segment).values_list('generic_number__label', flat=True)
-
                 # find template segment (for segments borders)
                 try:
                     main_tpl_ss = StructureSegment.objects.get(structure=template_structure,
@@ -197,14 +192,20 @@ class Command(BaseCommand):
                             current_gene = current_protein_genes[0]
                             template_structure_protein = template_structure.protein_conformation.protein.parent
                             template_structure_gene = template_structure_protein.genes.order_by('position')[0]
-                            if current_gene == template_structure_gene:
+                            if current_gene.name.lower() == template_structure_gene.name.lower():
                                 ignore_rules = True
                                 self.logger.info('Ignoring anomaly rules because of {} structure'
                                     .format(template_structure_protein))
 
+                        # get a list of generic numbers in main template
+                        main_tpl_gn_labels = Residue.objects.filter(
+                            protein_conformation=template_structure.protein_conformation, generic_number__isnull=False,
+                            protein_segment=segment).values_list('generic_number__label', flat=True)
+
                         for pa, parss in anomaly_rule_sets[segment.slug].items():
                             # check whether this anomaly is inside the segment borders
-                            if not generic_number_within_segment_borders(pa, main_tpl_gn_labels):
+                            numbers_within_segment = generic_number_within_segment_borders(pa, main_tpl_gn_labels)
+                            if not numbers_within_segment:
                                 self.logger.info("Anomaly {} excluded for {} (outside segment borders)".format(pa, 
                                     pconf))
                                 continue
