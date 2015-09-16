@@ -20,8 +20,10 @@ class Command(BaseCommand):
         commands = [
             ['build_common'],
             ['build_human_proteins'],
-            ['build_orthologs'],
-            ['build_residues', {'njobs': njobs}],
+            ['build_human_residues', {'njobs': njobs}],
+            ['build_blast_database'],
+            ['build_other_proteins'],
+            ['build_other_residues', {'njobs': njobs}],
             ['build_blast_database'],
             ['build_construct_proteins', {'njobs': njobs}],
             ['build_structures', {'njobs': njobs}],
