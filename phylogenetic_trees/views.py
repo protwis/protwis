@@ -6,6 +6,8 @@ from common.views import AbsSettingsSelection
 from common.views import AbsSegmentSelection
 from common.views import AbsTargetSelection
 from common.selection import SelectionItem
+from mutation.models import *
+
 import os, shutil, subprocess
 import uuid
 from phylogenetic_trees.PrepareTree2 import *
@@ -71,32 +73,28 @@ class Treeclass:
     family = {}
     phylip = None
     dir = ''
-    #Additional_info = {'crystal':{'proteins':[],'colours':{'n':'#6dcde1', 'd':'#EEE'},'include':'False', 'name':'Crystallized structures'},
-    #        'class': {'include':'True', 'colours':{}, 'proteins':[], 'name':'Class'},
-    #        'family': {'include':'True', 'colours':{}, 'proteins':[], 'name':'Ligand family'},
-    #        'ligand': {'include':'True', 'colours':{}, 'proteins':[], 'name':'Ligand type'},
-    #        'mutant': {'include':'False', 'colours':{}, 'proteins':[], 'name':'Any mutant'},
-    #        'mutant_plus': {'include':'False', 'colours':{}, 'proteins':[], 'name':'Positive mutant'},
-    #        'mutant_minus': {'include':'False', 'colours':{}, 'proteins':[], 'name':'Negative mutant'}
-    #        }
-    Additional_info={'crystal': {'include':'False', 'order':6, 'colours':{'n':'#6dcde1','d':'#EEE'}, 'color_type':'single', 'proteins':[], 'parent':None, 'child': None, 'name':'Crystals'},
-            'class': {'include':'True', 'order':0, 'colours':{}, 'proteins':[], 'color_type':'grayscale', 'parent':[], 'child': ['family,ligand'], 'name':'Class'},
-            'family': {'include':'True', 'order':1, 'colours':{}, 'proteins':[], 'color_type':'spectrum', 'parent':[], 'child': ['ligand'], 'name':'Ligand type'},
-            'ligand': {'include':'True', 'order':2, 'colours':{}, 'proteins':[], 'color_type':'spectrum', 'parent':['family','class'], 'child': [], 'name':'Ligand name'},
-            'mutant': {'include':'False', 'order':3, 'colours':{'n':'#6dcde1'}, 'color_type':'single', 'proteins':[], 'parent':[], 'child': ['mutant_plus','mutant_minus'], 'name':'Mutated proteins'},
-            'mutant_plus': {'include':'False', 'order':4, 'colours':{'n':'#6dcde1'}, 'color_type':'single', 'proteins':[], 'parent':'mutant', 'child': [], 'name':'Positive affinity mutants'},
-            'mutant_minus': {'include':'False', 'order':5, 'colours':{'n':'#6dcde1'}, 'color_type':'single', 'proteins':[], 'parent':'mutant', 'child': [], 'name':'Negative affinity mutants'}
+    Additional_info={"crystal": {"include":"False", "order":6, "colours":{"crystal_true":"#6dcde1","crystal_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":None, "child": None, "name":"Crystals"},
+            "class": {"include":"True", "order":0, "colours":{}, "proteins":[], "color_type":"grayscale", "parent":[], "child": ["family,ligand"], "name":"Class"},
+            "family": {"include":"True", "order":1, "colours":{}, "proteins":[], "color_type":"spectrum", "parent":[], "child": ["ligand"], "name":"Ligand type"},
+            "ligand": {"include":"True", "order":2, "colours":{}, "proteins":[], "color_type":"spectrum", "parent":["family","class"], "child": [], "name":"Ligand name"},
+            "mutant": {"include":"False", "order":3, "colours":{"mutant_true":"#6dcde1","mutant_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":[], "child": ["mutant_plus","mutant_minus"], "name":"Mutated proteins"},
+            "mutant_plus": {"include":"False", "order":4, "colours":{"mutant_plus_true":"#6dcde1","mutant_plus_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":"mutant", "child": [], "name":"Positive affinity mutants"},
+            "mutant_minus": {"include":"False", "order":5, "colours":{"mutant_minus_true":"#6dcde1","mutant_minus_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":"mutant", "child": [], "name":"Negative affinity mutants"}
             }
     buttons = [(x[1]['order'],x[1]['name']) for x in sorted(Additional_info.items(), key= lambda x: x[1]['order']) if x[1]['include']=='True']
 
     def Prepare_file(self, request):
         self.Tree = PrepareTree()
         sets = ProteinSet.objects.all()
+        #### Get additional data ####
         crysts=[]
         for n in sets:
             if n.id==1:
                 for prot in n.proteins.all():
                     crysts.append(prot.accession)
+
+            
+        #############################
         # get the user selection from session
         a=Alignment()
         simple_selection=request.session.get('selection', False)
@@ -135,12 +133,29 @@ class Treeclass:
         infile = open('/tmp/%s/infile' %dirname,'w')
         infile.write('    '+str(self.total)+'    '+str(total_length)+'\n')
         ####Get additional protein information
+        muts = {}
+        
         for n in a.proteins:
+            fam = self.Tree.trans_0_2_A(n.protein.family.slug)
+
+            #### Mutations ######
+            #muts_db = MutationExperiment.objects.filter(protein_id=n.id)
+            #for a in muts_db:
+            #    print(a.protein,a.residue,a.mutation,a.ligand)
+            #    wt = int(a.wt_value)
+            #    mu = int(a.mu_value)
+            #    if wt < mu:
+            #        muts[fam]='negative'
+            #    if wt > mu:
+            #        muts[fam]='positive'
+            #    if wt == mu:
+            #        muts[fam]='neutral'
+            #exit()
+
             link = n.protein.entry_name
             name = n.protein.name.replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')
             if '&' in name and ';' in name:
                 name = name.replace('&','').replace(';',' ')
-            fam = n.protein.family.slug
             acc = n.protein.accession
             if acc:
                 acc = acc.replace('-','_')
@@ -151,7 +166,6 @@ class Treeclass:
                 desc = str(ProteinAlias.objects.filter(protein__in=[n.id])[0])
             except IndexError:
                 desc = ''
-            fam = self.Tree.trans_0_2_A(fam)
             if acc in crysts:
                 if not fam in self.Additional_info['crystal']['proteins']:
                     self.Additional_info['crystal']['proteins'].append(fam)

@@ -26,7 +26,8 @@
         <div id="ring_buttons">
         {% include 'phylogenetic_trees/ring_buttons.html' %}
         </div>
-        <button style="width:250px;" onclick="predefined_colours({{ add.crystal }})">Highlight crystallized receptors</button>
+        <button style="width:250px;" onclick="predefined_colours({{add.crystal.proteins}},'{{ add.crystal.colours.crystal_true }}')">Highlight crystallized receptors</button>
+
 
     </div>
     <br>Download:

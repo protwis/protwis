@@ -6,13 +6,13 @@ from collections import defaultdict
 
 
 class PrepareTree:
-    rings={'crystal': {'include':'False', 'order':6, 'colours':{'n':'#6dcde1','d':'#EEE'}, 'color_type':'single', 'items':[], 'parent':None, 'child': None, 'name':'Crystallized structures'},
+    rings={'crystal': {'include':'False', 'order':6, 'colours':{'crystal_true':'#6dcde1','crystal_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':None, 'child': None, 'name':'Crystallized structures'},
             'class': {'include':'False', 'order':0, 'colours':{}, 'items':[], 'color_type':'grayscale', 'parent':[], 'child': ['family,ligand'], 'name':'Class'},
             'family': {'include':'False', 'order':1, 'colours':{}, 'items':[], 'color_type':'spectrum', 'parent':[], 'child': ['ligand'], 'name':'Ligand type'},
             'ligand': {'include':'False', 'order':2, 'colours':{}, 'items':[], 'color_type':'spectrum', 'parent':['family','class'], 'child': [], 'name':'Ligand name'},
-            'mutant': {'include':'False', 'order':3, 'colours':{'n':'#6dcde1'}, 'color_type':'single', 'items':[], 'parent':[], 'child': ['mutant_plus','mutant_minus'], 'name':'Mutated proteins'},
-            'mutant_plus': {'include':'False', 'order':4, 'colours':{'n':'#6dcde1'}, 'color_type':'single', 'items':[], 'parent':'mutant', 'child': [], 'name':'Positive affinity mutants'},
-            'mutant_minus': {'include':'False', 'order':5, 'colours':{'n':'#6dcde1'}, 'color_type':'single', 'items':[], 'parent':'mutant', 'child': [], 'name':'Negative affinity mutants'}
+            'mutant': {'include':'False', 'order':3, 'colours':{'mutant_true':'#6dcde1','mutant_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':[], 'child': ['mutant_plus','mutant_minus'], 'name':'Mutated proteins'},
+            'mutant_plus': {'include':'False', 'order':4, 'colours':{'mutant_plus_true':'#6dcde1','mutant_plus_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':'mutant', 'child': [], 'name':'Positive affinity mutants'},
+            'mutant_minus': {'include':'False', 'order':5, 'colours':{'mutant_minus_true':'#6dcde1','mutant_minus_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':'mutant', 'child': [], 'name':'Negative affinity mutants'}
             }
     prots = {}
 
@@ -244,7 +244,7 @@ class PrepareTree:
                 verse_count = 0
                 for item in ring[1]['items']:
                     if ring[1]['color_type']=='single':
-                        self.legend += '<rect x="'+str(ring_no*(width+40)+10)+'" y="'+str(80+verse_count*20)+'" height="10" width="30" class="chart" id="'+item+'" stroke="#000000" fill="'+ring[1]['colours']['n']+'"/><text x="'+str(ring_no*(width+40)+45)+'" y="'+str(90+verse_count*20)+'" style="font-family:Verdana; font-size:12;">'+self.famdict[item].replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')+'</text>'
+                        self.legend += '<rect x="'+str(ring_no*(width+40)+10)+'" y="'+str(80+verse_count*20)+'" height="10" width="30" class="chart" id="'+item+'" stroke="#000000" fill="'+ring[1]['colours'][ring[0]+'_true']+'"/><text x="'+str(ring_no*(width+40)+45)+'" y="'+str(90+verse_count*20)+'" style="font-family:Verdana; font-size:12;">'+self.famdict[item].replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')+'</text>'
                     else:
                         self.legend += '<rect x="'+str(ring_no*(width+40)+10)+'" y="'+str(80+verse_count*20)+'" height="10" width="30" class="chart" id="'+item+'" stroke="#000000" fill="'+ring[1]['colours'][item]+'"/><text x="'+str(ring_no*(width+40)+45)+'" y="'+str(90+verse_count*20)+'" style="font-family:Verdana; font-size:12;">'+self.famdict[item].replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')+'</text>'
                     verse_count +=1
@@ -325,9 +325,9 @@ class PrepareTree:
                     if self.rings[ring]['include']=='True':
                         if self.rings[ring]['color_type']=='single':
                             if self.prots[name]['acc'] in self.rings[ring]['items']:
-                                chart += '<%s>n</%s>' %(ring,ring)
+                                chart += '<%s>%s_true</%s>' %(ring,ring,ring)
                             else:
-                                chart += '<%s>d</%s>' %(ring,ring)
+                                chart += '<%s>%s_false</%s>' %(ring,ring,ring)
                         else:
                             chart += '<'+ring+'>'+self.prots[name][ring]+'</'+ring+'>'
                 chart += '</chart>'
