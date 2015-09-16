@@ -10,7 +10,7 @@ class PrepareTree:
             'class': {'include':'False', 'order':0, 'colours':{}, 'items':[], 'color_type':'grayscale', 'parent':[], 'child': ['family,ligand'], 'name':'Class'},
             'family': {'include':'False', 'order':1, 'colours':{}, 'items':[], 'color_type':'spectrum', 'parent':[], 'child': ['ligand'], 'name':'Ligand type'},
             'ligand': {'include':'False', 'order':2, 'colours':{}, 'items':[], 'color_type':'spectrum', 'parent':['family','class'], 'child': [], 'name':'Ligand name'},
-            'mutant': {'include':'False', 'order':3, 'colours':{'n':'#6dcde1'}, 'items':[], 'parent':[], 'child': ['mutant_plus','mutant_minus'], 'name':'Mutated proteins'},
+            'mutant': {'include':'False', 'order':3, 'colours':{'n':'#6dcde1'}, 'color_type':'single', 'items':[], 'parent':[], 'child': ['mutant_plus','mutant_minus'], 'name':'Mutated proteins'},
             'mutant_plus': {'include':'False', 'order':4, 'colours':{'n':'#6dcde1'}, 'color_type':'single', 'items':[], 'parent':'mutant', 'child': [], 'name':'Positive affinity mutants'},
             'mutant_minus': {'include':'False', 'order':5, 'colours':{'n':'#6dcde1'}, 'color_type':'single', 'items':[], 'parent':'mutant', 'child': [], 'name':'Negative affinity mutants'}
             }
@@ -237,16 +237,16 @@ class PrepareTree:
         height = verse*length+10
         ring_no = 0
         verse_count = 0
-        self.legend ='<?xml version="1.0" standalone="no"?><svg class="legend" id="legendSVG" width="'+str(width*total_rings+100)+'px" height="'+str(height+70)+'px" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="leg_group" class="legend">'
+        self.legend ='<?xml version="1.0" standalone="no"?><svg class="legend" id="legendSVG" width="'+str((width+40)*total_rings+100)+'px" height="'+str(height+70)+'px" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="leg_group" class="legend">'
         for ring in sorted(self.rings.items(), key=lambda x: x[1]['order']):
             if ring[1]['include']=='True':
                 self.legend+='<g class="chart'+str(ring[1]['order'])+'"><text x="'+str(ring_no*(width+40))+'" y="30" font-family="Verdana" font-size="20" font-weight="bold">'+self.rings[ring[0]]['name']+'</text><rect x="'+str(ring_no*(width+40))+'" y="70" width="'+str(width)+'" height="'+str(verse*len(self.rings[ring[0]]['items'])+10)+'" stroke="black" fill="transparent" stroke-width="5"/>'
                 verse_count = 0
                 for item in ring[1]['items']:
                     if ring[1]['color_type']=='single':
-                        self.legend += '<rect x="'+str(ring_no*(width+40)+10)+'" y="'+str(80+verse_count*20)+'" height="10" width="30" class="chart" id="'+item+'" stroke="#000000" fill="'+ring[1]['colours']['n']+'"/><text x="'+str(ring_no*(width+40)+45)+'" y="'+str(90+verse_count*20)+'" style="font-family:Verdana; font-size:12;">'+self.famdict[item]+'</text>'
+                        self.legend += '<rect x="'+str(ring_no*(width+40)+10)+'" y="'+str(80+verse_count*20)+'" height="10" width="30" class="chart" id="'+item+'" stroke="#000000" fill="'+ring[1]['colours']['n']+'"/><text x="'+str(ring_no*(width+40)+45)+'" y="'+str(90+verse_count*20)+'" style="font-family:Verdana; font-size:12;">'+self.famdict[item].replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')+'</text>'
                     else:
-                        self.legend += '<rect x="'+str(ring_no*(width+40)+10)+'" y="'+str(80+verse_count*20)+'" height="10" width="30" class="chart" id="'+item+'" stroke="#000000" fill="'+ring[1]['colours'][item]+'"/><text x="'+str(ring_no*(width+40)+45)+'" y="'+str(90+verse_count*20)+'" style="font-family:Verdana; font-size:12;">'+self.famdict[item]+'</text>'
+                        self.legend += '<rect x="'+str(ring_no*(width+40)+10)+'" y="'+str(80+verse_count*20)+'" height="10" width="30" class="chart" id="'+item+'" stroke="#000000" fill="'+ring[1]['colours'][item]+'"/><text x="'+str(ring_no*(width+40)+45)+'" y="'+str(90+verse_count*20)+'" style="font-family:Verdana; font-size:12;">'+self.famdict[item].replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')+'</text>'
                     verse_count +=1
                 ring_no+=1
                 self.legend+='</g>'
@@ -287,17 +287,11 @@ class PrepareTree:
         xml = open(d+'/raw.xml','r').readlines()
         out = open(d+'/out.xml','w')
         self.get_tree_data(Additional_info)
-        print('1')
         self.get_family_meta(family)
-        print('2')
         charts=self.get_charts()
-        print('3')
         self.get_colours()
-        print('4')
         self.build_legend()
-        print('5')
         self.get_styles()
-        print('6')
         flag = False
         flag2 = ''
         stylesflag=False
@@ -327,7 +321,6 @@ class PrepareTree:
             if '<name>' in line:
                 name = line.split('<')[1].split('>')[1]
                 chart = '<chart>'
-                print('7')
                 for ring in self.rings:
                     if self.rings[ring]['include']=='True':
                         if self.rings[ring]['color_type']=='single':
@@ -336,9 +329,7 @@ class PrepareTree:
                             else:
                                 chart += '<%s>d</%s>' %(ring,ring)
                         else:
-                            print('8')
                             chart += '<'+ring+'>'+self.prots[name][ring]+'</'+ring+'>'
-                            print('9')
                 chart += '</chart>'
                 flag2 = [name,chart]
                 line = line.replace(name,self.prots[name]['name']).replace('<name', "<name bgStyle='%s'" %self.prots[name]['acc'])

@@ -9,6 +9,7 @@ urlpatterns = patterns('',
     url(r'^segmentselection', views.SegmentSelection.as_view(), name='segmentselection'),
     url(r'^treesettings', views.TreeSettings.as_view(), name='treesettings'),
     url(r'^render', views.render_tree, name='render'),
-    url(r'^showrings', views.modify_tree, name='showrings'),
+    url(r'^showrings', views.modify_tree, name='render'),
+    url(r'^get_buttons', views.get_buttons, name='render'),
 
 )

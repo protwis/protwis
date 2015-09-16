@@ -61,11 +61,11 @@
          $(this).css("stroke-width", '4');
      });
  };
- function predefined_colours(defs, colours) {
-     resetColors(defs);
+ function predefined_colours(colours) { 
+     resetColors();
      $('#svgCanvas').find(".bgfield").each(function (index) {
          if (colours['proteins'].indexOf($(this).attr("id")) > -1) {
-             $(this).css("fill", colours['colours'][0]);
+             $(this).css("fill", colours['colours']['n']);
          };
      });
  };
@@ -115,7 +115,7 @@ function toggleLegend() {
  
   function SelectSubmenu(name) {
      $('.button_container').find('.btn-group').each(function (index) {
-         if ($(this).attr('id') == name || $(this).attr('id') == 'main' || $(this).attr('id') == 'choice') {
+         if ($(this).attr('id') == name || $(this).attr('id') == 'types' || $(this).attr('id') == 'choice') {
              $(this).css("display", '');
          } else {
              $(this).css("display", 'none');
@@ -141,7 +141,6 @@ function toggleLegend() {
      var values = [];
      $('.button_container').find('.btn-default').each(function (index) {
          if ($(this).css("display") != 'none'){
-             console.log($(this));
              args.push($(this).attr('id'));
              values.push('True');
          } else if ($(this).css("display") == 'none'){
@@ -149,6 +148,7 @@ function toggleLegend() {
              values.push('False');
          };
      });
+    $("#svgCanvas").empty(); 
     $.ajax({
     'url': '/phylogenetic_trees/showrings',
     'data': {
@@ -160,7 +160,15 @@ function toggleLegend() {
            $("#main").html(data);
        }
      });
+    $.ajax({
+    'url': '/phylogenetic_trees/get_buttons',
+    'type': 'GET',
+    'success': function(data) {
+           $("#ring_buttons").html(data);
+       }
+     });
        };
+       
 
 
 
@@ -171,12 +179,25 @@ function toggleLegend() {
      var legend = $('#legend').find('svg')[0];
      h2 = parseInt($(legend).attr('height'));
      w2 = parseInt($(legend).attr('width'));
-     new_w = (w-w2)/2
+     leg_w = (w-w2)/2
+     
      SVG.setAttribute('height', (h + h2));
+     if (w2 > w) {
+         SVG.setAttribute('width', (w2));
+         leg_w = 0 
+         svg_w = Math.abs(w-w2)/2
+     } else {
+         leg_w = Math.abs(w-w2)/2 
+         svg_w = 0
+     };
+//     for (i = 0; i < SVG.children.length; i++) {
+//         SVG.children[i].setAttribute('transform', 'translate ('+svg_w.toString()+' 0)');
+//     };
      for (i = 0; i < legend.children.length; i++) {
-         legend.children[i].setAttribute('transform', 'translate ('+new_w.toString()+' ' + h.toString()+')');
+         legend.children[i].setAttribute('transform', 'translate ('+leg_w.toString()+' ' + h.toString()+')');
          $(SVG).append(legend.children[i]);
-     }
+     };
+
 
  };
 $( document ).ready(function (){

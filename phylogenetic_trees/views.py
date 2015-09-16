@@ -26,7 +26,7 @@ class TreeSettings(AbsSettingsSelection):
     ])
     buttons = {
         'continue': {
-            'label': 'Continue to next step',
+            'label': 'Draw tree',
             'url': '/phylogenetic_trees/render',
             'color': 'success',
         },
@@ -71,14 +71,23 @@ class Treeclass:
     family = {}
     phylip = None
     dir = ''
-    Additional_info = {'crystal':{'proteins':[],'colours':{'n':'#6dcde1', 'd':'#EEE'},'include':'False'},
-            'class': {'include':'True', 'colours':{}, 'proteins':[]},
-            'family': {'include':'True', 'colours':{}, 'proteins':[]},
-            'ligand': {'include':'True', 'colours':{}, 'proteins':[]},
-            'mutant': {'include':'False', 'colours':{}, 'proteins':[]},
-            'mutant_plus': {'include':'False', 'colours':{}, 'proteins':[]},
-            'mutant_minus': {'include':'False', 'colours':{}, 'proteins':[]}
+    #Additional_info = {'crystal':{'proteins':[],'colours':{'n':'#6dcde1', 'd':'#EEE'},'include':'False', 'name':'Crystallized structures'},
+    #        'class': {'include':'True', 'colours':{}, 'proteins':[], 'name':'Class'},
+    #        'family': {'include':'True', 'colours':{}, 'proteins':[], 'name':'Ligand family'},
+    #        'ligand': {'include':'True', 'colours':{}, 'proteins':[], 'name':'Ligand type'},
+    #        'mutant': {'include':'False', 'colours':{}, 'proteins':[], 'name':'Any mutant'},
+    #        'mutant_plus': {'include':'False', 'colours':{}, 'proteins':[], 'name':'Positive mutant'},
+    #        'mutant_minus': {'include':'False', 'colours':{}, 'proteins':[], 'name':'Negative mutant'}
+    #        }
+    Additional_info={'crystal': {'include':'False', 'order':6, 'colours':{'n':'#6dcde1','d':'#EEE'}, 'color_type':'single', 'proteins':[], 'parent':None, 'child': None, 'name':'Crystals'},
+            'class': {'include':'True', 'order':0, 'colours':{}, 'proteins':[], 'color_type':'grayscale', 'parent':[], 'child': ['family,ligand'], 'name':'Class'},
+            'family': {'include':'True', 'order':1, 'colours':{}, 'proteins':[], 'color_type':'spectrum', 'parent':[], 'child': ['ligand'], 'name':'Ligand type'},
+            'ligand': {'include':'True', 'order':2, 'colours':{}, 'proteins':[], 'color_type':'spectrum', 'parent':['family','class'], 'child': [], 'name':'Ligand name'},
+            'mutant': {'include':'False', 'order':3, 'colours':{'n':'#6dcde1'}, 'color_type':'single', 'proteins':[], 'parent':[], 'child': ['mutant_plus','mutant_minus'], 'name':'Mutated proteins'},
+            'mutant_plus': {'include':'False', 'order':4, 'colours':{'n':'#6dcde1'}, 'color_type':'single', 'proteins':[], 'parent':'mutant', 'child': [], 'name':'Positive affinity mutants'},
+            'mutant_minus': {'include':'False', 'order':5, 'colours':{'n':'#6dcde1'}, 'color_type':'single', 'proteins':[], 'parent':'mutant', 'child': [], 'name':'Negative affinity mutants'}
             }
+    buttons = [(x[1]['order'],x[1]['name']) for x in sorted(Additional_info.items(), key= lambda x: x[1]['order']) if x[1]['include']=='True']
 
     def Prepare_file(self, request):
         self.Tree = PrepareTree()
@@ -204,34 +213,41 @@ class Treeclass:
             subprocess.check_output(['phylip consense<temp'], shell=True, cwd = '/tmp/%s' %dirname)
         self.phylip = open('/tmp/%s/outtree' %dirname).read()
         phylogeny_input = self.get_phylogeny('/tmp/%s/' %dirname)
-        shutil.rmtree('/tmp/%s' %dirname)
-        return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info
+        #shutil.rmtree('/tmp/%s' %dirname)
+        return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
         
     def get_phylogeny(self, dirname):
-        print(self.family)
         self.Tree.treeDo(dirname, self.phylip,self.branches,self.family,self.Additional_info, self.famdict)
         phylogeny_input = open('%s/out.xml' %dirname,'r').read().replace('\n','')
         return phylogeny_input
     
     def get_data(self):
-        return self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info
+        return self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
+
         
+def get_buttons(request):
+    Tree_class=request.session['Tree']
+    buttons = [(x[1]['order'],x[1]['name']) for x in sorted(Tree_class.Additional_info.items(), key= lambda x: x[1]['order']) if x[1]['include']=='True']
+    return render(request, 'phylogenetic_trees/ring_buttons.html', {'but':buttons })
+   
         
 
 def modify_tree(request):
-    arg = request.POST.getlist('arg[]')
-    value = request.POST.getlist('value[]')
+    arg = request.GET.getlist('arg[]')
+    value = request.GET.getlist('value[]')
     Tree_class=request.session['Tree']
     for n in range(len(arg)):
-        Tree_class.Additional_info[arg[n].replace('_btn','')]['include']==value[n]
+        Tree_class.Additional_info[arg[n].replace('_btn','')]['include']=value[n]
+    request.session['Tree']=Tree_class
     phylogeny_input = Tree_class.get_phylogeny('/tmp')
-    branches, ttype, total, legend, box, Additional_info=Tree_class.get_data()
-    return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info })
+    branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.get_data()
+    
+    return render(request, 'phylogenetic_trees/main.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons })
 
 def render_tree(request):
     Tree_class=Treeclass()
-    phylogeny_input, branches, ttype, total, legend, box, Additional_info=Tree_class.Prepare_file(request)
+    phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.Prepare_file(request)
     request.session['Tree']=Tree_class
-    return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info })
+    return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons })
 
 

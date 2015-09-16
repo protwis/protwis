@@ -1,10 +1,7 @@
 ﻿{% extends "home/base.html" %}
 {% load staticfiles %}
-
-    <div id='main'>
-    {% include 'phylogenetic_trees/main.html' %}
-
-    {% block addon_js %}
+<div id='all'>
+{% block addon_js %}
     <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
     <script src="{% static 'home/js/unitip.js' %}"></script>
     <script src="{% static 'home/js/raphael-min.js' %}"></script>
@@ -15,52 +12,21 @@
     {% else %}
     <script src="{% static 'home/js/jsphylosvg.js' %}"></script>
     {% endif %}
-    {% if ttype == 1 %}
-    <script type="text/javascript">
-        window.onload = function(){
-            var dataObject = { phyloxml: "{{ phylo|safe }}" };
-            phylocanvas = new Smits.PhyloCanvas(
-            dataObject,
-            "svgCanvas",
-            950, {{ count }}/4*100
-            )
-            mergeSVG();
-            colours();
-            colour_lines();
-
-        };
-    </script>
-    {% else %}
-    <script type="text/javascript">
-        window.onload = function(){
-            var dataObject = { phyloxml: "{{ phylo|safe }}" };
-            phylocanvas = new Smits.PhyloCanvas(
-                            dataObject,
-                            "svgCanvas",
-                            1000 + {{ count }}*20, 1000 + {{ count }}*20,
-                            'circular'
-                            )
-            mergeSVG();
-            colours();
-            colour_lines();
-        };
-
-    </script>
-    {% endif %}
+<div id='main'>
+    {% include 'phylogenetic_trees/main.html' %}
+</div>
 {% endblock %}
-
 {% block content %}
-    <div id="svgCanvas"> </div>
-    <div id="legend" class="hidden">{{ leg|safe }} </div>
+
+<div id="svgCanvas"> </div>
     <div>
         {{ b|safe }}
         <br><button style="width:120px;" onclick="resetColors()">Clear</button>
-        <button style="width:250px;" onclick="toggleLegend()">Toggle All Rings</button>
-        <br /><button style="width:150px;" onclick="toggleRings('chart0')">Toggle Class Ring</button>
-        <button style="width:150px;" onclick="toggleRings('chart1')">Toggle Family Ring</button>
-        <button style="width:150px;" onclick="toggleRings('chart2')">Toggle Ligand Ring</button>
-
-        <br><button style="width:250px;" onclick="predefined_colours({{ default }},{{ add.crystal }})">Highlight crystallized receptors</button>
+        <button style="width:250px;" onclick="toggleLegend()">Toggle all rings</button>
+        <div id="ring_buttons">
+        {% include 'phylogenetic_trees/ring_buttons.html' %}
+        </div>
+        <button style="width:250px;" onclick="predefined_colours({{ add.crystal }})">Highlight crystallized receptors</button>
 
     </div>
     <br>Download:
@@ -69,9 +35,10 @@
     <a href="javascript:saveSvgAsTiff(document.getElementById('svgtree'), 'tree.tiff', {scale: 3});">TIFF</a>
 
     <a id=tree_svg_link href-lang="image/svg+xml" href="" download="tree">SVG</a>
-</div>
 <br />
 {% include 'phylogenetic_trees/tree_options.html' %}
-{% endblock %}
 </div>
 
+{% endblock %}
+
+</div>
