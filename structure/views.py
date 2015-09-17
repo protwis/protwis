@@ -726,8 +726,10 @@ class TemplateBrowser(TemplateView):
         else:
             a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']))
         a.load_proteins([x.protein_conformation.protein for x in list(Structure.objects.all())])
+        print([x.protein_conformation.protein for x in list(Structure.objects.all())])
         a.build_alignment()
-        a.calculate_similarity()
+        a.calculate_statistics()
+        a.calculate_simiarity_matrix()
         context['crystals'] = []
         for prot in a.proteins[1:]:
             context['crystals'].append(Structure.objects.get(protein_conformation__protein__entry_name=prot.protein.entry_name))
