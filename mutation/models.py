@@ -52,7 +52,9 @@ class MutationExperiment(models.Model):
             mainauthor = ast.literal_eval(self.refs.authors)[0]
             return mainauthor + " et al ("+str(self.refs.year)+")"
         except:
-            return "("+str(self.refs.year)+")"
+            #print(self.refs.authors.split(','))
+            mainauthor = self.refs.authors.split(',')[0]
+            return mainauthor + " et al ("+str(self.refs.year)+")"
         #return  " et al ("+str(self.refs.year)+")"
 
     def getCalculation(self):
@@ -93,7 +95,7 @@ class MutationExperiment(models.Model):
             elif self.exp_qual: #only display those with qual_id
                 temp = self.exp_qual.qual +  " " + self.exp_qual.prop  
         else:
-            temp = "-"
+            temp = "N/A"
         return temp
     
     
