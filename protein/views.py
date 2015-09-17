@@ -13,6 +13,10 @@ from collections import OrderedDict
 
 
 class BrowseSelection(AbsBrowseSelection):
+    title = 'SELECT A RECEPTOR (FAMILY)'
+    description = 'Select a target or family by searching or browsing in the right column.'
+    description = 'Select a receptor (family) by searching or browsing in the middle. The selection is viewed to' \
+        + ' the right.'
     docs = '/docs/browse'
     buttons = {}
         
@@ -130,7 +134,7 @@ def SelectionAutocomplete(request):
             results.append(p_json)
 
         # find protein aliases
-        pas = ProteinAlias.objects.select_related('protein').filter(name__icontains=q,
+        pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
             protein__species__in=(species_list),
             protein__source__in=(protein_source_list))[:10]
         for pa in pas:

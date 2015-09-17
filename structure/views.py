@@ -2,6 +2,7 @@
 from django.conf import settings
 from django.views.generic import TemplateView
 from django.http import HttpResponse, JsonResponse
+from django.db.models import Count, Q
 from django import forms
 
 from protein.models import Gene, ProteinSegment
@@ -9,6 +10,8 @@ from structure.models import Structure
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
+from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
+from protein.models import Protein
 from common.views import AbsSegmentSelection,AbsReferenceSelection
 from common.selection import Selection
 from common.extensions import MultiFileField
@@ -40,7 +43,42 @@ class StructureBrowser(TemplateView):
 
         return context
 
+def StructureDetails(request, pdbname):
+    """
+    Show structure details
+    """
+    pdbname = pdbname
+    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name','structure_ligand_pair__pdb_reference','structure_ligand_pair__annotated').filter(structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
+    resn_list = ''
 
+    for structure in structures:
+        if structure['structure_ligand_pair__annotated']:
+            resn_list += ",\""+structure['structure_ligand_pair__pdb_reference']+"\""
+    print(resn_list)
+
+    crystal = Structure.objects.get(pdb_code__index=pdbname)
+    p = Protein.objects.get(protein=crystal.protein_conformation.protein)
+    residues = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname).order_by('rotamer__residue__sequence_number')
+    return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list})
+
+def ServePdbDiagram(request, pdbname):       
+    structure=Structure.objects.filter(pdb_code__index=pdbname) 
+    if structure.exists():
+        structure=structure.get()
+    else:
+         quit() #quit!
+
+    if structure.pdb_data is None:
+        quit()
+
+    response = HttpResponse(structure.pdb_data.pdb, content_type='text/plain')
+    return response
+
+    
+def ServePdbLigandDiagram(request,pdbname,ligand):      
+    pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(Q(ligand__properities__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
+    response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
+    return response
 
 class StructureStatistics(TemplateView):
     """
@@ -54,14 +92,15 @@ class StructureStatistics(TemplateView):
 
         #Prepare chart with unique crystallized receptors by year
         all_structs = list(Structure.objects.all().prefetch_related('protein_conformation__protein'))
-        years = list(set([x.publication_date.year for x in all_structs]))
+        years = self.get_years_range(list(set([x.publication_date.year for x in all_structs])))
         unique_structs = list(Structure.objects.order_by('protein_conformation__protein__parent', 'state',
-            'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein'))
+            'publication_date', 'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein'))
         families = list(set([x.protein_conformation.protein.get_protein_family() for x in unique_structs]))
         
         extra = {
             'x_axis_format': '',
             'y_axis_format': 'f',
+            'stacked': 'True',
             }
         context['charttype'] = "multiBarChart"
         context['chartdata'] = self.get_per_family_cumulative_data_series(years, families, unique_structs)
@@ -79,6 +118,13 @@ class StructureStatistics(TemplateView):
         context['extra_reso'] = extra#{'x_axis_format': '[]', 'y_axis_format': 'f'}
 
         return context
+
+
+    def get_years_range(self, years_list):
+
+        min_y = min(years_list)
+        max_y = max(years_list)
+        return range(min_y, max_y+1)
 
 
     def get_per_family_data_series(self, years, families, structures):

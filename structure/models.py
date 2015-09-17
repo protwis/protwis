@@ -14,6 +14,7 @@ class Structure(models.Model):
     resolution = models.DecimalField(max_digits=5, decimal_places=3)
     publication_date = models.DateField()
     pdb_data = models.ForeignKey('PdbData', null=True) #allow null for now, since dump file does not contain.
+    representative = models.BooleanField(default=False)
 
 
     def __str__(self):
@@ -34,7 +35,7 @@ class StructureModel(models.Model):
 
 
 class StructureType(models.Model):
-    slug = models.SlugField(max_length=20)
+    slug = models.SlugField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
 
     def __str__(self):

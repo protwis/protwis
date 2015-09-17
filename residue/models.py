@@ -43,6 +43,7 @@ class ResidueGenericNumber(models.Model):
     
     class Meta():
         db_table = 'residue_generic_number'
+        unique_together = ('scheme', 'label')
 
 
 class ResidueNumberingScheme(models.Model):
@@ -56,3 +57,16 @@ class ResidueNumberingScheme(models.Model):
 
     class Meta():
         db_table = 'residue_generic_numbering_scheme'
+
+
+class ResidueGenericNumberEquivalent(models.Model):
+    default_generic_number = models.ForeignKey('ResidueGenericNumber')
+    scheme = models.ForeignKey('ResidueNumberingScheme')
+    label = models.CharField(db_index=True, max_length=10)
+
+    def __str__(self):
+        return self.label
+    
+    class Meta():
+        db_table = 'residue_generic_number_equivalent'
+        unique_together = ('scheme', 'label')

@@ -4,7 +4,7 @@ from common.selection import Selection
 from common.definitions import *
 from protein.models import Protein, ProteinConformation, ProteinState, ProteinSegment, ProteinFusionProtein
 from residue.models import Residue
-from residue.models import ResidueGenericNumber
+from residue.models import ResidueGenericNumber, ResidueGenericNumberEquivalent
 from residue.models import ResidueNumberingScheme
 from structure.models import Structure
 
@@ -53,10 +53,9 @@ class Alignment:
         self.reference = True
 
         # fetch the selected conformations of the protein
-        # only one can be selected for similarity search, therefore state[0] (other states ignored, if defined)
+        # FIXME take many conformational states into account
         try:
-            pconf = ProteinConformation.objects.get(protein=protein,
-                state=ProteinState.objects.get(slug=self.states[0]))
+            pconf = ProteinConformation.objects.get(protein=protein)
         except ProteinConformation.DoesNotExist:
             raise Exception ('Protein conformation {} not found for protein {}'.format(self.states[0],
                 protein.entry_name))
@@ -71,11 +70,11 @@ class Alignment:
 
     def load_proteins(self, proteins):
         """Load a list of protein objects into the alignment"""
-        # fetch all protein conformations
+        # fetch all conformations of selected proteins
+        # FIXME only show inactive?
         protein_conformations = ProteinConformation.objects.order_by('protein__family__slug',
-            'protein__entry_name').filter(protein__in=proteins,
-            state__slug__in=self.states).select_related('protein__residue_numbering_scheme', 'protein__species',
-            'state')
+            'protein__entry_name').filter(protein__in=proteins).select_related('protein__residue_numbering_scheme',
+            'protein__species', 'state')
         pconfs = OrderedDict()
         for pconf in protein_conformations:
             pconf_label = pconf.__str__()
@@ -120,7 +119,7 @@ class Alignment:
         selected_residue_positions = []
         for s in segments:
             # handle residue positions separately
-            if s.__class__.__name__ == 'ResidueGenericNumber':
+            if s.__class__.__name__ == 'ResidueGenericNumberEquivalent':
                 selected_residue_positions.append(s)
                 continue
             # fetch split segments (e.g. ICL3_1 and ICL3_2)
@@ -142,7 +141,7 @@ class Alignment:
             if self.custom_segment_label not in self.segments:
                 self.segments[self.custom_segment_label] = []
             for residue_position in selected_residue_positions:
-                self.segments[self.custom_segment_label].append(residue_position.label)
+                self.segments[self.custom_segment_label].append(residue_position.default_generic_number.label)
             self.load_generic_numbers(self.custom_segment_label, selected_residue_positions)
 
     def load_segments_from_selection(self, simple_selection):
@@ -164,7 +163,11 @@ class Alignment:
                 self.generic_numbers[ns[0]] = OrderedDict()
             self.generic_numbers[ns[0]][segment_slug] = OrderedDict()
             for segment_residue in residues:
-                self.generic_numbers[ns[0]][segment_slug][segment_residue.label] = []
+                if segment_slug == self.custom_segment_label:
+                    residue_position = segment_residue.default_generic_number.label
+                else:
+                    residue_position = segment_residue.label
+                self.generic_numbers[ns[0]][segment_slug][residue_position] = []
 
     def update_numbering_schemes(self):
         """Update numbering scheme list"""

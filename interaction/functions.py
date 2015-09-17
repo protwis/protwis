@@ -40,9 +40,11 @@ CHARGEDAA = {'ARG','LYS','ASP','GLU'} #skip ,'HIS'
 
 module_dir = os.path.dirname(__file__)
 projectdir = module_dir + '/temp/'
+projectdir = '/tmp/interactions/'
 if not os.path.exists(projectdir):
         os.makedirs(projectdir)
-        os.makedirs(projectdir+'/temp/')
+if not os.path.exists(projectdir + '/temp/'):
+        os.makedirs(projectdir + '/temp/')
 ignore_het = ['NA','W'] #ignore sodium and water
 
 
@@ -119,13 +121,8 @@ def check_pdb():
 
 
 def checkdirs():
-    if not os.path.isfile(projectdir+'pdbs/'+pdbname+'.pdb'):
-        pdbfile = fetch_pdb(pdbname)
-        temp_path = projectdir+'pdbs/'+pdbname+'.pdb'
-        f=open(temp_path,'w')
-        f.write(pdbfile)
-        f.close();
 
+    #print(projectdir)
     directory = projectdir + 'results/'+pdbname+'/interaction'
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -141,6 +138,20 @@ def checkdirs():
     directory = projectdir + 'results/'+pdbname+'/fragments'
     if not os.path.exists(directory):
         os.makedirs(directory)
+
+def find_ligand_full_names():
+    pdbfile = projectdir+'pdbs/'+pdbname+'.pdb'
+    residuename = ''
+
+    f_in = open(pdbfile, 'r')
+    d = {}
+
+    for line in f_in:
+        if line.startswith('HETSYN'): 
+            m = re.match("HETSYN[\s]+([\w]{3})[\s]+(.+)",line) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+            if (m):
+                d[m.group(1)] = m.group(2).strip()
+    return d
 
 def fragment_library(ligand,atomvector,atomname,residuenr,chain,typeinteraction):
     if debug: print "Make fragment pdb file for ligand:",ligand,"atom vector",atomvector,"atomname",atomname,"residuenr from protein", residuenr,typeinteraction,'chain',chain
@@ -663,6 +674,10 @@ def find_interactions():
                 #print aaname
                 for hetflag, atomlist in hetlist.iteritems(): #could probably make a check here to see if this residue was anywhere near the ligand, otherwise skip the check per atom
                     #print aa_resname
+
+                    if not 'CA' in residue: #prevent errors
+                        continue
+
                     ca = residue['CA'].get_vector()
                     if (ca-ligandcenter[hetflag][0]).norm()>ligandcenter[hetflag][1]:
                         #print "skipping"
@@ -931,6 +946,8 @@ def analyze_interactions():
         summary_results[ligand]['score'].append([ligscore])
         summary_results[ligand]['inchikey'] = inchikeys[ligand]
         summary_results[ligand]['smiles'] = smiles[ligand]
+        summary_results[ligand]['smiles'] = smiles[ligand]
+        if ligand in hetlist_display: summary_results[ligand]['prettyname'] = hetlist_display[ligand]
         #print ligand,"Ligand score:"+str(ligscore) 
 
         sortedresults = sorted(sortedresults, key=itemgetter(1), reverse=True)  
@@ -973,10 +990,11 @@ def pretty_results():
 
 
 
-def calculate_interactions(pdb):
-    global pdbname,hetlist,ligand_atoms,ligand_charged,ligandcenter,ligand_rings,ligand_donors,results,sortedresults,summary_results,inchikeys,smiles
+def calculate_interactions(pdb, session=None):
+    global pdbname,hetlist,hetlist_display,ligand_atoms,ligand_charged,ligandcenter,ligand_rings,ligand_donors,results,sortedresults,summary_results,inchikeys,smiles, projectdir
 
     hetlist = {}
+    hetlist_display = {}
     ligand_atoms = {}
     ligand_charged = {}
     ligandcenter = {}
@@ -988,35 +1006,55 @@ def calculate_interactions(pdb):
     inchikeys = {}
     smiles = {}
 
-    pdbname = pdb
-    #print "checking ",pdbname
-    check_pdb()
-    checkdirs()
-    create_ligands_and_poseview()
-    build_ligand_info()
-    find_interactions()
-    analyze_interactions()
-
-    pretty_results()
+    if not session:
+        pdbname = pdb
+        #print "checking normal ",pdbname
+        check_pdb()
+        checkdirs()
+        hetlist_display = find_ligand_full_names()
+        create_ligands_and_poseview()
+        build_ligand_info()
+        find_interactions()
+        analyze_interactions()
+        pretty_results()
+    else:
+        pdbname = pdb
+        #print "checking ",pdbname
+        projectdir = '/tmp/interactions/'+session+"/"
+        checkdirs()
+        hetlist_display = find_ligand_full_names()
+        create_ligands_and_poseview()
+        build_ligand_info()
+        find_interactions()
+        analyze_interactions()
+        pretty_results()   
 
 def main(argv): 
     pdbname = ''                             
-    try:                                
-        opts, args = getopt.getopt(argv, "p:", ["pdb"]) 
-    except getopt.GetoptError:           
-        print "Remember PDB name -p "                      
+    try:
+        #print 'ARGV      :', argv                                
+        opts, args = getopt.getopt(argv, "p:s:", ["pdb"]) 
+    except getopt.GetoptError as err:           
+        print "Remember PDB name -p "
+        print err                     
         sys.exit(2)
 
+    session = None
     for opt, arg in opts:                
         if opt in ("-p"):      
-            pdbname = arg    
+            pdbname = arg                  
+        elif opt in ("-s"):      
+            session = arg    
 
     if not pdbname:
         print "Remember PDB name -p "                      
         sys.exit(2)
-    #print "looking for",pdbname
+    
+    if session:
+        calculate_interactions(pdbname,session)                    
+    else:
+        calculate_interactions(pdbname)
 
-    calculate_interactions(pdbname)
 
 
 if __name__ == "__main__":

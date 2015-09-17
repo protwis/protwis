@@ -4,6 +4,9 @@ from string import Template
 
 import urllib.request,json
 
+import logging
+import re
+
 
 class WebResource(models.Model):
     slug = models.SlugField(max_length=20)
@@ -46,6 +49,7 @@ class Publication(models.Model):
         db_table = 'publication'
 
     def update_from_pubmed_data(self, index=None):
+        logger = logging.getLogger('build')
         try:
             Entrez.email = 'info@gpcrdb.org'
             if index:
@@ -63,13 +67,33 @@ class Publication(models.Model):
                     retmode="text"
                     )
         except Exception as e:
-            print("Failed to retrieve data for pubmed id: {}".format(index))
-            return
+            logger.error("Failed 1x to retrieve data for pubmed id: {} - trying again".format(index))
+            try:
+                Entrez.email = 'info@gpcrdb.org'
+                if index:
+                    handle = Entrez.efetch(
+                        db="pubmed", 
+                        id=str(index), 
+                        rettype="medline", 
+                        retmode="text"
+                        )
+                else:
+                    handle = Entrez.efetch(
+                        db="pubmed", 
+                        id=str(self.web_link.index),
+                        rettype="medline",
+                        retmode="text"
+                        )
+            except Exception as e:
+                logger.error("Failed 2x to retrieve data for pubmed id: {}".format(index))
+                return
         try:
             record = Medline.read(handle)
             self.title = record['TI']
             self.authors = record['AU']
             self.year = record['DA'][:4]
+            record['JT'] = record['JT'][:29] #not allowed longer by model. FIXME
+            record['TA'] = record['TA'][:29] #not allowed longer by model. FIXME
             try:
                 self.journal = PublicationJournal.objects.get(slug=record['TA'], name=record['JT'])
             except PublicationJournal.DoesNotExist:
@@ -85,12 +109,12 @@ class Publication(models.Model):
             if 'PG' in record:
                 self.reference += ":" + record['PG']
         except Exception as msg:
-            print(msg)
+            logger.error("Publication update on pubmed error! Pubmed: "+index+" error:" + str(msg) )
 
     def update_from_doi(self, doi):
-
+        logger = logging.getLogger('build')
         #Pubmed by doi
-        try:
+        try: #try entrez first -- faster.
             Entrez.email = 'info@gpcrdb.org'
             record = Entrez.read(Entrez.esearch(
                 db='pubmed',
@@ -100,24 +124,26 @@ class Publication(models.Model):
             self.update_from_pubmed_data(record['IdList'][0])
         except Exception as msg:
             #Crossref doi search
+            logger.error("Publication update on doi via entrez error - trying crossref! DOI: "+doi+" error:" + str(msg) )
             try:
-                ulr = "http://search.crossref.org/dois?q={}".format(doi)
+                url = "http://search.crossref.org/dois?q={}".format(doi)
                 pub = json.loads(urllib.request.urlopen(url).read().decode('ascii', "ignore"))
+                # print(pub)
+                # print(pub[0])
+                # print(pub[0]['title'])
                 self.title = pub[0]['title'].strip()
                 self.year = pub[0]['year'].strip()
-                
                 full_cit = [x.strip() for x in reversed(pub[0]['fullCitation'].split(','))]
-                tmp_authors = []
-                p = re.compile(r'\d\d\d\d')
-                item = full_cit.pop()
+                tmp_authors = []   
+                p = re.compile(r'\d\d\d\d') #FIXME SOMETHING ERRORS HERE
+                item = full_cit.pop()  
                 while item.strip()[0] != "'" and p.match(item.strip()) is None:
                     tmp_authors.append(item.strip())
                     item = full_cit.pop()
-                self.authors = ','.join(tmp_authors)
-
+                self.authors = ','.join(tmp_authors)      
                 pages = ''
                 vol = ''
-                issue = ''
+                issue = ''    
                 for i in full_cit:
                     if '<i>' in i:
                         try:
@@ -126,7 +152,7 @@ class Publication(models.Model):
                             j = PublicationJournal(name=i.replace('<i>','').replace('</i>',''))
                             j.save()
                             self.journal = j
-                    if i.replace("'",'').strip() == title:
+                    if i.replace("'",'').strip() == self.title:
                         continue
                     if i.startswith('pp.'):
                         pages = i.replace('pp. ','')
@@ -134,9 +160,11 @@ class Publication(models.Model):
                         issue = '({})'.format(i.replace('no. ',''))
                     if i.startswith('vol.'):
                         vol = i.replace('vol. ','')
-                self.reference = "{}{}:{}".format(vol,issue,pages)
+                self.reference = "{}{}:{}".format(vol,issue,pages)    
+
 
             except Exception as e:
+                logger.error("Publication update on pubmed error! DOI: "+doi+" error:" + str(e) )
                 pass
 
 

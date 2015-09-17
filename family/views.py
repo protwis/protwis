@@ -41,53 +41,42 @@ def detail(request, slug):
     # calculate consensus sequence + amino acid and feature frequency
     a.calculate_statistics()
 
-    #print(a.consensus)
     residue_list = []
     generic_numbers = []
-    reference_segments = {}
     reference_generic_numbers = {}
     count = 0 #build sequence_number
 
-    for seg in a.consensus:
-        for aa in seg.items():
-            if "x" in aa[0]:
-                generic_numbers.append(aa[0])
+    ################################################################################
+    #FIXME -- getting matching display_generic_numbers kinda randomly.
+
+    for seg in a.consensus: #Grab list of generic_numbers to lookup for their display numbers
+        for aa in a.consensus[seg]:
+            if "x" in aa:
+                generic_numbers.append(aa)
 
     generic_ids = Residue.objects.filter(generic_number__label__in=generic_numbers).values('id').distinct('generic_number__label').order_by('generic_number__label')
     rs = Residue.objects.filter(id__in=generic_ids).prefetch_related('display_generic_number','generic_number')
 
-    for r in rs:
+    for r in rs: #make lookup dic.
         reference_generic_numbers[r.generic_number.label] = r
-
+    ################################################################################
+    
     for seg in a.consensus:
-        for aa in seg.items():
+        for aa,v in a.consensus[seg].items():
             r = Residue()
-            r.sequence_number =  count
-            if "x" in aa[0]:
-                #r.generic_number = reference_generic_numbers[aa[0]].generic_number
-                r.display_generic_number = reference_generic_numbers[aa[0]].display_generic_number
-                #r.protein_segment = reference_generic_numbers[aa[0]].protein_segment
-                #print(aa[0][0])
-                if int(aa[0][0])<8:
-                    segment_slug = "TM"+str(aa[0][0])
-                elif aa[0][0]=='8':
-                    segment_slug = "H"+str(aa[0][0])
-                r.segment_slug = segment_slug
-                r.family_generic_number = aa[0]
+            r.sequence_number =  count #FIXME is this certain to be correct that the position in consensus is seq position? 
+            if "x" in aa:
+                r.display_generic_number = reference_generic_numbers[aa].display_generic_number #FIXME
+                r.segment_slug = seg
+                r.family_generic_number = aa
             else:
-                segment_slug = aa[0][:-5] #remove -0001 from slug
-                r.segment_slug = segment_slug
-                r.family_generic_number = aa[0]
-                # if segment_slug not in reference_segments:
-                #     reference_residue = Residue.objects.filter(protein_segment__slug=segment_slug).prefetch_related('protein_segment')[:1].get()
-                #     reference_segments[segment_slug] = reference_residue
-                # r.protein_segment = reference_segments[segment_slug].protein_segment
-            r.amino_acid = aa[1][0]
-            r.extra = aa[1][2]
+                r.segment_slug = seg
+                r.family_generic_number = aa
+            r.amino_acid = v[0]
+            r.extra = v[2] #Grab consensus information
             residue_list.append(r)
 
-            count += 1
-
+            count += 1         
     HelixBox = DrawHelixBox(residue_list,'Class A',str('test'))
     SnakePlot = DrawSnakePlot(residue_list,'Class A',str('test'))
 

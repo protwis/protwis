@@ -16,9 +16,6 @@
         '+': ['#FFFFFF', '#000000']
     };
 
-
-
-    
     $('#svgCanvas').find('svg').attr('id', 'svgtree');
     $('#svgCanvas').find('svg').attr('class', 'svgtree');
     $('#svgCanvas').find('svg').removeAttr('xmlns:xlink');
@@ -29,87 +26,179 @@
         parentid = $(this).closest('svg').attr('id');
         newcolor = $(".pick-color.selected").attr('id');
         newcolor = newcolor.split('-');
-
         $(this).css("fill", newcolor[1]);
-
-
-        //$(this).next().css("fill", newcolor[2]);
     });
-    $(".chart").click(function () {
-        id = $(this).attr('id');
-         
-        newcolor = $(".pick-color.selected").attr('id');
-        newcolor = newcolor.split('-');
-        $('#svgCanvas').find(".chart").each(function (index) {
+    $("[class^=chart]").click(function () {
+        if ($(this).attr('id')) {
+            id = $(this).attr('id');
+            newcolor = $(".pick-color.selected").attr('id');
+            newcolor = newcolor.split('-');
+            $("[class^=chart]").each(function (index) {
+                if ($(this).attr('id')) {
+                    if ($(this).attr("id") == id && id.length != 1) {
+                        $(this).css("fill", newcolor[1]);
+                    };
+                };
+            });
 
-            if ($(this).attr("id") == id && id.length != 1) {
-                $(this).css("fill", newcolor[1]);
-            };
-            // $(this).next().css("fill", 'black');
-        });
-        $('#legend').find(".chart").each(function (index) {
-
-            if ($(this).attr("id") == id && id.length != 1) {
-                $(this).css("fill", newcolor[1]);
-            };
-            // $(this).next().css("fill", 'black');
-        });
+        }
     });
-
- 
  }
- function resetColors(defs) {
-     $('#svgCanvas').find(".bgfield").each(function (index) {
-         $(this).css("fill", '#EEE');
+
+ function colour_lines() {
+     $(".path").click(function () {
+         newcolor = $(".pick-color.selected").attr('id');
+         newcolor = newcolor.split('-');
+
+         $(this).css("stroke", newcolor[1]);
+         $(this).css("stroke-width", '4');
      });
-     $('#svgCanvas').find(".chart").each(function (index) {
-         $(this).css("fill", defs[$(this).attr('id')][0]);
-     });
-     $('#legend').find(".chart").each(function (index) {
-         $(this).css("fill", defs[$(this).attr('id')][0]);
+     $(".path2").click(function () {
+         newcolor = $(".pick-color.selected").attr('id');
+         newcolor = newcolor.split('-');
+
+         $(this).css("stroke", newcolor[1]);
+         $(this).css("stroke-width", '4');
      });
  };
+ function predefined_colours(colours) { 
+     resetColors();
+     $('#svgCanvas').find(".bgfield").each(function (index) {
+         if (colours['proteins'].indexOf($(this).attr("id")) > -1) {
+             $(this).css("fill", colours['colours']['n']);
+         };
+     });
+ };
+ function resetColors() {
+     $('#svgCanvas').find(".path").each(function (index) {
+         $(this).css("stroke", '');
+         $(this).css("stroke-width", '');
+     });
+     $('#svgCanvas').find(".path2").each(function (index) {
+         $(this).css("stroke", '');
+         $(this).css("stroke-width", '');
+     });
+     $('#svgCanvas').find(".bgfield").each(function (index) {
+         $(this).css("fill", '');
+         $(this).css("stroke", '');
+     });
+     $("[class^=chart]").each(function (index) {
+         if ($(this).attr('id')) {
+             $(this).css("fill",'');
+         };
+     });
 
- function toggleLegend() {
-     $('#svgCanvas').find(".chart").each(function (index) {
+
+ };
+
+function toggleLegend() {
+     var dupa = 'visible'
+     $('#svgCanvas').find("[class^=chart]").each(function (index) {
+         if ($(this).css("visibility") == 'visible'){
+             dupa = 'hidden'};
+     });
+     $('#svgCanvas').find("[class^=chart]").each(function (index) {
+         console.log($(this).css("visibility"));
+         $(this).css("visibility", dupa);
+    });
+ };
+     
+ function toggleRings(ring) {
+     $('#svgCanvas').find("." + ring).each(function (index) {
          if ($(this).css("visibility") == 'hidden') {
              $(this).css("visibility", 'visible');
          } else {
              $(this).css("visibility", 'hidden');
          };
      });
-    $('#svgCanvas').find(".legend").each(function (index) {
-        if ($(this).css("visibility")== 'hidden') {
-            $(this).css("visibility", 'visible');
-        } else {
-            $(this).css("visibility", 'hidden');
-
-        };
-         
-
+ };
+ 
+  function SelectSubmenu(name) {
+     $('.button_container').find('.btn-group').each(function (index) {
+         if ($(this).attr('id') == name || $(this).attr('id') == 'types' || $(this).attr('id') == 'choice') {
+             $(this).css("display", '');
+         } else {
+             $(this).css("display", 'none');
+         };
      });
  };
+ function SelectButtons(name) {
+     $('.button_container').find('.btn-default').each(function (index) {
+         if ($(this).attr('id') == name) {
+             $(this).css("display", '');
+         };
+     });
+ };
+  function DeselectButtons(name) {
+     $('.button_container').find('.btn-default').each(function (index) {
+         if ($(this).attr('id') == name) {
+             $(this).css("display", 'none');
+         };
+     });
+ };
+ function GetRings() {
+     var args = [];
+     var values = [];
+     $('.button_container').find('.btn-default').each(function (index) {
+         if ($(this).css("display") != 'none'){
+             args.push($(this).attr('id'));
+             values.push('True');
+         } else if ($(this).css("display") == 'none'){
+             args.push($(this).attr('id'));
+             values.push('False');
+         };
+     });
+    $("#svgCanvas").empty(); 
+    $.ajax({
+    'url': '/phylogenetic_trees/showrings',
+    'data': {
+        arg: args,
+        value: values
+    },
+    'type': 'GET',
+    'success': function(data) {
+           $("#main").html(data);
+       }
+     });
+    $.ajax({
+    'url': '/phylogenetic_trees/get_buttons',
+    'type': 'GET',
+    'success': function(data) {
+           $("#ring_buttons").html(data);
+       }
+     });
+       };
+       
+
+
 
  function mergeSVG() {
      var SVG = $('#svgCanvas').find('svg')[0];
      h = parseInt($(SVG).attr('height'));
      w = parseInt($(SVG).attr('width'));
-     // new_h = h+
      var legend = $('#legend').find('svg')[0];
-    // legend.setAttribute('transform', 'translate (' + h + 20 + ' 0)');
      h2 = parseInt($(legend).attr('height'));
      w2 = parseInt($(legend).attr('width'));
-     new_w = (w-w2)/2
+     leg_w = (w-w2)/2
+     
      SVG.setAttribute('height', (h + h2));
+     if (w2 > w) {
+         SVG.setAttribute('width', (w2));
+         leg_w = 0 
+         svg_w = Math.abs(w-w2)/2
+     } else {
+         leg_w = Math.abs(w-w2)/2 
+         svg_w = 0
+     };
+//     for (i = 0; i < SVG.children.length; i++) {
+//         SVG.children[i].setAttribute('transform', 'translate ('+svg_w.toString()+' 0)');
+//     };
      for (i = 0; i < legend.children.length; i++) {
-         legend.children[i].setAttribute('transform', 'translate ('+new_w.toString()+' ' + h.toString()+')');
+         legend.children[i].setAttribute('transform', 'translate ('+leg_w.toString()+' ' + h.toString()+')');
          $(SVG).append(legend.children[i]);
-     }
+     };
 
 
-     //console.log(svg1.css('height'));
-     //console.log(svg1);
-     //console.log(newSVG);
  };
 $( document ).ready(function (){
 

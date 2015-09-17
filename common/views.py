@@ -5,7 +5,7 @@ from django.conf import settings
 
 from common.selection import SimpleSelection, Selection, SelectionItem
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet
-from residue.models import ResidueGenericNumber, ResidueNumberingScheme
+from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 
 import inspect
 from collections import OrderedDict
@@ -205,8 +205,9 @@ class AbsSettingsSelection(TemplateView):
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
-        self.current = simple_selection.tree_settings
         context['selection'] = {}
+        context['selection']['tree_settings'] = selection.tree_settings
+
         for selection_box, include in self.selection_boxes.items():
             if include:
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
@@ -241,7 +242,7 @@ def AddToSelection(request):
             o.append(Protein.objects.get(entry_name=selection_id.lower()))
     elif selection_type == 'segments':
         if selection_subtype == 'residue':
-            o.append(ResidueGenericNumber.objects.get(pk=selection_id))
+            o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
         else:
             o.append(ProteinSegment.objects.get(pk=selection_id))
 
@@ -353,12 +354,9 @@ def SetTreeSelection(request):
         selection.importer(simple_selection)
     selection.tree_settings[int(option_no)]=option_id
     simple_selection = selection.exporter()
-    print(selection.tree_settings)
     # add simple selection to session
     request.session['selection'] = simple_selection
-    selection_type = 'tree_settings'
-    
-    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+    return render(request, 'common/bootstrap_buttons.html', selection.dict('tree_settings'))
 
 def SelectAlignableSegments(request):
     """Adds all alignable segments to the selection"""
@@ -467,7 +465,6 @@ def SelectionAnnotation(request):
 
     # add simple selection to session
     request.session['selection'] = simple_selection
-    
     return render(request, 'common/selection_filters_annotation.html', selection.dict('annotation'))
 
 def SelectionSpeciesPredefined(request):
@@ -549,11 +546,33 @@ def SelectionSpeciesToggle(request):
 def ExpandSegment(request):
     """Expands a segment to show it's generic numbers"""
     segment_id = request.GET['segment_id']
+    numbering_scheme_slug = str(request.GET['numbering_scheme'])
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+
+    # find the relevant numbering scheme (based on target selection)
+    if numbering_scheme_slug == 'false':
+        if simple_selection.reference:
+            first_item = simple_selection.reference[0]
+        else:
+            first_item = simple_selection.targets[0]
+        if first_item.type == 'family':
+            proteins = Protein.objects.filter(family__slug__startswith=first_item.item.slug)
+            numbering_scheme = proteins[0].residue_numbering_scheme
+        elif first_item.type == 'protein':
+            numbering_scheme = first_item.item.residue_numbering_scheme
+    else:
+        numbering_scheme = ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)
     
     # fetch the generic numbers
     context = {}
-    context['generic_numbers'] = ResidueGenericNumber.objects.filter(protein_segment__id=segment_id,
-        scheme__slug=settings.DEFAULT_NUMBERING_SCHEME)
+    context['generic_numbers'] = ResidueGenericNumberEquivalent.objects.filter(
+        default_generic_number__protein_segment__id=segment_id,
+        scheme=numbering_scheme).order_by('label')
+    context['scheme'] = numbering_scheme
+    context['schemes'] = ResidueNumberingScheme.objects.filter(parent__isnull=False)
+    context['segment_id'] = segment_id
     
     return render(request, 'common/segment_generic_numbers.html', context)
 

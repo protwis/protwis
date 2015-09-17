@@ -32,7 +32,7 @@ class Command(BaseCommand):
         self.logger.info('EXPORTING REFERENCE POSITIONS')
 
         # fetch all wild-type proteins
-        pcs = ProteinConformation.objects.filter(protein__sequence_type__slug='wt',
+        pcs = ProteinConformation.objects.filter(protein__sequence_type__slug='wt', protein__species_id=1,
             state__slug=settings.DEFAULT_PROTEIN_STATE).select_related('protein')
 
         for pc in pcs:
