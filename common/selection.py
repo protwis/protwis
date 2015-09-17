@@ -89,12 +89,37 @@ class Selection(SimpleSelection):
         updated_selection = []
         deleted = False
 
+        # see if this item is part of a group
+        group_id = False
+        delete_group = False
+        for selection_object in selection:
+            if (selection_object.type == selection_subtype and selection_object.item.id == int(selection_id) and 
+                'site_residue_group' in selection_object.properties and
+                selection_object.properties['site_residue_group']):
+                group_id = selection_object.properties['site_residue_group']
+                delete_group = True
+
         # loop through selected objects and remove the one that matches the subtype and ID
         for selection_object in selection:
             if not (selection_object.type == selection_subtype and selection_object.item.id == int(selection_id)):
                 updated_selection.append(selection_object)
+                
+                # check group ID
+                if (group_id and 'site_residue_group' in selection_object.properties and 
+                    selection_object.properties['site_residue_group'] == group_id):
+                    delete_group = False
             else:
                 deleted = True
+
+
+        # if the deleted items group is not found anywhere else, delete the group
+        if delete_group:
+            del self.site_residue_groups[group_id-1]
+            if self.site_residue_groups:
+                self.active_site_residue_group = 1
+            else:
+                self.active_site_residue_group = False
+
         setattr(self, selection_type, updated_selection)
 
         return deleted
@@ -103,15 +128,20 @@ class Selection(SimpleSelection):
         """Clears a section of the selection (e.g. targets)"""
         setattr(self, selection_type, [])
 
+        # when clearing segments, also clear residue groups
+        if selection_type == 'segments':
+            self.site_residue_groups = []
+            self.active_site_residue_group = False
+
     def dict(self, selection_type):
         """Returns the selected attribute of Selection in a dictionary for rendering in templates"""
         return {
             'selection': {
                 selection_type: getattr(self, selection_type),
+                'site_residue_groups': getattr(self, 'site_residue_groups'),
+                'active_site_residue_group': getattr(self, 'active_site_residue_group'),
             },
             'selection_type': selection_type,
-            'site_residue_groups': getattr(self, 'site_residue_groups'),
-            'active_site_residue_group': getattr(self, 'active_site_residue_group'),
         }
 
 

@@ -61,17 +61,17 @@ def render_alignment(request):
     # build the alignment data matrix
     a.build_alignment()
 
-    # calculate consensus sequence + amino acid and feature frequency
-    a.calculate_statistics()
-
-    # calculate identity and similarity of each row compared to the reference
-    a.calculate_similarity()
+    # evaluate sites
+    a.evaluate_sites(request)
 
     num_of_sequences = len(a.proteins)
+    num_of_non_matching_sequences = len(a.non_matching_proteins)
     num_residue_columns = len(a.positions) + len(a.segments)
 
-    return render(request, 'similaritysearch/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
-        'num_residue_columns': num_residue_columns})
+    context = {'a': a, 'num_of_sequences': num_of_sequences,
+        'num_of_non_matching_sequences': num_of_non_matching_sequences, 'num_residue_columns': num_residue_columns}
+
+    return render(request, 'sitesearch/alignment.html', context)
 
 def render_fasta_alignment(request):
     # get the user selection from session
@@ -93,10 +93,13 @@ def render_fasta_alignment(request):
     a.calculate_similarity()
 
     num_of_sequences = len(a.proteins)
+    num_of_non_matching_sequences = len(a.non_matching_proteins)
     num_residue_columns = len(a.positions) + len(a.segments)
     
-    response = render(request, 'alignment/alignment_fasta.html', {'a': a, 'num_of_sequences': num_of_sequences,
-        'num_residue_columns': num_residue_columns}, content_type='text/fasta')
+    context = {'a': a, 'num_of_sequences': num_of_sequences,
+        'num_of_non_matching_sequences': num_of_non_matching_sequences, 'num_residue_columns': num_residue_columns}
+
+    response = render(request, 'alignment/alignment_fasta.html', context, content_type='text/fasta')
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.fasta"
     return response
 

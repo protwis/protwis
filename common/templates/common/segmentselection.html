@@ -53,7 +53,11 @@
                 {% if include %}
                 <div class="col-md-12 well" id="selection-{{ selection_box }}">
                 {% with selection_type=selection_box %}
-                    {% include 'common/selection_lists.html' %}
+                    {% if position_type == 'site_residue' %}
+                        {% include 'common/selection_lists_sitesearch.html' %}
+                    {% else %}
+                        {% include 'common/selection_lists.html' %}
+                        {% endif %}
                 {% endwith %}
                 </div>
                 {% endif %}

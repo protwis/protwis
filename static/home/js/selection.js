@@ -178,3 +178,19 @@ function SetTreeSelection(option_no, option_id) {
         }
     });
 }
+
+function SelectResidueFeature(selection_type, selection_subtype, selection_id, feature) {
+    $.ajax({
+        'url': '/common/selectresiduefeature',
+        'data': {
+            selection_type: selection_type,
+            selection_subtype: selection_subtype,
+            selection_id: selection_id,
+            feature: feature
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}

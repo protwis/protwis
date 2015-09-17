@@ -4,6 +4,7 @@ from django.views.generic import TemplateView
 from django.conf import settings
 
 from common.selection import SimpleSelection, Selection, SelectionItem
+from common import definitions
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 
@@ -73,16 +74,15 @@ class AbsTargetSelection(TemplateView):
         
         # create full selection and import simple selection (if it exists)
         selection = Selection()
-        if simple_selection:
-            selection.importer(simple_selection)
 
-        # on the first page of a workflow, clear the selection
-        if self.step == 1:
-            selection.clear('reference')
-            selection.clear('targets')
-            selection.clear('segments')
-            simple_selection = selection.exporter()
-            self.request.session['selection'] = simple_selection
+        # on the first page of a workflow, clear the selection (or dont' import from the session)
+        if self.step is not 1:
+            if simple_selection:
+                selection.importer(simple_selection)
+
+        # update session
+        simple_selection = selection.exporter()
+        self.request.session['selection'] = simple_selection
 
         context['selection'] = {}
         for selection_box, include in self.selection_boxes.items():
@@ -151,6 +151,9 @@ class AbsSegmentSelection(TemplateView):
     ss_cats = ProteinSegment.objects.values_list('category').order_by('category').distinct('category')
     action = 'expand'
 
+    amino_acid_groups = definitions.AMINO_ACID_GROUPS
+    amino_acid_group_names = definitions.AMINO_ACID_GROUP_NAMES
+
     def get_context_data(self, **kwargs):
         """get context from parent class (really only relevant for child classes of this class, as TemplateView does
         not have any context variables)"""
@@ -165,7 +168,9 @@ class AbsSegmentSelection(TemplateView):
         if simple_selection:
             selection.importer(simple_selection)
 
+        # context['selection'] = selection
         context['selection'] = {}
+        context['selection']['site_residue_groups'] = selection.site_residue_groups
         for selection_box, include in self.selection_boxes.items():
             if include:
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
@@ -239,6 +244,7 @@ def AddToSelection(request):
     if simple_selection:
         selection.importer(simple_selection)
 
+    # process selected object
     o = []
     if selection_type == 'reference' or selection_type == 'targets':
         if selection_subtype == 'protein':
@@ -259,9 +265,9 @@ def AddToSelection(request):
             o.append({'obj': ResidueGenericNumberEquivalent.objects.get(pk=selection_id), 'properties': {}})
         elif selection_subtype == 'site_residue': # used in site search
             if not selection.site_residue_groups:
-                setattr(selection, 'site_residue_groups', 'test')
-            if not selection.active_site_residue_group:    
-                selection.active_site_residue_group = 1
+                setattr(selection, 'site_residue_groups', [1])
+            if not selection.active_site_residue_group:
+                setattr(selection, 'active_site_residue_group', 1)
             o.append({'obj': ResidueGenericNumberEquivalent.objects.get(pk=selection_id),
                 'properties': {'site_residue_group': selection.active_site_residue_group}})
         else:
@@ -277,8 +283,23 @@ def AddToSelection(request):
 
     # add simple selection to session
     request.session['selection'] = simple_selection
+
+    # context 
+    context = selection.dict(selection_type)
+
+    # template to load
+    if selection_subtype == 'site_residue':
+        template = 'common/selection_lists_sitesearch.html'
+        amino_acid_groups = {
+            'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
+            'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
+        context.update(amino_acid_groups)
+    else:
+        template = 'common/selection_lists.html'
     
-    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+    # amino acid groups
+
+    return render(request, template, context)
 
 def RemoveFromSelection(request):
     """Removes one selected item from the session"""
@@ -302,8 +323,21 @@ def RemoveFromSelection(request):
 
     # add simple selection to session
     request.session['selection'] = simple_selection
+
+    # context 
+    context = selection.dict(selection_type)
     
-    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+    # template to load
+    if selection_subtype == 'site_residue':
+        template = 'common/selection_lists_sitesearch.html'
+        amino_acid_groups = {
+            'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
+            'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
+        context.update(amino_acid_groups)
+    else:
+        template = 'common/selection_lists.html'
+
+    return render(request, template, context)
 
 def ClearSelection(request):
     """Clears all selected items of the selected type from the session"""
@@ -716,3 +750,47 @@ def UpdateSiteResidueFeatures(request):
     request.session['selection'] = simple_selection
     
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+
+def SelectResidueFeature(request):
+    """Receives a selection request, add a feature selection to an item, and returns the updated selection"""
+    selection_type = request.GET['selection_type']
+    selection_subtype = request.GET['selection_subtype']
+    selection_id = int(request.GET['selection_id'])
+    feature = request.GET['feature']
+    
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # process selected object
+    o = []
+    if selection_type == 'segments' and selection_subtype == 'site_residue':
+        for obj in selection.segments:
+            if int(obj.item.id) == selection_id:
+                obj.properties['feature'] = feature
+                obj.properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS[feature])
+                break
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # context 
+    context = selection.dict(selection_type)
+    
+    # amino acid groups
+    amino_acid_groups = {
+        'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
+        'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
+    context.update(amino_acid_groups)
+
+    # template to load
+    template = 'common/selection_lists_sitesearch.html'
+
+    return render(request, template, context)
