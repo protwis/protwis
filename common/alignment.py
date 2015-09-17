@@ -671,7 +671,9 @@ class AlignedReferenceTemplate(Alignment):
     def load_proteins_by_structure(self):
         ''' Loads proteins into alignment based on available structures in the database.
         '''
-        self.structures_data = Structure.objects.filter(state__name__in=self.query_states).order_by(
+        self.structures_data = Structure.objects.filter(
+            state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
+            self.reference_protein.family.parent.parent.parent).order_by(
             'protein_conformation__protein__parent','resolution').distinct('protein_conformation__protein__parent')
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])

@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from protein.models import Protein, ProteinSegment, ProteinConformation
+from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinAnomaly
 from residue.models import Residue
 from structure.models import Structure, PdbData, Rotamer
 from common.alignment import Alignment, AlignedReferenceTemplate
@@ -58,7 +58,7 @@ class Command(BaseCommand):
 #        print('binding pocket RMSD: ', val.PDB_RMSD("./structure/PDB/4Z34.pdb", "./structure/homology_models/Q92633_Inactive/modeller_test.pdb",
 #                           assign_gns=[1,2], gn_list=['1x35', '2x57', '3x28', '3x29', '3x32', '3x33', '3x36', '5x40', '5x43', '6x48', '6x51', '6x54', '6x55', '7x35', '7x37', '7x38'], seq_nums1=[52, 102, 124, 125, 128, 129, 132, 207, 210, 271, 274, 277, 278, 294, 296, 297], seq_nums2=[7, 57, 79, 80, 83, 84, 87, 162, 165, 226, 229, 232, 233, 249, 251, 252]))
                 
-        Homology_model = HomologyModeling('v1br_human', 'Inactive', ['Inactive'])
+        Homology_model = HomologyModeling('gp132_human', 'Inactive', ['Inactive'])
         alignment = Homology_model.run_alignment()
         Homology_model.build_homology_model(alignment)#, switch_bulges=False, switch_constrictions=False, switch_rotamers=False)
 
@@ -82,6 +82,7 @@ class HomologyModeling(object):
         self.reference_protein = Protein.objects.get(entry_name=self.reference_entry_name)
         self.uniprot_id = self.reference_protein.accession
         self.reference_sequence = self.reference_protein.sequence
+        self.reference_class = self.reference_protein.family.parent.parent.parent
         self.statistics.add_info('uniprot_id',self.uniprot_id)
         self.segments = []
         self.similarity_table = OrderedDict()
@@ -951,16 +952,18 @@ class Bulges(object):
             matches = Residue.objects.filter(generic_number__label=gn[:-1])
         for structure, value in similarity_table.items():  
             protein_object = Protein.objects.get(id=structure.protein_conformation.protein.parent.id)
+            this_anomaly = ProteinAnomaly.objects.get(generic_number__label=gn)
+            if this_anomaly in structure.protein_anomalies.all():
+                print(structure, gn)
             try:                            
-#                for match in matches:
-                if bulge_in_reference==True:
-#                    if match.protein_conformation.protein.parent==protein_object:
-                    
-                        self.bulge_templates.append(structure)
-                elif bulge_in_reference==False:
-                    if (match.protein_conformation.protein.parent==protein_object and 
-                        match.protein_conformation.protein.parent.entry_name not in excludee_proteins):
-                        self.bulge_templates.append(structure)
+                for match in matches:
+                    if bulge_in_reference==True:
+                        if match.protein_conformation.protein.parent==protein_object:
+                            self.bulge_templates.append(structure)
+                    elif bulge_in_reference==False:
+                        if (match.protein_conformation.protein.parent==protein_object and 
+                            match.protein_conformation.protein.parent.entry_name not in excludee_proteins):
+                            self.bulge_templates.append(structure)
             except:
                 pass
         mod_bulge = False
