@@ -12,19 +12,22 @@ presetColors = {'D': ['#E60A0A', '#FDFF7B'],'E': ['#E60A0A', '#FDFF7B'],
                 '+': ['#FFFFFF', '#000000']        
                 };
 
-function applyPresentColors() {
+function table_applyPresentColors() {
 
     //console.log( $('#'+target));
 
     $('.residue').each(function( index ){
+          console.log($(this).text());
+
           aa =  $(this).text().trim().charAt(0);
+          console.log(aa);
           $(this).css("background-color", presetColors[aa][0]);
           $(this).css("color", presetColors[aa][1]);
         });
 
 };
 
-function resetColors() {
+function table_resetColors() {
 
 
     $('.residue').each(function( index ){
@@ -35,7 +38,7 @@ function resetColors() {
 }
 
 
-function ajaxMutants() {
+function table_ajaxMutants() {
 
     $('.protein').each(function( index ){
         console.log($(this).find('span').text());
@@ -71,7 +74,7 @@ function ajaxMutants() {
 
 }
 
-function ajaxInteractions() {
+function table_ajaxInteractions() {
 
     $.getJSON( '/interaction/ajax/'+protein+'/', function( data ) {
       $.each( data, function( key, val ) {
