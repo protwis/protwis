@@ -207,9 +207,7 @@ class AbsSettingsSelection(TemplateView):
             selection.importer(simple_selection)
         context['selection'] = {}
         context['selection']['tree_settings'] = selection.tree_settings
-       # self.current = simple_selection.tree_settings
-       # print(self.current)
-        #context['selection'] = {}
+
         for selection_box, include in self.selection_boxes.items():
             if include:
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
@@ -467,7 +465,6 @@ def SelectionAnnotation(request):
 
     # add simple selection to session
     request.session['selection'] = simple_selection
-    print(selection.dict('annotation'))
     return render(request, 'common/selection_filters_annotation.html', selection.dict('annotation'))
 
 def SelectionSpeciesPredefined(request):
