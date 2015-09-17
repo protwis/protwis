@@ -21,7 +21,7 @@
                 {{ s.slug }}
             </a>
             {% if s.generic_numbers.all %}
-            <a href="javascript:void(0)" onclick="ExpandSegment('{{ s.id }}')"
+            <a href="javascript:void(0)" onclick="ExpandSegment('{{ s.id }}', '{{ position_type }}')"
             class="btn btn-primary btn-sm">
                 <span class="glyphicon glyphicon-arrow-down"></span>
             </a>
@@ -30,7 +30,6 @@
         {% endif %}
     {% endfor %}
 {% endfor %}
-
 <p>
 <div id='segment-generic-numbers'>
 </div>

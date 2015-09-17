@@ -20,7 +20,9 @@ class AbsTargetSelection(TemplateView):
     step = 1
     number_of_steps = 2
     title = 'SELECT TARGETS'
-    description = 'Select targets by searching or browsing in the middle column. You can select entire target families or individual targets.\n\nSelected targets will appear in the right column, where you can edit the list.\n\nOnce you have selected all your targets, click the green button.'
+    description = 'Select targets by searching or browsing in the middle column. You can select entire target' \
+        + ' families or individual targets.\n\nSelected targets will appear in the right column, where you can edit' \
+        + ' the list.\n\nOnce you have selected all your targets, click the green button.'
     docs = False
     filters = True
     numbering_schemes = False
@@ -124,9 +126,13 @@ class AbsSegmentSelection(TemplateView):
     step = 2
     number_of_steps = 2
     title = 'SELECT SEQUENCE SEGMENTS'
-    description = 'Select sequence segments in the middle column. You can expand helices and select individual residues by clicking on the down arrows next to each helix.\n\nSelected segments will appear in the right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green button.'
+    description = 'Select sequence segments in the middle column. You can expand helices and select individual' \
+        + ' residues by clicking on the down arrows next to each helix.\n\nSelected segments will appear in the' \
+        + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
+        + ' button.'
     docs = '/docs/protein'
     segment_list = True
+    position_type = 'residue'
     buttons = {
         'continue': {
             'label': 'Show alignment',
@@ -225,27 +231,6 @@ def AddToSelection(request):
     selection_subtype = request.GET['selection_subtype']
     selection_id = request.GET['selection_id']
     
-    o = []
-    if selection_type == 'reference' or selection_type == 'targets':
-        if selection_subtype == 'protein':
-            o.append(Protein.objects.get(pk=selection_id))
-        elif selection_subtype == 'protein_set':
-            selection_subtype = 'protein'
-            pset = ProteinSet.objects.get(pk=selection_id)
-            for protein in pset.proteins.all():
-                o.append(protein)
-        elif selection_subtype == 'family':
-            o.append(ProteinFamily.objects.get(pk=selection_id))
-        elif selection_subtype == 'set':
-            o.append(ProteinSet.objects.get(pk=selection_id))
-        elif selection_subtype == 'structure':
-            o.append(Protein.objects.get(entry_name=selection_id.lower()))
-    elif selection_type == 'segments':
-        if selection_subtype == 'residue':
-            o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
-        else:
-            o.append(ProteinSegment.objects.get(pk=selection_id))
-
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
     
@@ -254,9 +239,37 @@ def AddToSelection(request):
     if simple_selection:
         selection.importer(simple_selection)
 
+    o = []
+    if selection_type == 'reference' or selection_type == 'targets':
+        if selection_subtype == 'protein':
+            o.append({'obj': Protein.objects.get(pk=selection_id), 'properties': {}})
+        elif selection_subtype == 'protein_set':
+            selection_subtype = 'protein'
+            pset = ProteinSet.objects.get(pk=selection_id)
+            for protein in pset.proteins.all():
+                o.append({'obj': protein, 'properties': {}})
+        elif selection_subtype == 'family':
+            o.append({'obj': ProteinFamily.objects.get(pk=selection_id), 'properties': {}})
+        elif selection_subtype == 'set':
+            o.append({'obj': ProteinSet.objects.get(pk=selection_id), 'properties': {}})
+        elif selection_subtype == 'structure':
+            o.append({'obj': Protein.objects.get(entry_name=selection_id.lower()), 'properties': {}})
+    elif selection_type == 'segments':
+        if selection_subtype == 'residue':
+            o.append({'obj': ResidueGenericNumberEquivalent.objects.get(pk=selection_id), 'properties': {}})
+        elif selection_subtype == 'site_residue': # used in site search
+            if not selection.site_residue_groups:
+                setattr(selection, 'site_residue_groups', 'test')
+            if not selection.active_site_residue_group:    
+                selection.active_site_residue_group = 1
+            o.append({'obj': ResidueGenericNumberEquivalent.objects.get(pk=selection_id),
+                'properties': {'site_residue_group': selection.active_site_residue_group}})
+        else:
+            o.append({'obj': ProteinSegment.objects.get(pk=selection_id), 'properties': {}})
+
     for obj in o:
         # add the selected item to the selection
-        selection_object = SelectionItem(selection_subtype, obj)
+        selection_object = SelectionItem(selection_subtype, obj['obj'], obj['properties'])
         selection.add(selection_type, selection_subtype, selection_object)
 
     # export simple selection that can be serialized
@@ -546,6 +559,7 @@ def SelectionSpeciesToggle(request):
 def ExpandSegment(request):
     """Expands a segment to show it's generic numbers"""
     segment_id = request.GET['segment_id']
+    position_type = request.GET['position_type']
     numbering_scheme_slug = str(request.GET['numbering_scheme'])
 
     # get simple selection from session
@@ -570,6 +584,7 @@ def ExpandSegment(request):
     context['generic_numbers'] = ResidueGenericNumberEquivalent.objects.filter(
         default_generic_number__protein_segment__id=segment_id,
         scheme=numbering_scheme).order_by('label')
+    context['position_type'] = position_type
     context['scheme'] = numbering_scheme
     context['schemes'] = ResidueNumberingScheme.objects.filter(parent__isnull=False)
     context['segment_id'] = segment_id
@@ -651,3 +666,53 @@ def SelectionSchemesToggle(request):
     context['gns'] = ResidueNumberingScheme.objects.all()
     
     return render(request, 'common/selection_filters_numbering_schemes.html', context)
+
+def UpdateSiteResidueFeatures(request):
+    """Updates the selected features of a site residue"""
+    selection_type = request.GET['selection_type']
+    selection_subtype = request.GET['selection_subtype']
+    selection_id = request.GET['selection_id']
+    
+    o = []
+    if selection_type == 'reference' or selection_type == 'targets':
+        if selection_subtype == 'protein':
+            o.append(Protein.objects.get(pk=selection_id))
+        elif selection_subtype == 'protein_set':
+            selection_subtype = 'protein'
+            pset = ProteinSet.objects.get(pk=selection_id)
+            for protein in pset.proteins.all():
+                o.append(protein)
+        elif selection_subtype == 'family':
+            o.append(ProteinFamily.objects.get(pk=selection_id))
+        elif selection_subtype == 'set':
+            o.append(ProteinSet.objects.get(pk=selection_id))
+        elif selection_subtype == 'structure':
+            o.append(Protein.objects.get(entry_name=selection_id.lower()))
+    elif selection_type == 'segments':
+        if selection_subtype == 'residue':
+            o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
+        elif selection_subtype == 'residue_with_properties': # used in site search
+            o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
+        else:
+            o.append(ProteinSegment.objects.get(pk=selection_id))
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    for obj in o:
+        # add the selected item to the selection
+        selection_object = SelectionItem(selection_subtype, obj)
+        selection.add(selection_type, selection_subtype, selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+    
+    return render(request, 'common/selection_lists.html', selection.dict(selection_type))

@@ -122,11 +122,12 @@ function SelectionSpeciesToggle(species_id) {
     });
 }
 
-function ExpandSegment(segment_id, scheme) {
+function ExpandSegment(segment_id, position_type, scheme) {
     $.ajax({
         'url': '/common/expandsegment',
         'data': {
             segment_id: segment_id,
+            position_type: position_type,
             numbering_scheme: (typeof scheme === 'undefined') ? false : scheme
         },
         'type': 'GET',

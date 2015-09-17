@@ -1,4 +1,6 @@
-﻿from protein.models import Species
+﻿from django.conf import settings
+
+from protein.models import Species
 from protein.models import ProteinSource
 from residue.models import ResidueNumberingScheme
 
@@ -9,9 +11,9 @@ class SimpleSelection:
         self.reference = []
         self.targets = []
         self.segments = []
-        self.tree_settings = ['0','0','0','0'] # Default values for phylogenetic tree creation
+
         # species
-        sp = Species.objects.get(common_name='Human') # Default species selection is human only
+        sp = Species.objects.get(pk=1) # Default species selection is human only
         o = SelectionItem('species', sp)
         self.species = [o]
 
@@ -21,9 +23,16 @@ class SimpleSelection:
         self.annotation = [o]
 
         # numbering schemes
-        gn = ResidueNumberingScheme.objects.get(slug='gpcrdb')
+        gn = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
         o = SelectionItem('numbering_schemes', gn)
         self.numbering_schemes = [o]
+
+        # Default values for phylogenetic tree creation
+        self.tree_settings = ['0','0','0','0']
+
+        # site residue groups (only used in site search)
+        self.site_residue_groups = []
+        self.active_site_residue_group = False
 
     def __str__(self):
         return str(self.__dict__)
@@ -41,6 +50,8 @@ class Selection(SimpleSelection):
         self.annotation = simple_selection.annotation
         self.numbering_schemes = simple_selection.numbering_schemes
         self.tree_settings=simple_selection.tree_settings
+        self.site_residue_groups = simple_selection.site_residue_groups
+        self.active_site_residue_group = simple_selection.active_site_residue_group
 
     def exporter(self):
         """Exports the attributes of Selection to a SimpleSelection object, and returns it"""
@@ -52,6 +63,8 @@ class Selection(SimpleSelection):
         ss.annotation = self.annotation
         ss.numbering_schemes = self.numbering_schemes
         ss.tree_settings=self.tree_settings
+        ss.site_residue_groups = self.site_residue_groups
+        ss.active_site_residue_group = self.active_site_residue_group
 
         return ss
 
@@ -97,15 +110,18 @@ class Selection(SimpleSelection):
                 selection_type: getattr(self, selection_type),
             },
             'selection_type': selection_type,
+            'site_residue_groups': getattr(self, 'site_residue_groups'),
+            'active_site_residue_group': getattr(self, 'active_site_residue_group'),
         }
 
 
 class SelectionItem:
     """A wrapper class for selectable objects (protein, family, sequence segment etc.) that adds a type attribute"""
-    def __init__(self, selection_type, selection_object):
+    def __init__(self, selection_type, selection_object, properties={}):
         self.type = selection_type
-        self.type_title = selection_type.title()
+        self.type_title = selection_type.replace('_', ' ').capitalize()
         self.item = selection_object
+        self.properties = properties
 
     def __str__(self):
         return str(self.__dict__)
