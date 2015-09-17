@@ -175,18 +175,23 @@ class Command(BuildHumanProteins):
             else:
                 # otherwise, create a new family, and use Uniprot name
                 top_level_parent_family = ProteinFamily.objects.get(slug=p.family.slug.split('_')[0])
+                num_families = ProteinFamily.objects.filter(parent=top_level_parent_family).count()
+                family_slug = top_level_parent_family.slug + "_" + str(num_families + 1).zfill(3)
                 other_family, created = ProteinFamily.objects.get_or_create(parent=top_level_parent_family,
-                    name='Other', defaults={'slug': top_level_parent_family.slug + '_other'})
+                    name='Other', defaults={'slug': family_slug})
                 if created:
                     self.logger.info('Created protein family {}'.format(other_family))
 
+                family_slug += '_001'
                 unclassified_family, created = ProteinFamily.objects.get_or_create(parent=other_family,
-                    name='Unclassified', defaults={'slug': other_family.slug + '_unclassified'})
+                    name='Unclassified', defaults={'slug': family_slug})
                 if created:
                     self.logger.info('Created protein family {}'.format(unclassified_family))
-                    
+                
+                num_families = ProteinFamily.objects.filter(parent=unclassified_family).count()
+                family_slug = unclassified_family.slug + "_" + str(num_families + 1).zfill(3)
                 pf, created = ProteinFamily.objects.get_or_create(parent=unclassified_family, name=up['genes'][0],
-                    defaults={'slug': unclassified_family.slug + '_' + up['genes'][0]})
+                    defaults={'slug': family_slug})
                 if created:
                     self.logger.info('Created protein family {}'.format(pf))
 
