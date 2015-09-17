@@ -1,4 +1,5 @@
 ﻿<h5>Bootstraping</h5>
+{{ selection.tree_settings }}
     <div class="btn-group">
         <a href="javascript:void(0)"  onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm 
             {% if selection.tree_settings.0 == '0' %} active{% endif %}

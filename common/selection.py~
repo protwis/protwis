@@ -9,7 +9,7 @@ class SimpleSelection:
         self.reference = []
         self.targets = []
         self.segments = []
-        self.tree_settings = ['0','0','0','0'] # Default values for phylogenetic tree creation
+        self.tree_settings = [0,0,0,0] # Default values for phylogenetic tree creation
         # species
         sp = Species.objects.get(common_name='Human') # Default species selection is human only
         o = SelectionItem('species', sp)
