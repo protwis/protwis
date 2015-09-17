@@ -6,6 +6,7 @@ from structure.models import Structure, PdbData, Rotamer
 from common.alignment import Alignment, AlignedReferenceTemplate
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
+from structure.calculate_RMSD import Validation
 
 import Bio.PDB as PDB
 from modeller import *
@@ -17,6 +18,8 @@ import numpy as np
 from io import StringIO
 import sys
 import pprint
+from datetime import datetime
+startTime = datetime.now()
 
 
 class Command(BaseCommand):
@@ -33,11 +36,34 @@ class Command(BaseCommand):
                 self.stdout.write(Homology_model.statistics, ending='')
                 count+=1
 
+        val = Validation()
+#        print('7TM RMSD: ', val.PDB_RMSD("./structure/PDB/4XNW.pdb", "./structure/homology_models/P47900_Inactive/modeller_test.pdb",
+#                            assign_gns=[1,2]))
+
+#        print('7TM RMSD: ', val.PDB_RMSD("./structure/PDB/1U19.pdb", "./structure/homology_models/P02699_Inactive/modeller_test.pdb",
+#                            assign_gns=[1,2]))
+#        seq_nums1=[113,117,118,122,207,212,261,265,268,296]                    
+#        print('binding pocket RMSD: ', val.PDB_RMSD("./structure/PDB/1U19.pdb", "./structure/homology_models/P02699_Inactive/modeller_test.pdb",
+#                           assign_gns=[1,2], gn_list=['3x28', '3x32', '3x33', '3x37', '5x43', '5x47', '6x44', '6x48', '6x51', '7x43'], seq_nums1=[113,117,118,122,207,212,261,265,268,296], seq_nums2=[79,83,84,88,173,178,227,231,234,262]))
+
+#        print('7TM RMSD: ', val.PDB_RMSD("./structure/PDB/4YAY.pdb", "./structure/homology_models/P30556_Inactive/modeller_test.pdb",
+#                            assign_gns=[1,2]))
+#        seq_nums1=[35, 77, 84, 88, 105, 108, 109, 112, 163, 285, 288, 292]
+#        print('binding pocket RMSD: ', val.PDB_RMSD("./structure/PDB/4YAY.pdb", "./structure/homology_models/P30556_Inactive/modeller_test.pdb",
+#                            assign_gns=[1,2], gn_list=['1x39', '2x53', '2x60', '2x64', '3x29', '3x32', '3x33', '3x36', '4x60', '7x35', '7x38', '7x42'], seq_nums1=[35, 77, 84, 88, 105, 108, 109, 112, 163, 285, 288, 292], seq_nums2=[9, 51, 58, 62, 79, 82, 83, 86, 137, 259, 262, 266]))
+#                           
+#        print('7TM RMSD: ', val.PDB_RMSD("./structure/PDB/4Z34.pdb", "./structure/homology_models/Q92633_Inactive/modeller_test.pdb",
+#                            assign_gns=[1,2]))
+#        seq_nums1=[52, 102, 124, 125, 128, 129, 132, 207, 210, 271, 274, 277, 278, 294, 296, 297]
+#        print('binding pocket RMSD: ', val.PDB_RMSD("./structure/PDB/4Z34.pdb", "./structure/homology_models/Q92633_Inactive/modeller_test.pdb",
+#                           assign_gns=[1,2], gn_list=['1x35', '2x57', '3x28', '3x29', '3x32', '3x33', '3x36', '5x40', '5x43', '6x48', '6x51', '6x54', '6x55', '7x35', '7x37', '7x38'], seq_nums1=[52, 102, 124, 125, 128, 129, 132, 207, 210, 271, 274, 277, 278, 294, 296, 297], seq_nums2=[7, 57, 79, 80, 83, 84, 87, 162, 165, 226, 229, 232, 233, 249, 251, 252]))
+                
         Homology_model = HomologyModeling('v1br_human', 'Inactive', ['Inactive'])
         alignment = Homology_model.run_alignment()
         Homology_model.build_homology_model(alignment)#, switch_bulges=False, switch_constrictions=False, switch_rotamers=False)
 
         self.stdout.write(Homology_model.statistics, ending='')
+        print(datetime.now() - startTime)
 
 class HomologyModeling(object):
     ''' Class to build homology models for GPCRs. 
@@ -190,17 +216,17 @@ class HomologyModeling(object):
                                         constriction_template = Const.find_constriction_template(
                                                                                         self.similarity_table_all,
                                                                                         constriction_in_reference=True)
-#                                        constriction_site = parse.fetch_residues_from_pdb(self.main_structure,
-#                                                                                          [parse.gn_indecer(gn,'x',-2),
-#                                                                                           parse.gn_indecer(gn,'x',-1),
-#                                                                                           gn,
-#                                                                                           parse.gn_indecer(gn,'x',+1),
-#                                                                                           parse.gn_indecer(gn,'x',+2)])
-                                        constriction_site = OrderedDict([(parse.gn_indecer(gn,'x',-2).replace('x','.'), main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-2).replace('x','.')]),
-                                                                         (parse.gn_indecer(gn,'x',-1).replace('x','.'), main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-1).replace('x','.')]),
-                                                                         (gn.replace('x','.'), main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-2).replace('x','.')]),
-                                                                         (parse.gn_indecer(gn,'x',+1).replace('x','.'), main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+1).replace('x','.')]),
-                                                                         (parse.gn_indecer(gn,'x',+2).replace('x','.'), main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+2).replace('x','.')])])
+                                        constriction_site = OrderedDict([
+                                            (parse.gn_indecer(gn,'x',-2).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-2).replace('x','.')]),
+                                            (parse.gn_indecer(gn,'x',-1).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-1).replace('x','.')]),
+                                            (gn.replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-2).replace('x','.')]),
+                                            (parse.gn_indecer(gn,'x',+1).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+1).replace('x','.')]),
+                                            (parse.gn_indecer(gn,'x',+2).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+2).replace('x','.')])])
                                         superpose = sp.BulgeConstrictionSuperpose(constriction_site, 
                                                                                   constriction_template)
                                         new_residues = superpose.run()                                  
@@ -404,13 +430,13 @@ class HomologyModeling(object):
         trimmed_res_nums = self.write_homology_model_pdb(path+self.uniprot_id+"_post.pdb", main_pdb_array, 
                                                          a, trimmed_residues=trimmed_residues)
         # Model with MODELLER
-        self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
-        self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
-                          self.uniprot_id, 1, "modeller_test.pdb", atom_dict=trimmed_res_nums)
-        
-        with open('./structure/homology_models/{}_Inactive/{}.stat.txt'.format(self.uniprot_id, self.uniprot_id), 'w') as stat_file:
-            for label, info in self.statistics.items():
-                stat_file.write('{} : {}\n'.format(label, info))
+#        self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
+#        self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
+#                          self.uniprot_id, 1, "modeller_test.pdb", atom_dict=trimmed_res_nums)
+#        
+#        with open('./structure/homology_models/{}_Inactive/{}.stat.txt'.format(self.uniprot_id, self.uniprot_id), 'w') as stat_file:
+#            for label, info in self.statistics.items():
+#                stat_file.write('{} : {}\n'.format(label, info))
         return a       
     
     def run_non_conserved_switcher(self, main_pdb_array, reference_dict, template_dict, alignment_dict):
@@ -483,7 +509,7 @@ class HomologyModeling(object):
                         try:
                             if 'free' not in ref_seg:
                                 residue = main_pdb_array[ref_seg][gn_]
-                                main_pdb_array[ref_seg][gn_] = residue[0:4]
+                                main_pdb_array[ref_seg][gn_] = residue[0:5]
                                 trimmed_residues.append(gn_)
                                 trimmed_res_num+=1
                             elif 'free' in ref_seg:
@@ -926,14 +952,15 @@ class Bulges(object):
         for structure, value in similarity_table.items():  
             protein_object = Protein.objects.get(id=structure.protein_conformation.protein.parent.id)
             try:                            
-                for match in matches:
-                    if bulge_in_reference==True:
-                        if match.protein_conformation.protein.parent==protein_object:
-                            self.bulge_templates.append(structure)
-                    elif bulge_in_reference==False:
-                        if (match.protein_conformation.protein.parent==protein_object and 
-                            match.protein_conformation.protein.parent.entry_name not in excludee_proteins):
-                            self.bulge_templates.append(structure)
+#                for match in matches:
+                if bulge_in_reference==True:
+#                    if match.protein_conformation.protein.parent==protein_object:
+                    
+                        self.bulge_templates.append(structure)
+                elif bulge_in_reference==False:
+                    if (match.protein_conformation.protein.parent==protein_object and 
+                        match.protein_conformation.protein.parent.entry_name not in excludee_proteins):
+                        self.bulge_templates.append(structure)
             except:
                 pass
         mod_bulge = False
