@@ -15,7 +15,7 @@ from optparse import make_option
 
 
 class Command(BuildHumanProteins):
-    help = 'Reads uniprot text files and creates protein entries of orthologs of human proteins'
+    help = 'Reads uniprot text files and creates protein entries for non-human proteins'
 
     def add_arguments(self, parser):
         parser.add_argument('--only-constructs', action='store_true', dest='only_constructs',
@@ -51,7 +51,7 @@ class Command(BuildHumanProteins):
         Protein.objects.filter(~Q(species__id=1)).delete()
 
     def create_orthologs(self, only_constructs):
-        self.logger.info('CREATING ORTHOLOGS')
+        self.logger.info('CREATING OTHER PROTEINS')
 
         # go through constructs and finding their entry_names for lookup
         construct_entry_names = []
@@ -72,8 +72,6 @@ class Command(BuildHumanProteins):
             # check whether protein is specified
             if 'protein' not in sd:
                 continue
-
-            print(sd['protein'])
 
             # append entry_name to lookup list
             construct_entry_names.append(sd['protein'])
@@ -141,7 +139,10 @@ class Command(BuildHumanProteins):
                     blast_out = blast.run(up['sequence'])
 
                     # use first hit from BLAST as template for reference positions
-                    p = Protein.objects.get(pk=blast_out[0][0])
+                    try:
+                        p = Protein.objects.get(pk=blast_out[0][0])
+                    except Protein.DoesNotExist:
+                        self.logger.error('Template protein for {} not found'.format(up['entry_name']))
 
             # skip if no ortholog is found FIXME use a profile to find a good template
             if not p:
@@ -156,6 +157,11 @@ class Command(BuildHumanProteins):
                     # get reference positions of human ortholog
                     template_ref_position_file_path = os.sep.join([self.ref_position_source_dir,
                         p.entry_name + '.yaml'])
+                    if not os.path.isfile(template_ref_position_file_path):
+                        # use a non human sequence
+                        template_ref_position_file_path = os.sep.join([self.auto_ref_position_file_path,
+                        p.entry_name + '.yaml'])
+                    
                     ref_positions = align_protein_to_reference(up, template_ref_position_file_path, p)
 
                     # write reference positions to a file
@@ -169,21 +175,26 @@ class Command(BuildHumanProteins):
             else:
                 # otherwise, create a new family, and use Uniprot name
                 top_level_parent_family = ProteinFamily.objects.get(slug=p.family.slug.split('_')[0])
+                num_families = ProteinFamily.objects.filter(parent=top_level_parent_family).count()
+                family_slug = top_level_parent_family.slug + "_" + str(num_families + 1).zfill(3)
                 other_family, created = ProteinFamily.objects.get_or_create(parent=top_level_parent_family,
-                    name='Other', defaults={'slug': top_level_parent_family.slug + '_other'})
+                    name='Other', defaults={'slug': family_slug})
                 if created:
                     self.logger.info('Created protein family {}'.format(other_family))
 
+                family_slug += '_001'
                 unclassified_family, created = ProteinFamily.objects.get_or_create(parent=other_family,
-                    name='Unclassified', defaults={'slug': other_family.slug + '_unclassified'})
+                    name='Unclassified', defaults={'slug': family_slug})
                 if created:
                     self.logger.info('Created protein family {}'.format(unclassified_family))
-                    
+                
+                num_families = ProteinFamily.objects.filter(parent=unclassified_family).count()
+                family_slug = unclassified_family.slug + "_" + str(num_families + 1).zfill(3)
                 pf, created = ProteinFamily.objects.get_or_create(parent=unclassified_family, name=up['genes'][0],
-                    defaults={'slug': unclassified_family.slug + '_' + up['genes'][0]})
+                    defaults={'slug': family_slug})
                 if created:
                     self.logger.info('Created protein family {}'.format(pf))
 
                 self.create_protein(up['genes'][0], pf, p.sequence_type, p.residue_numbering_scheme, accession, up)
 
-        self.logger.info('COMPLETED ORTHOLOGS')
+        self.logger.info('COMPLETED CREATING OTHER PROTEINS')

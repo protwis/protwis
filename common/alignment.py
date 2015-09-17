@@ -53,10 +53,9 @@ class Alignment:
         self.reference = True
 
         # fetch the selected conformations of the protein
-        # only one can be selected for similarity search, therefore state[0] (other states ignored, if defined)
+        # FIXME take many conformational states into account
         try:
-            pconf = ProteinConformation.objects.get(protein=protein,
-                state=ProteinState.objects.get(slug=self.states[0]))
+            pconf = ProteinConformation.objects.get(protein=protein)
         except ProteinConformation.DoesNotExist:
             raise Exception ('Protein conformation {} not found for protein {}'.format(self.states[0],
                 protein.entry_name))
@@ -71,11 +70,11 @@ class Alignment:
 
     def load_proteins(self, proteins):
         """Load a list of protein objects into the alignment"""
-        # fetch all protein conformations
+        # fetch all conformations of selected proteins
+        # FIXME only show inactive?
         protein_conformations = ProteinConformation.objects.order_by('protein__family__slug',
-            'protein__entry_name').filter(protein__in=proteins,
-            state__slug__in=self.states).select_related('protein__residue_numbering_scheme', 'protein__species',
-            'state')
+            'protein__entry_name').filter(protein__in=proteins).select_related('protein__residue_numbering_scheme',
+            'protein__species', 'state')
         pconfs = OrderedDict()
         for pconf in protein_conformations:
             pconf_label = pconf.__str__()

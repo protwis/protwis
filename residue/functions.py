@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db.models import Q
+from django.db import IntegrityError
 
 from protein.models import ProteinAnomaly
 from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent

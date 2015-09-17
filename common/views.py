@@ -205,8 +205,9 @@ class AbsSettingsSelection(TemplateView):
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
-        self.current = simple_selection.tree_settings
         context['selection'] = {}
+        context['selection']['tree_settings'] = selection.tree_settings
+
         for selection_box, include in self.selection_boxes.items():
             if include:
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
@@ -353,12 +354,9 @@ def SetTreeSelection(request):
         selection.importer(simple_selection)
     selection.tree_settings[int(option_no)]=option_id
     simple_selection = selection.exporter()
-    print(selection.tree_settings)
     # add simple selection to session
     request.session['selection'] = simple_selection
-    selection_type = 'tree_settings'
-    
-    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+    return render(request, 'common/bootstrap_buttons.html', selection.dict('tree_settings'))
 
 def SelectAlignableSegments(request):
     """Adds all alignable segments to the selection"""
@@ -467,7 +465,6 @@ def SelectionAnnotation(request):
 
     # add simple selection to session
     request.session['selection'] = simple_selection
-    
     return render(request, 'common/selection_filters_annotation.html', selection.dict('annotation'))
 
 def SelectionSpeciesPredefined(request):

@@ -12,7 +12,7 @@ from optparse import make_option
 from multiprocessing import Queue, Process
 
 class Command(BaseBuild):
-    help = 'Creates residue records'
+    help = 'Creates residue records for human receptors'
 
     def add_arguments(self, parser):
         parser.add_argument('--njobs', action='store', dest='njobs', help='Number of jobs to run')
@@ -23,7 +23,8 @@ class Command(BaseBuild):
     default_segment_length_file_path = os.sep.join([settings.DATA_DIR, 'residue_data', 'default_segment_length.yaml'])
 
     segments = ProteinSegment.objects.filter(partial=False)
-    pconfs = ProteinConformation.objects.all().select_related('protein__residue_numbering_scheme__parent')
+    pconfs = ProteinConformation.objects.filter(protein__species__id=1).prefetch_related(
+        'protein__residue_numbering_scheme__parent')
     pconfs_without_reference = []
 
     schemes = parse_scheme_tables(generic_numbers_source_dir)
