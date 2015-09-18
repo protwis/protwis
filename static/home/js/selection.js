@@ -173,7 +173,7 @@ function SetTreeSelection(option_no, option_id) {
         },
         'type': 'GET',
         'success': function (data) {
-            $("#tree_selection").html(data);
+            $("#tree_buttons").html(data);
         }
     });
 }

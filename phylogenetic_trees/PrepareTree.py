@@ -161,7 +161,7 @@ class PrepareTree:
         hue_range = [start_hue,start_hue+hue_step]
         for a in sorted(self.ligands):
             print(a)
-            colour = self.HSV_2_RGB((int(self.trim_colour(current_hue)),127,200))
+            colour = self.HSV_2_RGB((int(self.trim_colour(current_hue)),127,220))
             self.styles+=('<%s fill=\'#%s\' stroke=\'#%s\' class=\'chart1\' id=\'%s\'/>' %(a,colour,'000000',a))
             self.defaultColours[a]=['#'+colour,'#000000']
             self.ligcolors[a]=[colour,list(hue_range),0]
@@ -185,7 +185,7 @@ class PrepareTree:
                     self.ligcolors[lig][2]+=hue_step/2
                 if hue_step == 0:
                     hue_step = 1
-                colour = self.HSV_2_RGB((self.trim_colour(int(hue_range[0]+self.ligcolors[lig][2])),127,200))
+                colour = self.HSV_2_RGB((self.trim_colour(int(hue_range[0]+self.ligcolors[lig][2])),127,220))
                 self.styles+=('<%s fill=\'#%s\' stroke=\'#%s\' class=\'chart2\' id=\'%s\'/>' %(a,colour,'000000',a))
                 self.defaultColours[a]=['#'+colour,'#000000']
                 self.famcolors[a]=colour
@@ -236,7 +236,7 @@ class PrepareTree:
                                     'Y': ['#18FF0B', '#000000'],'W': ['#0BCF00', '#000000'],
                                     'H': ['#0093DD', '#000000'],'P': ['#CC0099', '#FDFF7B'],
                                     'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
-                                    '-': ['#FFFFFF', '#000000']    
+                                    '-': ['#000000', '#000000']    
                                     }
         fillcolors = [['#EEEEEE', '#000000']]
         for key,value in presetColors.items():
