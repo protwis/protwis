@@ -194,3 +194,59 @@ function SelectResidueFeature(selection_type, selection_subtype, selection_id, f
         },
     });
 }
+
+function AddResidueGroup(selection_type) {
+    $.ajax({
+        'url': '/common/addresiduegroup',
+        'data': {
+            selection_type: selection_type
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}
+
+function SelectResidueGroup(selection_type, group_id) {
+    $.ajax({
+        'url': '/common/selectresiduegroup',
+        'data': {
+            selection_type: selection_type,
+            group_id: group_id
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}
+
+function RemoveResidueGroup(selection_type, group_id) {
+    $.ajax({
+        'url': '/common/removeresiduegroup',
+        'data': {
+            selection_type: selection_type,
+            group_id: group_id
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}
+
+function SetGroupMinMatch(selection_type, group_id, min_match) {
+    $.ajax({
+        'url': '/common/setgroupminmatch',
+        'data': {
+            selection_type: selection_type,
+            group_id: group_id,
+            min_match: min_match
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}

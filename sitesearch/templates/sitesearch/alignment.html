@@ -70,6 +70,7 @@
                         </td>
                     </tr>
 
+                    {% if a.non_matching_proteins %}
                     <!-- segment line -->
                     <tr>
                         <td class="ali-td ali-td-first-col"></td>
@@ -99,6 +100,7 @@
                         <td class="ali-td-generic-num ali-td-first-col">{{ ns.1 }}</td>
                     </tr>
                     {% endfor %}
+                    {% endif %}
 
                 </table>
             </div>
@@ -187,6 +189,7 @@
                             <td class="ali-td-header-row" colspan={{ num_residue_columns }}>&nbsp;</td>
                         </tr>
 
+                        {% if a.non_matching_proteins %}
                         <!-- segment title line -->
                         <tr>
                             {% for s, num in a.segments.items %}
@@ -248,6 +251,7 @@
                             {% endfor %}
                         </tr>
                         {% endfor %}
+                        {% endif %}
 
                     </table>
                 </div>

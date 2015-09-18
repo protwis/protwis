@@ -9,14 +9,45 @@
         {% endif %}
     </p>
         {% if selection_type == 'segments' %}
+            
+            {% if selection.site_residue_groups %}
+            <!-- Add interaction button -->
+            <p><a onclick="AddResidueGroup('{{ selection_type }}')"
+                class="btn btn-primary btn-xs">
+                <span class="glyphicon glyphicon-plus"></span> Add interaction
+            </a></p>
+            {% endif %}
+
             {% for group in selection.site_residue_groups %}
-                Interaction {{ forloop.counter }}
+                
+                <!-- Interaction line -->
+                <p class="target-selection">
+                <a href="#" onclick="SelectResidueGroup('{{ selection_type }}', '{{ forloop.counter }}')">
+                    {% if selection.active_site_residue_group == forloop.counter %}<b>&raquo; {% endif %} 
+                    Interaction {{ forloop.counter }}
+                    {% if selection.active_site_residue_group == forloop.counter %}</b>{% endif %} 
+                </a>
+
+                Min. match: <select class="form-control" id="sel-min-match-{{ forloop.counter }}"
+                    onchange="SetGroupMinMatch('{{ selection_type }}', {{ forloop.counter }}, this.value)">
+                    {% for i in group %}
+                    <option {% if group.0 == forloop.counter %}selected {% endif %}value="{{ forloop.counter }}">{{ forloop.counter }}</option>
+                    {% endfor %}
+                </select>
+
+                <a onclick="RemoveResidueGroup('{{ selection_type }}', '{{ forloop.counter }}')"
+                    class="btn btn-danger btn-xs">
+                    <span class="glyphicon glyphicon-remove"></span>
+                </a>
+                <br />
+
+                <!-- Feature selection line -->
                 {% for selected_item in selected_items %}
                     {% if selected_item.properties.site_residue_group == forloop.parentloop.counter %}
                 <div class="target-selection">
                         {{ selected_item.item.label|safe }}
                     
-                    <select class="form-control" id="sel-res-{{ forloop.counter }}" 
+                    <select class="form-control" id="sel-feature-{{ forloop.counter }}" 
                         onchange="SelectResidueFeature('{{ selection_type }}', '{{ selected_item.type }}',
                         {{ selected_item.item.id }}, this.value)">
                         <option value='any'>Select feature..</option>
@@ -37,6 +68,8 @@
                 </div>
                     {% endif %}
                 {% endfor %}
+                </p>
+            
             {% empty %}
             None
             {% endfor %}
