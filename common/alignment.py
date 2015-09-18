@@ -19,6 +19,7 @@ class Alignment:
     def __init__(self):
         self.reference = False
         self.proteins = []
+        self.non_matching_proteins = [] # proteins that do not match user specified site definitions
         self.segments = OrderedDict()
         self.numbering_schemes = {}
         self.generic_numbers = OrderedDict()
@@ -282,6 +283,11 @@ class Alignment:
                 s = segment.split("_")
                 if len(s) > 1:
                     del self.generic_numbers[ns][segment]
+                else:
+                    ordered_generic_numbers = OrderedDict()
+                    for gn in sorted(self.generic_numbers[ns][segment]):
+                        ordered_generic_numbers[gn] = self.generic_numbers[ns][segment][gn]
+                    self.generic_numbers[ns][segment] = ordered_generic_numbers 
 
         for pc in self.proteins:
             row = OrderedDict()
@@ -573,6 +579,31 @@ class Alignment:
                     else:
                         color_class = str(value)[:-1]
                 self.similarity_matrix[protein_key]['values'].append([value, color_class])
+
+    def evaluate_sites(self, request):
+        """Evaluate which user selected site definitions match each protein sequence"""
+        # get simple selection from session
+        simple_selection = request.session.get('selection', False)
+        
+        # format site definititions
+        site_defs = {}
+        for position in simple_selection.segments:
+            if position.type == 'site_residue':
+                # site_defs example: {'3x51': 'hbd', '6x50': 'pos'}
+                site_defs[position.item.label] = position.properties['feature']
+
+        # go through all proteins and match against site definitions
+        for i, protein in enumerate(self.proteins):
+            for segment in protein.alignment.values():
+                for position in segment:
+                    # position example: ['6x49', '6.49x49', 'L', 'GPCRdb(A)', 282, 282]
+                    if position[2] not in AMINO_ACID_GROUPS[site_defs[position[0]]]:
+                        # if the protein sequence does not match the definitions, store it in non_matching_proteins
+                        self.non_matching_proteins.append(protein)
+                        break
+
+        # remove non-matching proteins from protein list
+        self.proteins = [p for p in self.proteins if p not in self.non_matching_proteins]
 
     def pairwise_similarity(self, protein_1, protein_2):
         """Calculate the identity, similarity and similarity score between a pair of proteins"""

@@ -17,4 +17,5 @@ urlpatterns = patterns('',
     url(r'selectionschemespredefined', views.SelectionSchemesPredefined, name='selectionschemespredefined'),
     url(r'selectionschemestoggle', views.SelectionSchemesToggle, name='selectionschemestoggle'),
     url(r'settreeselection', views.SetTreeSelection, name='settreeselection'),
+    url(r'selectresiduefeature', views.SelectResidueFeature, name='selectresiduefeature'),
 )

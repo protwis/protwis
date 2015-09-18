@@ -1,6 +1,6 @@
 <h5>Residue positions</h5>
 <p>Scheme: <select class="form-control" id="numberingschemeselect"
-onchange="ExpandSegment('{{ segment_id }}', this.value)">
+onchange="ExpandSegment('{{ segment_id }}', '{{ position_type }}', this.value)">
 {% for rns in schemes %}
     <option {% if rns.slug = scheme.slug %} selected{% endif %} value="{{ rns.slug }}">
         {{ rns.name }}
@@ -8,7 +8,7 @@ onchange="ExpandSegment('{{ segment_id }}', this.value)">
 {% endfor %}
 </select></p>
 {% for gn in generic_numbers %}
-    <a href="javascript:void(0)" onclick="AddToSelection('segments', 'residue', '{{ gn.id }}')"
+    <a href="javascript:void(0)" onclick="AddToSelection('segments', '{{ position_type }}', '{{ gn.id }}')"
     class="btn btn-success btn-sm">
         {{ gn.label }}
     </a>

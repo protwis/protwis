@@ -31,6 +31,9 @@ INSTALLED_APPS = (
     'django_nvd3',
     'common',
     'api',
+    'documentation',
+    'news',
+    'pages',
     'home',
     'protein',
     'family',
@@ -43,6 +46,7 @@ INSTALLED_APPS = (
     'interaction',
     'mutation',
     'phylogenetic_trees',
+    'sitesearch',
     'build_' + SITE_NAME,
 )
 
