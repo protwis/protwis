@@ -149,7 +149,7 @@ class Command(BaseCommand):
         self.logger.info('CREATING PAGES')
         
         # what files should be parsed?
-        filenames = os.listdir(self.pages_data_dir)
+        filenames = sorted(os.listdir(self.pages_data_dir),key=str.lower)
 
         for source_file in filenames:
             self.logger.info('Parsing file ' + source_file)
