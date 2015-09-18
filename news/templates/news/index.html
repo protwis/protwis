@@ -1,0 +1,16 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+
+<div class="container">
+<div id="content">
+	<ul class="breadcrumbs breadcrumb"><li><a href="/">Home</a><span class="divider">/</span></li><li><a href="">News</a></ul>
+
+{% for instance in news %}
+	<div class='span3'>
+        <img src={{"/static/home/images/news/"|add:instance.fields.image|add:".png"}} style="height:150px;width:150px;float:bottom;">
+    </div>
+        <em>{{ instance.fields.date }} - </em> {{ instance.fields.html|safe }}
+{% endfor %}
+
+{% endblock content %}
