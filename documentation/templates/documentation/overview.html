@@ -7,17 +7,15 @@
 	<ul class="breadcrumbs breadcrumb"><li><a href="/">Home</a><span class="divider">/</span></li><li><a href="">Documentation</a><span class="divider">/</span></li><li class="active">Overview</li></ul>
 
 {% for instance in documentation %}
-<div class='row-fluid'>
-	<div class='row-fluid well well-small selection-box'>
-		<div class='span3'>
+<div class="row">
+	 <div class="col-md-10 well col-md-offset-1">
         <a href={{ "/documentation/"|add:instance.fields.image }}>
-            <img src={{"/static/home/images/documentation/"|add:instance.fields.image|add:".png"}} style="height:150px;width:300px;">
+            <img src={{"/static/home/images/documentation/"|add:instance.fields.image|add:".png"}} style="height:150px;width:300px;float:left;padding-right:25px;">
         </a>
-        </div>
         <a href={{ "/documentation/"|add:instance.fields.image }}>
             <h3>{{ instance.fields.title }}</h3>
         </a>
-        <p>{{ instance.fields.description }}</p>
+        <h5>{{ instance.fields.description }}</h5>
     </div>
 </div>
 {% endfor %}
