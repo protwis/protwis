@@ -80,7 +80,12 @@ h1, h2, h3, h4 { margin-top: 0px; }
 }
 select.form-control {
     width: auto;
-    height: auto;
+    height:22px;
     font-size: 11px;
+    display: inline;
+}
+input.form-control {
+    width: 250px;
+    font-size: 14px;
     display: inline;
 }
