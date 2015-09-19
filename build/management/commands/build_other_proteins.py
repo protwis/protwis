@@ -159,7 +159,7 @@ class Command(BuildHumanProteins):
                         p.entry_name + '.yaml'])
                     if not os.path.isfile(template_ref_position_file_path):
                         # use a non human sequence
-                        template_ref_position_file_path = os.sep.join([self.auto_ref_position_file_path,
+                        template_ref_position_file_path = os.sep.join([self.auto_ref_position_source_dir,
                         p.entry_name + '.yaml'])
                     
                     ref_positions = align_protein_to_reference(up, template_ref_position_file_path, p)
