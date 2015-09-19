@@ -540,19 +540,21 @@ class FragmentSuperpositionIndex(TemplateView):
 
     #Input file form data
     header = "Select a file to upload:"
-    upload_form_data = OrderedDict([
-        ("pdb_file", forms.FileField()),
-        ("similarity", forms.ChoiceField(choices=(('identical','Use fragments with identical residues'),
-                     ('similar','Use fragments with residues of similar properties')),
-            widget=forms.RadioSelect())),
-        ("representative", forms.ChoiceField(choices=(('closest','Use fragments from the evolutionary closest crystal structure'),
-                     ('any','Use all available fragments')), widget=forms.RadioSelect())),
-        ("state", forms.ChoiceField(choices=(('active', 'Agonist-bound structures'),('inactive', 'Antagonist-bound structures')),widget=forms.Select()))
-        ])
-    form_code = forms.Form()
-    form_code.fields = upload_form_data
-    form_code.initial={'similarity': 'similar', 'representative': 'closest'}
-    form_id = 'fragments'
+    #Can't control the class properly - staying with the dirty explicit html code
+    form_code = """
+    Pdb file:<input id="id_pdb_file" name="pdb_file" type="file" /></br>
+    Similarity:</br>
+    <input id="similarity" name="similarity" type="radio" value="identical" /> Use fragments with identical residues</br>
+    <input checked="checked" id="similarity" name="similarity" type="radio" value="similar" /> Use fragments with residues of similar properties</br>
+
+    Fragments:</br>
+    <input checked="checked" id="representative" name="representative" type="radio" value="closest" /> Use fragments from the evolutionary closest crystal structure</br>
+    <input id="representative" name="representative" type="radio" value="any" /> Use all available fragments</br></br>
+    State:<select id="id_state" name="state">
+    <option value="active">Antagonist-bound structures</option>
+    <option value="inactive">Agonist-bound structures</option>
+    </select>
+    """
     url = '/structure/fragment_superposition_results'
     mid_section = "upload_file_form.html"
     form_height = 350
