@@ -121,7 +121,11 @@ class Alignment:
     def load_segments(self, selected_segments):
         selected_residue_positions = []
         for s in selected_segments:
-            selected_segment = s.item
+            if hasattr(s, 'item'):
+                selected_segment = s.item
+            else:
+                selected_segment = s
+                
             # handle residue positions separately
             if selected_segment.__class__.__name__ == 'ResidueGenericNumberEquivalent':
                 segment_residue = [selected_segment]
