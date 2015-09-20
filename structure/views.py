@@ -37,7 +37,10 @@ class StructureBrowser(TemplateView):
 
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
-            context['crystals'] = Structure.objects.all().prefetch_related("protein_conformation__protein", "protein_conformation__protein__endogenous_ligands", "publication__web_link", "stabilizing_agents")
+            context['structures'] = Structure.objects.all().prefetch_related("ligands",
+                "protein_conformation__protein__parent__endogenous_ligands",
+                "protein_conformation__protein__family__parent__parent", "publication__web_link__web_resource",
+                "stabilizing_agents")
         except Structure.DoesNotExist as e:
             pass
 
