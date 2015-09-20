@@ -98,25 +98,25 @@ class Treeclass:
         # get the user selection from session
         a=Alignment()
         simple_selection=request.session.get('selection', False)
-        ################################## FOR BUILDING STATISTICS ONLY
-        #cons_prots = []
-        #    for n in Protein.objects.filter(sequence_type_id=3):
-        #        if n.family.slug.startswith('001') and len(n.family.slug.split('_'))==2:
-        #            cons_prots.append(n)
-        #    for n in simple_selection.targets:
-        #        if n.item.family.slug.startswith('001_'):
-        #            continue
-        #        else:
-        #            simple_selection.targets.remove(n)
-        #    for n in cons_prots:
-        #        simple_selection.targets.append(SelectionItem('protein',n))
+        ################################## FOR BUILDING STATISTICS ONLY##########################
+        cons_prots = []
+        for n in Protein.objects.filter(sequence_type_id=15):
+            if n.family.slug.startswith('006') and len(n.family.slug.split('_'))==3:
+                cons_prots.append(n)
+        for n in simple_selection.targets[:]:
+            if n.item.family.slug.startswith('006_'):
+                continue
+            else:
+                simple_selection.targets.remove(n)
+        for n in cons_prots:
+            simple_selection.targets.append(SelectionItem('protein',n))
+            print(n.family.slug)
         #####################################################
         a.load_proteins_from_selection(simple_selection)
         a.load_segments_from_selection(simple_selection)
         self.bootstrap,self.UPGMA,self.branches,self.ttype = map(int,simple_selection.tree_settings)
-        self.bootstrap=10^int(self.bootstrap)
-        if self.bootstrap==1:
-            self.bootstrap=0 
+        if self.bootstrap!=0:
+            self.bootstrap=pow(10,self.bootstrap)
         #### Create an alignment object
         a.build_alignment()
         a.calculate_statistics()
@@ -137,21 +137,6 @@ class Treeclass:
         
         for n in a.proteins:
             fam = self.Tree.trans_0_2_A(n.protein.family.slug)
-
-            #### Mutations ######
-            #muts_db = MutationExperiment.objects.filter(protein_id=n.id)
-            #for a in muts_db:
-            #    print(a.protein,a.residue,a.mutation,a.ligand)
-            #    wt = int(a.wt_value)
-            #    mu = int(a.mu_value)
-            #    if wt < mu:
-            #        muts[fam]='negative'
-            #    if wt > mu:
-            #        muts[fam]='positive'
-            #    if wt == mu:
-            #        muts[fam]='neutral'
-            #exit()
-
             link = n.protein.entry_name
             name = n.protein.name.replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')
             if '&' in name and ';' in name:
@@ -174,7 +159,9 @@ class Treeclass:
             self.family[acc] = {'name':name,'family':fam,'description':desc,'species':spec,'class':'','ligand':'','type':'','link': link}
             ####Write PHYLIP input
             sequence = ''
+            print(n.alignment)
             for chain in n.alignment:
+                print(chain)
                 for residue in n.alignment[chain]:
                     sequence += residue[2].replace('_','-')
                 sequence += '-'

@@ -61,14 +61,16 @@
          $(this).css("stroke-width", '4');
      });
  };
- function predefined_colours(colours) { 
+
+ function predefined_colours(defs, colours) {
      resetColors();
      $('#svgCanvas').find(".bgfield").each(function (index) {
-         if (colours['proteins'].indexOf($(this).attr("id")) > -1) {
-             $(this).css("fill", colours['colours']['n']);
+         if (defs.indexOf($(this).attr("id")) > -1) {
+             $(this).css("fill", colours);
          };
      });
  };
+ 
  function resetColors() {
      $('#svgCanvas').find(".path").each(function (index) {
          $(this).css("stroke", '');
