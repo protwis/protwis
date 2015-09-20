@@ -12,8 +12,8 @@ from datetime import datetime
 
 class DrawSnakePlot(Diagram):
 
-    def __init__(self, residue_list, protein_class,protein_name):
-
+    def __init__(self, residue_list, protein_class,protein_name, nobuttons = None):
+        self.nobuttons = nobuttons
         self.type = 'snakeplot'
         plot_data = {}
         plot_data['direction'] = [0,0, 1, 0, 1, 0, 1, 0]; # 0: EC->IC, 1: IC->EC
@@ -142,7 +142,7 @@ class DrawSnakePlot(Diagram):
     def __str__(self):  
 
         self.output = "<g id=snake transform='translate(0, " + str(-self.low+ self.offsetY) + ")'>" + self.traceoutput+self.output+self.helixoutput+self.drawToolTip() + "</g>"; #for resizing height
-        return mark_safe(self.create(self.output,self.maxX['right']+30,self.high-self.low+self.offsetY*2,"snakeplot"))
+        return mark_safe(self.create(self.output,self.maxX['right']+30,self.high-self.low+self.offsetY*2,"snakeplot", self.nobuttons))
 
     def drawSnakePlotHelix(self, helix_num):
         print('drawing helix nr',helix_num)
@@ -930,8 +930,8 @@ class DrawHelixBox(Diagram):
     plot_data['Class C']['rotation'] = [0, 170, 200, 290, 145, 250, 210, 310] # in degrees
 
 
-    def __init__(self, residue_list, protein_class,protein_name):
-
+    def __init__(self, residue_list, protein_class,protein_name, nobuttons = None):
+        self.nobuttons = nobuttons
         self.receptorId = protein_name
         self.family = protein_class
 
@@ -987,7 +987,7 @@ class DrawHelixBox(Diagram):
 
 
     def __str__(self):  
-        return mark_safe(self.create(self.output+self.drawToolTip(),595,430,"helixbox"))
+        return mark_safe(self.create(self.output+self.drawToolTip(),595,430,"helixbox", self.nobuttons))
 
     def DrawHelix(self, startX,startY,residuelist,radius,direction,helixNum,helixTopResidue,rotation):
 

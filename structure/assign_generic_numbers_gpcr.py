@@ -102,13 +102,22 @@ class GenericNumbering(object):
                 resn = self.locate_res_by_pos(chain, q_counter)
                 if resn != 0:
                     try:
-                        db_res = Residue.objects.get(protein_conformation__protein=prot_id, sequence_number=subj_counter)
-                        num = db_res.display_generic_number.label
-                        bw, gpcrdb = num.split('x')
-                        gpcrdb = "{}.{}".format(bw[0], gpcrdb)
-                        self.residues[chain][resn].add_bw_number(bw)
-                        self.residues[chain][resn].add_gpcrdb_number(gpcrdb)
+                        db_res = Residue.objects.prefetch_related('display_generic_number', 'protein_segment').get(protein_conformation__protein=prot_id, sequence_number=subj_counter)
+                        
+                        if db_res.protein_segment:
+                            segment = db_res.protein_segment.slug
+                            self.residues[chain][resn].add_segment(segment)
+
+                        if db_res.display_generic_number:
+                            num = db_res.display_generic_number.label
+                            bw, gpcrdb = num.split('x')
+                            gpcrdb = "{}.{}".format(bw[0], gpcrdb)
+                            self.residues[chain][resn].add_bw_number(bw)
+                            self.residues[chain][resn].add_gpcrdb_number(gpcrdb)
+                            self.residues[chain][resn].add_gpcrdb_number_id(db_res.display_generic_number.id)
+                            self.residues[chain][resn].add_display_number(num)
                     except Exception as msg:
+                        print(msg)
                         logger.warning("Could not find residue {} {} in the database.\t{}".format(resn, subj_counter, msg))
 
                     
