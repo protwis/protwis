@@ -2,6 +2,9 @@
 {% load staticfiles %}
 
 {% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+<link href="{% static 'home/css/residue_table.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/alignment.css' %}" rel="stylesheet">
 <style>
 .smiles-tooltip + .tooltip > .tooltip-inner {
@@ -27,6 +30,10 @@
     <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
     <script src="{% static 'home/js/selection.js' %}"> </script>
+    <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+    <script src="{% static 'home/js/diagrams.js' %}"></script>
+    <script src="{% static 'home/js/alignment.js' %}"></script>
+    <script src="{% static 'home/js/residuetable.js' %}"></script>
 
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
@@ -43,7 +50,7 @@
                 ],
                 tableTools: {
                     "sRowSelect": "multi",
-                    
+                    "aButtons": ["select_all", "select_none"]
                 },
                 initComplete: function () {
                     $('#mutations').dataTable().columnFilter({
@@ -73,7 +80,7 @@
 {% block content %}
 {% block buttons %}
 <!-- Download button -->
-<div class="btn-group">
+<!-- <div class="btn-group">
   <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
     aria-expanded="false">
     <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
@@ -81,7 +88,7 @@
   <ul class="dropdown-menu">
     <li><a href="/alignment/fasta">Alignment (fasta)</a></li>
     <li><a href="/alignment/csv">Spreadsheet (csv)</a></li>
-</div>
+</div> -->
 {% endblock %}
 <!-- sequence alignment starts -->
 
@@ -128,6 +135,7 @@
                     <tr>
                         <th>Protein name</th>
                         <th>Alt. Position</th>
+                        <th>Segment</th>
                         <th>Position</th>
                         <th>Mutation</th>
                         <th>FoldChange or Qual</th>
@@ -146,7 +154,7 @@
 
                 <td><a href="#" data-toogle="tooltip"   data-container="body" data-html="true" data-original-title="{{mutation.getCalculation}}" data-placement="top"> {{mutation.getFoldorQual|safe}}</a></td>
 
-                <td>{{mutation.exp_type.type}} ({{mutation.exp_func.func}})</td>
+                <td>{% if mutation.exp_func.func %} {{mutation.exp_type.type}} ({{mutation.exp_func.func}}) {% else %} N/A {% endif %}</td>
                 <td>
                 <a class="smiles-tooltip" data-toggle="tooltip"  data-html="true" data-original-title="<img src='http://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/{{mutation.ligand.properities.smiles|urlencode}}/PNG'><br>{{mutation.ligand.name}}<br>{{mutation.ligand_role.name}}" data-placement="right">{{mutation.ligand.name}}</a></td>
                <!--  <td>{{mutation.ligand_class.classname}}</td> -->
@@ -156,10 +164,30 @@
                 {% endfor %}
             </table>
         </div>
+        <br><br>
+<div class="col-md-2 text-right text-info">
+    <h4>Diagrams</h4>
+</div>
+    <div class="col-md-10">
+    {{ HelixBox }}
+    <br>
+    <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_{{ p.entry_name }}.png', {scale: 3});"> Download as PNG</a>
+    <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_{{ p.entry_name }}"> Download as SVG</a>
+    {{ SnakePlot }}
+    <br>
+    <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ p.entry_name }}.png', {scale: 3});"> Download as PNG</a>
+    <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_{{ p.entry_name }}"> Download as SVG</a>
+    </div>
     {% else %}
         <p> Ooops! There is no data to show here yet. </p>
     {% endif %}
-
+<br><br><br><br>
+<div class="col-md-2 text-right text-info">
+    <h4>Residue Table</h4>
+</div>
+<div class="col-md-10">
+{% include "residue/residue_table_only.html" with header=header segments=segments data=data %}
+</div>
 <!-- sequence alignment ends -->
 {% endblock %}
 

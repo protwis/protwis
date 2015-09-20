@@ -19,6 +19,7 @@ class Alignment:
     def __init__(self):
         self.reference = False
         self.proteins = []
+        self.non_matching_proteins = [] # proteins that do not match user specified site definitions
         self.segments = OrderedDict()
         self.numbering_schemes = {}
         self.generic_numbers = OrderedDict()
@@ -32,12 +33,14 @@ class Alignment:
         self.feature_stats = []
         self.default_numbering_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
         self.states = [settings.DEFAULT_PROTEIN_STATE] # inactive, active etc
+        self.use_residue_groups = False
         
         # refers to which ProteinConformation attribute to order by (identity, similarity or similarity score)
         self.order_by = 'similarity'
 
         # name of custom segment, where individually selected postions are collected
         self.custom_segment_label = 'Custom'
+        self.interaction_segment_label = 'I'
 
         # gap symbols
         self.gaps = ['-', '_']
@@ -53,10 +56,9 @@ class Alignment:
         self.reference = True
 
         # fetch the selected conformations of the protein
-        # only one can be selected for similarity search, therefore state[0] (other states ignored, if defined)
+        # FIXME take many conformational states into account
         try:
-            pconf = ProteinConformation.objects.get(protein=protein,
-                state=ProteinState.objects.get(slug=self.states[0]))
+            pconf = ProteinConformation.objects.get(protein=protein)
         except ProteinConformation.DoesNotExist:
             raise Exception ('Protein conformation {} not found for protein {}'.format(self.states[0],
                 protein.entry_name))
@@ -71,11 +73,11 @@ class Alignment:
 
     def load_proteins(self, proteins):
         """Load a list of protein objects into the alignment"""
-        # fetch all protein conformations
+        # fetch all conformations of selected proteins
+        # FIXME only show inactive?
         protein_conformations = ProteinConformation.objects.order_by('protein__family__slug',
-            'protein__entry_name').filter(protein__in=proteins,
-            state__slug__in=self.states).select_related('protein__residue_numbering_scheme', 'protein__species',
-            'state')
+            'protein__entry_name').filter(protein__in=proteins).select_related('protein__residue_numbering_scheme',
+            'protein__species', 'state')
         pconfs = OrderedDict()
         for pconf in protein_conformations:
             pconf_label = pconf.__str__()
@@ -116,15 +118,26 @@ class Alignment:
         # load protein list
         self.load_proteins(proteins)
 
-    def load_segments(self, segments):
+    def load_segments(self, selected_segments):
         selected_residue_positions = []
-        for s in segments:
+        for s in selected_segments:
+            if hasattr(s, 'item'):
+                selected_segment = s.item
+            else:
+                selected_segment = s
+                
             # handle residue positions separately
-            if s.__class__.__name__ == 'ResidueGenericNumberEquivalent':
-                selected_residue_positions.append(s)
+            if selected_segment.__class__.__name__ == 'ResidueGenericNumberEquivalent':
+                segment_residue = [selected_segment]
+                
+                # if in site search, add residue group to selected item
+                if 'site_residue_group' in s.properties:
+                    segment_residue.append(s.properties['site_residue_group'])
+                selected_residue_positions.append(segment_residue)
                 continue
+            
             # fetch split segments (e.g. ICL3_1 and ICL3_2)
-            alt_segments = ProteinSegment.objects.filter(slug__startswith=s.slug)
+            alt_segments = ProteinSegment.objects.filter(slug__startswith=selected_segment.slug)
             for segment in alt_segments:
                 segment_positions = ResidueGenericNumber.objects.filter(protein_segment=segment,
                     scheme=self.default_numbering_scheme).order_by('label')
@@ -139,11 +152,25 @@ class Alignment:
         
         # combine individual residue positions into a custom segment
         if selected_residue_positions:
-            if self.custom_segment_label not in self.segments:
-                self.segments[self.custom_segment_label] = []
-            for residue_position in selected_residue_positions:
-                self.segments[self.custom_segment_label].append(residue_position.default_generic_number.label)
-            self.load_generic_numbers(self.custom_segment_label, selected_residue_positions)
+            if self.use_residue_groups:
+                interaction_groups = {}
+                for residue_position in selected_residue_positions:
+                    segment_slug = self.interaction_segment_label + str(residue_position[1])
+                    if segment_slug not in self.segments:
+                        self.segments[segment_slug] = []
+                    if segment_slug not in interaction_groups:
+                        interaction_groups[segment_slug] = []
+                    self.segments[segment_slug].append(residue_position[0].default_generic_number.label)
+                    interaction_groups[segment_slug].append(residue_position)
+                for segment_slug, group_residues in interaction_groups.items():
+                    self.load_generic_numbers(segment_slug, group_residues)
+            else:
+                segment_slug = self.custom_segment_label
+                if segment_slug not in self.segments:
+                    self.segments[segment_slug] = []
+                for residue_position in selected_residue_positions:
+                    self.segments[segment_slug].append(residue_position[0].default_generic_number.label)
+                self.load_generic_numbers(segment_slug, selected_residue_positions)
 
     def load_segments_from_selection(self, simple_selection):
         """Read user selection and add selected protein segments/residue positions"""
@@ -152,7 +179,7 @@ class Alignment:
 
         # read selection
         for segment in simple_selection.segments:
-            segments.append(segment.item)
+            segments.append(segment)
 
         # load segment positions
         self.load_segments(segments)
@@ -164,8 +191,8 @@ class Alignment:
                 self.generic_numbers[ns[0]] = OrderedDict()
             self.generic_numbers[ns[0]][segment_slug] = OrderedDict()
             for segment_residue in residues:
-                if segment_slug == self.custom_segment_label:
-                    residue_position = segment_residue.default_generic_number.label
+                if segment_slug == self.custom_segment_label or self.use_residue_groups:
+                    residue_position = segment_residue[0].default_generic_number.label
                 else:
                     residue_position = segment_residue.label
                 self.generic_numbers[ns[0]][segment_slug][residue_position] = []
@@ -196,12 +223,14 @@ class Alignment:
                 'generic_number__scheme', 'display_generic_number__scheme')
         
         # fetch individually selected residues (Custom segment)
-        if self.custom_segment_label in self.segments:
-            crs = Residue.objects.filter(
-                generic_number__label__in=self.segments[self.custom_segment_label],
-                protein_conformation__in=self.proteins).prefetch_related('protein_conformation__protein',
-                'protein_conformation__state', 'protein_segment', 'generic_number__scheme',
-                'display_generic_number__scheme')
+        crs = {}
+        for segment in self.segments:
+            if segment == self.custom_segment_label or self.use_residue_groups:
+                crs[segment] = Residue.objects.filter(
+                    generic_number__label__in=self.segments[segment],
+                    protein_conformation__in=self.proteins).prefetch_related('protein_conformation__protein',
+                    'protein_conformation__state', 'protein_segment', 'generic_number__scheme',
+                    'display_generic_number__scheme')
 
         # create a dict of proteins, segments and residues
         proteins = {}
@@ -259,15 +288,16 @@ class Alignment:
                     self.segments[ps].append(pos_label)
         
         # individually selected residues (Custom segment)
-        if self.custom_segment_label in self.segments:
-            for r in crs:
-                ps = self.custom_segment_label
-                pcid = r.protein_conformation.protein.entry_name + "-" + r.protein_conformation.state.slug
-                if pcid not in proteins:
-                    proteins[pcid] = {}
-                if ps not in proteins[pcid]:
-                    proteins[pcid][ps] = {}
-                proteins[pcid][ps][r.generic_number.label] = r
+        for segment in self.segments:
+            if segment == self.custom_segment_label or self.use_residue_groups:
+                for r in crs[segment]:
+                    ps = segment
+                    pcid = r.protein_conformation.protein.entry_name + "-" + r.protein_conformation.state.slug
+                    if pcid not in proteins:
+                        proteins[pcid] = {}
+                    if ps not in proteins[pcid]:
+                        proteins[pcid][ps] = {}
+                    proteins[pcid][ps][r.generic_number.label] = r
 
         # remove split segments from segment list and order segment positions
         for segment, positions in self.segments.items():
@@ -283,6 +313,11 @@ class Alignment:
                 s = segment.split("_")
                 if len(s) > 1:
                     del self.generic_numbers[ns][segment]
+                else:
+                    ordered_generic_numbers = OrderedDict()
+                    for gn in sorted(self.generic_numbers[ns][segment]):
+                        ordered_generic_numbers[gn] = self.generic_numbers[ns][segment][gn]
+                    self.generic_numbers[ns][segment] = ordered_generic_numbers 
 
         for pc in self.proteins:
             row = OrderedDict()
@@ -574,6 +609,51 @@ class Alignment:
                     else:
                         color_class = str(value)[:-1]
                 self.similarity_matrix[protein_key]['values'].append([value, color_class])
+
+    def evaluate_sites(self, request):
+        """Evaluate which user selected site definitions match each protein sequence"""
+        # get simple selection from session
+        simple_selection = request.session.get('selection', False)
+        
+        # format site definititions
+        site_defs = {}
+        for position in simple_selection.segments:
+            if position.type == 'site_residue' and position.properties['site_residue_group']:
+                group_id = position.properties['site_residue_group']
+                if group_id not in site_defs:
+                    # min match is the value of the first item in each groups list (hence the [0])
+                    # site_defs example:
+                    # {
+                    #     1: {
+                    #         'min_match': 2,
+                    #         'positions': {
+                    #             {'3x51': 'hbd', '6x50': 'pos'}
+                    #         }
+                    #     }
+                    # }
+                    site_defs[group_id] = {'min_match': simple_selection.site_residue_groups[group_id -1][0],
+                        'positions': {}}
+
+                site_defs[group_id]['positions'][position.item.label] = position.properties['feature']
+
+        # go through all proteins and match against site definitions
+        for protein in self.proteins:
+            for k, segment in enumerate(protein.alignment.values(), start = 1):
+                num_matched = 0
+                min_match = site_defs[k]['min_match']
+                for position in segment:
+                    # position example: ['6x49', '6.49x49', 'L', 'GPCRdb(A)', 282, 282]
+                    if position[2] in AMINO_ACID_GROUPS[site_defs[k]['positions'][position[0]]]:
+                        num_matched += 1
+                        if num_matched >= min_match:
+                            break
+                else:
+                    # if the protein sequence does not match the definitions, store it in non_matching_proteins
+                    self.non_matching_proteins.append(protein)
+                    break
+
+        # remove non-matching proteins from protein list
+        self.proteins = [p for p in self.proteins if p not in self.non_matching_proteins]
 
     def pairwise_similarity(self, protein_1, protein_2):
         """Calculate the identity, similarity and similarity score between a pair of proteins"""

@@ -1,0 +1,31 @@
+<br>
+<button style="width:120px;" onclick="table_applyPresentColors()">Properties</button> 
+<button style="width:120px;" onclick="table_resetColors()">Clear</button>
+<br><button style="width:120px;" onclick="table_ajaxMutants()">Show Mutants</button>
+<button style="width:220px;" onclick="table_ajaxInteractions()">Show Interactions from Crystals</button>
+
+<table class="table-header-rotated">
+    <!-- Header -->
+    <thead><tr>
+    {% for elem, tooltip in header %}
+        <th class="rotate{% if forloop.counter <= number_of_schemes %} scheme{% else %} protein{% endif %}">
+        <div><span>{{ elem }}</span></div>
+        </th>
+    {% endfor %}
+    </tr></thead>
+    {% for segment in segments %}
+        <tr><th colspan="{{ header|length }}" class="row-header">{{ segment }}</td></tr>
+            {% for key, data_row in data.items %}
+                {% if key == segment %}
+                    {% for row in data_row %}
+                        <tr>
+                        {% for gn in row %}
+                            <td id="P{{forloop.counter}}R{{gn|slice:"1:"}}" class="{% if forloop.counter <= number_of_schemes %}info text-center{% else %}text-center residue{% endif %}">{{ gn }}</td>
+                        {% endfor %}
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+    {% endfor %}
+</table>
+
