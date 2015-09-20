@@ -49,14 +49,11 @@
         <h4>STRUCTURES</h4>
     </div>
     <div class="col-md-10">
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>ORTHOLOGS</h4>
-    </div>
-    <div class="col-md-10">
+        {% for structure in structures %}
+        <p><a href="/structure/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a></p>
+        {% empty %}
+        No structures available
+        {% endfor %}
     </div>
 </div>
 
@@ -67,6 +64,8 @@
     <div class="col-md-10">
         {% for link in p.web_links.all %}
         <p><a href="{{ link }}">{{ link.web_resource.name }}</a></p>
+        {% empty %}
+        No links available
         {% endfor %}
     </div>
 </div>
