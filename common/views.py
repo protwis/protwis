@@ -148,7 +148,7 @@ class AbsSegmentSelection(TemplateView):
     ])
 
     ss = ProteinSegment.objects.filter(partial=False).prefetch_related('generic_numbers')
-    ss_cats = ProteinSegment.objects.values_list('category').order_by('category').distinct('category')
+    ss_cats = ss.values_list('category').order_by('category').distinct('category')
     action = 'expand'
 
     amino_acid_groups = definitions.AMINO_ACID_GROUPS
@@ -171,6 +171,7 @@ class AbsSegmentSelection(TemplateView):
         # context['selection'] = selection
         context['selection'] = {}
         context['selection']['site_residue_groups'] = selection.site_residue_groups
+        context['selection']['active_site_residue_group'] = selection.active_site_residue_group
         for selection_box, include in self.selection_boxes.items():
             if include:
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
@@ -249,27 +250,29 @@ def AddToSelection(request):
     if selection_type == 'reference' or selection_type == 'targets':
         if selection_subtype == 'protein':
             o.append({'obj': Protein.objects.get(pk=selection_id), 'properties': {}})
+        
         elif selection_subtype == 'protein_set':
             selection_subtype = 'protein'
             pset = ProteinSet.objects.get(pk=selection_id)
             for protein in pset.proteins.all():
                 o.append({'obj': protein, 'properties': {}})
+        
         elif selection_subtype == 'family':
             o.append({'obj': ProteinFamily.objects.get(pk=selection_id), 'properties': {}})
+        
         elif selection_subtype == 'set':
             o.append({'obj': ProteinSet.objects.get(pk=selection_id), 'properties': {}})
+        
         elif selection_subtype == 'structure':
             o.append({'obj': Protein.objects.get(entry_name=selection_id.lower()), 'properties': {}})
+    
     elif selection_type == 'segments':
         if selection_subtype == 'residue':
             o.append({'obj': ResidueGenericNumberEquivalent.objects.get(pk=selection_id), 'properties': {}})
+        
         elif selection_subtype == 'site_residue': # used in site search
-            if not selection.site_residue_groups:
-                setattr(selection, 'site_residue_groups', [1])
-            if not selection.active_site_residue_group:
-                setattr(selection, 'active_site_residue_group', 1)
-            o.append({'obj': ResidueGenericNumberEquivalent.objects.get(pk=selection_id),
-                'properties': {'site_residue_group': selection.active_site_residue_group}})
+            o.append({'obj': ResidueGenericNumberEquivalent.objects.get(pk=selection_id), 'properties': {}})
+        
         else:
             o.append({'obj': ProteinSegment.objects.get(pk=selection_id), 'properties': {}})
 
@@ -782,6 +785,160 @@ def SelectResidueFeature(request):
     request.session['selection'] = simple_selection
 
     # context 
+    context = selection.dict(selection_type)
+    
+    # amino acid groups
+    amino_acid_groups = {
+        'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
+        'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
+    context.update(amino_acid_groups)
+
+    # template to load
+    template = 'common/selection_lists_sitesearch.html'
+
+    return render(request, template, context)
+
+def AddResidueGroup(request):
+    """Receives a selection request, creates a new residue group, and returns the updated selection"""
+    selection_type = request.GET['selection_type']
+    
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # add a group
+
+    selection.site_residue_groups.append([])
+
+    # make the new group active
+    selection.active_site_residue_group = len(selection.site_residue_groups)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # context 
+    context = selection.dict(selection_type)
+    
+    # amino acid groups
+    amino_acid_groups = {
+        'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
+        'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
+    context.update(amino_acid_groups)
+
+    # template to load
+    template = 'common/selection_lists_sitesearch.html'
+
+    return render(request, template, context)
+
+def SelectResidueGroup(request):
+    """Receives a selection request, updates the active residue group, and returns the updated selection"""
+    selection_type = request.GET['selection_type']
+    group_id = int(request.GET['group_id'])
+    
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # update the selected group
+    selection.active_site_residue_group = group_id
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # context 
+    context = selection.dict(selection_type)
+    
+    # amino acid groups
+    amino_acid_groups = {
+        'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
+        'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
+    context.update(amino_acid_groups)
+
+    # template to load
+    template = 'common/selection_lists_sitesearch.html'
+
+    return render(request, template, context)
+
+def RemoveResidueGroup(request):
+    """Receives a selection request, removes a residue group, and returns the updated selection"""
+    selection_type = request.GET['selection_type']
+    group_id = int(request.GET['group_id'])
+    
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # find all positions in the group and delete them
+    for position in selection.segments:
+        if position.type == 'site_residue':
+            if position.properties['site_residue_group'] == group_id:
+                selection.remove(selection_type, position.type, position.item.id)
+            else:
+                if position.properties['site_residue_group'] > group_id:
+                    position.properties['site_residue_group'] -= 1
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # context
+    context = selection.dict(selection_type)
+    
+    # amino acid groups
+    amino_acid_groups = {
+        'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
+        'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
+    context.update(amino_acid_groups)
+
+    # template to load
+    template = 'common/selection_lists_sitesearch.html'
+
+    return render(request, template, context)
+
+def SetGroupMinMatch(request):
+    """Receives a selection request, sets a minimum match for a group, and returns the updated selection"""
+    selection_type = request.GET['selection_type']
+    group_id = int(request.GET['group_id'])
+    min_match = int(request.GET['min_match'])
+    
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # update the group
+    selection.site_residue_groups[group_id - 1][0] = min_match
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # context
     context = selection.dict(selection_type)
     
     # amino acid groups

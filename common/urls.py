@@ -18,4 +18,8 @@ urlpatterns = patterns('',
     url(r'selectionschemestoggle', views.SelectionSchemesToggle, name='selectionschemestoggle'),
     url(r'settreeselection', views.SetTreeSelection, name='settreeselection'),
     url(r'selectresiduefeature', views.SelectResidueFeature, name='selectresiduefeature'),
+    url(r'addresiduegroup', views.AddResidueGroup, name='addresiduegroup'),
+    url(r'selectresiduegroup', views.SelectResidueGroup, name='selectresiduegroup'),
+    url(r'removeresiduegroup', views.RemoveResidueGroup, name='removeresiduegroup'),
+    url(r'setgroupminmatch', views.SetGroupMinMatch, name='setgroupminmatch'),
 )

@@ -6,6 +6,7 @@ from common.views import AbsSegmentSelection
 from common.views import AbsTargetSelection
 # from common.alignment_SITE_NAME import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
+from protein.models import ProteinSegment
 
 from collections import OrderedDict
 
@@ -46,12 +47,31 @@ class SegmentSelection(AbsSegmentSelection):
         },
     }
 
+    title = 'SELECT SITE RESIDUES'
+    description = 'Select site residues. Click the down arrow next to each helix to expand the available residues' \
+        + ' within that helix.\n\nSelected residues will appear in the right column, where you can edit the' \
+        + ' list.\n\nIn the right column, select a chemical feature for each residue. When a feature has been' \
+        + ' selected, a list of amino acids that match the feature will appear to the right of the residue.\n\n' \
+        + ' The selected residues can be organised into separate interactions. An interaction can contain one or' \
+        + ' more residues. To add an interaction, click the "Add interaction" button. Selected residues will be' \
+        + ' added to the currently active interaction (shown in bold text). To change the active interaction, click' \
+        + ' on the name of the interaction. Within an interaction, the number of residues required to match can be' \
+        + ' specified in the "Min. match" selection box.\n\n Once you have selected your site residues, click the' \
+        + ' green button.'
+
+    ss = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS, partial=False).prefetch_related(
+        'generic_numbers')
+    ss_cats = ss.values_list('category').order_by('category').distinct('category')
+
 def render_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
     
     # create an alignment object
     a = Alignment()
+
+    # group residue selection (for site search)
+    a.use_residue_groups = True
 
     # load data from selection into the alignment
     a.load_reference_protein_from_selection(simple_selection)

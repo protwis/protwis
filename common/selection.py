@@ -77,9 +77,22 @@ class Selection(SimpleSelection):
         else:
             selection = getattr(self, selection_type)
 
+        # make sure there is an active group
+        if selection_subtype == 'site_residue':
+            if not self.active_site_residue_group:
+                self.active_site_residue_group = 1
+        
+            # update selection object with group id
+            selection_object.properties['site_residue_group'] = self.active_site_residue_group
+        
         # check whether the selected item is already in the selection
-        if not selection_object in selection:
-            # if not, add it
+        if selection_object not in selection: # if not, add it
+            # site residue groups
+            if selection_subtype == 'site_residue':
+                if not self.site_residue_groups:
+                    self.site_residue_groups = [[]]
+                self.site_residue_groups[self.active_site_residue_group - 1].append(1)
+            
             selection.append(selection_object)
             setattr(self, selection_type, selection)
 
@@ -119,6 +132,10 @@ class Selection(SimpleSelection):
                 self.active_site_residue_group = 1
             else:
                 self.active_site_residue_group = False
+        elif group_id:
+            self.site_residue_groups[group_id-1].pop()
+            if self.site_residue_groups[group_id - 1][0] > len(self.site_residue_groups[group_id - 1]):
+                self.site_residue_groups[group_id - 1][0] -= 1
 
         setattr(self, selection_type, updated_selection)
 
