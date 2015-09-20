@@ -21,6 +21,12 @@
     background-color: #F5F5F5;
     color: #202020;
 }
+
+input.form-control {
+    width: 50px;
+    font-size: 14px;
+    display: inline;
+}
 </style>
 
 {% endblock %}
@@ -50,7 +56,7 @@
                 ],
                 tableTools: {
                     "sRowSelect": "multi",
-                    "aButtons": ["select_all", "select_none"]
+                    "aButtons": []
                 },
                 initComplete: function () {
                     $('#mutations').dataTable().columnFilter({
@@ -73,6 +79,9 @@
             $('[data-toggle="tooltip"]').tooltip(); 
             //$('[data-toggle="tooltip"]').tooltip({html:true});
 
+            ajaxMutantsPos("snakeplot",{{mutations_pos_list|safe}});
+            ajaxMutantsPos("helixbox",{{mutations_pos_list|safe}});
+            table_ajaxMutants();
             });
     </script> 
 {% endblock %}
@@ -99,7 +108,7 @@
                 <thead>
                     <tr>
                         <th>Protein name</th>
-                        <th>Alt. Position</th>
+                        <th>Generic number</th>
                         <th>Position</th>
                         <th>Segment</th>
                         <th>Mutation</th>
@@ -134,7 +143,7 @@
                 <tfoot>
                     <tr>
                         <th>Protein name</th>
-                        <th>Alt. Position</th>
+                        <th>Generic number</th>
                         <th>Segment</th>
                         <th>Position</th>
                         <th>Mutation</th>
@@ -171,12 +180,12 @@
     <div class="col-md-10">
     {{ HelixBox }}
     <br>
-    <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_{{ p.entry_name }}.png', {scale: 3});"> Download as PNG</a>
-    <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_{{ p.entry_name }}"> Download as SVG</a>
+    <button onclick="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_mutants.png', {scale: 3});"> Download as PNG</button>
+    <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_mutants"><button> Download as SVG</button></a>
     {{ SnakePlot }}
     <br>
-    <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ p.entry_name }}.png', {scale: 3});"> Download as PNG</a>
-    <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_{{ p.entry_name }}"> Download as SVG</a>
+    <button onclick="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_mutants.png', {scale: 3});"> Download as PNG</button>
+    <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_mutants"><button> Download as SVG</button></a>
     </div>
     {% else %}
         <p> Ooops! There is no data to show here yet. </p>
@@ -186,7 +195,7 @@
     <h4>Residue Table</h4>
 </div>
 <div class="col-md-10">
-{% include "residue/residue_table_only.html" with header=header segments=segments data=data %}
+{% include "residue/residue_table_only.html" with header=header segments=segments data=data onlymutants=1 %}
 </div>
 <!-- sequence alignment ends -->
 {% endblock %}

@@ -54,7 +54,7 @@ class SegmentSelection(AbsSegmentSelection):
     ])
     buttons = {
         'continue': {
-            'label': 'Show alignment',
+            'label': 'Show mutants',
             'url': '/mutations/render',
             'color': 'success',
         },
@@ -88,21 +88,21 @@ def render_mutations(request):
             for fp in family_proteins:
                 proteins.append(fp)
 
-    segments = []
+    original_segments = []
     segments_ids = []
     for segment in simple_selection.segments:
-        segments.append(segment.item)
+        original_segments.append(segment.item)
         segments_ids.append(segment.item.id)
 
     #print(segments)
 
-    mutations = MutationExperiment.objects.filter(protein__in=proteins, residue__protein_segment__in=segments).prefetch_related('protein', 'residue__protein_segment','residue__display_generic_number', 'residue','exp_func','exp_qual','exp_measure', 'exp_type', 'ligand_role', 'ligand','refs')
-
+    mutations = MutationExperiment.objects.filter(protein__in=proteins, residue__protein_segment__in=original_segments).prefetch_related('protein', 'residue__protein_segment','residue__display_generic_number', 'residue','exp_func','exp_qual','exp_measure', 'exp_type', 'ligand_role', 'ligand','refs')
+    mutations_list = [x.residue.display_generic_number.label for x in mutations if x.residue.display_generic_number]
     # create an alignment object
     a = Alignment()
 
     a.load_proteins(proteins)
-    a.load_segments(segments)
+    a.load_segments(ProteinSegment.objects.all()) #get all segments to make correct diagrams
 
     # build the alignment data matrix
     a.build_alignment()
@@ -130,12 +130,15 @@ def render_mutations(request):
         reference_generic_numbers[r.generic_number.label] = r
     ################################################################################
     
+    mutations_pos_list = []
     for seg in a.consensus:
         for aa,v in a.consensus[seg].items():
             r = Residue()
             r.sequence_number =  count #FIXME is this certain to be correct that the position in consensus is seq position? 
             if "x" in aa:
                 r.display_generic_number = reference_generic_numbers[aa].display_generic_number #FIXME
+                if r.display_generic_number.label in mutations_list:
+                    mutations_pos_list.append(r.sequence_number)
                 r.segment_slug = seg
                 r.family_generic_number = aa
             else:
@@ -148,8 +151,8 @@ def render_mutations(request):
             count += 1         
 
     protein_ids = list(set([x.id for x in proteins]))
-    HelixBox = DrawHelixBox(residue_list,'Class A',str(protein_ids))
-    SnakePlot = DrawSnakePlot(residue_list,'Class A',str(protein_ids))
+    HelixBox = DrawHelixBox(residue_list,'Class A',str(protein_ids), nobuttons = 1)
+    SnakePlot = DrawSnakePlot(residue_list,'Class A',str(protein_ids), nobuttons = 1)
 
     context = {}
     numbering_schemes_selection = ['gpcrdba','gpcrdbb','gpcrdbc','gpcrdbf'] #there is a residue_numbering_scheme attribute on the protein model, so it's easy to find out
@@ -211,13 +214,13 @@ def render_mutations(request):
         flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
     
     context['header'] = zip([x.short_name for x in numbering_schemes] + [x.entry_name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins])
-    context['segments'] = [x.slug for x in segments]
+    context['segments'] = [x.slug for x in segments if len(data[x.slug])]
     context['data'] = flattened_data
     context['number_of_schemes'] = len(numbering_schemes)
 
 
     return render(request, 'mutation/list.html', {'mutations': mutations, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'data':context['data'], 
-        'header':context['header'], 'segments':context['segments'], 'number_of_schemes':len(numbering_schemes), 'protein_ids':str(protein_ids)})
+        'header':context['header'], 'segments':context['segments'], 'mutations_pos_list' : mutations_pos_list, 'number_of_schemes':len(numbering_schemes), 'protein_ids':str(protein_ids)})
 
 # Create your views here.
 def index(request):
@@ -227,13 +230,36 @@ def index(request):
 # Create your views here.
 def ajax(request, slug, **response_kwargs):
     if '[' in slug:
-        print("OMG OMG OMG")
-        print(urllib.parse.unquote(slug))
         x = ast.literal_eval(urllib.parse.unquote(slug))
         #print(x)
         #h = HTMLParser.HTMLParser()
         #print(h.unescape(slug))
         mutations = MutationExperiment.objects.filter(protein__pk__in=x).order_by('residue__sequence_number').prefetch_related('residue')
+    else:
+        mutations = MutationExperiment.objects.filter(protein__entry_name=slug).order_by('residue__sequence_number').prefetch_related('residue')
+    #print(mutations)
+    #return HttpResponse("Hello, world. You're at the polls index. "+slug)
+    jsondata = {}
+    for mutation in mutations:
+        if mutation.residue.sequence_number not in jsondata: jsondata[mutation.residue.sequence_number] = []
+        jsondata[mutation.residue.sequence_number].append(mutation.foldchange)
+
+    jsondata = json.dumps(jsondata)
+    response_kwargs['content_type'] = 'application/json'
+    return HttpResponse(jsondata, **response_kwargs)
+
+def ajaxSegments(request, slug, segments, **response_kwargs):
+    print('hi')
+    if '[' in slug:
+        print("OMG OMG OMG")
+        print(urllib.parse.unquote(slug))
+        x = ast.literal_eval(urllib.parse.unquote(slug))
+        segments = ast.literal_eval(urllib.parse.unquote(segments))
+        print(segments)
+        #h = HTMLParser.HTMLParser()
+        #print(h.unescape(slug))
+        mutations = MutationExperiment.objects.filter(protein__pk__in=x,residue__protein_segment__slug__in=segments).order_by('residue__sequence_number').prefetch_related('residue')
+        print(mutations)
     else:
         mutations = MutationExperiment.objects.filter(protein__entry_name=slug).order_by('residue__sequence_number').prefetch_related('residue')
     #print(mutations)
