@@ -5,6 +5,7 @@ from django.db.models import Q
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene
 from residue.models import Residue
+from structure.models import Structure
 from common.selection import Selection
 from common.views import AbsBrowseSelection
 
@@ -23,7 +24,7 @@ class BrowseSelection(AbsBrowseSelection):
 
 def detail(request, slug):
     # get protein
-    p = Protein.objects.get(entry_name=slug, sequence_type__slug='wt')
+    p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
 
     # get family list
     pf = p.family
@@ -43,6 +44,9 @@ def detail(request, slug):
     genes = Gene.objects.filter(proteins=p).values_list('name', flat=True)
     gene = genes[0]
     alt_genes = genes[1:]
+
+    # get structures of this protein
+    structures = Structure.objects.filter(protein_conformation__protein__parent=p)
 
     # get residues
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
@@ -83,8 +87,10 @@ def detail(request, slug):
     if r_buffer:
         r_chunks.append(r_buffer)
 
-    return render(request, 'protein/protein_detail.html', {'p': p, 'families': families, 'r_chunks': r_chunks,
-        'chunk_size': chunk_size, 'aliases': aliases, 'gene': gene, 'alt_genes': alt_genes})
+    context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
+        'gene': gene, 'alt_genes': alt_genes, 'structures': structures}
+
+    return render(request, 'protein/protein_detail.html', context)
 
 def SelectionAutocomplete(request):
     if request.is_ajax():
