@@ -8,16 +8,19 @@ from django import forms
 from django.core.servers.basehttp import FileWrapper
 from django.db.models import Count, Min, Sum, Avg,Q
 
+
 from interaction.models import *
 from ligand.models import Ligand
 from ligand.models import LigandType
 from ligand.models import LigandRole, LigandProperities
 from structure.models import Structure,PdbData,Rotamer,Fragment
+from structure.functions import BlastSearch
+from structure.assign_generic_numbers_gpcr import GenericNumbering
 from protein.models import ProteinConformation,Protein
-from residue.models import Residue
+from residue.models import Residue, ResidueGenericNumber
 from common.models import WebResource
 from common.models import WebLink
-
+from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 
 from os import path, listdir, devnull,makedirs
 from os.path import isfile, join
@@ -28,6 +31,10 @@ import re
 import json
 import logging
 from subprocess import Popen, DEVNULL
+import urllib
+import collections
+from io import StringIO, BytesIO
+from Bio.PDB import PDBIO, PDBParser
 
 AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
      'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
@@ -50,8 +57,11 @@ def index(request):
 
     form = PDBform()
 
+    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index','structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate( num_ligands=Count('structure_ligand_pair', distinct = True),num_interactions=Count('pk', distinct = True)).order_by('structure_ligand_pair__structure__pdb_code__index')
+   
+
     #context = {}
-    return render(request,'interaction/index.html',{'form': form})
+    return render(request,'interaction/index.html',{'form': form, 'structures':structures })
 
 def list(request):
     form = PDBform()
@@ -521,58 +531,197 @@ def calculate(request):
             pdbname = form.cleaned_data['pdbname'].strip()
             results = ''
 
+            module_dir = '/tmp/interactions/' + request.session.session_key
+
+            if not path.exists('/tmp/interactions/'):
+                makedirs('/tmp/interactions/')
+            if not path.exists('/tmp/interactions/'+ request.session.session_key):
+                makedirs('/tmp/interactions/'+ request.session.session_key)
+            if not path.exists('/tmp/interactions/'+ request.session.session_key+'/pdbs'):
+                makedirs('/tmp/interactions/'+ request.session.session_key+'/pdbs')
+            if not path.exists('/tmp/interactions/'+ request.session.session_key+'/temp'):
+                makedirs('/tmp/interactions/'+ request.session.session_key+'/temp')
+
             if 'file' in request.FILES:
-
-                f = request.FILES['file']
-
-                print(f)
-                pdbname = path.splitext(str(f))[0]
-
-                module_dir = '/tmp/interactions/' + request.session.session_key
-
-                if not path.exists('/tmp/interactions/'):
-                    makedirs('/tmp/interactions/')
-                if not path.exists('/tmp/interactions/'+ request.session.session_key):
-                    makedirs('/tmp/interactions/'+ request.session.session_key)
-                if not path.exists('/tmp/interactions/'+ request.session.session_key+'/pdbs'):
-                    makedirs('/tmp/interactions/'+ request.session.session_key+'/pdbs')
-                if not path.exists('/tmp/interactions/'+ request.session.session_key+'/temp'):
-                    makedirs('/tmp/interactions/'+ request.session.session_key+'/temp')
-
-                print(module_dir)
-
-                with open(module_dir+'/pdbs/'+str(f), 'wb+') as destination:
-                     for chunk in f.chunks():
+                pdbdata = request.FILES['file']
+                pdbname = path.splitext(str(pdbdata))[0]
+                with open(module_dir+'/pdbs/'+str(pdbdata), 'wb+') as destination:
+                     for chunk in pdbdata.chunks():
                          destination.write(chunk)
 
+                print(module_dir+'/pdbs/'+str(pdbdata))
+                temp_path = module_dir+'/pdbs/'+str(pdbdata)
+                pdbdata=open(temp_path,'r').read()
+                print('do calc')
                 runusercalculation(pdbname,request.session.session_key)
 
-            # pdbname = form.cleaned_data['pdbname'].strip()
-            # t1 = datetime.now()
-            # runcalculation(pdbname)
-            # t2 = datetime.now()
-            # delta = t2 - t1
-            # seconds = delta.total_seconds()
-            # print("Total time "+str(seconds)+" seconds")
+            else:
+                pdbname = form.cleaned_data['pdbname'].strip()
+                print('pdbname selected!',pdbname)
+                temp_path = module_dir+'/pdbs/'+pdbname+'.pdb'
 
-                results = parseusercalculation(pdbname,request.session.session_key)
+                if not path.isfile(temp_path):
+                    url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
+                    pdbdata = urllib.request.urlopen(url).read().decode('utf-8')
+                    f=open(temp_path,'w')
+                    f.write(pdbdata)
+                    f.close();
+                else:
+                    pdbdata=open(temp_path,'r').read()
+                print('do calc')
+                runusercalculation(pdbname,request.session.session_key)
 
-                #print(results)
-                simple = {}
-                for ligand in results:
-                    print(ligand[1])
-                    simple[ligand[1]] = {'score':ligand[2][0]['score'][0][0]}
-                    for key,values in ligand[2][0].items():
-                        if key in ['aromatic','aromaticplus','hbond','hbond_confirmed','hydrophobic', 'hbondplus', 'aromaticfe','waals']:
-                            print(key)
-                            for value in values:
-                                print(value[0])
-                                if value[0] in simple[ligand[1]]:
-                                    simple[ligand[1]][value[0]].append(key)
-                                else:
-                                    simple[ligand[1]][value[0]] = [key]
-                print(simple)
-            return render(request,'interaction/calculate.html',{'result' : "Looking at "+pdbname, 'outputs' : results, 'simple' : simple })
+            print('map GPCRdb numbering on result')
+            #MAPPING GPCRdb numbering onto pdb.
+            generic_numbering = GenericNumbering(temp_path)
+            out_struct = generic_numbering.assign_generic_numbers()
+            structure_residues = generic_numbering.residues
+            segments = {}
+
+            generic_ids = []
+            generic_number = []
+            previous_seg = 'N-term'
+
+            # for chain in out_struct:
+            #     for residue in chain:
+            #         if residue.id[1] in structure_residues[chain.id].keys():
+            #             print(residue)
+            #         else:
+            #             print('not found')
+            #             print(residue)
+
+            for c,res in structure_residues.items():
+                for i,r in sorted(res.items()): #sort to be able to assign loops
+                    if r.gpcrdb:
+                        if r.gpcrdb[0]=='-':
+                            r.gpcrdb = r.gpcrdb[1:]+"1" #fix stefan - for bulge
+                        r.gpcrdb = str(r.gpcrdb).replace('.','x')
+                        generic_number.append(r.gpcrdb)
+                    if r.gpcrdb_id:
+                        generic_ids.append(r.gpcrdb_id)
+                    if (r.segment):
+                        if not r.segment in segments: 
+                            segments[r.segment] = {}
+                        segments[r.segment][r.number] = [r.display,r.name,r.gpcrdb]
+                        previous_seg = r.segment
+                    else: #if no segment assigned by blast
+                        if previous_seg in ['N-term','ICL1','ECL1','ICL2','ECL2','ICL3','ICL3','C-term']:
+                            if not previous_seg in segments: 
+                                segments[previous_seg] = {}
+                            segments[previous_seg][r.number] = ['',r.name, '']
+                        else:
+                            if previous_seg == 'TM1':
+                                previous_seg = 'ICL1'
+                            elif previous_seg == 'TM2':
+                                previous_seg = 'ECL1'
+                            elif previous_seg == 'TM3':
+                                previous_seg = 'ICL2'
+                            elif previous_seg == 'TM4':
+                                previous_seg = 'ECL2'
+                            elif previous_seg == 'TM5':
+                                previous_seg = 'ICL3'
+                            elif previous_seg == 'TM6':
+                                previous_seg = 'ECL3'
+                            elif previous_seg == 'TM7':
+                                previous_seg = 'C-term'
+                            elif previous_seg == 'H8':
+                                previous_seg = 'C-term'
+
+                            if not previous_seg in segments: 
+                                segments[previous_seg] = {}
+                            segments[previous_seg][r.number] = ['',r.name, '']
+
+            #print(segments)
+            #print(generic_ids)
+            rs = ResidueGenericNumber.objects.filter(id__in=generic_ids)
+
+            reference_generic_numbers = {}
+            for r in rs: #make lookup dic.
+                reference_generic_numbers[r.label] = r
+
+            rs = ResidueGenericNumber.objects.filter(label__in=generic_number)
+            reference_numbers = {}
+            for r in rs: #make lookup dic.
+                reference_numbers[r.label] = r
+            ################################################################################
+            #print(reference_numbers)
+            residue_list=[]
+            for seg,reslist in segments.items():
+
+                for seq_number,v in sorted(reslist.items()):
+                    r = Residue()
+                    r.sequence_number =  seq_number
+                    if "x" in v[0]:
+                        r.display_number = reference_numbers[v[2]] #FIXME
+                        r.display_generic_number = reference_generic_numbers[v[0]] #FIXME
+                        r.segment_slug = seg
+                        r.family_generic_number = v[2]
+                    else:
+                        r.segment_slug = seg
+                    r.amino_acid = v[1]
+                    residue_list.append(r)
+     
+            #print(residue_list)
+
+            HelixBox = DrawHelixBox(residue_list,'Class A',str('test'), nobuttons = 1)
+            SnakePlot = DrawSnakePlot(residue_list,'Class A',str('test'), nobuttons = 1)
+
+            xtal = {}
+            hetsyn = {}
+            hetsyn_reverse = {}
+            for line in pdbdata.splitlines():
+                if line.startswith('HETSYN'): 
+                    m = re.match("HETSYN[\s]+([\w]{3})[\s]+(.+)",line) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+                    if (m):
+                        hetsyn[m.group(2).strip()] = m.group(1).upper()
+                        hetsyn_reverse[m.group(1)] = m.group(2).strip().upper()
+                if line.startswith('HETNAM'): 
+                    m = re.match("HETNAM[\s]+([\w]{3})[\s]+(.+)",line) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+                    if (m):
+                        hetsyn[m.group(2).strip()] = m.group(1).upper()
+                        hetsyn_reverse[m.group(1)] = m.group(2).strip().upper()
+                if line.startswith('REVDAT   1'):
+                    xtal['publication_date'] = line[13:22]
+                    xtal['pdb_code'] = line[23:27]
+                if line.startswith('JRNL        PMID'):
+                    xtal['pubmed_id'] = line[19:].strip()
+                if line.startswith('JRNL        DOI'):
+                    xtal['doi_id'] = line[19:].strip()
+
+            #print(xtal)
+
+            results = parseusercalculation(pdbname,request.session.session_key)
+
+            #print(results)
+            simple = collections.OrderedDict()
+            residues = []
+            mainligand = ''
+            for ligand in results:
+                print(ligand[1])
+                if mainligand=='': mainligand=ligand[1] #select top hit
+                simple[ligand[1]] = {'score':round(ligand[2][0]['score'][0][0])}
+                for key,values in ligand[2][0].items():
+                    if key in ['aromatic','aromaticplus','hbond','hbond_confirmed','hydrophobic', 'hbondplus', 'aromaticfe','waals']:
+                        for value in values:
+                            if value[0] in simple[ligand[1]]:
+                                simple[ligand[1]][value[0]].append(key)
+                            else:
+                                simple[ligand[1]][value[0]] = [key]
+                            aa,pos,chain = regexaa(value[0])
+                            if int(pos) in structure_residues[chain]:
+                                r = structure_residues[chain][int(pos)]
+                                display = r.display
+                                segment = r.segment
+                            else:
+                                display = ''
+                                segment = ''
+                            residues.append({'type':key,'aa':aa,'ligand':ligand[1],'pos':pos, 'gpcrdb':display, 'segment':segment})
+           # print(simple)
+
+            #print(residues)
+            return render(request,'interaction/diagram.html',{'result' : "Looking at "+pdbname, 'outputs' : results,
+             'simple' : simple , 'xtal' : xtal, 'pdbname':pdbname, 'mainligand':mainligand, 'residues':residues,
+             'HelixBox':HelixBox, 'SnakePlot':SnakePlot})
 
         else:
             print(form.errors)
