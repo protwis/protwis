@@ -943,60 +943,22 @@ class Bulges(object):
         '''
         gn = self.gn
         parse = GPCRDBParsingPDB()
-        if bulge_in_reference==True:
-            matches = Residue.objects.filter(generic_number__label=gn)
-        elif bulge_in_reference==False:
-            excludees = Residue.objects.filter(generic_number__label=gn)
-            excludee_proteins = list(OrderedDict.fromkeys([res.protein_conformation.protein.parent.entry_name 
-                                        for res in excludees if res.protein_conformation.protein.parent!=None]))
-            matches = Residue.objects.filter(generic_number__label=gn[:-1])
         for structure, value in similarity_table.items():  
-            protein_object = Protein.objects.get(id=structure.protein_conformation.protein.parent.id)
             this_anomaly = ProteinAnomaly.objects.get(generic_number__label=gn)
-            if this_anomaly in structure.protein_anomalies.all():
-                print(structure, gn)
-            try:                            
-                for match in matches:
-                    if bulge_in_reference==True:
-                        if match.protein_conformation.protein.parent==protein_object:
-                            self.bulge_templates.append(structure)
-                    elif bulge_in_reference==False:
-                        if (match.protein_conformation.protein.parent==protein_object and 
-                            match.protein_conformation.protein.parent.entry_name not in excludee_proteins):
-                            self.bulge_templates.append(structure)
-            except:
-                pass
-        mod_bulge = False
-        for temp in self.bulge_templates:
-            try:
-                if bulge_in_reference==True:
-                    alt_bulge = parse.fetch_residues_from_pdb(temp, 
-                                                              [parse.gn_indecer(gn,'x',-2),
-                                                               parse.gn_indecer(gn,'x',-1),gn,
-                                                               parse.gn_indecer(gn,'x',+1),
-                                                               parse.gn_indecer(gn,'x',+2)])
-                elif bulge_in_reference==False:
+            if bulge_in_reference==True:
+                if this_anomaly in structure.protein_anomalies.all():
+                    gn_list = [parse.gn_indecer(gn,'x',-2),parse.gn_indecer(gn,'x',-1),gn,
+                               parse.gn_indecer(gn,'x',+1),parse.gn_indecer(gn,'x',+2)]
+                    alt_bulge = parse.fetch_residues_from_pdb(structure, gn_list)
+                    self.template = structure
+                    break
+            elif bulge_in_reference==False:
+                if this_anomaly not in structure.protein_anomalies.all():
                     gn_list = [parse.gn_indecer(gn,'x',-2), parse.gn_indecer(gn,'x',-1),
                                parse.gn_indecer(gn,'x',+1), parse.gn_indecer(gn,'x',+2)]
-                    for gn_ in gn_list:
-                        if len(Residue.objects.filter(generic_number__label=gn_+'1').filter(
-                                                                    protein_conformation=temp.protein_conformation))>0:
-                            if int(gn[:-1].split('x')[1])-int(gn_.split('x')[1])==1:
-                                gn_list[0] = gn_+'1'
-                            elif int(gn[:-1].split('x')[1])-int(gn_.split('x')[1])==-1:
-                                gn_list[2] = gn_+'1'
-                                gn_list[3] = parse.gn_indecer(gn_,'x',+1)
-                            elif int(gn[:-1].split('x')[1])-int(gn_.split('x')[1])==-2:
-                                gn_list[3] = gn_+'1'
-                            mod_bulge = True
-                    if mod_bulge==True:
-                        alt_bulge = parse.fetch_residues_from_pdb(temp, gn_list, modify_bulges=True)
-                    else:
-                        alt_bulge = parse.fetch_residues_from_pdb(temp, gn_list)
-                self.template = temp              
-                break
-            except:
-                self.template = None               
+                    alt_bulge = parse.fetch_residues_from_pdb(structure, gn_list)
+                    self.template = structure
+                    break
         return alt_bulge
             
 class Constrictions(object):
