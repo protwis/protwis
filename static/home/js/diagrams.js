@@ -291,6 +291,29 @@
                         });
                     }
 
+                    function ajaxMutantsPos(plotid,pos) {
+
+                        $.each( pos, function( key, val ) {
+                             // max = String(Math.max.apply(null, val));
+                             // min = String(Math.min.apply(null, val));
+                             // extra = "\n" + String(val.length) + " mutations | "+ max +" maxFold | "+ min +" minFold";
+
+
+                             // original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+                             $('#'+plotid).find("#"+val).css("fill", "#E60A0A");
+                             $('#'+plotid).find("#"+val).next().css("fill", "#FDFF7B");
+                             // $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             // $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+                          });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
+    
+                        
+                    }
+
                     function ajaxInteractions(plotid,protein) {
 
                         $.getJSON( '/interaction/ajax/'+protein+'/', function( data ) {

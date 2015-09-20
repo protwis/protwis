@@ -1,6 +1,45 @@
 {% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/jquery.js' %}"></script>
+{% endblock %}
 
 {% block content %}
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+    $(function(){
+      // bind change event to select
+      $('#preloaded_xtals').on('change', function () {
+        var url = window.location.href;
+
+        if (url.substr(-1) == '/') url = url.substr(0, url.length - 2);
+
+        url = url.split('/');
+        url.pop();
+        url = url.join('/')+"/structure/"+$(this).val(); // get selected value
+        if (url) { // require a URL
+            window.location = url; // redirect
+        }
+        return false;
+      });
+    });
+}); 
+</script>
+
+<h1> Select from interactions pre-calculated</h1>
+<select id='preloaded_xtals'>
+<option>Select from list</option>
+{% for structure in structures %}
+    <option value="{{structure.structure_ligand_pair__structure__pdb_code__index}}">{{structure.structure_ligand_pair__structure__pdb_code__index}} ({{structure.structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name}}) </option>
+{% endfor %}
+<select>
+<br>
+<br>
+<br>
+
+<h1> Run a new calculation</h1>
 Enter a PDB name to analyse:
 <form action="calculate" method="post" enctype="multipart/form-data">
 {% csrf_token %}
@@ -10,4 +49,6 @@ Enter a PDB name to analyse:
     <br>
     <input type="submit" value="OK">
 </form>
+
 {% endblock %}
+
