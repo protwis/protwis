@@ -103,11 +103,12 @@ class ResidueTablesDisplay(TemplateView):
                     for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
                         data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
                 elif scheme == default_scheme:
-                    for pos in list(set([x.alternative_generic_numbers.filter(scheme__slug=scheme.slug).label for x in residues if x.protein_segment == segment])):
-                        data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
-            
+                    for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                            data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+
             for residue in residues:
                 alternatives = residue.alternative_generic_numbers.all()
+                pos = residue.generic_number
                 for alternative in alternatives:
                     scheme = alternative.scheme
                     if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
@@ -119,7 +120,6 @@ class ResidueTablesDisplay(TemplateView):
                                 data[segment.slug][pos.label][scheme.slug] = alternative.label
                             data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
                     else:
-                        pos = residue.alternative_generic_numbers.get(scheme__slug=default_scheme.slug)
                         if scheme.slug not in data[segment.slug][pos.label].keys():
                             data[segment.slug][pos.label][scheme.slug] = alternative.label
                         data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)

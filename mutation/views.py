@@ -1,14 +1,17 @@
 from django.shortcuts import render
 
 from django.http import HttpResponse
+from django.conf import settings
 from mutation.functions import *
 from mutation.models import *
 
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
+from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 
-from residue.models import Residue
-from protein.models import Protein
+from residue.models import Residue,ResidueNumberingScheme
+from residue.views import ResidueTablesDisplay
+from protein.models import Protein,ProteinSegment
 
 
 from datetime import datetime
@@ -18,7 +21,9 @@ import json
 
 import re
 import math
+import urllib
 
+Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 class TargetSelection(AbsTargetSelection):
     step = 1
@@ -84,15 +89,135 @@ def render_mutations(request):
                 proteins.append(fp)
 
     segments = []
+    segments_ids = []
     for segment in simple_selection.segments:
         segments.append(segment.item)
+        segments_ids.append(segment.item.id)
 
     #print(segments)
 
-    mutations = MutationExperiment.objects.filter(protein__in=proteins, residue__protein_segment__in=segments).prefetch_related('protein', 'residue__protein_segment','residue__display_generic_number', 'residue', 'exp_type', 'ligand_role', 'ligand','refs')
+    mutations = MutationExperiment.objects.filter(protein__in=proteins, residue__protein_segment__in=segments).prefetch_related('protein', 'residue__protein_segment','residue__display_generic_number', 'residue','exp_func','exp_qual','exp_measure', 'exp_type', 'ligand_role', 'ligand','refs')
 
-    #print(mutations)
-    return render(request, 'mutation/list.html', {'mutations': mutations})
+    # create an alignment object
+    a = Alignment()
+
+    a.load_proteins(proteins)
+    a.load_segments(segments)
+
+    # build the alignment data matrix
+    a.build_alignment()
+
+    # calculate consensus sequence + amino acid and feature frequency
+    a.calculate_statistics()
+
+    residue_list = []
+    generic_numbers = []
+    reference_generic_numbers = {}
+    count = 0 #build sequence_number
+
+    ################################################################################
+    #FIXME -- getting matching display_generic_numbers kinda randomly.
+
+    for seg in a.consensus: #Grab list of generic_numbers to lookup for their display numbers
+        for aa in a.consensus[seg]:
+            if "x" in aa:
+                generic_numbers.append(aa)
+
+    generic_ids = Residue.objects.filter(generic_number__label__in=generic_numbers).values('id').distinct('generic_number__label').order_by('generic_number__label')
+    rs = Residue.objects.filter(id__in=generic_ids).prefetch_related('display_generic_number','generic_number')
+
+    for r in rs: #make lookup dic.
+        reference_generic_numbers[r.generic_number.label] = r
+    ################################################################################
+    
+    for seg in a.consensus:
+        for aa,v in a.consensus[seg].items():
+            r = Residue()
+            r.sequence_number =  count #FIXME is this certain to be correct that the position in consensus is seq position? 
+            if "x" in aa:
+                r.display_generic_number = reference_generic_numbers[aa].display_generic_number #FIXME
+                r.segment_slug = seg
+                r.family_generic_number = aa
+            else:
+                r.segment_slug = seg
+                r.family_generic_number = aa
+            r.amino_acid = v[0]
+            r.extra = v[2] #Grab consensus information
+            residue_list.append(r)
+
+            count += 1         
+
+    protein_ids = list(set([x.id for x in proteins]))
+    HelixBox = DrawHelixBox(residue_list,'Class A',str(protein_ids))
+    SnakePlot = DrawSnakePlot(residue_list,'Class A',str(protein_ids))
+
+    context = {}
+    numbering_schemes_selection = ['gpcrdba','gpcrdbb','gpcrdbc','gpcrdbf'] #there is a residue_numbering_scheme attribute on the protein model, so it's easy to find out
+    numbering_schemes = ResidueNumberingScheme.objects.filter(slug__in=numbering_schemes_selection).all()
+
+    segments = ProteinSegment.objects.filter(pk__in=segments_ids,category='helix')
+
+    if ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME) in numbering_schemes:
+        default_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
+    else:
+        default_scheme = numbering_schemes[0]
+
+        residue_table_list = []
+    for mutation in mutations:
+        residue_table_list.append(mutation.residue.generic_number)
+
+    # prepare the dictionary
+    # each helix has a dictionary of positions
+    # default_generic_number or first scheme on the list is the key
+    # value is a dictionary of other gn positions and residues from selected proteins 
+    data = OrderedDict()
+    for segment in segments:
+        data[segment.slug] = OrderedDict()
+        # residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins).prefetch_related('protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
+        #     'generic_number__scheme', 'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
+        residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins, generic_number__in=residue_table_list).prefetch_related('protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
+                                        'generic_number__scheme', 'alternative_generic_numbers__scheme')
+        for scheme in numbering_schemes:
+            if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                    data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+            elif scheme == default_scheme:
+                for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                        data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+
+        for residue in residues:
+            alternatives = residue.alternative_generic_numbers.all()
+            pos = residue.generic_number
+            for alternative in alternatives:
+                if alternative.scheme not in numbering_schemes:
+                    continue
+                scheme = alternative.scheme
+                if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                    pos = residue.generic_number
+                    if scheme == pos.scheme:
+                        data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+                    else:
+                        if scheme.slug not in data[segment.slug][pos.label].keys():
+                            data[segment.slug][pos.label][scheme.slug] = alternative.label
+                        data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+                else:
+                    if scheme.slug not in data[segment.slug][pos.label].keys():
+                        data[segment.slug][pos.label][scheme.slug] = alternative.label
+                    data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+
+    # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
+    flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
+    for s in iter(flattened_data):
+        flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
+    
+    context['header'] = zip([x.short_name for x in numbering_schemes] + [x.entry_name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins])
+    context['segments'] = [x.slug for x in segments]
+    context['data'] = flattened_data
+    context['number_of_schemes'] = len(numbering_schemes)
+
+
+    return render(request, 'mutation/list.html', {'mutations': mutations, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'data':context['data'], 
+        'header':context['header'], 'segments':context['segments'], 'number_of_schemes':len(numbering_schemes), 'protein_ids':str(protein_ids)})
 
 # Create your views here.
 def index(request):
@@ -101,7 +226,16 @@ def index(request):
 
 # Create your views here.
 def ajax(request, slug, **response_kwargs):
-    mutations = MutationExperiment.objects.filter(protein__entry_name=slug).order_by('residue__sequence_number')
+    if '[' in slug:
+        print("OMG OMG OMG")
+        print(urllib.parse.unquote(slug))
+        x = ast.literal_eval(urllib.parse.unquote(slug))
+        #print(x)
+        #h = HTMLParser.HTMLParser()
+        #print(h.unescape(slug))
+        mutations = MutationExperiment.objects.filter(protein__pk__in=x).order_by('residue__sequence_number').prefetch_related('residue')
+    else:
+        mutations = MutationExperiment.objects.filter(protein__entry_name=slug).order_by('residue__sequence_number').prefetch_related('residue')
     #print(mutations)
     #return HttpResponse("Hello, world. You're at the polls index. "+slug)
     jsondata = {}

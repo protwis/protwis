@@ -32,7 +32,11 @@
             {% if segment_list %}
             <div class="col-md-12 well">
                 <h4>Sequence segments</h4>
-                {% include 'common/selection_segments.html' %}
+                {% if position_type == 'site_residue' %}
+                    {% include 'common/selection_segments_sitesearch.html' %}
+                {% else %}
+                    {% include 'common/selection_segments.html' %}
+                {% endif %}
             </div>
             {% endif %}
 
@@ -53,7 +57,11 @@
                 {% if include %}
                 <div class="col-md-12 well" id="selection-{{ selection_box }}">
                 {% with selection_type=selection_box %}
-                    {% include 'common/selection_lists.html' %}
+                    {% if position_type == 'site_residue' %}
+                        {% include 'common/selection_lists_sitesearch.html' %}
+                    {% else %}
+                        {% include 'common/selection_lists.html' %}
+                    {% endif %}
                 {% endwith %}
                 </div>
                 {% endif %}
