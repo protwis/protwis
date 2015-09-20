@@ -4,6 +4,7 @@
 
 {% block addon_css %}
     <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
 {% endblock %}
 
 {% block addon_js %}
@@ -24,8 +25,9 @@
                 dom: 'T<"clear">lfrtip',
                 "aoColumnDefs": [
                     { "sType": "string", "aTargets": [2] },
-                    { "sType": "string", "aTargets": [11] },
+                    { "sType": "string", "aTargets": [12] },
                 ],
+                "aaSorting": [[ 0, "desc" ]],
                 tableTools: {
                     "sRowSelect": "multi",
                     "aButtons": ["select_all", "select_none"]
@@ -40,18 +42,19 @@
                             { type: "select" }, //class
                             { type: "select" }, //specie
                             { type: "text" }, //pdb code
-                            { type: "text" }, //endogenous ligand name
                             { type: "number-range" }, //resolution
-                            { type: "text" }, //x-ray ligand
                             { type: "text" }, //preferred chain
+                            { type: "text" }, //endogenous ligand name
+                            { type: "text" }, //endogenous ligand type
+                            { type: "text" }, //x-ray ligand
+                            { type: "text" }, //stabilizing agent - left as type-in for now
                             { type: "text" }, //pmid
                             { type: "date-range" }, //publication date
-                            { type: "text" }, //stabilizing agent - left as type-in for now
                         ]
                     });
                 }
             });
-            $.datepicker.regional[""].dateFormat = "M d, yyyy";
+            $.datepicker.regional[""].dateFormat = "yy-mm-dd";
             $.datepicker.setDefaults($.datepicker.regional['']);
             $('#crystal_structures tbody').on('click', 'tr', function () {
                 $(this).toggleClass('selected');
@@ -68,36 +71,23 @@
 
             <thead>
                 <tr>
-                    <th>Sequence similarity</th>
-                    <th>Sequence identity</th>
-                    <th>Protein name</th>
-                    <th>Protein class</th>
-                    <th>Species</th>
-                    <th>PDB code</th>
-                    <th>Endogenous ligand</th>
-                    <th>Resolution</th>
-                    <th>X-ray ligand</th>
-                    <th>Preferred chain</th>
-                    <th>PMID</th>
-                    <th>Publication date</th>
+                    <th class="similarity-th">Sequence similarity</th>
+                    <th class="similarity-th">Sequence identity</th>
+                    <th class="protein-th">Protein name</th>
+                    <th class="protein-th">Protein class</th>
+                    <th class="protein-th">Species</th>
+                    <th class="pdb-th">PDB code</th>
+                    <th class="pdb-th">Resolution</th>
+                    <th class="pdb-th">Preferred chain</th>
+                    <th class="ligand-th">Endogenous ligand</th>
+                    <th class="ligand-th">Endogenous ligand type</th>
+                    <th class="ligand-th">X-ray ligand</th>
                     <th>Stabilizing agents</th>
+                    <th class="pub-th">PMID</th>
+                    <th class="pub-th">Publication date</th>
                 </tr>
                 <tr>
                     <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr>
-                <tr>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -121,30 +111,32 @@
                     <th>Protein class</th>
                     <th>Species</th>
                     <th>PDB code</th>
-                    <th>Endogenous ligand</th>
                     <th>Resolution</th>
-                    <th>X-ray ligand</th>
                     <th>Preferred chain</th>
+                    <th>Endogenous ligand</th>
+                    <th>Endogenous ligand type</th>
+                    <th>X-ray ligand</th>
+                    <th>Stabilizing agents</th>
                     <th>PMID</th>
                     <th>Publication date</th>
-                    <th>Stabilizing agents</th>
                 </tr>
             </tfoot>
             {% for crystal in crystals %}
             <tr>
-                <td>{{ crystal.protein_conformation.similarity }}</td>
-                <td>{{ crystal.protein_conformation.identity }}</td>
-                <td>{{ crystal.protein_conformation.protein.family.name|safe }}</td>
-                <td>{{ crystal.protein_conformation.protein.get_protein_class }}</td>
-                <td>{{ crystal.protein_conformation.protein.species.latin_name }}</td>
-                <td>{{ crystal.pdb_code.index}}</td>
-                <td>{{ crystal.protein_conformation.protein.endogenous_ligands.all|join_attr:"name" }}</td>
-                <td>{{ crystal.resolution}}</td>
-                <td>{{ crystal.ligands.all|join_attr:"name" }}</td>
-                <td>{{ crystal.preferred_chain }}</td>
-                <td>{{ crystal.publication.web_link.index }}</td>
-                <td>{{ crystal.publication_date }}</td>
-                <td>{{ crystal.stabilizing_agents.all|join_attr:"name" }}</td>
+                <td>{{ crystal.0 }}</td>
+                <td>{{ crystal.1 }}</td>
+                <td>{{ crystal.2.protein_conformation.protein.family.name|safe }}</td>
+                <td>{{ crystal.2.protein_conformation.protein.get_protein_class }}</td>
+                <td>{{ crystal.2.protein_conformation.protein.species.latin_name }}</td>
+                <td>{{ crystal.2.pdb_code.index}}</td>
+                <td>{{ crystal.2.resolution}}</td>
+                <td>{{ crystal.2.preferred_chain }}</td>
+                <td>{{ crystal.2.protein_conformation.protein.endogenous_ligands.all|join_attr:"name" }}</td>
+                <td>{{ crystal.2.protein_conformation.protein.parent.endogenous_ligands.all|join_attr:"properties__ligand_type" }}</td>
+                <td>{{ crystal.2.ligands.all|join_attr:"name" }}</td>
+                <td>{{ crystal.2.stabilizing_agents.all|join_attr:"name" }}</td>
+                <td>{{ crystal.2.publication.web_link.index }}</td>
+                <td>{{ crystal.2.publication_date|date:"Y-m-d" }}</td>
             </tr>
             {% endfor %}
         </table>
