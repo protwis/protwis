@@ -37,7 +37,10 @@ class StructureBrowser(TemplateView):
 
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
-            context['crystals'] = Structure.objects.all().prefetch_related("protein_conformation__protein", "protein_conformation__protein__endogenous_ligands", "publication__web_link", "stabilizing_agents")
+            context['structures'] = Structure.objects.all().prefetch_related("ligands",
+                "protein_conformation__protein__parent__endogenous_ligands",
+                "protein_conformation__protein__family__parent__parent", "publication__web_link__web_resource",
+                "stabilizing_agents")
         except Structure.DoesNotExist as e:
             pass
 
@@ -723,19 +726,25 @@ class TemplateBrowser(TemplateView):
         simple_selection = self.request.session.get('selection', False)
         a = Alignment()
         a.load_reference_protein_from_selection(simple_selection)
+        qs = Structure.objects.all().select_related().prefetch_related("protein_conformation__protein", "protein_conformation__protein__endogenous_ligands", "publication__web_link", "stabilizing_agents")
+        #Dirty but fast
+        qsd = {}
+        for st in list(qs):
+            qsd[st.protein_conformation.protein.id] = st
+        a.load_proteins([x.protein_conformation.protein for x in list(qs)])
         if simple_selection.segments != []:
             a.load_segments_from_selection(simple_selection)
         else:
             a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']))
-        a.load_proteins([x.protein_conformation.protein for x in list(Structure.objects.all())])
-        print([x.protein_conformation.protein for x in list(Structure.objects.all())])
         a.build_alignment()
-        a.calculate_statistics()
-        a.calculate_simiarity_matrix()
+        a.calculate_similarity()
         context['crystals'] = []
         for prot in a.proteins[1:]:
-            context['crystals'].append(Structure.objects.get(protein_conformation__protein__entry_name=prot.protein.entry_name))
-
+            try:
+                context['crystals'].append([prot.similarity, prot.identity, qsd[prot.protein.id]])
+                del qsd[prot.protein.id]
+            except KeyError:
+                pass
         return context
 
 
