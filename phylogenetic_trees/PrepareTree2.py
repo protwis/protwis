@@ -9,7 +9,7 @@ class PrepareTree:
     rings={'crystal': {'include':'False', 'order':6, 'colours':{'crystal_true':'#6dcde1','crystal_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':None, 'child': None, 'name':'Crystallized structures'},
             'class': {'include':'False', 'order':0, 'colours':{}, 'items':[], 'color_type':'grayscale', 'parent':[], 'child': ['family,ligand'], 'name':'Class'},
             'family': {'include':'False', 'order':1, 'colours':{}, 'items':[], 'color_type':'spectrum', 'parent':[], 'child': ['ligand'], 'name':'Ligand type'},
-            'ligand': {'include':'False', 'order':2, 'colours':{}, 'items':[], 'color_type':'spectrum', 'parent':['family','class'], 'child': [], 'name':'Ligand name'},
+            'ligand': {'include':'False', 'order':2, 'colours':{}, 'items':[], 'color_type':'spectrum', 'parent':['family','class'], 'child': [], 'name':'Receptor type'},
             'mutant': {'include':'False', 'order':3, 'colours':{'mutant_true':'#6dcde1','mutant_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':[], 'child': ['mutant_plus','mutant_minus'], 'name':'Mutated proteins'},
             'mutant_plus': {'include':'False', 'order':4, 'colours':{'mutant_plus_true':'#6dcde1','mutant_plus_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':'mutant', 'child': [], 'name':'Positive affinity mutants'},
             'mutant_minus': {'include':'False', 'order':5, 'colours':{'mutant_minus_true':'#6dcde1','mutant_minus_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':'mutant', 'child': [], 'name':'Negative affinity mutants'}
@@ -23,10 +23,10 @@ class PrepareTree:
         else:
             v_step = 0
         v_count = 0
-        for a in itemlist:
+        for a in sorted(itemlist):
             colour = self.HSV_2_RGB((0,0,10+(v_count*int(v_step))))
             v_count +=1
-            colours_dict[a]=colour
+            colours_dict[a]='#'+colour
         return colours_dict
 
 
@@ -37,7 +37,7 @@ class PrepareTree:
         else:
             v_step = 0    
         v_count = 0
-        for a in itemlist:
+        for a in sorted(itemlist):
             colour = self.HSV_2_RGB((int(range[0]+v_step*v_count),127,200))
             v_count +=1
             colours_dict[a]='#'+colour
@@ -86,7 +86,7 @@ class PrepareTree:
         for color in fillcolours:
             colours += "<div class='pick-color selected' id='pick-"+color[0]+"-"+color[1]+"' style='background-color: "+color[0]+";'>&nbsp;</div>"
             
-        output = ("<br>Pick color:" +
+        output = ("<br><b>Pick color:</b>" +
             colours )
 
         return boxstyle+ output
@@ -185,7 +185,6 @@ class PrepareTree:
 
     def get_family_meta(self,inp):
         for acc in inp.keys():
-            #self.styles += '<%s fill=\'#EEE\' stroke=\'#DDD\' id=\'%s\' class=\'bgfield\'/>' %(inp[acc]['family'],inp[acc]['family'])
             fam = inp[acc]['family'].split('_')
             prot_class=fam[0]
             family='_'.join(fam[:2])
@@ -199,8 +198,6 @@ class PrepareTree:
                 self.rings['ligand']['items'].append(ligand)
             self.prots[acc]={'class':prot_class,'family':family,'ligand':ligand, 'acc':prot, 'name':inp[acc]['name'], 'link':inp[acc]['link'], 'species':inp[acc]['species'], 'desc':inp[acc]['description']}
             self.prots[prot]=acc
-            #self.prots[acc]
-       # return classes, families, ligands, prots
 
     def get_tree_data(self, Additional_info):
            for datatype in Additional_info:
@@ -242,7 +239,7 @@ class PrepareTree:
             if ring[1]['include']=='True':
                 self.legend+='<g class="chart'+str(ring[1]['order'])+'"><text x="'+str(ring_no*(width+40))+'" y="30" font-family="Verdana" font-size="20" font-weight="bold">'+self.rings[ring[0]]['name']+'</text><rect x="'+str(ring_no*(width+40))+'" y="70" width="'+str(width)+'" height="'+str(verse*len(self.rings[ring[0]]['items'])+10)+'" stroke="black" fill="transparent" stroke-width="5"/>'
                 verse_count = 0
-                for item in ring[1]['items']:
+                for item in sorted(ring[1]['items']):
                     if ring[1]['color_type']=='single':
                         self.legend += '<rect x="'+str(ring_no*(width+40)+10)+'" y="'+str(80+verse_count*20)+'" height="10" width="30" class="chart" id="'+item+'" stroke="#000000" fill="'+ring[1]['colours'][ring[0]+'_true']+'"/><text x="'+str(ring_no*(width+40)+45)+'" y="'+str(90+verse_count*20)+'" style="font-family:Verdana; font-size:12;">'+self.famdict[item].replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')+'</text>'
                     else:
@@ -251,7 +248,6 @@ class PrepareTree:
                 ring_no+=1
                 self.legend+='</g>'
         self.legend+='</g></svg>'
-      #  return self.legend
         
     def get_styles(self):
         self.styles = ''
@@ -265,21 +261,17 @@ class PrepareTree:
                 colour_dict = self.rings[ring]['colours']
                 for item in colour_dict:
                     if ring == 'class':
-                        self.styles+='<%s fill=\'#%s\' stroke=\'#%s\' label=\'%s\' labelStyle=\'sectorHighlightText\' class=\'chart0\' id=\'%s\'/>' %(item,colour_dict[item],colour_dict[item],self.famdict[item],item)
+                        self.styles+='<%s fill=\'%s\' stroke=\'%s\' label=\'%s\' labelStyle=\'sectorHighlightText\' class=\'chart0\' id=\'%s\'/>' %(item,colour_dict[item],colour_dict[item],self.famdict[item],item)
                     else:
                         self.styles +='<%s fill=\'%s\' stroke=\'%s\' id=\'%s\' class=\'%s\'/>' %(item,colour_dict[item],colour_dict[item],item, 'chart'+str(self.rings[ring]['order']))
-                
-        #self.styles+=('<%s fill=\'#%s\' stroke=\'#%s\' label=\'%s\' labelStyle=\'sectorHighlightText\' class=\'chart0\' id=\'%s\'/>' %(a,colour,colour,self.famdict[a].upper(),a))
-        #self.ligcolours[a]=[colour]
-        #self.defaultColours[a]=['#'+colour,'#'+colour]
-        
+  
 
 
 
     def treeDo(self,d, infile,branches,family,Additional_info, famdict=None):
         self.famdict=famdict
         d = '/'.join(d.split('/'))
-        z = infile#= open(infile,'r').read()
+        z = infile
         w = open(d+'/rong','w').write(z.replace('-',''))
         raw = open(d+'/raw.xml','w')
         Phylo.convert(d+'/rong','newick',raw,'phyloxml')
@@ -341,8 +333,7 @@ class PrepareTree:
                 if flag2 != '':
                     line = line.strip('\n')+' <annotation><desc>'+self.prots[flag2[0]]['desc']+' ('+self.prots[flag2[0]]['species']+')'+'</desc><uri>http://tools.gpcr.org/visualise/protein/'+self.prots[flag2[0]]['link']+'</uri> </annotation>'+flag2[1]
                     flag2=''
-            out.write(line)#.strip('\n'))
-        ###SVG legend###
+            out.write(line)
         
         self.box = self.drawColorPanel()
 

@@ -19,22 +19,32 @@
 {% block content %}
 
 <div id="svgCanvas"> </div>
-    <br>Download:
-    <a href="javascript:saveSvgAsPng(document.getElementById('svgtree'), 'tree.png', {scale: 3});">PNG</a>
-    <a href="javascript:saveSvgAsJpg(document.getElementById('svgtree'), 'tree.jpg', {scale: 3});">JPG</a>
-    <a href="javascript:saveSvgAsTiff(document.getElementById('svgtree'), 'tree.tiff', {scale: 3});">TIFF</a>
+    <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+            Download
+            <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <b> Image</b>
+            <li><a href="javascript:saveSvgAsPng(document.getElementById('svgtree'), 'tree.png', {scale: 3});">PNG</a></li>
+            <li><a href="javascript:saveSvgAsJpg(document.getElementById('svgtree'), 'tree.jpg', {scale: 3});">JPG</a></li>
+            <li><a href="javascript:saveSvgAsTiff(document.getElementById('svgtree'), 'tree.tiff', {scale: 3});">TIFF</a></li>
+            <li><a id=tree_svg_link href-lang="image/svg+xml" href="" download="tree.svg">SVG</a></li>
+            <b> Tree</b>
+            <li><a href-lang="text" href="data:{{ phylip }}" download="newick_file">Newick</a></li>
+            <li><a href="data:{{ outtree }}" download="newick_tree">Newick tree</a></li>
 
-    <a id=tree_svg_link href-lang="image/svg+xml" href="" download="tree">SVG</a>
-    <br />
+        </ul>
+    </div>
     <div>
         {{ b|safe }}
         <br><button style="width:120px;" onclick="resetColors()">Clear</button>
-        <button style="width:250px;" onclick="toggleLegend()">Toggle all rings</button>
+        <button style="width:250px;" onclick="toggleAll()">Toggle all rings</button>
+        <button style="width:250px;" onclick="toggleLegend()">Toggle legend</button>
         <div id="ring_buttons" style="display:none;">
         {% include 'phylogenetic_trees/ring_buttons.html' %}
         </div>
         <button style="width:250px;" onclick="predefined_colours({{add.crystal.proteins}},'{{ add.crystal.colours.crystal_true }}')">Highlight crystallized receptors</button>
-
 
     </div>
     

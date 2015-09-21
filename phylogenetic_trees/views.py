@@ -11,12 +11,10 @@ from mutation.models import *
 import os, shutil, subprocess
 import uuid
 from phylogenetic_trees.PrepareTree2 import *
+from collections import OrderedDict
 
-# from common.alignment_SITE_NAME import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
-from collections import OrderedDict
-#TODO
 class TreeSettings(AbsSettingsSelection):
     step = 3
     number_of_steps = 3
@@ -72,6 +70,7 @@ class TargetSelection(AbsTargetSelection):
 class Treeclass:
     family = {}
     phylip = None
+    outtree = None
     dir = ''
     Additional_info={"crystal": {"include":"False", "order":6, "colours":{"crystal_true":"#6dcde1","crystal_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":None, "child": None, "name":"Crystals"},
             "class": {"include":"True", "order":0, "colours":{}, "proteins":[], "color_type":"grayscale", "parent":[], "child": ["family,ligand"], "name":"Class"},
@@ -99,18 +98,18 @@ class Treeclass:
         a=Alignment()
         simple_selection=request.session.get('selection', False)
         ################################## FOR BUILDING STATISTICS ONLY##########################
-        cons_prots = []
-        for n in Protein.objects.filter(sequence_type_id=15):
-            if n.family.slug.startswith('006') and len(n.family.slug.split('_'))==3:
-                cons_prots.append(n)
-        for n in simple_selection.targets[:]:
-            if n.item.family.slug.startswith('006_'):
-                continue
-            else:
-                simple_selection.targets.remove(n)
-        for n in cons_prots:
-            simple_selection.targets.append(SelectionItem('protein',n))
-            print(n.family.slug)
+        #cons_prots = []
+        #for n in Protein.objects.filter(sequence_type_id=15):
+        #    if n.family.slug.startswith('004') and len(n.family.slug.split('_'))==3:
+        #        cons_prots.append(n)
+        #for n in simple_selection.targets[:]:
+        #    if n.item.family.slug.startswith('004_'):
+        #        continue
+        #    else:
+        #        simple_selection.targets.remove(n)
+        #for n in cons_prots:
+        #    simple_selection.targets.append(SelectionItem('protein',n))
+        #    print(n.family.slug)
         #####################################################
         a.load_proteins_from_selection(simple_selection)
         a.load_segments_from_selection(simple_selection)
@@ -159,9 +158,7 @@ class Treeclass:
             self.family[acc] = {'name':name,'family':fam,'description':desc,'species':spec,'class':'','ligand':'','type':'','link': link}
             ####Write PHYLIP input
             sequence = ''
-            print(n.alignment)
             for chain in n.alignment:
-                print(chain)
                 for residue in n.alignment[chain]:
                     sequence += residue[2].replace('_','-')
                 sequence += '-'
@@ -202,17 +199,18 @@ class Treeclass:
         inp.close()
         ### 
         subprocess.check_output(['phylip neighbor<temp'], shell=True, cwd = '/tmp/%s' %dirname)
-        os.remove('/tmp/%s/infile' %dirname)
-        os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
+        #os.remove('/tmp/%s/infile' %dirname)
         if self.bootstrap:
-           ### Write phylip input options
+            os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
             os.rename('/tmp/%s/outtree' %dirname, '/tmp/%s/intree' %dirname)
+           ### Write phylip input options
             inp = open('/tmp/%s/temp' %dirname,'w')
             inp.write('y\n')
             inp.close()
         ###
             subprocess.check_output(['phylip consense<temp'], shell=True, cwd = '/tmp/%s' %dirname)
         self.phylip = open('/tmp/%s/outtree' %dirname).read()
+        self.outtree = open('/tmp/%s/outfile' %dirname).read().lstrip()
         phylogeny_input = self.get_phylogeny('/tmp/%s/' %dirname)
         #shutil.rmtree('/tmp/%s' %dirname)
         return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
@@ -225,7 +223,7 @@ class Treeclass:
     def get_data(self):
         return self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
 
-        
+ 
 def get_buttons(request):
     Tree_class=request.session['Tree']
     buttons = [(x[1]['order'],x[1]['name']) for x in sorted(Tree_class.Additional_info.items(), key= lambda x: x[1]['order']) if x[1]['include']=='True']
@@ -243,12 +241,12 @@ def modify_tree(request):
     phylogeny_input = Tree_class.get_phylogeny('/tmp')
     branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.get_data()
     
-    return render(request, 'phylogenetic_trees/main.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons })
+    return render(request, 'phylogenetic_trees/main.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree})
 
 def render_tree(request):
     Tree_class=Treeclass()
     phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.Prepare_file(request)
     request.session['Tree']=Tree_class
-    return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons })
+    return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
 
 

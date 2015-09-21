@@ -93,27 +93,36 @@
 
  };
 
-function toggleLegend() {
-     var dupa = 'visible'
+function toggleAll() {
+     var style = ''
      $('#svgCanvas').find("[class^=chart]").each(function (index) {
          if ($(this).css("visibility") == 'visible'){
-             dupa = 'hidden'};
+             style = 'hidden'};
      });
      $('#svgCanvas').find("[class^=chart]").each(function (index) {
-         console.log($(this).css("visibility"));
-         $(this).css("visibility", dupa);
+         $(this).css("visibility", style);
     });
  };
-     
- function toggleRings(ring) {
-     $('#svgCanvas').find("." + ring).each(function (index) {
-         if ($(this).css("visibility") == 'hidden') {
-             $(this).css("visibility", 'visible');
-         } else {
-             $(this).css("visibility", 'hidden');
-         };
-     });
- };
+function toggleLegend() {
+    var style = 'visible'
+    $('#svgCanvas').find(".legend").each(function (index) {
+        if ($(this).css("visibility") == 'visible' || $(this).css("visibility") == '') {
+            style = 'hidden'
+        };
+    });
+    $('#svgCanvas').find(".legend").each(function (index) {
+        $(this).css("visibility", style);
+    });
+};
+ //function toggleRings(ring) {
+ //    $('#svgCanvas').find("." + ring).each(function (index) {
+ //        if ($(this).css("visibility") == 'hidden') {
+ //            $(this).css("visibility", 'visible');
+ //        } else {
+ //            $(this).css("visibility", 'hidden');
+ //        };
+ //    });
+ //};
  
   function SelectSubmenu(name) {
      $('.button_container').find('.btn-group').each(function (index) {
@@ -170,7 +179,6 @@ function toggleLegend() {
        }
      });
        };
-       
 
 
 
@@ -192,9 +200,6 @@ function toggleLegend() {
          leg_w = Math.abs(w-w2)/2 
          svg_w = 0
      };
-//     for (i = 0; i < SVG.children.length; i++) {
-//         SVG.children[i].setAttribute('transform', 'translate ('+svg_w.toString()+' 0)');
-//     };
      for (i = 0; i < legend.children.length; i++) {
          legend.children[i].setAttribute('transform', 'translate ('+leg_w.toString()+' ' + h.toString()+')');
          $(SVG).append(legend.children[i]);
