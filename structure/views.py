@@ -2,7 +2,7 @@
 from django.conf import settings
 from django.views.generic import TemplateView
 from django.http import HttpResponse, JsonResponse
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Prefetch
 from django import forms
 
 from protein.models import Gene, ProteinSegment
@@ -37,10 +37,11 @@ class StructureBrowser(TemplateView):
 
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
-            context['structures'] = Structure.objects.all().prefetch_related("ligands",
-                "protein_conformation__protein__parent__endogenous_ligands",
+            context['structures'] = Structure.objects.all().prefetch_related(
+                "protein_conformation__protein__parent__endogenous_ligands", "stabilizing_agents",
                 "protein_conformation__protein__family__parent__parent", "publication__web_link__web_resource",
-                "stabilizing_agents")
+                Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
+                annotated=True).prefetch_related('ligand')))
         except Structure.DoesNotExist as e:
             pass
 
