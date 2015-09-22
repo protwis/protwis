@@ -55,7 +55,7 @@ class Command(BaseBuild):
             print(msg)
             self.logger.error(msg)
 
-    def main_func(self, positions):
+    def main_func(self, positions, iteration):
         # pconfs
         if not positions[1]:
             pconfs = self.pconfs[positions[0]:]
