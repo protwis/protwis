@@ -77,12 +77,26 @@ class MappedResidue(object):
         self.pos_in_aln = 0
         self.mapping = {}
         self.bw = 0.
-        self.gpcrdb = 0.       
+        self.gpcrdb = 0.  
+        self.gpcrdb_id = 0     
+        self.segment = ''
+        self.display = ''      
   
     def add_bw_number (self, bw_number=''):
     
         self.bw = bw_number
 
+    def add_segment (self, segment=''):
+    
+        self.segment = segment
+
+    def add_display_number (self, display = ''):
+
+        self.display = display
+
+    def add_gpcrdb_number_id (self, gpcrdb_number_id=''):
+
+        self.gpcrdb_id = gpcrdb_number_id
 
     def add_gpcrdb_number (self, gpcrdb_number=''):
 

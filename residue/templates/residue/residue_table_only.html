@@ -1,9 +1,12 @@
 <br>
+{% if onlymutants %}
+
+{% else %}
 <button style="width:120px;" onclick="table_applyPresentColors()">Properties</button> 
 <button style="width:120px;" onclick="table_resetColors()">Clear</button>
 <br><button style="width:120px;" onclick="table_ajaxMutants()">Show Mutants</button>
 <button style="width:220px;" onclick="table_ajaxInteractions()">Show Interactions from Crystals</button>
-
+{% endif %}
 <table class="table-header-rotated">
     <!-- Header -->
     <thead><tr>
