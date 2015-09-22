@@ -235,7 +235,7 @@ class Command(BaseBuild):
                     if not representative:
                         try:
                             representative_structure = Structure.objects.get(
-                                protein_conformation__protein__parent=con.parent, representative=True)
+                                protein_conformation__protein__parent=con.parent, representative=True, state=s.state)
                         except Structure.DoesNotExist:
                             self.logger.error("No representative structure for protein {}".format(
                                 protein_conformation.protein.parent))
@@ -313,12 +313,13 @@ class Command(BaseBuild):
                         else:
                             ligands = [sd['ligand']]
                         for ligand in ligands:
-                            if ligand['name'].upper() in hetsyn:
-                                self.logger.info('Ligand {} matched to PDB records'.format(ligand['name']))
-                                matched = 1
-                                ligand['name'] = hetsyn[ligand['name'].upper()]
-                            elif ligand['name'].upper() in hetsyn_reverse:
-                                matched = 1
+                            if 'name' in ligand:
+                                if ligand['name'].upper() in hetsyn:
+                                    self.logger.info('Ligand {} matched to PDB records'.format(ligand['name']))
+                                    matched = 1
+                                    ligand['name'] = hetsyn[ligand['name'].upper()]
+                                elif ligand['name'].upper() in hetsyn_reverse:
+                                    matched = 1
 
                     if matched==0 and len(hetsyn)>0:
                         self.logger.info('No ligand names found in HET in structure {}'.format(sd['pdb']))
@@ -604,9 +605,18 @@ class Command(BaseBuild):
                     # stabilizing agents, FIXME - redesign this!
                     # fusion proteins moved to constructs, use this for G-proteins and other agents?
                     aux_proteins = []
-                    if 'g_protein' in sd and sd['g_protein'] and sd['g_protein'] is not 'None':
+                    print(sd['g_protein'])
+                    if sd['g_protein'] is 'None':
+                        print('X')
+                    if sd['g_protein'] is not 'None':
+                        print('Y')
+                    if sd['g_protein'] == 'None':
+                        print('Z')
+                    if sd['g_protein'] != 'None':
+                        print('Q')
+                    if 'g_protein' in sd and sd['g_protein'] and sd['g_protein'] != 'None':
                         aux_proteins.append('g_protein')
-                    if 'auxiliary_protein' in sd and sd['auxiliary_protein'] and sd['auxiliary_protein'] is not 'None':
+                    if 'auxiliary_protein' in sd and sd['auxiliary_protein'] and sd['auxiliary_protein'] != 'None':
                         aux_proteins.append('auxiliary_protein')
                     for index in aux_proteins:
                         if isinstance(sd[index], list):
