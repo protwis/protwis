@@ -100,16 +100,15 @@ class Treeclass:
         ################################## FOR BUILDING STATISTICS ONLY##########################
         #cons_prots = []
         #for n in Protein.objects.filter(sequence_type_id=15):
-        #    if n.family.slug.startswith('004') and len(n.family.slug.split('_'))==3:
-        #        cons_prots.append(n)
+           #if n.family.slug.startswith('001') and len(n.family.slug.split('_'))==3:
+               #cons_prots.append(n)
         #for n in simple_selection.targets[:]:
-        #    if n.item.family.slug.startswith('004_'):
-        #        continue
-        #    else:
-        #        simple_selection.targets.remove(n)
+           #if n.item.family.slug.startswith('001_'):
+               #continue
+           #else:
+               #simple_selection.targets.remove(n)
         #for n in cons_prots:
-        #    simple_selection.targets.append(SelectionItem('protein',n))
-        #    print(n.family.slug)
+           #simple_selection.targets.append(SelectionItem('protein',n))
         #####################################################
         a.load_proteins_from_selection(simple_selection)
         a.load_segments_from_selection(simple_selection)
@@ -200,7 +199,6 @@ class Treeclass:
         inp.close()
         ### 
         subprocess.check_output(['phylip neighbor<temp'], shell=True, cwd = '/tmp/%s' %dirname)
-        #os.remove('/tmp/%s/infile' %dirname)
         if self.bootstrap:
             os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
             os.rename('/tmp/%s/outtree' %dirname, '/tmp/%s/intree' %dirname)
@@ -213,7 +211,7 @@ class Treeclass:
         self.phylip = open('/tmp/%s/outtree' %dirname).read()
         self.outtree = open('/tmp/%s/outfile' %dirname).read().lstrip()
         phylogeny_input = self.get_phylogeny('/tmp/%s/' %dirname)
-        #shutil.rmtree('/tmp/%s' %dirname)
+        shutil.rmtree('/tmp/%s' %dirname)
         return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
         
     def get_phylogeny(self, dirname):
