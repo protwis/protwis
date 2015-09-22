@@ -57,14 +57,33 @@
             });
             $.datepicker.regional[""].dateFormat = "yy-mm-dd";
             $.datepicker.setDefaults($.datepicker.regional['']);
+            $('#superpose_btn').click(function () {
+                if (table.rows('.selected').data().length == 1) {
+                    var div = document.createElement("div");
+                    div.innerHTML = table.rows('.selected').data()[0][4];
+
+                    //alert(div.innerText);
+                    //AddToSelection('reference', 'structure', div.innerText);
+                }
+                var checked_data = $('input:checked');
+                //for (i = 0; i < checked_data; i++) {
+                //    alert(checked_data[i]);
+                //}
+                //table.rows( 'input:checked' ).data();
+                //alert(checked_data.length);
+                for (i = 0; i < checked_data; i++) {
+                    AddToSelection('targets', 'structure', checked_data[i][3]);
+                }
+                //window.location.href = '/structure/superposition_workflow_index';
             });
+        });
     </script> 
 {% endblock %}
 
 {% block content %}
     <div style="font-size: 10px;">Select (tick box) structures, and Highlight the reference template</div><br />
     <div class="btn-group">
-        <a class="btn btn-primary btn-mini " href="/structure/superposition_workflow_index">Superpose structures</a>
+        <a id="superpose_btn" class="btn btn-primary btn-mini " href="#">Superpose structures</a>
     </div>
     <br />
     <br />
@@ -106,7 +125,7 @@
                 <tbody>
                     {% for structure in structures.select_related.all %}
                     <tr>
-                        <th><form><input type="checkbox" /></form></th>
+                        <th><form><input id="alt_sel" type="checkbox"></form></th>
                         <td>{{ structure.protein_conformation.protein.family.name|safe }}</td>
                         <td>{{ structure.protein_conformation.protein.get_protein_class }}</td>
                         <td>{{ structure.protein_conformation.protein.species.common_name }}</td>

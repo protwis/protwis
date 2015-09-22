@@ -14,22 +14,22 @@
     <div id="charts" visibility="hidden">
         <?xml version="1.0" standalone="no" ?>
         <svg id="chart_legend" width="450px" height="70px" version="1.1" xmlns="http://www.w3.org/2000/svg">
-            <circle class="Class" id="unique" cx="10" cy="10" r="5" stroke="black" fill="white" stroke-width="2" />
+            <circle class="chart_type" id="unique" cx="10" cy="10" r="5" stroke="black" fill="white" stroke-width="2" />
             <text x="20" y="13" font-family="Verdana" font-size="10">The number of unique crystallized receptors available.</text>
-            <circle class="Class" id="unique_y" cx="10" cy="30" r="5" stroke="black" fill="white" stroke-width="2" />
+            <circle class="chart_type" id="unique_y" cx="10" cy="30" r="5" stroke="black" fill="white" stroke-width="2" />
             <text x="20" y="33" font-family="Verdana" font-size="10">The number of unique receptors crystallized each year.</text>
-            <circle class="Class" id="all" cx="10" cy="50" r="5" stroke="black" fill="white" stroke-width="2" />
+            <circle class="chart_type" id="all" cx="10" cy="50" r="5" stroke="black" fill="white" stroke-width="2" />
             <text x="20" y="53" font-family="Verdana" font-size="10">The number of crystal structures available each year.</text>
         </svg>
-        <div id="unique" class="container" style="display: none;">
+        <div id="unique" class="chart_container" style="display: none;">
             {% load_chart charttype chartdata "multibarchart_container" extra %}
             {% include_container "multibarchart_container" 600 800 %}
         </div>
-        <div id="unique_y" class="container" style="display: none;">
+        <div id="unique_y" class="chart_container" style="display: none;">
             {% load_chart charttype2 chartdata2 "multibarchart_container2" extra2 %}
             {% include_container "multibarchart_container2" 600 800 %}
         </div>
-        <div id="all" class="container" style="display: none;">
+        <div id="all" class="chart_container" style="display: none;">
             {% load_chart charttype chartdata_all "multibarchart_container3" extra_all %}
             {% include_container "multibarchart_container3" 600 800 %}
         </div>
