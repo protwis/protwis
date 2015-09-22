@@ -117,12 +117,13 @@ class DrawSnakePlot(Diagram):
         for i in range(1,8):
             try:
                 self.helixoutput += self.drawSnakePlotHelix(i)
-            except:
+            except Exception as msg:
                 self.TBCoords[i] = {}
                 startX = self.helixWidth+self.offsetX+(self.margin+self.helixWidth)*(i-1)
                 startY = self.offsetY
                 self.TBCoords[i]['extra'] = [startX,startY]
                 self.TBCoords[i]['intra'] = [startX,startY+140]
+                print('error with helix',i,msg)
                 pass
 
         if "H8" in self.segments: #if helix8
@@ -236,7 +237,7 @@ class DrawSnakePlot(Diagram):
             if (row_pos==1 and row!=0) or (skip==1 and row_pos==2): #if need for trace
                 #print('trace!')
                 if row_length==3: points = "M "+str(prevX)+" "+str(prevY)+" Q"+str(prevX-40)+" "+str(prevY+30)+", "+str(x-21)+" "+str(y-8)+" T"+str(x)+" "+str(y)
-                if row_length==4: points = "M "+str(prevX)+" "+str(prevY)+" Q"+str(prevX-40)+" "+str(prevY+30)+", "+str(x-24)+" "+str(y-7)+" T"+str(x)+" "+str(y)
+                if row_length>=4: points = "M "+str(prevX)+" "+str(prevY)+" Q"+str(prevX-40)+" "+str(prevY+30)+", "+str(x-24)+" "+str(y-7)+" T"+str(x)+" "+str(y)
                 #points = "M "+str(prevX)+","+str(prevY)+" C"+str(prevX-50)+","+str(prevY+20)+" "+str(x-25)+","+str(y+20)+" "+str(x+10)+","+str(y)
                 output_trace += "<path d='" + points + "' stroke='grey' fill='none' stroke-width='1' stroke-dasharray='1,2' />"
 
