@@ -780,9 +780,9 @@ class AlignedReferenceTemplate(Alignment):
                             if res[1]!=False and res[1]!='':
                                all_temp_positions.append(res[0])
                         temp_positions.append([all_temp_positions[0],all_temp_positions[-1]])
-                    print(protein)
-                    print(ref_positions)
-                    print(temp_positions)
+#                    print(protein)
+#                    print(ref_positions)
+#                    print(temp_positions)
                     if ref_positions==temp_positions:
                         for struct in self.similarity_table:
                             if protein.protein==struct.protein_conformation.protein.parent:
@@ -803,6 +803,7 @@ class AlignedReferenceTemplate(Alignment):
                 temp_list.append((list(matches)[0], int(protein.similarity), float(list(matches)[0].resolution), protein))
         sorted_list = sorted(temp_list, key=lambda x: (-x[1],x[2]))
         for i in sorted_list:
+#            print(i[0].id, i[0])
             similarity_table[i[0]] = i[1]
             self.ordered_proteins.append(i[3])
         return similarity_table

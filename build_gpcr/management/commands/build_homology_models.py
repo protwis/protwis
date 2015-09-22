@@ -58,7 +58,7 @@ class Command(BaseCommand):
 #        print('binding pocket RMSD: ', val.PDB_RMSD("./structure/PDB/4Z34.pdb", "./structure/homology_models/Q92633_Inactive/modeller_test.pdb",
 #                           assign_gns=[1,2], gn_list=['1x35', '2x57', '3x28', '3x29', '3x32', '3x33', '3x36', '5x40', '5x43', '6x48', '6x51', '6x54', '6x55', '7x35', '7x37', '7x38'], seq_nums1=[52, 102, 124, 125, 128, 129, 132, 207, 210, 271, 274, 277, 278, 294, 296, 297], seq_nums2=[7, 57, 79, 80, 83, 84, 87, 162, 165, 226, 229, 232, 233, 249, 251, 252]))
                 
-        Homology_model = HomologyModeling('gp132_human', 'Inactive', ['Inactive'])
+        Homology_model = HomologyModeling('grpr_human', 'Inactive', ['Inactive'])
         alignment = Homology_model.run_alignment()
         Homology_model.build_homology_model(alignment)#, switch_bulges=False, switch_constrictions=False, switch_rotamers=False)
 
@@ -142,7 +142,7 @@ class HomologyModeling(object):
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
         main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
-        
+
         # loops
         if loops==True:
             loop_stat = OrderedDict()
@@ -943,23 +943,36 @@ class Bulges(object):
         '''
         gn = self.gn
         parse = GPCRDBParsingPDB()
-        for structure, value in similarity_table.items():  
-            this_anomaly = ProteinAnomaly.objects.get(generic_number__label=gn)
+        for structure, value in similarity_table.items():
+            this_anomaly = ProteinAnomaly.objects.filter(generic_number__label=gn)
             if bulge_in_reference==True:
-                if this_anomaly in structure.protein_anomalies.all():
-                    gn_list = [parse.gn_indecer(gn,'x',-2),parse.gn_indecer(gn,'x',-1),gn,
-                               parse.gn_indecer(gn,'x',+1),parse.gn_indecer(gn,'x',+2)]
-                    alt_bulge = parse.fetch_residues_from_pdb(structure, gn_list)
-                    self.template = structure
-                    break
+                try:
+                    for anomaly in this_anomaly:
+                        if anomaly in structure.protein_anomalies.all():
+                            gn_list = [parse.gn_indecer(gn,'x',-2),parse.gn_indecer(gn,'x',-1),gn,
+                                       parse.gn_indecer(gn,'x',+1),parse.gn_indecer(gn,'x',+2)]
+                            alt_bulge = parse.fetch_residues_from_pdb(structure, gn_list)
+                            self.template = structure
+                            return alt_bulge
+                except:
+                    pass
             elif bulge_in_reference==False:
-                if this_anomaly not in structure.protein_anomalies.all():
-                    gn_list = [parse.gn_indecer(gn,'x',-2), parse.gn_indecer(gn,'x',-1),
-                               parse.gn_indecer(gn,'x',+1), parse.gn_indecer(gn,'x',+2)]
-                    alt_bulge = parse.fetch_residues_from_pdb(structure, gn_list)
-                    self.template = structure
-                    break
-        return alt_bulge
+                try:
+                    suitable_temp = []
+                    for anomaly in this_anomaly:
+                        if anomaly not in structure.protein_anomalies.all():
+                            pass
+                        else:
+                            suitable_temp.append('no')
+                    if 'no' not in suitable_temp:
+                        gn_list = [parse.gn_indecer(gn,'x',-2), parse.gn_indecer(gn,'x',-1),
+                                   parse.gn_indecer(gn,'x',+1), parse.gn_indecer(gn,'x',+2)]
+                        alt_bulge = parse.fetch_residues_from_pdb(structure, gn_list)
+                        self.template = structure
+                        return alt_bulge
+                except:
+                    pass
+        return None
             
 class Constrictions(object):
     ''' Class to handle constrictions in GPCRs.
@@ -981,46 +994,36 @@ class Constrictions(object):
         '''
         gn = self.gn
         parse = GPCRDBParsingPDB()
-        if constriction_in_reference==True:
-            excludees = Residue.objects.filter(generic_number__label=gn)
-            excludee_proteins = list(OrderedDict.fromkeys([res.protein_conformation.protein.parent.entry_name 
-                                        for res in excludees if res.protein_conformation.protein.parent!=None]))
-            matches = Residue.objects.filter(generic_number__label=parse.gn_indecer(gn,'x',-1))
-        elif constriction_in_reference==False:
-            matches = Residue.objects.filter(generic_number__label=gn)
-        for structure, value in similarity_table.items():  
-            protein_object = Protein.objects.get(id=structure.protein_conformation.protein.parent.id)
-            try:                            
-                for match in matches:
-                    if constriction_in_reference==True:
-                        if (match.protein_conformation.protein.parent==protein_object and 
-                            match.protein_conformation.protein.parent.entry_name not in excludee_proteins):
-                            self.constriction_templates.append(structure)
-                    elif constriction_in_reference==False:
-                        if match.protein_conformation.protein.parent==protein_object:
-                            self.constriction_templates.append(structure)
-            except:
-                pass
-        
-        for temp in self.constriction_templates:
-            try:
-                if constriction_in_reference==True:
-                    alt_bulge = parse.fetch_residues_from_pdb(temp,
-                                                              [parse.gn_indecer(gn,'x',-2),
-                                                               parse.gn_indecer(gn,'x',-1),
-                                                               parse.gn_indecer(gn,'x',+1),
-                                                               parse.gn_indecer(gn,'x',+2)])
-                elif constriction_in_reference==False:
-                    alt_bulge = parse.fetch_residues_from_pdb(temp,
-                                                              [parse.gn_indecer(gn,'x',-2),
-                                                               parse.gn_indecer(gn,'x',-1),gn,
-                                                               parse.gn_indecer(gn,'x',+1),
-                                                               parse.gn_indecer(gn,'x',+2)])
-                self.template = temp              
-                break
-            except:
-                self.template = None               
-        return alt_bulge
+        for structure, value in similarity_table.items():
+            this_anomaly = ProteinAnomaly.objects.filter(generic_number__label=gn)
+            if constriction_in_reference==True:
+                try:                      
+                    for anomaly in this_anomaly:
+                        if anomaly in structure.protein_anomalies.all():
+                            gn_list = [parse.gn_indecer(gn,'x',-2),parse.gn_indecer(gn,'x',-1),
+                                       parse.gn_indecer(gn,'x',+1),parse.gn_indecer(gn,'x',+2)]
+                            alt_const = parse.fetch_residues_from_pdb(structure, gn_list)
+                            self.template = structure
+                            return alt_const
+                except:
+                    pass
+            elif constriction_in_reference==False:
+                try:
+                    suitable_temp = []
+                    for anomaly in this_anomaly:
+                        if anomaly not in structure.protein_anomalies.all():
+                            pass
+                        else:
+                            suitable_temp.append('no')
+                    if 'no' not in suitable_temp:
+                        gn_list = [parse.gn_indecer(gn,'x',-2), parse.gn_indecer(gn,'x',-1),gn,
+                                   parse.gn_indecer(gn,'x',+1), parse.gn_indecer(gn,'x',+2)]
+                        alt_const = parse.fetch_residues_from_pdb(structure, gn_list)
+                        self.template = structure
+                        return alt_const
+                except:
+                    pass              
+        return None
         
 class GPCRDBParsingPDB(object):
     ''' Class to manipulate cleaned pdb files of GPCRs.
@@ -1073,10 +1076,10 @@ class GPCRDBParsingPDB(object):
         for gn in generic_numbers:
             try:
                 rotamer = Rotamer.objects.get(structure__protein_conformation=structure.protein_conformation, 
-                                              residue__generic_number__label=gn, structure__preferred_chain=structure.preferred_chain)
+                            residue__generic_number__label=gn, structure__preferred_chain=structure.preferred_chain)
             except:
                 rotamer = Rotamer.objects.get(structure__protein_conformation=structure.protein_conformation, 
-                                              residue__sequence_number=gn, structure__preferred_chain=structure.preferred_chain)
+                            residue__sequence_number=gn, structure__preferred_chain=structure.preferred_chain)
             io = StringIO(rotamer.pdbdata.pdb)
             rota_struct = PDB.PDBParser().get_structure('structure', io)[0]
             for chain in rota_struct:
