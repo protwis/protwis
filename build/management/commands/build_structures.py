@@ -423,7 +423,7 @@ class Command(BaseBuild):
                             if ligand['name'] and ligand['name'] != 'None': # some inserted as none.
 
                                 # use pubchem_id
-                                if ligand['pubchemId']:
+                                if 'pubchemId' in ligand and ligand['pubchemId'] and ligand['pubchemId'] != 'None':
                                     # create ligand
                                     l = Ligand()
 
