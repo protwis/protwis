@@ -10,7 +10,7 @@ from mutation.models import *
 
 import os, shutil, subprocess
 import uuid
-from phylogenetic_trees.PrepareTree2 import *
+from phylogenetic_trees.PrepareTree import *
 from collections import OrderedDict
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
