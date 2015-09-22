@@ -238,7 +238,7 @@ class Command(BaseBuild):
                                 protein_conformation__protein__parent=con.parent, representative=True, state=s.state)
                         except Structure.DoesNotExist:
                             self.logger.error("No representative structure for protein {}".format(
-                                protein_conformation.protein.parent))
+                                s.protein_conformation.protein.parent))
                             continue
 
                     # get the PDB file and save to DB
@@ -307,7 +307,7 @@ class Command(BaseBuild):
                         self.logger.warning('No structure type specified in PDB file {}'.format(sd['pdb']))
 
                     matched = 0
-                    if 'ligand' in sd:
+                    if 'ligand' in sd and sd['ligand']:
                         if isinstance(sd['ligand'], list):
                             ligands = sd['ligand']
                         else:
@@ -605,15 +605,6 @@ class Command(BaseBuild):
                     # stabilizing agents, FIXME - redesign this!
                     # fusion proteins moved to constructs, use this for G-proteins and other agents?
                     aux_proteins = []
-                    print(sd['g_protein'])
-                    if sd['g_protein'] is 'None':
-                        print('X')
-                    if sd['g_protein'] is not 'None':
-                        print('Y')
-                    if sd['g_protein'] == 'None':
-                        print('Z')
-                    if sd['g_protein'] != 'None':
-                        print('Q')
                     if 'g_protein' in sd and sd['g_protein'] and sd['g_protein'] != 'None':
                         aux_proteins.append('g_protein')
                     if 'auxiliary_protein' in sd and sd['auxiliary_protein'] and sd['auxiliary_protein'] != 'None':
