@@ -83,10 +83,8 @@ class Command(BaseCommand):
         yaml_other_data = {
             'construct' : data[self.csv_fields['pdb_code']].lower(),
             'segments' : self.get_segments_data(data[self.csv_fields['prot_name']]),
-            'bulges' : '',
-            'constrictions' : '',
             }
-        out_fh = open('{}.yaml'.format(os.sep.join([self.structure_build_data_dir, 'pdb_structures', data[self.csv_fields['pdb_code']]])), 'w')
+        out_fh = open('{}.yaml'.format(os.sep.join([self.structure_build_data_dir, 'structures', data[self.csv_fields['pdb_code']]])), 'w')
         out_fh.write('# PDB data\n\n')
         yaml.dump(yaml_pdb_data, out_fh, default_flow_style=False)
         out_fh.write('\n# Structure annotations\n\n')
@@ -99,10 +97,6 @@ class Command(BaseCommand):
         yaml_construct = {
             'name' : data[self.csv_fields['pdb_code']].lower(),
             'protein' : data[self.csv_fields['prot_name']],
-            'truncations' : '',
-            'mutations' : '',
-            'fusion_proteins' : [{'name': data[self.csv_fields['stabilizing_agent']], 'sequence': '',
-                'positions': [1,2]}]
             }
 
         construct_fh = open('{}.yaml'.format(os.sep.join([self.structure_build_data_dir, 'constructs', data[self.csv_fields['pdb_code']]])), 'w')

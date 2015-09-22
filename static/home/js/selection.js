@@ -122,11 +122,13 @@ function SelectionSpeciesToggle(species_id) {
     });
 }
 
-function ExpandSegment(segment_id) {
+function ExpandSegment(segment_id, position_type, scheme) {
     $.ajax({
         'url': '/common/expandsegment',
         'data': {
-            segment_id: segment_id
+            segment_id: segment_id,
+            position_type: position_type,
+            numbering_scheme: (typeof scheme === 'undefined') ? false : scheme
         },
         'type': 'GET',
         'success': function(data) {
@@ -172,7 +174,79 @@ function SetTreeSelection(option_no, option_id) {
         },
         'type': 'GET',
         'success': function (data) {
-            $("#tree_selection").html(data);
+            $("#tree_buttons").html(data);
         }
+    });
+}
+
+function SelectResidueFeature(selection_type, selection_subtype, selection_id, feature) {
+    $.ajax({
+        'url': '/common/selectresiduefeature',
+        'data': {
+            selection_type: selection_type,
+            selection_subtype: selection_subtype,
+            selection_id: selection_id,
+            feature: feature
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}
+
+function AddResidueGroup(selection_type) {
+    $.ajax({
+        'url': '/common/addresiduegroup',
+        'data': {
+            selection_type: selection_type
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}
+
+function SelectResidueGroup(selection_type, group_id) {
+    $.ajax({
+        'url': '/common/selectresiduegroup',
+        'data': {
+            selection_type: selection_type,
+            group_id: group_id
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}
+
+function RemoveResidueGroup(selection_type, group_id) {
+    $.ajax({
+        'url': '/common/removeresiduegroup',
+        'data': {
+            selection_type: selection_type,
+            group_id: group_id
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}
+
+function SetGroupMinMatch(selection_type, group_id, min_match) {
+    $.ajax({
+        'url': '/common/setgroupminmatch',
+        'data': {
+            selection_type: selection_type,
+            group_id: group_id,
+            min_match: min_match
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
     });
 }

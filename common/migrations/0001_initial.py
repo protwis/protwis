@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Publication',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('title', models.TextField()),
                 ('authors', models.TextField()),
                 ('year', models.IntegerField()),
@@ -26,8 +26,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='PublicationJournal',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
-                ('slug', models.CharField(max_length=30, null=True)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
+                ('slug', models.CharField(null=True, max_length=30)),
                 ('name', models.TextField()),
             ],
             options={
@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='WebLink',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('index', models.TextField()),
             ],
             options={
@@ -47,7 +47,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='WebResource',
             fields=[
-                ('id', models.AutoField(auto_created=True, verbose_name='ID', serialize=False, primary_key=True)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, verbose_name='ID', serialize=False)),
                 ('slug', models.SlugField(max_length=20)),
                 ('name', models.CharField(max_length=200, default='')),
                 ('url', models.TextField()),
@@ -69,6 +69,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='publication',
             name='web_link',
-            field=models.ForeignKey(to='common.WebLink', null=True),
+            field=models.ForeignKey(null=True, to='common.WebLink'),
         ),
     ]

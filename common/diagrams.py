@@ -14,12 +14,17 @@ def uniqid(prefix='', more_entropy=False):
     return uniqid
 
 class Diagram:
-    def create(self, content,sizex,sizey,name):
+    def create(self, content,sizex,sizey,name, nobuttons):
         #diagram_js = self.diagramJS()
-        return ("<svg id=\""+name+"\" " +
-        "xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""+str(sizex)+"\" height=\""+str(sizey)+"\" " +
-        "style='stroke-width: 0px; background-color: white;'>\n"+content+"</svg>" +
-        self.drawColorPanel() ) #width=\"595\" height=\"430\"
+        if nobuttons:
+            return ("<svg id=\""+name+"\" " +
+            "xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""+str(sizex)+"\" height=\""+str(sizey)+"\" " +
+            "style='stroke-width: 0px; background-color: white;'>\n"+content+"</svg>") #width=\"595\" height=\"430\"
+        else:
+            return ("<svg id=\""+name+"\" " +
+            "xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""+str(sizex)+"\" height=\""+str(sizey)+"\" " +
+            "style='stroke-width: 0px; background-color: white;'>\n"+content+"</svg>" +
+            self.drawColorPanel() ) #width=\"595\" height=\"430\"
 
     def drawToolTip(self):
         output2 = """<g id='tool-tip-{}' transform='translate(0,0)' visibility='hidden'>
@@ -79,7 +84,7 @@ class Diagram:
 
         print(str(self.receptorId))
 
-        output += '<br><button style="width:120px;" onclick="applyPresentColors(\''+self.type+'\')">Properities</button> <button style="width:120px;" onclick="resetColors(\''+self.type+'\')">Clear</button>'
+        output += '<br><button style="width:120px;" onclick="applyPresentColors(\''+self.type+'\')">Properties</button> <button style="width:120px;" onclick="resetColors(\''+self.type+'\')">Clear</button>'
         output += '<br><button style="width:120px;" onclick="ajaxMutants(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Mutants</button>'
         output += ' <button style="width:220px;" onclick="ajaxInteractions(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Interactions from Crystals</button>'
 

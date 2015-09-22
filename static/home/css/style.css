@@ -78,3 +78,14 @@ h1, h2, h3, h4 { margin-top: 0px; }
 .btn-small [class*=" icon-"] {
   margin-top: 0;
 }
+select.form-control {
+    width: auto;
+    height:22px;
+    font-size: 11px;
+    display: inline;
+}
+input.form-control {
+    width: 250px;
+    font-size: 14px;
+    display: inline;
+}

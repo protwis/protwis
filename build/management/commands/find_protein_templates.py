@@ -1,74 +1,98 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
+from django.db import connection 
 
+from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinSequenceType, ProteinSegment,
     ProteinConformationTemplateStructure)
 from structure.models import Structure
 from common.alignment import Alignment
 
-import logging
+from cProfile import Profile
 
-
-class Command(BaseCommand):
+class Command(BaseBuild):
     help = 'Goes though all protein records and finds the best structural templates for the whole 7TM domain, and ' \
         + 'each helix individually'
 
-    logger = logging.getLogger(__name__)
+    def add_arguments(self, parser):
+        parser.add_argument('--njobs', action='store', dest='njobs', help='Number of jobs to run')
+        parser.add_argument('--profile', action='store_true', dest='profile', default=False,
+            help='Profile the script with cProfile')
+
+    # segments
+    segments = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS)
+
+    # fetch representative (inactive) structures FIXME add active structure??
+    structures = Structure.objects.filter(representative=True,
+        protein_conformation__state__slug=settings.DEFAULT_PROTEIN_STATE).prefetch_related(
+        'protein_conformation__protein__parent__family')
+
+    # fetch all protein conformations
+    pconfs = ProteinConformation.objects.all().prefetch_related('protein__family', 'template_structure')
 
     def handle(self, *args, **options):
-        # find protein templates
+        # run with profiling
+        if options['profile']:
+            profiler = Profile()
+            profiler.runcall(self._handle, *args, **options)
+            profiler.print_stats()
+        # run without profiling
+        else:
+            self._handle(*args, **options)
+
+    def _handle(self, *args, **options):
+        # how many jobs to run?
+        if 'njobs' in options and options['njobs']:
+            njobs = int(options['njobs'])
+        else:
+            njobs = 1
+
         try:
-            self.find_protein_templates()
+            self.logger.info('ASSIGNING STRUCTURE TEMPLATES FOR PROTEINS')
+            self.prepare_input(njobs, self.pconfs)
+            self.logger.info('COMPLETED ASSIGNING STRUCTURE TEMPLATES FOR PROTEINS')
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
 
-    def find_protein_templates(self):
-        self.logger.info('ASSIGNING STRUCTURE TEMPLATES FOR PROTEINS')
-
-        # segments
-        segments = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS)
-
-        # fetch all conformations of wild-type proteins
-        pconfs = ProteinConformation.objects.all().select_related(
-            'protein')
-
-        # fetch wild-type sequences of receptors with available structures
-        structures = Structure.objects.order_by('protein_conformation__protein__parent', 'resolution').distinct(
-            'protein_conformation__protein__parent').select_related('protein_conformation__protein__parent__family')
+    def main_func(self, positions):
+        # pconfs
+        if not positions[1]:
+            pconfs = self.pconfs[positions[0]:]
+        else:
+            pconfs = self.pconfs[positions[0]:positions[1]]
 
         # find templates
         for pconf in pconfs:
             # filter structure sequence queryset to include only sequences from within the same class
             pconf_class = pconf.protein.family.slug[:3]
-            class_sps = structures.filter(protein_conformation__protein__parent__family__slug__startswith=pconf_class)
+            class_sps = self.structures.filter(
+                protein_conformation__protein__parent__family__slug__startswith=pconf_class)
             sps = []
             if class_sps.exists():
                 for structure in class_sps:
                     sps.append(structure.protein_conformation.protein.parent) # use the wild-type sequence
             else:
-                for structure in structures:
+                for structure in self.structures:
                     sps.append(structure.protein_conformation.protein.parent) # use the wild-type sequence
 
             # overall
-            template = self.find_segment_template(pconf, sps, segments)
-            template_structure = self.fetch_template_structure(structures, template.protein.entry_name)
+            template = self.find_segment_template(pconf, sps, self.segments)
+            template_structure = self.fetch_template_structure(self.structures, template.protein.entry_name)
             pconf.template_structure = template_structure
             pconf.save()
             self.logger.info("Assigned {} as overall template for {}".format(template_structure, pconf))
 
             # for each segment
-            for segment in segments:
+            for segment in self.segments:
                 template = self.find_segment_template(pconf, sps, [segment])
-                template_structure = self.fetch_template_structure(structures, template.protein.entry_name)
+                template_structure = self.fetch_template_structure(self.structures, template.protein.entry_name)
                 pcts, created = ProteinConformationTemplateStructure.objects.get_or_create(protein_conformation=pconf,
                     protein_segment=segment, defaults={'structure': template_structure})
                 if pcts.structure != template_structure:
                     pcts.structure = template_structure
                     pcts.save()
                 self.logger.info("Assigned {} as {} template for {}".format(template_structure, segment, pconf))
-
-        self.logger.info('COMPLETED ASSIGNING STRUCTURE TEMPLATES FOR PROTEINS')
 
     def find_segment_template(self, pconf, sconfs, segments):
             a = Alignment()

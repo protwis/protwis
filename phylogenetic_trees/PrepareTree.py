@@ -2,6 +2,7 @@
 import urllib
 from Bio import Phylo
 import sys,os
+from collections import defaultdict
 
 
 class PrepareTree:
@@ -102,8 +103,16 @@ class PrepareTree:
         return out
 
 #### Get colors based on family trees ####
+    def trim_colour(self,m):
+        if m > 256:
+            return m-256
+        else:
+            return m
+    def modify_rings(options):
+        pass
+
     def get_colours(self,inp):
-        cl = {'A':'Class A','B':'Class B','C':'Class C','D':'Class F','E':'cAMP Receptors','K':'Vomeronasal','L':'Taste'}
+        #cl = {'A':'Class A','B':'Class B','C':'Class C','D':'Class F','E':'cAMP Receptors','K':'Vomeronasal','L':'Taste'}
         self.styles += '<cryst fill=\'#'+ self.HSV_2_RGB((136,130,225))+'\' stroke=\'#'+self.HSV_2_RGB((136,130,225))+'\'/><none fill=\'#EEE\' stroke=\'#DDD\'/>'
         self.classes = []
         self.ligands = []
@@ -136,7 +145,6 @@ class PrepareTree:
                 inp[acc]['type']='_'.join(fam[:3])
                 if not '_'.join(fam[:3]) in self.families:
                     self.families.append('_'.join(fam[:3]))
-
         self.data = inp
                 
     #### Get colours ####
@@ -145,37 +153,42 @@ class PrepareTree:
         ncolours = len(self.families)
         self.ligcolors = {}
         self.famcolors = {}
-        hue_step = 256/nligands
+        famcount={}
+        hue_step = 256/(nligands+1)
         hue_count = 0
-        start_hue = 360-(hue_step/2)
+        start_hue = 256-(hue_step/2)
         current_hue = 0
         hue_range = [start_hue,start_hue+hue_step]
         for a in sorted(self.ligands):
-            colour = self.HSV_2_RGB((int(current_hue),127,128))
-            self.styles+=('<%s fill=\'#%s\' stroke=\'#%s\' class=\'chart\' id=\'%s\'/>' %(a,colour,'000000',a))
+            print(a)
+            colour = self.HSV_2_RGB((int(self.trim_colour(current_hue)),127,220))
+            self.styles+=('<%s fill=\'#%s\' stroke=\'#%s\' class=\'chart1\' id=\'%s\'/>' %(a,colour,'000000',a))
             self.defaultColours[a]=['#'+colour,'#000000']
-            self.ligcolors[a]=[colour,hue_range,0]
+            self.ligcolors[a]=[colour,list(hue_range),0]
             hue_count +=1
             current_hue = hue_step*hue_count
-            hue_range[0] += hue_step*hue_count
-            hue_range[1] += hue_step*hue_count
+            hue_range[0] += hue_step 
+            hue_range[1] += hue_step
         hue_count = 0
         for a in sorted(self.families):
-            n=ncolours
-            sat_step = 200/n
-            counter =0
+            lig = '_'.join(a.split('_')[:2])###FIX
+            if lig in famcount:
+                famcount[lig]+=1
+            else:
+                famcount[lig]=1
+        for a in sorted(self.families):
             lig = '_'.join(a.split('_')[:2])###FIX
             try:
                 hue_range = self.ligcolors[lig][1]
-                hue_step = (hue_range[1]-hue_range[0])/(ncolours+1)
-                self.ligcolors[lig][2]+=hue_step/2
+                hue_step = (hue_range[1]-hue_range[0])/(famcount[lig]+1)
+                if self.ligcolors[lig][2] == 0:
+                    self.ligcolors[lig][2]+=hue_step/2
                 if hue_step == 0:
                     hue_step = 1
-                colour = self.HSV_2_RGB((int(hue_count*hue_step+self.ligcolors[lig][2]),127,180))
-                self.styles+=('<%s fill=\'#%s\' stroke=\'#%s\' class=\'chart\' id=\'%s\'/>' %(a,colour,'000000',a))
+                colour = self.HSV_2_RGB((self.trim_colour(int(hue_range[0]+self.ligcolors[lig][2])),127,220))
+                self.styles+=('<%s fill=\'#%s\' stroke=\'#%s\' class=\'chart2\' id=\'%s\'/>' %(a,colour,'000000',a))
                 self.defaultColours[a]=['#'+colour,'#000000']
                 self.famcolors[a]=colour
-                counter +=1
                 self.ligcolors[lig][2]+=hue_step
             except KeyError:
                 continue
@@ -183,9 +196,10 @@ class PrepareTree:
                
         v_step = 180/nclasses
         v_count = 0
-        for a in self.classes:
+        for a in sorted(self.classes):
             colour = self.HSV_2_RGB((0,0,10+(v_count*int(v_step))))
-            self.styles+=('<%s fill=\'#%s\' stroke=\'#%s\' label=\'%s\' labelStyle=\'sectorHighlightText\' class=\'chart\' id=\'%s\'/>' %(a,colour,colour,cl[a].upper(),a))
+            self.styles+=('<%s fill=\'#%s\' stroke=\'#%s\' label=\'%s\' labelStyle=\'sectorHighlightText\' class=\'chart0\' id=\'%s\'/>' %(a,colour,colour,self.famdict[a].upper(),a))
+            self.ligcolors[a]=[colour]
             self.defaultColours[a]=['#'+colour,'#'+colour]
             self.styles+="<sectorHighlightText font-family='Verdana' font-size='10' font-weight='bold' fill='#FFFFFF' rotate='90'/>"
             v_count +=1
@@ -222,7 +236,7 @@ class PrepareTree:
                                     'Y': ['#18FF0B', '#000000'],'W': ['#0BCF00', '#000000'],
                                     'H': ['#0093DD', '#000000'],'P': ['#CC0099', '#FDFF7B'],
                                     'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
-                                    '-': ['#FFFFFF', '#000000']    
+                                    '-': ['#000000', '#000000']    
                                     }
         fillcolors = [['#EEEEEE', '#000000']]
         for key,value in presetColors.items():
@@ -247,21 +261,22 @@ class PrepareTree:
         w = open(d+'/rong','w').write(z.replace('-',''))
         raw = open(d+'/raw.xml','w')
         Phylo.convert(d+'/rong','newick',raw,'phyloxml')
+        #tree1 = Phylo.read(z, 'newick')
+        #Phylo.write(tree1, raw, 'phyloxml')
         raw.close()
         xml = open(d+'/raw.xml','r').readlines()
         out = open(d+'/out.xml','w')
         self.get_colours(family)
-        print(branches)
         charts = ''
         flag = False
         flag2 = ''
         stylesflag=False
         charts += "<family type='binary' thickness='10' bufferInner='0'/>"
         charts += "<ligand type='binary' thickness='10' bufferInner='1'/>"
-        charts += "<class type='binary' thickness='10' bufferInner='1'/>"
+        charts += "<class type='binary' thickness='10' bufferInner='1' bufferOuter='1'/>"
         charts = '<charts>'+charts+'</charts>'
+
         for line in xml:
-            #print('dupajasia')
             if stylesflag == True:
                 out.write("<render>"+charts+"<styles>"+self.styles+"</styles></render>")
                 stylesflag = False
@@ -286,25 +301,22 @@ class PrepareTree:
             ################# Reformat names ############################
             if '<name>' in line:
                 name = line.split('<')[1].split('>')[1]
-                #recname,fam,desc,spec = family[name]
                 chart = '<chart>'
                 chart += '<family>%s</family>' %(self.data[name]['type'])
                 chart += '<ligand>'+self.data[name]['ligand']+'</ligand>'
-#                if len(self.classes)>1:
                 chart += '<class>'+self.data[name]['class']+'</class>'
                 chart += '</chart>'
                 flag2 = [name,chart]
                 line = line.replace(name,self.data[name]['name']).replace('<name', "<name bgStyle='%s'" %self.data[name]['family'])
-#                if recname in crystalized_ligands:
-#                    line = line.replace('<name>','<name bgStyle=\'cryst\'>')
-#                else:
-#                    line = line.replace('<name>','<name bgStyle=\'none\'>')
             ############## Add annotations and descriptions #############
             if '<branch_length>' in line:
+                line=line.replace('>1E05<','>0.00001<').replace('-','')
+                if '>0.0<' in line and flag == True:
+                    line=line.replace('>0.0<','>0.00001<')
                 if flag2 != '':
-                    line = line.strip('\n')+' <annotation><desc>'+self.data[flag2[0]]['description']+' ('+self.data[flag2[0]]['species']+')'+'</desc><uri>http://tools.gpcr.org/visualise/protein/'+self.data[flag2[0]]['link']+'</uri> </annotation>'+flag2[1]#flag3[3]
+                    line = line.strip('\n')+' <annotation><desc>'+self.data[flag2[0]]['description']+' ('+self.data[flag2[0]]['species']+')'+'</desc><uri>http://tools.gpcr.org/visualise/protein/'+self.data[flag2[0]]['link']+'</uri> </annotation>'+flag2[1]
                     flag2=''
-            out.write(line.strip('\n'))
+            out.write(line)#.strip('\n'))
         ###SVG legend###
         column = 200
         verse = 20
@@ -313,28 +325,37 @@ class PrepareTree:
         width1 = 300
         width2 = 300
         if 10+verse*len(self.ligands) > verse*len(self.families)+10:
-            height = 10+verse*len(self.ligands)
+            height = 20+verse*len(self.ligands)
         else:
             height = verse*len(self.families)+10
-        self.legend ='<?xml version="1.0" standalone="no"?><svg class="legend" id="legendSVG" width="'+str(width1+width2+100)+'px" height="'+str(height+70)+'px" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="leg_group" class="legend"><text x="0" y="30" font-family="Verdana" font-size="20" font-weight="bold">Ligand type (Outer ring)</text><rect x="0" y="70" width="'+str(width1)+'" height="'+str(verse*len(self.ligands)+10)+'" stroke="black" fill="transparent" stroke-width="5"/>'
+        self.legend ='<?xml version="1.0" standalone="no"?><svg class="legend" id="legendSVG" width="'+str(width1*3+100)+'px" height="'+str(height+70)+'px" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="leg_group" class="legend"><g class="chart0"><text x="0" y="30" font-family="Verdana" font-size="20" font-weight="bold">Class (Outer ring)</text><rect x="0" y="70" width="'+str(width1)+'" height="'+str(verse*len(self.ligands)+10)+'" stroke="black" fill="transparent" stroke-width="5"/>'
         count = 0
-        for n in sorted(self.ligands):
+        for n in sorted(self.classes):
             try:
                 name = self.famdict[n]
             except:
                 name = n
             self.legend += '<rect x="10" y="'+str(80+count*20)+'" height="10" width="30" class="chart" id="'+n+'" style="stroke:#000000; fill: #'+self.ligcolors[n][0]+'"/><text x="45" y="'+str((count*20)+90)+'" style="font-family:Verdana; font-size:12;">'+name+'</text>'
             count +=1
-        self.legend+='<rect x="'+str(width1+40)+'" y="70" width="'+str(width2+45)+'" height="'+str(verse*len(self.families)+10)+'" stroke="black" fill="transparent" stroke-width="5"/><text x="'+str(width1+40)+'" y="30" font-family="Verdana" font-size="20" font-weight="bold">Receptor type (Inner ring)</text>'
+        self.legend+='</g><g class="chart1"><text x="'+str(width1+20)+'" y="30" font-family="Verdana" font-size="20" font-weight="bold">Ligand type (Middle ring)</text><rect x="'+str(width1+20)+'" y="70" width="'+str(width1)+'" height="'+str(verse*len(self.ligands)+10)+'" stroke="black" fill="transparent" stroke-width="5"/>'
+        count = 0
+        for n in sorted(self.ligands):
+            try:
+                name = self.famdict[n]
+            except:
+                name = n
+            self.legend += '<rect x="'+str(width1+30)+'" y="'+str(80+count*20)+'" height="10" width="30" class="chart" id="'+n+'" style="stroke:#000000; fill: #'+self.ligcolors[n][0]+'"/><text x="'+str(width1+65)+'" y="'+str((count*20)+90)+'" style="font-family:Verdana; font-size:12;">'+name+'</text>'
+            count +=1
+        self.legend+='</g><g class="chart2"><rect x="'+str(width1*2+40)+'" y="70" width="'+str(width2+45)+'" height="'+str(verse*len(self.families)+10)+'" stroke="black" fill="transparent" stroke-width="5"/><text x="'+str(width1*2+40)+'" y="30" font-family="Verdana" font-size="20" font-weight="bold">Receptor type (Inner ring)</text>'
         count2 = 0
         for n in sorted(self.families):
             try:
                 name2 = self.famdict[n]
             except:
                 name2 = n
-            self.legend += '<rect x="'+str(width1+50)+'" y="'+str(80+count2*20)+'" height="10" width="30" class="chart" id="'+n+'" style="stroke:#000000; fill: #'+self.famcolors[n]+'"/><text x="'+str(width1+85)+'" y="'+str((count2*20)+90)+'" style="font-family:Verdana; font-size:12;">'+name2+'</text>'
+            self.legend += '<rect x="'+str(width1*2+50)+'" y="'+str(80+count2*20)+'" height="10" width="30" class="chart" id="'+n+'" style="stroke:#000000; fill: #'+self.famcolors[n]+'"/><text x="'+str(width1*2+85)+'" y="'+str((count2*20)+90)+'" style="font-family:Verdana; font-size:12;">'+name2+'</text>'
             count2 +=1
-        self.legend += '</g></svg>'
+        self.legend += '</g></g></svg>'
         self.box = self.drawColorPanel()
 
 if __name__ == '__main__':

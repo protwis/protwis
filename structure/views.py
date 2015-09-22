@@ -2,6 +2,7 @@
 from django.conf import settings
 from django.views.generic import TemplateView
 from django.http import HttpResponse, JsonResponse
+from django.db.models import Count, Q, Prefetch
 from django import forms
 
 from protein.models import Gene, ProteinSegment
@@ -9,6 +10,8 @@ from structure.models import Structure
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
+from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
+from protein.models import Protein
 from common.views import AbsSegmentSelection,AbsReferenceSelection
 from common.selection import Selection
 from common.extensions import MultiFileField
@@ -34,13 +37,52 @@ class StructureBrowser(TemplateView):
 
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
-            context['crystals'] = Structure.objects.all().prefetch_related("protein_conformation__protein", "protein_conformation__protein__endogenous_ligands", "publication__web_link", "stabilizing_agents")
+            context['structures'] = Structure.objects.all().prefetch_related(
+                "protein_conformation__protein__parent__endogenous_ligands", "stabilizing_agents",
+                "protein_conformation__protein__family__parent__parent", "publication__web_link__web_resource",
+                Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
+                annotated=True).prefetch_related('ligand')))
         except Structure.DoesNotExist as e:
             pass
 
         return context
 
+def StructureDetails(request, pdbname):
+    """
+    Show structure details
+    """
+    pdbname = pdbname
+    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name','structure_ligand_pair__pdb_reference','structure_ligand_pair__annotated').filter(structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
+    resn_list = ''
 
+    for structure in structures:
+        if structure['structure_ligand_pair__annotated']:
+            resn_list += ",\""+structure['structure_ligand_pair__pdb_reference']+"\""
+    print(resn_list)
+
+    crystal = Structure.objects.get(pdb_code__index=pdbname)
+    p = Protein.objects.get(protein=crystal.protein_conformation.protein)
+    residues = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname).order_by('rotamer__residue__sequence_number')
+    return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list})
+
+def ServePdbDiagram(request, pdbname):       
+    structure=Structure.objects.filter(pdb_code__index=pdbname) 
+    if structure.exists():
+        structure=structure.get()
+    else:
+         quit() #quit!
+
+    if structure.pdb_data is None:
+        quit()
+
+    response = HttpResponse(structure.pdb_data.pdb, content_type='text/plain')
+    return response
+
+    
+def ServePdbLigandDiagram(request,pdbname,ligand):      
+    pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(Q(ligand__properities__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
+    response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
+    return response
 
 class StructureStatistics(TemplateView):
     """
@@ -54,14 +96,15 @@ class StructureStatistics(TemplateView):
 
         #Prepare chart with unique crystallized receptors by year
         all_structs = list(Structure.objects.all().prefetch_related('protein_conformation__protein'))
-        years = list(set([x.publication_date.year for x in all_structs]))
+        years = self.get_years_range(list(set([x.publication_date.year for x in all_structs])))
         unique_structs = list(Structure.objects.order_by('protein_conformation__protein__parent', 'state',
-            'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein'))
+            'publication_date', 'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein'))
         families = list(set([x.protein_conformation.protein.get_protein_family() for x in unique_structs]))
         
         extra = {
             'x_axis_format': '',
             'y_axis_format': 'f',
+            'stacked': 'True',
             }
         context['charttype'] = "multiBarChart"
         context['chartdata'] = self.get_per_family_cumulative_data_series(years, families, unique_structs)
@@ -79,6 +122,13 @@ class StructureStatistics(TemplateView):
         context['extra_reso'] = extra#{'x_axis_format': '[]', 'y_axis_format': 'f'}
 
         return context
+
+
+    def get_years_range(self, years_list):
+
+        min_y = min(years_list)
+        max_y = max(years_list)
+        return range(min_y, max_y+1)
 
 
     def get_per_family_data_series(self, years, families, structures):
@@ -494,19 +544,21 @@ class FragmentSuperpositionIndex(TemplateView):
 
     #Input file form data
     header = "Select a file to upload:"
-    upload_form_data = OrderedDict([
-        ("pdb_file", forms.FileField()),
-        ("similarity", forms.ChoiceField(choices=(('identical','Use fragments with identical residues'),
-                     ('similar','Use fragments with residues of similar properties')),
-            widget=forms.RadioSelect())),
-        ("representative", forms.ChoiceField(choices=(('closest','Use fragments from the evolutionary closest crystal structure'),
-                     ('any','Use all available fragments')), widget=forms.RadioSelect())),
-        ("state", forms.ChoiceField(choices=(('active', 'Agonist-bound structures'),('inactive', 'Antagonist-bound structures')),widget=forms.Select()))
-        ])
-    form_code = forms.Form()
-    form_code.fields = upload_form_data
-    form_code.initial={'similarity': 'similar', 'representative': 'closest'}
-    form_id = 'fragments'
+    #Can't control the class properly - staying with the dirty explicit html code
+    form_code = """
+    Pdb file:<input id="id_pdb_file" name="pdb_file" type="file" /></br>
+    Similarity:</br>
+    <input id="similarity" name="similarity" type="radio" value="identical" /> Use fragments with identical residues</br>
+    <input checked="checked" id="similarity" name="similarity" type="radio" value="similar" /> Use fragments with residues of similar properties</br>
+
+    Fragments:</br>
+    <input checked="checked" id="representative" name="representative" type="radio" value="closest" /> Use fragments from the evolutionary closest crystal structure</br>
+    <input id="representative" name="representative" type="radio" value="any" /> Use all available fragments</br></br>
+    State:<select id="id_state" name="state">
+    <option value="active">Antagonist-bound structures</option>
+    <option value="inactive">Agonist-bound structures</option>
+    </select>
+    """
     url = '/structure/fragment_superposition_results'
     mid_section = "upload_file_form.html"
     form_height = 350
@@ -675,17 +727,25 @@ class TemplateBrowser(TemplateView):
         simple_selection = self.request.session.get('selection', False)
         a = Alignment()
         a.load_reference_protein_from_selection(simple_selection)
+        qs = Structure.objects.all().select_related().prefetch_related("protein_conformation__protein", "protein_conformation__protein__endogenous_ligands", "publication__web_link", "stabilizing_agents")
+        #Dirty but fast
+        qsd = {}
+        for st in list(qs):
+            qsd[st.protein_conformation.protein.id] = st
+        a.load_proteins([x.protein_conformation.protein for x in list(qs)])
         if simple_selection.segments != []:
             a.load_segments_from_selection(simple_selection)
         else:
             a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']))
-        a.load_proteins([x.protein_conformation.protein for x in list(Structure.objects.all())])
         a.build_alignment()
         a.calculate_similarity()
         context['crystals'] = []
         for prot in a.proteins[1:]:
-            context['crystals'].append(Structure.objects.get(protein_conformation__protein__entry_name=prot.protein.entry_name))
-
+            try:
+                context['crystals'].append([prot.similarity, prot.identity, qsd[prot.protein.id]])
+                del qsd[prot.protein.id]
+            except KeyError:
+                pass
         return context
 
 

@@ -291,6 +291,29 @@
                         });
                     }
 
+                    function ajaxMutantsPos(plotid,pos) {
+
+                        $.each( pos, function( key, val ) {
+                             // max = String(Math.max.apply(null, val));
+                             // min = String(Math.min.apply(null, val));
+                             // extra = "\n" + String(val.length) + " mutations | "+ max +" maxFold | "+ min +" minFold";
+
+
+                             // original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+                             $('#'+plotid).find("#"+val).css("fill", "#E60A0A");
+                             $('#'+plotid).find("#"+val).next().css("fill", "#FDFF7B");
+                             // $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             // $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+                          });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
+    
+                        
+                    }
+
                     function ajaxInteractions(plotid,protein) {
 
                         $.getJSON( '/interaction/ajax/'+protein+'/', function( data ) {
@@ -319,6 +342,45 @@
 
                              $('#'+plotid).find("#"+key).attr('title',original_title+extra);
                              $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+                          });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
+    
+                        });
+                    }
+
+                    function ajaxInteractionsLigand(protein,ligand) {
+
+                        resetColors('snakeplot');
+                        resetColors('helixbox');
+
+                        $.getJSON( '/interaction/ajaxLigand/'+protein+'/'+ligand, function( data ) {
+                          $.each( data, function( key, val ) {
+
+                            var flags = [], falgsAA = [], output = [], outputAA = [], l = val.length, i;
+                            for( i=0; i<l; i++) {
+                                if( flags[val[i][1]]) continue;
+                                flags[val[i][1]] = true;
+                                output.push(val[i][1]);
+                            }
+                            for( i=0; i<l; i++) {
+                                if( flags[val[i][0]]) continue;
+                                flags[val[i][0]] = true;
+                                outputAA.push(val[i][0]);
+                            }
+                             
+                             extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
+
+
+                             $('[id='+key+']').css("fill", "#E60A0A");
+                             $('[id='+key+']').next().css("fill", "#FDFF7B");
+
+                             original_title = $("#"+key).attr('original_title')
+
+                             $('[id='+key+']').attr('title',original_title+extra);
+                             $('[id='+key+'t]').attr('title',original_title+extra);
 
 
                           });

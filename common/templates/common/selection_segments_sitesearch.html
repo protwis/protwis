@@ -1,0 +1,22 @@
+{% for ss_cat in ss_cats %}
+    <h5>{{ ss_cat.0.title }}</h5>
+    {% for s in ss %}
+        {% if s.category = ss_cat.0 %}
+        <div class="btn-group" role="group">
+            <a class="btn btn-primary btn-sm">
+                {{ s.slug }}
+            </a>
+            {% if s.generic_numbers.all %}
+            <a href="javascript:void(0)" onclick="ExpandSegment('{{ s.id }}', '{{ position_type }}')"
+            class="btn btn-primary btn-sm">
+                <span class="glyphicon glyphicon-arrow-down"></span>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% endfor %}
+{% endfor %}
+<p>
+<div id='segment-generic-numbers'>
+</div>
+</p>
