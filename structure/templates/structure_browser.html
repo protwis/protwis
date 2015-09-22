@@ -57,24 +57,22 @@
             });
             $.datepicker.regional[""].dateFormat = "yy-mm-dd";
             $.datepicker.setDefaults($.datepicker.regional['']);
+            $('.alt').change(function () {
+                $(this).parent().parent().toggleClass('alt_selected');
+            });
             $('#superpose_btn').click(function () {
                 if (table.rows('.selected').data().length == 1) {
                     var div = document.createElement("div");
                     div.innerHTML = table.rows('.selected').data()[0][4];
-
-                    //alert(div.innerText);
-                    //AddToSelection('reference', 'structure', div.innerText);
+                    AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, ''));
                 }
-                var checked_data = $('input:checked');
-                //for (i = 0; i < checked_data; i++) {
-                //    alert(checked_data[i]);
-                //}
-                //table.rows( 'input:checked' ).data();
-                //alert(checked_data.length);
-                for (i = 0; i < checked_data; i++) {
-                    AddToSelection('targets', 'structure', checked_data[i][3]);
+                var checked_data = table.rows('.alt_selected').data();
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][4];
+                    AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
                 }
-                //window.location.href = '/structure/superposition_workflow_index';
+                window.location.href = '/structure/superposition_workflow_index';
             });
         });
     </script> 
@@ -125,7 +123,7 @@
                 <tbody>
                     {% for structure in structures.select_related.all %}
                     <tr>
-                        <th><form><input id="alt_sel" type="checkbox"></form></th>
+                        <td><input class="alt" type="checkbox"></td>
                         <td>{{ structure.protein_conformation.protein.family.name|safe }}</td>
                         <td>{{ structure.protein_conformation.protein.get_protein_class }}</td>
                         <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
