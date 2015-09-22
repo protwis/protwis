@@ -404,7 +404,11 @@ class Command(BaseBuild):
                                 lt, created = LigandType.objects.get_or_create(slug='sm',
                                     defaults={'name': 'Small molecule'})
                             ligand = Ligand()
-                            ligand = ligand.load_by_gtop_id(endogenous_ligand['iupharId'], lt)
+
+                            if 'iupharId' not in endogenous_ligand:
+                                endogenous_ligand['iupharId'] = 0
+                            ligand = ligand.load_by_gtop_id(endogenous_ligand['name'], endogenous_ligand['iupharId'],
+                                lt)
                             s.protein_conformation.protein.parent.endogenous_ligands.add(ligand)
 
                     # ligands

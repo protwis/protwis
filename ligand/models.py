@@ -20,7 +20,7 @@ class Ligand(models.Model):
     class Meta():
         db_table = 'ligand'
 
-    def load_by_gtop_id(self, gtop_id, ligand_type):
+    def load_by_gtop_id(self, ligand_name, gtop_id, ligand_type):
         logger = logging.getLogger('build')
 
         # fetch name
@@ -29,10 +29,9 @@ class Ligand(models.Model):
         try:
             req = urlopen(gtop_url)
             gtop = json.loads(req.read().decode('UTF-8'))
+            ligand_name = gtop['name']
         except:
             logger.error('Failed fetching properties of ligand with GuideToPharmacology ID {}'.format(gtop_id))
-
-        ligand_name = gtop['name']
 
         # does a ligand by this name already exists?
         try:
@@ -88,7 +87,7 @@ class Ligand(models.Model):
         lp = LigandProperities()
         lp.ligand_type = ligand_type
         lp.save()
-        
+
         # assign properties
         for prop in properties:
             setattr(lp, prop, properties[prop])
