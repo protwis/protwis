@@ -413,7 +413,7 @@ class Command(BaseBuild):
                             s.protein_conformation.protein.parent.endogenous_ligands.add(ligand)
 
                     # ligands
-                    if 'ligand' in sd:
+                    if 'ligand' in sd and sd['ligand']:
                         if isinstance(sd['ligand'], list):
                             ligands = sd['ligand']
                         else:
