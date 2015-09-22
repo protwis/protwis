@@ -121,8 +121,9 @@ class Treeclass:
         a.calculate_statistics()
         a.calculate_similarity()
         self.total = len(a.proteins)
-        lengths= list(map(len,a.proteins[0].alignment)) 
-        total_length = len(lengths)-1+sum(lengths)
+        total_length = 0
+        for chain in a.proteins[0].alignment:
+            total_length += len(a.proteins[0].alignment[chain])
         families = ProteinFamily.objects.all()
         self.famdict = {}
         for n in families:
@@ -161,9 +162,9 @@ class Treeclass:
             for chain in n.alignment:
                 for residue in n.alignment[chain]:
                     sequence += residue[2].replace('_','-')
-                sequence += '-'
             infile.write(acc+' '*9+sequence+'\n')
         infile.close()
+        
         ####Run bootstrap
         if self.bootstrap:
         ### Write phylip input options
