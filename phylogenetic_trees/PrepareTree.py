@@ -6,7 +6,8 @@ from collections import defaultdict
 
 
 class PrepareTree:
-    rings={'crystal': {'include':'False', 'order':6, 'colours':{'crystal_true':'#6dcde1','crystal_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':None, 'child': None, 'name':'Crystallized structures'},
+    def __init__(self):
+        self.rings={'crystal': {'include':'False', 'order':6, 'colours':{'crystal_true':'#6dcde1','crystal_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':None, 'child': None, 'name':'Crystallized structures'},
             'class': {'include':'False', 'order':0, 'colours':{}, 'items':[], 'color_type':'grayscale', 'parent':[], 'child': ['family,ligand'], 'name':'Class'},
             'family': {'include':'False', 'order':1, 'colours':{}, 'items':[], 'color_type':'spectrum', 'parent':[], 'child': ['ligand'], 'name':'Ligand type'},
             'ligand': {'include':'False', 'order':2, 'colours':{}, 'items':[], 'color_type':'spectrum', 'parent':['family','class'], 'child': [], 'name':'Receptor type'},
@@ -14,7 +15,7 @@ class PrepareTree:
             'mutant_plus': {'include':'False', 'order':4, 'colours':{'mutant_plus_true':'#6dcde1','mutant_plus_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':'mutant', 'child': [], 'name':'Positive affinity mutants'},
             'mutant_minus': {'include':'False', 'order':5, 'colours':{'mutant_minus_true':'#6dcde1','mutant_minus_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':'mutant', 'child': [], 'name':'Negative affinity mutants'}
             }
-    prots = {}
+        self.prots = {}
 
     def get_grayscale_colours(self, itemlist):
         colours_dict = {}
@@ -331,7 +332,7 @@ class PrepareTree:
                 if '>0.0<' in line and flag == True:
                     line=line.replace('>0.0<','>0.00001<')
                 if flag2 != '':
-                    line = line.strip('\n')+' <annotation><desc>'+self.prots[flag2[0]]['desc']+' ('+self.prots[flag2[0]]['species']+')'+'</desc><uri>http://tools.gpcr.org/visualise/protein/'+self.prots[flag2[0]]['link']+'</uri> </annotation>'+flag2[1]
+                    line = line.strip('\n')+' <annotation><desc>'+self.prots[flag2[0]]['desc']+' ('+self.prots[flag2[0]]['species']+')'+'</desc><uri>/protein/'+self.prots[flag2[0]]['link']+'</uri> </annotation>'+flag2[1]
                     flag2=''
             out.write(line)
         

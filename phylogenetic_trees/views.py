@@ -72,15 +72,17 @@ class Treeclass:
     phylip = None
     outtree = None
     dir = ''
-    Additional_info={"crystal": {"include":"False", "order":6, "colours":{"crystal_true":"#6dcde1","crystal_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":None, "child": None, "name":"Crystals"},
-            "class": {"include":"True", "order":0, "colours":{}, "proteins":[], "color_type":"grayscale", "parent":[], "child": ["family,ligand"], "name":"Class"},
-            "family": {"include":"True", "order":1, "colours":{}, "proteins":[], "color_type":"spectrum", "parent":[], "child": ["ligand"], "name":"Ligand type"},
-            "ligand": {"include":"True", "order":2, "colours":{}, "proteins":[], "color_type":"spectrum", "parent":["family","class"], "child": [], "name":"Ligand name"},
-            "mutant": {"include":"False", "order":3, "colours":{"mutant_true":"#6dcde1","mutant_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":[], "child": ["mutant_plus","mutant_minus"], "name":"Mutated proteins"},
-            "mutant_plus": {"include":"False", "order":4, "colours":{"mutant_plus_true":"#6dcde1","mutant_plus_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":"mutant", "child": [], "name":"Positive affinity mutants"},
-            "mutant_minus": {"include":"False", "order":5, "colours":{"mutant_minus_true":"#6dcde1","mutant_minus_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":"mutant", "child": [], "name":"Negative affinity mutants"}
-            }
-    buttons = [(x[1]['order'],x[1]['name']) for x in sorted(Additional_info.items(), key= lambda x: x[1]['order']) if x[1]['include']=='True']
+    
+    def __init__(self):
+        self.Additional_info={"crystal": {"include":"False", "order":6, "colours":{"crystal_true":"#6dcde1","crystal_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":None, "child": None, "name":"Crystals"},
+                "class": {"include":"True", "order":0, "colours":{}, "proteins":[], "color_type":"grayscale", "parent":[], "child": ["family,ligand"], "name":"Class"},
+                "family": {"include":"True", "order":1, "colours":{}, "proteins":[], "color_type":"spectrum", "parent":[], "child": ["ligand"], "name":"Ligand type"},
+                "ligand": {"include":"True", "order":2, "colours":{}, "proteins":[], "color_type":"spectrum", "parent":["family","class"], "child": [], "name":"Receptor type"},
+                "mutant": {"include":"False", "order":3, "colours":{"mutant_true":"#6dcde1","mutant_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":[], "child": ["mutant_plus","mutant_minus"], "name":"Mutated proteins"},
+                "mutant_plus": {"include":"False", "order":4, "colours":{"mutant_plus_true":"#6dcde1","mutant_plus_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":"mutant", "child": [], "name":"Positive affinity mutants"},
+                "mutant_minus": {"include":"False", "order":5, "colours":{"mutant_minus_true":"#6dcde1","mutant_minus_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":"mutant", "child": [], "name":"Negative affinity mutants"}
+                }
+        self.buttons = [(x[1]['order'],x[1]['name']) for x in sorted(self.Additional_info.items(), key= lambda x: x[1]['order']) if x[1]['include']=='True']
 
     def Prepare_file(self, request):
         self.Tree = PrepareTree()
@@ -133,7 +135,6 @@ class Treeclass:
         infile.write('    '+str(self.total)+'    '+str(total_length)+'\n')
         ####Get additional protein information
         muts = {}
-        
         for n in a.proteins:
             fam = self.Tree.trans_0_2_A(n.protein.family.slug)
             link = n.protein.entry_name
@@ -237,14 +238,17 @@ def modify_tree(request):
     for n in range(len(arg)):
         Tree_class.Additional_info[arg[n].replace('_btn','')]['include']=value[n]
     request.session['Tree']=Tree_class
-    phylogeny_input = Tree_class.get_phylogeny('/tmp')
+    os.mkdir('/tmp/modify')
+    phylogeny_input = Tree_class.get_phylogeny('/tmp/modify')
     branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.get_data()
+    shutil.rmtree('/tmp/modify')
     
     return render(request, 'phylogenetic_trees/main.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree})
 
 def render_tree(request):
     Tree_class=Treeclass()
     phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.Prepare_file(request)
+   
     request.session['Tree']=Tree_class
     return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
 
