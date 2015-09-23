@@ -57,14 +57,44 @@
             });
             $.datepicker.regional[""].dateFormat = "yy-mm-dd";
             $.datepicker.setDefaults($.datepicker.regional['']);
+            $('.alt').change(function () {
+                $(this).parent().parent().toggleClass('alt_selected');
             });
+            $('#superpose_btn').click(function () {
+                if (table.rows('.selected').data().length == 1) {
+                    var div = document.createElement("div");
+                    div.innerHTML = table.rows('.selected').data()[0][4];
+                    AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, ''));
+                }
+                var checked_data = table.rows('.alt_selected').data();
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][4];
+                    AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                }
+                window.location.href = '/structure/superposition_workflow_index';
+            });
+            $('#representative_btn').click(function () {
+                $.fn.dataTable.ext.search.push(
+                    function (settings, data, dataIndex) {
+                        if ($(settings.nTable).hasClass('repr-st')) {
+                            return true;
+                        }
+                        return false;
+                    });
+                table.draw();
+            });
+        });
     </script> 
 {% endblock %}
 
 {% block content %}
     <div style="font-size: 10px;">Select (tick box) structures, and Highlight the reference template</div><br />
     <div class="btn-group">
-        <a class="btn btn-primary btn-mini " href="/structure/superposition_workflow_index">Superpose structures</a>
+        <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superpose structures</a>
+    </div>
+    <div class="btn-group">
+        <a id="representative_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show representative</a>
     </div>
     <br />
     <br />
@@ -104,9 +134,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for structure in structures.select_related.all %}
-                    <tr>
-                        <th><form><input type="checkbox" /></form></th>
+                {% for structure in structures.select_related.all %}
+                    {% if structure.representative %}
+                        <tr class="repr-st">
+                    {% else %}
+                        <tr>
+                    {% endif %}
+                        <td><input class="alt" type="checkbox"></td>
                         <td>{{ structure.protein_conformation.protein.family.name|safe }}</td>
                         <td>{{ structure.protein_conformation.protein.get_protein_class }}</td>
                         <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
