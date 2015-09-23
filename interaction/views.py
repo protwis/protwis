@@ -708,11 +708,12 @@ def calculate(request, vignir=None):
                                 r = structure_residues[chain][int(pos)]
                                 display = r.display
                                 segment = r.segment
+                                generic = r.gpcrdb
 
-                                if display!="" and display in simple_generic_number[ligand[1]]:
-                                    simple_generic_number[ligand[1]][display].append(key)
-                                elif display!="":
-                                    simple_generic_number[ligand[1]][display] = [key]
+                                if generic!="" and generic in simple_generic_number[ligand[1]]:
+                                    simple_generic_number[ligand[1]][generic].append(key)
+                                elif generic!="":
+                                    simple_generic_number[ligand[1]][generic] = [key]
                             else:
                                 display = ''
                                 segment = ''
