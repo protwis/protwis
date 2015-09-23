@@ -16,6 +16,8 @@
                 {% else %}
                     {{ selected_item.item.slug|safe }}
                 {% endif %}
+            {% elif selected_item.type == 'structure' %}
+                {{ selected_item.item.pdb_code.index }}
             {% else %}
                 {{ selected_item.item.name|safe }}
                 {% if selected_item.item.species.common_name %}

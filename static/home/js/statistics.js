@@ -6,14 +6,15 @@ window.onload = function(){
         $(point).css("visibility", 'hidden');
         $('#'+$(this).attr('id') + '.container').css("display", '');
     });
+    $(".Class_phylo").click(function () {
+        Clear_phylo()
+        $(this).css("fill", '#000000');
+        point = $('#' + $(this).attr('id')).find('svg')
+        $(point).css("visibility", 'hidden');
+        $('#' + $(this).attr('id') + '.container').css("display", '');
+    });
 
-    function Clear_all(){
-        $('#phylos').find(".Class").each(function (index) {
-            $(this).css("fill", '');
-        });
-        $('#phylos').find(".container").each(function (index) {
-            $(this).css("display", 'none');
-        });
+    function Clear_all() {
         $('#charts').find(".Class").each(function (index) {
             $(this).css("fill", '');
         });
@@ -21,9 +22,17 @@ window.onload = function(){
             $(this).css("display", 'none');
         });
     };
+    function Clear_phylo(){
+        $('#phylos').find(".Class_phylo").each(function (index) {
+            $(this).css("fill", '');
+        });
+        $('#phylos').find(".container").each(function (index) {
+            $(this).css("display", 'none');
+        });
+    };
     $(document).ready(function () {
-        $('#A.Class').css("fill", '#000000');
-        $('#A.container').css("display", '');
+        $('#phylo_A.Class_phylo').css("fill", '#000000');
+        $('#phylo_A.container').css("display", '');
         $('#unique.Class').css("fill", '#000000');
         $('#unique.container').css("display", '');
 
