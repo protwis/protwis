@@ -74,6 +74,16 @@
                 }
                 window.location.href = '/structure/superposition_workflow_index';
             });
+            $('#representative_btn').click(function () {
+                $.fn.dataTable.ext.search.push(
+                    function (settings, data, dataIndex) {
+                        if ($(settings.nTable).hasClass('repr-st')) {
+                            return true;
+                        }
+                        return false;
+                    });
+                table.draw();
+            });
         });
     </script> 
 {% endblock %}
@@ -81,7 +91,10 @@
 {% block content %}
     <div style="font-size: 10px;">Select (tick box) structures, and Highlight the reference template</div><br />
     <div class="btn-group">
-        <a id="superpose_btn" class="btn btn-primary btn-mini " href="#">Superpose structures</a>
+        <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superpose structures</a>
+    </div>
+    <div class="btn-group">
+        <a id="representative_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show representative</a>
     </div>
     <br />
     <br />
@@ -121,8 +134,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for structure in structures.select_related.all %}
-                    <tr>
+                {% for structure in structures.select_related.all %}
+                    {% if structure.representative %}
+                        <tr class="repr-st">
+                    {% else %}
+                        <tr>
+                    {% endif %}
                         <td><input class="alt" type="checkbox"></td>
                         <td>{{ structure.protein_conformation.protein.family.name|safe }}</td>
                         <td>{{ structure.protein_conformation.protein.get_protein_class }}</td>
