@@ -139,19 +139,19 @@ class Command(BaseCommand):
             d['ligand_class'] = r[8]
             d['exp_type'] = r[9]
             d['exp_func'] = r[10]
-            d['exp_wt_value'] = int(r[11]) if r[11] else 0
+            d['exp_wt_value'] = float(r[11]) if r[11] else 0
             d['exp_wt_unit'] = r[12]
             d['exp_mu_effect_type'] = r[13]
             d['exp_mu_effect_sign'] = r[14]
-            d['exp_mu_value_raw'] = int(r[15]) if r[15] else 0
+            d['exp_mu_value_raw'] = float(r[15]) if r[15] else 0
             d['exp_mu_effect_qual'] = r[16]
             d['exp_mu_effect_ligand_prop'] = r[17]
             d['exp_mu_ligand_ref'] = r[18]
             d['opt_type'] = r[21]
-            d['opt_wt'] = int(r[22]) if r[22] else 0
-            d['opt_mu'] = int(r[23]) if r[23] else 0
+            d['opt_wt'] = float(r[22]) if r[22] else 0
+            d['opt_mu'] = float(r[23]) if r[23] else 0
             d['opt_sign'] = r[24]
-            d['opt_percentage'] = int(r[25]) if r[25] else 0
+            d['opt_percentage'] = float(r[25]) if r[25] else 0
             d['opt_qual'] = r[26]
             d['opt_agonist'] = r[27]
 
