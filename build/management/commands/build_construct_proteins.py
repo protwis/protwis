@@ -65,7 +65,7 @@ class Command(BaseBuild):
         except ProteinSequenceType.DoesNotExist:
             self.logger.warning('ProteinSequenceType mod not found: nothing to delete.')
 
-    def main_func(self, positions):
+    def main_func(self, positions, iteration):
         # filenames
         if not positions[1]:
             filenames = self.filenames[positions[0]:]

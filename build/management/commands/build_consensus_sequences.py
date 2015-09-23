@@ -67,7 +67,7 @@ class Command(BuildHumanProteins):
                 i += 1
         return ref_positions, segment_starts, segment_ends
 
-    def main_func(self, positions):
+    def main_func(self, positions, iteration):
         # families
         if not positions[1]:
             families = self.families[positions[0]:]

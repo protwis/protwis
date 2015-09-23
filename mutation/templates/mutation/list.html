@@ -79,8 +79,10 @@ input.form-control {
             $('[data-toggle="tooltip"]').tooltip(); 
             //$('[data-toggle="tooltip"]').tooltip({html:true});
 
-            ajaxMutantsPos("snakeplot",{{mutations_pos_list|safe}});
-            ajaxMutantsPos("helixbox",{{mutations_pos_list|safe}});
+            mutant_json = '{{mutations_pos_list|safe}}';
+
+            ajaxMutantsPos("snakeplot");
+            ajaxMutantsPos("helixbox");
             table_ajaxMutants();
             });
     </script> 
@@ -100,7 +102,7 @@ input.form-control {
 </div> -->
 {% endblock %}
 <!-- sequence alignment starts -->
-
+<h2>Mutant Browser</h2>
     {% if mutations %}              
         <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
             <table width="100%" class="display" id="mutations">
@@ -174,6 +176,8 @@ input.form-control {
             </table>
         </div>
         <br><br>
+
+<h2>Residue</h2>
 <div class="col-md-2 text-right text-info">
     <h4>Diagrams</h4>
 </div>

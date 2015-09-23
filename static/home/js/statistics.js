@@ -1,40 +1,40 @@
 window.onload = function(){
     $(".Class").click(function () {
-        Clear_phylos()
+        Clear_all()
         $(this).css("fill", '#000000');
         point = $('#' + $(this).attr('id')).find('svg')
         $(point).css("visibility", 'hidden');
         $('#'+$(this).attr('id') + '.container').css("display", '');
     });
-    $(".chart_type").click(function () {
-        Clear_charts()
+    $(".Class_phylo").click(function () {
+        Clear_phylo()
         $(this).css("fill", '#000000');
         point = $('#' + $(this).attr('id')).find('svg')
         $(point).css("visibility", 'hidden');
-        $('#' + $(this).attr('id') + '.chart_container').css("display", '');
+        $('#' + $(this).attr('id') + '.container').css("display", '');
     });
 
-    function Clear_phylos(){
-        $('#phylos').find(".Class").each(function (index) {
+    function Clear_all() {
+        $('#charts').find(".Class").each(function (index) {
+            $(this).css("fill", '');
+        });
+        $('#charts').find(".container").each(function (index) {
+            $(this).css("display", 'none');
+        });
+    };
+    function Clear_phylo(){
+        $('#phylos').find(".Class_phylo").each(function (index) {
             $(this).css("fill", '');
         });
         $('#phylos').find(".container").each(function (index) {
             $(this).css("display", 'none');
         });
     };
-    function Clear_charts(){
-        $('#charts').find(".chart_type").each(function (index) {
-            $(this).css("fill", '');
-        });
-        $('#charts').find(".chart_container").each(function (index) {
-            $(this).css("display", 'none');
-        });
-    };
     $(document).ready(function () {
-        $('#A.Class').css("fill", '#000000');
-        $('#A.container').css("display", '');
-        $('#unique.chart_type').css("fill", '#000000');
-        $('#unique.chart_container').css("display", '');
+        $('#phylo_A.Class_phylo').css("fill", '#000000');
+        $('#phylo_A.container').css("display", '');
+        $('#unique.Class').css("fill", '#000000');
+        $('#unique.container').css("display", '');
 
     });
         
