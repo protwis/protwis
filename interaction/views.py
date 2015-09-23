@@ -53,15 +53,14 @@ def regexaa(aa):
     else:
         return None, None, None
 
-def index(request):
-
+def index(request, vignir=None):
+    print(vignir)
     form = PDBform()
 
     structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index','structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate( num_ligands=Count('structure_ligand_pair', distinct = True),num_interactions=Count('pk', distinct = True)).order_by('structure_ligand_pair__structure__pdb_code__index')
    
-
     #context = {}
-    return render(request,'interaction/index.html',{'form': form, 'structures':structures })
+    return render(request,'interaction/index.html',{'form': form, 'structures':structures, 'vignir':vignir })
 
 def list(request):
     form = PDBform()
@@ -173,8 +172,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
     structure=Structure.objects.filter(pdb_code=web_link) 
     if structure.exists():
         structure=Structure.objects.get(pdb_code=web_link)
-   
-        
+
         #quit() #quit!
 
         if structure.pdb_data is None:
@@ -523,7 +521,7 @@ def parseusercalculation(pdbname,session, debug = True, ignore_ligand_preset = F
 
     return results
 
-def calculate(request):   
+def calculate(request, vignir=None):   
     if request.method == 'POST':
         form = PDBform(request.POST, request.FILES)
         if form.is_valid():
@@ -694,34 +692,44 @@ def calculate(request):
 
             #print(results)
             simple = collections.OrderedDict()
+            simple_generic_number = collections.OrderedDict()
             residues = []
             mainligand = ''
             for ligand in results:
                 print(ligand[1])
                 if mainligand=='': mainligand=ligand[1] #select top hit
                 simple[ligand[1]] = {'score':round(ligand[2][0]['score'][0][0])}
+                simple_generic_number[ligand[1]] = {'score':round(ligand[2][0]['score'][0][0])}
                 for key,values in ligand[2][0].items():
                     if key in ['aromatic','aromaticplus','hbond','hbond_confirmed','hydrophobic', 'hbondplus', 'aromaticfe','waals']:
                         for value in values:
-                            if value[0] in simple[ligand[1]]:
-                                simple[ligand[1]][value[0]].append(key)
-                            else:
-                                simple[ligand[1]][value[0]] = [key]
                             aa,pos,chain = regexaa(value[0])
                             if int(pos) in structure_residues[chain]:
                                 r = structure_residues[chain][int(pos)]
                                 display = r.display
                                 segment = r.segment
+
+                                if display!="" and display in simple_generic_number[ligand[1]]:
+                                    simple_generic_number[ligand[1]][display].append(key)
+                                elif display!="":
+                                    simple_generic_number[ligand[1]][display] = [key]
                             else:
                                 display = ''
                                 segment = ''
-                            residues.append({'type':key,'aa':aa,'ligand':ligand[1],'pos':pos, 'gpcrdb':display, 'segment':segment})
-           # print(simple)
 
-            #print(residues)
-            return render(request,'interaction/diagram.html',{'result' : "Looking at "+pdbname, 'outputs' : results,
-             'simple' : simple , 'xtal' : xtal, 'pdbname':pdbname, 'mainligand':mainligand, 'residues':residues,
-             'HelixBox':HelixBox, 'SnakePlot':SnakePlot})
+                            if value[0] in simple[ligand[1]]:
+                                simple[ligand[1]][value[0]].append(key)
+                            else:
+                                simple[ligand[1]][value[0]] = [key]
+
+                            residues.append({'type':key,'aa':aa,'ligand':ligand[1],'pos':pos, 'gpcrdb':display, 'segment':segment})
+
+            if vignir:
+                return render(request,'interaction/vignir.html',{'simple':simple,'simple_generic_number':simple_generic_number})
+            else:
+                return render(request,'interaction/diagram.html',{'result' : "Looking at "+pdbname, 'outputs' : results,
+                 'simple' : simple ,'simple_generic_number' : simple_generic_number , 'xtal' : xtal, 'pdbname':pdbname, 'mainligand':mainligand, 'residues':residues,
+                 'HelixBox':HelixBox, 'SnakePlot':SnakePlot})
 
         else:
             print(form.errors)
