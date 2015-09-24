@@ -213,7 +213,7 @@ def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, r
 
     # update generic numbers equivalents
     if 'table' in schemes[residue_numbering_scheme.slug]:
-        if structure_corrected_generic_number in schemes[residue_numbering_scheme.slug]['table']
+        if structure_corrected_generic_number in schemes[residue_numbering_scheme.slug]['table']:
             equivalent = schemes[residue_numbering_scheme.slug]['table'][structure_corrected_generic_number]
         else:
             logger.warning('{} equivalent for number {} not found, using {}'.format(residue_numbering_scheme.slug,
