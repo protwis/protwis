@@ -60,35 +60,59 @@ class SegmentSelection(AbsSegmentSelection):
         },
     }
 
-def render_mutations(request):  
+def render_mutations(request, protein = None, family = None):  
+    print(protein)
+
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
     
      # local protein list
     proteins = []
 
-    # flatten the selection into individual proteins
-    for target in simple_selection.targets:
-        if target.type == 'protein':
-            proteins.append(target.item)
-        elif target.type == 'family':
-            # species filter
-            species_list = []
-            for species in simple_selection.species:
-                species_list.append(species.item)
+    if protein: #if protein static page
 
-            # annotation filter
-            protein_source_list = []
-            for protein_source in simple_selection.annotation:
-                protein_source_list.append(protein_source.item)
-                
-            family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                species__in=(species_list),
-                source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
-            for fp in family_proteins:
-                proteins.append(fp)
+        proteins.append(Protein.objects.get(entry_name = protein))
+        segments_ids = ProteinSegment.objects.all().values('id')
+        original_segments = ProteinSegment.objects.all()
 
-    #scheme
+    elif family:
+
+        family_proteins = Protein.objects.filter(family__slug__startswith=family, sequence_type__slug='wt')
+        for fp in family_proteins:
+            proteins.append(fp)
+        segments_ids = ProteinSegment.objects.all().values('id')
+        original_segments = ProteinSegment.objects.all()
+
+    else:
+
+        # flatten the selection into individual proteins
+        for target in simple_selection.targets:
+            if target.type == 'protein':
+                proteins.append(target.item)
+            elif target.type == 'family':
+                # species filter
+                species_list = []
+                for species in simple_selection.species:
+                    species_list.append(species.item)
+
+                # annotation filter
+                protein_source_list = []
+                for protein_source in simple_selection.annotation:
+                    protein_source_list.append(protein_source.item)
+                    
+                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                    species__in=(species_list),
+                    source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                for fp in family_proteins:
+                    proteins.append(fp)
+
+        original_segments = []
+        segments_ids = []
+        for segment in simple_selection.segments:
+            original_segments.append(segment.item)
+            segments_ids.append(segment.item.id)
+
+       #scheme
     used_schemes = {}
     for protein in proteins:
         if protein.residue_numbering_scheme.slug not in used_schemes:
@@ -96,12 +120,6 @@ def render_mutations(request):
         used_schemes[protein.residue_numbering_scheme.slug] += 1
 
     used_scheme = max(used_schemes, key=used_schemes.get)
-
-    original_segments = []
-    segments_ids = []
-    for segment in simple_selection.segments:
-        original_segments.append(segment.item)
-        segments_ids.append(segment.item.id)
 
     #print(segments)
 

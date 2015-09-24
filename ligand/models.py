@@ -45,11 +45,11 @@ class Ligand(models.Model):
         logger = logging.getLogger('build')
 
         # fetch ligand name from pubchem
-        pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + str(pubchem_id) + '/description/json'
+        pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + str(pubchem_id) + '/synonyms/json'
         try:
             req = urlopen(pubchem_url)
             pubchem = json.loads(req.read().decode('UTF-8'))
-            ligand_name = pubchem['InformationList']['Information'][0]['Title']
+            ligand_name = pubchem['InformationList']['Information'][0]['Synonym'][0]
         except:
             logger.error('Error fetching ligand {} from PubChem'.format(pubchem_id))
             return

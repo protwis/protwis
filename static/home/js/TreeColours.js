@@ -27,6 +27,7 @@
         newcolor = $(".pick-color.selected").attr('id');
         newcolor = newcolor.split('-');
         $(this).css("fill", newcolor[1]);
+        $(this).css("stroke", newcolor[1]);
     });
     $("[class^=chart]").click(function () {
         if ($(this).attr('id')) {
@@ -87,6 +88,7 @@
      $("[class^=chart]").each(function (index) {
          if ($(this).attr('id')) {
              $(this).css("fill",'');
+             $(this).css("stroke", '');
          };
      });
 

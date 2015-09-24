@@ -23,7 +23,7 @@
                 'orderCellsTop': true,
                 'autoWidth': true,
                 'dom': 'T<"clear">lfrtip',
-                'order': [[11, "asc"]], // order by date
+                'order': [[14, "asc"]], // order by date
                 'aoColumnDefs': [
                     { 'bSortable' : false, 'aTargets': [0] },
                     { 'sType': 'string', 'aTargets': [1] },
@@ -47,8 +47,10 @@
                             { type: "text" }, // preferred chain
                             { type: "text" }, // stabilizing agent - left as type-in for now
                             { type: "text" }, // endogenous ligand name
-                            // { type: "text" }, // endogenous ligand type
+                            { type: "text" }, // endogenous ligand type
                             { type: "text" }, // x-ray ligand
+                            { type: "text" }, // x-ray ligand function
+                            { type: "text" }, // x-ray ligand type
                             { type: "text" }, // reference
                             { type: "date-range" }, // publication date
                         ]
@@ -112,8 +114,10 @@
                         <th class="pdb-th">Pre. chain</th>
                         <th class='pdb-th'>Aux. proteins</th>
                         <th class="ligand-th">Endo. ligand</th>
-                        <!-- <th class="ligand-th">Endo. lig. type</th> -->
+                        <th class="ligand-th">Endo. lig. type</th>
                         <th class="ligand-th">X-ray ligand</th>
+                        <th class="ligand-th">X-ray lig. function</th>
+                        <th class="ligand-th">X-ray lig. type</th>
                         <th class="pub-th">Reference</th>
                         <th class="pub-th">Date</th>
                     </tr>
@@ -127,7 +131,9 @@
                         <th></th>
                         <th></th>
                         <th></th>
-                        <!-- <th></th> -->
+                        <th></th>
+                        <th></th>
+                        <th></th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -157,15 +163,23 @@
                         </td>
                         <td>
                             {% for ligand in structure.protein_conformation.protein.parent.endogenous_ligands.all %}
-                            {{ ligand|title }}<br />
+                            {{ ligand|safe }}<br />
                             {% empty %}
                             N/A
                             {% endfor %}
                         </td>
-                        <!-- <td></td> -->
+                        <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
                         <td>
                             {% for ligand in structure.ligands.all %}
-                            {{ ligand.ligand.name|slice:":20" }}
+                            {{ ligand.ligand.name|safe }}
+                            {% empty %}
+                            N/A
+                            {% endfor %}
+                        </td>
+                        <td>{{ structure.ligands.all.0.ligand_role.name }}</td>
+                        <td>
+                            {% for ligand in structure.ligands.all %}
+                            {{ ligand.ligand.properities.ligand_type }}
                             {% empty %}
                             N/A
                             {% endfor %}
