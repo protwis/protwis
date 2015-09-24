@@ -142,7 +142,7 @@ class HomologyModeling(object):
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
         main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
-
+        pprint.pprint(main_pdb_array)
         # loops
         if loops==True:
             loop_stat = OrderedDict()
@@ -160,7 +160,8 @@ class HomologyModeling(object):
                 else:
                     loop_stat[label] = loop.loop_output_structure
             self.statistics.add_info('loops', loop_stat)
-        
+            raise Exception
+            
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
             for ref_seg, temp_seg, aligned_seg in zip(a.reference_dict, a.template_dict, a.alignment_dict):
@@ -429,7 +430,8 @@ class HomologyModeling(object):
         if not os.path.exists(path):
             os.mkdir(path)
         trimmed_res_nums = self.write_homology_model_pdb(path+self.uniprot_id+"_post.pdb", main_pdb_array, 
-                                                         a, trimmed_residues=trimmed_residues)
+                                                         a, trimmed_residues=trimmed_residues)                                                         
+
         # Model with MODELLER
 #        self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
 #        self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
@@ -824,11 +826,11 @@ class Loops(object):
             ref_residues = list(Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
                                                   protein_segment__slug=self.loop_label))
             for ref_seg, temp_seg, aligned_seg in zip(reference_dict, template_dict, alignment_dict):
-                if ref_seg[0]=='T' and ref_seg[-1]==list(loop_template.keys())[0][0]:
+                if ref_seg[0]=='T' and self.segment_order[self.loop_label]-self.segment_order[ref_seg[:4]]==0.5:
                     temp_ref_dict[ref_seg] = reference_dict[ref_seg]
                     temp_temp_dict[temp_seg] = template_dict[temp_seg]
                     temp_aligned_dict[aligned_seg] = alignment_dict[aligned_seg]
-                    input_residues = list(loop_template.keys())[1:-1]
+                    input_residues = list(loop_template.keys())
                     ref_loop_seg, temp_loop_seg, aligned_loop_seg = OrderedDict(),OrderedDict(),OrderedDict()
                     if continuous_loop==True:
                         l_res=0
@@ -1002,15 +1004,12 @@ class Constrictions(object):
             this_anomaly = ProteinAnomaly.objects.filter(generic_number__label=gn)
             if constriction_in_reference==True:
                 try:
-                    if structure.pdb_code.index=='3ODU':                                      #REMOVE
-                        continue
                     for anomaly in this_anomaly:
                         if anomaly in structure.protein_anomalies.all():
                             gn_list = [parse.gn_indecer(gn,'x',-2),parse.gn_indecer(gn,'x',-1),
                                        parse.gn_indecer(gn,'x',+1),parse.gn_indecer(gn,'x',+2)]
                             alt_const = parse.fetch_residues_from_pdb(structure, gn_list)
                             self.template = structure
-                            pprint.pprint(alt_const)
                             return alt_const
                 except:
                     pass
