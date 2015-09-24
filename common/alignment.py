@@ -713,21 +713,25 @@ class AlignedReferenceTemplate(Alignment):
     def __init__(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
                  provide_similarity_table=None):
         super(AlignedReferenceTemplate, self).__init__()
-        self.query_states = query_states
-        self.order_by = order_by
-        self.reference_protein = reference_protein
-        self.load_reference_protein(reference_protein)
-        self.load_proteins_by_structure()
-        self.load_segments(ProteinSegment.objects.filter(slug__in=segments))
-        self.build_alignment()
-        self.calculate_similarity()
-        self.reference_protein = self.proteins[0]
-        self.main_template_protein = None
-        self.ordered_proteins = []
+        self.segment_labels = segments
+        self.reference_protein = Protein.objects.get(entry_name=reference_protein)
+        if provide_main_template_structure==None and provide_similarity_table==None:
+            self.query_states = query_states
+            self.order_by = order_by
+            self.load_reference_protein(reference_protein)
+            self.load_proteins_by_structure()
+            self.load_segments(ProteinSegment.objects.filter(slug__in=segments))
+            self.build_alignment()
+            self.calculate_similarity()
+            self.reference_protein = self.proteins[0]
+            self.main_template_protein = None
+            self.ordered_proteins = []
         if provide_main_template_structure==None:
             self.main_template_structure = None
+            self.provide_main_template_structure = False
         else:
             self.main_template_structure = provide_main_template_structure
+            self.provide_main_template_structure = True
         segment_type = [str(x)[:2] for x in segments]
         if provide_similarity_table==None:
             self.provide_similarity_table = None
@@ -740,7 +744,6 @@ class AlignedReferenceTemplate(Alignment):
             self.similarity_table = self.create_loop_similarity_table()
         if self.main_template_structure==None:
             self.main_template_structure = self.get_main_template()
-        self.segment_labels = segments
         self.reference_dict = OrderedDict()
         self.template_dict = OrderedDict()
         self.alignment_dict = OrderedDict()
@@ -780,9 +783,6 @@ class AlignedReferenceTemplate(Alignment):
                             if res[1]!=False and res[1]!='':
                                all_temp_positions.append(res[0])
                         temp_positions.append([all_temp_positions[0],all_temp_positions[-1]])
-#                    print(protein)
-#                    print(ref_positions)
-#                    print(temp_positions)
                     if ref_positions==temp_positions:
                         for struct in self.similarity_table:
                             if protein.protein==struct.protein_conformation.protein.parent:
@@ -803,7 +803,6 @@ class AlignedReferenceTemplate(Alignment):
                 temp_list.append((list(matches)[0], int(protein.similarity), float(list(matches)[0].resolution), protein))
         sorted_list = sorted(temp_list, key=lambda x: (-x[1],x[2]))
         for i in sorted_list:
-#            print(i[0].id, i[0])
             similarity_table[i[0]] = i[1]
             self.ordered_proteins.append(i[3])
         return similarity_table
@@ -815,40 +814,67 @@ class AlignedReferenceTemplate(Alignment):
         '''
         temp_list = []
         similarity_table = OrderedDict()
-        self.main_template_protein = [p for p in self.proteins if 
-                                    p.protein==self.main_template_structure.protein_conformation.protein.parent][0]
-        for protein in self.proteins:
-            if protein.protein==self.reference_protein.protein:
-                ref_length = []
-                for seglab, segment in protein.alignment.items():
-                    for res in segment:
-                        if res[1]!=False:
-                            ref_length.append(res[0])
-            elif protein.protein==self.main_template_protein.protein:
-                main_temp_length = []
-                main_struct_sim = int(protein.similarity)
-                for seglab, segment in protein.alignment.items():
-                    for res in segment:
-                        if res[1]!=False:
-                            main_temp_length.append(res[0])
+        self.main_template_protein = self.main_template_structure.protein_conformation.protein.parent        
+        ref_seq = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
+                                         protein_segment__slug=self.segment_labels[0])
+        segment = ProteinSegment.objects.get(slug=self.segment_labels[0])
+        orig_before_residues = Residue.objects.filter(
+                                    protein_conformation__protein=self.main_template_protein, 
+                                    protein_segment__id=segment.id-1)
+        orig_after_residues = Residue.objects.filter(
+                                    protein_conformation__protein=self.main_template_protein, 
+                                    protein_segment__id=segment.id+1)
+        orig_before_gns = []
+        orig_after_gns = []
+        for res in orig_before_residues.reverse():
+            if len(orig_before_gns)<8:
+                orig_before_gns.append(res.generic_number.label)
+        for res in orig_after_residues:
+            if len(orig_after_gns)<8:
+                orig_after_gns.append(res.generic_number.label)
+        orig_before_gns = list(reversed(orig_before_gns))
+        last_before_gn = orig_before_gns[-1]
+        first_after_gn = orig_after_gns[0]
+        for struct, similarity in self.provide_similarity_table.items():
+            protein = struct.protein_conformation.protein.parent
+            if protein==self.main_template_protein:
+                main_temp_seq = Residue.objects.filter(protein_conformation__protein=self.main_template_protein, 
+                                         protein_segment__slug=self.segment_labels[0])
+                if len(ref_seq)==len(main_temp_seq):
+                    similarity_table[self.main_template_structure] = self.provide_similarity_table[
+                                                                                        self.main_template_structure]
+                    self.loop_table = similarity_table
+                    return similarity_table
             else:
                 temp_length = []
-                for seglab, segment in protein.alignment.items():
-                    for res in segment:
-                        if res[1]!=False:
-                            temp_length.append(res[0])
-                if self.provide_similarity_table==None:
-                    match = self.structures_data.filter(protein_conformation__protein__parent__id=protein.protein.id)
-                    temp_list.append((list(match)[0], temp_length, int(protein.similarity), 
-                                      float(list(match)[0].resolution), protein))
-                else:
-                    for struct, score in self.provide_similarity_table.items():
-                        if struct.protein_conformation.protein.parent.id==protein.protein.id:
-                            match = struct
-                            break
-                    temp_list.append((match, temp_length, score, float(match.resolution), protein))
-        if len(ref_length)!=len(main_temp_length):
-            alt_temps = [entry for entry in temp_list if len(entry[1])==len(ref_length)]
+                try:
+                    alt_last_gn = Residue.objects.get(protein_conformation__protein=protein, 
+                                                      generic_number__label=last_before_gn)
+                    alt_first_gn= Residue.objects.get(protein_conformation__protein=protein, 
+                                                      generic_number__label=first_after_gn)
+                    temp_length = alt_first_gn.sequence_number-alt_last_gn.sequence_number-1
+                    alt_seq = Residue.objects.filter(protein_conformation__protein=protein, 
+                                           sequence_number__in=list(range(alt_last_gn.sequence_number+1,
+                                                                          alt_first_gn.sequence_number)))
+                    if len(ref_seq)!=len(alt_seq):
+                        continue
+                    before_nums = list(range(alt_last_gn.sequence_number-7, alt_last_gn.sequence_number+1))
+                    after_nums = list(range(alt_first_gn.sequence_number, alt_first_gn.sequence_number+8))
+                    alt_before8 = Residue.objects.filter(protein_conformation__protein=protein,
+                                                         sequence_number__in=before_nums)
+                    alt_after8 = Residue.objects.filter(protein_conformation__protein=protein,
+                                                         sequence_number__in=after_nums)
+                    alt_before_gns = [r.generic_number.label for r in alt_before8]
+                    alt_after_gns = [r.generic_number.label for r in alt_after8]
+                    if orig_before_gns==alt_before_gns and orig_after_gns==alt_after_gns:
+                        pass
+                    else:
+                        raise Exception
+                except:
+                    temp_length = -1
+                temp_list.append((struct, temp_length, similarity, float(struct.resolution), protein))
+        if len(ref_seq)!=len(main_temp_seq):
+            alt_temps = [entry for entry in temp_list if entry[1]==len(ref_seq)]
             sorted_list = sorted(alt_temps, key=lambda x: (-x[2],x[3]))
             for i in sorted_list:
                 similarity_table[i[0]] = i[2]
@@ -860,15 +886,8 @@ class AlignedReferenceTemplate(Alignment):
                 self.main_template_protein = None
                 self.main_template_structure = None
                 self.loop_table = None
-                return None            
-        else:
-            if self.provide_similarity_table==None:
-                similarity_table[self.main_template_structure] = main_struct_sim
-            else:
-                similarity_table[self.main_template_structure] = self.provide_similarity_table[
-                                                                                        self.main_template_structure]
-            self.loop_table = similarity_table
-        return similarity_table
+                return None
+            return similarity_table
 
 
     def enhance_best_alignment(self):

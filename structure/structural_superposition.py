@@ -204,8 +204,12 @@ class BulgeConstrictionSuperpose(object):
         ''' Run the superpositioning.
         '''
         super_imposer = Superimposer()
-        ref_backbone_atoms = [atom for atom in self.reference_dict[self.reference_gns[0]] if atom.get_name() in ['N','CA','C']] + [atom for atom in self.reference_dict[self.reference_gns[-1]] if atom.get_name() in ['N','CA','C']]
-        temp_backbone_atoms= [atom for atom in self.template_dict[self.template_gns[0]] if atom.get_name() in ['N','CA','C']] + [atom for atom in self.template_dict[self.template_gns[-1]] if atom.get_name() in ['N','CA','C']]
+        ref_backbone_atoms = [atom for atom in self.reference_dict[self.reference_gns[0]] if atom.get_name() in 
+                                ['N','CA','C','O']] + [atom for atom in self.reference_dict[self.reference_gns[-1]] if 
+                                atom.get_name() in ['N','CA','C','O']]
+        temp_backbone_atoms= [atom for atom in self.template_dict[self.template_gns[0]] if atom.get_name() in 
+                                ['N','CA','C','O']] + [atom for atom in self.template_dict[self.template_gns[-1]] if 
+                                atom.get_name() in ['N','CA','C','O']]
         all_template_atoms = []
         for gn, atoms in self.template_dict.items():
             all_template_atoms+=atoms
@@ -245,9 +249,12 @@ class LoopSuperpose(BulgeConstrictionSuperpose):
             for atom in atoms:
                 if atom.get_name() in ['N','CA','C','O']:
                     ref_backbone_atoms.append(atom)
+        res_count=0
+        array_length = template_dict.keys()
         for gn, atoms in self.template_dict.items():
+            res_count+=1
             for atom in atoms:
-                if '.' in str(gn) and atom.get_name() in ['N','CA','C','O']:
+                if res_count<=8 or array_length-8<res_count and atom.get_name() in ['N','CA','C','O']:
                     temp_backbone_atoms.append(atom)
                 all_template_atoms.append(atom)
         super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
