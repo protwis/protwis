@@ -392,6 +392,7 @@ class Command(BaseBuild):
                     s.save()
 
                     # endogenous ligand(s)
+                    default_ligand_type = 'Small molecule'
                     if representative and 'endogenous_ligand' in sd and sd['endogenous_ligand']:
                         if isinstance(sd['endogenous_ligand'], list):
                             endogenous_ligands = sd['endogenous_ligand']
@@ -402,8 +403,8 @@ class Command(BaseBuild):
                                 lt, created = LigandType.objects.get_or_create(slug=slugify(endogenous_ligand['type']),
                                     defaults={'name': endogenous_ligand['type']})
                             else:
-                                lt, created = LigandType.objects.get_or_create(slug='sm',
-                                    defaults={'name': 'Small molecule'})
+                                lt, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
+                                    defaults={'name': default_ligand_type})
                             ligand = Ligand()
 
                             if 'iupharId' not in endogenous_ligand:
@@ -432,11 +433,14 @@ class Command(BaseBuild):
                                         lt, created = LigandType.objects.get_or_create(slug=slugify(ligand['type']),
                                             defaults={'name': ligand['type']})
                                     else:
-                                        lt, created = LigandType.objects.get_or_create(slug='sm',
-                                            defaults={'name': 'Small molecule'})
+                                        lt, created = LigandType.objects.get_or_create(
+                                            slug=slugify(default_ligand_type), defaults={'name': default_ligand_type})
 
                                     # update ligand by pubchem id
-                                    l = l.load_by_pubchem_id(ligand['pubchemId'], lt)
+                                    ligand_title = False
+                                    if 'title' in ligand and ligand['title']:
+                                        ligand_title = ligand['title']
+                                    l = l.load_by_pubchem_id(ligand['pubchemId'], lt, ligand_title)
 
                                     # set pdb reference for structure-ligand interaction
                                     pdb_reference = ligand['name']
@@ -444,9 +448,16 @@ class Command(BaseBuild):
                                 # if no pubchem id is specified, use name
                                 else:
                                     # USE HETSYN NAME, not 3letter pdb reference
-                                    if ligand['name'] in hetsyn_reverse: ligand['name'] = hetsyn_reverse[ligand['name']]
+                                    if ligand['name'] in hetsyn_reverse:
+                                        ligand['name'] = hetsyn_reverse[ligand['name']]
+                                    
                                     pdb_reference = None
-                                    if ligand['name'] in hetsyn: pdb_reference = hetsyn[ligand['name']]
+                                    if ligand['name'] in hetsyn:
+                                        pdb_reference = hetsyn[ligand['name']]
+
+                                    # use ligand title, if specified
+                                    if 'title' in ligand and ligand['title']:
+                                        ligand['name'] = ligand['title']
                                     
                                     # if this name is canonical and it has a ligand record already
                                     if Ligand.objects.filter(name=ligand['name'], canonical=True).exists():
