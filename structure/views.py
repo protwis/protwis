@@ -38,10 +38,11 @@ class StructureBrowser(TemplateView):
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
             context['structures'] = Structure.objects.all().prefetch_related(
-                "protein_conformation__protein__parent__endogenous_ligands", "stabilizing_agents",
+                "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+                "stabilizing_agents",
                 "protein_conformation__protein__family__parent__parent", "publication__web_link__web_resource",
                 Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).prefetch_related('ligand')))
+                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
         except Structure.DoesNotExist as e:
             pass
 
@@ -461,11 +462,11 @@ class SuperpositionWorkflowResults(TemplateView):
         if 'ref_file' in self.request.session.keys():
             ref_file = StringIO(self.request.session['ref_file'].file.read().decode('UTF-8'))
         elif selection.reference != []:
-            ref_file = StringIO(Structure.objects.get(protein_conformation__protein = selection.reference[0].item).pdb_data.pdb)
+            ref_file = StringIO(selection.reference[0].item.pdb_data.pdb)
         if 'alt_files' in self.request.session.keys():
             alt_files = [StringIO(alt_file.file.read().decode('UTF-8')) for alt_file in self.request.session['alt_files']]
         elif selection.targets != []:
-            alt_files = [StringIO(Structure.objects.get(protein_conformation__protein = x.item).pdb_data.pdb) for x in selection.targets]
+            alt_files = [StringIO(x.item.pdb_data.pdb) for x in selection.targets]
         superposition = ProteinSuperpose(deepcopy(ref_file),alt_files, selection)
         out_structs = superposition.run()
         if len(out_structs) == 0:
@@ -479,13 +480,13 @@ class SuperpositionWorkflowResults(TemplateView):
                 ref_struct = PDBParser().get_structure('ref', ref_file)[0]
                 ref_name = self.request.session['ref_file'].name
             elif selection.reference != []:
-                ref_struct = PDBParser().get_structure('ref', StringIO(Structure.objects.get(protein_conformation__protein = selection.reference[0].item).pdb_data.pdb))[0]
+                ref_struct = PDBParser().get_structure('ref', StringIO(selection.reference[0].item.pdb_data.pdb))[0]
                 ref_name = "{!s}.pdb".format(str(selection.reference[0].item).upper())
 
             if 'alt_files' in self.request.session.keys():
                 alt_file_names = [x.name for x in self.request.session['alt_files']]
             elif selection.targets != []:
-                alt_file_names = ["{!s}_superposed.pdb".format(str(y)) for y in [Structure.objects.get(protein_conformation__protein = x.item) for x in selection.targets]]
+                alt_file_names = ["{!s}_superposed.pdb".format(str(y)) for y in [x.item for x in selection.targets]]
 
             if self.request.session['exclusive']:
                 consensus_gn_set = CASelector(SelectionParser(selection), ref_struct, out_structs).get_consensus_gn_set()

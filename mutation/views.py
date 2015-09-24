@@ -60,44 +60,87 @@ class SegmentSelection(AbsSegmentSelection):
         },
     }
 
-def render_mutations(request):  
+def render_mutations(request, protein = None, family = None):  
+    print(protein)
+
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
     
      # local protein list
     proteins = []
 
-    # flatten the selection into individual proteins
-    for target in simple_selection.targets:
-        if target.type == 'protein':
-            proteins.append(target.item)
-        elif target.type == 'family':
-            # species filter
-            species_list = []
-            for species in simple_selection.species:
-                species_list.append(species.item)
+    if protein: #if protein static page
 
-            # annotation filter
-            protein_source_list = []
-            for protein_source in simple_selection.annotation:
-                protein_source_list.append(protein_source.item)
-                
-            family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                species__in=(species_list),
-                source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
-            for fp in family_proteins:
-                proteins.append(fp)
+        proteins.append(Protein.objects.get(entry_name = protein))
+        segments_ids = ProteinSegment.objects.all().values('id')
+        original_segments = ProteinSegment.objects.all()
 
-    original_segments = []
-    segments_ids = []
-    for segment in simple_selection.segments:
-        original_segments.append(segment.item)
-        segments_ids.append(segment.item.id)
+    elif family:
+
+        family_proteins = Protein.objects.filter(family__slug__startswith=family, sequence_type__slug='wt')
+        for fp in family_proteins:
+            proteins.append(fp)
+        segments_ids = ProteinSegment.objects.all().values('id')
+        original_segments = ProteinSegment.objects.all()
+
+    else:
+
+        # flatten the selection into individual proteins
+        for target in simple_selection.targets:
+            if target.type == 'protein':
+                proteins.append(target.item)
+            elif target.type == 'family':
+                # species filter
+                species_list = []
+                for species in simple_selection.species:
+                    species_list.append(species.item)
+
+                # annotation filter
+                protein_source_list = []
+                for protein_source in simple_selection.annotation:
+                    protein_source_list.append(protein_source.item)
+                    
+                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                    species__in=(species_list),
+                    source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                for fp in family_proteins:
+                    proteins.append(fp)
+
+        original_segments = []
+        segments_ids = []
+        for segment in simple_selection.segments:
+            original_segments.append(segment.item)
+            segments_ids.append(segment.item.id)
+
+       #scheme
+    used_schemes = {}
+    for protein in proteins:
+        if protein.residue_numbering_scheme.slug not in used_schemes:
+            used_schemes[protein.residue_numbering_scheme.slug] = 0
+        used_schemes[protein.residue_numbering_scheme.slug] += 1
+
+    used_scheme = max(used_schemes, key=used_schemes.get)
 
     #print(segments)
 
     mutations = MutationExperiment.objects.filter(protein__in=proteins, residue__protein_segment__in=original_segments).prefetch_related('protein', 'residue__protein_segment','residue__display_generic_number', 'residue','exp_func','exp_qual','exp_measure', 'exp_type', 'ligand_role', 'ligand','refs')
+    
     mutations_list = [x.residue.display_generic_number.label for x in mutations if x.residue.display_generic_number]
+    
+    mutations_list = {}
+    for mutation in mutations:
+        if not mutation.residue.display_generic_number: continue #cant map those without display numbers
+        if mutation.residue.display_generic_number.label not in mutations_list: mutations_list[mutation.residue.display_generic_number.label] = []
+        if mutation.ligand:
+            ligand = mutation.ligand.name
+        else:
+            ligand = ''
+        if mutation.exp_qual:
+            qual = mutation.exp_qual.qual
+        else:
+            qual = ''
+        mutations_list[mutation.residue.display_generic_number.label].append([mutation.foldchange,ligand,qual])
+
     # create an alignment object
     a = Alignment()
 
@@ -113,7 +156,7 @@ def render_mutations(request):
     residue_list = []
     generic_numbers = []
     reference_generic_numbers = {}
-    count = 0 #build sequence_number
+    count = 1 #build sequence_number
 
     ################################################################################
     #FIXME -- getting matching display_generic_numbers kinda randomly.
@@ -123,14 +166,13 @@ def render_mutations(request):
             if "x" in aa:
                 generic_numbers.append(aa)
 
-    generic_ids = Residue.objects.filter(generic_number__label__in=generic_numbers).values('id').distinct('generic_number__label').order_by('generic_number__label')
+    generic_ids = Residue.objects.filter(generic_number__label__in=generic_numbers,display_generic_number__scheme__slug=used_scheme).values('id').distinct('generic_number__label').order_by('generic_number__label')
     rs = Residue.objects.filter(id__in=generic_ids).prefetch_related('display_generic_number','generic_number')
 
     for r in rs: #make lookup dic.
         reference_generic_numbers[r.generic_number.label] = r
     ################################################################################
-    
-    mutations_pos_list = []
+    mutations_pos_list = {}
     for seg in a.consensus:
         for aa,v in a.consensus[seg].items():
             r = Residue()
@@ -138,7 +180,9 @@ def render_mutations(request):
             if "x" in aa:
                 r.display_generic_number = reference_generic_numbers[aa].display_generic_number #FIXME
                 if r.display_generic_number.label in mutations_list:
-                    mutations_pos_list.append(r.sequence_number)
+                    if r.sequence_number not in mutations_pos_list: 
+                        mutations_pos_list[r.sequence_number] = []
+                    mutations_pos_list[r.sequence_number].append(mutations_list[r.display_generic_number.label])
                 r.segment_slug = seg
                 r.family_generic_number = aa
             else:
@@ -156,6 +200,7 @@ def render_mutations(request):
 
     context = {}
     numbering_schemes_selection = ['gpcrdba','gpcrdbb','gpcrdbc','gpcrdbf'] #there is a residue_numbering_scheme attribute on the protein model, so it's easy to find out
+    numbering_schemes_selection = list(used_schemes.keys())
     numbering_schemes = ResidueNumberingScheme.objects.filter(slug__in=numbering_schemes_selection).all()
 
     segments = ProteinSegment.objects.filter(pk__in=segments_ids,category='helix')
@@ -220,7 +265,7 @@ def render_mutations(request):
 
 
     return render(request, 'mutation/list.html', {'mutations': mutations, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'data':context['data'], 
-        'header':context['header'], 'segments':context['segments'], 'mutations_pos_list' : mutations_pos_list, 'number_of_schemes':len(numbering_schemes), 'protein_ids':str(protein_ids)})
+        'header':context['header'], 'segments':context['segments'], 'mutations_pos_list' : json.dumps(mutations_pos_list), 'number_of_schemes':len(numbering_schemes), 'protein_ids':str(protein_ids)})
 
 # Create your views here.
 def index(request):
@@ -242,7 +287,15 @@ def ajax(request, slug, **response_kwargs):
     jsondata = {}
     for mutation in mutations:
         if mutation.residue.sequence_number not in jsondata: jsondata[mutation.residue.sequence_number] = []
-        jsondata[mutation.residue.sequence_number].append(mutation.foldchange)
+        if mutation.ligand:
+            ligand = mutation.ligand.name
+        else:
+            ligand = ''
+        if mutation.exp_qual:
+            qual = mutation.exp_qual.qual
+        else:
+            qual = ''
+        jsondata[mutation.residue.sequence_number].append([mutation.foldchange,ligand,qual])
 
     jsondata = json.dumps(jsondata)
     response_kwargs['content_type'] = 'application/json'

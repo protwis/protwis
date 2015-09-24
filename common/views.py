@@ -5,6 +5,7 @@ from django.conf import settings
 
 from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
+from structure.models import Structure
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 
@@ -264,7 +265,7 @@ def AddToSelection(request):
             o.append({'obj': ProteinSet.objects.get(pk=selection_id), 'properties': {}})
         
         elif selection_subtype == 'structure':
-            o.append({'obj': Protein.objects.get(entry_name=selection_id.lower()), 'properties': {}})
+            o.append({'obj': Structure.objects.get(pdb_code__index=selection_id.upper()), 'properties': {}})
     
     elif selection_type == 'segments':
         if selection_subtype == 'residue':
