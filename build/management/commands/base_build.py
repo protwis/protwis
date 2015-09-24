@@ -17,11 +17,14 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--njobs', action='store', dest='njobs', help='Number of jobs to run')
 
-    def prepare_input(self, njobs, items):
+    def prepare_input(self, njobs, items, iteration=1):
         q = Queue()
         procs = list()
         num_items = len(items)
-        
+
+        if not num_items:
+            return False
+
         # make sure not to use more jobs than proteins (chunk size will be 0, which is not good)
         if njobs > num_items:
             njobs = num_items
@@ -35,7 +38,7 @@ class Command(BaseCommand):
             else:
                 last = chunk_size * (i + 1)
     
-            p = Process(target=self.main_func, args=([(first, last)]))
+            p = Process(target=self.main_func, args=([(first, last), iteration]))
             procs.append(p)
             p.start()
 

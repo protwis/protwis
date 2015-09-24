@@ -1,4 +1,5 @@
-<div class="button_container">
+<div class="button_container"><br />
+    <b>Change displayed attributes</b>
    <table class="table table-bordered">
 
        <thead>
@@ -9,7 +10,7 @@
 
                <th>Value</th>
 
-               <th>Chosen attributes</th>
+               <th>Chosen attributes (Click to deselect)</th>
 
            </tr>
 
@@ -25,11 +26,11 @@
 
                        <a href="javascript:void(0)" onclick="SelectSubmenu('phylo')" class="btn btn-primary btn-block
 
-          ">Phylogeny</a><br>
+          ">Class/Family</a><br>
 
-                       <a href="javascript:void(0)" onclick="SelectSubmenu('mutants')" class="btn btn-primary btn-block
+                       <!--<a href="javascript:void(0)" onclick="SelectSubmenu('mutants')" class="btn btn-primary btn-block
 
-          ">Mutagenesis</a><br>
+          ">Mutagenesis</a><br>-->
 
                        <a href="javascript:void(0)" onclick="SelectSubmenu('crystals')" class="btn btn-primary btn-block
 
@@ -55,11 +56,11 @@
 
                        <a href="javascript:void(0)" onclick="SelectButtons('ligand_btn')" class="btn btn-primary btn-block
 
-          ">Ligand name</a><br>
+          ">Receptor family</a><br>
 
                       </div>
 
-           <div style="display: none; width:200px;" id='mutants' class="btn-group">
+           <!--<div style="display: none; width:200px;" id='mutants' class="btn-group">
 
                        <a href="javascript:void(0)" onclick="SelectButtons('mutant_btn')" class="btn btn-primary btn-block
 
@@ -73,7 +74,7 @@
 
           ">Negative mutant</a><br>
 
-                      </div>
+                      </div>-->
 
            <div style="display: none; width:200px;" id='crystals' class="btn-group">
 
@@ -130,6 +131,6 @@
 
    </table>
 <br>
-Show the selected properties as: <a href="javascript:void(0)" id="rings_btn" onclick="GetRings()" class="btn btn-primary">Rings</a>
+    <b>Show the selected properties as:</b> <a href="javascript:void(0)" id="rings_btn" onclick="GetRings()" class="btn btn-primary">{% if ttype == 1 %}Bars {% else %}Rings{% endif %}</a>
 <!--<a href="javascript:void(0)" id="fields_btn" onclick="DeselectButtons('crystal_btn')" class="btn btn-primary">Field colours</a>-->
 </div>

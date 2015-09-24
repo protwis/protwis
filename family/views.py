@@ -6,6 +6,7 @@ from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 
 from protein.models import Protein, ProteinFamily, ProteinSegment
 from residue.models import Residue,ResidueGenericNumber
+from mutation.models import MutationExperiment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 def detail(request, slug):
@@ -30,6 +31,8 @@ def detail(request, slug):
     # fetch proteins and segments
     proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt')
     segments = ProteinSegment.objects.filter(partial=False)
+
+    mutations = MutationExperiment.objects.filter(protein__in=proteins)
     
     # load data into the alignment
     a.load_proteins(proteins)
@@ -81,4 +84,4 @@ def detail(request, slug):
     SnakePlot = DrawSnakePlot(residue_list,'Class A',str('test'))
 
     return render(request, 'family/family_detail.html', {'pf': pf, 'families': families,
-        'no_of_proteins': no_of_proteins, 'no_of_human_proteins': no_of_human_proteins, 'a':a, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot})
+        'no_of_proteins': no_of_proteins, 'no_of_human_proteins': no_of_human_proteins, 'a':a, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'mutations':mutations})

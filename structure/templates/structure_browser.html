@@ -23,7 +23,7 @@
                 'orderCellsTop': true,
                 'autoWidth': true,
                 'dom': 'T<"clear">lfrtip',
-                'order': [[12, "asc"]], // order by date
+                'order': [[14, "asc"]], // order by date
                 'aoColumnDefs': [
                     { 'bSortable' : false, 'aTargets': [0] },
                     { 'sType': 'string', 'aTargets': [1] },
@@ -49,6 +49,8 @@
                             { type: "text" }, // endogenous ligand name
                             { type: "text" }, // endogenous ligand type
                             { type: "text" }, // x-ray ligand
+                            { type: "text" }, // x-ray ligand function
+                            { type: "text" }, // x-ray ligand type
                             { type: "text" }, // reference
                             { type: "date-range" }, // publication date
                         ]
@@ -57,14 +59,44 @@
             });
             $.datepicker.regional[""].dateFormat = "yy-mm-dd";
             $.datepicker.setDefaults($.datepicker.regional['']);
+            $('.alt').change(function () {
+                $(this).parent().parent().toggleClass('alt_selected');
             });
+            $('#superpose_btn').click(function () {
+                if (table.rows('.selected').data().length == 1) {
+                    var div = document.createElement("div");
+                    div.innerHTML = table.rows('.selected').data()[0][4];
+                    AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, ''));
+                }
+                var checked_data = table.rows('.alt_selected').data();
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][4];
+                    AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                }
+                window.location.href = '/structure/superposition_workflow_index';
+            });
+            $('#representative_btn').click(function () {
+                $.fn.dataTable.ext.search.push(
+                    function (settings, data, dataIndex) {
+                        if ($(settings.nTable).hasClass('repr-st')) {
+                            return true;
+                        }
+                        return false;
+                    });
+                table.draw();
+            });
+        });
     </script> 
 {% endblock %}
 
 {% block content %}
     <div style="font-size: 10px;">Select (tick box) structures, and Highlight the reference template</div><br />
     <div class="btn-group">
-        <a class="btn btn-primary btn-mini " href="/structure/superposition_workflow_index">Superpose structures</a>
+        <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superpose structures</a>
+    </div>
+    <div class="btn-group">
+        <a id="representative_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show representative</a>
     </div>
     <br />
     <br />
@@ -84,6 +116,8 @@
                         <th class="ligand-th">Endo. ligand</th>
                         <th class="ligand-th">Endo. lig. type</th>
                         <th class="ligand-th">X-ray ligand</th>
+                        <th class="ligand-th">X-ray lig. function</th>
+                        <th class="ligand-th">X-ray lig. type</th>
                         <th class="pub-th">Reference</th>
                         <th class="pub-th">Date</th>
                     </tr>
@@ -101,25 +135,59 @@
                         <th></th>
                         <th></th>
                         <th></th>
+                        <th></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for structure in structures.select_related.all %}
-                    <tr>
-                        <th><form><input type="checkbox" /></form></th>
+                {% for structure in structures.select_related.all %}
+                    {% if structure.representative %}
+                        <tr class="repr-st">
+                    {% else %}
+                        <tr>
+                    {% endif %}
+                        <td><input class="alt" type="checkbox"></td>
                         <td>{{ structure.protein_conformation.protein.family.name|safe }}</td>
                         <td>{{ structure.protein_conformation.protein.get_protein_class }}</td>
                         <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
-                            <td class="text-center"><a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}
+                        <td class="text-center"><a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}
                         </a></td>
                         <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
                         <td class="text-center">{{ structure.preferred_chain }}</td>
-                        <td>{{ structure.stabilizing_agents.all|join_attr:"name" }}</td>
-                        <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|join_attr:"name" }}</td>
-                        <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all|join_attr:"properties__ligand_type" }}</td>
-                        <td>{{ structure.ligands.all|join_attr:"name"|slice:":20" }}</td>
                         <td>
-                            <a href="{{ structure.publication.web_link }}">{{ structure.publication.web_link.index }}</a>
+                            {% for sa in structure.stabilizing_agents.all %}
+                                {{ sa.name }}<br />
+                            {% empty %}
+                            N/A
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for ligand in structure.protein_conformation.protein.parent.endogenous_ligands.all %}
+                            {{ ligand|safe }}<br />
+                            {% empty %}
+                            N/A
+                            {% endfor %}
+                        </td>
+                        <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
+                        <td>
+                            {% for ligand in structure.ligands.all %}
+                            {{ ligand.ligand.name|safe }}
+                            {% empty %}
+                            N/A
+                            {% endfor %}
+                        </td>
+                        <td>{{ structure.ligands.all.0.ligand_role.name }}</td>
+                        <td>
+                            {% for ligand in structure.ligands.all %}
+                            {{ ligand.ligand.properities.ligand_type }}
+                            {% empty %}
+                            N/A
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <a href="{{ structure.publication.web_link }}">
+                            {{ structure.publication.web_link.index }}
+                            </a>
                         </td>
                         <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
                     </tr>

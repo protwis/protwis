@@ -6,6 +6,7 @@ from django.db.models import Q
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene
 from residue.models import Residue
 from structure.models import Structure
+from mutation.models import MutationExperiment
 from common.selection import Selection
 from common.views import AbsBrowseSelection
 
@@ -46,12 +47,15 @@ def detail(request, slug):
     alt_genes = genes[1:]
 
     # get structures of this protein
-    structures = Structure.objects.filter(protein_conformation__protein__parent=p)
+    structures = Structure.objects.filter(protein_conformation__protein__parent=p).order_by('-representative',
+        'resolution')
 
     # get residues
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
         'protein_segment', 'generic_number', 'display_generic_number')
 
+    mutations = MutationExperiment.objects.filter(protein=p)
+    
     # process residues and return them in chunks of 10
     # this is done for easier scaling on smaller screens
     chunk_size = 10
@@ -88,7 +92,7 @@ def detail(request, slug):
         r_chunks.append(r_buffer)
 
     context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
-        'gene': gene, 'alt_genes': alt_genes, 'structures': structures}
+        'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations}
 
     return render(request, 'protein/protein_detail.html', context)
 
