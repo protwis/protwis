@@ -109,21 +109,24 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, e
                         scheme=protein_conformation.protein.residue_numbering_scheme)
             
             # display generic number
-            ns = protein_conformation.protein.residue_numbering_scheme.slug
-            gnl = numbers['display_generic_number']
-            if gnl in schemes[ns]['generic_numbers']:
-                rvalues['display_generic_number'] = schemes[ns]['generic_numbers'][gnl]
+            if 'display_generic_number' in numbers:
+                ns = protein_conformation.protein.residue_numbering_scheme.slug
+                gnl = numbers['display_generic_number']
+                if gnl in schemes[ns]['generic_numbers']:
+                    rvalues['display_generic_number'] = schemes[ns]['generic_numbers'][gnl]
+                else:
+                    try:
+                        gn, created = ResidueGenericNumber.objects.get_or_create(
+                            scheme=protein_conformation.protein.residue_numbering_scheme,
+                            label=gnl, defaults=rns_defaults)
+                        if created:
+                            logger.info('Created generic number {}'.format(gn.label))
+                    except IntegrityError:
+                        gn = ResidueGenericNumber.objects.get(
+                            scheme=protein_conformation.protein.residue_numbering_scheme, label=gnl)
+                    rvalues['display_generic_number'] = schemes[ns]['generic_numbers'][gnl] = gn
             else:
-                try:
-                    gn, created = ResidueGenericNumber.objects.get_or_create(
-                        scheme=protein_conformation.protein.residue_numbering_scheme,
-                        label=gnl, defaults=rns_defaults)
-                    if created:
-                        logger.info('Created generic number {}'.format(gn.label))
-                except IntegrityError:
-                    gn = ResidueGenericNumber.objects.get(
-                        scheme=protein_conformation.protein.residue_numbering_scheme, label=gnl)
-                rvalues['display_generic_number'] = schemes[ns]['generic_numbers'][gnl] = gn
+                logger.error('No display generic_numbers for {} in {}'.format(gnl, protein_conformation))
         else:
             rvalues['generic_number'] = None
             rvalues['display_generic_number'] = None
@@ -215,11 +218,10 @@ def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, r
     if 'table' in schemes[residue_numbering_scheme.slug]:
         if structure_corrected_generic_number in schemes[residue_numbering_scheme.slug]['table']:
             equivalent = schemes[residue_numbering_scheme.slug]['table'][structure_corrected_generic_number]
+            numbers['equivalent'] = equivalent + prime
         else:
-            logger.warning('{} equivalent for number {} not found, using {}'.format(residue_numbering_scheme.slug,
+            logger.error('{} equivalent for number {} not found, using {}'.format(residue_numbering_scheme.slug,
                 structure_corrected_generic_number, structure_corrected_generic_number))
-            equivalent = structure_corrected_generic_number
-        numbers['equivalent'] = equivalent + prime
 
     # alternative schemes
     numbers['alternative_generic_numbers'] = {}
@@ -231,14 +233,14 @@ def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, r
                 else:
                     logger.warning('{} equivalent for number {} not found, using {}'.format(s['parent'],
                         generic_number, generic_number))
-                    seq_based_num = generic_number
+                    continue
                 
                 if structure_corrected_generic_number in s['table']:
                     str_based_num = s['table'][structure_corrected_generic_number] + prime
                 else:
                     logger.warning('{} equivalent for number {} not found, using {}'.format(scheme,
                         structure_corrected_generic_number, structure_corrected_generic_number))
-                    str_based_num = structure_corrected_generic_number + prime
+                    continue
                 
                 split_str_based_num = str_based_num.split('x')
                 numbers['alternative_generic_numbers'][scheme] = seq_based_num + 'x' + split_str_based_num[1]

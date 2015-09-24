@@ -224,7 +224,7 @@ class Command(BaseBuild):
                     try:
                         s.protein_conformation = ProteinConformation.objects.get(protein=con)
                     except ProteinConformation.DoesNotExist:
-                        self.logger.error('Construct {} does not exists'.format(con))
+                        self.logger.error('Protein conformation for construct {} does not exists'.format(con))
                         continue
                     if s.protein_conformation.state is not state:
                         ProteinConformation.objects.filter(protein=con).update(state=ps)
