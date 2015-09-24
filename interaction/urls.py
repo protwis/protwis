@@ -5,8 +5,10 @@ from interaction import views
 
 urlpatterns = patterns('',
     url(r'^$', views.index, name='index'),
+    url(r'^(?P<vignir>vignir)$', views.index, name='vignir'),
     url(r'^list', views.list, name='list'),
     url(r'^calculate', views.calculate, name='calculate'),
+    url(r'^(?P<vignir>vignir)/calculate', views.calculate, name='vignir'),
     url(r'^updateall', views.updateall, name='updateall'),
     url(r'^download', views.download, name='download'),
     url(r'^pdbfragment', views.pdbfragment, name='pdbfragment'),
