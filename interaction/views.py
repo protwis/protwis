@@ -534,13 +534,18 @@ def calculate(request, redirect=None):
             results = ''
 
             session_key = request.session.session_key
-            module_dir = '/tmp/interactions/' + session_key
-            makedirs(module_dir, 0o777, True)
-
-            sub_dirs = ['pdbs', 'temp']
-            for sub_dir in sub_dirs:
-                sub_dir = module_dir + '/' + sub_dir
-                makedirs(sub_dir, 0o777, True)
+            module_dirs = []
+            module_dir = '/tmp/interactions'
+            module_dirs.append(module_dir)
+            module_dir = os.sep.join([module_dir, session_key])
+            module_dirs.append(module_dir)
+            module_dirs.append(os.sep.join([module_dir, 'pdbs']))
+            module_dirs.append(os.sep.join([module_dir, 'temp']))
+            
+            # create dirs and set permissions (needed on some systems)
+            for mdir in module_dirs:
+                os.makedirs(mdir, exist_ok=True)
+                os.chmod(mdir, 0o777)
 
             if 'file' in request.FILES:
                 pdbdata = request.FILES['file']
