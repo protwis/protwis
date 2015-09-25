@@ -1,8 +1,6 @@
 from django.shortcuts import render
-from django.http import HttpResponse
-#from interaction.functions import *
-# Create your views here.
-from subprocess import call
+from django.http import HttpResponse, HttpResponseRedirect
+from django.conf import settings
 from .forms import PDBform
 from django import forms
 from django.core.servers.basehttp import FileWrapper
@@ -17,10 +15,12 @@ from structure.models import Structure,PdbData,Rotamer,Fragment
 from structure.functions import BlastSearch
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from protein.models import ProteinConformation,Protein
-from residue.models import Residue, ResidueGenericNumber
+from residue.models import Residue, ResidueGenericNumber, ResidueGenericNumberEquivalent
 from common.models import WebResource
 from common.models import WebLink
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
+from common.selection import SimpleSelection, Selection, SelectionItem
+from common import definitions
 
 from os import path, listdir, devnull,makedirs
 from os.path import isfile, join
@@ -30,7 +30,7 @@ from datetime import datetime
 import re
 import json
 import logging
-from subprocess import Popen, DEVNULL
+from subprocess import call, Popen, DEVNULL
 import urllib
 import collections
 from io import StringIO, BytesIO
@@ -53,14 +53,18 @@ def regexaa(aa):
     else:
         return None, None, None
 
-def index(request, vignir=None):
-    print(vignir)
+def index(request):
     form = PDBform()
 
     structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index','structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate( num_ligands=Count('structure_ligand_pair', distinct = True),num_interactions=Count('pk', distinct = True)).order_by('structure_ligand_pair__structure__pdb_code__index')
    
     #context = {}
-    return render(request,'interaction/index.html',{'form': form, 'structures':structures, 'vignir':vignir })
+    return render(request,'interaction/index.html', {'form': form, 'structures':structures})
+
+def sitesearch(request):
+    form = PDBform()
+
+    return render(request,'interaction/sitesearch.html', {'form': form})
 
 def list(request):
     form = PDBform()
@@ -521,7 +525,7 @@ def parseusercalculation(pdbname,session, debug = True, ignore_ligand_preset = F
 
     return results
 
-def calculate(request, vignir=None):   
+def calculate(request, redirect=None):   
     if request.method == 'POST':
         form = PDBform(request.POST, request.FILES)
         if form.is_valid():
@@ -575,6 +579,11 @@ def calculate(request, vignir=None):
             out_struct = generic_numbering.assign_generic_numbers()
             structure_residues = generic_numbering.residues
             segments = {}
+
+            # print(structure_residues)
+            for chain, res in structure_residues.items():
+                for res_num, res_attr in res.items():
+                    print(str(res_num), res_attr.name, res_attr.bw, res_attr.gpcrdb)
 
             generic_ids = []
             generic_number = []
@@ -686,22 +695,27 @@ def calculate(request, vignir=None):
                 if line.startswith('JRNL        DOI'):
                     xtal['doi_id'] = line[19:].strip()
 
-            #print(xtal)
-
             results = parseusercalculation(pdbname,request.session.session_key)
 
-            #print(results)
             simple = collections.OrderedDict()
             simple_generic_number = collections.OrderedDict()
             residues = []
             mainligand = ''
+            interaction_types = ['aromatic','aromaticplus','hbond','hbond_confirmed','hydrophobic', 'hbondplus',
+                'aromaticfe','waals']
+            
             for ligand in results:
-                print(ligand[1])
-                if mainligand=='': mainligand=ligand[1] #select top hit
-                simple[ligand[1]] = {'score':round(ligand[2][0]['score'][0][0])}
-                simple_generic_number[ligand[1]] = {'score':round(ligand[2][0]['score'][0][0])}
+                ligand_score = round(ligand[2][0]['score'][0][0])
+
+                # select top hit
+                if mainligand == '':
+                    mainligand=ligand[1]
+                
+                simple[ligand[1]] = {'score': ligand_score}
+                simple_generic_number[ligand[1]] = {'score': ligand_score}
+                
                 for key,values in ligand[2][0].items():
-                    if key in ['aromatic','aromaticplus','hbond','hbond_confirmed','hydrophobic', 'hbondplus', 'aromaticfe','waals']:
+                    if key in interaction_types:
                         for value in values:
                             aa,pos,chain = regexaa(value[0])
                             if int(pos) in structure_residues[chain]:
@@ -725,8 +739,57 @@ def calculate(request, vignir=None):
 
                             residues.append({'type':key,'aa':aa,'ligand':ligand[1],'pos':pos, 'gpcrdb':display, 'segment':segment})
 
-            if vignir:
-                return render(request,'interaction/vignir.html',{'simple':simple,'simple_generic_number':simple_generic_number})
+            if redirect:
+                # get simple selection from session
+                simple_selection = request.session.get('selection', False)
+                
+                # create full selection and import simple selection (if it exists)
+                selection = Selection()
+                if simple_selection:
+                    selection.importer(simple_selection)
+
+                # convert identified interactions to the correct names and add them to the session
+                # FIXME use the correct names from the beginning
+                interaction_name_dict = {
+                    'aromatic': 'ar',
+                    'aromaticplus': 'ar',
+                    'aromaticfe': 'ar',
+                    'hbond': 'hba',
+                    'hbond_confirmed': 'hba',
+                    'hbondplus': 'hba',
+                    'hydrophobic': 'hp',
+                }
+                for gn, interactions in simple_generic_number[mainligand].items():
+                    if gn != 'score':
+                        if interactions[0] in interaction_name_dict:
+                            feature = interaction_name_dict[interactions[0]]
+                        else:
+                            continue
+
+                        # get residue number equivalent object
+                        rne = ResidueGenericNumberEquivalent.objects.get(label=gn,
+                            scheme__slug='gpcrdba')
+
+                        # create a selection item
+                        properties = {
+                            'feature': feature,
+                            'amino_acids': ','.join(definitions.AMINO_ACID_GROUPS[feature]),
+                        }
+                        selection_item = SelectionItem('site_residue', rne, properties)
+                        # selection_item.properties['feature'] = feature
+                        # selection_item.properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS[feature])
+
+                        # add to selection
+                        selection.add('segments', 'site_residue', selection_item)
+
+                # export simple selection that can be serialized
+                simple_selection = selection.exporter()
+
+                # add simple selection to session
+                request.session['selection'] = simple_selection
+                
+                # re-direct to segment selection (with the extracted interactions already selected)
+                return HttpResponseRedirect(redirect)
             else:
                 return render(request,'interaction/diagram.html',{'result' : "Looking at "+pdbname, 'outputs' : results,
                  'simple' : simple ,'simple_generic_number' : simple_generic_number , 'xtal' : xtal, 'pdbname':pdbname, 'mainligand':mainligand, 'residues':residues,
