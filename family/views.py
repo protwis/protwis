@@ -4,9 +4,10 @@ from django.views import generic
 
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 
-from protein.models import Protein, ProteinFamily, ProteinSegment
+from protein.models import Protein, ProteinFamily, ProteinSegment, ProteinConformation
 from residue.models import Residue,ResidueGenericNumber
 from mutation.models import MutationExperiment
+from structure.models import Structure
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 def detail(request, slug):
@@ -25,15 +26,19 @@ def detail(request, slug):
     no_of_proteins = Protein.objects.filter(family__slug__startswith=pf.slug).count()
     no_of_human_proteins = Protein.objects.filter(family__slug__startswith=pf.slug, species__id=1).count()
 
-        # create an alignment object
-    a = Alignment()
-
     # fetch proteins and segments
     proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt')
     segments = ProteinSegment.objects.filter(partial=False)
 
+    # get structures of this family
+    structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=slug
+        ).order_by('-representative', 'resolution')
+
     mutations = MutationExperiment.objects.filter(protein__in=proteins)
     
+    # create an alignment object
+    a = Alignment()
+
     # load data into the alignment
     a.load_proteins(proteins)
     a.load_segments(segments)
@@ -57,7 +62,8 @@ def detail(request, slug):
             if "x" in aa:
                 generic_numbers.append(aa)
 
-    generic_ids = Residue.objects.filter(generic_number__label__in=generic_numbers).values('id').distinct('generic_number__label').order_by('generic_number__label')
+    generic_ids = Residue.objects.filter(generic_number__label__in=generic_numbers).values('id').distinct(
+        'generic_number__label').order_by('generic_number__label')
     rs = Residue.objects.filter(id__in=generic_ids).prefetch_related('display_generic_number','generic_number')
 
     for r in rs: #make lookup dic.
@@ -83,5 +89,49 @@ def detail(request, slug):
     HelixBox = DrawHelixBox(residue_list,'Class A',str('test'))
     SnakePlot = DrawSnakePlot(residue_list,'Class A',str('test'))
 
-    return render(request, 'family/family_detail.html', {'pf': pf, 'families': families,
-        'no_of_proteins': no_of_proteins, 'no_of_human_proteins': no_of_human_proteins, 'a':a, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'mutations':mutations})
+    # get residues for sequence viewer
+    # get residues
+    pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__sequence_type__slug='consensus')
+    residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
+        'protein_segment', 'generic_number', 'display_generic_number')
+    
+    # process residues and return them in chunks of 10
+    # this is done for easier scaling on smaller screens
+    chunk_size = 10
+    r_chunks = []
+    r_buffer = []
+    last_segment = False
+    border = False
+    title_cell_skip = 0
+    for i, r in enumerate(residues):
+        # title of segment to be written out for the first residue in each segment
+        segment_title = False
+        
+        # keep track of last residues segment (for marking borders)
+        if r.protein_segment.slug != last_segment:
+            last_segment = r.protein_segment.slug
+            border = True
+        
+        # if on a border, is there room to write out the title? If not, write title in next chunk
+        if i == 0 or (border and len(last_segment) <= (chunk_size - i % chunk_size)):
+            segment_title = True
+            border = False
+            title_cell_skip += len(last_segment) # skip cells following title (which has colspan > 1)
+        
+        if i and i % chunk_size == 0:
+            r_chunks.append(r_buffer)
+            r_buffer = []
+        
+        r_buffer.append((r, segment_title, title_cell_skip))
+
+        # update cell skip counter
+        if title_cell_skip > 0:
+            title_cell_skip -= 1
+    if r_buffer:
+        r_chunks.append(r_buffer)
+
+    context = {'pf': pf, 'families': families, 'structures': structures, 'no_of_proteins': no_of_proteins,
+        'no_of_human_proteins': no_of_human_proteins, 'a':a, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot,
+        'mutations':mutations, 'r_chunks': r_chunks, 'chunk_size': chunk_size}
+
+    return render(request, 'family/family_detail.html', context)
