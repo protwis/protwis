@@ -229,18 +229,6 @@ class Command(BaseBuild):
                     if s.protein_conformation.state is not state:
                         ProteinConformation.objects.filter(protein=con).update(state=ps)
 
-                    # if not representative, get the representative structure
-                    # FIXME is this used anywhere?
-                    representative_structure = False
-                    if not representative:
-                        try:
-                            representative_structure = Structure.objects.get(
-                                protein_conformation__protein__parent=con.parent, representative=True, state=s.state)
-                        except Structure.DoesNotExist:
-                            self.logger.error("No representative structure for protein {}".format(
-                                s.protein_conformation.protein.parent))
-                            continue
-
                     # get the PDB file and save to DB
                     sd['pdb'] = sd['pdb'].upper()
                     if not os.path.exists(self.pdb_data_dir):
