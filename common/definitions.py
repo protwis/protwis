@@ -21,6 +21,7 @@ AMINO_ACIDS = OrderedDict([
         ('V', 'Val'),
         ('W', 'Trp'),
         ('Y', 'Tyr'),
+        ('X', 'Xaa'),
     ])
 
 AMINO_ACID_GROUPS = OrderedDict([

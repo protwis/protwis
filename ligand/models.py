@@ -38,21 +38,33 @@ class Ligand(models.Model):
             existing_ligand = Ligand.objects.get(name=ligand_name, canonical=True)
             return existing_ligand
         except Ligand.DoesNotExist:
-            self.update_ligand(ligand_name, {}, ligand_type)
+            web_resource = False
+            
+            if gtop_id:
+                # gtoplig webresource
+                web_resource = WebResource.objects.get(slug='gtoplig')
+            
+            self.update_ligand(ligand_name, {}, ligand_type, web_resource, gtop_id)
             return self
 
-    def load_by_pubchem_id(self, pubchem_id, ligand_type):
+    def load_by_pubchem_id(self, pubchem_id, ligand_type, ligand_title):
         logger = logging.getLogger('build')
 
-        # fetch ligand name from pubchem
-        pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + str(pubchem_id) + '/synonyms/json'
-        try:
-            req = urlopen(pubchem_url)
-            pubchem = json.loads(req.read().decode('UTF-8'))
-            ligand_name = pubchem['InformationList']['Information'][0]['Synonym'][0]
-        except:
-            logger.error('Error fetching ligand {} from PubChem'.format(pubchem_id))
-            return
+        # if ligand title is specified, use that as the name
+        if ligand_title:
+            ligand_name = ligand_title
+
+        # otherwise, fetch ligand name from pubchem
+        else:
+            pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + str(pubchem_id) \
+                + '/synonyms/json'
+            try:
+                req = urlopen(pubchem_url)
+                pubchem = json.loads(req.read().decode('UTF-8'))
+                ligand_name = pubchem['InformationList']['Information'][0]['Synonym'][0]
+            except:
+                logger.error('Error fetching ligand {} from PubChem'.format(pubchem_id))
+                return
 
         # fetch ligand properties from pubchem
         properties = {}
