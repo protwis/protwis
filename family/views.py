@@ -23,8 +23,9 @@ def detail(request, slug):
     families.reverse()
 
     # number of proteins
-    no_of_proteins = Protein.objects.filter(family__slug__startswith=pf.slug).count()
-    no_of_human_proteins = Protein.objects.filter(family__slug__startswith=pf.slug, species__id=1).count()
+    no_of_proteins = Protein.objects.filter(family__slug__startswith=pf.slug, sequence_type__slug='wt').count()
+    no_of_human_proteins = Protein.objects.filter(family__slug__startswith=pf.slug, species__id=1,
+        sequence_type__slug='wt').count()
 
     # fetch proteins and segments
     proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt')
