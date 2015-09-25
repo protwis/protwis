@@ -171,15 +171,21 @@
                         <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
                         <td>
                             {% for ligand in structure.ligands.all %}
-                            {{ ligand.ligand.name|safe }}
+                            {{ ligand.ligand.name|safe }}<br />
                             {% empty %}
                             N/A
                             {% endfor %}
                         </td>
-                        <td>{{ structure.ligands.all.0.ligand_role.name }}</td>
                         <td>
                             {% for ligand in structure.ligands.all %}
-                            {{ ligand.ligand.properities.ligand_type }}
+                            {{ ligand.ligand_role.name }}<br />
+                            {% empty %}
+                            N/A
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for ligand in structure.ligands.all %}
+                            {{ ligand.ligand.properities.ligand_type }}<br />
                             {% empty %}
                             N/A
                             {% endfor %}
