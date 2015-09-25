@@ -123,22 +123,26 @@ def check_pdb():
 
 def checkdirs():
 
-    #print(projectdir)
     directory = projectdir + 'results/'+pdbname+'/interaction'
     if not os.path.exists(directory):
         os.makedirs(directory)
+        os.chmod(directory, 0o777)
     directory = projectdir + 'results/'+pdbname+'/ligand'
     if not os.path.exists(directory):
         os.makedirs(directory)
+        os.chmod(directory, 0o777)
     directory = projectdir + 'results/'+pdbname+'/output'
     if not os.path.exists(directory):
         os.makedirs(directory)
+        os.chmod(directory, 0o777)
     directory = projectdir + 'results/'+pdbname+'/png'
     if not os.path.exists(directory):
         os.makedirs(directory)
+        os.chmod(directory, 0o777)
     directory = projectdir + 'results/'+pdbname+'/fragments'
     if not os.path.exists(directory):
         os.makedirs(directory)
+        os.chmod(directory, 0o777)
 
 def find_ligand_full_names():
     pdbfile = projectdir+'pdbs/'+pdbname+'.pdb'
