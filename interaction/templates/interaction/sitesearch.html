@@ -15,10 +15,7 @@ Enter a PDB name to analyse:
     {{ form.pdbname }} <br> or 
     <p>{{ form.file.label_tag }}</p> {{ form.file }}
     <br>
-    {% if vignir == 'vignir' %}
-        <input type="hidden" name="vignir" value="vignir">
-    {% endif %}
-        <input type="submit" value="OK">
+    <input type="submit" value="OK">
 </form>
 
 {% endblock %}
