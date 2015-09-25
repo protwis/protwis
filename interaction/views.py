@@ -1,8 +1,6 @@
 from django.shortcuts import render
-from django.http import HttpResponse
-#from interaction.functions import *
-# Create your views here.
-from subprocess import call
+from django.http import HttpResponse, HttpResponseRedirect
+from django.conf import settings
 from .forms import PDBform
 from django import forms
 from django.core.servers.basehttp import FileWrapper
@@ -17,20 +15,22 @@ from structure.models import Structure,PdbData,Rotamer,Fragment
 from structure.functions import BlastSearch
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from protein.models import ProteinConformation,Protein
-from residue.models import Residue, ResidueGenericNumber
+from residue.models import Residue, ResidueGenericNumber, ResidueGenericNumberEquivalent
 from common.models import WebResource
 from common.models import WebLink
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
+from common.selection import SimpleSelection, Selection, SelectionItem
+from common import definitions
 
-from os import path, listdir, devnull,makedirs
-from os.path import isfile, join
+import os
+from os import listdir, devnull, makedirs
 import yaml
 from operator import itemgetter
 from datetime import datetime
 import re
 import json
 import logging
-from subprocess import Popen, DEVNULL
+from subprocess import call, Popen, DEVNULL
 import urllib
 import collections
 from io import StringIO, BytesIO
@@ -53,14 +53,18 @@ def regexaa(aa):
     else:
         return None, None, None
 
-def index(request, vignir=None):
-    print(vignir)
+def index(request):
     form = PDBform()
 
     structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index','structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate( num_ligands=Count('structure_ligand_pair', distinct = True),num_interactions=Count('pk', distinct = True)).order_by('structure_ligand_pair__structure__pdb_code__index')
    
     #context = {}
-    return render(request,'interaction/index.html',{'form': form, 'structures':structures, 'vignir':vignir })
+    return render(request,'interaction/index.html', {'form': form, 'structures':structures})
+
+def sitesearch(request):
+    form = PDBform()
+
+    return render(request,'interaction/sitesearch.html', {'form': form})
 
 def list(request):
     form = PDBform()
@@ -177,7 +181,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
 
         if structure.pdb_data is None:
             f = module_dir+"/pdbs/"+pdbname+".pdb"
-            if isfile(f):      
+            if os.path.isfile(f):      
                 pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read()) #does this close the file?
             else:
                 print('quitting due to no pdb in filesystem')
@@ -188,7 +192,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
         protein=structure.protein_conformation
 
         for f in listdir(mypath):
-            if isfile(join(mypath,f)):       
+            if os.path.isfile(os.path.join(mypath,f)):       
                 result = yaml.load(open(mypath+"/"+f, 'rb'))
                 output = result
 
@@ -244,7 +248,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                 #proteinligand, created = ProteinLigandInteraction.objects.get_or_create(protein=protein,ligand=ligand)
 
                 f = module_dir+"/results/"+pdbname+"/interaction"+"/"+pdbname+"_"+temp[1]+".pdb"
-                if isfile(f):      
+                if os.path.isfile(f):      
                     pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read()) #does this close the file?
                     if debug: print("Found file"+f)
                 else:
@@ -303,7 +307,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
 
                                 f = module_dir+"/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_"+fragment+"_HB.pdb"
                                 if interactiontype=='hbondplus':  f = module_dir+"/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_"+fragment+"_HBC.pdb"
-                                if isfile(f):      
+                                if os.path.isfile(f):      
                                     if debug: print("Found file"+f)
                                     f_in = open(f, 'r')
                                     rotamer_pdb = ''
@@ -354,7 +358,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
 
                                 #mypath = module_dir+'/temp/results/'+pdbname+'/fragments'
                                 f = module_dir+"/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_"+fragment+"_HB.pdb"
-                                if isfile(f):      
+                                if os.path.isfile(f):      
                                     if debug: print("Found file"+f)
                                     f_in = open(f, 'r')
                                     rotamer_pdb = ''
@@ -402,7 +406,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                             fragment = '' #NEED TO EXPAND THIS TO INCLUDE MORE INFO
 
                             f = module_dir+"/results/"+pdbname+"/ligand/"+temp[1]+"_"+pdbname+".pdb"
-                            if isfile(f):      
+                            if os.path.isfile(f):      
                                 liganddata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read()) #does this close the file?
                                 if debug: logger.info("Hydro Found file"+f)
                             else:
@@ -438,7 +442,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                                 #continue #SKIP THESE -- mostly fusion residues that aren't mapped yet.
 
                             f = module_dir+"/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_aromatic_"+str(entry[1])+".pdb"
-                            if isfile(f):      
+                            if os.path.isfile(f):      
                                 if debug: logger.info("Found file"+f)
                                 f_in = open(f, 'r')
                                 rotamer_pdb = ''
@@ -468,7 +472,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
     else:
         if debug: logger.info("Structure not in DB?!??!")
         for f in listdir(mypath):
-            if isfile(join(mypath,f)):       
+            if os.path.isfile(os.path.join(mypath,f)):       
                 result = yaml.load(open(mypath+"/"+f, 'rb'))
                 output = result
 
@@ -486,11 +490,11 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
 
     return results
 
-def runusercalculation(filename,session):
+def runusercalculation(filename, session):
     call(["python", "interaction/functions.py","-p",filename,"-s",session])
     return None
 
-def parseusercalculation(pdbname,session, debug = True, ignore_ligand_preset = False, ): #consider skipping non hetsym ligands FIXME
+def parseusercalculation(pdbname, session, debug = True, ignore_ligand_preset = False, ): #consider skipping non hetsym ligands FIXME
     logger = logging.getLogger('build')
     mypath = '/tmp/interactions/'+session+'/results/'+pdbname+'/output'
     module_dir = '/tmp/interactions/'+session
@@ -498,7 +502,7 @@ def parseusercalculation(pdbname,session, debug = True, ignore_ligand_preset = F
    
 
     for f in listdir(mypath):
-        if isfile(join(mypath,f)):       
+        if os.path.isfile(os.path.join(mypath,f)):       
             result = yaml.load(open(mypath+"/"+f, 'rb'))
             output = result
 
@@ -521,7 +525,7 @@ def parseusercalculation(pdbname,session, debug = True, ignore_ligand_preset = F
 
     return results
 
-def calculate(request, vignir=None):   
+def calculate(request, redirect=None):   
     if request.method == 'POST':
         form = PDBform(request.POST, request.FILES)
         if form.is_valid():
@@ -529,20 +533,23 @@ def calculate(request, vignir=None):
             pdbname = form.cleaned_data['pdbname'].strip()
             results = ''
 
-            module_dir = '/tmp/interactions/' + request.session.session_key
-
-            if not path.exists('/tmp/interactions/'):
-                makedirs('/tmp/interactions/')
-            if not path.exists('/tmp/interactions/'+ request.session.session_key):
-                makedirs('/tmp/interactions/'+ request.session.session_key)
-            if not path.exists('/tmp/interactions/'+ request.session.session_key+'/pdbs'):
-                makedirs('/tmp/interactions/'+ request.session.session_key+'/pdbs')
-            if not path.exists('/tmp/interactions/'+ request.session.session_key+'/temp'):
-                makedirs('/tmp/interactions/'+ request.session.session_key+'/temp')
+            session_key = request.session.session_key
+            module_dirs = []
+            module_dir = '/tmp/interactions'
+            module_dirs.append(module_dir)
+            module_dir = os.sep.join([module_dir, session_key])
+            module_dirs.append(module_dir)
+            module_dirs.append(os.sep.join([module_dir, 'pdbs']))
+            module_dirs.append(os.sep.join([module_dir, 'temp']))
+            
+            # create dirs and set permissions (needed on some systems)
+            for mdir in module_dirs:
+                os.makedirs(mdir, exist_ok=True)
+                os.chmod(mdir, 0o777)
 
             if 'file' in request.FILES:
                 pdbdata = request.FILES['file']
-                pdbname = path.splitext(str(pdbdata))[0]
+                pdbname = os.path.splitext(str(pdbdata))[0]
                 with open(module_dir+'/pdbs/'+str(pdbdata), 'wb+') as destination:
                      for chunk in pdbdata.chunks():
                          destination.write(chunk)
@@ -551,14 +558,14 @@ def calculate(request, vignir=None):
                 temp_path = module_dir+'/pdbs/'+str(pdbdata)
                 pdbdata=open(temp_path,'r').read()
                 print('do calc')
-                runusercalculation(pdbname,request.session.session_key)
+                runusercalculation(pdbname, request.session.session_key)
 
             else:
                 pdbname = form.cleaned_data['pdbname'].strip()
                 print('pdbname selected!',pdbname)
                 temp_path = module_dir+'/pdbs/'+pdbname+'.pdb'
 
-                if not path.isfile(temp_path):
+                if not os.path.isfile(temp_path):
                     url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
                     pdbdata = urllib.request.urlopen(url).read().decode('utf-8')
                     f=open(temp_path,'w')
@@ -567,10 +574,9 @@ def calculate(request, vignir=None):
                 else:
                     pdbdata=open(temp_path,'r').read()
                 print('do calc')
-                runusercalculation(pdbname,request.session.session_key)
+                runusercalculation(pdbname, request.session.session_key)
 
-            print('map GPCRdb numbering on result')
-            #MAPPING GPCRdb numbering onto pdb.
+            # MAPPING GPCRdb numbering onto pdb.
             generic_numbering = GenericNumbering(temp_path)
             out_struct = generic_numbering.assign_generic_numbers()
             structure_residues = generic_numbering.residues
@@ -579,14 +585,6 @@ def calculate(request, vignir=None):
             generic_ids = []
             generic_number = []
             previous_seg = 'N-term'
-
-            # for chain in out_struct:
-            #     for residue in chain:
-            #         if residue.id[1] in structure_residues[chain.id].keys():
-            #             print(residue)
-            #         else:
-            #             print('not found')
-            #             print(residue)
 
             for c,res in structure_residues.items():
                 for i,r in sorted(res.items()): #sort to be able to assign loops
@@ -629,8 +627,6 @@ def calculate(request, vignir=None):
                                 segments[previous_seg] = {}
                             segments[previous_seg][r.number] = ['',r.name, '']
 
-            #print(segments)
-            #print(generic_ids)
             rs = ResidueGenericNumber.objects.filter(id__in=generic_ids)
 
             reference_generic_numbers = {}
@@ -641,8 +637,7 @@ def calculate(request, vignir=None):
             reference_numbers = {}
             for r in rs: #make lookup dic.
                 reference_numbers[r.label] = r
-            ################################################################################
-            #print(reference_numbers)
+
             residue_list=[]
             for seg,reslist in segments.items():
 
@@ -659,8 +654,6 @@ def calculate(request, vignir=None):
                     r.amino_acid = v[1]
                     residue_list.append(r)
      
-            #print(residue_list)
-
             HelixBox = DrawHelixBox(residue_list,'Class A',str('test'), nobuttons = 1)
             SnakePlot = DrawSnakePlot(residue_list,'Class A',str('test'), nobuttons = 1)
 
@@ -686,22 +679,27 @@ def calculate(request, vignir=None):
                 if line.startswith('JRNL        DOI'):
                     xtal['doi_id'] = line[19:].strip()
 
-            #print(xtal)
-
             results = parseusercalculation(pdbname,request.session.session_key)
 
-            #print(results)
             simple = collections.OrderedDict()
             simple_generic_number = collections.OrderedDict()
             residues = []
             mainligand = ''
+            interaction_types = ['aromatic','aromaticplus','hbond','hbond_confirmed','hydrophobic', 'hbondplus',
+                'aromaticfe','waals']
+            
             for ligand in results:
-                print(ligand[1])
-                if mainligand=='': mainligand=ligand[1] #select top hit
-                simple[ligand[1]] = {'score':round(ligand[2][0]['score'][0][0])}
-                simple_generic_number[ligand[1]] = {'score':round(ligand[2][0]['score'][0][0])}
+                ligand_score = round(ligand[2][0]['score'][0][0])
+
+                # select top hit
+                if mainligand == '':
+                    mainligand=ligand[1]
+                
+                simple[ligand[1]] = {'score': ligand_score}
+                simple_generic_number[ligand[1]] = {'score': ligand_score}
+                
                 for key,values in ligand[2][0].items():
-                    if key in ['aromatic','aromaticplus','hbond','hbond_confirmed','hydrophobic', 'hbondplus', 'aromaticfe','waals']:
+                    if key in interaction_types:
                         for value in values:
                             aa,pos,chain = regexaa(value[0])
                             if int(pos) in structure_residues[chain]:
@@ -725,8 +723,55 @@ def calculate(request, vignir=None):
 
                             residues.append({'type':key,'aa':aa,'ligand':ligand[1],'pos':pos, 'gpcrdb':display, 'segment':segment})
 
-            if vignir:
-                return render(request,'interaction/vignir.html',{'simple':simple,'simple_generic_number':simple_generic_number})
+            if redirect:
+                # get simple selection from session
+                simple_selection = request.session.get('selection', False)
+                
+                # create full selection and import simple selection (if it exists)
+                selection = Selection()
+                if simple_selection:
+                    selection.importer(simple_selection)
+
+                # convert identified interactions to the correct names and add them to the session
+                # FIXME use the correct names from the beginning
+                interaction_name_dict = {
+                    'aromatic': 'ar',
+                    'aromaticplus': 'ar',
+                    'aromaticfe': 'ar',
+                    'hbond': 'hba',
+                    'hbond_confirmed': 'hba',
+                    'hbondplus': 'hba',
+                    # 'hydrophobic': 'hp',
+                }
+                for gn, interactions in simple_generic_number[mainligand].items():
+                    if gn != 'score' and gn != 0.0: # FIXME leave these out when dict is created
+                        if interactions[0] in interaction_name_dict:
+                            feature = interaction_name_dict[interactions[0]]
+                        else:
+                            continue
+
+                        # get residue number equivalent object
+                        rne = ResidueGenericNumberEquivalent.objects.get(label=gn,
+                            scheme__slug='gpcrdba')
+
+                        # create a selection item
+                        properties = {
+                            'feature': feature,
+                            'amino_acids': ','.join(definitions.AMINO_ACID_GROUPS[feature])
+                        }
+                        selection_item = SelectionItem('site_residue', rne, properties)
+
+                        # add to selection
+                        selection.add('segments', 'site_residue', selection_item)
+
+                # export simple selection that can be serialized
+                simple_selection = selection.exporter()
+
+                # add simple selection to session
+                request.session['selection'] = simple_selection
+                
+                # re-direct to segment selection (with the extracted interactions already selected)
+                return HttpResponseRedirect(redirect)
             else:
                 return render(request,'interaction/diagram.html',{'result' : "Looking at "+pdbname, 'outputs' : results,
                  'simple' : simple ,'simple_generic_number' : simple_generic_number , 'xtal' : xtal, 'pdbname':pdbname, 'mainligand':mainligand, 'residues':residues,

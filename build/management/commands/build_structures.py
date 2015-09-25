@@ -224,22 +224,10 @@ class Command(BaseBuild):
                     try:
                         s.protein_conformation = ProteinConformation.objects.get(protein=con)
                     except ProteinConformation.DoesNotExist:
-                        self.logger.error('Construct {} does not exists'.format(con))
+                        self.logger.error('Protein conformation for construct {} does not exists'.format(con))
                         continue
                     if s.protein_conformation.state is not state:
                         ProteinConformation.objects.filter(protein=con).update(state=ps)
-
-                    # if not representative, get the representative structure
-                    # FIXME is this used anywhere?
-                    representative_structure = False
-                    if not representative:
-                        try:
-                            representative_structure = Structure.objects.get(
-                                protein_conformation__protein__parent=con.parent, representative=True, state=s.state)
-                        except Structure.DoesNotExist:
-                            self.logger.error("No representative structure for protein {}".format(
-                                s.protein_conformation.protein.parent))
-                            continue
 
                     # get the PDB file and save to DB
                     sd['pdb'] = sd['pdb'].upper()
@@ -392,6 +380,7 @@ class Command(BaseBuild):
                     s.save()
 
                     # endogenous ligand(s)
+                    default_ligand_type = 'Small molecule'
                     if representative and 'endogenous_ligand' in sd and sd['endogenous_ligand']:
                         if isinstance(sd['endogenous_ligand'], list):
                             endogenous_ligands = sd['endogenous_ligand']
@@ -402,8 +391,8 @@ class Command(BaseBuild):
                                 lt, created = LigandType.objects.get_or_create(slug=slugify(endogenous_ligand['type']),
                                     defaults={'name': endogenous_ligand['type']})
                             else:
-                                lt, created = LigandType.objects.get_or_create(slug='sm',
-                                    defaults={'name': 'Small molecule'})
+                                lt, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
+                                    defaults={'name': default_ligand_type})
                             ligand = Ligand()
 
                             if 'iupharId' not in endogenous_ligand:
@@ -432,11 +421,14 @@ class Command(BaseBuild):
                                         lt, created = LigandType.objects.get_or_create(slug=slugify(ligand['type']),
                                             defaults={'name': ligand['type']})
                                     else:
-                                        lt, created = LigandType.objects.get_or_create(slug='sm',
-                                            defaults={'name': 'Small molecule'})
+                                        lt, created = LigandType.objects.get_or_create(
+                                            slug=slugify(default_ligand_type), defaults={'name': default_ligand_type})
 
                                     # update ligand by pubchem id
-                                    l = l.load_by_pubchem_id(ligand['pubchemId'], lt)
+                                    ligand_title = False
+                                    if 'title' in ligand and ligand['title']:
+                                        ligand_title = ligand['title']
+                                    l = l.load_by_pubchem_id(ligand['pubchemId'], lt, ligand_title)
 
                                     # set pdb reference for structure-ligand interaction
                                     pdb_reference = ligand['name']
@@ -444,9 +436,16 @@ class Command(BaseBuild):
                                 # if no pubchem id is specified, use name
                                 else:
                                     # USE HETSYN NAME, not 3letter pdb reference
-                                    if ligand['name'] in hetsyn_reverse: ligand['name'] = hetsyn_reverse[ligand['name']]
+                                    if ligand['name'] in hetsyn_reverse:
+                                        ligand['name'] = hetsyn_reverse[ligand['name']]
+                                    
                                     pdb_reference = None
-                                    if ligand['name'] in hetsyn: pdb_reference = hetsyn[ligand['name']]
+                                    if ligand['name'] in hetsyn:
+                                        pdb_reference = hetsyn[ligand['name']]
+
+                                    # use ligand title, if specified
+                                    if 'title' in ligand and ligand['title']:
+                                        ligand['name'] = ligand['title']
                                     
                                     # if this name is canonical and it has a ligand record already
                                     if Ligand.objects.filter(name=ligand['name'], canonical=True).exists():

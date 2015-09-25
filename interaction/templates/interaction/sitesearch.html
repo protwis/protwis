@@ -1,0 +1,22 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/jquery.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+
+<h1> Select or upload a structure</h1>
+Enter a PDB name to analyse:
+<form action="sitesearch_calculate" method="post" enctype="multipart/form-data">
+{% csrf_token %}
+    <label for="pdbname">PDBname</label>
+    {{ form.pdbname }} <br> or 
+    <p>{{ form.file.label_tag }}</p> {{ form.file }}
+    <br>
+    <input type="submit" value="OK">
+</form>
+
+{% endblock %}
+

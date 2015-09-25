@@ -38,13 +38,14 @@ AROMATIC = {'TYR','TRP','PHE','HIS'}
 
 CHARGEDAA = {'ARG','LYS','ASP','GLU'} #skip ,'HIS'
 
-module_dir = os.path.dirname(__file__)
-projectdir = module_dir + '/temp/'
 projectdir = '/tmp/interactions/'
 if not os.path.exists(projectdir):
         os.makedirs(projectdir)
-if not os.path.exists(projectdir + '/temp/'):
-        os.makedirs(projectdir + '/temp/')
+        os.chmod(projectdir, 0o777)
+tempdir = projectdir + 'temp/'
+if not os.path.exists(tempdir):
+        os.makedirs(tempdir)
+        os.chmod(tempdir, 0o777)
 ignore_het = ['NA','W'] #ignore sodium and water
 
 

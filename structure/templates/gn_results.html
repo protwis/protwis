@@ -1,4 +1,4 @@
-﻿{% block gn_results %}
+﻿{% load staticfiles %}
     <h4>Results for your query: </h4>
     <div class='row-fluid well well-small selection-box'>
         {% if success %}
@@ -21,4 +21,3 @@
         <i class="icon-download">PyMOL</i></a>
     <a class="btn btn-small" href="{% static 'visualization_scripts/maestro_label_generic_numbers.py' %}">
         <i class="icon-download">Maestro</i></a>
-{% endblock %}
