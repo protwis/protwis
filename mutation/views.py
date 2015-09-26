@@ -151,7 +151,6 @@ def render_mutations(request, protein = None, family = None, download = None, **
 
         mutations_display_generic_number[mutation.raw.id] = mutation.residue.display_generic_number.label
 
-    print(mutations_display_generic_number)
 
     # create an alignment object
     a = Alignment()
@@ -360,14 +359,9 @@ def index(request):
 def ajax(request, slug, **response_kwargs):
     if '[' in slug:
         x = ast.literal_eval(urllib.parse.unquote(slug))
-        #print(x)
-        #h = HTMLParser.HTMLParser()
-        #print(h.unescape(slug))
         mutations = MutationExperiment.objects.filter(protein__pk__in=x).order_by('residue__sequence_number').prefetch_related('residue')
     else:
         mutations = MutationExperiment.objects.filter(protein__entry_name=slug).order_by('residue__sequence_number').prefetch_related('residue')
-    #print(mutations)
-    #return HttpResponse("Hello, world. You're at the polls index. "+slug)
     jsondata = {}
     for mutation in mutations:
         if mutation.residue.sequence_number not in jsondata: jsondata[mutation.residue.sequence_number] = []
@@ -386,21 +380,12 @@ def ajax(request, slug, **response_kwargs):
     return HttpResponse(jsondata, **response_kwargs)
 
 def ajaxSegments(request, slug, segments, **response_kwargs):
-    print('hi')
     if '[' in slug:
-        print("OMG OMG OMG")
-        print(urllib.parse.unquote(slug))
         x = ast.literal_eval(urllib.parse.unquote(slug))
         segments = ast.literal_eval(urllib.parse.unquote(segments))
-        print(segments)
-        #h = HTMLParser.HTMLParser()
-        #print(h.unescape(slug))
         mutations = MutationExperiment.objects.filter(protein__pk__in=x,residue__protein_segment__slug__in=segments).order_by('residue__sequence_number').prefetch_related('residue')
-        print(mutations)
     else:
         mutations = MutationExperiment.objects.filter(protein__entry_name=slug).order_by('residue__sequence_number').prefetch_related('residue')
-    #print(mutations)
-    #return HttpResponse("Hello, world. You're at the polls index. "+slug)
     jsondata = {}
     for mutation in mutations:
         if mutation.residue.sequence_number not in jsondata: jsondata[mutation.residue.sequence_number] = []
@@ -421,7 +406,6 @@ def importmutation(request):
     skipped = 0
     inserted = 0
     for r in rows:
-        print(inserted,skipped)
         #print(r)
         raw_id = insert_raw(r)
         ref_id = check_reference(r['reference'])
