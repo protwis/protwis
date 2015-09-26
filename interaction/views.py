@@ -162,7 +162,8 @@ def updateall(request):
     #return render(request,'interaction/view.html',{'form': form, 'pdbname': pdbname, 'structures': structures})
 
 def runcalculation(pdbname):
-    call(["python", "interaction/functions.py","-p",pdbname], stdout=open(devnull, 'wb'), stderr=open(devnull, 'wb'))
+    calc_script = os.sep.join([os.path.dirname(__file__), 'functions.py'])
+    call(["python", calc_script, "-p",pdbname], stdout=open(devnull, 'wb'), stderr=open(devnull, 'wb'))
     return None
 
 def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #consider skipping non hetsym ligands FIXME
@@ -491,7 +492,8 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
     return results
 
 def runusercalculation(filename, session):
-    call(["python", "interaction/functions.py","-p",filename,"-s",session])
+    calc_script = os.sep.join([os.path.dirname(__file__), 'functions.py'])
+    call(["python", calc_script,"-p",filename,"-s",session])
     return None
 
 def parseusercalculation(pdbname, session, debug = True, ignore_ligand_preset = False, ): #consider skipping non hetsym ligands FIXME
@@ -554,11 +556,9 @@ def calculate(request, redirect=None):
                      for chunk in pdbdata.chunks():
                          destination.write(chunk)
 
-                print(module_dir+'/pdbs/'+str(pdbdata))
                 temp_path = module_dir+'/pdbs/'+str(pdbdata)
                 pdbdata=open(temp_path,'r').read()
-                print('do calc')
-                runusercalculation(pdbname, request.session.session_key)
+                runusercalculation(pdbname, session_key)
 
             else:
                 pdbname = form.cleaned_data['pdbname'].strip()
@@ -573,8 +573,7 @@ def calculate(request, redirect=None):
                     f.close();
                 else:
                     pdbdata=open(temp_path,'r').read()
-                print('do calc')
-                runusercalculation(pdbname, request.session.session_key)
+                runusercalculation(pdbname, session_key)
 
             # MAPPING GPCRdb numbering onto pdb.
             generic_numbering = GenericNumbering(temp_path)
