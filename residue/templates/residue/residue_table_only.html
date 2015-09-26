@@ -10,9 +10,9 @@
 <table class="table-header-rotated">
     <!-- Header -->
     <thead><tr>
-    {% for elem, tooltip in header %}
+    {% for elem, tooltip, protein in header %}
         <th class="rotate{% if forloop.counter <= number_of_schemes %} scheme{% else %} protein{% endif %}">
-        <div><span>{{ elem }}</span></div>
+        <div><span id='{{protein}}'>{{ elem|safe }}</span></div>
         </th>
     {% endfor %}
     </tr></thead>
