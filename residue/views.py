@@ -118,10 +118,14 @@ class ResidueTablesDisplay(TemplateView):
                         else:
                             if scheme.slug not in data[segment.slug][pos.label].keys():
                                 data[segment.slug][pos.label][scheme.slug] = alternative.label
+                            if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                                data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
                             data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
                     else:
                         if scheme.slug not in data[segment.slug][pos.label].keys():
                             data[segment.slug][pos.label][scheme.slug] = alternative.label
+                        if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                            data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
                         data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
 
         # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
@@ -129,7 +133,7 @@ class ResidueTablesDisplay(TemplateView):
         for s in iter(flattened_data):
             flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
         
-        context['header'] = zip([x.short_name for x in numbering_schemes] + [x.entry_name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins])
+        context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
         context['segments'] = [x.slug for x in segments]
         context['data'] = flattened_data
         context['number_of_schemes'] = len(numbering_schemes)
