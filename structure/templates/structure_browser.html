@@ -76,14 +76,21 @@
                 }
                 window.location.href = '/structure/superposition_workflow_index';
             });
-            $('#representative_btn').click(function () {
-                $.fn.dataTable.ext.search.push(
-                    function (settings, data, dataIndex) {
-                        if ($(settings.nTable).hasClass('repr-st')) {
+            $.fn.dataTable.ext.search.push(
+                function (settings, data, dataIndex) {
+                    if ($('#representative_btn').hasClass('active')) {
+                        if ($(table.row(dataIndex).node()).hasClass("repr-st")) {
                             return true;
                         }
                         return false;
-                    });
+                    }
+                    else {
+                        return true;
+                    }
+            });
+
+            $('#representative_btn').click(function () {
+                $(this).toggleClass("active");
                 table.draw();
             });
         });
