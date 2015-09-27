@@ -43,6 +43,7 @@ class TargetSelection(AbsTargetSelection):
             'color': 'success',
         },
     }
+    default_species = False
 
 
 class SegmentSelection(AbsSegmentSelection):

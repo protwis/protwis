@@ -27,6 +27,7 @@ class AbsTargetSelection(TemplateView):
         + ' the list.\n\nOnce you have selected all your targets, click the green button.'
     docs = False
     filters = True
+    default_species = 'Human'
     numbering_schemes = False
     search = True
     family_tree = True
@@ -80,6 +81,12 @@ class AbsTargetSelection(TemplateView):
         if self.step is not 1:
             if simple_selection:
                 selection.importer(simple_selection)
+
+        # default species selection
+        if self.default_species:
+            sp = Species.objects.get(common_name=self.default_species)
+            o = SelectionItem('species', sp)
+            selection.species = [o]
 
         # update session
         simple_selection = selection.exporter()
@@ -533,13 +540,11 @@ def SelectionSpeciesPredefined(request):
     all_sps = Species.objects.all()
     sps = False
     if species == 'All':
-        sps = all_sps
-    elif species:
+        sps = []
+    if species != 'All' and species:
         sps = Species.objects.filter(common_name=species)
-    elif not selection.species:
-        sps = Species.objects.filter(common_name='Human') # if nothing is selected, select human
 
-    if sps:
+    if sps != False:
         # reset the species selection
         selection.clear('species')
 
