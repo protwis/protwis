@@ -36,7 +36,7 @@
             {% if filters %}
             <div class="col-md-12 panel panel-primary">
                 <div class="panel-body">
-                    <h4>Filters</h4>
+                    <h4>Filter</h4>
                     <div id="filters-species">
                     {% include 'common/selection_filters_species.html' %}
                     </div>
@@ -72,6 +72,18 @@
             </div>
             {% endif %}
 
+            <!-- target family tree -->
+            {% if family_tree %}
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Browse</h4>
+                    <div class="selection-tree-box">
+                    {% include 'common/selection_tree.html' %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- protein sets -->
             {% if psets %}
             <div class="col-md-12 panel panel-primary">
@@ -79,18 +91,6 @@
                     <h4>Predefined sets</h4>
                     <div>
                         {% include 'common/targetselection_predefined.html' %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- target family tree -->
-            {% if family_tree %}
-            <div class="col-md-12 panel panel-primary">
-                <div class="panel-body">
-                    <h4>Browse by family</h4>
-                    <div class="selection-tree-box">
-                    {% include 'common/selection_tree.html' %}
                     </div>
                 </div>
             </div>
