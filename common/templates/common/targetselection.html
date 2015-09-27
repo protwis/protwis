@@ -8,18 +8,22 @@
         <div class="col-md-4">
 
             <!-- main description -->
-            <div class="col-md-12 well">
-                {% if step and number_of_steps and number_of_steps > 1 %}
-                <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
-                {% endif %}
-                <h4>{{ title }}</h4>
-                {{ description|linebreaks }}
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    {% if step and number_of_steps and number_of_steps > 1 %}
+                    <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
+                    {% endif %}
+                    <h4>{{ title }}</h4>
+                    {{ description|linebreaks }}
+                </div>
             </div>
 
             <!-- link to docs -->
             {% if docs %}
-            <div class="col-md-12 well">
-                <p>For more information on this tool, see the <a href="{{ docs }}">docs</a>.</p>
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <p>For more information on this tool, see the <a href="{{ docs }}">docs</a>.</p>
+                </div>
             </div>
             {% endif %}
 
@@ -30,54 +34,64 @@
 
             <!-- filters -->
             {% if filters %}
-            <div class="col-md-12 well">
-                <h4>Filters</h4>
-                <div id="filters-species">
-                {% include 'common/selection_filters_species.html' %}
-                </div>
-                <br \>
-                <div id="filters-annotation">
-                {% include 'common/selection_filters_annotation.html' %}
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Filters</h4>
+                    <div id="filters-species">
+                    {% include 'common/selection_filters_species.html' %}
+                    </div>
+                    <br \>
+                    <div id="filters-annotation">
+                    {% include 'common/selection_filters_annotation.html' %}
+                    </div>
                 </div>
             </div>
             {% endif %}
 
             <!-- generic numbering schemes -->
             {% if numbering_schemes %}
-            <div class="col-md-12 well">
-                <h4>Numbering schemes</h4>
-                <div id="filters-schemes">
-                    {% include 'common/selection_filters_numbering_schemes.html' %}
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Numbering schemes</h4>
+                    <div id="filters-schemes">
+                        {% include 'common/selection_filters_numbering_schemes.html' %}
+                    </div>
                 </div>
             </div>
             {% endif %}
 
             <!-- target search -->
             {% if search %}
-            <div class="col-md-12 well">
-                <h4>Search</h4>
-                <div>
-                    <input id="selection-autocomplete" class="form-control" size="15">
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Search</h4>
+                    <div>
+                        <input id="selection-autocomplete" class="form-control" size="15">
+                    </div>
                 </div>
             </div>
             {% endif %}
 
             <!-- protein sets -->
             {% if psets %}
-            <div class="col-md-12 well">
-                <h4>Predefined sets</h4>
-                <div>
-                    {% include 'common/targetselection_predefined.html' %}
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Predefined sets</h4>
+                    <div>
+                        {% include 'common/targetselection_predefined.html' %}
+                    </div>
                 </div>
             </div>
             {% endif %}
 
             <!-- target family tree -->
             {% if family_tree %}
-            <div class="col-md-12 well">
-                <h4>Browse by family</h4>
-                <div class="selection-tree-box">
-                {% include 'common/selection_tree.html' %}
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Browse by family</h4>
+                    <div class="selection-tree-box">
+                    {% include 'common/selection_tree.html' %}
+                    </div>
                 </div>
             </div>
             {% endif %}
@@ -97,10 +111,12 @@
             <!-- show the selection -->
             {% for selection_box, include in selection_boxes.items %}
                 {% if include %}
-                <div class="col-md-12 well" id="selection-{{ selection_box }}">
-                {% with selection_type=selection_box %}
-                    {% include 'common/selection_lists.html' %}
-                {% endwith %}
+                <div class="col-md-12 panel panel-primary">
+                    <div class="panel-body" id="selection-{{ selection_box }}">
+                    {% with selection_type=selection_box %}
+                        {% include 'common/selection_lists.html' %}
+                    {% endwith %}
+                    </div>
                 </div>
                 {% endif %}
             {% endfor %}
