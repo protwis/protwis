@@ -6,7 +6,7 @@ from collections import defaultdict
 
 
 class PrepareTree:
-    def __init__(self):
+    def __init__(self,build):
         self.rings={'crystal': {'include':'False', 'order':6, 'colours':{'crystal_true':'#6dcde1','crystal_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':None, 'child': None, 'name':'Crystallized structures'},
             'class': {'include':'False', 'order':0, 'colours':{}, 'items':[], 'color_type':'grayscale', 'parent':[], 'child': ['family,ligand'], 'name':'Class'},
             'family': {'include':'False', 'order':1, 'colours':{}, 'items':[], 'color_type':'spectrum', 'parent':[], 'child': ['ligand'], 'name':'Ligand type'},
@@ -16,6 +16,7 @@ class PrepareTree:
             'mutant_minus': {'include':'False', 'order':5, 'colours':{'mutant_minus_true':'#6dcde1','mutant_minus_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':'mutant', 'child': [], 'name':'Negative affinity mutants'}
             }
         self.prots = {}
+        self.build=build
 
     def get_grayscale_colours(self, itemlist):
         colours_dict = {}
@@ -253,8 +254,14 @@ class PrepareTree:
     def get_styles(self):
         self.styles = ''
         for prot in self.prots:
-            if len(prot.split('_')) == 1:            
-                self.styles += '<%s fill=\'#EEE\' stroke=\'#DDD\' id=\'%s\' class=\'bgfield\'/>' %(self.prots[prot]['acc'],self.prots[prot]['acc'])
+            if len(prot.split('_')) == 1:
+                if self.build != False:
+                    if self.prots[prot]['acc'] in self.rings['crystal']['items']:
+                        self.styles += '<'+self.prots[prot]['acc']+' fill=\''+self.rings['crystal']['colours']['crystal_true']+'\' stroke=\'#DDD\' id=\''+self.prots[prot]['acc']+'\' class=\'bgfield\'/>'
+                    else:
+                        self.styles += '<%s fill=\'#EEE\' stroke=\'#DDD\' id=\'%s\' class=\'bgfield\'/>' %(self.prots[prot]['acc'],self.prots[prot]['acc'])
+                else:
+                    self.styles += '<%s fill=\'#EEE\' stroke=\'#DDD\' id=\'%s\' class=\'bgfield\'/>' %(self.prots[prot]['acc'],self.prots[prot]['acc'])
         for ring in self.rings:
             if self.rings[ring]['include']== 'True':
                 if ring == 'class':
@@ -277,9 +284,14 @@ class PrepareTree:
         raw = open(d+'/raw.xml','w')
         Phylo.convert(d+'/rong','newick',raw,'phyloxml')
         raw.close()
+
         xml = open(d+'/raw.xml','r').readlines()
         out = open(d+'/out.xml','w')
         self.get_tree_data(Additional_info)
+        if self.build !=False:
+            self.rings['class']['include']=False
+            self.rings['ligand']['include']=False
+            self.rings['family']['include']=False
         self.get_family_meta(family)
         charts=self.get_charts()
         self.get_colours()
@@ -339,6 +351,6 @@ class PrepareTree:
         self.box = self.drawColorPanel()
 
 if __name__ == '__main__':
-    tree = PrepareTree()
+    tree = PrepareTree(False)
     tree.treeDo(sys.argv[1],sys.argv[2])
 

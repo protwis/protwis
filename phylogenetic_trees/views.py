@@ -1,7 +1,7 @@
 ﻿from django.shortcuts import render
 from django.conf import settings
 from django.core.files import File
-from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein
+from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein, ProteinSegment
 from common.views import AbsSettingsSelection
 from common.views import AbsSegmentSelection
 from common.views import AbsTargetSelection
@@ -84,8 +84,10 @@ class Treeclass:
                 }
         self.buttons = [(x[1]['order'],x[1]['name']) for x in sorted(self.Additional_info.items(), key= lambda x: x[1]['order']) if x[1]['include']=='True']
 
-    def Prepare_file(self, request):
-        self.Tree = PrepareTree()
+    def Prepare_file(self, request,build=False):
+        self.Tree = PrepareTree(build)
+        a=Alignment()
+
         sets = ProteinSet.objects.all()
         #### Get additional data ####
         crysts=[]
@@ -97,24 +99,33 @@ class Treeclass:
             
         #############################
         # get the user selection from session
-        a=Alignment()
-        simple_selection=request.session.get('selection', False)
+        if build != False:
         ################################## FOR BUILDING STATISTICS ONLY##########################
-        #cons_prots = []
-        #for n in Protein.objects.filter(sequence_type_id=15):
-           #if n.family.slug.startswith('001') and len(n.family.slug.split('_'))==3:
-               #cons_prots.append(n)
-        #for n in simple_selection.targets[:]:
-           #if n.item.family.slug.startswith('001_'):
-               #continue
-           #else:
-               #simple_selection.targets.remove(n)
-        #for n in cons_prots:
-           #simple_selection.targets.append(SelectionItem('protein',n))
-        #####################################################
-        a.load_proteins_from_selection(simple_selection)
-        a.load_segments_from_selection(simple_selection)
-        self.bootstrap,self.UPGMA,self.branches,self.ttype = map(int,simple_selection.tree_settings)
+            build_proteins=[]
+            if build == '001':
+                cons_prots = []
+                for prot in Protein.objects.filter(sequence_type_id=7, species_id=1):
+                    if prot.family.slug.startswith('001') and len(prot.family.slug.split('_'))==3:
+                        build_proteins.append(prot)
+                for set in sets:
+                    if set.id==1:
+                        for prot in set.proteins.all():
+                            if prot.family.slug.startswith('001_') and prot.species.latin_name=='Homo sapiens':
+                                build_proteins.append(prot)
+            else:
+                for prot in Protein.objects.filter(sequence_type_id=1, species_id=1):
+                    if prot.family.slug.startswith(build):
+                        build_proteins.append(prot)
+            a.load_proteins(build_proteins)
+            segments = ProteinSegment.objects.all()
+            a.load_segments(segments)
+            self.bootstrap,self.UPGMA,self.branches,self.ttype=[0,1,0,0]
+        ##################################################################
+        else:
+            simple_selection=request.session.get('selection', False)
+            a.load_proteins_from_selection(simple_selection)
+            a.load_segments_from_selection(simple_selection)
+            self.bootstrap,self.UPGMA,self.branches,self.ttype = map(int,simple_selection.tree_settings)
         if self.bootstrap!=0:
             self.bootstrap=pow(10,self.bootstrap)
         #### Create an alignment object
@@ -134,7 +145,6 @@ class Treeclass:
         infile = open('/tmp/%s/infile' %dirname,'w')
         infile.write('    '+str(self.total)+'    '+str(total_length)+'\n')
         ####Get additional protein information
-        muts = {}
         for n in a.proteins:
             fam = self.Tree.trans_0_2_A(n.protein.family.slug)
             link = n.protein.entry_name
@@ -213,7 +223,10 @@ class Treeclass:
         self.outtree = open('/tmp/%s/outfile' %dirname).read().lstrip()
         phylogeny_input = self.get_phylogeny('/tmp/%s/' %dirname)
         shutil.rmtree('/tmp/%s' %dirname)
-        return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
+        if build != False:
+            open('static/home/images/'+build+'_tree.xml','w').write(phylogeny_input)
+        else:
+            return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
         
     def get_phylogeny(self, dirname):
         self.Tree.treeDo(dirname, self.phylip,self.branches,self.family,self.Additional_info, self.famdict)
