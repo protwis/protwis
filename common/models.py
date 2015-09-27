@@ -177,3 +177,39 @@ class PublicationJournal(models.Model):
 
     class Meta():
         db_table = 'publication_journal'
+
+
+class ReleaseNotes(models.Model):
+    date = models.DateField()
+    html = models.TextField()
+
+    def __str__(self):
+        return str(self.date)
+
+    class Meta():
+        ordering = ('-date', )
+        db_table = 'release_notes'
+
+
+class ReleaseStatistics(models.Model):
+    release = models.ForeignKey('ReleaseNotes')
+    statistics_type = models.ForeignKey('ReleaseStatisticsType')
+    value = models.IntegerField()
+
+    def __str__(self):
+        return "{} {}".format(self.date, self.statistics_type)
+
+    class Meta():
+        ordering = ('id', )
+        db_table = 'release_statistics'
+
+
+class ReleaseStatisticsType(models.Model):
+    name = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'release_statistics_type'
+
