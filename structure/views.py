@@ -742,10 +742,10 @@ class TemplateBrowser(TemplateView):
             a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']))
         a.build_alignment()
         a.calculate_similarity()
-        context['crystals'] = []
+        context['structures'] = []
         for prot in a.proteins[1:]:
             try:
-                context['crystals'].append([prot.similarity, prot.identity, qsd[prot.protein.id]])
+                context['structures'].append([prot.similarity, prot.identity, qsd[prot.protein.id]])
                 del qsd[prot.protein.id]
             except KeyError:
                 pass
