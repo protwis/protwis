@@ -1,6 +1,8 @@
-from django.conf.urls import patterns, url
+﻿from django.conf.urls import patterns, url
 from structure.views import *
+from structure import views
 from django.conf import settings
+from django.views.generic import TemplateView
 
 urlpatterns = patterns('',
     url(r'^$', StructureBrowser.as_view(), name='structure_browser'),
@@ -18,7 +20,9 @@ urlpatterns = patterns('',
     url(r'^fragment_superposition_results', FragmentSuperpositionResults.as_view(), name='fragment_superposition'),
     url(r'^output/(?P<outfile>\w+.\w{3})/(?P<replacement_tag>\w+)$', ServePdbOutfile, name='structural_tools_result'),
     url(r'^zipoutput/(?P<outfile>\w+.\w{3})/', ServeZipOutfile, name='structural_tools_result'), 
+    url(r'^showtrees', RenderTrees, name='render'),
     url(r'^(?P<pdbname>\w+)$', StructureDetails, name='structure_details'), 
     url(r'^pdb/(?P<pdbname>\w+)$', ServePdbDiagram, name='structure_serve_pdb'), 
     url(r'^pdb/(?P<pdbname>\w+)/ligand/(?P<ligand>.+)$', ServePdbLigandDiagram, name='structure_serve_pdb_ligand'), 
+
 )

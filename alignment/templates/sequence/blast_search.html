@@ -4,19 +4,27 @@
 {% block content %}
 <div class="row">
     <div class='col-md-4'>
-        <div class="col-md-12 well">
-            <h4>BLAST search</h4>
-            <p>Enter a sequence into the text box and press the green button.</p>
+        <div class="col-md-12 panel panel-primary">
+            <div class="panel-body">
+                <h4>BLAST search</h4>
+                <p>Enter a sequence into the text box and press the green button.</p>
+            </div>
         </div>
         </div>
-    <div class='col-md-4 well'>
-        <form id='seq' action="/alignment/blastsearchresults" method="post" enctype="multipart/form-data"> {% csrf_token %}
-            <textarea name="input_seq" rows="15" cols="47"></textarea>
-        </form>
+    <div class="col-md-4 panel panel-primary">
+        <div class="panel-body">
+            <form id='seq' action="/alignment/blastsearchresults" method="post" enctype="multipart/form-data"> {% csrf_token %}
+                <textarea name="input_seq" rows="15" cols="44"></textarea>
+            </form>
+        </div>
     </div>
     <div class="col-md-4">
-        <div class="col-md-12 well">
-            <a href="#" class="btn btn-success btn-lg btn-block" onclick='document.getElementById("seq").submit()'>BLAST</a>
+        <div class="col-md-12 panel panel-primary">
+            <div class="panel-body">
+                <a href="#" class="btn btn-success btn-lg btn-block" onclick='document.getElementById("seq").submit()'>
+                    BLAST
+                </a>
+            </div>
         </div>
     </div>
 </div>

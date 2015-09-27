@@ -1,5 +1,4 @@
 ﻿from django.conf.urls import patterns, url
-
 from phylogenetic_trees import views
 
 

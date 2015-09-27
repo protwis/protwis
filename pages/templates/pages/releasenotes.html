@@ -1,0 +1,16 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+<h3>Release notes</h3>
+
+{% for note in release_notes %}
+<div class="col-md-12 panel panel-primary">
+    <div class="panel-body">
+        <strong>{{ note.date }}</strong>
+        {{ note.html|safe }}
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
