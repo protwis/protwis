@@ -43,6 +43,7 @@ class TargetSelection(AbsTargetSelection):
             'color': 'success',
         },
     }
+    default_species = False
 
 
 class SegmentSelection(AbsSegmentSelection):
@@ -315,8 +316,9 @@ def render_mutations(request, protein = None, family = None, download = None, **
         response_kwargs['content_type'] = 'text/csv'
         response = HttpResponse(**response_kwargs) 
         response['Content-Disposition'] = 'attachment; filename="GPCRdb_mutant_data.csv"'
-        template = loader.get_template('mutation/csv.html')
-        response.write(template.render(Context({'mutations': csv })))
+        
+        #template = loader.get_template('mutation/csv.html')
+        response.write(csv)
         #return response
 
         #EXCEL SOLUTION
@@ -346,7 +348,7 @@ def render_mutations(request, protein = None, family = None, download = None, **
 
     else:        
         return render(request, 'mutation/list.html', {'mutations': mutations, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'data':context['data'], 
-            'header':context['header'], 'segments':context['segments'], 'mutations_pos_list' : json.dumps(mutations_pos_list), 'number_of_schemes':len(numbering_schemes), 'protein_ids':str(protein_ids)})
+            'header':context['header'], 'segments':context['segments'], 'number_of_schemes':len(numbering_schemes), 'mutations_pos_list' : json.dumps(mutations_pos_list), 'protein_ids':str(protein_ids)})
 
 # Create your views here.
 def index(request):

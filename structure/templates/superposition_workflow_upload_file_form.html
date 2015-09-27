@@ -1,6 +1,6 @@
 {% block upload_file_form %}
-<div class='col-md-4'>
-    <div class='row-fluid well selection-box'>
+<div class='col-md-4 panel panel-primary'>
+    <div class="panel-body">
         <div class='selection-heading'>
             <span class='selection-heading-text'>{{ header }}</span>
         </div>
@@ -8,7 +8,7 @@
             <br />
             <form id="{{form_id}}" action="{{ url }}" method="post" enctype="multipart/form-data"> {% csrf_token %}
                 {{ form_code }}
-             </form>
+            </form>
         </div>
         <div class="text-center">
             <a class="btn btn-primary btn-mini " href="/structure">Select from structure browser</a>
