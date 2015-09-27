@@ -45,7 +45,7 @@ function ajaxMutants(plotid,protein) {
                              var ligands = [], bigincreases=0, increases = 0, bigdecreases=0, decreases = 0, unchanged=0, unspecified = 0;
                              
                              
-                             $.each( val[0], function( key, v ) {
+                             $.each( val, function( key, v ) {
                               if( !(ligands[v[1]]) ) ligands[v[1]] = [];
                               ligands[v[1]].push(v[0])
                               if (v[1]>10) {
@@ -127,10 +127,9 @@ function table_ajaxMutants() {
 
 
     $('.protein').each(function( index ){
-        console.log($(this).find('span').text());
-        console.log($(this).index());
-        var protein = $(this).find('span').text();
+        var protein = $(this).find('span').attr('id');
         var protein_index = $(this).index()+1;
+        console.log(protein);
         $.getJSON( '/mutations/ajax/'+protein+'/', function( data ) {
                 count = 0;
               $.each( data, function( key, val ) {
@@ -140,7 +139,7 @@ function table_ajaxMutants() {
                             var ligands = [], bigincreases=0, increases = 0, bigdecreases=0, decreases = 0, unchanged=0, unspecified = 0;
                              
                              
-                             $.each( val, function( key, v ) {
+                             $.each( val[0], function( key, v ) {
                               if( !(ligands[v[1]]) ) ligands[v[1]] = [];
                               ligands[v[1]].push(v[0])
                               if (v[1]>10) {

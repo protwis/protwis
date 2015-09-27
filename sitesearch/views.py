@@ -14,7 +14,6 @@ from collections import OrderedDict
 class TargetSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 2
-    docs = '/docs/sitesearch'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -29,10 +28,21 @@ class TargetSelection(AbsTargetSelection):
     }
 
 
+class TargetSelectionPdb(TargetSelection):
+    step = 1
+    number_of_steps = 3
+    buttons = {
+        'continue': {
+            'label': 'Continue to next step',
+            'url': '/interaction/sitesearch',
+            'color': 'success',
+        },
+    }
+
+
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
-    docs = '/docs/sitesearch'
     position_type = 'site_residue'
     selection_boxes = OrderedDict([
         ('reference', False),
@@ -62,6 +72,16 @@ class SegmentSelection(AbsSegmentSelection):
     ss = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS, partial=False).prefetch_related(
         'generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
+
+
+class SegmentSelectionPdb(SegmentSelection):
+    step = 3
+    number_of_steps = 3
+
+    ss = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS, partial=False).prefetch_related(
+        'generic_numbers')
+    ss_cats = ss.values_list('category').order_by('category').distinct('category')
+
 
 def render_alignment(request):
     # get the user selection from session

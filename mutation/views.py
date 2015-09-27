@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.template import loader, Context
 
 from django.http import HttpResponse
 from django.conf import settings
@@ -19,16 +20,17 @@ from collections import OrderedDict
 import json
 #env/bin/python3 -m pip install xlrd
 
+from io import BytesIO
 import re
 import math
 import urllib
+import xlsxwriter #sudo pip3 install XlsxWriter
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 class TargetSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 2
-    docs = '/docs/alignment'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -46,7 +48,6 @@ class TargetSelection(AbsTargetSelection):
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
-    docs = '/docs/alignment'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -60,8 +61,7 @@ class SegmentSelection(AbsSegmentSelection):
         },
     }
 
-def render_mutations(request, protein = None, family = None):  
-    print(protein)
+def render_mutations(request, protein = None, family = None, download = None, **response_kwargs):  
 
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
@@ -123,11 +123,17 @@ def render_mutations(request, protein = None, family = None):
 
     #print(segments)
 
-    mutations = MutationExperiment.objects.filter(protein__in=proteins, residue__protein_segment__in=original_segments).prefetch_related('protein', 'residue__protein_segment','residue__display_generic_number', 'residue','exp_func','exp_qual','exp_measure', 'exp_type', 'ligand_role', 'ligand','refs')
+    mutations = MutationExperiment.objects.filter(protein__in=proteins, 
+                            residue__protein_segment__in=original_segments).prefetch_related('protein', 
+                            'residue__protein_segment','residue__display_generic_number',
+                            'residue__generic_number', 'residue','exp_func','exp_qual',
+                            'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
+                            'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource')
     
     mutations_list = [x.residue.display_generic_number.label for x in mutations if x.residue.display_generic_number]
     
     mutations_list = {}
+    mutations_display_generic_number = {}
     for mutation in mutations:
         if not mutation.residue.display_generic_number: continue #cant map those without display numbers
         if mutation.residue.display_generic_number.label not in mutations_list: mutations_list[mutation.residue.display_generic_number.label] = []
@@ -141,11 +147,15 @@ def render_mutations(request, protein = None, family = None):
             qual = ''
         mutations_list[mutation.residue.display_generic_number.label].append([mutation.foldchange,ligand,qual])
 
+        mutations_display_generic_number[mutation.raw.id] = mutation.residue.display_generic_number.label
+
+
     # create an alignment object
     a = Alignment()
 
     a.load_proteins(proteins)
-    a.load_segments(ProteinSegment.objects.all()) #get all segments to make correct diagrams
+    segments = ProteinSegment.objects.all().filter().prefetch_related()
+    a.load_segments(segments) #get all segments to make correct diagrams
 
     # build the alignment data matrix
     a.build_alignment()
@@ -201,6 +211,7 @@ def render_mutations(request, protein = None, family = None):
     context = {}
     numbering_schemes_selection = ['gpcrdba','gpcrdbb','gpcrdbc','gpcrdbf'] #there is a residue_numbering_scheme attribute on the protein model, so it's easy to find out
     numbering_schemes_selection = list(used_schemes.keys())
+    numbering_schemes_selection = ['gpcrdb'] + numbering_schemes_selection #always use A for reference
     numbering_schemes = ResidueNumberingScheme.objects.filter(slug__in=numbering_schemes_selection).all()
 
     segments = ProteinSegment.objects.filter(pk__in=segments_ids,category='helix')
@@ -210,7 +221,7 @@ def render_mutations(request, protein = None, family = None):
     else:
         default_scheme = numbering_schemes[0]
 
-        residue_table_list = []
+    residue_table_list = []
     for mutation in mutations:
         residue_table_list.append(mutation.residue.generic_number)
 
@@ -223,15 +234,17 @@ def render_mutations(request, protein = None, family = None):
         data[segment.slug] = OrderedDict()
         # residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins).prefetch_related('protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
         #     'generic_number__scheme', 'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
-        residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins, generic_number__in=residue_table_list).prefetch_related('protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
-                                        'generic_number__scheme', 'alternative_generic_numbers__scheme')
+        residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins, 
+                                        generic_number__in=residue_table_list).prefetch_related('protein_conformation__protein', 
+                                        'protein_conformation__state', 'protein_segment',
+                                        'generic_number','display_generic_number','generic_number__scheme', 'alternative_generic_numbers__scheme')
         for scheme in numbering_schemes:
             if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
                 for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
                     data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
             elif scheme == default_scheme:
                 for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
-                        data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+                    data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
 
         for residue in residues:
             alternatives = residue.alternative_generic_numbers.all()
@@ -247,10 +260,14 @@ def render_mutations(request, protein = None, family = None):
                     else:
                         if scheme.slug not in data[segment.slug][pos.label].keys():
                             data[segment.slug][pos.label][scheme.slug] = alternative.label
+                        if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                            data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
                         data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
                 else:
                     if scheme.slug not in data[segment.slug][pos.label].keys():
                         data[segment.slug][pos.label][scheme.slug] = alternative.label
+                    if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                        data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
                     data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
 
     # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
@@ -258,14 +275,78 @@ def render_mutations(request, protein = None, family = None):
     for s in iter(flattened_data):
         flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
     
-    context['header'] = zip([x.short_name for x in numbering_schemes] + [x.entry_name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins])
+    context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
     context['segments'] = [x.slug for x in segments if len(data[x.slug])]
     context['data'] = flattened_data
     context['number_of_schemes'] = len(numbering_schemes)
 
+    if download:
+        raws = mutations.values('raw')
+        rawmutations = MutationRaw.objects.filter(pk__in = raws).all()
+        
+        data = []
+        for r in rawmutations:
+            headers = []
+            values = {}
+            for field, val in r:
+                headers.append(field)
+                values[field] = val
+            if values['id'] in mutations_display_generic_number:
+                values['generic'] = mutations_display_generic_number[values['id']]
+            else:
+                values['generic'] = ''
+            data.append(values)
+        headers = ['reference', 'protein', 'mutation_pos', 'generic', 'mutation_from', 'mutation_to', 
+        'ligand_name', 'ligand_idtype', 'ligand_id', 'ligand_class',
+        'exp_type', 'exp_func',  'exp_wt_value',  'exp_wt_unit','exp_mu_effect_sign', 'exp_mu_effect_type', 'exp_mu_effect_value', 
+        'exp_mu_effect_qual', 'exp_mu_effect_ligand_prop',  'exp_mu_ligand_ref', 'opt_type', 'opt_wt',
+        'opt_mu', 'opt_sign', 'opt_percentage', 'opt_qual','opt_agonist', 'added_date'                
+         ] #'added_by',
 
-    return render(request, 'mutation/list.html', {'mutations': mutations, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'data':context['data'], 
-        'header':context['header'], 'segments':context['segments'], 'mutations_pos_list' : json.dumps(mutations_pos_list), 'number_of_schemes':len(numbering_schemes), 'protein_ids':str(protein_ids)})
+        #CSV SOLUTION
+        csv = "sep=;\n"
+        for h in headers:
+            csv += h + ";"
+        csv += "\n"
+        for d in data:
+            for h in headers:
+                csv += str(d[h]) + ";"
+            csv += "\n"
+        response_kwargs['content_type'] = 'text/csv'
+        response = HttpResponse(**response_kwargs) 
+        response['Content-Disposition'] = 'attachment; filename="GPCRdb_mutant_data.csv"'
+        template = loader.get_template('mutation/csv.html')
+        response.write(template.render(Context({'mutations': csv })))
+        #return response
+
+        #EXCEL SOLUTION
+        output = BytesIO()
+        workbook = xlsxwriter.Workbook(output)
+        worksheet = workbook.add_worksheet()
+
+        col = 0
+        for h in headers:
+            worksheet.write(0, col, h)
+            col += 1
+        row = 1
+        for d in data:
+            col = 0
+            for h in headers:
+                worksheet.write(row, col, d[h])
+                col += 1
+            row += 1
+        workbook.close()
+        output.seek(0)
+        xlsx_data = output.read()
+
+        response = HttpResponse(xlsx_data,content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename=GPCRdb_mutant_data.xlsx' #% 'mutations'
+        return response
+
+
+    else:        
+        return render(request, 'mutation/list.html', {'mutations': mutations, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'data':context['data'], 
+            'header':context['header'], 'segments':context['segments'], 'mutations_pos_list' : json.dumps(mutations_pos_list), 'number_of_schemes':len(numbering_schemes), 'protein_ids':str(protein_ids)})
 
 # Create your views here.
 def index(request):
@@ -276,14 +357,9 @@ def index(request):
 def ajax(request, slug, **response_kwargs):
     if '[' in slug:
         x = ast.literal_eval(urllib.parse.unquote(slug))
-        #print(x)
-        #h = HTMLParser.HTMLParser()
-        #print(h.unescape(slug))
         mutations = MutationExperiment.objects.filter(protein__pk__in=x).order_by('residue__sequence_number').prefetch_related('residue')
     else:
         mutations = MutationExperiment.objects.filter(protein__entry_name=slug).order_by('residue__sequence_number').prefetch_related('residue')
-    #print(mutations)
-    #return HttpResponse("Hello, world. You're at the polls index. "+slug)
     jsondata = {}
     for mutation in mutations:
         if mutation.residue.sequence_number not in jsondata: jsondata[mutation.residue.sequence_number] = []
@@ -302,21 +378,12 @@ def ajax(request, slug, **response_kwargs):
     return HttpResponse(jsondata, **response_kwargs)
 
 def ajaxSegments(request, slug, segments, **response_kwargs):
-    print('hi')
     if '[' in slug:
-        print("OMG OMG OMG")
-        print(urllib.parse.unquote(slug))
         x = ast.literal_eval(urllib.parse.unquote(slug))
         segments = ast.literal_eval(urllib.parse.unquote(segments))
-        print(segments)
-        #h = HTMLParser.HTMLParser()
-        #print(h.unescape(slug))
         mutations = MutationExperiment.objects.filter(protein__pk__in=x,residue__protein_segment__slug__in=segments).order_by('residue__sequence_number').prefetch_related('residue')
-        print(mutations)
     else:
         mutations = MutationExperiment.objects.filter(protein__entry_name=slug).order_by('residue__sequence_number').prefetch_related('residue')
-    #print(mutations)
-    #return HttpResponse("Hello, world. You're at the polls index. "+slug)
     jsondata = {}
     for mutation in mutations:
         if mutation.residue.sequence_number not in jsondata: jsondata[mutation.residue.sequence_number] = []
@@ -337,7 +404,6 @@ def importmutation(request):
     skipped = 0
     inserted = 0
     for r in rows:
-        print(inserted,skipped)
         #print(r)
         raw_id = insert_raw(r)
         ref_id = check_reference(r['reference'])

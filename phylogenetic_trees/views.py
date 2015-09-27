@@ -18,7 +18,7 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 class TreeSettings(AbsSettingsSelection):
     step = 3
     number_of_steps = 3
-    docs = '/docs/phylogenetic_trees'
+    docs = '/documentation/similarities'
     selection_boxes = OrderedDict([
         ('tree_settings', False),
         ('segments', True),
@@ -35,7 +35,7 @@ class TreeSettings(AbsSettingsSelection):
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 3
-    docs = '/docs/phylogenetic_trees'
+    docs = '/documentation/similarities'
     selection_boxes = OrderedDict([
         ('tree_settings', False),
         ('segments', True),
@@ -53,7 +53,7 @@ class SegmentSelection(AbsSegmentSelection):
 class TargetSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 3
-    docs = '/docs/phylogenetic_trees'
+    docs = '/documentation/similarities'
     selection_boxes = OrderedDict([
         ('tree_settings', False),
         ('segments', False),

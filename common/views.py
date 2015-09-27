@@ -131,7 +131,7 @@ class AbsSegmentSelection(TemplateView):
         + ' residues by clicking on the down arrows next to each helix.\n\nSelected segments will appear in the' \
         + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
         + ' button.'
-    docs = '/docs/protein'
+    docs = False
     segment_list = True
     position_type = 'residue'
     buttons = {
@@ -191,7 +191,7 @@ class AbsSettingsSelection(TemplateView):
     number_of_steps = 3
     title = 'SELECT TREE OPTIONS'
     description = 'Select options for tree generation in the middle column.\nOnce you have selected all your segments, click the green button.'
-    docs = '/docs/trees'
+    docs = '/documentation/similarities'
     buttons = {
         'continue': {
             'label': 'Show alignment',
@@ -250,36 +250,36 @@ def AddToSelection(request):
     o = []
     if selection_type == 'reference' or selection_type == 'targets':
         if selection_subtype == 'protein':
-            o.append({'obj': Protein.objects.get(pk=selection_id), 'properties': {}})
+            o.append(Protein.objects.get(pk=selection_id))
         
         elif selection_subtype == 'protein_set':
             selection_subtype = 'protein'
             pset = ProteinSet.objects.get(pk=selection_id)
             for protein in pset.proteins.all():
-                o.append({'obj': protein, 'properties': {}})
+                o.append(protein)
         
         elif selection_subtype == 'family':
-            o.append({'obj': ProteinFamily.objects.get(pk=selection_id), 'properties': {}})
+            o.append(ProteinFamily.objects.get(pk=selection_id))
         
         elif selection_subtype == 'set':
-            o.append({'obj': ProteinSet.objects.get(pk=selection_id), 'properties': {}})
+            o.append(ProteinSet.objects.get(pk=selection_id))
         
         elif selection_subtype == 'structure':
-            o.append({'obj': Structure.objects.get(pdb_code__index=selection_id.upper()), 'properties': {}})
+            o.append(Structure.objects.get(pdb_code__index=selection_id.upper()))
     
     elif selection_type == 'segments':
         if selection_subtype == 'residue':
-            o.append({'obj': ResidueGenericNumberEquivalent.objects.get(pk=selection_id), 'properties': {}})
+            o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
         
         elif selection_subtype == 'site_residue': # used in site search
-            o.append({'obj': ResidueGenericNumberEquivalent.objects.get(pk=selection_id), 'properties': {}})
+            o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
         
         else:
-            o.append({'obj': ProteinSegment.objects.get(pk=selection_id), 'properties': {}})
+            o.append(ProteinSegment.objects.get(pk=selection_id))
 
     for obj in o:
         # add the selected item to the selection
-        selection_object = SelectionItem(selection_subtype, obj['obj'], obj['properties'])
+        selection_object = SelectionItem(selection_subtype, obj)
         selection.add(selection_type, selection_subtype, selection_object)
 
     # export simple selection that can be serialized
@@ -771,7 +771,6 @@ def SelectResidueFeature(request):
         selection.importer(simple_selection)
 
     # process selected object
-    o = []
     if selection_type == 'segments' and selection_subtype == 'site_residue':
         for obj in selection.segments:
             if int(obj.item.id) == selection_id:

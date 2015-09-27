@@ -357,13 +357,11 @@
                         var pos = jQuery.parseJSON(mutant_json);
 
                         $.each( pos, function( key, val ) {
-                             console.log(key +" "+val);
                              var ligands = [], bigincreases=0, increases = 0, bigdecreases=0, decreases = 0, unchanged=0, unspecified = 0;
                              
                              
                              $.each( val[0], function( key, v ) {
                               if( !(ligands[v[1]]) ) ligands[v[1]] = [];
-                              console.log(v, v[1]);
                               ligands[v[1]].push(v[0])
                               if (v[1]>10) {
                                 bigincreases ++;
@@ -421,8 +419,6 @@
                               color = "#F7DA00";
                               color_letter = "#000";
                             }
-
-                            console.log(counts + " " + counts.indexOf(Math.max.apply(window,counts)));
 
 
                              original_title = $('#'+plotid).find("#"+key).attr('original_title')

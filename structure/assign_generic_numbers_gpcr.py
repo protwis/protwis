@@ -19,16 +19,17 @@ class GenericNumbering(object):
     
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
   
-    def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, blast_path='blastp', blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb'])):
+    def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, blast_path='blastp',
+        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb'])):
     
-        #pdb_file can be either a name/path or a handle to an open file
+        # pdb_file can be either a name/path or a handle to an open file
         self.pdb_file = pdb_file
         self.pdb_filename = pdb_filename
         
-        #dictionary of 'MappedResidue' object storing information about alignments and bw numbers
+        # dictionary of 'MappedResidue' object storing information about alignments and bw numbers
         self.residues = {}
         self.pdb_seq = {} #Seq('')
-        #list of uniprot ids returned from blast
+        # list of uniprot ids returned from blast
         self.prot_id_list = []
         #setup for local blast search
         self.blast = BlastSearch(blast_path=blast_path, blastdb=blastdb)
