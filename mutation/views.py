@@ -346,7 +346,7 @@ def render_mutations(request, protein = None, family = None, download = None, **
 
     else:        
         return render(request, 'mutation/list.html', {'mutations': mutations, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'data':context['data'], 
-            'header':context['header'], 'segments':context['segments'], 'mutations_pos_list' : json.dumps(mutations_pos_list), 'number_of_schemes':len(numbering_schemes), 'protein_ids':str(protein_ids)})
+            'header':context['header'], 'segments':context['segments'], 'number_of_schemes':len(numbering_schemes), 'mutations_pos_list' : json.dumps(mutations_pos_list), 'protein_ids':str(protein_ids)})
 
 # Create your views here.
 def index(request):

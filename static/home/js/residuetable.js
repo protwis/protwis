@@ -134,25 +134,26 @@ function table_ajaxMutants() {
                 count = 0;
               $.each( data, function( key, val ) {
                 count = count + 1;
-                 //console.log('#'+protein_index+"#"+key);
+                 console.log('#'+protein_index+"#"+key+" val:"+val);
 
                             var ligands = [], bigincreases=0, increases = 0, bigdecreases=0, decreases = 0, unchanged=0, unspecified = 0;
                              
                              
-                             $.each( val[0], function( key, v ) {
+                             $.each( val, function( key, v ) {
                               if( !(ligands[v[1]]) ) ligands[v[1]] = [];
                               ligands[v[1]].push(v[0])
-                              if (v[1]>10) {
+                              console.log(v[1]);
+                              if (v[0]>10) {
                                 bigincreases ++;
-                              } else if (v[1]>5) {
+                              } else if (v[0]>5) {
                                 increases ++;
-                              } else if (v[1]>0) {
+                              } else if (v[0]>0) {
                                 unchanged ++;
-                              }  else if (v[1]<-10) {
+                              }  else if (v[0]<-10) {
                                 bigdecreases ++;
-                              } else if (v[1]<-5) {
+                              } else if (v[0]<-5) {
                                 decreases ++;
-                              } else if (v[1]<0) {
+                              } else if (v[0]<0) {
                                 unchanged ++;
                               } else if (v[2]=='No effect on') {
                                 unchanged ++;
