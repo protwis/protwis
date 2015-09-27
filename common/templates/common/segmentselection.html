@@ -8,18 +8,22 @@
         <div class="col-md-4">
 
             <!-- main description -->
-            <div class="col-md-12 well">
-                {% if step and number_of_steps %}
-                <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
-                {% endif %}
-                <h4>{{ title }}</h4>
-                {{ description|linebreaks }}
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    {% if step and number_of_steps %}
+                    <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
+                    {% endif %}
+                    <h4>{{ title }}</h4>
+                    {{ description|linebreaks }}
+                </div>
             </div>
 
             <!-- link to docs -->
             {% if docs %}
-            <div class="col-md-12 well">
-                <p>For more information on this tool, see the <a href="{{ docs }}">docs</a>.</p>
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <p>For more information on this tool, see the <a href="{{ docs }}">docs</a>.</p>
+                </div>
             </div>
             {% endif %}
 
@@ -30,13 +34,15 @@
 
             <!-- segment list -->
             {% if segment_list %}
-            <div class="col-md-12 well">
-                <h4>Sequence segments</h4>
-                {% if position_type == 'site_residue' %}
-                    {% include 'common/selection_segments_sitesearch.html' %}
-                {% else %}
-                    {% include 'common/selection_segments.html' %}
-                {% endif %}
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Sequence segments</h4>
+                    {% if position_type == 'site_residue' %}
+                        {% include 'common/selection_segments_sitesearch.html' %}
+                    {% else %}
+                        {% include 'common/selection_segments.html' %}
+                    {% endif %}
+                </div>
             </div>
             {% endif %}
 
@@ -55,14 +61,16 @@
             <!-- show the selection -->
             {% for selection_box, include in selection_boxes.items %}
                 {% if include %}
-                <div class="col-md-12 well" id="selection-{{ selection_box }}">
-                {% with selection_type=selection_box %}
-                    {% if position_type == 'site_residue' %}
-                        {% include 'common/selection_lists_sitesearch.html' %}
-                    {% else %}
-                        {% include 'common/selection_lists.html' %}
-                    {% endif %}
-                {% endwith %}
+                <div class="col-md-12 panel panel-primary">
+                    <div class="panel-body" id="selection-{{ selection_box }}">
+                    {% with selection_type=selection_box %}
+                        {% if position_type == 'site_residue' %}
+                            {% include 'common/selection_lists_sitesearch.html' %}
+                        {% else %}
+                            {% include 'common/selection_lists.html' %}
+                        {% endif %}
+                    {% endwith %}
+                    </div>
                 </div>
                 {% endif %}
             {% endfor %}
