@@ -315,8 +315,9 @@ def render_mutations(request, protein = None, family = None, download = None, **
         response_kwargs['content_type'] = 'text/csv'
         response = HttpResponse(**response_kwargs) 
         response['Content-Disposition'] = 'attachment; filename="GPCRdb_mutant_data.csv"'
-        template = loader.get_template('mutation/csv.html')
-        response.write(template.render(Context({'mutations': csv })))
+        
+        #template = loader.get_template('mutation/csv.html')
+        response.write(csv)
         #return response
 
         #EXCEL SOLUTION
