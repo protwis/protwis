@@ -1,0 +1,20 @@
+{% if tree %}
+{% load staticfiles %}
+        <script src="{% static 'home/js/raphael-min.js' %}">
+        </script>
+        <script src="{% static 'home/js/jsphylosvg.js' %}">
+        </script>
+        <script type="text/javascript">
+            function draw_phylo() {
+                var dataObject = { phyloxml: "{{ tree|safe }}" };
+                phylocanvas = new Smits.PhyloCanvas(
+                dataObject,
+                "svg{{ num }}",
+                1800, 1800,
+                'circular'
+                )
+                
+            };
+            draw_phylo();
+        </script>
+{% endif %}
