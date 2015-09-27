@@ -17,7 +17,7 @@ from collections import OrderedDict
 class TargetSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 2
-    docs = '/docs/alignment'
+    docs = '/documentation/sequences'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -35,7 +35,7 @@ class TargetSelection(AbsTargetSelection):
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
-    docs = '/docs/alignment'
+    docs = '/documentation/sequences'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),

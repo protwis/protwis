@@ -14,7 +14,6 @@ from collections import OrderedDict
 class TargetSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 2
-    docs = '/docs/sitesearch'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -44,7 +43,6 @@ class TargetSelectionPdb(TargetSelection):
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
-    docs = '/docs/sitesearch'
     position_type = 'site_residue'
     selection_boxes = OrderedDict([
         ('reference', False),
