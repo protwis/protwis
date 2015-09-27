@@ -53,6 +53,7 @@ def StructureDetails(request, pdbname):
     Show structure details
     """
     pdbname = pdbname
+    print(pdbname,'here')
     structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name','structure_ligand_pair__pdb_reference','structure_ligand_pair__annotated').filter(structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
     resn_list = ''
 
@@ -89,11 +90,10 @@ class StructureStatistics(TemplateView):
     """
     So not ready that EA wanted to publish it.
     """
-
     template_name = 'structure_statistics.html'
 
     def get_context_data (self, **kwargs):
-        context = super(StructureStatistics, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
 
         #Prepare chart with unique crystallized receptors by year
         all_structs = list(Structure.objects.all().prefetch_related('protein_conformation__protein'))
@@ -121,6 +121,8 @@ class StructureStatistics(TemplateView):
         context['charttype_reso'] = "discreteBarChart"
         context['chartdata_reso'] = self.get_resolution_coverage_data_series(all_structs)
         context['extra_reso'] = extra#{'x_axis_format': '[]', 'y_axis_format': 'f'}
+        #print(context['trees'])
+        
 
         return context
 
@@ -770,3 +772,9 @@ def ServeZipOutfile (request, outfile):
     response.write(out_stream.getvalue())
 
     return response
+
+def RenderTrees(request):
+    number = request.GET['number']
+    tree = open('static/home/images/00'+number+'_tree.xml').read()
+    context = {'tree':tree, 'num':number}
+    return render(request, 'phylogenetic_trees.html', context)
