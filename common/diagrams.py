@@ -82,7 +82,7 @@ class Diagram:
         output = ("<br>Pick color:" +
             colors )
 
-        print(str(self.receptorId))
+        #print(str(self.receptorId))
 
         output += '<br><button style="width:120px;" onclick="applyPresentColors(\''+self.type+'\')">Properties</button> <button style="width:120px;" onclick="resetColors(\''+self.type+'\')">Clear</button>'
         output += '<br><button style="width:120px;" onclick="ajaxMutants(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Mutants</button>'
