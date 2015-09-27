@@ -131,7 +131,7 @@ class AbsSegmentSelection(TemplateView):
         + ' residues by clicking on the down arrows next to each helix.\n\nSelected segments will appear in the' \
         + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
         + ' button.'
-    docs = '/docs/protein'
+    docs = False
     segment_list = True
     position_type = 'residue'
     buttons = {
@@ -191,7 +191,7 @@ class AbsSettingsSelection(TemplateView):
     number_of_steps = 3
     title = 'SELECT TREE OPTIONS'
     description = 'Select options for tree generation in the middle column.\nOnce you have selected all your segments, click the green button.'
-    docs = '/docs/trees'
+    docs = '/documentation/similarities'
     buttons = {
         'continue': {
             'label': 'Show alignment',

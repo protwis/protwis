@@ -171,6 +171,13 @@ def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, r
     ref_generic_index = int(sgn[1])
     generic_index = ref_generic_index - (ref_residue - sequence_number)
 
+    # get generic numbers in display residue numbering scheme
+    if ref_position in schemes[residue_numbering_scheme.slug]['table']:
+        scheme_ref_position = schemes[residue_numbering_scheme.slug]['table'][ref_position]
+        sgn = scheme_ref_position.split("x")
+        scheme_ref_generic_index = int(sgn[1])
+        scheme_generic_index = scheme_ref_generic_index - (ref_residue - sequence_number)
+
     # order anomalies if there are more than one
     # this is important for counting offset
     if len(protein_anomalies) > 1:
@@ -181,30 +188,41 @@ def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, r
     prime = ''
     
     # reverse anomalies if the residue position is before the reference position
-    if generic_index < ref_generic_index:
+    # use numbers from the display scheme for this, because the residue may be on the other side of the reference in
+    # that scheme
+    if scheme_generic_index < ref_generic_index:
         protein_anomalies.reverse()
 
     for pa in protein_anomalies:
-        pa_generic_index = int(pa.generic_number.label.split("x")[1][:2]) # generic number without the prime for bulges
+        # generic number without the prime for bulges # FIXME GPCR specific
+        spgn = pa.generic_number.label.split("x")
+        pa_generic_index = int(spgn[1][:2])
+        pa_generic_number = spgn[0] + 'x' + spgn[1][:2]
+
+        # get the anomaly generic number in the display residue numbering scheme
+        if pa_generic_number in schemes[residue_numbering_scheme.slug]['table']:
+            scheme_pa_generic_number = schemes[residue_numbering_scheme.slug]['table'][pa_generic_number]
+            scheme_pa_generic_index = int(scheme_pa_generic_number.split("x")[1])
         
         # add prime to bulges
         if pa.anomaly_type.slug == 'bulge' and (
-            (pa_generic_index < ref_generic_index and pa_generic_index == (generic_index+offset) or
-            (pa_generic_index > ref_generic_index and pa_generic_index == (generic_index+offset-1)))):
+            (scheme_pa_generic_index < ref_generic_index and scheme_pa_generic_index == (scheme_generic_index+offset)
+            or (scheme_pa_generic_index > ref_generic_index
+            and scheme_pa_generic_index == (scheme_generic_index+offset-1)))):
             prime = '1'
 
         # offsets
-        if (pa_generic_index > ref_generic_index and (generic_index+offset) > pa_generic_index and
+        if (scheme_pa_generic_index > ref_generic_index and (scheme_generic_index+offset) > scheme_pa_generic_index and
             pa.anomaly_type.slug == 'bulge'):
             offset -= 1
-        elif (pa_generic_index > ref_generic_index and (generic_index+offset) >= pa_generic_index and
-            pa.anomaly_type.slug == 'constriction'):
+        elif (scheme_pa_generic_index > ref_generic_index and (scheme_generic_index+offset) >= scheme_pa_generic_index
+            and pa.anomaly_type.slug == 'constriction'):
             offset += 1
-        elif (pa_generic_index < ref_generic_index and (generic_index+offset) < pa_generic_index and
-            pa.anomaly_type.slug == 'bulge'):
+        elif (scheme_pa_generic_index < ref_generic_index and (scheme_generic_index+offset) < scheme_pa_generic_index
+            and pa.anomaly_type.slug == 'bulge'):
             offset += 1
-        elif (pa_generic_index < ref_generic_index and (generic_index+offset) <= pa_generic_index and
-            pa.anomaly_type.slug == 'constriction'):
+        elif (scheme_pa_generic_index < ref_generic_index and (scheme_generic_index+offset) <= scheme_pa_generic_index
+            and pa.anomaly_type.slug == 'constriction'):
             offset -= 1
 
     # structure corrected index (based on anomalies)
