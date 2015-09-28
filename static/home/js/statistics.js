@@ -1,3 +1,25 @@
+ function mergeSVG(div) {
+     var SVG = $('#'+div).find('svg')[0];
+     h = parseInt($(SVG).attr('height'));
+     w = parseInt($(SVG).attr('width'));
+     var legend = $('#legend').find('svg')[0];
+     h2 = parseInt($(legend).attr('height'));
+     w2 = parseInt($(legend).attr('width'));
+     leg_w = (w-w2)/2
+     SVG.setAttribute('height', (h + h2));
+     if (w2 > w) {
+         SVG.setAttribute('width', (w2));
+         leg_w = 0 
+         svg_w = Math.abs(w-w2)/2
+     } else {
+         leg_w = Math.abs(w-w2)/2 
+         svg_w = 0
+     };
+     for (i = 0; i < legend.children.length; i++) {
+         legend.children[i].setAttribute('transform', 'translate ('+leg_w.toString()+' ' + h.toString()+')');
+         $(SVG).append(legend.children[i]);
+     };
+ };
 window.onload = function(){
     $(".chart_type").click(function () {
         Clear_all()
@@ -46,6 +68,8 @@ window.onload = function(){
             }
         });
     };
+    
+ 
     $(document).ready(function () {
         $('#phylo_1.Class_phylo').css("fill", '#000000');
         $('#phylo_1.container').css("display", '');
