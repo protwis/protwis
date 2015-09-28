@@ -753,10 +753,13 @@ class PDBDownload(TemplateView):
     """
     template_name = "pdb_download.html"
 
+
     def get_context_data (self, **kwargs):
 
         context = super(PDBDownload, self).get_context_data(**kwargs)
+        pdb_files = []
         self.success = False
+
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)
         selection = Selection()
@@ -764,13 +767,13 @@ class PDBDownload(TemplateView):
             selection.importer(simple_selection)
         if selection.targets != []:
            pdb_files = [(PDBParser().get_structure('', StringIO(x.item.pdb_data.pdb))[0], x.item.pdb_code.index+'.pdb') for x in selection.targets if x.type == 'structure']
-        print(len(pdb_files))
+
         if len(pdb_files) > 0:
             io = PDBIO()            
             out_stream = BytesIO()
             zipf = zipfile.ZipFile(out_stream, 'w')
             for structure, fname in pdb_files:
-
+                print(fname)
                 tmp = StringIO()
                 io.set_structure(structure)
                 io.save(tmp)
@@ -781,6 +784,14 @@ class PDBDownload(TemplateView):
                 self.outfile = "pdb_structures.zip"
                 self.success = True
                 self.zip = 'zip'
+
+        context = super(PDBDownload, self).get_context_data(**kwargs)
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+
+        return context
 
 #==============================================================================
 def ServePdbOutfile (request, outfile, replacement_tag):
