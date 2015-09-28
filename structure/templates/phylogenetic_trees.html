@@ -1,5 +1,8 @@
 {% if tree %}
+<div id="legend" class="hidden">{{ leg|safe }} </div>
 {% load staticfiles %}
+        <script src="{% static 'home/js/statistics.js' %}">
+        </script>
         <script src="{% static 'home/js/raphael-min.js' %}">
         </script>
         <script src="{% static 'home/js/jsphylosvg.js' %}">
@@ -10,11 +13,12 @@
                 phylocanvas = new Smits.PhyloCanvas(
                 dataObject,
                 "svg{{ num }}",
-                1800, 1800,
+                1500, 1500,
                 'circular'
                 )
                 
             };
             draw_phylo();
+            mergeSVG("svg{{ num }}")
         </script>
 {% endif %}

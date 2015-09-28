@@ -69,9 +69,6 @@ class TargetSelection(AbsTargetSelection):
 
 class Treeclass:
     family = {}
-    phylip = None
-    outtree = None
-    dir = ''
     
     def __init__(self):
         self.Additional_info={"crystal": {"include":"False", "order":6, "colours":{"crystal_true":"#6dcde1","crystal_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":None, "child": None, "name":"Crystals"},
@@ -83,6 +80,12 @@ class Treeclass:
                 "mutant_minus": {"include":"False", "order":5, "colours":{"mutant_minus_true":"#6dcde1","mutant_minus_false":"#EEE"}, "color_type":"single", "proteins":[], "parent":"mutant", "child": [], "name":"Negative affinity mutants"}
                 }
         self.buttons = [(x[1]['order'],x[1]['name']) for x in sorted(self.Additional_info.items(), key= lambda x: x[1]['order']) if x[1]['include']=='True']
+        self.family = {}
+        self.phylip = None
+        self.outtree = None
+        self.dir = ''
+
+        print('Starting Treeclass', len(self.Additional_info['ligand']['proteins']))
 
     def Prepare_file(self, request,build=False):
         self.Tree = PrepareTree(build)
@@ -104,7 +107,7 @@ class Treeclass:
             build_proteins=[]
             if build == '001':
                 cons_prots = []
-                for prot in Protein.objects.filter(sequence_type_id=7, species_id=1):
+                for prot in Protein.objects.filter(sequence_type__slug='consensus', species_id=1):
                     if prot.family.slug.startswith('001') and len(prot.family.slug.split('_'))==3:
                         build_proteins.append(prot)
                 for set in sets:
@@ -113,13 +116,13 @@ class Treeclass:
                             if prot.family.slug.startswith('001_') and prot.species.latin_name=='Homo sapiens':
                                 build_proteins.append(prot)
             else:
-                for prot in Protein.objects.filter(sequence_type_id=1, species_id=1):
+                for prot in Protein.objects.filter(sequence_type__slug='wt', species_id=1):
                     if prot.family.slug.startswith(build):
                         build_proteins.append(prot)
             a.load_proteins(build_proteins)
             segments = ProteinSegment.objects.all()
             a.load_segments(segments)
-            self.bootstrap,self.UPGMA,self.branches,self.ttype=[0,1,0,0]
+            self.bootstrap,self.UPGMA,self.branches,self.ttype=[0,1,1,0]
         ##################################################################
         else:
             simple_selection=request.session.get('selection', False)
@@ -147,6 +150,8 @@ class Treeclass:
         ####Get additional protein information
         for n in a.proteins:
             fam = self.Tree.trans_0_2_A(n.protein.family.slug)
+            if n.protein.sequence_type.slug == 'consensus':
+                fam+='_CON'
             link = n.protein.entry_name
             name = n.protein.name.replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')
             if '&' in name and ';' in name:
@@ -224,6 +229,7 @@ class Treeclass:
         phylogeny_input = self.get_phylogeny('/tmp/%s/' %dirname)
         shutil.rmtree('/tmp/%s' %dirname)
         if build != False:
+            open('static/home/images/'+build+'_legend.svg','w').write(str(self.Tree.legend))
             open('static/home/images/'+build+'_tree.xml','w').write(phylogeny_input)
         else:
             return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
