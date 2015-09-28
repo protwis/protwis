@@ -4,7 +4,7 @@ from documentation import views
 
 urlpatterns = patterns('',
     url(r'^$', views.index, name='index'),
-    url(r'^crystals', views.crystals, name='crystals'),
+    url(r'^structures', views.structures, name='structures'),
     url(r'^diagrams', views.diagrams, name='diagrams'),
     url(r'^numbering', views.numbering, name='numbering'),
     url(r'^pharmacophore', views.pharmacophore, name='update'),

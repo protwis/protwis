@@ -5,10 +5,17 @@ from django.views.static import serve
 from django.core.files import File 
 
 from pages.models import Pages
+from common.models import ReleaseNotes
 import os
 
 def index(request):
 	return render(request,'pages/index.html', {'site_title': settings.SITE_TITLE})
+
+def releasenotes(request):
+    context = {}
+    context['release_notes'] = ReleaseNotes.objects.all()
+
+    return render(request, 'pages/releasenotes.html', context)
 
 def contact(request):
     title = Pages.objects.get(title__icontains='contact')

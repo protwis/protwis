@@ -20,127 +20,203 @@
                 "scrollY": 600,
                 "bScrollCollapse": true,
                 'paging': false,
-                orderCellsTop: true,
+                'orderCellsTop': true,
                 "autoWidth": true,
                 dom: 'T<"clear">lfrtip',
                 "aoColumnDefs": [
+                    { 'bSortable': false, 'aTargets': [0] },
                     { "sType": "string", "aTargets": [2] },
                     { "sType": "string", "aTargets": [12] },
                 ],
                 "aaSorting": [[ 0, "desc" ]],
-                tableTools: {
-                    "sRowSelect": "multi",
-                    "aButtons": ["select_all", "select_none"]
+                'tableTools': {
+                    "sRowSelect": "single",
+                    "aButtons": []
                 },
                 initComplete: function () {
                     $('#crystal_structures').dataTable().columnFilter({
                         sPlaceHolder: "head:after",
                         aoColumns: [
+                            null,
                             { type: "number" }, // sequence similarity
                             { type: "number" }, // sequence identity
-                            { type: "select" }, //protein name
-                            { type: "select" }, //class
-                            { type: "select" }, //specie
-                            { type: "text" }, //pdb code
-                            { type: "number-range" }, //resolution
-                            { type: "text" }, //preferred chain
-                            { type: "text" }, //endogenous ligand name
-                            { type: "text" }, //endogenous ligand type
-                            { type: "text" }, //x-ray ligand
-                            { type: "text" }, //stabilizing agent - left as type-in for now
-                            { type: "text" }, //pmid
-                            { type: "date-range" }, //publication date
+                            { type: "select" }, // protein name
+                            { type: "select" }, // class
+                            { type: "select" }, // species
+                            { type: "text" }, // pdb code
+                            { type: "number-range" }, // resolution
+                            { type: "text" }, // preferred chain
+                            { type: "text" }, // stabilizing agent - left as type-in for now
+                            { type: "text" }, // endogenous ligand name
+                            { type: "text" }, // endogenous ligand type
+                            { type: "text" }, // x-ray ligand
+                            { type: "text" }, // x-ray ligand function
+                            { type: "text" }, // x-ray ligand type
+                            { type: "text" }, // reference
+                            { type: "date-range" }, // publication date
                         ]
                     });
                 }
             });
             $.datepicker.regional[""].dateFormat = "yy-mm-dd";
             $.datepicker.setDefaults($.datepicker.regional['']);
-            $('#crystal_structures tbody').on('click', 'tr', function () {
-                $(this).toggleClass('selected');
+            $('.alt').change(function () {
+                $(this).parent().parent().toggleClass('alt_selected');
             });
+            $('#superpose_btn').click(function () {
+                if (table.rows('.selected').data().length == 1) {
+                    var div = document.createElement("div");
+                    div.innerHTML = table.rows('.selected').data()[0][4];
+                    AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, ''));
+                }
+                var checked_data = table.rows('.alt_selected').data();
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][4];
+                    AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                }
+                window.location.href = '/structure/superposition_workflow_index';
             });
+            $.fn.dataTable.ext.search.push(
+                function (settings, data, dataIndex) {
+                    if ($('#representative_btn').hasClass('active')) {
+                        if ($(table.row(dataIndex).node()).hasClass("repr-st")) {
+                            return true;
+                        }
+                        return false;
+                    }
+                    else {
+                        return true;
+                    }
+                });
+
+            $('#representative_btn').click(function () {
+                $(this).toggleClass("active");
+                table.draw();
+            });
+        });
     </script> 
 {% endblock %}
 
 {% block content %}
-
-{% if crystals %}              
-    <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
-        <table width="100%" class="display" id="crystal_structures">
-
-            <thead>
-                <tr>
-                    <th class="similarity-th">Sequence similarity</th>
-                    <th class="similarity-th">Sequence identity</th>
-                    <th class="protein-th">Protein name</th>
-                    <th class="protein-th">Protein class</th>
-                    <th class="protein-th">Species</th>
-                    <th class="pdb-th">PDB code</th>
-                    <th class="pdb-th">Resolution</th>
-                    <th class="pdb-th">Preferred chain</th>
-                    <th class="ligand-th">Endogenous ligand</th>
-                    <th class="ligand-th">Endogenous ligand type</th>
-                    <th class="ligand-th">X-ray ligand</th>
-                    <th>Stabilizing agents</th>
-                    <th class="pub-th">PMID</th>
-                    <th class="pub-th">Publication date</th>
-                </tr>
-                <tr>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tfoot>
-                <tr>
-                    <th>Sequence similarity</th>
-                    <th>Sequence identity</th>
-                    <th>Protein name</th>
-                    <th>Protein class</th>
-                    <th>Species</th>
-                    <th>PDB code</th>
-                    <th>Resolution</th>
-                    <th>Preferred chain</th>
-                    <th>Endogenous ligand</th>
-                    <th>Endogenous ligand type</th>
-                    <th>X-ray ligand</th>
-                    <th>Stabilizing agents</th>
-                    <th>PMID</th>
-                    <th>Publication date</th>
-                </tr>
-            </tfoot>
-            {% for crystal in crystals %}
-            <tr>
-                <td>{{ crystal.0 }}</td>
-                <td>{{ crystal.1 }}</td>
-                <td>{{ crystal.2.protein_conformation.protein.family.name|safe }}</td>
-                <td>{{ crystal.2.protein_conformation.protein.get_protein_class }}</td>
-                <td>{{ crystal.2.protein_conformation.protein.species.latin_name }}</td>
-                <td>{{ crystal.2.pdb_code.index}}</td>
-                <td>{{ crystal.2.resolution}}</td>
-                <td>{{ crystal.2.preferred_chain }}</td>
-                <td>{{ crystal.2.protein_conformation.protein.endogenous_ligands.all|join_attr:"name" }}</td>
-                <td>{{ crystal.2.protein_conformation.protein.parent.endogenous_ligands.all|join_attr:"properties__ligand_type" }}</td>
-                <td>{{ crystal.2.ligands.all|join_attr:"name" }}</td>
-                <td>{{ crystal.2.stabilizing_agents.all|join_attr:"name" }}</td>
-                <td>{{ crystal.2.publication.web_link.index }}</td>
-                <td>{{ crystal.2.publication_date|date:"Y-m-d" }}</td>
-            </tr>
-            {% endfor %}
-        </table>
+    <div style="font-size: 10px;">Select (tick box) structures, and Highlight the reference template</div><br />
+    <div class="btn-group">
+        <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superpose structures</a>
     </div>
+    <div class="btn-group">
+        <a id="representative_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show representative</a>
+    </div>
+    <br />
+    <br />
+    {% if structures %}              
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+            <table width="100%" class="display" id="crystal_structures">
+
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th class="similarity-th">Sequence similarity</th>
+                        <th class="similarity-th">Sequence identity</th>
+                        <th class="protein-th">Protein name</th>
+                        <th class="protein-th">Protein class</th>
+                        <th class="protein-th">Species</th>
+                        <th class="pdb-th">PDB code</th>
+                        <th class="pdb-th">Resolution</th>
+                        <th class="pdb-th">Pre. chain</th>
+                        <th class='pdb-th'>Aux. proteins</th>
+                        <th class="ligand-th">Endo. ligand</th>
+                        <th class="ligand-th">Endo. lig. type</th>
+                        <th class="ligand-th">X-ray ligand</th>
+                        <th class="ligand-th">X-ray lig. function</th>
+                        <th class="ligand-th">X-ray lig. type</th>
+                        <th class="pub-th">Reference</th>
+                        <th class="pub-th">Date</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                {% for structure in structures%}
+                {% if structure.2.representative %}
+                <tr class="repr-st">
+                    {% else %}
+                <tr>
+                    {% endif %}
+                    <td><input class="alt" type="checkbox"></td>
+                    <td>{{ structure.0 }}</td>
+                    <td>{{ structure.1 }}</td>
+                    <td>{{ structure.2.protein_conformation.protein.family.name|safe }}</td>
+                    <td>{{ structure.2.protein_conformation.protein.get_protein_class }}</td>
+                    <td>{{ structure.2.protein_conformation.protein.species.common_name }}</td>
+                    <td class="text-center">
+                        <a href="{{ structure.2.pdb_code.index}}">
+                            {{ structure.2.pdb_code.index}}
+                        </a>
+                    </td>
+                    <td class="text-center">{{ structure.2.resolution|floatformat:"1" }}</td>
+                    <td class="text-center">{{ structure.2.preferred_chain }}</td>
+                    <td>
+                        {% for sa in structure.2.stabilizing_agents.all %}
+                        {{ sa.name }}<br />
+                        {% empty %}
+                        N/A
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for ligand in structure.2.protein_conformation.protein.parent.endogenous_ligands.all %}
+                        {{ ligand|safe }}<br />
+                        {% empty %}
+                        N/A
+                        {% endfor %}
+                    </td>
+                    <td>{{ structure.2.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
+                    <td>
+                        {% for ligand in structure.2.ligands.all %}
+                        {{ ligand.ligand.name|safe }}<br />
+                        {% empty %}
+                        N/A
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for ligand in structure.2.ligands.all %}
+                        {{ ligand.ligand_role.name }}<br />
+                        {% empty %}
+                        N/A
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for ligand in structure.2.ligands.all %}
+                        {{ ligand.ligand.properities.ligand_type }}<br />
+                        {% empty %}
+                        N/A
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <a href="{{ structure.2.publication.web_link }}">
+                            {{ structure.2.publication.web_link.index }}
+                        </a>
+                    </td>
+                    <td>{{ structure.2.publication_date|date:"Y-m-d" }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
 {% else %}
     <p> Ooops! There is no data to show here yet. </p>
 {% endif %}

@@ -43,6 +43,7 @@ class TargetSelection(AbsTargetSelection):
             'color': 'success',
         },
     }
+    default_species = False
 
 
 class SegmentSelection(AbsSegmentSelection):
@@ -69,7 +70,7 @@ def render_mutations(request, protein = None, family = None, download = None, **
      # local protein list
     proteins = []
 
-    if protein: #if protein static page
+    if protein: # if protein static page
 
         proteins.append(Protein.objects.get(entry_name = protein))
         segments_ids = ProteinSegment.objects.all().values('id')
@@ -100,9 +101,14 @@ def render_mutations(request, protein = None, family = None, download = None, **
                 for protein_source in simple_selection.annotation:
                     protein_source_list.append(protein_source.item)
                     
-                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                    species__in=(species_list),
-                    source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                if species_list:
+                    family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                        species__in=(species_list),
+                        source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                else:
+                    family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                        source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+
                 for fp in family_proteins:
                     proteins.append(fp)
 
@@ -315,8 +321,9 @@ def render_mutations(request, protein = None, family = None, download = None, **
         response_kwargs['content_type'] = 'text/csv'
         response = HttpResponse(**response_kwargs) 
         response['Content-Disposition'] = 'attachment; filename="GPCRdb_mutant_data.csv"'
-        template = loader.get_template('mutation/csv.html')
-        response.write(template.render(Context({'mutations': csv })))
+        
+        #template = loader.get_template('mutation/csv.html')
+        response.write(csv)
         #return response
 
         #EXCEL SOLUTION
@@ -346,7 +353,7 @@ def render_mutations(request, protein = None, family = None, download = None, **
 
     else:        
         return render(request, 'mutation/list.html', {'mutations': mutations, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'data':context['data'], 
-            'header':context['header'], 'segments':context['segments'], 'mutations_pos_list' : json.dumps(mutations_pos_list), 'number_of_schemes':len(numbering_schemes), 'protein_ids':str(protein_ids)})
+            'header':context['header'], 'segments':context['segments'], 'number_of_schemes':len(numbering_schemes), 'mutations_pos_list' : json.dumps(mutations_pos_list), 'protein_ids':str(protein_ids)})
 
 # Create your views here.
 def index(request):

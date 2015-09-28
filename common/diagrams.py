@@ -82,11 +82,13 @@ class Diagram:
         output = ("<br>Pick color:" +
             colors )
 
-        print(str(self.receptorId))
+        #print(str(self.receptorId))
 
         output += '<br><button style="width:120px;" onclick="applyPresentColors(\''+self.type+'\')">Properties</button> <button style="width:120px;" onclick="resetColors(\''+self.type+'\')">Clear</button>'
         output += '<br><button style="width:120px;" onclick="ajaxMutants(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Mutants</button>'
         output += ' <button style="width:220px;" onclick="ajaxInteractions(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Interactions from Crystals</button>'
+
+        output += '<br><small>Mutant Data: Increased binding/potency: <font style="color: #000; background-color: #87E88F" color="#87E88F">>5-fold</font>, <font style="color: #000; background-color: #66B36C" color="#66B36C">>10-fold</font>; Reduced binding/potency: <font style="color: #FFF; background-color: #FF7373" color="#FF7373">>5-fold</font>, <font style="color: #FDFF7B; background-color: #FA1111" color="#FA1111">>10-fold</font>; <font style="color: #000; background-color: #F7DA00" color="#F7DA00">No/low effect (<5-fold)</font>; and <font style="color: #000; background-color: #D9D7CE" color="#D9D7CE">N/A</font> </small>'
 
         return boxstyle+ output
 

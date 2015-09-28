@@ -27,12 +27,13 @@ class Command(BaseCommand):
             ['build_blast_database'],
             ['build_links'],
             ['build_construct_proteins', {'njobs': njobs}],
-            ['build_structures', {'njobs': njobs}],
+            ['build_structures'],
             ['build_mutant_data'],
             ['find_protein_templates', {'njobs': njobs}],
             ['update_alignments', {'njobs': njobs}],
             ['build_protein_sets'],
             ['build_consensus_sequences', {'njobs': njobs}],
+            ['build_release_notes'],
         ]
 
         for c in commands:

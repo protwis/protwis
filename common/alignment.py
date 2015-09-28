@@ -108,10 +108,15 @@ class Alignment:
                 protein_source_list = []
                 for protein_source in simple_selection.annotation:
                     protein_source_list.append(protein_source.item)
-                    
-                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                    species__in=(species_list),
-                    source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                
+                if species_list:
+                    family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                        species__in=(species_list), source__in=(protein_source_list)).select_related(
+                        'residue_numbering_scheme', 'species')
+                else:
+                    family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                        source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+
                 for fp in family_proteins:
                     proteins.append(fp)
 

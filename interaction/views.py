@@ -14,8 +14,8 @@ from ligand.models import LigandRole, LigandProperities
 from structure.models import Structure,PdbData,Rotamer,Fragment
 from structure.functions import BlastSearch
 from structure.assign_generic_numbers_gpcr import GenericNumbering
-from protein.models import ProteinConformation,Protein
-from residue.models import Residue, ResidueGenericNumber, ResidueGenericNumberEquivalent
+from protein.models import ProteinConformation,Protein, ProteinSegment
+from residue.models import Residue, ResidueGenericNumber, ResidueGenericNumberEquivalent,ResidueNumberingScheme
 from common.models import WebResource
 from common.models import WebLink
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
@@ -33,6 +33,7 @@ import logging
 from subprocess import call, Popen, DEVNULL
 import urllib
 import collections
+from collections import OrderedDict
 from io import StringIO, BytesIO
 from Bio.PDB import PDBIO, PDBParser
 
@@ -66,7 +67,7 @@ def sitesearch(request):
 
     return render(request,'interaction/sitesearch.html', {'form': form})
 
-def list(request):
+def list_structures(request):
     form = PDBform()
     #structures = ResidueFragmentInteraction.objects.distinct('structure_ligand_pair__structure').all()
     structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index','structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate( num_ligands=Count('structure_ligand_pair', distinct = True),num_interactions=Count('pk', distinct = True)).order_by('structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name')
@@ -562,7 +563,7 @@ def calculate(request, redirect=None):
 
             else:
                 pdbname = form.cleaned_data['pdbname'].strip()
-                print('pdbname selected!',pdbname)
+                #print('pdbname selected!',pdbname)
                 temp_path = module_dir+'/pdbs/'+pdbname+'.pdb'
 
                 if not os.path.isfile(temp_path):
@@ -579,6 +580,7 @@ def calculate(request, redirect=None):
             generic_numbering = GenericNumbering(temp_path)
             out_struct = generic_numbering.assign_generic_numbers()
             structure_residues = generic_numbering.residues
+            prot_id_list = generic_numbering.prot_id_list
             segments = {}
 
             generic_ids = []
@@ -656,6 +658,7 @@ def calculate(request, redirect=None):
             HelixBox = DrawHelixBox(residue_list,'Class A',str('test'), nobuttons = 1)
             SnakePlot = DrawSnakePlot(residue_list,'Class A',str('test'), nobuttons = 1)
 
+
             xtal = {}
             hetsyn = {}
             hetsyn_reverse = {}
@@ -677,12 +680,15 @@ def calculate(request, redirect=None):
                     xtal['pubmed_id'] = line[19:].strip()
                 if line.startswith('JRNL        DOI'):
                     xtal['doi_id'] = line[19:].strip()
+                if line.startswith('REMARK   2 RESOLUTION.'):
+                    xtal['resolution'] = line[22:].strip()
 
             results = parseusercalculation(pdbname,request.session.session_key)
 
             simple = collections.OrderedDict()
             simple_generic_number = collections.OrderedDict()
-            residues = []
+            residues_browser = []
+            residue_table_list = []
             mainligand = ''
             interaction_types = ['aromatic','aromaticplus','hbond','hbond_confirmed','hydrophobic', 'hbondplus',
                 'aromaticfe','waals']
@@ -707,6 +713,9 @@ def calculate(request, redirect=None):
                                 segment = r.segment
                                 generic = r.gpcrdb
 
+                                if generic!="":
+                                    residue_table_list.append(generic)
+
                                 if generic!="" and generic in simple_generic_number[ligand[1]]:
                                     simple_generic_number[ligand[1]][generic].append(key)
                                 elif generic!="":
@@ -720,8 +729,73 @@ def calculate(request, redirect=None):
                             else:
                                 simple[ligand[1]][value[0]] = [key]
 
-                            residues.append({'type':key,'aa':aa,'ligand':ligand[1],'pos':pos, 'gpcrdb':display, 'segment':segment})
+                            residues_browser.append({'type':key,'aa':aa,'ligand':ligand[1],'pos':pos, 'gpcrdb':display, 'segment':segment})
 
+
+            #RESIDUE TABLE
+            segments = ProteinSegment.objects.all().filter().prefetch_related()
+            #s = Structure.objects.get(pdb_code__index=xtal['pdb_code'])
+            #proteins = [s.protein_conformation.protein]
+            proteins = []
+            protein_list = Protein.objects.filter(pk__in=prot_id_list)
+            numbering_schemes_selection = ['gpcrdb']
+            for p in protein_list:
+                proteins.append(p)
+                numbering_schemes_selection.append(p.residue_numbering_scheme.slug)
+
+            numbering_schemes = ResidueNumberingScheme.objects.filter(slug__in=numbering_schemes_selection).all()
+            default_scheme = numbering_schemes[0]
+            data = OrderedDict()
+
+            for segment in segments:
+                data[segment.slug] = OrderedDict()
+                residues = Residue.objects.filter(protein_segment=segment,  protein_conformation__protein__in=proteins, 
+                                                generic_number__label__in=residue_table_list).prefetch_related('protein_conformation__protein', 
+                                                'protein_conformation__state', 'protein_segment',
+                                                'generic_number','display_generic_number','generic_number__scheme', 'alternative_generic_numbers__scheme')
+                for scheme in numbering_schemes:
+                    if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                        for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                            data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+                    elif scheme == default_scheme:
+                        for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                            data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+
+                for residue in residues:
+                    alternatives = residue.alternative_generic_numbers.all()
+                    pos = residue.generic_number
+                    for alternative in alternatives:
+                        if alternative.scheme not in numbering_schemes:
+                            continue
+                        scheme = alternative.scheme
+                        if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                            pos = residue.generic_number
+                            if scheme == pos.scheme:
+                                data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+                            else:
+                                if scheme.slug not in data[segment.slug][pos.label].keys():
+                                    data[segment.slug][pos.label][scheme.slug] = alternative.label
+                                if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                                    data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
+                                data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+                        else:
+                            if scheme.slug not in data[segment.slug][pos.label].keys():
+                                data[segment.slug][pos.label][scheme.slug] = alternative.label
+                            if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                                data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
+                            data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+
+            # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
+            flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
+            for s in iter(flattened_data):
+                flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
+            
+            context = {}
+            context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
+            context['segments'] = [x.slug for x in segments if len(data[x.slug])]
+            context['data'] = flattened_data
+            context['number_of_schemes'] = len(numbering_schemes)
+   
             if redirect:
                 # get simple selection from session
                 simple_selection = request.session.get('selection', False)
@@ -773,8 +847,9 @@ def calculate(request, redirect=None):
                 return HttpResponseRedirect(redirect)
             else:
                 return render(request,'interaction/diagram.html',{'result' : "Looking at "+pdbname, 'outputs' : results,
-                 'simple' : simple ,'simple_generic_number' : simple_generic_number , 'xtal' : xtal, 'pdbname':pdbname, 'mainligand':mainligand, 'residues':residues,
-                 'HelixBox':HelixBox, 'SnakePlot':SnakePlot})
+                 'simple' : simple ,'simple_generic_number' : simple_generic_number , 'xtal' : xtal, 'pdbname':pdbname, 'mainligand':mainligand, 'residues':residues_browser,
+                 'HelixBox':HelixBox, 'SnakePlot':SnakePlot ,'data':context['data'], 
+                'header':context['header'], 'segments':context['segments'], 'number_of_schemes':len(numbering_schemes)})
 
         else:
             print(form.errors)
