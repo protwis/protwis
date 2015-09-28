@@ -85,7 +85,6 @@ class Treeclass:
         self.outtree = None
         self.dir = ''
 
-        print('Starting Treeclass', len(self.Additional_info['ligand']['proteins']))
 
     def Prepare_file(self, request,build=False):
         self.Tree = PrepareTree(build)
