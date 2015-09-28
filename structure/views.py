@@ -772,5 +772,6 @@ def ServeZipOutfile (request, outfile):
 def RenderTrees(request):
     number = request.GET['number']
     tree = open('static/home/images/00'+number+'_tree.xml').read()
-    context = {'tree':tree, 'num':number}
+    legend = open('static/home/images/00'+number+'_legend.svg').read()
+    context = {'tree':tree, 'leg':legend, 'num':number}
     return render(request, 'phylogenetic_trees.html', context)
