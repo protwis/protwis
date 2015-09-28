@@ -563,7 +563,7 @@ def calculate(request, redirect=None):
 
             else:
                 pdbname = form.cleaned_data['pdbname'].strip()
-                print('pdbname selected!',pdbname)
+                #print('pdbname selected!',pdbname)
                 temp_path = module_dir+'/pdbs/'+pdbname+'.pdb'
 
                 if not os.path.isfile(temp_path):
@@ -580,6 +580,7 @@ def calculate(request, redirect=None):
             generic_numbering = GenericNumbering(temp_path)
             out_struct = generic_numbering.assign_generic_numbers()
             structure_residues = generic_numbering.residues
+            prot_id_list = generic_numbering.prot_id_list
             segments = {}
 
             generic_ids = []
@@ -733,22 +734,25 @@ def calculate(request, redirect=None):
 
             #RESIDUE TABLE
             segments = ProteinSegment.objects.all().filter().prefetch_related()
-            s = Structure.objects.get(pdb_code__index=xtal['pdb_code'])
-            proteins = [s.protein_conformation.protein]
-            numbering_schemes_selection = ['gpcrdb',s.protein_conformation.protein.residue_numbering_scheme.slug]
+            #s = Structure.objects.get(pdb_code__index=xtal['pdb_code'])
+            #proteins = [s.protein_conformation.protein]
+            proteins = []
+            protein_list = Protein.objects.filter(pk__in=prot_id_list)
+            numbering_schemes_selection = ['gpcrdb']
+            for p in protein_list:
+                proteins.append(p)
+                numbering_schemes_selection.append(p.residue_numbering_scheme.slug)
+
             numbering_schemes = ResidueNumberingScheme.objects.filter(slug__in=numbering_schemes_selection).all()
             default_scheme = numbering_schemes[0]
             data = OrderedDict()
-            print(proteins)
 
-            print(residue_table_list)
             for segment in segments:
                 data[segment.slug] = OrderedDict()
                 residues = Residue.objects.filter(protein_segment=segment,  protein_conformation__protein__in=proteins, 
                                                 generic_number__label__in=residue_table_list).prefetch_related('protein_conformation__protein', 
                                                 'protein_conformation__state', 'protein_segment',
                                                 'generic_number','display_generic_number','generic_number__scheme', 'alternative_generic_numbers__scheme')
-                print(segment,len(residues))
                 for scheme in numbering_schemes:
                     if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
                         for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
@@ -781,8 +785,6 @@ def calculate(request, redirect=None):
                                 data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
                             data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
 
-            print(data)
-
             # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
             flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
             for s in iter(flattened_data):
@@ -793,12 +795,7 @@ def calculate(request, redirect=None):
             context['segments'] = [x.slug for x in segments if len(data[x.slug])]
             context['data'] = flattened_data
             context['number_of_schemes'] = len(numbering_schemes)
-
-            print(context['data'])
-            
-
-
-            
+   
             if redirect:
                 # get simple selection from session
                 simple_selection = request.session.get('selection', False)

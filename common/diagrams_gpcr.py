@@ -50,7 +50,7 @@ class DrawSnakePlot(Diagram):
 
         #self.segments = dict.fromkeys(self.segments, [])
         self.segments = {}
-        print("residues",len(self.sequence))
+        #print("residues",len(self.sequence))
         i = 0
         for r in self.sequence:
             if r.protein_segment:
@@ -76,8 +76,8 @@ class DrawSnakePlot(Diagram):
         #print(i)
 
         #print(self.segments)
-        for segment in self.segments:
-            print(segment,len(self.segments[segment]))
+        #for segment in self.segments:
+            #print(segment,len(self.segments[segment]))
         
         #$baldwin =  Receptor::GetReceptorProperty($receptorId, 'baldwin');
         #$baldwin = explode(";", $baldwin);
@@ -135,7 +135,7 @@ class DrawSnakePlot(Diagram):
         self.drawSnakePlotTerminals()
 
         #print(self.maxY)
-        print(self.maxX)
+        #print(self.maxX)
         #self.output +=self.drawToolTip()
 
 
@@ -146,7 +146,7 @@ class DrawSnakePlot(Diagram):
         return mark_safe(self.create(self.output,self.maxX['right']+30,self.high-self.low+self.offsetY*2,"snakeplot", self.nobuttons))
 
     def drawSnakePlotHelix(self, helix_num):
-        print('drawing helix nr',helix_num)
+        #print('drawing helix nr',helix_num)
         rs = self.segments['TM'+str(helix_num)]
         #print(residues)
         #print(len(self.segments['TM'+str(helix_num)]), "residues")
@@ -268,7 +268,7 @@ class DrawSnakePlot(Diagram):
         return output_trace+output_residue_in+output_residue_out
 
     def drawSnakePlotHelix8(self):
-        print('drawing helix nr8')
+        #print('drawing helix nr8')
         helix_num = 8
         rs = self.segments['H8']
         #print(residues)
