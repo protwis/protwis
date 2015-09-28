@@ -17,6 +17,7 @@ from common.selection import Selection
 from common.extensions import MultiFileField
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
+import json
 import inspect
 import os
 import zipfile
@@ -120,9 +121,7 @@ class StructureStatistics(TemplateView):
 
         context['charttype_reso'] = "discreteBarChart"
         context['chartdata_reso'] = self.get_resolution_coverage_data_series(all_structs)
-        context['extra_reso'] = extra#{'x_axis_format': '[]', 'y_axis_format': 'f'}
-        #print(context['trees'])
-        
+        context['extra_reso'] = extra
 
         return context
 
@@ -198,8 +197,8 @@ class StructureStatistics(TemplateView):
             else:
                 reso_count.append(len([x for x in structures if bracket-step < x.resolution <= bracket]))
         
-        print(["{:.2f}".format(x) for x in brackets])
-        return {'x': ["{:.2f}".format(x) for x in brackets], 'y': reso_count}
+#        print(["{:.2f}".format(x) for x in brackets])
+        return {'x': ["{:.1f}".format(x) for x in brackets], 'y': reso_count}
             
 
 
@@ -358,7 +357,6 @@ class SuperpositionWorkflowIndex(TemplateView):
             selection.importer(simple_selection)
 
         #Clearing selections for fresh run
-        print(self.kwargs)
         if 'clear' in self.kwargs.keys():
             selection.clear('reference')
             selection.clear('targets')
