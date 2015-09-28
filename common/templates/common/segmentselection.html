@@ -32,8 +32,8 @@
         <!-- selection boxes -->
         <div class="col-md-4">
 
-            <!-- segment list -->
             {% if segment_list %}
+            <!-- segment list -->
             <div class="col-md-12 panel panel-primary">
                 <div class="panel-body">
                     <h4>Sequence segments</h4>
@@ -42,6 +42,16 @@
                     {% else %}
                         {% include 'common/selection_segments.html' %}
                     {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if structure_upload %}
+            <!-- structure upload -->
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Upload a structure</h4>
+                    {% include 'common/selection_segments_upload.html' %}
                 </div>
             </div>
             {% endif %}
