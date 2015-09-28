@@ -1,13 +1,13 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
-from .forms import PDBform
 from django import forms
 from django.core.servers.basehttp import FileWrapper
 from django.db.models import Count, Min, Sum, Avg,Q
 
 
 from interaction.models import *
+from interaction.forms import PDBform
 from ligand.models import Ligand
 from ligand.models import LigandType
 from ligand.models import LigandRole, LigandProperities
@@ -61,11 +61,6 @@ def index(request):
    
     #context = {}
     return render(request,'interaction/index.html', {'form': form, 'structures':structures})
-
-def sitesearch(request):
-    form = PDBform()
-
-    return render(request,'interaction/sitesearch.html', {'form': form})
 
 def list_structures(request):
     form = PDBform()
@@ -818,8 +813,10 @@ def calculate(request, redirect=None):
                 }
                 for gn, interactions in simple_generic_number[mainligand].items():
                     if gn != 'score' and gn != 0.0: # FIXME leave these out when dict is created
-                        if interactions[0] in interaction_name_dict:
-                            feature = interaction_name_dict[interactions[0]]
+                        for interaction in interactions:
+                            if interaction in interaction_name_dict:
+                                feature = interaction_name_dict[interaction]
+                                break
                         else:
                             continue
 

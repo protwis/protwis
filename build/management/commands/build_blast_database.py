@@ -29,7 +29,7 @@ class Command(BaseCommand):
         self.logger.info('Building blast database in {}'.format(self.blast_database_dir))
         
         # fetch proteins
-        proteins = Protein.objects.all()
+        proteins = Protein.objects.filter(sequence_type__slug='wt')
         for protein in proteins:
             sequences.append(SeqRecord(Seq(protein.sequence, IUPAC.protein), id=str(protein.id),
                 description=protein.entry_name))
