@@ -120,9 +120,7 @@ class StructureStatistics(TemplateView):
 
         context['charttype_reso'] = "discreteBarChart"
         context['chartdata_reso'] = self.get_resolution_coverage_data_series(all_structs)
-        context['extra_reso'] = extra#{'x_axis_format': '[]', 'y_axis_format': 'f'}
-        #print(context['trees'])
-        
+        context['extra_reso'] = extra
 
         return context
 
@@ -198,8 +196,7 @@ class StructureStatistics(TemplateView):
             else:
                 reso_count.append(len([x for x in structures if bracket-step < x.resolution <= bracket]))
         
-        print(["{:.2f}".format(x) for x in brackets])
-        return {'x': ["{:.2f}".format(x) for x in brackets], 'y': reso_count}
+        return {'x': ["{:.1f}".format(x) for x in brackets], 'y': reso_count}
             
 
 
@@ -358,7 +355,6 @@ class SuperpositionWorkflowIndex(TemplateView):
             selection.importer(simple_selection)
 
         #Clearing selections for fresh run
-        print(self.kwargs)
         if 'clear' in self.kwargs.keys():
             selection.clear('reference')
             selection.clear('targets')
@@ -742,10 +738,10 @@ class TemplateBrowser(TemplateView):
             a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']))
         a.build_alignment()
         a.calculate_similarity()
-        context['crystals'] = []
+        context['structures'] = []
         for prot in a.proteins[1:]:
             try:
-                context['crystals'].append([prot.similarity, prot.identity, qsd[prot.protein.id]])
+                context['structures'].append([prot.similarity, prot.identity, qsd[prot.protein.id]])
                 del qsd[prot.protein.id]
             except KeyError:
                 pass
