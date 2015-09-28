@@ -747,6 +747,40 @@ class TemplateBrowser(TemplateView):
                 pass
         return context
 
+class PDBDownload(TemplateView):
+    """
+    Extraction, packing and serving out the pdb records selected via structure/template browser.
+    """
+    template_name = "pdb_download.html"
+
+    def get_context_data (self, **kwargs):
+
+        context = super(PDBDownload, self).get_context_data(**kwargs)
+        self.success = False
+        # get simple selection from session
+        simple_selection = self.request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+        if selection.targets != []:
+           pdb_files = [(PDBParser().get_structure('', StringIO(x.item.pdb_data.pdb))[0], x.item.pdb_code.index+'.pdb') for x in selection.targets if x.type == 'structure']
+        print(len(pdb_files))
+        if len(pdb_files) > 0:
+            io = PDBIO()            
+            out_stream = BytesIO()
+            zipf = zipfile.ZipFile(out_stream, 'w')
+            for structure, fname in pdb_files:
+
+                tmp = StringIO()
+                io.set_structure(structure)
+                io.save(tmp)
+                zipf.writestr(fname, tmp.getvalue())
+            zipf.close()
+            if len(out_stream.getvalue()) > 0:
+                self.request.session['outfile'] = { "pdb_structures.zip" : out_stream, }
+                self.outfile = "pdb_structures.zip"
+                self.success = True
+                self.zip = 'zip'
 
 #==============================================================================
 def ServePdbOutfile (request, outfile, replacement_tag):
