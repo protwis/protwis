@@ -16,7 +16,6 @@ class PrepareTree:
             'mutant_minus': {'include':'False', 'order':5, 'colours':{'mutant_minus_true':'#6dcde1','mutant_minus_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':'mutant', 'child': [], 'name':'Negative affinity mutants'}
             }
         self.prots = {}
-        print('Preparing tree',len(self.rings['ligand']['items']))
         self.build=build
 
     def get_grayscale_colours(self, itemlist):
@@ -223,10 +222,9 @@ class PrepareTree:
         self.rings['ligand']['colours']= self.get_spectrum_colours(self.rings['ligand']['items'],(0,255))
 
     def build_legend(self):
-        column = 200
         verse = 20
         self.legend =''
-        width = 350
+        width = 400
         length = 0
         total_rings = 0
         for ring in self.rings:
@@ -294,7 +292,6 @@ class PrepareTree:
             #self.rings['ligand']['include']=False
             self.rings['family']['include']=False
         self.get_family_meta(family)
-        print(self.build, len(self.rings['ligand']['items']))
         charts=self.get_charts()
         self.get_colours()
         self.build_legend()
