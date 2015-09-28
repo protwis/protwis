@@ -1,5 +1,6 @@
 {% extends "home/base.html" %}
 {% load staticfiles %}
+{% load humanize %}
 
 {% block content %}
     <div class="row">
@@ -136,7 +137,7 @@
                     <h3>GPCRdb statistics</h3>
                     <ul>
                     {% for stat in release_statistics %}
-                        <li>{{ stat.statistics_type }}: {{ stat.value }}</li>
+                        <li>{{ stat.statistics_type }}: {{ stat.value|intcomma }}</li>
                     {% endfor %}
                     </ul>
                 </div>
