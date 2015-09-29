@@ -13,7 +13,7 @@ from structure.structural_superposition import ProteinSuperpose,FragmentSuperpos
 from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
 from protein.models import Protein
 from common.views import AbsSegmentSelection,AbsReferenceSelection
-from common.selection import Selection
+from common.selection import Selection, SelectionItem
 from common.extensions import MultiFileField
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -209,7 +209,7 @@ class GenericNumberingIndex(TemplateView):
     
     #Left panel
     step = 1
-    number_of_steps = 1
+    number_of_steps = 2
     title = "UPLOAD A PDB FILE"
     description = """
     Upload a pdb file you want to be annotated with generic numbers. Note that "CA" atoms will be assigned a number in GPCRdb notation, and "N" atoms will be annotated with Ballesteros-Weinstein scheme.
@@ -255,7 +255,11 @@ class GenericNumberingResults(TemplateView):
 
     template_name = 'common_structural_tools.html'
 
-    #Left panel - blank
+    #Left panel
+    step = 1
+    number_of_steps = 2
+    title = "SELECT SUBSTRUCTURE"
+    description = 'Download the desired substructures.'
     #Mid section
     mid_section = 'gn_results.html'
     #Buttons - none
@@ -270,10 +274,11 @@ class GenericNumberingResults(TemplateView):
         io.set_structure(out_struct)
         io.save(out_stream)
         if len(out_stream.getvalue()) > 0:
-            request.session['outfile'] = { request.FILES['pdb_file'].name : out_stream, }
+            request.session['gn_outfile'] = out_stream
+            request.session['gn_outfname'] = request.FILES['pdb_file'].name
             self.success = True
-            self.outfile = request.FILES['pdb_file'].name
-            self.replacement_tag = 'GPCRDB'
+            #self.outfile = request.FILES['pdb_file'].name
+            #self.replacement_tag = 'GPCRDB'
         else:
             self.input_file = request.FILES['pdb_file'].name
             self.success = False
@@ -287,15 +292,98 @@ class GenericNumberingResults(TemplateView):
         return render(request, self.template_name, context)
 
 
-    def get_context_data (self, **kwargs):
+    #def get_context_data (self, **kwargs):
 
-        context = super(GenericNumberingResults, self).get_context_data(**kwargs)
+    #    context = super(GenericNumberingResults, self).get_context_data(**kwargs)
+    #    attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+    #    for a in attributes:
+    #        if not(a[0].startswith('__') and a[0].endswith('__')):
+    #            context[a[0]] = a[1]
+
+    #    return context
+class GenericNumberingSelection(AbsSegmentSelection):
+    """
+    Segment selection for download of annotated substructure.
+    """
+
+    step = 2
+    number_of_steps = 2
+
+    #Mid section
+    #mid_section = 'segment_selection.html'
+
+    #Right panel
+    segment_list = True
+    buttons = {
+        'continue': {
+            'label': 'Download substructure',
+            'url': '/structure/generic_numbering_results/substr',
+            'color': 'success',
+        },
+    }
+    # OrderedDict to preserve the order of the boxes
+    selection_boxes = OrderedDict([('reference', False),
+        ('targets', False),
+        ('segments', True),])
+
+
+    def get_context_data(self, **kwargs):
+        
+        context = super(GenericNumberingSelection, self).get_context_data(**kwargs)
+
+        simple_selection = self.request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+
+        context['selection'] = {}
+        context['selection']['site_residue_groups'] = selection.site_residue_groups
+        context['selection']['active_site_residue_group'] = selection.active_site_residue_group
+        for selection_box, include in self.selection_boxes.items():
+            if include:
+                context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
+
+        # get attributes of this class and add them to the context
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
-
         return context
+
+
+class GenericNumberingDownload(View):
+    """
+    Serve the (sub)structure depending on user's choice.
+    """
+    def get(self, request, *args, **kwargs):
+
+        if self.kwargs['substructure'] == 'custom':
+            return HttpResponseRedirect('/structure/generic_numbering_selection')
+
+        simple_selection = self.request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+        out_stream = StringIO()
+        io = PDBIO()
+        request.session['gn_outfile'].seek(0)
+        gn_struct = PDBParser(PERMISSIVE=True).get_structure(request.session['gn_outfname'], request.session['gn_outfile'])[0]
+
+        if self.kwargs['substructure'] == 'full':
+            io.set_structure(gn_struct)
+            io.save(out_stream)
+
+        if self.kwargs['substructure'] == 'substr':
+            io.set_structure(gn_struct)
+            io.save(out_stream, GenericNumbersSelector(parsed_selection=SelectionParser(selection)))
+
+        root, ext = os.path.splitext(request.session['gn_outfname'])
+        response = HttpResponse(content_type="chemical/x-pdb")
+        response['Content-Disposition'] = 'attachment; filename="{}_GPCRDB.pdb"'.format(root)
+        response.write(out_stream.getvalue())
+
+        return response
+
 
 #==============================================================================
 
@@ -414,13 +502,8 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
             request.session['exclusive'] = False
         if 'ref_file' in request.FILES:
             request.session['ref_file'] = request.FILES['ref_file']
-        elif selection.reference != []:
-            print(selection.reference[0].item)
         if 'alt_files' in request.FILES:
             request.session['alt_files'] = request.FILES.getlist('alt_files')
-        elif selection.targets != []:
-            print(selection.targets)
-
         
         context = super(SuperpositionWorkflowSelection, self).get_context_data(**kwargs)
         context['selection'] = {}
@@ -440,7 +523,7 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
 
         self.buttons = {
             'continue': {
-                'label': 'Get substructures',
+                'label': 'Download substructures',
                 'url': '/structure/superposition_workflow_results/custom',
                 'color': 'success',
             },
@@ -478,7 +561,7 @@ class SuperpositionWorkflowResults(TemplateView):
     #Left panel
     step = 3
     number_of_steps = 3
-
+    title = "SELECT SUBSTRUCTURE"
     description = 'Download the desired substructures.'
 
     #Mid section
@@ -850,14 +933,13 @@ class PDBDownload(TemplateView):
         if simple_selection:
             selection.importer(simple_selection)
         if selection.targets != []:
-           pdb_files = [(PDBParser().get_structure('', StringIO(x.item.pdb_data.pdb))[0], x.item.pdb_code.index+'.pdb') for x in selection.targets if x.type == 'structure']
+            pdb_files = [(PDBParser().get_structure('', StringIO(x.item.pdb_data.pdb))[0], x.item.pdb_code.index+'.pdb') for x in selection.targets if x.type == 'structure']
 
         if len(pdb_files) > 0:
             io = PDBIO()            
             out_stream = BytesIO()
             zipf = zipfile.ZipFile(out_stream, 'w')
             for structure, fname in pdb_files:
-                print(fname)
                 tmp = StringIO()
                 io.set_structure(structure)
                 io.save(tmp)
@@ -878,6 +960,27 @@ class PDBDownload(TemplateView):
         return context
 
 #==============================================================================
+def ConvertStructuresToProteins(request):
+    "For alignment from structure browser"
+
+    simple_selection = request.session.get('selection', False)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+    if selection.targets != []:
+        for struct in selection.targets:
+            prot = struct.item.protein_conformation.protein
+            selection.remove('targets', 'structure', struct.item.id)
+            selection.add('targets', 'protein', SelectionItem('protein', prot))
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    return HttpResponseRedirect('/alignment/render')
+
+
 def ServePdbOutfile (request, outfile, replacement_tag):
     
     root, ext = os.path.splitext(outfile)
