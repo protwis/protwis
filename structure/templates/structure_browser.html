@@ -14,7 +14,9 @@
     <script src="{% static 'home/js/selection.js' %}"> </script>
 
     <script type="text/javascript" charset="utf-8">
-        $(document).ready(function() {
+        $(document).ready(function () {
+            ClearSelection('targets');
+            ClearSelection('reference');
             var table = $('#structures').DataTable({
                 'scrollX': true,
                 'scrollY': 600,
@@ -66,15 +68,25 @@
                 if (table.rows('.selected').data().length == 1) {
                     var div = document.createElement("div");
                     div.innerHTML = table.rows('.selected').data()[0][4];
-                    AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, ''));
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('reference', 'structure', div.textContent.replace(/\s+/g, ''));
+                    }
+
                 }
                 var checked_data = table.rows('.alt_selected').data();
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
                     div.innerHTML = checked_data[i][4];
-                    AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                    }
+
                 }
-                setTimeout(function () { window.location.href = '/structure/superposition_workflow_index'; }, 500);
+                window.location.href = '/structure/superposition_workflow_index';
             });
             $.fn.dataTable.ext.search.push(
                 function (settings, data, dataIndex) {
@@ -94,14 +106,18 @@
                 table.draw();
             });
             $('#download_btn').click(function () {
-                var checked_data = table.rows('.alt_selected').data();
                 ClearSelection('targets');
+                var checked_data = table.rows('.alt_selected').data();
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
                     div.innerHTML = checked_data[i][4];
-                    AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '') );
+                    } else {
+                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                    }
                 }
-                setTimeout(function () { window.location.href = '/structure/pdb_download'; }, 1000);
+                window.location.href = '/structure/pdb_download';
             });
             $('#align_btn').click(function () {
                 var checked_data = table.rows('.alt_selected').data();
@@ -109,9 +125,14 @@
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
                     div.innerHTML = checked_data[i][4];
-                    AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                    }
+
                 }
-                setTimeout(function () { window.location.href = '/structure/selection_convert'; }, 500);
+                window.location.href = '/structure/selection_convert';
             });
 
         });

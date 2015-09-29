@@ -7,6 +7,7 @@ function AddToSelection(selection_type, selection_subtype, selection_id) {
             selection_id: selection_id
         },
         'type': 'GET',
+        'async': false,
         'success': function(data) {
             $("#selection-" + selection_type).html(data);
         },
@@ -35,7 +36,8 @@ function ClearSelection(selection_type) {
             selection_type: selection_type
         },
         'type': 'GET',
-        'success': function(data) {
+        'async': false,
+        'success': function (data) {
             $("#selection-" + selection_type).html(data);
         }
     });
