@@ -1,13 +1,7 @@
 {% extends "home/base.html" %}
 
-
-
 {% block content %}
 <h3>{{ pages.title }}</h3>
-
-<!-- {% load staticfiles %}
-<img src="{% static "home/images/pages/glisten.png" %}" alt="My image" style="height:150px;width:150px;">
- -->
 
 {{ pages.html|safe }}
 
