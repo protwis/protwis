@@ -65,6 +65,8 @@
                 $(this).parent().parent().toggleClass('alt_selected');
             });
             $('#superpose_btn').click(function () {
+                ClearSelection('targets');
+                ClearSelection('reference');
                 if (table.rows('.selected').data().length == 1) {
                     var div = document.createElement("div");
                     div.innerHTML = table.rows('.selected').data()[0][4];
