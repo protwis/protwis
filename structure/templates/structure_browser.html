@@ -93,6 +93,17 @@
                 $(this).toggleClass("active");
                 table.draw();
             });
+            $('#download_btn').click(function () {
+                var checked_data = table.rows('.alt_selected').data();
+                ClearSelection('targets');
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][4];
+                    AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                }
+                window.location.href = '/structure/pdb_download';
+            });
+
         });
     </script> 
 {% endblock %}
@@ -104,6 +115,9 @@
     </div>
     <div class="btn-group">
         <a id="representative_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show representative</a>
+    </div>
+    <div class="btn-group">
+        <a id="download_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Download</a>
     </div>
     <br />
     <br />

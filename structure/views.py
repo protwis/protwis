@@ -1,13 +1,13 @@
 ﻿from django.shortcuts import render
 from django.conf import settings
-from django.views.generic import TemplateView
-from django.http import HttpResponse, JsonResponse
+from django.views.generic import TemplateView, View
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.db.models import Count, Q, Prefetch
 from django import forms
 
 from protein.models import Gene, ProteinSegment
 from structure.models import Structure
-from structure.functions import CASelector, SelectionParser, GenericNumbersSelector
+from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, check_gn
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
@@ -320,7 +320,7 @@ class SuperpositionWorkflowIndex(TemplateView):
     upload_form_data = OrderedDict([
         ('ref_file', forms.FileField(label="Reference structure")),
         ('alt_files', MultiFileField(label="Structure(s) to superpose", max_num=10, min_num=1)),
-        ('exclusive', forms.BooleanField(label='Download only superposed subset of atoms', widget=forms.CheckboxInput())),
+        #('exclusive', forms.BooleanField(label='Download only superposed subset of atoms', widget=forms.CheckboxInput())),
         ])
     form_code = forms.Form()
     form_code.fields = upload_form_data
@@ -436,14 +436,51 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
 
         return render(request, self.template_name, context)
 
+    def get_context_data(self, **kwargs):
+
+        self.buttons = {
+            'continue': {
+                'label': 'Get substructures',
+                'url': '/structure/superposition_workflow_results/custom',
+                'color': 'success',
+            },
+        }
+        context = super(SuperpositionWorkflowSelection, self).get_context_data(**kwargs)
+
+        simple_selection = self.request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+
+        context['selection'] = {}
+        context['selection']['site_residue_groups'] = selection.site_residue_groups
+        context['selection']['active_site_residue_group'] = selection.active_site_residue_group
+        for selection_box, include in self.selection_boxes.items():
+            if include:
+                context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
+
+        # get attributes of this class and add them to the context
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+        return context
 
 
 #Class rendering results from superposition workflow
 class SuperpositionWorkflowResults(TemplateView):
+    """
+    Select download mode for the superposed structures. Full structures, superposed fragments only, select substructure.
+    """
 
     template_name = 'common_structural_tools.html'
 
-    #Left panel - blank
+    #Left panel
+    step = 3
+    number_of_steps = 3
+
+    description = 'Download the desired substructures.'
+
     #Mid section
     mid_section = 'superposition_results.html'
     #Buttons - none
@@ -467,54 +504,19 @@ class SuperpositionWorkflowResults(TemplateView):
             alt_files = [StringIO(x.item.pdb_data.pdb) for x in selection.targets]
         superposition = ProteinSuperpose(deepcopy(ref_file),alt_files, selection)
         out_structs = superposition.run()
+        alt_file_names = [x.name for x in self.request.session['alt_files']]
         if len(out_structs) == 0:
             self.success = False
         elif len(out_structs) >= 1:
             io = PDBIO()            
-            out_stream = BytesIO()
-            zipf = zipfile.ZipFile(out_stream, 'w')
-
-            if 'ref_file' in self.request.session.keys():
-                ref_struct = PDBParser().get_structure('ref', ref_file)[0]
-                ref_name = self.request.session['ref_file'].name
-            elif selection.reference != []:
-                ref_struct = PDBParser().get_structure('ref', StringIO(selection.reference[0].item.pdb_data.pdb))[0]
-                ref_name = "{!s}.pdb".format(str(selection.reference[0].item).upper())
-
-            if 'alt_files' in self.request.session.keys():
-                alt_file_names = [x.name for x in self.request.session['alt_files']]
-            elif selection.targets != []:
-                alt_file_names = ["{!s}_superposed.pdb".format(str(y)) for y in [x.item for x in selection.targets]]
-
-            if self.request.session['exclusive']:
-                consensus_gn_set = CASelector(SelectionParser(selection), ref_struct, out_structs).get_consensus_gn_set()
-                io.set_structure(ref_struct)
+            self.request.session['alt_structs'] = {}
+            for alt_struct, alt_file_name in zip(out_structs, alt_file_names):
                 tmp = StringIO()
-                io.save(tmp, GenericNumbersSelector(consensus_gn_set))
-                zipf.writestr(ref_name, tmp.getvalue())
-                for alt_struct, alt_file_name in zip(out_structs, alt_file_names):
-                    tmp = StringIO()
-                    io.set_structure(alt_struct)
-                    io.save(tmp, GenericNumbersSelector(consensus_gn_set))
-                    zipf.writestr(alt_file_name, tmp.getvalue())
-                zipf.close()
-                if len(out_stream.getvalue()) > 0:
-                    self.request.session['outfile'] = { "Superposed_substructures.zip" : out_stream, }
-                    self.outfile = "Superposed_substructures.zip"
-                    self.success = True
-                    self.zip = 'zip'
-            else:
-                for alt_struct, alt_file_name in zip(out_structs, alt_file_names):
-                    tmp = StringIO()
-                    io.set_structure(alt_struct)
-                    io.save(tmp)
-                    zipf.writestr(alt_file_name, tmp.getvalue())
-                zipf.close()
-                if len(out_stream.getvalue()) > 0:
-                    self.request.session['outfile'] = { "Superposed_structures.zip" : out_stream, }
-                    self.outfile = "Superposed_structures.zip"
-                    self.success = True
-                    self.zip = 'zip'
+                io.set_structure(alt_struct)
+                io.save(tmp)
+                self.request.session['alt_structs'][alt_file_name] = tmp
+
+            self.success = True
         
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
@@ -523,6 +525,88 @@ class SuperpositionWorkflowResults(TemplateView):
 
         return context
 
+class SuperpositionWorkflowDownload(View):
+    """
+    Serve the (sub)structures depending on user's choice.
+    """
+
+    def get(self, request, *args, **kwargs):
+
+        if self.kwargs['substructure'] == 'select':
+            return HttpResponseRedirect('/structure/superposition_workflow_selection')
+
+        io = PDBIO()            
+        out_stream = BytesIO()
+        zipf = zipfile.ZipFile(out_stream, 'w')
+        simple_selection = self.request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+        #reference
+        if 'ref_file' in request.session.keys():
+            self.request.session['ref_file'].file.seek(0)
+            ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', StringIO(self.request.session['ref_file'].file.read().decode('UTF-8')))[0]
+            if not check_gn(ref_struct):
+                gn_assigner = GenericNumbering(structure=ref_struct)
+                ref_struct = gn_assigner.assign_generic_numbers()
+            ref_name = self.request.session['ref_file'].name
+        elif selection.reference != []:
+            ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', StringIO(selection.reference[0].item.pdb_data.pdb))[0]
+            if not check_gn(ref_struct):
+                gn_assigner = GenericNumbering(structure=ref_struct)
+                ref_struct = gn_assigner.assign_generic_numbers()
+            ref_name = "{!s}.pdb".format(str(selection.reference[0].item).upper())
+
+        alt_structs = {}
+        for alt_id, st in self.request.session['alt_structs'].items():
+            st.seek(0)
+            alt_structs[alt_id] = PDBParser(PERMISSIVE=True).get_structure(alt_id, st)[0]
+
+        if self.kwargs['substructure'] == 'full':
+
+            io.set_structure(ref_struct)
+            tmp = StringIO()
+            io.save(tmp)
+            zipf.writestr(ref_name, tmp.getvalue())
+
+            for alt_name in self.request.session['alt_structs']:
+                tmp = StringIO()
+                io.set_structure(alt_structs[alt_name])
+                io.save(tmp)
+                zipf.writestr(alt_name, tmp.getvalue())
+
+        elif self.kwargs['substructure'] == 'substr':
+
+            consensus_gn_set = CASelector(SelectionParser(selection), ref_struct, alt_structs.values()).get_consensus_gn_set()
+            io.set_structure(ref_struct)
+            tmp = StringIO()
+            io.save(tmp, GenericNumbersSelector(consensus_gn_set))
+            zipf.writestr(ref_name, tmp.getvalue())
+            for alt_name in self.request.session['alt_structs']:
+                tmp = StringIO()
+                io.set_structure(alt_structs[alt_name])
+                io.save(tmp, GenericNumbersSelector(consensus_gn_set))
+                zipf.writestr(alt_name, tmp.getvalue())
+
+        elif self.kwargs['substructure'] == 'custom':
+
+            io.set_structure(ref_struct)
+            tmp = StringIO()
+            io.save(tmp, GenericNumbersSelector(parsed_selection=SelectionParser(selection)))
+            zipf.writestr(ref_name, tmp.getvalue())
+            for alt_name in self.request.session['alt_structs']:
+                tmp = StringIO()
+                io.set_structure(alt_structs[alt_name])
+                io.save(tmp, GenericNumbersSelector(parsed_selection=SelectionParser(selection)))
+                zipf.writestr(alt_name, tmp.getvalue())
+
+        zipf.close()
+        if len(out_stream.getvalue()) > 0:
+            response = HttpResponse(content_type="application/zip")
+            response['Content-Disposition'] = 'attachment; filename="Superposed_structures.zip"'
+            response.write(out_stream.getvalue())
+
+        return response
 
 
 class FragmentSuperpositionIndex(TemplateView):
@@ -599,7 +683,6 @@ class FragmentSuperpositionResults(TemplateView):
         frag_sp = FragmentSuperpose(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8', 'ignore')),request.FILES['pdb_file'].name)
         superposed_fragments = []
         superposed_fragments_repr = []
-        print(request.POST)
         if request.POST['similarity'] == 'identical':
             if request.POST['representative'] == 'any':
                 superposed_fragments = frag_sp.superpose_fragments()
@@ -747,6 +830,52 @@ class TemplateBrowser(TemplateView):
                 pass
         return context
 
+#==============================================================================
+class PDBDownload(TemplateView):
+    """
+    Extraction, packing and serving out the pdb records selected via structure/template browser.
+    """
+    template_name = "pdb_download.html"
+
+
+    def get_context_data (self, **kwargs):
+
+        context = super(PDBDownload, self).get_context_data(**kwargs)
+        pdb_files = []
+        self.success = False
+
+        # get simple selection from session
+        simple_selection = self.request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+        if selection.targets != []:
+           pdb_files = [(PDBParser().get_structure('', StringIO(x.item.pdb_data.pdb))[0], x.item.pdb_code.index+'.pdb') for x in selection.targets if x.type == 'structure']
+
+        if len(pdb_files) > 0:
+            io = PDBIO()            
+            out_stream = BytesIO()
+            zipf = zipfile.ZipFile(out_stream, 'w')
+            for structure, fname in pdb_files:
+                print(fname)
+                tmp = StringIO()
+                io.set_structure(structure)
+                io.save(tmp)
+                zipf.writestr(fname, tmp.getvalue())
+            zipf.close()
+            if len(out_stream.getvalue()) > 0:
+                self.request.session['outfile'] = { "pdb_structures.zip" : out_stream, }
+                self.outfile = "pdb_structures.zip"
+                self.success = True
+                self.zip = 'zip'
+
+        context = super(PDBDownload, self).get_context_data(**kwargs)
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+
+        return context
 
 #==============================================================================
 def ServePdbOutfile (request, outfile, replacement_tag):
