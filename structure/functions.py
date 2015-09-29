@@ -137,17 +137,17 @@ class GenericNumbersSelector(Select):
             self.generic_numbers=parsed_selection.generic_numbers
             self.helices = parsed_selection.helices
 
-
     def accept_residue(self, residue):
 
         try:
             if str(residue['CA'].get_bfactor()) in self.generic_numbers:
                 return 1
-            if -8.1 < res['CA'].get_bfactor() < 0 and str(-res['CA'].get_bfactor() + 0.001) in self.generic_numbers:
+            if -8.1 < residue['CA'].get_bfactor() < 0 and str(-residue['CA'].get_bfactor() + 0.001) in self.generic_numbers:
                 return 1
             if -8.1 < residue['CA'].get_bfactor() < 8.1 and int(math.floor(abs(residue['CA'].get_bfactor()))) in self.helices:
                 return 1
         except:
+
             return 0
         
 
