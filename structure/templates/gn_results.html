@@ -1,23 +1,35 @@
-﻿{% load staticfiles %}
+﻿{% block gn_results %}
+{% load staticfiles %}
+<div class='col-md-4 panel panel-primary' style="height:400px;">
+    <br />
     <h4>Results for your query: </h4>
     <div class='row-fluid well well-small selection-box'>
         {% if success %}
-            Generic residue numbers assigned successfully.
+        Generic residue numbers assigned successfully.
         {% else %}
-            Failed to assign generic numers for {{ input_file }}
+        Failed to assign generic numers for {{ input_file }}
         {% endif %}
     </div>
     <br />
     <hr />
-    <div>
-        <a class="btn btn-small" href="/structure/output/{{ outfile }}/{{ replacement_tag}}">
-            <i class="icon-download">Output file<i>
-        </a>
+    {% if success %}
+    <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+                aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li><a href="/structure/generic_numbering_results/full">Full protein</a></li>
+            <li><a href="/structure/generic_numbering_results/custom">Select substructure</a></li>
     </div>
-    <br />
+    {% endif %}    <br />
     <hr />
     Download the visualization scripts:
     <a class="btn btn-small" href="{% static 'visualization_scripts/pymol_view_generic_numbers.pml' %}">
-        <i class="icon-download">PyMOL</i></a>
+        <i class="icon-download">PyMOL</i>
+    </a>
     <a class="btn btn-small" href="{% static 'visualization_scripts/maestro_label_generic_numbers.py' %}">
-        <i class="icon-download">Maestro</i></a>
+        <i class="icon-download">Maestro</i>
+    </a>
+</div>
+{% endblock %}

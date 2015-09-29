@@ -66,7 +66,7 @@
             $('#superpose_btn').click(function () {
                 if (table.rows('.selected').data().length == 1) {
                     var div = document.createElement("div");
-                    div.innerHTML = table.rows('.selected').data()[0][4];
+                    div.innerHTML = table.rows('.selected').data()[0][6];
                     AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, ''));
                 }
                 var checked_data = table.rows('.alt_selected').data();
@@ -75,7 +75,7 @@
                     div.innerHTML = checked_data[i][4];
                     AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
                 }
-                window.location.href = '/structure/superposition_workflow_index';
+                setTimeout(function () { window.location.href = '/structure/superposition_workflow_index'; }, 500);
             });
             $.fn.dataTable.ext.search.push(
                 function (settings, data, dataIndex) {
@@ -94,6 +94,26 @@
                 $(this).toggleClass("active");
                 table.draw();
             });
+            $('#download_btn').click(function () {
+                ClearSelection('targets');
+                var checked_data = table.rows('.alt_selected').data();
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][6];
+                    AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                }
+                setTimeout(function () { window.location.href = '/structure/pdb_download'; }, 1200);
+            });
+            $('#align_btn').click(function () {
+                var checked_data = table.rows('.alt_selected').data();
+                ClearSelection('targets');
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][6];
+                    AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                }
+                setTimeout(function () { window.location.href = '/structure/selection_convert'; }, 500);
+            });
         });
     </script> 
 {% endblock %}
@@ -105,6 +125,12 @@
     </div>
     <div class="btn-group">
         <a id="representative_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show representative</a>
+    </div>
+    <div class="btn-group">
+        <a id="download_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Download</a>
+    </div>
+    <div class="btn-group">
+        <a id="align_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Align</a>
     </div>
     <br />
     <br />
