@@ -136,7 +136,6 @@ class GenericNumbersSelector(Select):
         if parsed_selection:
             self.generic_numbers=parsed_selection.generic_numbers
             self.helices = parsed_selection.helices
-        print(self.generic_numbers)
     def accept_residue(self, residue):
 
         try:
