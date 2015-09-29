@@ -447,7 +447,10 @@ class SuperpositionWorkflowIndex(TemplateView):
             selection.clear('reference')
             selection.clear('targets')
             selection.clear('segments')
-
+            if 'alt_files' in self.request.session.keys():
+                del self.request.session['alt_files']
+            if 'ref_file' in self.request.session.keys():
+                del self.request.session['ref_file']
         context['selection'] = {}
         for selection_box, include in self.selection_boxes.items():
             if include:
@@ -496,10 +499,7 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
-        if 'exclusive' in request.POST:
-            request.session['exclusive'] = True
-        else:
-            request.session['exclusive'] = False
+
         if 'ref_file' in request.FILES:
             request.session['ref_file'] = request.FILES['ref_file']
         if 'alt_files' in request.FILES:
@@ -584,10 +584,13 @@ class SuperpositionWorkflowResults(TemplateView):
         if 'alt_files' in self.request.session.keys():
             alt_files = [StringIO(alt_file.file.read().decode('UTF-8')) for alt_file in self.request.session['alt_files']]
         elif selection.targets != []:
-            alt_files = [StringIO(x.item.pdb_data.pdb) for x in selection.targets]
+            alt_files = [StringIO(x.item.pdb_data.pdb) for x in selection.targets if x.type == 'structure']
         superposition = ProteinSuperpose(deepcopy(ref_file),alt_files, selection)
         out_structs = superposition.run()
-        alt_file_names = [x.name for x in self.request.session['alt_files']]
+        if 'alt_files' in self.request.session.keys():
+            alt_file_names = [x.name for x in self.request.session['alt_files']]
+        else:
+            alt_file_names = [x.item.pdb_code.index+'.pdb' for x in selection.targets if x.type == 'structure']
         if len(out_structs) == 0:
             self.success = False
         elif len(out_structs) >= 1:
@@ -638,7 +641,7 @@ class SuperpositionWorkflowDownload(View):
             if not check_gn(ref_struct):
                 gn_assigner = GenericNumbering(structure=ref_struct)
                 ref_struct = gn_assigner.assign_generic_numbers()
-            ref_name = "{!s}.pdb".format(str(selection.reference[0].item).upper())
+            ref_name = "{!s}_ref.pdb".format(str(selection.reference[0].item).upper())
 
         alt_structs = {}
         for alt_id, st in self.request.session['alt_structs'].items():
@@ -688,6 +691,12 @@ class SuperpositionWorkflowDownload(View):
             response = HttpResponse(content_type="application/zip")
             response['Content-Disposition'] = 'attachment; filename="Superposed_structures.zip"'
             response.write(out_stream.getvalue())
+
+        if 'ref_file' in request.FILES:
+            request.session['ref_file'] = request.FILES['ref_file']
+        if 'alt_files' in request.FILES:
+            request.session['alt_files'] = request.FILES.getlist('alt_files')
+
 
         return response
 
