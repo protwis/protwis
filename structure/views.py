@@ -978,7 +978,7 @@ def ConvertStructuresToProteins(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
 
-    return HttpResponseRedirect('/alignment/render')
+    return HttpResponseRedirect('/alignment/segmentselection')
 
 
 def ServePdbOutfile (request, outfile, replacement_tag):
