@@ -12,6 +12,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from operator import itemgetter
 from Bio.SubsMat import MatrixInfo
+import logging
 
 
 class Alignment:
@@ -713,6 +714,7 @@ class AlignedReferenceTemplate(Alignment):
     def __init__(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
                  provide_similarity_table=None):
         super(AlignedReferenceTemplate, self).__init__()
+        self.logger = logging.getLogger('homology_modeling')
         self.segment_labels = segments
         self.reference_protein = Protein.objects.get(entry_name=reference_protein)
         if provide_main_template_structure==None and provide_similarity_table==None:
@@ -877,6 +879,7 @@ class AlignedReferenceTemplate(Alignment):
             alt_temps = [entry for entry in temp_list if entry[1]==len(ref_seq)]
             sorted_list = sorted(alt_temps, key=lambda x: (-x[2],x[3]))
             for i in sorted_list:
+                
                 similarity_table[i[0]] = i[2]
             try:
                 self.main_template_protein = sorted_list[0][4]
@@ -894,8 +897,11 @@ class AlignedReferenceTemplate(Alignment):
         ''' Creates an alignment between reference and main_template where matching residues are depicted with the 
             one-letter residue code, mismatches with '.', gaps with '-', gaps due to shorter sequences with 'x'.
         '''
-        if not self.main_template_protein: raise AssertionError(
-        "No main template with same helix endings. No homology model will be built for {}.".format(self.reference_protein))
+        if not self.main_template_protein: 
+            self.logger.error(
+            '''No main template with same helix endings. Protein did not inherit structural annotations from main 
+            template correctly. No homology model will be built for {}.'''.format(self.reference_protein))
+            return None
         segment_count = 0
 
         for ref_seglab, temp_seglab in zip(self.reference_protein.alignment, self.main_template_protein.alignment):
@@ -931,3 +937,4 @@ class AlignedReferenceTemplate(Alignment):
             self.reference_dict[ref_seglab] = ref_segment_dict
             self.template_dict[ref_seglab] = temp_segment_dict
             self.alignment_dict[ref_seglab] = align_segment_dict
+        return self

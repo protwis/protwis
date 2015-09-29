@@ -25,18 +25,18 @@ startTime = datetime.now()
 class Command(BaseCommand):
     
     def handle(self, *args, **options):
-        count=0
-        s = [struct.protein_conformation.protein.parent.entry_name for struct in Structure.objects.all()]
-        for protein in ProteinConformation.objects.all():
-            if protein.protein.entry_name in s and count < 0:
-                Homology_model = HomologyModeling(protein.protein.entry_name, 'Inactive', ['Inactive'])
-                alignment = Homology_model.run_alignment()
-                Homology_model.run_non_conserved_switcher(alignment)
-    
-                self.stdout.write(Homology_model.statistics, ending='')
-                count+=1
+#        count=0
+#        s = [struct.protein_conformation.protein.parent.entry_name for struct in Structure.objects.all()]
+#        for protein in ProteinConformation.objects.all():
+#            if protein.protein.entry_name in s and count < 0:
+#                Homology_model = HomologyModeling(protein.protein.entry_name, 'Inactive', ['Inactive'])
+#                alignment = Homology_model.run_alignment()
+#                Homology_model.run_non_conserved_switcher(alignment)
+#    
+#                self.stdout.write(Homology_model.statistics, ending='')
+#                count+=1
 
-        val = Validation()
+#        val = Validation()
 #        print('7TM RMSD: ', val.PDB_RMSD("./structure/PDB/4XNW.pdb", "./structure/homology_models/P47900_Inactive/modeller_test.pdb",
 #                            assign_gns=[1,2]))
 
@@ -57,13 +57,25 @@ class Command(BaseCommand):
 #        seq_nums1=[52, 102, 124, 125, 128, 129, 132, 207, 210, 271, 274, 277, 278, 294, 296, 297]
 #        print('binding pocket RMSD: ', val.PDB_RMSD("./structure/PDB/4Z34.pdb", "./structure/homology_models/Q92633_Inactive/modeller_test.pdb",
 #                           assign_gns=[1,2], gn_list=['1x35', '2x57', '3x28', '3x29', '3x32', '3x33', '3x36', '5x40', '5x43', '6x48', '6x51', '6x54', '6x55', '7x35', '7x37', '7x38'], seq_nums1=[52, 102, 124, 125, 128, 129, 132, 207, 210, 271, 274, 277, 278, 294, 296, 297], seq_nums2=[7, 57, 79, 80, 83, 84, 87, 162, 165, 226, 229, 232, 233, 249, 251, 252]))
-                
-        Homology_model = HomologyModeling('grpr_human', 'Inactive', ['Inactive'])
-        alignment = Homology_model.run_alignment()
-        Homology_model.build_homology_model(alignment)#, switch_bulges=False, switch_constrictions=False, switch_rotamers=False)
 
-        self.stdout.write(Homology_model.statistics, ending='')
-        print(datetime.now() - startTime)
+        receptor_list = ['gp139_human','gp132_human','mshr_human']
+        if os.path.isfile('./structure/homology_modeling.log'):
+            os.remove('./structure/homology_modeling.log')
+        logger = logging.getLogger('homology_modeling')
+        hdlr = logging.FileHandler('./structure/homology_modeling.log')
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        hdlr.setFormatter(formatter)
+        logger.addHandler(hdlr) 
+        logger.setLevel(logging.INFO)
+        for receptor in receptor_list:
+            Homology_model = HomologyModeling(receptor, 'Inactive', ['Inactive'])
+            alignment = Homology_model.run_alignment()
+            if alignment==None:
+                continue
+            Homology_model.build_homology_model(alignment)#, switch_bulges=False, switch_constrictions=False, switch_rotamers=False)
+    
+            self.stdout.write(Homology_model.statistics, ending='')
+            print(datetime.now() - startTime)
 
 class HomologyModeling(object):
     ''' Class to build homology models for GPCRs. 
@@ -90,9 +102,8 @@ class HomologyModeling(object):
         self.main_structure = None
         self.main_template_preferred_chain = ''
         self.loop_template_table = OrderedDict()
-        if os.path.isfile('./structure/homology_modeling.log'):
-            os.remove('./structure/homology_modeling.log')
-        logging.basicConfig(filename='./structure/homology_modeling.log',level=logging.WARNING)
+        self.logger = logging.getLogger('homology_modeling')
+        self.logger.info('Building model for {} {}.'.format(self.reference_protein, self.state))
         
     def __repr__(self):
         return "<{}, {}>".format(self.reference_entry_name, self.state)
@@ -108,7 +119,9 @@ class HomologyModeling(object):
         if query_states=='default':
             query_states=self.query_states
         alignment = AlignedReferenceTemplate(self.reference_protein, segments, query_states, order_by)
-        alignment.enhance_best_alignment()
+        enhanced_alignment = alignment.enhance_best_alignment()
+        if enhanced_alignment==None:
+            return None
         if core_alignment==True:
             self.segments = segments
             self.main_structure = alignment.main_template_structure
@@ -142,7 +155,7 @@ class HomologyModeling(object):
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
         main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
-        pprint.pprint(main_pdb_array)
+        
         # loops
         if loops==True:
             loop_stat = OrderedDict()
@@ -159,9 +172,8 @@ class HomologyModeling(object):
                     loop_stat[loop.new_label] = loop.loop_output_structure
                 else:
                     loop_stat[label] = loop.loop_output_structure
-            self.statistics.add_info('loops', loop_stat)
-            raise Exception
-            
+            self.statistics.add_info('loops', loop_stat)           
+        
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
             for ref_seg, temp_seg, aligned_seg in zip(a.reference_dict, a.template_dict, a.alignment_dict):
@@ -433,14 +445,14 @@ class HomologyModeling(object):
                                                          a, trimmed_residues=trimmed_residues)                                                         
 
         # Model with MODELLER
-#        self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
-#        self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
-#                          self.uniprot_id, 1, "modeller_test.pdb", atom_dict=trimmed_res_nums)
-#        
-#        with open('./structure/homology_models/{}_Inactive/{}.stat.txt'.format(self.uniprot_id, self.uniprot_id), 'w') as stat_file:
-#            for label, info in self.statistics.items():
-#                stat_file.write('{} : {}\n'.format(label, info))
-        return a       
+        self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
+        self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
+                          self.uniprot_id, 1, "modeller_test.pdb", atom_dict=trimmed_res_nums)
+        
+        with open('./structure/homology_models/{}_Inactive/{}.stat.txt'.format(self.uniprot_id, self.uniprot_id), 'w') as stat_file:
+            for label, info in self.statistics.items():
+                stat_file.write('{} : {}\n'.format(label, info))
+        return a
     
     def run_non_conserved_switcher(self, main_pdb_array, reference_dict, template_dict, alignment_dict):
         ''' Switches non-conserved residues with best possible template. Returns refreshed main_pdb_array 
@@ -764,7 +776,7 @@ class Loops(object):
                                                                   orig_before_gns+orig_after_gns)
                     superpose = sp.LoopSuperpose(orig_residues, alt_residues)
                     new_residues = superpose.run()
-                    key_list = list(new_residues.keys())[7:-7]
+                    key_list = list(new_residues.keys())[8:-8]
                     for key in key_list:
                         output[key] = new_residues[key]
                     self.loop_output_structure = template
@@ -1080,12 +1092,20 @@ class GPCRDBParsingPDB(object):
         output = OrderedDict()
         atoms_list = []
         for gn in generic_numbers:
-            try:
-                rotamer = Rotamer.objects.get(structure__protein_conformation=structure.protein_conformation, 
-                            residue__generic_number__label=gn, structure__preferred_chain=structure.preferred_chain)
-            except:
-                rotamer = Rotamer.objects.get(structure__protein_conformation=structure.protein_conformation, 
-                            residue__sequence_number=gn, structure__preferred_chain=structure.preferred_chain)
+            rotamer=None
+            if 'x' in str(gn):                    
+                rotamer = list(Rotamer.objects.filter(structure__protein_conformation=structure.protein_conformation, 
+                        residue__generic_number__label=gn, structure__preferred_chain=structure.preferred_chain))
+            else:
+                rotamer = list(Rotamer.objects.filter(structure__protein_conformation=structure.protein_conformation, 
+                        residue__sequence_number=gn, structure__preferred_chain=structure.preferred_chain))
+            if len(rotamer)>1:
+                for i in rotamer:
+                    if i.pdbdata.pdb.startswith('COMPND')==False:
+                        rotamer = i
+                        break
+            else:
+                rotamer = rotamer[0]
             io = StringIO(rotamer.pdbdata.pdb)
             rota_struct = PDB.PDBParser().get_structure('structure', io)[0]
             for chain in rota_struct:

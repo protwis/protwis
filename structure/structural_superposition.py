@@ -250,11 +250,11 @@ class LoopSuperpose(BulgeConstrictionSuperpose):
                 if atom.get_name() in ['N','CA','C','O']:
                     ref_backbone_atoms.append(atom)
         res_count=0
-        array_length = template_dict.keys()
+        array_length = len(self.template_dict.keys())
         for gn, atoms in self.template_dict.items():
             res_count+=1
             for atom in atoms:
-                if res_count<=8 or array_length-8<res_count and atom.get_name() in ['N','CA','C','O']:
+                if (res_count<=8 or array_length-8<res_count) and atom.get_name() in ['N','CA','C','O']:
                     temp_backbone_atoms.append(atom)
                 all_template_atoms.append(atom)
         super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
@@ -264,7 +264,6 @@ class LoopSuperpose(BulgeConstrictionSuperpose):
             array1 = np.vstack((array1, list(atom1.get_coord())))
             array2 = np.vstack((array2, list(atom2.get_coord())))
         self.backbone_rmsd = np.sqrt(((array1[1:]-array2[1:])**2).mean())
-        print(self.backbone_rmsd)
         return self.rebuild_dictionary(all_template_atoms)
 
 
