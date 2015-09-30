@@ -34,7 +34,6 @@ AMINO_ACID_GROUPS = OrderedDict([
         ('ar',     ('F', 'H', 'W', 'Y')),
         ('pol',    ('D', 'E', 'H', 'K', 'N', 'Q', 'R', 'S', 'T')),
         ('hbd',    ('H', 'K', 'N', 'Q', 'R', 'S', 'T', 'W', 'Y')),
-        ('hbd',    ('H', 'K', 'N', 'Q', 'R', 'S', 'T', 'W', 'Y')),
         ('hba',    ('D', 'E', 'H', 'N', 'Q', 'S', 'T', 'Y')),
         ('neg',    ('D', 'E')),
         ('pos',    ('H', 'K', 'R')),
