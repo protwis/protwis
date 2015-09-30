@@ -59,10 +59,10 @@ class Command(BaseCommand):
             ['Proteins', Protein.objects.filter(sequence_type__slug='wt').count()],
             ['Human proteins', Protein.objects.filter(sequence_type__slug='wt', species__id=1).count()],
             ['Species', Species.objects.all().count()],
-            ['Structures', Structure.objects.all().count()],
+            ['Exp. structures', Structure.objects.all().count()],
             ['Ligands', Ligand.objects.filter(canonical=True).count()],
             ['Mutants', MutationExperiment.objects.all().count()],
-            ['Interactions', ResidueFragmentInteraction.objects.all().count()],
+            ['Ligand interactions', ResidueFragmentInteraction.objects.all().count()],
         ]
 
         for stat in stats:
