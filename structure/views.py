@@ -978,7 +978,7 @@ def ConvertStructuresToProteins(request):
         selection.importer(simple_selection)
     if selection.targets != []:
         for struct in selection.targets:
-            prot = struct.item.protein_conformation.protein
+            prot = struct.item.protein_conformation.protein.parent
             selection.remove('targets', 'structure', struct.item.id)
             selection.add('targets', 'protein', SelectionItem('protein', prot))
     # export simple selection that can be serialized

@@ -23,9 +23,6 @@ class Command(BaseCommand):
     resource_source_file = os.sep.join([settings.DATA_DIR, 'common_data', 'resources.txt'])
     ligands_source_file = os.sep.join([settings.DATA_DIR, 'ligand_data', 'ligands.yaml'])
     publications_source_file = os.sep.join([settings.DATA_DIR, 'publications_data', 'publications.yaml'])
-    documentation_data_dir = os.sep.join([settings.DATA_DIR, 'documentation'])
-    news_data_dir = os.sep.join([settings.DATA_DIR, 'news'])
-    pages_data_dir = os.sep.join([settings.DATA_DIR, 'pages'])
     segment_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'segments.txt'])
     residue_number_scheme_source_file = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers',
         'schemes.txt'])
@@ -34,10 +31,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         functions = [
             'create_resources',
-            'create_ligands',
-            'create_documentation',
-            'create_news',
-            'create_pages',
+            # 'create_ligands',
             'create_publications',
             'create_protein_segments',
             'create_residue_numbering_schemes',
@@ -116,90 +110,6 @@ class Command(BaseCommand):
                     self.logger.info('Created ligand ' + l['name'])
 
         self.logger.info('COMPLETED CREATING LIGANDS')
-
-    def create_documentation(self):
-        self.logger.info('CREATING DOCUMENTATION')
-        
-        # what files should be parsed?
-        filenames = os.listdir(self.documentation_data_dir)
-
-        for source_file in filenames:
-            self.logger.info('Parsing file ' + source_file)
-            source_file_path = os.sep.join([self.documentation_data_dir, source_file])
-
-            if source_file.endswith('.yaml'):
-                with open(source_file_path, 'r') as f:
-                    ds = yaml.load(f)
-
-                    doc, created = Documentation.objects.get_or_create(title=ds['title'] , description=ds['description'], image=ds['image'] ,)
-
-                    if created:
-                        self.logger.info('Created documentation for ' + ds['title'])
-                with open(source_file_path[:-4]+'html', 'r') as h:
-
-                    doc.html = h.read()
-                    doc.save()
-
-                    if created:
-                        self.logger.info('Created html documentation for ' + ds['title'])
-
-        self.logger.info('COMPLETED CREATING DOCUMENTATION')
-
-    def create_pages(self):
-        self.logger.info('CREATING PAGES')
-        
-        # what files should be parsed?
-        filenames = sorted(os.listdir(self.pages_data_dir),key=str.lower)
-
-        for source_file in filenames:
-            self.logger.info('Parsing file ' + source_file)
-            source_file_path = os.sep.join([self.pages_data_dir, source_file])
-
-            if source_file.endswith('.yaml'):
-                with open(source_file_path, 'r') as f:
-                    ds = yaml.load(f)
-
-                    doc, created = Pages.objects.get_or_create(title=ds['title'])
-
-                    if created:
-                        self.logger.info('Created pages for ' + ds['title'])
-                with open(source_file_path[:-4]+'html', 'r') as h:
-
-                    doc.html = h.read()
-                    doc.save()
-
-                    if created:
-                        self.logger.info('Created html pages for ' + ds['title'])
-
-        self.logger.info('COMPLETED CREATING PAGES')
-
-    def create_news(self):
-        self.logger.info('CREATING NEWS')
-        
-        # what files should be parsed?
-        filenames = os.listdir(self.news_data_dir)
-
-        for source_file in filenames:
-            self.logger.info('Parsing file ' + source_file)
-            source_file_path = os.sep.join([self.news_data_dir, source_file])
-
-            if source_file.endswith('.yaml'):
-                with open(source_file_path, 'r') as f:
-                    ds = yaml.load(f)
-
-                    doc, created = News.objects.get_or_create(image=ds['image'], date=ds['date'])
-
-                    if created:
-                        self.logger.info('Created news for ' + ds['date'])
-                with open(source_file_path[:-4]+'html', 'r') as h:
-
-                    doc.html = h.read()
-                    doc.save()
-
-                    if created:
-                        self.logger.info('Created html news for ' + ds['date'])
-
-        self.logger.info('COMPLETED CREATING NEWS')
 
     def create_publications(self):
         self.logger.info('CREATING PUBLICATIONS')
