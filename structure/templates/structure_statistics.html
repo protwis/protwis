@@ -4,6 +4,14 @@
 <link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
 {% endblock %}
 
+<h4>Structures overview</h4>
+<li>
+    <ul>{{ all_structures}} total crystalized complexes.</ul>
+    <ul>{{ unique_structures }} unique crystalized receptors.</ul>
+    <ul>{% for class in unique_by_class %}{{ class.0 }} : {{ class.1 }} {% endfor %}</ul>
+    <ul>{{ unique_complexes }} unique ligand-receptor complexes.</ul>
+</li>
+
 
 {% block content %}
 <script src="/static/home/js/d3.min.js"></script>
