@@ -720,6 +720,7 @@ class FragmentSuperpositionIndex(TemplateView):
     #Input file form data
     header = "Select a file to upload:"
     #Can't control the class properly - staying with the dirty explicit html code
+    form_id='fragments'
     form_code = """
     Pdb file:<input id="id_pdb_file" name="pdb_file" type="file" /></br>
     Similarity:</br>
@@ -767,7 +768,7 @@ class FragmentSuperpositionResults(TemplateView):
 
     #Left panel - blank
     #Mid section
-    mid_section = 'superposition_results.html'
+    mid_section = 'fragment_superposition_results.html'
     #Buttons - none
 
     def post (self, request, *args, **kwargs):
