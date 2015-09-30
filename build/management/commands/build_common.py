@@ -23,7 +23,7 @@ class Command(BaseCommand):
     resource_source_file = os.sep.join([settings.DATA_DIR, 'common_data', 'resources.txt'])
     ligands_source_file = os.sep.join([settings.DATA_DIR, 'ligand_data', 'ligands.yaml'])
     publications_source_file = os.sep.join([settings.DATA_DIR, 'publications_data', 'publications.yaml'])
-    documentation_data_dir = os.sep.join([settings.DATA_DIR, 'documentation'])
+    segment_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'segments.txt'])
     residue_number_scheme_source_file = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers',
         'schemes.txt'])
     anomaly_source_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'anomalies'])
