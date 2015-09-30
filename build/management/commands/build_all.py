@@ -33,6 +33,7 @@ class Command(BaseCommand):
             ['update_alignments', {'njobs': njobs}],
             ['build_protein_sets'],
             ['build_consensus_sequences', {'njobs': njobs}],
+            ['build_text'],
             ['build_release_notes'],
         ]
 
