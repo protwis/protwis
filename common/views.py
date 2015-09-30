@@ -8,6 +8,7 @@ from common import definitions
 from structure.models import Structure
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
+from interaction.forms import PDBform
 
 import inspect
 from collections import OrderedDict
@@ -140,6 +141,8 @@ class AbsSegmentSelection(TemplateView):
         + ' button.'
     docs = False
     segment_list = True
+    structure_upload = False
+    upload_form = PDBform()
     position_type = 'residue'
     buttons = {
         'continue': {

@@ -22,7 +22,7 @@ class ProteinSuperpose(object):
     
         self.selection = SelectionParser(simple_selection)
     
-        self.ref_struct = PDBParser().get_structure('ref', ref_file)[0]
+        self.ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', ref_file)[0]
         assert self.ref_struct, self.logger.error("Can't parse the ref file %s".format(ref_file))
         if self.selection.generic_numbers != [] or self.selection.helices != []:
             if not check_gn(self.ref_struct):
@@ -37,10 +37,10 @@ class ProteinSuperpose(object):
                     if not check_gn(tmp_struct):
                         gn_assigner = GenericNumbering(structure=tmp_struct)
                         self.alt_structs.append(gn_assigner.assign_generic_numbers())
+                        self.alt_structs[-1].id = alt_id
                     else:
                         self.alt_structs.append(tmp_struct)
             except Exception as e:
-                print(e)
                 logger.warning("Can't parse the file {!s}\n{!s}".format(alt_id, e))
         self.selector = CASelector(self.selection, self.ref_struct, self.alt_structs)
 

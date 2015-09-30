@@ -1,0 +1,21 @@
+﻿{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<h4>Your structures </h4>
+<div class='row-fluid well well-small selection-box'>
+    {% if success %}
+    PDB structures retrieved successfully.
+    {% else %}
+    Failed to extract PDB data.
+    {% endif %}
+</div>
+<br />
+<hr />
+<div>
+    <a class="btn btn-small" href="/structure/zipoutput/{{ outfile }}">
+        <i class="icon-download">Output file<i>
+    </a>
+</div>
+<br />
+{% endblock %}
