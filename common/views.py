@@ -478,9 +478,13 @@ def ToggleFamilyTreeNode(request):
         for protein_source in selection.annotation:
             protein_source_list.append(protein_source.item)
 
-        ps = Protein.objects.order_by('id').filter(family=ppf,
-            species__in=(species_list),
-            source__in=(protein_source_list))
+        if species_list:
+            ps = Protein.objects.order_by('id').filter(family=ppf,
+                species__in=(species_list),
+                source__in=(protein_source_list)).order_by('source_id', 'id')
+        else:
+            ps = Protein.objects.order_by('id').filter(family=ppf,
+                source__in=(protein_source_list)).order_by('source_id', 'id')
         action = 'collapse'
     else:
         pfs = ps = {}
