@@ -105,7 +105,17 @@ class StructureStatistics(TemplateView):
         unique_structs = list(Structure.objects.order_by('protein_conformation__protein__parent', 'state',
             'publication_date', 'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein'))
         families = list(set([x.protein_conformation.protein.get_protein_family() for x in unique_structs]))
+        classes = [x.protein_conformation.protein.get_protein_class() for x in unique_structs]
         
+        tmp = {}
+        for x in list(set(classes)):
+            tmp[x] = classes.count(x)
+        #Basic stats
+        context['all_structures'] = len(all_structs)
+        context['unique_structures'] = len(unique_structs)
+        context['unique_by_class'] = tmp
+        context['unique_complexes'] = len(StructureLigandInteraction.objects.filter(annotated=True).distinct('structure__protein_conformation__protein__family__name', 'ligand__name'))
+
         extra = {
             'x_axis_format': '',
             'y_axis_format': 'f',

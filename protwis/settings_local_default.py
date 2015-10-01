@@ -1,4 +1,4 @@
-# local settings
+﻿# local settings
 # override these settings by copying and editing this file to protwis/settings_local.py
 
 # Site specific constants
