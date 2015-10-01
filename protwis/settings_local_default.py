@@ -37,7 +37,7 @@ DEBUG = True
 # Debug toolbar
 if DEBUG:
     DEBUG_TOOLBAR_PATCH_SETTINGS = False
-    INTERNAL_IPS = ('127.0.0.1')
+    INTERNAL_IPS = ('10.0.2.2')
 
 TEMPLATE_DEBUG = True
 
