@@ -79,10 +79,9 @@ class FragmentSuperpose(object):
         if not check_gn(self.pdb_struct):
             gn_assigner = GenericNumbering(structure=self.pdb_struct)
             self.pdb_struct = gn_assigner.assign_generic_numbers()
-
-        rec = self.identify_receptor()
-        print(rec)
-        self.target = Protein.objects.get(pk=self.identify_receptor())
+            self.target = Protein.objects.get(pk=gn_assigner.prot_id_list[0])
+        else:
+            self.target = Protein.objects.get(pk=self.identify_receptor())
 
 
     def parse_pdb (self):
@@ -147,12 +146,12 @@ class FragmentSuperpose(object):
     def get_representative_fragments(self, state):
         
         template = get_segment_template(self.target, state)
-        return list(ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__protein_conformation__protein=template.id))
+        return list(ResidueFragmentInteraction.objects.prefetch_related('rotamer__residue__display_generic_number', 'rotamer__residue', 'interaction_type').filter(structure_ligand_pair__structure__protein_conformation__protein=template.id))
 
 
     def get_all_fragments(self):
 
-        return list(ResidueFragmentInteraction.objects.exclude(structure_ligand_pair__structure__protein_conformation__protein__parent=self.target))
+        return list(ResidueFragmentInteraction.objects.exclude(structure_ligand_pair__structure__protein_conformation__protein__parent=self.target).prefetch_related('rotamer__residue__display_generic_number', 'rotamer__residue', 'interaction_type'))
 
 #==============================================================================  
 class RotamerSuperpose(object):

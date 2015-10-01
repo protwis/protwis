@@ -1,4 +1,4 @@
-# local settings
+﻿# local settings
 # override these settings by copying and editing this file to protwis/settings_local.py
 
 # Site specific constants
@@ -37,7 +37,7 @@ DEBUG = True
 # Debug toolbar
 if DEBUG:
     DEBUG_TOOLBAR_PATCH_SETTINGS = False
-    INTERNAL_IPS = ('10.0.2.2')
+    INTERNAL_IPS = ('127.0.0.1')
 
 TEMPLATE_DEBUG = True
 
