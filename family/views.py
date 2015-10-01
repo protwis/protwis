@@ -92,7 +92,11 @@ def detail(request, slug):
 
     # get residues for sequence viewer
     # get residues
-    pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__sequence_type__slug='consensus')
+    try:
+        pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__sequence_type__slug='consensus')
+    except ProteinConformation.DoesNotExist:
+        pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__species_id=1)
+        
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
         'protein_segment', 'generic_number', 'display_generic_number')
     
