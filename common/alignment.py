@@ -34,6 +34,7 @@ class Alignment:
         self.default_numbering_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
         self.states = [settings.DEFAULT_PROTEIN_STATE] # inactive, active etc
         self.use_residue_groups = False
+        self.ignore_alternative_residue_numbering_schemes = False # set to true if no numbering is to be displayed
         
         # refers to which ProteinConformation attribute to order by (identity, similarity or similarity score)
         self.order_by = 'similarity'
@@ -216,7 +217,7 @@ class Alignment:
     def build_alignment(self):
         """Fetch selected residues from DB and build an alignment"""
         # fetch segment residues
-        if len(self.numbering_schemes) > 1:
+        if not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1:
             rs = Residue.objects.filter(
                 protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins).prefetch_related(
                 'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
@@ -358,7 +359,8 @@ class Alignment:
                                 self.generic_numbers[ns_slug][segment][pos] = []
 
                         # add display numbers for other numbering schemes of selected proteins
-                        if r.generic_number and len(self.numbering_schemes) > 1:
+                        if (not self.ignore_alternative_residue_numbering_schemes and r.generic_number
+                            and len(self.numbering_schemes) > 1):
                             for arn in r.alternative_generic_numbers.all():
                                 for ns in self.numbering_schemes:
                                     if (arn.scheme.slug == ns[0] and arn.scheme.slug != ns):

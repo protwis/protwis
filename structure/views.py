@@ -37,10 +37,14 @@ class StructureBrowser(TemplateView):
 
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
-            context['structures'] = Structure.objects.all().prefetch_related(
-                "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+            context['structures'] = Structure.objects.all().select_related(
+                "pdb_code__web_resource",
+                "protein_conformation__protein__species",
+                "protein_conformation__protein__source",
+                "protein_conformation__protein__family__parent__parent__parent",
+                "publication__web_link__web_resource").prefetch_related(
                 "stabilizing_agents",
-                "protein_conformation__protein__family__parent__parent", "publication__web_link__web_resource",
+                "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
                 Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
                 annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
         except Structure.DoesNotExist as e:
@@ -910,20 +914,42 @@ class TemplateBrowser(TemplateView):
 
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)
+        
+        # make an alignment
         a = Alignment()
+        a.ignore_alternative_residue_numbering_schemes = True
+
+        # load the selected reference into the alignment
         a.load_reference_protein_from_selection(simple_selection)
-        qs = Structure.objects.all().select_related().prefetch_related("protein_conformation__protein", "protein_conformation__protein__endogenous_ligands", "publication__web_link", "stabilizing_agents")
-        #Dirty but fast
+        
+        # fetch 
+        qs = Structure.objects.all().select_related(
+            "pdb_code__web_resource",
+            "protein_conformation__protein__species",
+            "protein_conformation__protein__source",
+            "protein_conformation__protein__family__parent__parent__parent",
+            "publication__web_link__web_resource").prefetch_related(
+            "stabilizing_agents",
+            "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+            Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
+            annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
+
+        # Dirty but fast
         qsd = {}
-        for st in list(qs):
+        for st in qs:
             qsd[st.protein_conformation.protein.id] = st
-        a.load_proteins([x.protein_conformation.protein for x in list(qs)])
+        
+        # add proteins to the alignment
+        a.load_proteins([x.protein_conformation.protein for x in qs])
+        
         if simple_selection.segments != []:
             a.load_segments_from_selection(simple_selection)
         else:
             a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']))
+        
         a.build_alignment()
         a.calculate_similarity()
+
         context['structures'] = []
         for prot in a.proteins[1:]:
             try:
