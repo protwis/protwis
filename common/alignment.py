@@ -23,9 +23,11 @@ class Alignment:
         self.segments = OrderedDict()
         self.numbering_schemes = {}
         self.generic_numbers = OrderedDict()
+        self.generic_number_objs = {}
         self.positions = []
         self.consensus = OrderedDict()
         self.forced_consensus = OrderedDict() # consensus sequence where all conflicts are solved by rules
+        self.full_consensus = [] # consensus sequence with full residue objects
         self.similarity_matrix = OrderedDict()
         self.amino_acids = []
         self.amino_acid_stats = []
@@ -376,6 +378,10 @@ class Alignment:
 
                             s.append([pos, r.display_generic_number.label, r.amino_acid,
                                 r.display_generic_number.scheme.short_name, r.sequence_number, x50_seq_num])
+
+                            # update generic residue object dict
+                            if pos not in self.generic_number_objs:
+                                self.generic_number_objs[pos] = r.display_generic_number
                         else:
                             s.append([pos, "", r.amino_acid, "", r.sequence_number])
 
@@ -503,6 +509,7 @@ class Alignment:
 
         # merge the amino acid counts into a consensus sequence
         num_proteins = len(self.proteins)
+        sequence_counter = 1
         for i, s in most_freq_aa.items():
             self.consensus[i] = OrderedDict()
             self.forced_consensus[i] = OrderedDict()
@@ -514,6 +521,7 @@ class Alignment:
                     # the intervals are defined as 0-10, where 0 is 0-9, 1 is 10-19 etc. Used for colors.
                     cons_interval = conservation[:-1]
                 
+
                 # forced consensus sequence uses the first residue to break ties
                 self.forced_consensus[i][p] = r[0][0]
 
@@ -525,6 +533,20 @@ class Alignment:
                 elif num_freq_aa > 1:
                     self.consensus[i][p] = ['+', cons_interval,
                     '/'.join(r[0]) + ' ' + str(round(r[1]/num_proteins*100)) + '%']
+
+                # create a residue object full consensus
+                res_obj = Residue()
+                res_obj.sequence_number = sequence_counter
+                if p in self.generic_number_objs:
+                    res_obj.display_generic_number = self.generic_number_objs[p]
+                res_obj.family_generic_number = p
+                res_obj.segment_slug = i
+                res_obj.amino_acid = r[0][0]
+                res_obj.extra = self.consensus[i][p][2] # FIXME use a better name
+                self.full_consensus.append(res_obj)
+
+                # update sequence counter
+                sequence_counter += 1
 
         # process amino acid frequency
         for i, amino_acid in enumerate(AMINO_ACIDS):

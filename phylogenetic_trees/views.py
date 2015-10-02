@@ -161,10 +161,7 @@ class Treeclass:
             else:
                 acc = link.replace('-','_')[:6]
             spec = str(n.protein.species)
-            try:
-                desc = str(ProteinAlias.objects.filter(protein__in=[n.id])[0])
-            except IndexError:
-                desc = ''
+            desc = name
             if acc in crysts:
                 if not fam in self.Additional_info['crystal']['proteins']:
                     self.Additional_info['crystal']['proteins'].append(fam)
