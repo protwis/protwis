@@ -32,6 +32,7 @@ class AbsTargetSelection(TemplateView):
     numbering_schemes = False
     search = True
     family_tree = True
+    redirect_on_select = False
     buttons = {
         'continue': {
             'label': 'Continue to next step',
@@ -115,6 +116,7 @@ class AbsReferenceSelection(AbsTargetSelection):
     number_of_steps = 3
     title = 'SELECT A REFERENCE TARGET'
     description = 'Select a reference target by searching or browsing in the right column.\n\nThe reference will be compared to the targets you select later in the workflow.\n\nOnce you have selected your reference target, you will be redirected to the next step.'
+    redirect_on_select = True
     selection_boxes = {}
     psets = [] # protein sets not applicable for this selection
 
