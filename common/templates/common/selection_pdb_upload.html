@@ -1,0 +1,12 @@
+<div class="col-md-12 panel panel-primary">
+    <div class="panel-body">
+        <h4>Upload a structure</h4>
+        <form id="form" action="/interaction/sitesearch_calculate" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+            <p><label for="pdbname">PDB code</label>
+            {{ upload_form.pdbname }}</p>
+            <p>OR</p> 
+            <p><label for="file">Select a file</label>{{ upload_form.file }}</p>
+        </form>
+    </div>
+</div>

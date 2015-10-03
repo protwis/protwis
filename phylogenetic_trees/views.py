@@ -2,9 +2,9 @@
 from django.conf import settings
 from django.core.files import File
 from protein.models import ProteinFamily, ProteinAlias, ProteinSet, Protein, ProteinSegment
-from common.views import AbsSettingsSelection
-from common.views import AbsSegmentSelection
 from common.views import AbsTargetSelection
+from common.views import AbsSegmentSelection
+from common.views import AbsMiscSelection
 from common.selection import SelectionItem
 from mutation.models import *
 
@@ -15,31 +15,31 @@ from collections import OrderedDict
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
-class TreeSettings(AbsSettingsSelection):
-    step = 3
+
+class TargetSelection(AbsTargetSelection):
+    step = 1
     number_of_steps = 3
     docs = '/documentation/similarities'
     selection_boxes = OrderedDict([
-        ('tree_settings', False),
-        ('segments', True),
         ('targets', True),
+        ('segments', False),
     ])
     buttons = {
         'continue': {
-            'label': 'Draw tree',
-            'url': '/phylogenetic_trees/render',
+            'label': 'Continue to next step',
+            'url': '/phylogenetic_trees/segmentselection',
             'color': 'success',
         },
-   }
+    }
+
 
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 3
     docs = '/documentation/similarities'
     selection_boxes = OrderedDict([
-        ('tree_settings', False),
-        ('segments', True),
         ('targets', True),
+        ('segments', True),
     ])
     buttons = {
         'continue': {
@@ -50,22 +50,27 @@ class SegmentSelection(AbsSegmentSelection):
     }
 
 
-class TargetSelection(AbsTargetSelection):
-    step = 1
+class TreeSettings(AbsMiscSelection):
+    step = 3
     number_of_steps = 3
     docs = '/documentation/similarities'
+    title = 'SELECT TREE OPTIONS'
+    description = 'Select options for tree generation in the middle column.\nOnce you have selected your' \
+        + ' settings, click the green button.'
+    docs = '/documentation/similarities'
     selection_boxes = OrderedDict([
-        ('tree_settings', False),
-        ('segments', False),
         ('targets', True),
+        ('segments', True),
     ])
     buttons = {
         'continue': {
-            'label': 'Continue to next step',
-            'url': '/phylogenetic_trees/segmentselection',
+            'label': 'Draw tree',
+            'url': '/phylogenetic_trees/render',
             'color': 'success',
         },
     }
+    tree_settings = True
+
 
 class Treeclass:
     family = {}

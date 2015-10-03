@@ -1,37 +1,18 @@
-{% extends "home/base.html" %}
+{% extends "common/selection.html" %}
 {% load staticfiles %}
 
-{% block content %}
-    <div class="row">
-        
-        <!-- description boxes -->
-        <div class="col-md-4">
+{% block addon_js %}
+    <script type="text/javascript">
+        var type_of_selection = '{{ type_of_selection }}';
+        var redirect_url = '{{ buttons.continue.url }}'
+        var redirect_on_select = '{{ redirect_on_select }}'
+    </script>
+    <script src="{% static 'home/js/selection-autocomplete.js' %}"></script>
+    <script src="{% static 'home/js/selection-filters.js' %}"></script>
+    <script src="{% static 'home/js/selection.js' %}"></script>
+{% endblock %}
 
-            <!-- main description -->
-            <div class="col-md-12 panel panel-primary">
-                <div class="panel-body">
-                    {% if step and number_of_steps and number_of_steps > 1 %}
-                    <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
-                    {% endif %}
-                    <h4>{{ title }}</h4>
-                    {{ description|linebreaks }}
-                </div>
-            </div>
-
-            <!-- link to docs -->
-            {% if docs %}
-            <div class="col-md-12 panel panel-primary">
-                <div class="panel-body">
-                    <p>For more information on this tool, see the <a href="{{ docs }}">docs</a>.</p>
-                </div>
-            </div>
-            {% endif %}
-
-        </div>
-        
-        <!-- selection boxes -->
-        <div class="col-md-4">
-
+{% block middle_column %}
             <!-- filters -->
             {% if filters %}
             <div class="col-md-12 panel panel-primary">
@@ -95,43 +76,4 @@
                 </div>
             </div>
             {% endif %}
-
-        </div>
-        
-        <!-- selection -->
-        <div class="col-md-4">
-
-            <!-- button(s) -->
-            {% if buttons.continue.label %}
-            <div id="selection-buttons">
-                {% include 'common/selection_buttons.html' %}
-            </div>
-            {% endif %}
-
-            <!-- show the selection -->
-            {% for selection_box, include in selection_boxes.items %}
-                {% if include %}
-                <div class="col-md-12 panel panel-primary">
-                    <div class="panel-body" id="selection-{{ selection_box }}">
-                    {% with selection_type=selection_box %}
-                        {% include 'common/selection_lists.html' %}
-                    {% endwith %}
-                    </div>
-                </div>
-                {% endif %}
-            {% endfor %}
-
-        </div>
-
-    </div>
-{% endblock %}
-{% block addon_js %}
-    <script type="text/javascript">
-        var type_of_selection = '{{ type_of_selection }}';
-        var redirect_url = '{{ buttons.continue.url }}'
-        var redirect_on_select = '{{ redirect_on_select }}'
-    </script>
-    <script src="{% static 'home/js/selection-autocomplete.js' %}"></script>
-    <script src="{% static 'home/js/selection-filters.js' %}"></script>
-    <script src="{% static 'home/js/selection.js' %}"></script>
 {% endblock %}
