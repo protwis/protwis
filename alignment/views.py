@@ -4,6 +4,7 @@ from django.views.generic import TemplateView
 
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
+from common.views import AbsMiscSelection
 from structure.functions import BlastSearch
 from protein.models import Protein
 # from common.alignment_SITE_NAME import Alignment
@@ -17,7 +18,7 @@ from collections import OrderedDict
 class TargetSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 2
-    docs = '/docs/alignment'
+    docs = '/documentation/sequences'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -35,7 +36,7 @@ class TargetSelection(AbsTargetSelection):
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
-    docs = '/docs/alignment'
+    docs = '/documentation/sequences'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -50,11 +51,27 @@ class SegmentSelection(AbsSegmentSelection):
     }
 
 
+class BlastSearchInput(AbsMiscSelection):
+    step = 1
+    number_of_steps = 1
+    title = 'BLAST search'
+    description = 'Enter a sequence into the text box and press the green button.'
+    buttons = {
+        'continue': {
+            'label': 'BLAST',
+            'onclick': 'document.getElementById("form").submit()',
+            'color': 'success',
+        },
+    }
+    selection_boxes = {}
+    blast_input = True
+
+
 class BlastSearchResults(TemplateView):
     """
     An interface for blast similarity search of the input sequence.
     """
-    template_name="sequence/blast_search_results.html"
+    template_name="blast/blast_search_results.html"
 
     def post(self, request, *args, **kwargs):
 

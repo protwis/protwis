@@ -4,9 +4,10 @@ from django.views import generic
 
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 
-from protein.models import Protein, ProteinFamily, ProteinSegment
+from protein.models import Protein, ProteinFamily, ProteinSegment, ProteinConformation
 from residue.models import Residue,ResidueGenericNumber
 from mutation.models import MutationExperiment
+from structure.models import Structure
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 def detail(request, slug):
@@ -22,18 +23,25 @@ def detail(request, slug):
     families.reverse()
 
     # number of proteins
-    no_of_proteins = Protein.objects.filter(family__slug__startswith=pf.slug).count()
-    no_of_human_proteins = Protein.objects.filter(family__slug__startswith=pf.slug, species__id=1).count()
+    proteins = Protein.objects.filter(family__slug__startswith=pf.slug, sequence_type__slug='wt')
+    no_of_proteins = proteins.count()
+    no_of_human_proteins = Protein.objects.filter(family__slug__startswith=pf.slug, species__id=1,
+        sequence_type__slug='wt').count()
 
-        # create an alignment object
-    a = Alignment()
 
-    # fetch proteins and segments
-    proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt')
-    segments = ProteinSegment.objects.filter(partial=False)
+    # get structures of this family
+    structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=slug
+        ).order_by('-representative', 'resolution').prefetch_related('pdb_code__web_resource')
 
     mutations = MutationExperiment.objects.filter(protein__in=proteins)
     
+    # fetch proteins and segments
+    proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt', species__id=1)
+    segments = ProteinSegment.objects.filter(partial=False)
+
+    # create an alignment object
+    a = Alignment()
+
     # load data into the alignment
     a.load_proteins(proteins)
     a.load_segments(segments)
@@ -44,44 +52,54 @@ def detail(request, slug):
     # calculate consensus sequence + amino acid and feature frequency
     a.calculate_statistics()
 
-    residue_list = []
-    generic_numbers = []
-    reference_generic_numbers = {}
-    count = 0 #build sequence_number
+    HelixBox = DrawHelixBox(a.full_consensus,'Class A',str('test'))
+    SnakePlot = DrawSnakePlot(a.full_consensus,'Class A',str('test'))
 
-    ################################################################################
-    #FIXME -- getting matching display_generic_numbers kinda randomly.
-
-    for seg in a.consensus: #Grab list of generic_numbers to lookup for their display numbers
-        for aa in a.consensus[seg]:
-            if "x" in aa:
-                generic_numbers.append(aa)
-
-    generic_ids = Residue.objects.filter(generic_number__label__in=generic_numbers).values('id').distinct('generic_number__label').order_by('generic_number__label')
-    rs = Residue.objects.filter(id__in=generic_ids).prefetch_related('display_generic_number','generic_number')
-
-    for r in rs: #make lookup dic.
-        reference_generic_numbers[r.generic_number.label] = r
-    ################################################################################
+    try:
+        pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__sequence_type__slug='consensus')
+    except ProteinConformation.DoesNotExist:
+        pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__species_id=1)
+        
+    residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
+        'protein_segment', 'generic_number', 'display_generic_number')
     
-    for seg in a.consensus:
-        for aa,v in a.consensus[seg].items():
-            r = Residue()
-            r.sequence_number =  count #FIXME is this certain to be correct that the position in consensus is seq position? 
-            if "x" in aa:
-                r.display_generic_number = reference_generic_numbers[aa].display_generic_number #FIXME
-                r.segment_slug = seg
-                r.family_generic_number = aa
-            else:
-                r.segment_slug = seg
-                r.family_generic_number = aa
-            r.amino_acid = v[0]
-            r.extra = v[2] #Grab consensus information
-            residue_list.append(r)
+    # process residues and return them in chunks of 10
+    # this is done for easier scaling on smaller screens
+    chunk_size = 10
+    r_chunks = []
+    r_buffer = []
+    last_segment = False
+    border = False
+    title_cell_skip = 0
+    for i, r in enumerate(residues):
+        # title of segment to be written out for the first residue in each segment
+        segment_title = False
+        
+        # keep track of last residues segment (for marking borders)
+        if r.protein_segment.slug != last_segment:
+            last_segment = r.protein_segment.slug
+            border = True
+        
+        # if on a border, is there room to write out the title? If not, write title in next chunk
+        if i == 0 or (border and len(last_segment) <= (chunk_size - i % chunk_size)):
+            segment_title = True
+            border = False
+            title_cell_skip += len(last_segment) # skip cells following title (which has colspan > 1)
+        
+        if i and i % chunk_size == 0:
+            r_chunks.append(r_buffer)
+            r_buffer = []
+        
+        r_buffer.append((r, segment_title, title_cell_skip))
 
-            count += 1         
-    HelixBox = DrawHelixBox(residue_list,'Class A',str('test'))
-    SnakePlot = DrawSnakePlot(residue_list,'Class A',str('test'))
+        # update cell skip counter
+        if title_cell_skip > 0:
+            title_cell_skip -= 1
+    if r_buffer:
+        r_chunks.append(r_buffer)
 
-    return render(request, 'family/family_detail.html', {'pf': pf, 'families': families,
-        'no_of_proteins': no_of_proteins, 'no_of_human_proteins': no_of_human_proteins, 'a':a, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'mutations':mutations})
+    context = {'pf': pf, 'families': families, 'structures': structures, 'no_of_proteins': no_of_proteins,
+        'no_of_human_proteins': no_of_human_proteins, 'a':a, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot,
+        'mutations':mutations, 'r_chunks': r_chunks, 'chunk_size': chunk_size}
+
+    return render(request, 'family/family_detail.html', context)

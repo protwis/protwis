@@ -1,22 +1,27 @@
 ﻿{% block superposition_results %}
+<div class='col-md-4 panel panel-primary' style="height:200px;">
+    <br />
     <h4>Results for your query: </h4>
     <div class='row-fluid well well-small selection-box'>
         {% if success %}
-            Structures superposed successufully.
+        Structures superposed successufully.
         {% else %}
-            Failed to superpose onto structure {{ input_file }}
+        Failed to superpose onto structure {{ input_file }}
         {% endif %}
         {{ message }}
     </div>
-    <br />
     <hr />
     {% if success %}
-        {% if outfile %}
-            <div>
-                <a class="btn btn-small" href="/structure/{{ zip }}output/{{ outfile }}/{{ replacement_tag }}">
-                    <i class="icon-download">Output file<i>
-                </a>
-            </div>
-        {% endif %}
+    <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+                aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li><a href="/structure/superposition_workflow_results/full">Full proteins</a></li>
+            <li><a href="/structure/superposition_workflow_results/substr">Superposed substructures only</a></li>
+            <li><a href="/structure/superposition_workflow_results/select">Advanced segment selection</a></li>
+    </div>
     {% endif %}
-{% endblock %}
+</div>
+    {% endblock %}

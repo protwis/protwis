@@ -13,7 +13,7 @@ from collections import OrderedDict
 class ReferenceSelection(AbsReferenceSelection):
     step = 1
     number_of_steps = 3
-    docs = '/docs/similaritysearch'
+    docs = '/documentation/similarities'
     buttons = {
         'continue': {
             'url': '/similaritysearch/segmentselection',
@@ -24,7 +24,7 @@ class ReferenceSelection(AbsReferenceSelection):
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 3
-    docs = '/docs/similaritysearch'
+    docs = '/documentation/similarities'
     selection_boxes = OrderedDict([
         ('reference', True),
         ('segments', True),
@@ -42,7 +42,7 @@ class SegmentSelection(AbsSegmentSelection):
 class TargetSelection(AbsTargetSelection):
     step = 3
     number_of_steps = 3
-    docs = '/docs/similaritysearch'
+    docs = '/documentation/similarities'
     selection_boxes = OrderedDict([
         ('reference', True),
         ('segments', True),

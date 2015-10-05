@@ -1,9 +1,13 @@
-﻿{% extends "home/base.html" %}
+{% extends "home/base.html" %}
 {% load staticfiles %}
-
 
 {% block addon_js %}
     <script src="/static/home/js/selection.js"></script>
+{% endblock %}
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/button_spinner.css' %}" type="text/css" />
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 {% endblock %}
 
 {% block content %}
@@ -14,21 +18,26 @@
 
             <!-- main description -->
             {% if step and number_of_steps %}
-                <div class="col-md-12 well">
-                    <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
-                    {% endif %}
-                    <h4>{{ title }}</h4>
-                    {{ description|safe|linebreaks }}
+                <div class="col-md-12 panel panel-primary">
+                    <div class="panel-body">
+                        <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
+                        {% endif %}
+                        <h4>{{ title }}</h4>
+                        {{ description|safe|linebreaks }}
+                    </div>
                 </div>
 
             <!-- link to docs -->
             {% if docs %}
-            <div class="col-md-12 well">
-                <p>For more information on this tool, see the <a href="{{ docs }}">docs</a>.</p>
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <p>For more information on this tool, see the <a href="{{ docs }}">docs</a>.</p>
+                </div>
             </div>
             {% endif %}
 
         </div>
+        
         <div id="middle_col">
         {% include mid_section %}
         </div>
@@ -44,10 +53,12 @@
             <!-- show the selection -->
             {% for selection_box, include in selection_boxes.items %}
                 {% if include %}
-                <div class="col-md-12 well" id="selection-{{ selection_box }}">
-                    {% with selection_type=selection_box %}
-                        {% include 'common/selection_lists.html' %}
-                    {% endwith %}
+                <div class="col-md-12 panel panel-primary">
+                    <div class="panel-body" id="selection-{{ selection_box }}">
+                        {% with selection_type=selection_box %}
+                            {% include 'common/selection_lists.html' %}
+                        {% endwith %}
+                    </div>
                 </div>
                 {% endif %}
             {% endfor %}

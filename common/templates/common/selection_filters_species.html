@@ -5,7 +5,7 @@
         Human
     </a>
     <a href="javascript:void(0)" onclick="SelectionSpeciesPredefined('All')"
-        class="btn btn-primary{% if selection.species|length == sps|length %} active{% endif %}">
+        class="btn btn-primary{% if selection.species|length == 0 or selection.species|length == sps|length %} active{% endif %}">
         All
     </a>
     <a data-toggle="modal" data-target="#SpeciesSelector"

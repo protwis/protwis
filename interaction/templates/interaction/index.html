@@ -40,21 +40,14 @@ $(document).ready(function() {
 <br>
 
 <h1> Run a new calculation</h1>
-Enter a PDB name to analyse:
-    {% if vignir == 'vignir' %}
-        <form action="vignir/calculate" method="post" enctype="multipart/form-data">
-    {% else %}
-        <form action="calculate" method="post" enctype="multipart/form-data">
-    {% endif %}
+Enter a PDB code to analyse:
+    <form action="calculate" method="post" enctype="multipart/form-data">
 {% csrf_token %}
-    <label for="pdbname">PDBname</label>
+    <label for="pdbname">PDB code</label>
     {{ form.pdbname }} <br> or 
     <p>{{ form.file.label_tag }}  </p> {{ form.file }}
     <br>
-    {% if vignir == 'vignir' %}
-        <input type="hidden" name="vignir" value="vignir">
-    {% endif %}
-        <input type="submit" value="OK">
+    <input type="submit" value="OK">
 </form>
 
 {% endblock %}

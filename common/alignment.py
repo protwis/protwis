@@ -24,9 +24,11 @@ class Alignment:
         self.segments = OrderedDict()
         self.numbering_schemes = {}
         self.generic_numbers = OrderedDict()
+        self.generic_number_objs = {}
         self.positions = []
         self.consensus = OrderedDict()
         self.forced_consensus = OrderedDict() # consensus sequence where all conflicts are solved by rules
+        self.full_consensus = [] # consensus sequence with full residue objects
         self.similarity_matrix = OrderedDict()
         self.amino_acids = []
         self.amino_acid_stats = []
@@ -35,6 +37,7 @@ class Alignment:
         self.default_numbering_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
         self.states = [settings.DEFAULT_PROTEIN_STATE] # inactive, active etc
         self.use_residue_groups = False
+        self.ignore_alternative_residue_numbering_schemes = False # set to true if no numbering is to be displayed
         
         # refers to which ProteinConformation attribute to order by (identity, similarity or similarity score)
         self.order_by = 'similarity'
@@ -109,10 +112,15 @@ class Alignment:
                 protein_source_list = []
                 for protein_source in simple_selection.annotation:
                     protein_source_list.append(protein_source.item)
-                    
-                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                    species__in=(species_list),
-                    source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                
+                if species_list:
+                    family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                        species__in=(species_list), source__in=(protein_source_list)).select_related(
+                        'residue_numbering_scheme', 'species')
+                else:
+                    family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                        source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+
                 for fp in family_proteins:
                     proteins.append(fp)
 
@@ -212,7 +220,7 @@ class Alignment:
     def build_alignment(self):
         """Fetch selected residues from DB and build an alignment"""
         # fetch segment residues
-        if len(self.numbering_schemes) > 1:
+        if not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1:
             rs = Residue.objects.filter(
                 protein_segment__slug__in=self.segments, protein_conformation__in=self.proteins).prefetch_related(
                 'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
@@ -354,7 +362,8 @@ class Alignment:
                                 self.generic_numbers[ns_slug][segment][pos] = []
 
                         # add display numbers for other numbering schemes of selected proteins
-                        if r.generic_number and len(self.numbering_schemes) > 1:
+                        if (not self.ignore_alternative_residue_numbering_schemes and r.generic_number
+                            and len(self.numbering_schemes) > 1):
                             for arn in r.alternative_generic_numbers.all():
                                 for ns in self.numbering_schemes:
                                     if (arn.scheme.slug == ns[0] and arn.scheme.slug != ns):
@@ -370,6 +379,10 @@ class Alignment:
 
                             s.append([pos, r.display_generic_number.label, r.amino_acid,
                                 r.display_generic_number.scheme.short_name, r.sequence_number, x50_seq_num])
+
+                            # update generic residue object dict
+                            if pos not in self.generic_number_objs:
+                                self.generic_number_objs[pos] = r.display_generic_number
                         else:
                             s.append([pos, "", r.amino_acid, "", r.sequence_number])
 
@@ -497,6 +510,7 @@ class Alignment:
 
         # merge the amino acid counts into a consensus sequence
         num_proteins = len(self.proteins)
+        sequence_counter = 1
         for i, s in most_freq_aa.items():
             self.consensus[i] = OrderedDict()
             self.forced_consensus[i] = OrderedDict()
@@ -508,6 +522,7 @@ class Alignment:
                     # the intervals are defined as 0-10, where 0 is 0-9, 1 is 10-19 etc. Used for colors.
                     cons_interval = conservation[:-1]
                 
+
                 # forced consensus sequence uses the first residue to break ties
                 self.forced_consensus[i][p] = r[0][0]
 
@@ -519,6 +534,20 @@ class Alignment:
                 elif num_freq_aa > 1:
                     self.consensus[i][p] = ['+', cons_interval,
                     '/'.join(r[0]) + ' ' + str(round(r[1]/num_proteins*100)) + '%']
+
+                # create a residue object full consensus
+                res = Residue()
+                res.sequence_number = sequence_counter
+                if p in self.generic_number_objs:
+                    res.display_generic_number = self.generic_number_objs[p]
+                res.family_generic_number = p
+                res.segment_slug = i
+                res.amino_acid = r[0][0]
+                res.frequency = self.consensus[i][p][2]
+                self.full_consensus.append(res)
+
+                # update sequence counter
+                sequence_counter += 1
 
         # process amino acid frequency
         for i, amino_acid in enumerate(AMINO_ACIDS):

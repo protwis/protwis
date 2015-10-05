@@ -13,9 +13,7 @@ class SimpleSelection:
         self.segments = []
 
         # species
-        sp = Species.objects.get(pk=1) # Default species selection is human only
-        o = SelectionItem('species', sp)
-        self.species = [o]
+        self.species = []
 
         # annotation
         ps = ProteinSource.objects.get(name='SWISSPROT') # Default protein source is SWISSPROT
