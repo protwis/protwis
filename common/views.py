@@ -32,6 +32,7 @@ class AbsTargetSelection(TemplateView):
     numbering_schemes = False
     search = True
     family_tree = True
+    redirect_on_select = False
     buttons = {
         'continue': {
             'label': 'Continue to next step',
@@ -115,6 +116,7 @@ class AbsReferenceSelection(AbsTargetSelection):
     number_of_steps = 3
     title = 'SELECT A REFERENCE TARGET'
     description = 'Select a reference target by searching or browsing in the right column.\n\nThe reference will be compared to the targets you select later in the workflow.\n\nOnce you have selected your reference target, you will be redirected to the next step.'
+    redirect_on_select = True
     selection_boxes = {}
     psets = [] # protein sets not applicable for this selection
 
@@ -194,24 +196,20 @@ class AbsSegmentSelection(TemplateView):
                 context[a[0]] = a[1]
         return context
 
-class AbsSettingsSelection(TemplateView):
-    """An abstract class for the settings selection page used in phylogenetic trees."""
-    template_name = 'common/tree_options.html'
+class AbsMiscSelection(TemplateView):
+    """An abstract class for selection pages of other types than target- and segmentselection"""
+    template_name = 'common/miscselection.html'
     step = 3
     number_of_steps = 3
-    title = 'SELECT TREE OPTIONS'
-    description = 'Select options for tree generation in the middle column.\nOnce you have selected all your segments, click the green button.'
-    docs = '/documentation/similarities'
-    buttons = {
-        'continue': {
-            'label': 'Show alignment',
-            'url': '/alignment/render',
-            'color': 'success',
-        },
-    }
+    title = ''
+    description = ''
+    docs = ''
+    buttons = {}
+    tree_settings = False
+    blast_input = False
+
     # OrderedDict to preserve the order of the boxes
     selection_boxes = OrderedDict([
-        ('tree_settings', True),
         ('targets', True),
         ('segments', True),
     ])
@@ -226,8 +224,12 @@ class AbsSettingsSelection(TemplateView):
 
         # create full selection and import simple selection (if it exists)
         selection = Selection()
-        if simple_selection:
-            selection.importer(simple_selection)
+
+        # on the first page of a workflow, clear the selection (or dont' import from the session)
+        if self.step is not 1:
+            if simple_selection:
+                selection.importer(simple_selection)
+
         context['selection'] = {}
         context['selection']['tree_settings'] = selection.tree_settings
 
@@ -417,7 +419,7 @@ def SetTreeSelection(request):
     simple_selection = selection.exporter()
     # add simple selection to session
     request.session['selection'] = simple_selection
-    return render(request, 'common/bootstrap_buttons.html', selection.dict('tree_settings'))
+    return render(request, 'common/tree_options.html', selection.dict('tree_settings'))
 
 def SelectAlignableSegments(request):
     """Adds all alignable segments to the selection"""

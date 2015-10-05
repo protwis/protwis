@@ -814,6 +814,7 @@ def calculate(request, redirect=None):
                     # 'hydrophobic': 'hp',
                 }
                 for gn, interactions in simple_generic_number[mainligand].items():
+                    print(gn, interactions)
                     if gn != 'score' and gn != 0.0: # FIXME leave these out when dict is created
                         for interaction in interactions:
                             if interaction in interaction_name_dict:

@@ -535,15 +535,15 @@ class Alignment:
                     '/'.join(r[0]) + ' ' + str(round(r[1]/num_proteins*100)) + '%']
 
                 # create a residue object full consensus
-                res_obj = Residue()
-                res_obj.sequence_number = sequence_counter
+                res = Residue()
+                res.sequence_number = sequence_counter
                 if p in self.generic_number_objs:
-                    res_obj.display_generic_number = self.generic_number_objs[p]
-                res_obj.family_generic_number = p
-                res_obj.segment_slug = i
-                res_obj.amino_acid = r[0][0]
-                res_obj.extra = self.consensus[i][p][2] # FIXME use a better name
-                self.full_consensus.append(res_obj)
+                    res.display_generic_number = self.generic_number_objs[p]
+                res.family_generic_number = p
+                res.segment_slug = i
+                res.amino_acid = r[0][0]
+                res.frequency = self.consensus[i][p][2]
+                self.full_consensus.append(res)
 
                 # update sequence counter
                 sequence_counter += 1

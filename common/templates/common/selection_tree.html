@@ -73,7 +73,7 @@
     {% else %}
 <a href="javascript:void(0)" class="target-selection" onclick="AddToSelection('{{ type_of_selection }}', 'protein',
     '{{ p.id }}');
-    if (type_of_selection == 'reference') {setTimeout(function(){window.location = redirect_url;}, 200);};">
+    if (type_of_selection == 'reference' && redirect_on_select == 'True') {setTimeout(function(){window.location = redirect_url;}, 200);};">
     {% endif %}
     {{ p.name|safe }} [{{ p.species.common_name|safe }}]
 </a><br />

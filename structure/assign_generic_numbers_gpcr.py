@@ -88,7 +88,7 @@ class GenericNumbering(object):
         logger.info("{:d}\t{:d}".format(hsps.query_start, hsps.sbjct_start))
 
         rs = Residue.objects.prefetch_related('display_generic_number', 'protein_segment').filter(
-            protein_conformation__protein=prot_id, sequence_number=subj_counter)
+            protein_conformation__protein=prot_id)
         residues = {}
         for r in rs:
             residues[r.sequence_number] = r

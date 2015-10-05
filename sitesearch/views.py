@@ -88,7 +88,7 @@ class StructureUpload(AbsSegmentSelection):
     buttons = {
         'continue': {
             'label': 'Continue to next step',
-            'onclick': 'document.getElementById("pdbform").submit()',
+            'onclick': 'document.getElementById("form").submit()',
             'color': 'success',
         },
     }

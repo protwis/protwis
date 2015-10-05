@@ -846,26 +846,30 @@ class TemplateTargetSelection(AbsReferenceSelection):
     """
     
     type_of_selection = 'reference'
-    #Left panel
-    description = 'Select targets by searching or browsing in the middle column. You can select entire target families or individual targets.\n\nSelected targets will appear in the right column, where you can edit the list.\n\nOnce you have selected all your targets, either proceed with all TMs alignment ("Find template" button) or specify the sequence segments manualy ("Advanced segment selection" button).'
+    # Left panel
+    description = 'Select a reference target by searching or browsing in the middle column.' \
+        + '\n\nThe selected reference target will appear in the right column.' \
+        + '\n\nOnce you have selected your reference target, either proceed with all TMs alignment ("Find template"' \
+        + 'button) or specify the sequence segments manualy ("Advanced segment selection" button).'
     step = 1
     number_of_steps = 2
+    redirect_on_select = False
 
-    #Mid section
+    # Mid section
 
-    #Right panel
-    buttons = {
-        'continue': {
-            'label': 'Find template',
-            'url': '/structure/template_browser',
-            'color': 'success',
-        },
-        'segments' : {
-            'label' : 'Advanced segment selection',
-            'url' : '/structure/template_segment_selection',
-            'color' : 'info',
-        },
+    # Right panel
+    buttons = OrderedDict()
+    buttons['continue'] = {
+        'label': 'Find template',
+        'url': '/structure/template_browser',
+        'color': 'success',
     }
+    buttons['segments'] = {
+        'label' : 'Advanced segment selection',
+        'url' : '/structure/template_segment_selection',
+        'color' : 'info',
+    }
+
     selection_boxes = OrderedDict([('reference', True),
         ('targets', False),
         ('segments', False),])

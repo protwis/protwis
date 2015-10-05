@@ -1,9 +1,15 @@
-<div class="col-md-12 text-center panel panel-primary">
+<div class="col-md-12 panel panel-primary">
     <div class="panel-body" id="selection-{{ selection_box }}">
     {% for button_name, button in buttons.items %}
-        <a {% if button.url %}href="{{ button.url }}" {% endif %} class="btn btn-{{ button.color }} btn-lg btn-block"
+        <a {% if button.url %}href="{{ button.url }}" {% endif %} class="btn btn-{{ button.color }}
+        {% if forloop.counter > 1 %}
+        btn-sm
+        {% else %}
+        btn-lg 
+        {% endif %}
+        btn-block has-spinner"
         {% if button.onclick %}onclick="{{ button.onclick }}" {% endif %}>
-            {{ button.label }}
+            <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> {{ button.label }}
         </a>
     {% endfor %}
     </div>

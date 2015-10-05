@@ -205,7 +205,7 @@ def render_mutations(request, protein = None, family = None, download = None, **
                 r.segment_slug = seg
                 r.family_generic_number = aa
             r.amino_acid = v[0]
-            r.extra = v[2] #Grab consensus information
+            r.frequency = v[2] #Grab consensus information
             residue_list.append(r)
 
             count += 1         
