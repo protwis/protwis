@@ -401,10 +401,14 @@ class Command(BaseBuild):
 
                             if 'iupharId' not in endogenous_ligand:
                                 endogenous_ligand['iupharId'] = 0
-                            
+
                             ligand = ligand.load_by_gtop_id(endogenous_ligand['name'], endogenous_ligand['iupharId'],
                                 lt)
-                            s.protein_conformation.protein.parent.endogenous_ligands.add(ligand)
+                            try:
+                                s.protein_conformation.protein.parent.endogenous_ligands.add(ligand)
+                            except IntegrityError:
+                                self.logger.info('Endogenous ligand for protein {}, already added. Skipping.'.format(
+                                    s.protein_conformatino.protein.parent))
 
                     # ligands
                     if 'ligand' in sd and sd['ligand']:
@@ -619,8 +623,11 @@ class Command(BaseBuild):
                         else:
                             aps = [sd[index]]
                         for aux_protein in aps:
-                            sa, created = StructureStabilizingAgent.objects.get_or_create(slug=slugify(aux_protein),
-                                name=aux_protein)
+                            try:
+                                sa, created = StructureStabilizingAgent.objects.get_or_create(
+                                    slug=slugify(aux_protein), defaults={'name': aux_protein})
+                            except IntegrityError:
+                                sa = StructureStabilizingAgent.objects.get(slug=slugify(aux_protein))
                             s.stabilizing_agents.add(sa)
 
                     # save structure
