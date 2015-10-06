@@ -19,16 +19,17 @@ class GenericNumbering(object):
     
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
   
-    def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, blast_path='blastp', blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb'])):
+    def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, blast_path='blastp',
+        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb'])):
     
-        #pdb_file can be either a name/path or a handle to an open file
+        # pdb_file can be either a name/path or a handle to an open file
         self.pdb_file = pdb_file
         self.pdb_filename = pdb_filename
         
-        #dictionary of 'MappedResidue' object storing information about alignments and bw numbers
+        # dictionary of 'MappedResidue' object storing information about alignments and bw numbers
         self.residues = {}
         self.pdb_seq = {} #Seq('')
-        #list of uniprot ids returned from blast
+        # list of uniprot ids returned from blast
         self.prot_id_list = []
         #setup for local blast search
         self.blast = BlastSearch(blast_path=blast_path, blastdb=blastdb)
@@ -86,6 +87,12 @@ class GenericNumbering(object):
         logger.info("{}\n{}".format(hsps.query, hsps.sbjct))
         logger.info("{:d}\t{:d}".format(hsps.query_start, hsps.sbjct_start))
 
+        rs = Residue.objects.prefetch_related('display_generic_number', 'protein_segment').filter(
+            protein_conformation__protein=prot_id)
+        residues = {}
+        for r in rs:
+            residues[r.sequence_number] = r
+
         while tmp_seq:
             #skipping position if there is a gap in either of sequences
             if q_seq[0] == '-' or q_seq[0] == 'X' or q_seq[0] == ' ':
@@ -101,8 +108,8 @@ class GenericNumbering(object):
             if tmp_seq[0] == q_seq[0]:
                 resn = self.locate_res_by_pos(chain, q_counter)
                 if resn != 0:
-                    try:
-                        db_res = Residue.objects.prefetch_related('display_generic_number', 'protein_segment').get(protein_conformation__protein=prot_id, sequence_number=subj_counter)
+                    if subj_counter in residues:
+                        db_res = residues[subj_counter]
                         
                         if db_res.protein_segment:
                             segment = db_res.protein_segment.slug
@@ -116,9 +123,8 @@ class GenericNumbering(object):
                             self.residues[chain][resn].add_gpcrdb_number(gpcrdb)
                             self.residues[chain][resn].add_gpcrdb_number_id(db_res.display_generic_number.id)
                             self.residues[chain][resn].add_display_number(num)
-                    except Exception as msg:
-                        print(msg)
-                        logger.warning("Could not find residue {} {} in the database.\t{}".format(resn, subj_counter, msg))
+                    else:
+                        logger.warning("Could not find residue {} {} in the database.".format(resn, subj_counter))
 
                     
                     if prot_id not in self.prot_id_list:

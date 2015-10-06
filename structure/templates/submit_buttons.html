@@ -1,8 +1,9 @@
-﻿<div class="col-md-12 well text-center">
-    {% for button_name, button in buttons.items %}
-    <a href="#" class="btn btn-{{ button.color }} btn-lg btn-block" onclick='document.getElementById("{{ form_id }}").submit()'>
-        {{ button.label }}
-    </a>
-    {% endfor %}
+<div class="col-md-12 panel panel-primary">
+    <div class="panel-body">
+        {% for button_name, button in buttons.items %}
+        <a href="#" class="btn btn-{{ button.color }} btn-lg btn-block has-spinner" onclick='document.getElementById("{{ form_id }}").submit()'>
+           <span class="spinner"><i class="fa fa-spinner fa-spin"></i></span> {{ button.label }}
+        </a>
+        {% endfor %}
+    </div>
 </div>
-

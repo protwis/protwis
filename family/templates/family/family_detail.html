@@ -1,6 +1,10 @@
 {% extends "home/base.html" %}
 {% load staticfiles %}
 
+{% block addon_css %}
+<link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 
 <div class="row text-success">
@@ -37,28 +41,7 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>CONSENSUS SEQUENCE</h4>
-    </div>
-    <div class="col-md-10">
-    <table>
-     <tr>
-                            {% for s in a.consensus %}
-                                {% for p, r in s.items %}
-                                    <td class="ali-td ali-residue res-cons-{{ r.1 }}">
-                                        <div data-toggle="tooltip" data-placement="top" data-html="true"
-                                        title="{{ r.2 }}">
-                                            {{ r.0 }}
-                                        </div>
-                                    </td>
-                                {% endfor %}
-                                <td class="ali-td">&nbsp;</td>
-                            {% endfor %}
-                        </tr>
-                        </table>
-    </div>
-</div>
+{% include "protein/sequence_viewer.html" %}
 
 <div class="row">
     <div class="col-md-2 text-right text-info">
@@ -81,6 +64,7 @@
         <h4>MUTATIONS</h4>
     </div>
     <div class="col-md-10">
+    <a href="/mutations/family/{{ pf.slug }}">{{ mutations|length }} mutant data points available.</a>
     </div>
 </div>
 
@@ -89,19 +73,25 @@
         <h4>STRUCTURES</h4>
     </div>
     <div class="col-md-10">
+        {% for structure in structures %}
+        <p><a href="/structure/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a></p>
+        {% empty %}
+        No structures available
+        {% endfor %}
     </div>
 </div>
 
-<div class="row">
+<!-- <div class="row">
     <div class="col-md-2 text-right text-info">
         <h4>LINKS</h4>
     </div>
     <div class="col-md-10">
     </div>
-</div>
+</div> -->
 {% endblock %}
 
 {% block addon_js %}
+<script src="{% static 'home/js/sequenceviewer.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/diagrams.js' %}"></script>
 {% endblock %}

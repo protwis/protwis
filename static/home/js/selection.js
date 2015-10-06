@@ -1,3 +1,9 @@
+$(function () {
+    $('a').click(function () {
+        $(this).toggleClass('active');
+    });
+});
+
 function AddToSelection(selection_type, selection_subtype, selection_id) {
     $.ajax({
         'url': '/common/addtoselection',
@@ -7,6 +13,7 @@ function AddToSelection(selection_type, selection_subtype, selection_id) {
             selection_id: selection_id
         },
         'type': 'GET',
+        'async': false,
         'success': function(data) {
             $("#selection-" + selection_type).html(data);
         },
@@ -35,7 +42,8 @@ function ClearSelection(selection_type) {
             selection_type: selection_type
         },
         'type': 'GET',
-        'success': function(data) {
+        'async': false,
+        'success': function (data) {
             $("#selection-" + selection_type).html(data);
         }
     });
@@ -164,8 +172,6 @@ function SelectionSchemesToggle(numbering_scheme_id) {
 }
 
 function SetTreeSelection(option_no, option_id) {
-    console.log(option_no)
-    console.log(option_id)
     $.ajax({
         'url': '/common/settreeselection',
         'data': {
@@ -174,7 +180,7 @@ function SetTreeSelection(option_no, option_id) {
         },
         'type': 'GET',
         'success': function (data) {
-            $("#tree_buttons").html(data);
+            $("#tree-options").html(data);
         }
     });
 }

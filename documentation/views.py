@@ -11,8 +11,8 @@ def index(request):
     data = serializers.serialize( "python", Documentation.objects.all(), fields=('title','description','image'))
     return render(request, 'documentation/overview.html', {'documentation': data})
 
-def crystals(request):
-    title = Documentation.objects.get(title__icontains='crystal')
+def structures(request):
+    title = Documentation.objects.get(title__icontains='structures')
     return render(request, 'documentation/index.html', {'documentation': title})
 
 def diagrams(request):

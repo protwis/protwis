@@ -12,6 +12,6 @@ urlpatterns = patterns('',
     url(r'^fasta/(?P<slug>[^/]+)/$', views.render_fasta_family_alignment, name='fasta-family'),
     url(r'^fasta', views.render_fasta_alignment, name='fasta'),
     url(r'^csv', views.render_csv_alignment, name='csv'),
-    url(r'blastsearch$', TemplateView.as_view(template_name='sequence/blast_search.html'), name='blastsearch'),
-    url(r'blastsearchresults', views.BlastSearchResults.as_view(), name='blastsearch'),
+    url(r'blastsearch$', views.BlastSearchInput.as_view(), name='blastsearch'),
+    url(r'blastsearchresults', views.BlastSearchResults.as_view(), name='blastsearch_results'),
 )

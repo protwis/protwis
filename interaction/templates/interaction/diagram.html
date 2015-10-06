@@ -3,137 +3,99 @@
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+<link href="{% static 'home/css/residue_table.css' %}" rel="stylesheet">
 </style>
 
 {% endblock %}
 {% block content %}
-
+<h2>Structure information</h2>
  <script src="http://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script> 
-<div class="row text-success">
-<div class="text-center">
-        <h2>{{ crystal.protein_conformation.protein.family.name|safe }}</h2>
-    </div>
+ <div class="row">
+    <table width="100%">
+      <tr>
+        <td width="50%" style="border:0px;">
+        <div class="row text-success">
+        <div class="text-center">
+                <h2>{{ crystal.protein_conformation.protein.family.name|safe }}</h2>
+            </div>
+        </div>
+
+<!--         <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>Protein Class</h4>
+            </div>
+            <div class="col-md-6">
+            {{ crystal.protein_conformation.protein.get_protein_class }}
+            </div>
+        </div> -->
+
+        <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>PDB code</h4>
+            </div>
+            <div class="col-md-6">
+            {{ xtal.pdb_code }}
+            </div>
+        </div>
+
+<!--         <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>Species</h4>
+            </div>
+            <div class="col-md-6">
+            {{ crystal.protein_conformation.protein.species.latin_name }}
+            </div>
+        </div> -->
+
+        <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>Resolution</h4>
+            </div>
+            <div class="col-md-6">
+            {{ xtal.resolution}}
+            </div>
+        </div>
+
+<!--         <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>Preferred chain</h4>
+            </div>
+            <div class="col-md-6">
+            {{ crystal.preferred_chain }}
+            </div>
+        </div> -->
+
+        <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>PMID</h4>
+            </div>
+            <div class="col-md-6">
+            {{ xtal.pubmed_id }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>Publication date</h4>
+            </div>
+            <div class="col-md-6">
+            {{ xtal.publication_date }}
+            </div>
+        </div>
+    </td>
+    <td style="border:0px;">
+
+            <div style="height: 300px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xf6f6f6' data-href='pdb?session=1&pdb={{ pdbname }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test","{{ mainligand}}"]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
+                 <a href="pdb?session=1&pdb={{ pdbname }}">Download PDB file</a>
+                
+    </td>
+    </tr>
+    </table>
 </div>
 
+<h2>Ligand Interaction Browser</h2>
 <div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>Protein Class</h4>
-    </div>
-    <div class="col-md-10">
-    {{ crystal.protein_conformation.protein.get_protein_class }}
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>PDB code</h4>
-    </div>
-    <div class="col-md-10">
-    {{ xtal.pdb_code }}
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>Species</h4>
-    </div>
-    <div class="col-md-10">
-    {{ crystal.protein_conformation.protein.species.latin_name }}
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>Resolution</h4>
-    </div>
-    <div class="col-md-10">
-    {{ crystal.resolution}}
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>Preferred chain</h4>
-    </div>
-    <div class="col-md-10">
-    {{ crystal.preferred_chain }}
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>PMID</h4>
-    </div>
-    <div class="col-md-10">
-    {{ xtal.pubmed_id }}
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>Publication date</h4>
-    </div>
-    <div class="col-md-10">
-    {{ xtal.publication_date }}
-    </div>
-</div>
-
-
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>Receptor PDB</h4>
-    </div>
-    <div class="col-md-10">
-    <div style="height: 400px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xf6f6f6' data-href='pdb?session=1&pdb={{ pdbname }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test","{{ mainligand}}"]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
-         <a href="pdb?session=1&pdb={{ pdbname }}">Download PDB file</a>
-         
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>LIGANDS</h4>
-    </div>
-    <div class="col-md-10">
-        {% for ligand,values in simple.items %}
-        {{ligand}} (Score: {{values.score}})
-         <div style="height: 380px; width: 400px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xf6f6f6' data-href='download?session=1&ligand={{ ligand }}&pdb={{ pdbname }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres1='fontSize:10;opacity:1;color:white;backgroundOpacity:0.8' data-select1='{"hetflag":false}' data-style1='stick' data-select2='{"hetflag":true}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
-
-             <a href="download?session=1&ligand={{ ligand }}&pdb={{ pdbname }}">Download PDB file</a>
-
-       <!-- <a href="pdb/{{pdbname}}/ligand/{{structure.structure_ligand_pair__ligand__name}}">{{structure.structure_ligand_pair__ligand__name}}</a> Has {{structure.numRes}} residues interacting<br> -->
-
-              <!-- <button style="width:220px;" onclick="ajaxInteractionsLigand('{{ protein.entry_name }}','{{structure.structure_ligand_pair__ligand__name}}')">Color diagrams with interactions</button><br> -->
-<br>
-{% empty %}
-    No structures yet.
-{% endfor %}
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>DIAGRAMS</h4>
-    </div>
-    <div class="col-md-10">
-    {{ HelixBox }}
-    <br>
-    <button onclick="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_{{ pdbname }}.png', {scale: 3});"> Download as PNG</button>
-    <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_{{ pdbname }}"><button>Download as SVG</button></a>
-    {{ SnakePlot }}
-    <br>
-    <button onclick="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ pdbname }}.png', {scale: 3});"> Download as PNG</button>
-    <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_{{ pdbname }}"> <button>Download as SVG</button></a>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>Interacting residues</h4>
-    </div>
-    <div class="col-md-10">
-
+    <div class="col-md-11 text-center">
         {% if residues %}              
         <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
             <table width="100%" class="display" id="residues">
@@ -186,6 +148,62 @@
 
     </div>
 </div>
+<br>
+<h2>Ligands</h2>
+        {% for ligand,values in simple.items %}
+        <div class="row">
+            <div class="col-md-2 text-left text-info">
+                <h4>{{ligand}} (Score: {{values.score}})</h4>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-5 text-center text-info">
+                3D interaction viewer
+                 <div style="height: 380px; width: 400px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xf6f6f6' data-href='download?session=1&ligand={{ ligand }}&pdb={{ pdbname }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres1='fontSize:10;opacity:1;color:white;backgroundOpacity:0.8' data-select1='{"hetflag":false}' data-style1='stick' data-select2='{"hetflag":true}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
+
+                 <a href="download?session=1&ligand={{ ligand }}&pdb={{ pdbname }}">Download PDB file</a>
+            </div>
+            <div class="col-md-5 text-center text-info">
+                2D interaction plot<br>
+                <br>
+                 PoseView coming soon.
+            </div>
+        </div>
+       <!-- <a href="pdb/{{pdbname}}/ligand/{{structure.structure_ligand_pair__ligand__name}}">{{structure.structure_ligand_pair__ligand__name}}</a> Has {{structure.numRes}} residues interacting<br> -->
+
+              <!-- <button style="width:220px;" onclick="ajaxInteractionsLigand('{{ protein.entry_name }}','{{structure.structure_ligand_pair__ligand__name}}')">Color diagrams with interactions</button><br> -->
+<br>
+{% empty %}
+    No structures yet.
+{% endfor %}
+
+<h2>Residue Diagrams</h2>
+
+<div class="row">
+<div class="col-md-10 text-center">
+    {{ SnakePlot }}
+    <br>
+    Download: 
+    <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ pdbname }}.png', {scale: 3});">PNG</a> | 
+    <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_{{ p.pdbname }}">SVG</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-10 text-center">
+        {{ HelixBox }}
+        <br>
+        Download: 
+        <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox{{ pdbname }}.png', {scale: 3});">PNG</a> | 
+        <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox{{ p.pdbname }}">SVG</a>   
+    </div>
+</div>
+
+<h2>Residue Table</h2>
+<div class="col-md-10">
+{% include "residue/residue_table_only.html" with header=header segments=segments data=data onlymutants=1 %}
+</div>
+
 
 
 {% endblock %}
@@ -210,7 +228,7 @@
                 ],
                 tableTools: {
                     "sRowSelect": "multi",
-                    
+                    "aButtons": []
                 },
                 initComplete: function () {
                     $('#residues').dataTable().columnFilter({

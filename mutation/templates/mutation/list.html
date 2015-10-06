@@ -79,29 +79,21 @@ input.form-control {
             $('[data-toggle="tooltip"]').tooltip(); 
             //$('[data-toggle="tooltip"]').tooltip({html:true});
 
-            ajaxMutantsPos("snakeplot",{{mutations_pos_list|safe}});
-            ajaxMutantsPos("helixbox",{{mutations_pos_list|safe}});
+            mutant_json = '{{mutations_pos_list|safe}}';
+
+            ajaxMutantsPos("snakeplot");
+            ajaxMutantsPos("helixbox");
             table_ajaxMutants();
             });
     </script> 
 {% endblock %}
 
 {% block content %}
-{% block buttons %}
-<!-- Download button -->
-<!-- <div class="btn-group">
-  <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
-    aria-expanded="false">
-    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-  </button>
-  <ul class="dropdown-menu">
-    <li><a href="/alignment/fasta">Alignment (fasta)</a></li>
-    <li><a href="/alignment/csv">Spreadsheet (csv)</a></li>
-</div> -->
-{% endblock %}
-<!-- sequence alignment starts -->
-
-    {% if mutations %}              
+<h2>Mutant Browser</h2>
+{% if mutations %} 
+    <!-- Download button -->
+    <a class="btn btn-sm btn-primary" href="download" role="button">
+    <span class="glyphicon glyphicon-download"></span> Download</a>
         <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
             <table width="100%" class="display" id="mutations">
 
@@ -174,18 +166,25 @@ input.form-control {
             </table>
         </div>
         <br><br>
+
+<h2>Residue</h2>
 <div class="col-md-2 text-right text-info">
     <h4>Diagrams</h4>
 </div>
     <div class="col-md-10">
+     <small>Increased binding/potency: <font style="color: #000; background-color: #87E88F" color="#87E88F">>5-fold</font>, <font style="color: #000; background-color: #66B36C" color="#66B36C">>10-fold</font>; Reduced binding/potency: <font style="color: #FFF; background-color: #FF7373" color="#FF7373">>5-fold</font>, <font style="color: #FDFF7B; background-color: #FA1111" color="#FA1111">>10-fold</font>; <font style="color: #000; background-color: #F7DA00" color="#F7DA00">No/low effect (<5-fold)</font>; and <font style="color: #000; background-color: #D9D7CE" color="#D9D7CE">N/A</font> </small><br>
     {{ HelixBox }}
-    <br>
-    <button onclick="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_mutants.png', {scale: 3});"> Download as PNG</button>
-    <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_mutants"><button> Download as SVG</button></a>
+    <br>    
+    Download: 
+        <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_mutants.png', {scale: 3});">PNG</a> | 
+        <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_mutants">SVG</a>  
     {{ SnakePlot }}
-    <br>
-    <button onclick="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_mutants.png', {scale: 3});"> Download as PNG</button>
-    <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_mutants"><button> Download as SVG</button></a>
+    <br>    
+    Download: 
+        <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_mutants.png', {scale: 3});">PNG</a> | 
+        <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_mutants">SVG</a>  
+   </a> 
+
     </div>
     {% else %}
         <p> Ooops! There is no data to show here yet. </p>

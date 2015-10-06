@@ -1,70 +1,44 @@
-﻿{% extends "home/base.html" %}
-{% load staticfiles %}
+<h4>Tree options</h4>
 
-{% block content %}
-<div class="row">
-    <!-- description boxes -->
-    <div class="col-md-4">
+<h5>Bootstraping</h5>
+<div class="btn-group">
+    <a href="javascript:void(0)"  onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm 
+        {% if selection.tree_settings.0 == '0' %} active{% endif %}
+       ">No bootstrapping</a>
+    <a href="javascript:void(0)"  onclick="SetTreeSelection(0,1)" class="btn btn-primary btn-sm
+       {% if selection.tree_settings.0 == '1' %} active{% endif %}
+       ">10 replicas</a>
+    <a href="javascript:void(0)" id="3" onclick="SetTreeSelection(0,2)" class="btn btn-primary btn-sm
+       {% if selection.tree_settings.0 == '2' %} active{% endif %}
+       ">100 replicas</a>
+</div>
 
-        <!-- main description -->
-        <div class="col-md-12 well">
-            {% if step and number_of_steps %}
-            <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
-            {% endif %}
-            <h4>{{ title }}</h4>
-            {{ description|linebreaks }}
-        </div>
+<h5>Distance calculation method</h5>
+<div class="btn-group">
+    <a href="javascript:void(0)"  onclick="SetTreeSelection(1,0)" class="btn btn-primary btn-sm
+       {% if selection.tree_settings.1 == '0' %} active{% endif %}
+       ">Neighbor-joining</a>
+    <a href="javascript:void(0)"  onclick="SetTreeSelection(1,1)" class="btn btn-primary btn-sm
+       {% if selection.tree_settings.1 == '1' %} active{% endif %}
+       ">UPGMA</a>
+</div>
 
-        <!-- link to docs -->
-        {% if docs %}
-        <div class="col-md-12 well">
-            <p>For more information on this tool, see the <a href="{{ docs }}">docs</a>.</p>
-        </div>
-        {% endif %}
+<h5>Branch lengths</h5>
+<div class="btn-group">
+    <a href="javascript:void(0)"  onclick="SetTreeSelection(2,0)" class="btn btn-primary btn-sm
+       {% if selection.tree_settings.2 == '0' %} active{% endif %}
+       ">Regular</a>
+    <a href="javascript:void(0)" onclick="SetTreeSelection(2,1)" class="btn btn-primary btn-sm
+       {% if selection.tree_settings.2 == '1' %} active{% endif %}
+       ">Even</a>
+</div>
 
-    </div>
-
-    <!-- selection boxes -->
-    <div class="col-md-4">
-
-        <!-- segment list -->
-        <div class="col-md-12 well">
-            <h4>Tree options</h4>
-            <div id="tree_buttons">
-            {% include 'common/bootstrap_buttons.html' %}
-            </div>
-        </div>
-        </div>
-        
-        <!-- selection -->
-        <div class="col-md-4">
-
-            <!-- button(s) -->
-            {% if buttons %}
-            <div id="selection-buttons">
-                {% include 'common/selection_buttons.html' %}
-            </div>
-            {% endif %}
-
-            <!-- show the selection -->
-            {% for selection_box, include in selection_boxes.items %}
-                {% if include %}
-                <div class="col-md-12 well" id="selection-{{ selection_box }}">
-                {% with selection_type=selection_box %}
-                    {% include 'common/selection_lists.html' %}
-                {% endwith %}
-                </div>
-                {% endif %}
-            {% endfor %}
-
-        </div>
-
-    </div>
-{% endblock %}
-{% block addon_js %}
-    <script type="text/javascript">
-        var type_of_selection = '{{ type_of_selection }}';
-        var redirect_url = '{{ buttons.continue.url }}'
-    </script>
-    <script src="{% static 'home/js/selection.js' %}"></script>
-{% endblock %}
+<h5>Tree type</h5>
+<div class="btn-group">
+    <a href="javascript:void(0)"  onclick="SetTreeSelection(3,0)" class="btn btn-primary btn-sm
+       {% if selection.tree_settings.3 == '0' %} active{% endif %}
+       ">Circular</a>
+    <a href="javascript:void(0)"  onclick="SetTreeSelection(3,1)" class="btn btn-primary btn-sm
+       {% if selection.tree_settings.3 == '1' %} active{% endif %}
+       ">Ladder</a>
+</div>
