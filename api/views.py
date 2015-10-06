@@ -439,7 +439,7 @@ class StructureAssignGenericNumbers(views.APIView):
     Assign generic residue numbers (Ballesteros-Weinstein and GPCRdb schemes) to an uploaded pdb file.
     \n/structure/assign_generic_numbers\n
     e.g. 
-    curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/api/structure/assign_generic_numbers
+    curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/services/structure/assign_generic_numbers
     """
     parser_classes = (FileUploadParser,)
     renderer_classes = (PDBRenderer, )
