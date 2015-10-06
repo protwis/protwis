@@ -2,25 +2,27 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
 
+from build.management.commands.base_build import Command as BaseBuild
 from protein.models import ProteinConformation, ProteinSegment, ProteinAnomaly, ProteinConformationTemplateStructure
 from structure.models import StructureSegment
 from residue.models import Residue
 from residue.functions import *
 from common.alignment import Alignment
 
-import logging
 import os
 from collections import OrderedDict
-from multiprocessing import Queue, Process
 
 
-class Command(BaseCommand):
+class Command(BaseBuild):
     help = 'Updates protein alignments based on structure data'
 
     def add_arguments(self, parser):
-        parser.add_argument('--njobs', action='store', dest='njobs', help='Number of jobs to run')
-
-    logger = logging.getLogger(__name__)
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=1,
+            help='Number of processes to run')
 
     generic_numbers_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers'])
     ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'reference_positions'])
@@ -30,48 +32,15 @@ class Command(BaseCommand):
             'protein__residue_numbering_scheme__parent', 'protein__genes', 'template_structure')
 
     def handle(self, *args, **options):
-        # how many jobs to run?
-        if 'njobs' in options and options['njobs']:
-            njobs = int(options['njobs'])
-        else:
-            njobs = 1
-
         try:
-            self.prepare_input(njobs)
+            self.logger.info('UPDATING PROTEIN ALIGNMENTS')
+            self.prepare_input(options['proc'], self.pconfs)
+            self.logger.info('COMPLETED UPDATING PROTEIN ALIGNMENTS')
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
 
-    def prepare_input(self, njobs):
-        self.logger.info('UPDATING PROTEIN ALIGNMENTS')
-       
-        q = Queue()
-        procs = list()
-        num_pconfs = self.pconfs.count()
-        
-        # make sure not to use more njobs than proteins (chunk size will be 0, which is not good)
-        if njobs > num_pconfs:
-            njobs = num_pconfs
-
-        chunk_size = int(num_pconfs / njobs)
-        connection.close()
-        for i in range(0, njobs):
-            first = chunk_size * i
-            if i == njobs - 1:
-                last = False
-            else:
-                last = chunk_size * (i + 1)
-    
-            p = Process(target=self.update_alignments, args=([(first, last)]))
-            procs.append(p)
-            p.start()
-
-        for p in procs:
-            p.join()
-
-        self.logger.info('COMPLETED UPDATING PROTEIN ALIGNMENTS')
-
-    def update_alignments(self, positions):
+    def main_func(self, positions, iteration):
         # pconfs
         if not positions[1]:
             pconfs = self.pconfs[positions[0]:]

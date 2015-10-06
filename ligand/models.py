@@ -3,16 +3,18 @@ from django.utils.text import slugify
 
 from common.models import WebResource
 from common.models import WebLink
+from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
 
 from urllib.request import urlopen, quote
 import json
+import yaml
 import logging
 
 class Ligand(models.Model):
     properities = models.ForeignKey('LigandProperities')
     name = models.TextField()
     canonical = models.NullBooleanField()
-    ambigious_alias = models.NullBooleanField() #required to flag 'safe' alias, eg one parent 
+    ambigious_alias = models.NullBooleanField() #required to flag 'safe' alias, eg one parent
 
     def __str__(self):
         return self.name
@@ -23,15 +25,32 @@ class Ligand(models.Model):
     def load_by_gtop_id(self, ligand_name, gtop_id, ligand_type):
         logger = logging.getLogger('build')
 
-        # fetch name
-        gtop_url = 'http://www.guidetopharmacology.org/services/ligands/' + str(gtop_id)
+        # check whether this data is cached
+        cache_dir = ['guidetopharmacology', 'ligands']
+        gtop = fetch_from_cache(cache_dir, str(gtop_id))
 
-        try:
-            req = urlopen(gtop_url)
-            gtop = json.loads(req.read().decode('UTF-8'))
+        if gtop:
+            logger.info('Fetched {}/{} from cache'.format('/'.join(cache_dir), gtop_id))
+        else:
+            logger.info('No cached entry for {}/{}'.format('/'.join(cache_dir), gtop_id))
+            
+            # fetch synomyms
+            gtop_url = 'http://www.guidetopharmacology.org/services/ligands/' + str(gtop_id)
+
+            try:
+                req = fetch_from_web_api(gtop_url)
+                if req:
+                    gtop = json.loads(req.read().decode('UTF-8'))
+
+                    # save to cache
+                    save_to_cache(cache_dir, str(gtop_id), gtop)
+                    logger.info('Saved entry for {}/{} in cache'.format('/'.join(cache_dir), gtop_id))
+            except:
+                logger.error('Failed fetching properties of ligand with GuideToPharmacology ID {}'.format(gtop_id))
+        
+        if gtop:
+            # get name from response
             ligand_name = gtop['name']
-        except:
-            logger.error('Failed fetching properties of ligand with GuideToPharmacology ID {}'.format(gtop_id))
 
         # does a ligand by this name already exists?
         try:
@@ -56,28 +75,61 @@ class Ligand(models.Model):
 
         # otherwise, fetch ligand name from pubchem
         else:
-            pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + str(pubchem_id) \
-                + '/synonyms/json'
-            try:
-                req = urlopen(pubchem_url)
-                pubchem = json.loads(req.read().decode('UTF-8'))
-                ligand_name = pubchem['InformationList']['Information'][0]['Synonym'][0]
-            except:
-                logger.error('Error fetching ligand {} from PubChem'.format(pubchem_id))
-                return
+            # check cache
+            cache_dir = ['pubchem', 'cid', 'synonyms']
+            pubchem = fetch_from_cache(cache_dir, str(pubchem_id))
+
+            if pubchem:
+                logger.info('Fetched {}/{} from cache'.format('/'.join(cache_dir), pubchem_id))
+            else:
+                logger.info('No cached entry for {}/{}'.format('/'.join(cache_dir), pubchem_id))
+
+                pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + str(pubchem_id) \
+                    + '/synonyms/json'
+                try:
+                    req = fetch_from_web_api(pubchem_url)
+                    if req:
+                        pubchem = json.loads(req.read().decode('UTF-8'))
+
+                        # save to cache
+                        save_to_cache(cache_dir, str(pubchem_id), pubchem)
+                        logger.info('Saved entry for {}/{} in cache'.format('/'.join(cache_dir), pubchem_id))
+                except:
+                    logger.error('Error fetching ligand {} from PubChem'.format(pubchem_id))
+                    return
+            
+            # get name from response
+            ligand_name = pubchem['InformationList']['Information'][0]['Synonym'][0]
 
         # fetch ligand properties from pubchem
         properties = {}
-        pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + str(pubchem_id) \
-            + '/property/CanonicalSMILES,InChIKey/json'
-        try:
-            req = urlopen(pubchem_url)
-            pubchem = json.loads(req.read().decode('UTF-8'))
-            properties['smiles'] =  pubchem['PropertyTable']['Properties'][0]['CanonicalSMILES']
-            properties['inchikey'] =  pubchem['PropertyTable']['Properties'][0]['InChIKey']
-        except:
-            logger.error('Error fetching ligand {} from PubChem'.format(pubchem_id))
-            return
+        
+        # check cache
+        cache_dir = ['pubchem', 'cid', 'property']
+        pubchem = fetch_from_cache(cache_dir, str(pubchem_id))
+
+        if pubchem:
+            logger.info('Fetched {}/{} from cache'.format('/'.join(cache_dir), pubchem_id))
+        else:
+            logger.info('No cached entry for {}/{}'.format('/'.join(cache_dir), pubchem_id))
+            
+            pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + str(pubchem_id) \
+                + '/property/CanonicalSMILES,InChIKey/json'
+            try:
+                req = fetch_from_web_api(pubchem_url)
+                if req:
+                    pubchem = json.loads(req.read().decode('UTF-8'))
+
+                    # save to cache
+                    save_to_cache(cache_dir, str(pubchem_id), pubchem)
+                    logger.info('Saved entry for {}/{} in cache'.format('/'.join(cache_dir), pubchem_id))
+            except:
+                logger.error('Error fetching ligand {} from PubChem'.format(pubchem_id))
+                return
+        
+        # get properties from reponse
+        properties['smiles'] =  pubchem['PropertyTable']['Properties'][0]['CanonicalSMILES']
+        properties['inchikey'] =  pubchem['PropertyTable']['Properties'][0]['InChIKey']
 
         # pubchem webresource
         web_resource = WebResource.objects.get(slug='pubchem')
