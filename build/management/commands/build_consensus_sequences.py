@@ -8,7 +8,6 @@ from residue.functions import *
 from protein.models import Protein, ProteinConformation, ProteinFamily, ProteinSegment, ProteinSequenceType
 from common.alignment import Alignment
 
-import logging
 import os
 import yaml
 
@@ -29,17 +28,11 @@ class Command(BuildHumanProteins):
     # fetch families
     families = ProteinFamily.objects.all()
 
-    def handle(self, *args, **options):
-        # how many jobs to run?
-        if 'njobs' in options and options['njobs']:
-            njobs = int(options['njobs'])
-        else:
-            njobs = 1
-        
+    def handle(self, *args, **options):        
         try:
             self.purge_consensus_sequences()
             self.logger.info('CREATING CONSENSUS SEQUENCES')
-            self.prepare_input(njobs, self.families)
+            self.prepare_input(options['proc'], self.families)
             self.logger.info('COMPLETED CREATING CONSENSUS SEQUENCES')
         except Exception as msg:
             print(msg)

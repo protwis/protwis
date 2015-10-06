@@ -47,11 +47,21 @@ class Command(BaseBuild):
     help = 'Reads source data and creates pdb structure records'
     
     def add_arguments(self, parser):
-        parser.add_argument('--njobs', action='store', dest='njobs', help='Number of jobs to run')
-        parser.add_argument('--filename', action='append', dest='filename',
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=1,
+            help='Number of processes to run')
+        parser.add_argument('-f', '--filename',
+            action='append',
+            dest='filename',
             help='Filename to import. Can be used multiple times')
-        parser.add_argument('--purge', action='store_true', dest='purge', default=False,
-            help='Purge existing construct records')
+        parser.add_argument('-u', '--purge',
+            action='store_true',
+            dest='purge',
+            default=False,
+            help='Purge existing records')
 
     # source file directory
     structure_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
@@ -69,12 +79,6 @@ class Command(BaseBuild):
                 print(msg)
                 self.logger.error(msg)
 
-        # how many jobs to run?
-        if 'njobs' in options and options['njobs']:
-            njobs = int(options['njobs'])
-        else:
-            njobs = 1
-
         # where filenames specified?
         if options['filename']:
             self.filenames = options['filename']
@@ -85,7 +89,7 @@ class Command(BaseBuild):
             # run the function twice (once for representative structures, once for non-representative)
             iterations = 2
             for i in range(1,iterations+1):
-                self.prepare_input(njobs, self.filenames, i)
+                self.prepare_input(options['proc'], self.filenames, i)
 
             self.logger.info('COMPLETED CREATING STRUCTURES')
         except Exception as msg:
@@ -397,9 +401,14 @@ class Command(BaseBuild):
 
                             if 'iupharId' not in endogenous_ligand:
                                 endogenous_ligand['iupharId'] = 0
+
                             ligand = ligand.load_by_gtop_id(endogenous_ligand['name'], endogenous_ligand['iupharId'],
                                 lt)
-                            s.protein_conformation.protein.parent.endogenous_ligands.add(ligand)
+                            try:
+                                s.protein_conformation.protein.parent.endogenous_ligands.add(ligand)
+                            except IntegrityError:
+                                self.logger.info('Endogenous ligand for protein {}, already added. Skipping.'.format(
+                                    s.protein_conformatino.protein.parent))
 
                     # ligands
                     if 'ligand' in sd and sd['ligand']:
@@ -614,8 +623,11 @@ class Command(BaseBuild):
                         else:
                             aps = [sd[index]]
                         for aux_protein in aps:
-                            sa, created = StructureStabilizingAgent.objects.get_or_create(slug=slugify(aux_protein),
-                                name=aux_protein)
+                            try:
+                                sa, created = StructureStabilizingAgent.objects.get_or_create(
+                                    slug=slugify(aux_protein), defaults={'name': aux_protein})
+                            except IntegrityError:
+                                sa = StructureStabilizingAgent.objects.get(slug=slugify(aux_protein))
                             s.stabilizing_agents.add(sa)
 
                     # save structure

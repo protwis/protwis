@@ -16,11 +16,23 @@ from urllib.request import urlopen
 class Command(BaseBuild):
     help = 'Reads source data and creates protein families, proteins, and associated tables'
 
+    def add_arguments(self, parser):
+        parser.add_argument('-t', '--test',
+            action='store_true',
+            dest='test',
+            default=False,
+            help='Include only a subset of data for testing')
+
     protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'proteins_and_families.txt'])
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
 
     def handle(self, *args, **options):
+        # use a smaller protein file if in test mode
+        if options['test']:
+            self.protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data',
+                'proteins_and_families_test.txt'])
+
         # create parent protein family, 000
         try:
             self.create_parent_protein_family()

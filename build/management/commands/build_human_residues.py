@@ -14,9 +14,6 @@ from multiprocessing import Queue, Process
 class Command(BaseBuild):
     help = 'Creates residue records for human receptors'
 
-    def add_arguments(self, parser):
-        parser.add_argument('--njobs', action='store', dest='njobs', help='Number of jobs to run')
-
     generic_numbers_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers'])
     ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'reference_positions'])
     auto_ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'auto_reference_positions'])
@@ -25,7 +22,6 @@ class Command(BaseBuild):
     segments = ProteinSegment.objects.filter(partial=False)
     pconfs = ProteinConformation.objects.filter(protein__species__id=1).prefetch_related(
         'protein__residue_numbering_scheme__parent')
-    pconfs_without_reference = []
 
     schemes = parse_scheme_tables(generic_numbers_source_dir)
 
@@ -34,58 +30,25 @@ class Command(BaseBuild):
         segment_length = yaml.load(default_segment_length_file)  
 
     def handle(self, *args, **options):
-        # how many jobs to run?
-        if 'njobs' in options and options['njobs']:
-            njobs = int(options['njobs'])
-        else:
-            njobs = 1
-
         try:
-            self.prepare_input(njobs)
+            self.logger.info('CREATING RESIDUES')
+
+            # run the function twice (second run for proteins without reference positions)
+            iterations = 2
+            for i in range(1,iterations+1):
+                self.prepare_input(options['proc'], self.pconfs, i)
+
+            self.logger.info('COMPLETED CREATING RESIDUES')
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
 
-    def prepare_input(self, njobs):
-        self.logger.info('CREATING RESIDUES')
-
-        pconf_lists = [self.pconfs, self.pconfs_without_reference]
-        for use_related_references, pconfs_list in enumerate(pconf_lists):
-            q = Queue()
-            procs = list()
-            num_pconfs = len(pconfs_list)
-
-            if not num_pconfs:
-                continue
-            
-            # make sure not to use more njobs than proteins (chunk size will be 0, which is not good)
-            if njobs > num_pconfs:
-                njobs = num_pconfs
-                
-            chunk_size = int(num_pconfs / njobs)
-            connection.close()
-            for i in range(0, njobs):
-                first = chunk_size * i
-                if i == njobs - 1:
-                    last = False
-                else:
-                    last = chunk_size * (i + 1)
-        
-                p = Process(target=self.create_residues, args=([(first, last), use_related_references]))
-                procs.append(p)
-                p.start()
-
-            for p in procs:
-                p.join()
-
-        self.logger.info('COMPLETED CREATING RESIDUES')
-
-    def create_residues(self, positions, use_related_references):
+    def main_func(self, positions, iteration):
         # pconfs
         if not positions[1]:
             pconfs = self.pconfs[positions[0]:]
         else:
-            pconfs = self.pconfs[positions[0]:positions[1]]   
+            pconfs = self.pconfs[positions[0]:positions[1]]
         
         for pconf in pconfs:
             sequence_number_counter = 0
@@ -101,8 +64,9 @@ class Command(BaseBuild):
 
             # if auto refs are not found, generate them
             if not ref_positions:
-                # is this protein in the "not-annotated list"?
-                if use_related_references:
+                # is this the second iteration of this function? We want all proteins with reference positions to be
+                # processed before looking for positions for those who lack them
+                if iteration == 2:
                     self.logger.info("Reference positions for {} not annotated, looking for a template".format(
                         pconf.protein))
                     
@@ -154,8 +118,10 @@ class Command(BaseBuild):
                         if not template_found:
                             self.logger.error('No template reference positions found for {}'.format(pconf.protein))
                 else:
-                    self.pconfs_without_reference.append(pconf)
                     continue
+            elif iteration == 2:
+                # proteins with ref positions have already been processed in the first iteration
+                continue
 
             # determine segment ranges, and create residues
             nseg = self.segments.count()
