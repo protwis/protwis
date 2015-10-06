@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from django.db import IntegrityError
 
 from common.models import WebResource
 from common.models import WebLink
@@ -21,6 +22,7 @@ class Ligand(models.Model):
     
     class Meta():
         db_table = 'ligand'
+        unique_together = ('name', 'canonical')
 
     def load_by_gtop_id(self, ligand_name, gtop_id, ligand_type):
         logger = logging.getLogger('build')
@@ -63,8 +65,7 @@ class Ligand(models.Model):
                 # gtoplig webresource
                 web_resource = WebResource.objects.get(slug='gtoplig')
             
-            self.update_ligand(ligand_name, {}, ligand_type, web_resource, gtop_id)
-            return self
+            return self.update_ligand(ligand_name, {}, ligand_type, web_resource, gtop_id)
 
     def load_by_pubchem_id(self, pubchem_id, ligand_type, ligand_title):
         logger = logging.getLogger('build')
@@ -141,11 +142,14 @@ class Ligand(models.Model):
             self.name = ligand_name
             self.canonical = False
             self.ambigious_alias = False
-            self.save()
-            return self
+            
+            try:
+                self.save()
+                return self
+            except IntegrityError:
+                return Ligand.objects.get(name=ligand_name, canonical=False)
         except Ligand.DoesNotExist:
-            self.update_ligand(ligand_name, properties, ligand_type, web_resource, pubchem_id)
-            return self
+            return self.update_ligand(ligand_name, properties, ligand_type, web_resource, pubchem_id)
 
     def update_ligand(self, ligand_name, properties, ligand_type, web_resource=False, web_resource_index=False):
         lp = LigandProperities()
@@ -166,7 +170,12 @@ class Ligand(models.Model):
         self.canonical = True
         self.ambigious_alias = False
         self.properities = lp
-        self.save()
+        
+        try:
+            self.save()
+            return self
+        except IntegrityError:
+            return Ligand.objects.get(name=ligand_name, canonical=True)
 
     def load_by_name(self, name):
         logger = logging.getLogger('build')
