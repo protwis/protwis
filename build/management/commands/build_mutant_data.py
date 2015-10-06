@@ -7,17 +7,17 @@ from mutation.models import *
 
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
+from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
 
 from residue.models import Residue
 from protein.models import Protein
-from ligand.models import Ligand, LigandProperities, LigandRole
+from ligand.models import Ligand, LigandProperities, LigandRole, LigandType
 from common.models import WebLink, WebResource, Publication
 
 from datetime import datetime
 from collections import OrderedDict
 import json
 from urllib.request import urlopen, quote
-#env/bin/python3 -m pip install xlrd
 
 import re
 import math
@@ -51,9 +51,14 @@ class Command(BaseCommand):
     help = 'Reads source data and creates pdb structure records'
     
     def add_arguments(self, parser):
-        parser.add_argument('--filename', action='append', dest='filename',
+        parser.add_argument('-f', '--filename',
+            action='append',
+            dest='filename',
             help='Filename to import. Can be used multiple times')
-        parser.add_argument('--purge', action='store_true', dest='purge', default=False,
+        parser.add_argument('-u', '--purge',
+            action='store_true',
+            dest='purge',
+            default=False,
             help='Purge existing mutations records')
 
     logger = logging.getLogger(__name__)
@@ -65,7 +70,7 @@ class Command(BaseCommand):
         # delete any existing structure data
         if options['purge']:
             try:
-                self.truncate_structure_tables() #FIXME
+                self.purge_mutants()
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
@@ -76,16 +81,8 @@ class Command(BaseCommand):
             print(msg)
             self.logger.error(msg)
     
-    def truncate_structure_tables(self): #FIXME
-        cursor = connection.cursor()
-        
-        tables_to_truncate = [
-            #Following the changes in the models - SM
-            'mutation_experiment',                
-        ]
-
-        for table in tables_to_truncate:
-            cursor.execute("TRUNCATE TABLE {!s} CASCADE".format(table))
+    def purge_mutants(self):
+        Mutation.objects.all().delete()
 
     def loaddatafromexcel(self,excelpath):
         workbook = xlrd.open_workbook(excelpath)
@@ -301,110 +298,60 @@ class Command(BaseCommand):
                             self.logger.error('error with reference ' + str(r['reference']) + ' ' + pub_type)
                             continue #if something off with publication, skip.
 
-                    if r['ligand_type']=='PubChem CID':
+                    if r['ligand_type']=='PubChem CID' or r['ligand_type']=='SMILES':
+                        if r['ligand_type']=='PubChem CID':
+                            pubchem_lookup_value = 'cid'
+                        elif r['ligand_type']=='SMILES':
+                            pubchem_lookup_value = 'smiles'
+
                         try:
                             web_resource = WebResource.objects.get(slug='pubchem')
                         except:
                             # abort if pdb resource is not found
                             raise Exception('PubChem resource not found, aborting!')
 
-                        if Ligand.objects.filter(name=r['ligand_name'], properities__web_links__web_resource=web_resource, properities__web_links__index=r['ligand_id']).exists(): #if this name is canonical and it has a ligand record already
-                            l = Ligand.objects.get(name=r['ligand_name'], properities__web_links__web_resource=web_resource, properities__web_links__index=r['ligand_id'])
-                        elif Ligand.objects.filter(properities__web_links__web_resource=web_resource, properities__web_links__index=r['ligand_id'], canonical=True).exists(): #if exists under different name
-                            l_canonical = Ligand.objects.get(properities__web_links__web_resource=web_resource, properities__web_links__index=r['ligand_id'], canonical=True)
-                            l = Ligand()
-                            l.properities = l_canonical.properities
-                            l.name = str(r['ligand_name'])
-                            l.canonical = False
-                            l.save()
+                        if 'ligand_name' in r and r['ligand_name']:
+                            ligand_name = str(r['ligand_name'])
                         else:
-                            pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + str(r['ligand_id']) + '/property/CanonicalSMILES,InChIKey/json'
+                            ligand_name = False
+
+                        try:
+                            # if this name is canonical and it has a ligand record already
+                            l = Ligand.objects.get(name=ligand_name, canonical=True,
+                                properities__web_links__web_resource=web_resource,
+                                properities__web_links__index=r['ligand_id'])
+                        except Ligand.DoesNotExist:
                             try:
-                                req = urlopen(pubchem_url)
-                                pubchem = json.loads(req.read().decode('UTF-8'))
-
-                                pubchem_smiles = pubchem['PropertyTable']['Properties'][0]['CanonicalSMILES']
-                                pubchem_inchikey = pubchem['PropertyTable']['Properties'][0]['InChIKey']
-
-                                if Ligand.objects.filter(name=r['ligand_name'], properities__inchikey=pubchem_inchikey).exists(): #if this name is canonical and it has a ligand record already
-                                    l = Ligand.objects.get(name=r['ligand_name'], properities__inchikey=pubchem_inchikey)
-                                    wl, created = WebLink.objects.get_or_create(index=r['ligand_id'], web_resource=web_resource)
-                                    l.properities.web_links.add(wl)
-                                elif Ligand.objects.filter(properities__inchikey=pubchem_inchikey, canonical=True).exists(): #if exists under different name
-                                    l_canonical = Ligand.objects.get(properities__inchikey=pubchem_inchikey, canonical=True)
-                                    l = Ligand()
-                                    l.properities = l_canonical.properities
-                                    wl, created = WebLink.objects.get_or_create(index=r['ligand_id'], web_resource=web_resource)
-                                    l.properities.web_links.add(wl)
-                                    l.name = str(r['ligand_name'])
-                                    l.canonical = False
-                                    l.save()
-                                else: #if neither found by pubchem id or inchi key, create new
-                                    lp = LigandProperities()
-                                    lp.inchikey = pubchem_inchikey
-                                    lp.smiles = pubchem_smiles
-                                    lp.save()
-                                    wl, created = WebLink.objects.get_or_create(index=r['ligand_id'], web_resource=web_resource)
-                                    lp.web_links.add(wl)
-                                    l = Ligand()
-                                    l.properities = lp
-                                    l.name = str(r['ligand_name'])
-                                    l.canonical = True
-                                    l.ambigious_alias = False
-                                    l.save()
-                                    l.load_by_name(str(r['ligand_name']))
-                            except:
-                                raise Exception('JSON failed, aborting!')
+                                # if exists under different name
+                                l_canonical = Ligand.objects.get(properities__web_links__web_resource=web_resource,
+                                    properities__web_links__index=r['ligand_id'], canonical=True)
+                                l, created = Ligand.objects.get_or_create(properities = l_canonical.properities,
+                                    name = ligand_name, canonical = False)
+                                if created:
+                                    self.logger.info('Created ligand {}'.format(l.name))
+                            except Ligand.DoesNotExist:
+                                # fetch ligand from pubchem
+                                default_ligand_type = 'Small molecule'
+                                lt, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
+                                    defaults={'name': default_ligand_type})
+                                l = Ligand()
+                                l = l.load_from_pubchem(pubchem_lookup_value, r['ligand_id'], lt, ligand_name)
                         
-                    elif r['ligand_type']=='SMILES':
-                        if Ligand.objects.filter(name=r['ligand_name'], properities__smiles=r['ligand_id']).exists(): #if this name is canonical and it has a ligand record already
-                            l = Ligand.objects.get(name=r['ligand_name'], properities__smiles=r['ligand_id'])
-                        elif Ligand.objects.filter(properities__smiles=r['ligand_id'], canonical=True).exists(): #if exists under different name
-                            l_canonical = Ligand.objects.get(properities__smiles=r['ligand_id'], canonical=True)
-                            l = Ligand()
-                            l.properities = l_canonical.properities
-                            l.name = str(r['ligand_name'])
-                            l.canonical = False
-                            l.save()
-                        else: #if neither found by SMILES
-
-                            pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/' + str(r['ligand_id']) + '/property/CanonicalSMILES,InChIKey/json'
-                            try:
-                                req = urlopen(pubchem_url)
-                                pubchem = json.loads(req.read().decode('UTF-8'))
-
-                                pubchem_smiles = pubchem['PropertyTable']['Properties'][0]['CanonicalSMILES']
-                                pubchem_inchikey = pubchem['PropertyTable']['Properties'][0]['InChIKey']
-
-                                lp = LigandProperities()
-                                lp.inchikey = pubchem_inchikey
-                                lp.smiles = pubchem_smiles
-                                lp.save()
-                                l = Ligand()
-                                l.properities = lp
-                                l.name = str(r['ligand_name'])
-                                l.canonical = True
-                                l.ambigious_alias = False
-                                l.save()
-                                l.load_by_name(str(r['ligand_name']))
-                            except:
-                                lp = LigandProperities()
-                                lp.smiles = str(r['ligand_id'])
-                                lp.save()
-                                l = Ligand()
-                                l.properities = lp
-                                l.name = str(r['ligand_name'])
-                                l.canonical = True
-                                l.ambigious_alias = False
-                                l.save()
-                                #l.load_by_name(str(r['ligand_name']))
                     elif r['ligand_name']:
-                        if Ligand.objects.filter(name=r['ligand_name'], canonical=True).exists(): #if this name is canonical and it has a ligand record already
+                        
+                        # if this name is canonical and it has a ligand record already
+                        if Ligand.objects.filter(name=r['ligand_name'], canonical=True).exists():
                             l = Ligand.objects.get(name=r['ligand_name'], canonical=True)
-                        elif Ligand.objects.filter(name=r['ligand_name'], canonical=False, ambigious_alias=False).exists(): #if this matches an alias that only has "one" parent canonical name - eg distinct
+                        
+                        # if this matches an alias that only has "one" parent canonical name - eg distinct
+                        elif Ligand.objects.filter(name=r['ligand_name'], canonical=False,
+                            ambigious_alias=False).exists():
                             l = Ligand.objects.get(name=r['ligand_name'], canonical=False, ambigious_alias=False)
-                        elif Ligand.objects.filter(name=r['ligand_name'], canonical=False, ambigious_alias=True).exists(): #if this matches an alias that only has several canonical parents, must investigate, start with empty.
-                            #print('Inserting '+ligand['name']+" for "+sd['pdb'])
+                        
+                        # if this matches an alias that only has several canonical parents, must investigate, start
+                        # with empty.
+                        elif Ligand.objects.filter(name=r['ligand_name'], canonical=False,
+                            ambigious_alias=True).exists():
                             lp = LigandProperities()
                             lp.save()
                             l = Ligand()
@@ -414,7 +361,10 @@ class Command(BaseCommand):
                             l.ambigious_alias = True
                             l.save()
                             l.load_by_name(r['ligand_name'])
-                        else: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.
+                        
+                        # if neither a canonical or alias exists, create the records. Remember to check for
+                        # canonical / alias status.
+                        else:
                             lp = LigandProperities()
                             lp.save()
                             l = Ligand()
@@ -443,7 +393,7 @@ class Command(BaseCommand):
                         l_ref.save()
                         l_ref.load_by_name(r['exp_mu_ligand_ref'])
                         l_ref.save()
-                    elif r['exp_mu_ligand_ref']: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.
+                    elif r['exp_mu_ligand_ref']: #if neither a canonical or alias exists, create the records. Remember to check for canonical / alias status.
                         lp = LigandProperities()
                         lp.save()
                         l_ref = Ligand()
