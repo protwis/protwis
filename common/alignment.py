@@ -875,7 +875,7 @@ class AlignedReferenceTemplate(Alignment):
                     similarity_table[self.main_template_structure] = self.provide_similarity_table[
                                                                                         self.main_template_structure]
                     self.loop_table = similarity_table
-                    return similarity_table
+                    temp_list.append((struct, len(main_temp_seq), similarity, float(struct.resolution), protein))
             else:
                 temp_length = []
                 try:
@@ -904,22 +904,21 @@ class AlignedReferenceTemplate(Alignment):
                 except:
                     temp_length = -1
                 temp_list.append((struct, temp_length, similarity, float(struct.resolution), protein))
-        if len(ref_seq)!=len(main_temp_seq):
-            alt_temps = [entry for entry in temp_list if entry[1]==len(ref_seq)]
-            sorted_list = sorted(alt_temps, key=lambda x: (-x[2],x[3]))
-            for i in sorted_list:
-                
-                similarity_table[i[0]] = i[2]
-            try:
-                self.main_template_protein = sorted_list[0][4]
-                self.main_template_structure = sorted_list[0][0]
-                self.loop_table = similarity_table
-            except:
-                self.main_template_protein = None
-                self.main_template_structure = None
-                self.loop_table = None
-                return None
-            return similarity_table
+        alt_temps = [entry for entry in temp_list if entry[1]==len(ref_seq)]
+        sorted_list = sorted(alt_temps, key=lambda x: (-x[2],x[3]))
+        for i in sorted_list:
+            
+            similarity_table[i[0]] = i[2]
+        try:
+            self.main_template_protein = sorted_list[0][4]
+            self.main_template_structure = sorted_list[0][0]
+            self.loop_table = similarity_table
+        except:
+            self.main_template_protein = None
+            self.main_template_structure = None
+            self.loop_table = None
+            return None
+        return similarity_table
 
 
     def enhance_best_alignment(self):

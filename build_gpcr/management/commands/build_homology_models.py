@@ -58,7 +58,12 @@ class Command(BaseCommand):
 #        print('binding pocket RMSD: ', val.PDB_RMSD("./structure/PDB/4Z34.pdb", "./structure/homology_models/Q92633_Inactive/modeller_test.pdb",
 #                           assign_gns=[1,2], gn_list=['1x35', '2x57', '3x28', '3x29', '3x32', '3x33', '3x36', '5x40', '5x43', '6x48', '6x51', '6x54', '6x55', '7x35', '7x37', '7x38'], seq_nums1=[52, 102, 124, 125, 128, 129, 132, 207, 210, 271, 274, 277, 278, 294, 296, 297], seq_nums2=[7, 57, 79, 80, 83, 84, 87, 162, 165, 226, 229, 232, 233, 249, 251, 252]))
 
-        receptor_list = ['gp139_human','gp132_human','mshr_human']
+#        ['brs3_human', 'gpr83_human', 'ogr1_human', 'gpr4_human', 'gpr3_human', 'gpr15_human', 
+#                         'gpr39_human', 'gpr25_human', 'gpr1_human', 'gp139_human', 'etbr2_human', 'gp151_human', 
+#                         'gpr37_human', 'gp135_human', 'gp176_human', 'gpr55_human', 'gpr19_human', 'p2ry8_human', 
+#                         'gpr32_human', 'p2y10_human']
+
+        receptor_list = ['gpr3_human']
         if os.path.isfile('./structure/homology_modeling.log'):
             os.remove('./structure/homology_modeling.log')
         logger = logging.getLogger('homology_modeling')
@@ -172,8 +177,8 @@ class HomologyModeling(object):
                     loop_stat[loop.new_label] = loop.loop_output_structure
                 else:
                     loop_stat[label] = loop.loop_output_structure
-            self.statistics.add_info('loops', loop_stat)           
-        
+            self.statistics.add_info('loops', loop_stat)
+            
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
             for ref_seg, temp_seg, aligned_seg in zip(a.reference_dict, a.template_dict, a.alignment_dict):
@@ -740,49 +745,55 @@ class Loops(object):
             first_after_gn = orig_after_gns[0]
             for template in self.loop_template_structures:
                 output = OrderedDict()
-                try:                   
+                try:
                     if template==self.main_structure:
-                        loop_res = [r.sequence_number for r in list(Residue.objects.filter(
-                                                                    protein_conformation=template.protein_conformation,
-                                                                    protein_segment__slug=self.loop_label))]
-                        inter_array = parse.fetch_residues_from_pdb(template,loop_res)
-                        self.loop_output_structure = self.main_structure
-                        for id_, atoms in inter_array.items():
-                            output[str(id_)] = atoms
+                        try:
+                            loop_res = [r.sequence_number for r in list(Residue.objects.filter(
+                                                                        protein_conformation=template.protein_conformation,
+                                                                        protein_segment__slug=self.loop_label))]
+                            inter_array = parse.fetch_residues_from_pdb(template,loop_res)
+                            self.loop_output_structure = self.main_structure
+                            for id_, atoms in inter_array.items():
+                                output[str(id_)] = atoms
+                            return output
+                        except:
+                            continue
+                    else:
+                        b_num = Residue.objects.get(protein_conformation=template.protein_conformation,
+                                                    generic_number__label=last_before_gn).sequence_number
+                        a_num = Residue.objects.get(protein_conformation=template.protein_conformation,
+                                                    generic_number__label=first_after_gn).sequence_number
+                        before8 = Residue.objects.filter(protein_conformation=template.protein_conformation, 
+                                                         sequence_number__in=[b_num,b_num-1,b_num-2,b_num-3,
+                                                                              b_num-4,b_num-5,b_num-6,b_num-7])
+                        after8 = Residue.objects.filter(protein_conformation=template.protein_conformation, 
+                                                         sequence_number__in=[a_num,a_num+1,a_num+2,a_num+3,
+                                                                              a_num+4,a_num+5,a_num+6,a_num+7])
+                        loop_residues = Residue.objects.filter(protein_conformation=template.protein_conformation,
+                                                               sequence_number__in=list(range(b_num+1,a_num)))
+                        before_gns = [x.sequence_number for x in before8]
+                        mid_nums = [x.sequence_number for x in loop_residues]
+                        after_gns = [x.sequence_number for x in after8]
+                        alt_residues_temp = parse.fetch_residues_from_pdb(template, before_gns+mid_nums+after_gns)
+                        alt_residues = OrderedDict()
+                        for id_, atoms in alt_residues_temp.items():
+                            if '.' not in str(id_):
+                                alt_residues[str(id_)] = atoms
+                            else:
+                                alt_residues[id_] = atoms                            
+                        orig_residues = parse.fetch_residues_from_pdb(self.main_structure, 
+                                                                      orig_before_gns+orig_after_gns)
+                        superpose = sp.LoopSuperpose(orig_residues, alt_residues)
+                        new_residues = superpose.run()
+                        key_list = list(new_residues.keys())[8:-8]
+                        for key in key_list:
+                            output[key] = new_residues[key]
+                        self.loop_output_structure = template
                         return output
-                    b_num = Residue.objects.get(protein_conformation=template.protein_conformation,
-                                                generic_number__label=last_before_gn).sequence_number
-                    a_num = Residue.objects.get(protein_conformation=template.protein_conformation,
-                                                generic_number__label=first_after_gn).sequence_number
-                    before8 = Residue.objects.filter(protein_conformation=template.protein_conformation, 
-                                                     sequence_number__in=[b_num,b_num-1,b_num-2,b_num-3,
-                                                                          b_num-4,b_num-5,b_num-6,b_num-7])
-                    after8 = Residue.objects.filter(protein_conformation=template.protein_conformation, 
-                                                     sequence_number__in=[a_num,a_num+1,a_num+2,a_num+3,
-                                                                          a_num+4,a_num+5,a_num+6,a_num+7])
-                    loop_residues = Residue.objects.filter(protein_conformation=template.protein_conformation,
-                                                           sequence_number__in=list(range(b_num+1,a_num)))
-                    before_gns = [x.sequence_number for x in before8]
-                    mid_nums = [x.sequence_number for x in loop_residues]
-                    after_gns = [x.sequence_number for x in after8]
-                    alt_residues_temp = parse.fetch_residues_from_pdb(template, before_gns+mid_nums+after_gns)
-                    alt_residues = OrderedDict()
-                    for id_, atoms in alt_residues_temp.items():
-                        if '.' not in str(id_):
-                            alt_residues[str(id_)] = atoms
-                        else:
-                            alt_residues[id_] = atoms                            
-                    orig_residues = parse.fetch_residues_from_pdb(self.main_structure, 
-                                                                  orig_before_gns+orig_after_gns)
-                    superpose = sp.LoopSuperpose(orig_residues, alt_residues)
-                    new_residues = superpose.run()
-                    key_list = list(new_residues.keys())[8:-8]
-                    for key in key_list:
-                        output[key] = new_residues[key]
-                    self.loop_output_structure = template
-                    return output
                 except:
-                    return None
+                    continue
+            if len(output.keys())==0:
+                return None
         else:
             return None
                     
