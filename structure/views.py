@@ -204,13 +204,18 @@ class StructureStatistics(TemplateView):
         brackets = [reso_min + step*x for x in range(10)] + [reso_max]
 
         reso_count = []
+        bracket_labels = []
         for idx, bracket in enumerate(brackets):
             if idx == 0:
                 reso_count.append(len([x for x in structures if x.resolution <= bracket]))
+                bracket_labels.append('< {:.1f}'.format(bracket))
             else:
                 reso_count.append(len([x for x in structures if bracket-step < x.resolution <= bracket]))
+                bracket_labels.append('{:.1f}-{:.1f}'.format(brackets[idx-1],bracket))
         
-        return {'x': ["{:.1f}".format(x) for x in brackets], 'y': reso_count}
+        #return {'x': ["{:.1f}".format(x) for x in brackets], 'y': reso_count}
+        return {'x': bracket_labels, 'y': reso_count}
+         
             
 
 
