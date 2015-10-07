@@ -15,14 +15,15 @@ from ligand.models import Ligand, LigandType, LigandRole, LigandProperities
 from interaction.models import *
 from interaction.views import runcalculation,parsecalculation
 
-from optparse import make_option
-from datetime import datetime
-import logging, os, re
+import logging
+import os
+import re
 import yaml
 from collections import OrderedDict
 import json
 from urllib.request import urlopen
 from Bio.PDB import parse_pdb_header
+
 
 ## FOR VIGNIR ORDERED DICT YAML IMPORT/DUMP
 _mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
@@ -437,7 +438,7 @@ class Command(BaseBuild):
                                     ligand_title = False
                                     if 'title' in ligand and ligand['title']:
                                         ligand_title = ligand['title']
-                                    l = l.load_by_pubchem_id(ligand['pubchemId'], lt, ligand_title)
+                                    l = l.load_from_pubchem('cid', ligand['pubchemId'], lt, ligand_title)
 
                                     # set pdb reference for structure-ligand interaction
                                     pdb_reference = ligand['name']

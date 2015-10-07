@@ -67,7 +67,7 @@ class Ligand(models.Model):
             
             return self.update_ligand(ligand_name, {}, ligand_type, web_resource, gtop_id)
 
-    def load_by_pubchem_id(self, pubchem_id, ligand_type, ligand_title):
+    def load_from_pubchem(self, lookup_type, pubchem_id, ligand_type, ligand_title=False):
         logger = logging.getLogger('build')
 
         # if ligand title is specified, use that as the name
@@ -85,8 +85,8 @@ class Ligand(models.Model):
             else:
                 logger.info('No cached entry for {}/{}'.format('/'.join(cache_dir), pubchem_id))
 
-                pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + str(pubchem_id) \
-                    + '/synonyms/json'
+                pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/' + lookup_type + '/' \
+                    + str(pubchem_id) + '/synonyms/json'
                 try:
                     req = fetch_from_web_api(pubchem_url)
                     if req:
@@ -97,10 +97,14 @@ class Ligand(models.Model):
                         logger.info('Saved entry for {}/{} in cache'.format('/'.join(cache_dir), pubchem_id))
                 except:
                     logger.error('Error fetching ligand {} from PubChem'.format(pubchem_id))
-                    return
+                    return None
             
             # get name from response
-            ligand_name = pubchem['InformationList']['Information'][0]['Synonym'][0]
+            try:
+                ligand_name = pubchem['InformationList']['Information'][0]['Synonym'][0]
+            except:
+                logger.warning('Ligand {} not found in PubChem'.format(pubchem_id))
+                return None
 
         # fetch ligand properties from pubchem
         properties = {}
@@ -114,7 +118,7 @@ class Ligand(models.Model):
         else:
             logger.info('No cached entry for {}/{}'.format('/'.join(cache_dir), pubchem_id))
             
-            pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + str(pubchem_id) \
+            pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/' + lookup_type + '/' + str(pubchem_id) \
                 + '/property/CanonicalSMILES,InChIKey/json'
             try:
                 req = fetch_from_web_api(pubchem_url)
@@ -126,16 +130,26 @@ class Ligand(models.Model):
                     logger.info('Saved entry for {}/{} in cache'.format('/'.join(cache_dir), pubchem_id))
             except:
                 logger.error('Error fetching ligand {} from PubChem'.format(pubchem_id))
-                return
+                return None
         
         # get properties from reponse
-        properties['smiles'] =  pubchem['PropertyTable']['Properties'][0]['CanonicalSMILES']
-        properties['inchikey'] =  pubchem['PropertyTable']['Properties'][0]['InChIKey']
+        try:
+            properties['smiles'] =  pubchem['PropertyTable']['Properties'][0]['CanonicalSMILES']
+            properties['inchikey'] =  pubchem['PropertyTable']['Properties'][0]['InChIKey']
+        except:
+            logger.warning('Ligand {} not found in PubChem'.format(pubchem_id))
+            return None
 
         # pubchem webresource
         web_resource = WebResource.objects.get(slug='pubchem')
 
-        # does a ligand with this inchikey already exists?
+        # does a ligand with this canonical name already exist
+        try:
+            return Ligand.objects.get(name=ligand_name, canonical=True)
+        except Ligand.DoesNotExist:
+            pass # continue
+
+        # does a (canonical) ligand with this inchikey already exist?
         try:
             existing_ligand = Ligand.objects.get(properities__inchikey=properties['inchikey'], canonical=True)
             self.properities = existing_ligand.properities

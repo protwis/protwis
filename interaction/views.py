@@ -4,6 +4,7 @@ from django.conf import settings
 from django import forms
 from django.core.servers.basehttp import FileWrapper
 from django.db.models import Count, Min, Sum, Avg,Q
+from django.utils.text import slugify
 
 
 from interaction.models import *
@@ -222,7 +223,9 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
 
                             ligand = alias #Use alias for structureligandinteraction
                 else: #Ligand does not exist, create it
-                    ligandtype, created = LigandType.objects.get_or_create(slug="sm", name='Small molecule') #FIXME
+                    default_ligand_type = 'Small molecule'
+                    ligandtype, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
+                        defaults={'name': default_ligand_type})
                     lp = LigandProperities()
                     lp.inchikey = output['inchikey'].strip()
                     lp.smiles = output['smiles'].strip()
