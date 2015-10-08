@@ -63,7 +63,7 @@ class Command(BaseCommand):
 #                         'gpr37_human', 'gp135_human', 'gp176_human', 'gpr55_human', 'gpr19_human', 'p2ry8_human', 
 #                         'gpr32_human', 'p2y10_human']
 
-        receptor_list = ['gpr3_human']
+        receptor_list = ['gpr15_human']
         if os.path.isfile('./structure/homology_modeling.log'):
             os.remove('./structure/homology_modeling.log')
         logger = logging.getLogger('homology_modeling')
@@ -124,7 +124,9 @@ class HomologyModeling(object):
         if query_states=='default':
             query_states=self.query_states
         alignment = AlignedReferenceTemplate(self.reference_protein, segments, query_states, order_by)
+        print('Alignment: ',datetime.now() - startTime)
         enhanced_alignment = alignment.enhance_best_alignment()
+        print('Enhanced alignment: ',datetime.now() - startTime)
         if enhanced_alignment==None:
             return None
         if core_alignment==True:
@@ -144,6 +146,7 @@ class HomologyModeling(object):
                 self.loop_template_table[loop] = loop_alignment.loop_table
             self.statistics.add_info('similarity_table', self.similarity_table)
             self.statistics.add_info('loops',self.loop_template_table)
+            print('Loop alignment: ',datetime.now() - startTime)
         return alignment
         
     def build_homology_model(self, ref_temp_alignment, switch_bulges=True, switch_constrictions=True, loops=True, 
@@ -160,7 +163,7 @@ class HomologyModeling(object):
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
         main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
-        
+        print('Create main_pdb_array: ',datetime.now() - startTime)
         # loops
         if loops==True:
             loop_stat = OrderedDict()
@@ -178,7 +181,7 @@ class HomologyModeling(object):
                 else:
                     loop_stat[label] = loop.loop_output_structure
             self.statistics.add_info('loops', loop_stat)
-            
+        print('Integrate loops: ',datetime.now() - startTime)   
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
             for ref_seg, temp_seg, aligned_seg in zip(a.reference_dict, a.template_dict, a.alignment_dict):
@@ -368,7 +371,7 @@ class HomologyModeling(object):
                             seg[parse.gn_indecer(key, '.', +1)] = main_pdb_array[seg_id][parse.gn_indecer(key, '.', +1)]
                     out_pdb_array[seg_id] = seg
                 main_pdb_array = out_pdb_array
-
+        print('Integrate bulges/constrictions: ',datetime.now() - startTime)
         # check for inconsitencies with db
         pdb_db_inconsistencies = []
         for seg_label, segment in a.template_dict.items():
@@ -414,7 +417,7 @@ class HomologyModeling(object):
         self.write_homology_model_pdb(
                                 "./structure/homology_models/{}_{}/pre_switch.pdb".format(self.uniprot_id, self.state), 
                                 main_pdb_array, a)        
-        
+        print('Check inconsistencies: ',datetime.now() - startTime)
         # inserting loops for free modeling
         for label, template in loop_stat.items():
             if template==None:
@@ -425,7 +428,7 @@ class HomologyModeling(object):
                 a.reference_dict = modeling_loops.reference_dict
                 a.template_dict = modeling_loops.template_dict
                 a.alignment_dict = modeling_loops.alignment_dict
-        
+        print('Free loops: ',datetime.now() - startTime)
         # non-conserved residue switching
         if switch_rotamers==True:
             non_cons_switch = self.run_non_conserved_switcher(main_pdb_array,a.reference_dict,a.template_dict,
@@ -441,14 +444,14 @@ class HomologyModeling(object):
                 for key in seg:
                     if a.reference_dict[seg_id][str(key).replace('.','x')]!='-':
                         trimmed_residues.append(key)
-
+        print('Rotamer switching: ',datetime.now() - startTime)
         # write to file
         path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
         if not os.path.exists(path):
             os.mkdir(path)
         trimmed_res_nums = self.write_homology_model_pdb(path+self.uniprot_id+"_post.pdb", main_pdb_array, 
                                                          a, trimmed_residues=trimmed_residues)                                                         
-
+        print('Before MODELLER: ',datetime.now() - startTime)
         # Model with MODELLER
         self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
@@ -489,42 +492,33 @@ class HomologyModeling(object):
                     conserved_count+=1
                     conserved_residues[ref_res] = alignment_dict[aligned_seg][aligned_res]
                 
-                gn = ref_res
-    
+                gn = ref_res    
                 if (alignment_dict[aligned_seg][aligned_res]=='.' and 
                     reference_dict[ref_seg][gn]!=template_dict[temp_seg][gn]) and reference_dict[ref_seg][gn]!='x':
                     non_cons_count+=1
-                    try:
-                        residues = Residue.objects.filter(generic_number__label=ref_res)
-                        proteins_w_this_gn = [res.protein_conformation.protein.parent for res in 
-                                                residues if str(res.amino_acid)==reference_dict[ref_seg][ref_res]]
-                        proteins_w_this_gn = list(set(proteins_w_this_gn))
-                    except:
-                        proteins_w_this_gn = []
                     gn_ = str(ref_res).replace('x','.')
                     no_match = True
                     for struct in self.similarity_table:
-                        if struct.protein_conformation.protein.parent in proteins_w_this_gn:
-                            try:
-                                alt_temp = parse.fetch_residues_from_pdb(struct, [gn])
-                                if reference_dict[ref_seg][gn]==PDB.Polypeptide.three_to_one(
-                                                                        alt_temp[gn_][0].get_parent().get_resname()):
-                                    orig_res = main_pdb_array[ref_seg][gn_]
-                                    alt_res = parse.fetch_residues_from_pdb(struct,[gn])[gn_]
-                                    superpose = sp.RotamerSuperpose(orig_res, alt_res)
-                                    new_atoms = superpose.run()
-                                    if superpose.backbone_rmsd>0.3:
-                                        continue
-                                    main_pdb_array[ref_seg][gn_] = new_atoms
-                                    template_dict[temp_seg][gn] = reference_dict[ref_seg][gn]
-                                    switched_count+=1                     
-                                    non_cons_res_templates[ref_res] = struct
-                                    res=Residue.objects.get(protein_conformation__protein=self.reference_protein, generic_number__label=ref_res)
-                                    res_list.append(res.sequence_number)
-                                    no_match = False
-                                    break
-                            except:
-                                pass
+                        try:
+                            alt_temp = parse.fetch_residues_from_pdb(struct, [gn])
+                            if reference_dict[ref_seg][gn]==PDB.Polypeptide.three_to_one(
+                                                                    alt_temp[gn_][0].get_parent().get_resname()):
+                                orig_res = main_pdb_array[ref_seg][gn_]
+                                alt_res = parse.fetch_residues_from_pdb(struct,[gn])[gn_]
+                                superpose = sp.RotamerSuperpose(orig_res, alt_res)
+                                new_atoms = superpose.run()
+                                if superpose.backbone_rmsd>0.3:
+                                    continue
+                                main_pdb_array[ref_seg][gn_] = new_atoms
+                                template_dict[temp_seg][gn] = reference_dict[ref_seg][gn]
+                                switched_count+=1                     
+                                non_cons_res_templates[ref_res] = struct
+                                res=Residue.objects.get(protein_conformation__protein=self.reference_protein, generic_number__label=ref_res)
+                                res_list.append(res.sequence_number)
+                                no_match = False
+                                break
+                        except:
+                            pass
                     if no_match==True:
                         try:
                             if 'free' not in ref_seg:
@@ -974,10 +968,11 @@ class Bulges(object):
         parse = GPCRDBParsingPDB()
         for structure, value in similarity_table.items():
             this_anomaly = ProteinAnomaly.objects.filter(generic_number__label=gn)
+            anomaly_list = structure.protein_anomalies.all().prefetch_related()
             if bulge_in_reference==True:
                 try:
                     for anomaly in this_anomaly:
-                        if anomaly in structure.protein_anomalies.all():
+                        if anomaly in anomaly_list:
                             gn_list = [parse.gn_indecer(gn,'x',-2),parse.gn_indecer(gn,'x',-1),gn,
                                        parse.gn_indecer(gn,'x',+1),parse.gn_indecer(gn,'x',+2)]
                             alt_bulge = parse.fetch_residues_from_pdb(structure, gn_list)
@@ -989,7 +984,7 @@ class Bulges(object):
                 try:
                     suitable_temp = []
                     for anomaly in this_anomaly:
-                        if anomaly not in structure.protein_anomalies.all():
+                        if anomaly not in anomaly_list:
                             pass
                         else:
                             suitable_temp.append('no')
@@ -1025,10 +1020,11 @@ class Constrictions(object):
         parse = GPCRDBParsingPDB()
         for structure, value in similarity_table.items():
             this_anomaly = ProteinAnomaly.objects.filter(generic_number__label=gn)
+            anomaly_list = structure.protein_anomalies.all().prefetch_related()
             if constriction_in_reference==True:
                 try:
                     for anomaly in this_anomaly:
-                        if anomaly in structure.protein_anomalies.all():
+                        if anomaly in anomaly_list:
                             gn_list = [parse.gn_indecer(gn,'x',-2),parse.gn_indecer(gn,'x',-1),
                                        parse.gn_indecer(gn,'x',+1),parse.gn_indecer(gn,'x',+2)]
                             alt_const = parse.fetch_residues_from_pdb(structure, gn_list)
@@ -1040,7 +1036,7 @@ class Constrictions(object):
                 try:
                     suitable_temp = []
                     for anomaly in this_anomaly:
-                        if anomaly not in structure.protein_anomalies.all():
+                        if anomaly not in anomaly_list:
                             pass
                         else:
                             suitable_temp.append('no')
