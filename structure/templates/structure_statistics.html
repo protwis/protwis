@@ -19,38 +19,44 @@
     <li>{{ unique_complexes }} unique ligand-receptor complexes.</li>
 </ul>
 <br />
-
-    {% load nvd3_tags %}
-    <div id="charts" visibility="hidden">
-        <?xml version="1.0" standalone="no" ?>
-        <svg id="chart_legend" width="450px" height="70px" version="1.1" xmlns="http://www.w3.org/2000/svg">
-            <circle class="chart_type" id="unique" cx="10" cy="10" r="5" stroke="black" fill="white" stroke-width="2" />
-            <text x="20" y="13" font-family="Verdana" font-size="10">The number of unique crystallized receptors available.</text>
-            <circle class="chart_type" id="unique_y" cx="10" cy="30" r="5" stroke="black" fill="white" stroke-width="2" />
-            <text x="20" y="33" font-family="Verdana" font-size="10">The number of unique receptors CRYSTAL STRUCTURES PUBLISHED each year.</text>
-            <circle class="chart_type" id="all" cx="10" cy="50" r="5" stroke="black" fill="white" stroke-width="2" />
-            <text x="20" y="53" font-family="Verdana" font-size="10">The number of crystal structures available each year.</text>
-        </svg>
-        <div id="unique" class="chart_container" style="display: none;">
-            {% load_chart charttype chartdata "multibarchart_container" extra %}
-            {% include_container "multibarchart_container" 600 800 %}
-        </div>
-        <div id="unique_y" class="chart_container" style="display: none;">
-            {% load_chart charttype2 chartdata2 "multibarchart_container2" extra2 %}
-            {% include_container "multibarchart_container2" 600 800 %}
-        </div>
-        <div id="all" class="chart_container" style="display: none;">
-            {% load_chart charttype chartdata_all "multibarchart_container3" extra_all %}
-            {% include_container "multibarchart_container3" 600 800 %}
-        </div>
+<div id="charts" visibility="hidden">
+    <?xml version="1.0" standalone="no" ?>
+    <svg id="chart_legend" width="450px" height="70px" version="1.1" xmlns="http://www.w3.org/2000/svg">
+        <circle class="chart_type" id="unique" cx="10" cy="10" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="13" font-family="Verdana" font-size="10">The number of unique crystallized receptors available.</text>
+        <circle class="chart_type" id="unique_y" cx="10" cy="30" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="33" font-family="Verdana" font-size="10">The number of unique receptors CRYSTAL STRUCTURES PUBLISHED each year.</text>
+        <circle class="chart_type" id="all" cx="10" cy="50" r="5" stroke="black" fill="white" stroke-width="2" />
+        <text x="20" y="53" font-family="Verdana" font-size="10">The number of crystal structures available each year.</text>
+    </svg>
+    <div id="unique" class="chart_container" style="display: none;">
+        <div id="unique_cryst_container"><svg style="width:800px;height:600px;"></svg></div>
+        <script>
+        data_unique_cryst_container={{ chartdata|safe }};
+        </script>
     </div>
-    <br />
-    <br />
-    <p>Resolution distribution of the available crystal structures</p>
-    {% load_chart charttype_reso chartdata_reso "multibarchart_container4" extra_reso %}
-    {% include_container "multibarchart_container4" 600 800 %}
+    <div id="unique_y" class="chart_container" style="display: none;">
+        <div id="unique_cryst_year_container"><svg style="width:800px;height:600px;"></svg></div>
+        <script>
+            data_unique_cryst_year_container={{ chartdata_y|safe }};
+        </script>
+    </div>
+    <div id="all" class="chart_container" style="display: none;">
+        <div id="cryst_year_container"><svg style="width:800px;height:600px;"></svg></div>
+        <script>
+            data_cryst_year_container={{ chartdata_all|safe }};
+        </script>
+    </div>
+</div>
+<br />
+<br />
+<p>Resolution distribution of the available crystal structures</p>
+<script>
+    data_reso_container={{ chartdata_reso|safe }};
+</script>
+<div id="reso_container"><svg style="width:800px;height:600px;"></svg></div>
 
-    Structural coverage of GPCR Classes<br />
+Structural coverage of GPCR Classes<br />
 <div id="phylos">
     {% include "view_phylos.html" %}
 </div>

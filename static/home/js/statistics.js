@@ -20,7 +20,129 @@
          $(SVG).append(legend.children[i]);
      };
  };
-window.onload = function(){
+ window.onload = function () {
+    //Unique crystallized receptors graph
+    nv.addGraph(function () {
+        var datum = data_unique_cryst_container;
+        var chart = nv.models.multiBarChart()
+            .reduceXTicks(false)
+            .stacked(true)
+            .margin({ top: 30, right: 60, bottom: 20, left: 60 })
+            .color(d3.scale.category20().range());
+        chart.yAxis
+            .tickFormat(d3.format(',f'))
+            .showMaxMin(false);
+
+
+        var yAxis2 = nv.models.axis()
+            .scale(chart.yScale())
+            .showMaxMin(false)
+            .tickFormat(d3.format(',f'))
+            ._ticks(nv.utils.calcTicksY(400 / 36, datum))
+            .tickPadding(0)
+            .orient("right");
+
+        d3.select('#unique_cryst_container svg')
+            .datum(datum)
+            .transition().duration(500)
+            .attr('height', 450)
+            .call(chart);
+        d3.select('#unique_cryst_container svg').selectAll('g.nv-wrap.nv-multiBarWithLegend').append("g")
+            .attr("class", "nv-y nv-axis")
+            .attr("transform", "translate(680, 0)")
+            .call(yAxis2);
+        $("rect[height=1]").height(0);
+    });
+    //Unique crystals/year
+    nv.addGraph(function () {
+        var datum = data_unique_cryst_year_container;
+        var chart = nv.models.multiBarChart()
+            .reduceXTicks(false)
+            .stacked(true)
+            .margin({ top: 30, right: 60, bottom: 20, left: 60 })
+            .color(d3.scale.category20().range());
+        chart.yAxis
+            .tickFormat(d3.format(',f'))
+            ._ticks(nv.utils.calcTicksY(400 / 36, datum));
+
+
+        var yAxis2 = nv.models.axis()
+            .scale(chart.yScale())
+            .showMaxMin(false)
+            .tickFormat(d3.format(',f'))
+            ._ticks(nv.utils.calcTicksY(400 / 36, datum))
+            .tickPadding(0)
+            .orient("right");
+
+        d3.select('#unique_cryst_year_container svg')
+            .datum(datum)
+            .transition().duration(500)
+            .attr('height', 450)
+            .call(chart);
+        d3.select('#unique_cryst_year_container svg').selectAll('g.nv-wrap.nv-multiBarWithLegend').append("g")
+            .attr("class", "nv-y nv-axis")
+            .attr("transform", "translate(680, 0)")
+            .call(yAxis2);
+    });
+    //All crystals/year
+    nv.addGraph(function () {
+        var chart = nv.models.multiBarChart()
+            .reduceXTicks(false)
+            .stacked(true)
+            .margin({ top: 30, right: 60, bottom: 20, left: 60 })
+            .color(d3.scale.category20().range());
+        chart.yAxis
+            .tickFormat(d3.format(',f'));
+
+        var datum = data_cryst_year_container;
+
+        var yAxis2 = nv.models.axis()
+            .scale(chart.yScale())
+            .showMaxMin(false)
+            .tickFormat(d3.format(',f'))
+            ._ticks(nv.utils.calcTicksY(400 / 36, datum))
+            .tickPadding(0)
+            .orient("right");
+
+        d3.select('#cryst_year_container svg')
+            .datum(datum)
+            .transition().duration(500)
+            .attr('height', 450)
+            .call(chart);
+        d3.select('#cryst_year_container svg').selectAll('g.nv-wrap.nv-multiBarWithLegend').append("g")
+            .attr("class", "nv-y nv-axis")
+            .attr("transform", "translate(680, 0)")
+            .call(yAxis2);
+    });
+    //Resolution coverage graph
+    nv.addGraph(function () {
+        var chart = nv.models.discreteBarChart()
+            .margin({ top: 30, right: 60, bottom: 20, left: 60 })
+            .color(d3.scale.category20().range());
+        chart.yAxis
+            .tickFormat(d3.format(',f'));
+
+        var datum = data_reso_container;
+
+        var yAxis2 = nv.models.axis()
+            .scale(chart.yScale())
+            .showMaxMin(false)
+            .tickFormat(d3.format(',f'))
+            ._ticks( nv.utils.calcTicksY(400/36, datum) )
+            .tickPadding(0)
+            .orient("right");
+
+        d3.select('#reso_container svg')
+            .datum(datum)
+            .transition().duration(500)
+            .attr('height', 450)
+            .call(chart);
+        d3.select('#reso_container svg').selectAll('g.nv-wrap.nv-discreteBarWithAxes').append("g")
+            .attr("class", "nv-y nv-axis")
+            .attr("transform", "translate(740, 30)")
+            .call(yAxis2);
+    });
+
     $(".chart_type").click(function () {
         Clear_all()
         $(this).css("fill", '#000000');

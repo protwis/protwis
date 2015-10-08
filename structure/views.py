@@ -21,6 +21,7 @@ import inspect
 import os
 import zipfile
 import math
+import json
 from copy import deepcopy
 from io import StringIO, BytesIO
 from collections import OrderedDict
@@ -116,25 +117,10 @@ class StructureStatistics(TemplateView):
         context['unique_by_class'] = tmp
         context['unique_complexes'] = len(StructureLigandInteraction.objects.filter(annotated=True).distinct('structure__protein_conformation__protein__family__name', 'ligand__name'))
 
-        extra = {
-            'x_axis_format': '',
-            'y_axis_format': 'f',
-            'stacked': 'True',
-            }
-        context['charttype'] = "multiBarChart"
         context['chartdata'] = self.get_per_family_cumulative_data_series(years, families, unique_structs)
-        context['extra'] = extra
-
-        context['charttype2'] = "multiBarChart"
-        context['chartdata2'] = self.get_per_family_data_series(years, families, unique_structs)
-        context['extra2'] = extra
-
+        context['chartdata_y'] = self.get_per_family_data_series(years, families, unique_structs)
         context['chartdata_all'] = self.get_per_family_cumulative_data_series(years, families, all_structs)
-        context['extra_all'] = extra
-
-        context['charttype_reso'] = "discreteBarChart"
         context['chartdata_reso'] = self.get_resolution_coverage_data_series(all_structs)
-        context['extra_reso'] = extra
 
         return context
 
@@ -150,7 +136,7 @@ class StructureStatistics(TemplateView):
         """
         Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
         """
-        series = {'x' : years,}
+        series = []
         data = {}
         for year in years:
             for family in families:
@@ -161,17 +147,22 @@ class StructureStatistics(TemplateView):
                     if structure.protein_conformation.protein.get_protein_family() == family and structure.publication_date.year == year:
                         count += 1
                 data[family].append(count)
-        for idx, family in enumerate(data.keys()):
-            series['name{:n}'.format(idx+1)] = family
-            series['y{:n}'.format(idx+1)] = data[family]
-        return series
+        for family in families:
+            series.append({"values": 
+                [{
+                    'x': years[i],
+                    'y': j
+                    } for i, j in enumerate(data[family])],
+                "key": family,
+                "yAxis": "1"})
+        return json.dumps(series)
 
 
     def get_per_family_cumulative_data_series(self, years, families, structures):
         """
         Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
         """
-        series = {'x' : years,}
+        series = []
         data = {}
         for year in years:
             for family in families:
@@ -185,11 +176,15 @@ class StructureStatistics(TemplateView):
                     data[family].append(count + data[family][-1])
                 else:
                     data[family].append(count)
-
-        for idx, family in enumerate(data.keys()):
-            series['name{:n}'.format(idx+1)] = family
-            series['y{:n}'.format(idx+1)] = data[family]
-        return series
+        for family in families:
+            series.append({"values": 
+                [{
+                    'x': years[i],
+                    'y': j
+                    } for i, j in enumerate(data[family])],
+                "key": family,
+                "yAxis": "1"})
+        return json.dumps(series)
 
 
     def get_resolution_coverage_data_series(self, structures):
@@ -213,8 +208,12 @@ class StructureStatistics(TemplateView):
                 reso_count.append(len([x for x in structures if bracket-step < x.resolution <= bracket]))
                 bracket_labels.append('{:.1f}-{:.1f}'.format(brackets[idx-1],bracket))
         
-        #return {'x': ["{:.1f}".format(x) for x in brackets], 'y': reso_count}
-        return {'x': bracket_labels, 'y': reso_count}
+        return json.dumps([{"values": [{
+                    'x': bracket_labels[i],
+                    'y': j
+                    } for i, j in enumerate(reso_count)],
+                "key": 'Resolution coverage',
+                "yAxis": "1"}])
          
             
 
