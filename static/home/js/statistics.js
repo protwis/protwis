@@ -51,7 +51,6 @@
             .attr("class", "nv-y nv-axis")
             .attr("transform", "translate(680, 0)")
             .call(yAxis2);
-        $("rect[height=1]").height(0);
     });
     //Unique crystals/year
     nv.addGraph(function () {
