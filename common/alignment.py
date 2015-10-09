@@ -858,10 +858,10 @@ class AlignedReferenceTemplate(Alignment):
         orig_before_gns = []
         orig_after_gns = []
         for res in orig_before_residues.reverse():
-            if len(orig_before_gns)<8:
+            if len(orig_before_gns)<4:
                 orig_before_gns.append(res.generic_number.label)
         for res in orig_after_residues:
-            if len(orig_after_gns)<8:
+            if len(orig_after_gns)<4:
                 orig_after_gns.append(res.generic_number.label)
         orig_before_gns = list(reversed(orig_before_gns))
         last_before_gn = orig_before_gns[-1]
@@ -889,8 +889,8 @@ class AlignedReferenceTemplate(Alignment):
                                                                           alt_first_gn.sequence_number)))
                     if len(ref_seq)!=len(alt_seq):
                         continue
-                    before_nums = list(range(alt_last_gn.sequence_number-7, alt_last_gn.sequence_number+1))
-                    after_nums = list(range(alt_first_gn.sequence_number, alt_first_gn.sequence_number+8))
+                    before_nums = list(range(alt_last_gn.sequence_number-3, alt_last_gn.sequence_number+1))
+                    after_nums = list(range(alt_first_gn.sequence_number, alt_first_gn.sequence_number+4))
                     alt_before8 = Residue.objects.filter(protein_conformation__protein=protein,
                                                          sequence_number__in=before_nums)
                     alt_after8 = Residue.objects.filter(protein_conformation__protein=protein,
