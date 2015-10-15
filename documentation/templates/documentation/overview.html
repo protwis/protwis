@@ -4,14 +4,16 @@
 
 {% for instance in documentation %}
 <div class="row">
-	 <div class="col-md-10 well col-md-offset-1">
-        <a href={{ "/documentation/"|add:instance.fields.image }}>
-            <img src={{"/static/home/images/documentation/"|add:instance.fields.image|add:".png"}} style="height:150px;width:300px;float:left;padding-right:25px;">
-        </a>
-        <a href={{ "/documentation/"|add:instance.fields.image }}>
-            <h3>{{ instance.fields.title }}</h3>
-        </a>
-        <h5>{{ instance.fields.description }}</h5>
+	 <div class="col-md-10 col-md-offset-1 panel panel-primary">
+        <div class="panel-body">
+            <a href={{ "/documentation/"|add:instance.fields.image }}>
+                <img src={{"/static/home/images/documentation/"|add:instance.fields.image|add:".png"}} style="height:150px;width:300px;float:left;padding-right:25px;">
+            </a>
+            <a href={{ "/documentation/"|add:instance.fields.image }}>
+                <h3>{{ instance.fields.title }}</h3>
+            </a>
+            <h5>{{ instance.fields.description }}</h5>
+        </div>
     </div>
 </div>
 {% endfor %}

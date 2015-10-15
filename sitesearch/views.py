@@ -34,7 +34,7 @@ class TargetSelectionPdb(TargetSelection):
     buttons = {
         'continue': {
             'label': 'Continue to next step',
-            'url': '/interaction/sitesearch',
+            'url': '/sitesearch/structureupload',
             'color': 'success',
         },
     }
@@ -72,6 +72,30 @@ class SegmentSelection(AbsSegmentSelection):
     ss = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS, partial=False).prefetch_related(
         'generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
+
+
+class StructureUpload(AbsSegmentSelection):
+    step = 2
+    number_of_steps = 3
+    segment_list = False
+    structure_upload = True
+
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Continue to next step',
+            'onclick': 'document.getElementById("form").submit()',
+            'color': 'success',
+        },
+    }
+
+    title = 'SELECT OR UPLOAD A STRUCTURE'
+    description = 'Enter a PDB code or upload your own PDB file in the middle column, and click the green button.' \
+        + '\n\nProtein-ligand interactions from the complex will be analyzed and shown on the next page.'
 
 
 class SegmentSelectionPdb(SegmentSelection):

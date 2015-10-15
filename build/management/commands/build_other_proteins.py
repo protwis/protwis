@@ -18,7 +18,7 @@ class Command(BuildHumanProteins):
     help = 'Reads uniprot text files and creates protein entries for non-human proteins'
 
     def add_arguments(self, parser):
-        parser.add_argument('--only-constructs', action='store_true', dest='only_constructs',
+        parser.add_argument('-c', '--constructs-only', action='store_true', dest='constructs_only',
             help='Only import orthologs for which there are annotated constructs. Useful for building a small ' \
             + 'database with all structures')
         parser.add_argument('--purge', action='store_true', dest='purge', default=False,
@@ -36,13 +36,13 @@ class Command(BuildHumanProteins):
             except:
                 self.logger.error('Could not purge orthologs')
 
-        if options['only_constructs']:
-            only_constructs = True
+        if options['constructs_only']:
+            constructs_only = True
         else:
-            only_constructs = False
+            constructs_only = False
         
         try:
-            self.create_orthologs(only_constructs)
+            self.create_orthologs(constructs_only)
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
@@ -50,7 +50,7 @@ class Command(BuildHumanProteins):
     def purge_orthologs(self):
         Protein.objects.filter(~Q(species__id=1)).delete()
 
-    def create_orthologs(self, only_constructs):
+    def create_orthologs(self, constructs_only):
         self.logger.info('CREATING OTHER PROTEINS')
 
         # go through constructs and finding their entry_names for lookup
@@ -93,7 +93,7 @@ class Command(BuildHumanProteins):
                 continue
 
             # should proteins that are not constructs be skipped?
-            if only_constructs and up['entry_name'] not in construct_entry_names:
+            if constructs_only and up['entry_name'] not in construct_entry_names:
                 continue
 
             # is this an ortholog of a human protein?

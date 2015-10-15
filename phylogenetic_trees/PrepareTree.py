@@ -222,10 +222,9 @@ class PrepareTree:
         self.rings['ligand']['colours']= self.get_spectrum_colours(self.rings['ligand']['items'],(0,255))
 
     def build_legend(self):
-        column = 200
         verse = 20
         self.legend =''
-        width = 300
+        width = 400
         length = 0
         total_rings = 0
         for ring in self.rings:
@@ -290,7 +289,7 @@ class PrepareTree:
         self.get_tree_data(Additional_info)
         if self.build !=False:
             self.rings['class']['include']=False
-            self.rings['ligand']['include']=False
+            #self.rings['ligand']['include']=False
             self.rings['family']['include']=False
         self.get_family_meta(family)
         charts=self.get_charts()

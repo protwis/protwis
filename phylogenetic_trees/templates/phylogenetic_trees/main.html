@@ -30,7 +30,7 @@
             phylocanvas = new Smits.PhyloCanvas(
                             dataObject,
                             "svgCanvas",
-                            800 + {{ count }}*20, 800 + {{ count }}*20,
+                            800 + {{ count }}*10, 800 + {{ count }}*10,
                             'circular'
                             )
             mergeSVG();
@@ -41,6 +41,8 @@
     </script>
     {% endif %}
 <script type="text/javascript"> draw_phylo();
+predefined_colours({{add.crystal.proteins|safe}},'{{ add.crystal.colours.crystal_true }}');
+
 </script>
 
 

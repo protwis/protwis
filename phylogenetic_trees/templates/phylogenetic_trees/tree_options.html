@@ -1,14 +1,15 @@
 <div class="button_container"><br />
-    <b>Change displayed attributes</b>
+    <b>(Un-)display data with coloured rings</b> <br>  <a href="javascript:void(0)" id="rings_btn" onclick="GetRings()" class="btn btn-primary">Update figure</a>
+
    <table class="table table-bordered">
 
        <thead>
 
            <tr>
 
-               <th>Attribute</th>
+               <th>Data type</th>
 
-               <th>Value</th>
+               <th>Data</th>
 
                <th>Chosen attributes (Click to deselect)</th>
 
@@ -56,7 +57,7 @@
 
                        <a href="javascript:void(0)" onclick="SelectButtons('ligand_btn')" class="btn btn-primary btn-block
 
-          ">Receptor family</a><br>
+          ">Receptor type</a><br>
 
                       </div>
 
@@ -100,7 +101,7 @@
 
                        <a href="javascript:void(0)" style="display: none;" id="ligand_btn" onclick="DeselectButtons('ligand_btn')" class="btn btn-default 
 
-          ">Ligand name</a>
+          ">Receptor type</a>
 
                        <a href="javascript:void(0)" style="display: none;" id="mutant_btn" onclick="DeselectButtons('mutant_btn')" class="btn btn-default 
 
@@ -131,6 +132,5 @@
 
    </table>
 <br>
-    <b>Show the selected properties as:</b> <a href="javascript:void(0)" id="rings_btn" onclick="GetRings()" class="btn btn-primary">{% if ttype == 1 %}Bars {% else %}Rings{% endif %}</a>
 <!--<a href="javascript:void(0)" id="fields_btn" onclick="DeselectButtons('crystal_btn')" class="btn btn-primary">Field colours</a>-->
 </div>

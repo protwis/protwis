@@ -8,31 +8,40 @@ class Command(BaseCommand):
     help = 'Runs all build functions'
 
     def add_arguments(self, parser):
-        parser.add_argument('--njobs', action='store', dest='njobs', help='Number of jobs to run')
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=1,
+            help='Number of processes to run')
+        parser.add_argument('-t', '--test',
+            action='store_true',
+            dest='test',
+            default=False,
+            help='Include only a subset of data for testing')
 
     def handle(self, *args, **options):
-        # how many jobs to run?
-        if 'njobs' in options and options['njobs']:
-            njobs = int(options['njobs'])
-        else:
-            njobs = 1
+        if options['test']:
+            print('Running in test mode')
 
         commands = [
             ['build_common'],
-            ['build_human_proteins'],
-            ['build_human_residues', {'njobs': njobs}],
+            ['build_human_proteins', {'test': options['test']}],
+            ['build_human_residues', {'proc': options['proc']}],
             ['build_blast_database'],
-            ['build_other_proteins'],
-            ['build_other_residues', {'njobs': njobs}],
+            ['build_other_proteins', {'constructs_only': options['test']}], # build only constructs in test mode
+            ['build_other_residues', {'proc': options['proc']}],
             ['build_blast_database'],
             ['build_links'],
-            ['build_construct_proteins', {'njobs': njobs}],
-            ['build_structures', {'njobs': njobs}],
+            ['build_construct_proteins', {'proc': options['proc']}],
+            ['build_structures', {'proc': options['proc']}],
             ['build_mutant_data'],
-            ['find_protein_templates', {'njobs': njobs}],
-            ['update_alignments', {'njobs': njobs}],
+            ['find_protein_templates', {'proc': options['proc']}],
+            ['update_alignments', {'proc': options['proc']}],
             ['build_protein_sets'],
-            ['build_consensus_sequences', {'njobs': njobs}],
+            ['build_consensus_sequences', {'proc': options['proc']}],
+            ['build_text'],
+            ['build_release_notes'],
         ]
 
         for c in commands:

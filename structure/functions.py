@@ -136,18 +136,17 @@ class GenericNumbersSelector(Select):
         if parsed_selection:
             self.generic_numbers=parsed_selection.generic_numbers
             self.helices = parsed_selection.helices
-
-
     def accept_residue(self, residue):
 
         try:
-            if str(residue['CA'].get_bfactor()) in self.generic_numbers:
+            if "{:.2f}".format(residue['CA'].get_bfactor()) in self.generic_numbers:
                 return 1
-            if -8.1 < res['CA'].get_bfactor() < 0 and str(-res['CA'].get_bfactor() + 0.001) in self.generic_numbers:
+            if -8.1 < residue['CA'].get_bfactor() < 0 and "{:.3f}".format(-residue['CA'].get_bfactor() + 0.001) in self.generic_numbers:
                 return 1
             if -8.1 < residue['CA'].get_bfactor() < 8.1 and int(math.floor(abs(residue['CA'].get_bfactor()))) in self.helices:
                 return 1
         except:
+
             return 0
         
 
@@ -186,9 +185,9 @@ class CASelector(object):
         for chain in structure:
             for res in chain:
                 try:
-                    if 0 < res['CA'].get_bfactor() < 8.1 and str(res["CA"].get_bfactor()) in self.selection.generic_numbers:
+                    if 0 < res['CA'].get_bfactor() < 8.1 and "{:.2f}".format(res['CA'].get_bfactor()) in self.selection.generic_numbers:
                         atom_list.append(res['CA'])
-                    if -8.1 < res['CA'].get_bfactor() < 0 and str(-res['CA'].get_bfactor() + 0.001) in self.selection.generic_numbers:
+                    if -8.1 < res['CA'].get_bfactor() < 0 and "{:.3f}".format(-res['CA'].get_bfactor() + 0.001) in self.selection.generic_numbers:
                         atom_list.append(res['CA'])
                 except :
                     continue
@@ -244,9 +243,9 @@ class CASelector(object):
             for ref_ca in tmp_ref:
                 for alt_ca in tmp_alt:
                     if ref_ca.get_bfactor() == alt_ca.get_bfactor():
-                        if 0 < ref_ca.get_bfactor() < 8.1 and str(ref_ca.get_bfactor()) in self.selection.generic_numbers:
+                        if 0 < ref_ca.get_bfactor() < 8.1 and "{:.2f}".format(ref_ca.get_bfactor()) in self.selection.generic_numbers:
                             gn_list.append("{:.2f}".format(ref_ca.get_bfactor()))
-                        if -8.1 < ref_ca.get_bfactor() < 0 and str(-ref_ca.get_bfactor() + 0.001) in self.selection.generic_numbers:
+                        if -8.1 < ref_ca.get_bfactor() < 0 and "{:.3f}".format(-ref_ca.get_bfactor() + 0.001) in self.selection.generic_numbers:
                             gn_list.append("{:.3f}".format(-ref_ca.get_bfactor() + 0.001))
                         if 0 < ref_ca.get_bfactor() < 8.1 and int(math.floor(abs(ref_ca.get_bfactor()))) in self.selection.helices:
                             gn_list.append("{:.2f}".format(ref_ca.get_bfactor()))
@@ -303,8 +302,9 @@ class BackboneSelector():
         for chain in ref_pdbio_struct:
             for res in chain:
                 try:
-                    if self.get_generic_number(res) == fragment.rotamer.residue.display_generic_number.label:
-                        print("Ref {}:{}\tFragment {}:{}".format(polypeptide.three_to_one(res.resname), self.get_generic_number(res), fragment.rotamer.residue.amino_acid, fragment.rotamer.residue.display_generic_number.label))
+                    gn = self.get_generic_number(res)
+                    if gn == fragment.rotamer.residue.display_generic_number.label:
+                        logger.info("Ref {}:{}\tFragment {}:{}".format(polypeptide.three_to_one(res.resname), self.get_generic_number(res), fragment.rotamer.residue.amino_acid, fragment.rotamer.residue.display_generic_number.label))
                         if use_similar:
                             for rule in self.similarity_rules:
                                 if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and fragment.rotamer.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
@@ -312,7 +312,6 @@ class BackboneSelector():
                         else:
                             return [res['CA'], res['N'], res['O']] 
                 except Exception as msg:
-                    #print(msg)
                     continue
         return []                  
 

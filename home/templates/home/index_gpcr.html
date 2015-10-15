@@ -1,5 +1,6 @@
 {% extends "home/base.html" %}
 {% load staticfiles %}
+{% load humanize %}
 
 {% block content %}
     <div class="row">
@@ -44,7 +45,7 @@
                     <img src="{% static 'home/carousel/snake_plot.png' %}">
                     <div class="carousel-caption">
                         <h2>Plot experimental values onto diagrams</h2>
-                        <p>Highlight residues with available mutant and/or interaction data.</p>
+                        <p>Highlight residues with available mutant and/or ligand interaction data.</p>
                     </div>
                 </div>
                 <div class="item">
@@ -78,17 +79,18 @@
             <div class="panel panel-primary">
                 <div class="panel-body">
                     <div class='col-md-1 text-center'>
-                        <img src="http://gpcrdb.org/img/logo/gpcrdb.png" style="height:80px;width:80px;">
+                        <img src="{% static 'home/logo/gpcr/main.png' %}" style="height:80px;width:80px;">
                     </div>
                     <div class='col-md-11'>
-                        <p><strong>GPCRdb</strong> contains data, diagrams and web tools for G protein-coupled receptors (GPCRs). Users can
-                        browse all GPCR crystal structures and the largest collections of mutants. Diagrams can be produced and
-                        downloaded to illustrate receptor residues (snake-plot and helix box diagrams) and relationships
-                        (phylogenetic trees). Reference (crystal) structure-based sequence alignments take into account helix bulges
-                        and constrictions, display statistics of amino acid conservation and have been assigned generic residue
-                        numbering for equivalent residues in different receptors. For an overview read the GPCRdb <a href="http://gpcrdb.org/about/poster">poster</a>,
-                        <a href="/pages/citing">articles</a> or
-                        <a href="/documentation">documentation</a>.</p>
+                        <p><strong>GPCRdb</strong> contains data, diagrams and web tools for G protein-coupled
+                        receptors (GPCRs). Users can browse all GPCR crystal structures and the largest collections of
+                        receptor mutants. Diagrams can be produced and downloaded to illustrate receptor residues
+                        (snake-plot and helix box diagrams) and relationships (phylogenetic trees). Reference (crystal)
+                        structure-based sequence alignments take into account helix bulges and constrictions, display
+                        statistics of amino acid conservation and have been assigned generic residue numbering for
+                        equivalent residues in different receptors. For an overview read the GPCRdb
+                        <a href="http://files.gpcrdb.org/GPCRdb_Poster.pdf">poster</a>,
+                        <a href="/pages/citing">articles</a> or <a href="/documentation">documentation</a>.</p>
                     </div>
                 </div>
             </div>
@@ -108,7 +110,7 @@
         <div class="col-md-3">
             <div class="panel panel-primary">
                 <div class="panel-body">
-                    <h3>Latest news</h3>
+                    <h3>Latest <a href="/news">news</a></h3>
                     <ul>
                         {% for item in news %}
                         <li><small>{{ item.html|safe }}</small></li>
@@ -136,7 +138,11 @@
                     <h3>GPCRdb statistics</h3>
                     <ul>
                     {% for stat in release_statistics %}
-                        <li>{{ stat.statistics_type }}: {{ stat.value }}</li>
+                        <li>
+                        {{ stat.statistics_type }}: {{ stat.value|intcomma }}
+                        <!-- FIXME -->
+                        {% if stat.statistics_type|safe == "Human proteins" %} (all non-olfactory){% endif %}
+                        </li>
                     {% endfor %}
                     </ul>
                 </div>
@@ -160,12 +166,12 @@
 
         <div class='col-md-3'>
             <p class="text-center"><a href='http://gloriamgroup.org'>University of Copenhagen</p>
-            <p class="text-center"><img src='http://gpcrdb.org/img/logo/uni_cph.png' style="height:100px;width:100px;"></a></p>
+            <p class="text-center"><img src="{% static 'home/logo/uni_cph.png' %}" style="height:100px;width:100px;"></a></p>
         </div>
 
         <div class='col-md-3'>
             <p>Supported by <a href='http://glisten-gpcr.eu'>GLISTEN</a> (COST Action CM1207)</p>
-            <p><a href='http://glisten-gpcr.eu'><img src='http://gpcrdb.org/img/logo/glisten.png' style="height:28px;width:200px;"></a></p>
+            <p><a href='http://glisten-gpcr.eu'><img src="{% static 'home/logo/glisten.png' %}" style="height:28px;width:200px;"></a></p>
         </div>
 
         <!-- Partner servers -->
