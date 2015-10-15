@@ -37,10 +37,14 @@ class StructureBrowser(TemplateView):
 
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
-            context['structures'] = Structure.objects.all().prefetch_related(
-                "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+            context['structures'] = Structure.objects.all().select_related(
+                "pdb_code__web_resource",
+                "protein_conformation__protein__species",
+                "protein_conformation__protein__source",
+                "protein_conformation__protein__family__parent__parent__parent",
+                "publication__web_link__web_resource").prefetch_related(
                 "stabilizing_agents",
-                "protein_conformation__protein__family__parent__parent", "publication__web_link__web_resource",
+                "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
                 Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
                 annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
         except Structure.DoesNotExist as e:
@@ -101,7 +105,17 @@ class StructureStatistics(TemplateView):
         unique_structs = list(Structure.objects.order_by('protein_conformation__protein__parent', 'state',
             'publication_date', 'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein'))
         families = list(set([x.protein_conformation.protein.get_protein_family() for x in unique_structs]))
+        classes = [x.protein_conformation.protein.get_protein_class() for x in unique_structs]
         
+        tmp = {}
+        for x in list(set(classes)):
+            tmp[x] = classes.count(x)
+        #Basic stats
+        context['all_structures'] = len(all_structs)
+        context['unique_structures'] = len(unique_structs)
+        context['unique_by_class'] = tmp
+        context['unique_complexes'] = len(StructureLigandInteraction.objects.filter(annotated=True).distinct('structure__protein_conformation__protein__family__name', 'ligand__name'))
+
         extra = {
             'x_axis_format': '',
             'y_axis_format': 'f',
@@ -720,6 +734,7 @@ class FragmentSuperpositionIndex(TemplateView):
     #Input file form data
     header = "Select a file to upload:"
     #Can't control the class properly - staying with the dirty explicit html code
+    form_id='fragments'
     form_code = """
     Pdb file:<input id="id_pdb_file" name="pdb_file" type="file" /></br>
     Similarity:</br>
@@ -767,7 +782,7 @@ class FragmentSuperpositionResults(TemplateView):
 
     #Left panel - blank
     #Mid section
-    mid_section = 'superposition_results.html'
+    mid_section = 'fragment_superposition_results.html'
     #Buttons - none
 
     def post (self, request, *args, **kwargs):
@@ -831,26 +846,30 @@ class TemplateTargetSelection(AbsReferenceSelection):
     """
     
     type_of_selection = 'reference'
-    #Left panel
-    description = 'Select targets by searching or browsing in the middle column. You can select entire target families or individual targets.\n\nSelected targets will appear in the right column, where you can edit the list.\n\nOnce you have selected all your targets, either proceed with all TMs alignment ("Find template" button) or specify the sequence segments manualy ("Advanced segment selection" button).'
+    # Left panel
+    description = 'Select a reference target by searching or browsing in the middle column.' \
+        + '\n\nThe selected reference target will appear in the right column.' \
+        + '\n\nOnce you have selected your reference target, either proceed with all TMs alignment ("Find template"' \
+        + 'button) or specify the sequence segments manualy ("Advanced segment selection" button).'
     step = 1
     number_of_steps = 2
+    redirect_on_select = False
 
-    #Mid section
+    # Mid section
 
-    #Right panel
-    buttons = {
-        'continue': {
-            'label': 'Find template',
-            'url': '/structure/template_browser',
-            'color': 'success',
-        },
-        'segments' : {
-            'label' : 'Advanced segment selection',
-            'url' : '/structure/template_segment_selection',
-            'color' : 'info',
-        },
+    # Right panel
+    buttons = OrderedDict()
+    buttons['continue'] = {
+        'label': 'Find template',
+        'url': '/structure/template_browser',
+        'color': 'success',
     }
+    buttons['segments'] = {
+        'label' : 'Advanced segment selection',
+        'url' : '/structure/template_segment_selection',
+        'color' : 'info',
+    }
+
     selection_boxes = OrderedDict([('reference', True),
         ('targets', False),
         ('segments', False),])
@@ -899,20 +918,42 @@ class TemplateBrowser(TemplateView):
 
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)
+        
+        # make an alignment
         a = Alignment()
+        a.ignore_alternative_residue_numbering_schemes = True
+
+        # load the selected reference into the alignment
         a.load_reference_protein_from_selection(simple_selection)
-        qs = Structure.objects.all().select_related().prefetch_related("protein_conformation__protein", "protein_conformation__protein__endogenous_ligands", "publication__web_link", "stabilizing_agents")
-        #Dirty but fast
+        
+        # fetch 
+        qs = Structure.objects.all().select_related(
+            "pdb_code__web_resource",
+            "protein_conformation__protein__species",
+            "protein_conformation__protein__source",
+            "protein_conformation__protein__family__parent__parent__parent",
+            "publication__web_link__web_resource").prefetch_related(
+            "stabilizing_agents",
+            "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+            Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
+            annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
+
+        # Dirty but fast
         qsd = {}
-        for st in list(qs):
+        for st in qs:
             qsd[st.protein_conformation.protein.id] = st
-        a.load_proteins([x.protein_conformation.protein for x in list(qs)])
+        
+        # add proteins to the alignment
+        a.load_proteins([x.protein_conformation.protein for x in qs])
+        
         if simple_selection.segments != []:
             a.load_segments_from_selection(simple_selection)
         else:
             a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']))
+        
         a.build_alignment()
         a.calculate_similarity()
+
         context['structures'] = []
         for prot in a.proteins[1:]:
             try:

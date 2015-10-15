@@ -5,7 +5,6 @@ from django.db import connection
 
 import datetime
 import logging
-from optparse import make_option
 from multiprocessing import Queue, Process
 
 
@@ -15,9 +14,14 @@ class Command(BaseCommand):
     logger = logging.getLogger(__name__)
 
     def add_arguments(self, parser):
-        parser.add_argument('--njobs', action='store', dest='njobs', help='Number of jobs to run')
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=1,
+            help='Number of processes to run')
 
-    def prepare_input(self, njobs, items, iteration=1):
+    def prepare_input(self, proc, items, iteration=1):
         q = Queue()
         procs = list()
         num_items = len(items)
@@ -26,14 +30,14 @@ class Command(BaseCommand):
             return False
 
         # make sure not to use more jobs than proteins (chunk size will be 0, which is not good)
-        if njobs > num_items:
-            njobs = num_items
+        if proc > num_items:
+            proc = num_items
 
-        chunk_size = int(num_items / njobs)
+        chunk_size = int(num_items / proc)
         connection.close()
-        for i in range(0, njobs):
+        for i in range(0, proc):
             first = chunk_size * i
-            if i == njobs - 1:
+            if i == proc - 1:
                 last = False
             else:
                 last = chunk_size * (i + 1)

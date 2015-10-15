@@ -1,0 +1,18 @@
+﻿{% block superposition_results %}
+<div class='col-md-4 panel panel-primary' style="height:200px;">
+    <br />
+    <h4>Results for your query: </h4>
+    <div class='row-fluid well well-small selection-box'>
+        {{ message }}
+    </div>
+    <hr />
+    {% if success %}
+        {% if outfile %}
+            <div>
+                <a class="btn btn-small" href="/structure/{{ zip }}output/{{ outfile }}/{{ replacement_tag }}"><i class="icon-download">Output file</i>
+                </a>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+    {% endblock %}

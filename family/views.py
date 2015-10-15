@@ -23,20 +23,22 @@ def detail(request, slug):
     families.reverse()
 
     # number of proteins
-    no_of_proteins = Protein.objects.filter(family__slug__startswith=pf.slug, sequence_type__slug='wt').count()
+    proteins = Protein.objects.filter(family__slug__startswith=pf.slug, sequence_type__slug='wt')
+    no_of_proteins = proteins.count()
     no_of_human_proteins = Protein.objects.filter(family__slug__startswith=pf.slug, species__id=1,
         sequence_type__slug='wt').count()
 
-    # fetch proteins and segments
-    proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt')
-    segments = ProteinSegment.objects.filter(partial=False)
 
     # get structures of this family
     structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__startswith=slug
-        ).order_by('-representative', 'resolution')
+        ).order_by('-representative', 'resolution').prefetch_related('pdb_code__web_resource')
 
     mutations = MutationExperiment.objects.filter(protein__in=proteins)
     
+    # fetch proteins and segments
+    proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt', species__id=1)
+    segments = ProteinSegment.objects.filter(partial=False)
+
     # create an alignment object
     a = Alignment()
 
@@ -50,49 +52,14 @@ def detail(request, slug):
     # calculate consensus sequence + amino acid and feature frequency
     a.calculate_statistics()
 
-    residue_list = []
-    generic_numbers = []
-    reference_generic_numbers = {}
-    count = 0 #build sequence_number
+    HelixBox = DrawHelixBox(a.full_consensus,'Class A',str('test'))
+    SnakePlot = DrawSnakePlot(a.full_consensus,'Class A',str('test'))
 
-    ################################################################################
-    #FIXME -- getting matching display_generic_numbers kinda randomly.
-
-    for seg in a.consensus: #Grab list of generic_numbers to lookup for their display numbers
-        for aa in a.consensus[seg]:
-            if "x" in aa:
-                generic_numbers.append(aa)
-
-    generic_ids = Residue.objects.filter(generic_number__label__in=generic_numbers).values('id').distinct(
-        'generic_number__label').order_by('generic_number__label')
-    rs = Residue.objects.filter(id__in=generic_ids).prefetch_related('display_generic_number','generic_number')
-
-    for r in rs: #make lookup dic.
-        reference_generic_numbers[r.generic_number.label] = r
-    ################################################################################
-    
-    for seg in a.consensus:
-        for aa,v in a.consensus[seg].items():
-            r = Residue()
-            r.sequence_number =  count #FIXME is this certain to be correct that the position in consensus is seq position? 
-            if "x" in aa:
-                r.display_generic_number = reference_generic_numbers[aa].display_generic_number #FIXME
-                r.segment_slug = seg
-                r.family_generic_number = aa
-            else:
-                r.segment_slug = seg
-                r.family_generic_number = aa
-            r.amino_acid = v[0]
-            r.extra = v[2] #Grab consensus information
-            residue_list.append(r)
-
-            count += 1         
-    HelixBox = DrawHelixBox(residue_list,'Class A',str('test'))
-    SnakePlot = DrawSnakePlot(residue_list,'Class A',str('test'))
-
-    # get residues for sequence viewer
-    # get residues
-    pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__sequence_type__slug='consensus')
+    try:
+        pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__sequence_type__slug='consensus')
+    except ProteinConformation.DoesNotExist:
+        pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__species_id=1)
+        
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
         'protein_segment', 'generic_number', 'display_generic_number')
     

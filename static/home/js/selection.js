@@ -1,3 +1,9 @@
+$(function () {
+    $('a').click(function () {
+        $(this).toggleClass('active');
+    });
+});
+
 function AddToSelection(selection_type, selection_subtype, selection_id) {
     $.ajax({
         'url': '/common/addtoselection',
@@ -174,7 +180,7 @@ function SetTreeSelection(option_no, option_id) {
         },
         'type': 'GET',
         'success': function (data) {
-            $("#tree_buttons").html(data);
+            $("#tree-options").html(data);
         }
     });
 }

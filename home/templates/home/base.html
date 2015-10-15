@@ -1,4 +1,5 @@
 {% load mainmenu %}
+{% load site_title %}
 {% load staticfiles %}
 
 <!DOCTYPE html>
@@ -7,7 +8,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}{% endblock %}</title>
+    <title>{% site_title %}</title>
 
     <!-- Bootstrap -->
     <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">

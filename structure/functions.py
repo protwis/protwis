@@ -302,8 +302,9 @@ class BackboneSelector():
         for chain in ref_pdbio_struct:
             for res in chain:
                 try:
-                    if self.get_generic_number(res) == fragment.rotamer.residue.display_generic_number.label:
-                        print("Ref {}:{}\tFragment {}:{}".format(polypeptide.three_to_one(res.resname), self.get_generic_number(res), fragment.rotamer.residue.amino_acid, fragment.rotamer.residue.display_generic_number.label))
+                    gn = self.get_generic_number(res)
+                    if gn == fragment.rotamer.residue.display_generic_number.label:
+                        logger.info("Ref {}:{}\tFragment {}:{}".format(polypeptide.three_to_one(res.resname), self.get_generic_number(res), fragment.rotamer.residue.amino_acid, fragment.rotamer.residue.display_generic_number.label))
                         if use_similar:
                             for rule in self.similarity_rules:
                                 if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and fragment.rotamer.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
@@ -311,7 +312,6 @@ class BackboneSelector():
                         else:
                             return [res['CA'], res['N'], res['O']] 
                 except Exception as msg:
-                    #print(msg)
                     continue
         return []                  
 

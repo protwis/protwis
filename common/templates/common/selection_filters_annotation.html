@@ -6,7 +6,7 @@
         Swiss-Prot
     </a>
     <a href="javascript:void(0)" onclick="SelectionAnnotation('All')"
-        class="btn btn-primary{% if selection.annotation|length == 2 %} active{% endif %}">
+        class="btn btn-primary{% if selection.annotation|length > 1 %} active{% endif %}">
         All
     </a>
 </div>

@@ -9,9 +9,8 @@ from protein.models import (Protein, ProteinConformation, ProteinState, ProteinS
 ProteinFusion, ProteinFusionProtein, ProteinSource)
 from residue.models import Residue
 
-from optparse import make_option
-from datetime import datetime
-import logging, os
+import os
+import logging
 import yaml
 
 
@@ -19,10 +18,20 @@ class Command(BaseBuild):
     help = 'Reads source data and creates protein records for constructs'
     
     def add_arguments(self, parser):
-        parser.add_argument('--njobs', action='store', dest='njobs', help='Number of jobs to run')
-        parser.add_argument('--filename', action='append', dest='filename',
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=1,
+            help='Number of processes to run')
+        parser.add_argument('-f', '--filename',
+            action='append',
+            dest='filename',
             help='Filename to import. Can be used multiple times')
-        parser.add_argument('--purge', action='store_true', dest='purge', default=False,
+        parser.add_argument('-u', '--purge',
+            action='store_true',
+            dest='purge',
+            default=False,
             help='Purge existing construct records')
 
     # source file directory
@@ -39,12 +48,6 @@ class Command(BaseBuild):
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
-        
-        # how many jobs to run?
-        if 'njobs' in options and options['njobs']:
-            njobs = int(options['njobs'])
-        else:
-            njobs = 1
 
         # where filenames specified?
         if options['filename']:
@@ -52,7 +55,7 @@ class Command(BaseBuild):
 
         try:
             self.logger.info('CREATING CONSTRUCTS')
-            self.prepare_input(njobs, self.filenames)
+            self.prepare_input(options['proc'], self.filenames)
             self.logger.info('COMPLETED CREATING CONSTRUCTS')
         except Exception as msg:
             print(msg)

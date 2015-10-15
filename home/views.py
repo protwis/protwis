@@ -6,6 +6,8 @@ from common.models import ReleaseNotes, ReleaseStatistics
 
 
 def index(request):
+    request.session.flush()
+
     context = {}
     
     # title of the page

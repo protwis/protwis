@@ -19,12 +19,12 @@
             ClearSelection('reference');
             var table = $('#structures').DataTable({
                 'scrollX': true,
-                'scrollY': 600,
+                'scrollY': $(window).height()-300,
                 'bScrollCollapse': true,
                 'paging': false,
                 'orderCellsTop': true,
                 'autoWidth': true,
-                'dom': 'T<"clear">lfrtip',
+                'dom': 'iTlfrt',
                 'order': [[14, "asc"]], // order by date
                 'aoColumnDefs': [
                     { 'bSortable' : false, 'aTargets': [0] },
@@ -157,109 +157,106 @@
     </div>
     <br />
     <br />
-    {% if structures %}              
-        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
-            <table width="100%" class="display" id="structures">
-                <thead>
+
+    <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+        <table width="100%" class="display" id="structures">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th class="protein-th">Protein name</th>
+                    <th class="protein-th">Protein class</th>
+                    <th class="protein-th">Species</th>
+                    <th class="pdb-th">PDB code</th>
+                    <th class="pdb-th">Resolution</th>
+                    <th class="pdb-th">Pre. chain</th>
+                    <th class='pdb-th'>Aux. proteins</th>
+                    <th class="ligand-th">Endo. ligand</th>
+                    <th class="ligand-th">Endo. lig. type</th>
+                    <th class="ligand-th">X-ray ligand</th>
+                    <th class="ligand-th">X-ray lig. function</th>
+                    <th class="ligand-th">X-ray lig. type</th>
+                    <th class="pub-th">Reference</th>
+                    <th class="pub-th">Date</th>
+                </tr>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for structure in structures.all %}
+                {% if structure.representative %}
+                    <tr class="repr-st">
+                {% else %}
                     <tr>
-                        <th></th>
-                        <th class="protein-th">Protein name</th>
-                        <th class="protein-th">Protein class</th>
-                        <th class="protein-th">Species</th>
-                        <th class="pdb-th">PDB code</th>
-                        <th class="pdb-th">Resolution</th>
-                        <th class="pdb-th">Pre. chain</th>
-                        <th class='pdb-th'>Aux. proteins</th>
-                        <th class="ligand-th">Endo. ligand</th>
-                        <th class="ligand-th">Endo. lig. type</th>
-                        <th class="ligand-th">X-ray ligand</th>
-                        <th class="ligand-th">X-ray lig. function</th>
-                        <th class="ligand-th">X-ray lig. type</th>
-                        <th class="pub-th">Reference</th>
-                        <th class="pub-th">Date</th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for structure in structures.select_related.all %}
-                    {% if structure.representative %}
-                        <tr class="repr-st">
-                    {% else %}
-                        <tr>
-                    {% endif %}
-                        <td><input class="alt" type="checkbox"></td>
-                        <td>{{ structure.protein_conformation.protein.family.name|safe }}</td>
-                        <td>{{ structure.protein_conformation.protein.get_protein_class }}</td>
-                        <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
-                        <td class="text-center"><a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}
-                        </a></td>
-                        <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
-                        <td class="text-center">{{ structure.preferred_chain }}</td>
-                        <td>
-                            {% for sa in structure.stabilizing_agents.all %}
-                                {{ sa.name }}<br />
-                            {% empty %}
-                            N/A
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {% for ligand in structure.protein_conformation.protein.parent.endogenous_ligands.all %}
-                            {{ ligand|safe }}<br />
-                            {% empty %}
-                            N/A
-                            {% endfor %}
-                        </td>
-                        <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
-                        <td>
-                            {% for ligand in structure.ligands.all %}
-                            {{ ligand.ligand.name|safe }}<br />
-                            {% empty %}
-                            N/A
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {% for ligand in structure.ligands.all %}
-                            {{ ligand.ligand_role.name }}<br />
-                            {% empty %}
-                            N/A
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {% for ligand in structure.ligands.all %}
-                            {{ ligand.ligand.properities.ligand_type }}<br />
-                            {% empty %}
-                            N/A
-                            {% endfor %}
-                        </td>
-                        <td>
-                            <a href="{{ structure.publication.web_link }}">
-                            {{ structure.publication.web_link.index }}
-                            </a>
-                        </td>
-                        <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <p> Ooops! There is no data to show here yet. </p>
-    {% endif %}
+                {% endif %}
+                    <td><input class="alt" type="checkbox"></td>
+                    <td>{{ structure.protein_conformation.protein.family.name|safe }}</td>
+                    <td>{{ structure.protein_conformation.protein.family.parent.parent.parent.name }}</td>
+                    <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
+                    <td class="text-center"><a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}
+                    </a></td>
+                    <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
+                    <td class="text-center">{{ structure.preferred_chain }}</td>
+                    <td>
+                        {% for sa in structure.stabilizing_agents.all %}
+                            {{ sa.name }}<br />
+                        {% empty %}
+                        N/A
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for ligand in structure.protein_conformation.protein.parent.endogenous_ligands.all %}
+                        {{ ligand|safe }}<br />
+                        {% empty %}
+                        N/A
+                        {% endfor %}
+                    </td>
+                    <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
+                    <td>
+                        {% for ligand in structure.ligands.all %}
+                        {{ ligand.ligand.name|safe }}<br />
+                        {% empty %}
+                        N/A
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for ligand in structure.ligands.all %}
+                        {{ ligand.ligand_role.name }}<br />
+                        {% empty %}
+                        N/A
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for ligand in structure.ligands.all %}
+                        {{ ligand.ligand.properities.ligand_type }}<br />
+                        {% empty %}
+                        N/A
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <a href="{{ structure.publication.web_link }}">
+                        {{ structure.publication.web_link.index }}
+                        </a>
+                    </td>
+                    <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
 {% endblock %}

@@ -4,6 +4,7 @@ from django.conf import settings
 from django import forms
 from django.core.servers.basehttp import FileWrapper
 from django.db.models import Count, Min, Sum, Avg,Q
+from django.utils.text import slugify
 
 
 from interaction.models import *
@@ -222,7 +223,9 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
 
                             ligand = alias #Use alias for structureligandinteraction
                 else: #Ligand does not exist, create it
-                    ligandtype, created = LigandType.objects.get_or_create(slug="sm", name='Small molecule') #FIXME
+                    default_ligand_type = 'Small molecule'
+                    ligandtype, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
+                        defaults={'name': default_ligand_type})
                     lp = LigandProperities()
                     lp.inchikey = output['inchikey'].strip()
                     lp.smiles = output['smiles'].strip()
@@ -733,21 +736,23 @@ def calculate(request, redirect=None):
             #proteins = [s.protein_conformation.protein]
             proteins = []
             protein_list = Protein.objects.filter(pk__in=prot_id_list)
-            numbering_schemes_selection = ['gpcrdb']
+            numbering_schemes_selection = [settings.DEFAULT_NUMBERING_SCHEME]
             for p in protein_list:
                 proteins.append(p)
-                numbering_schemes_selection.append(p.residue_numbering_scheme.slug)
+                if p.residue_numbering_scheme.slug not in numbering_schemes_selection:
+                    numbering_schemes_selection.append(p.residue_numbering_scheme.slug)
 
             numbering_schemes = ResidueNumberingScheme.objects.filter(slug__in=numbering_schemes_selection).all()
-            default_scheme = numbering_schemes[0]
+            default_scheme = numbering_schemes.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
             data = OrderedDict()
 
             for segment in segments:
                 data[segment.slug] = OrderedDict()
                 residues = Residue.objects.filter(protein_segment=segment,  protein_conformation__protein__in=proteins, 
-                                                generic_number__label__in=residue_table_list).prefetch_related('protein_conformation__protein', 
-                                                'protein_conformation__state', 'protein_segment',
-                                                'generic_number','display_generic_number','generic_number__scheme', 'alternative_generic_numbers__scheme')
+                    generic_number__label__in=residue_table_list).prefetch_related('protein_conformation__protein', 
+                    'protein_conformation__state', 'protein_segment',
+                    'generic_number','display_generic_number','generic_number__scheme',
+                    'alternative_generic_numbers__scheme')
                 for scheme in numbering_schemes:
                     if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
                         for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
@@ -812,6 +817,7 @@ def calculate(request, redirect=None):
                     # 'hydrophobic': 'hp',
                 }
                 for gn, interactions in simple_generic_number[mainligand].items():
+                    print(gn, interactions)
                     if gn != 'score' and gn != 0.0: # FIXME leave these out when dict is created
                         for interaction in interactions:
                             if interaction in interaction_name_dict:
