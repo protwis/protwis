@@ -146,6 +146,7 @@ class Ligand(models.Model):
         # does a ligand with this canonical name already exist
         try:
             return Ligand.objects.get(name=ligand_name, canonical=True)
+            # FIXME check inchikey
         except Ligand.DoesNotExist:
             pass # continue
 
