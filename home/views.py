@@ -12,6 +12,7 @@ def index(request):
     
     # title of the page
     context['site_title'] = settings.SITE_TITLE
+    context['documentation_url'] = settings.DOCUMENTATION_URL
 
     # analytics
     context['google_analytics_key'] = settings.GOOGLE_ANALYTICS_KEY

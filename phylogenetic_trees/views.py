@@ -19,7 +19,7 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 class TargetSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 3
-    docs = '/documentation/similarities'
+    docs = 'sequences.html#phylogeneric-trees'
     selection_boxes = OrderedDict([
         ('targets', True),
         ('segments', False),
@@ -36,7 +36,7 @@ class TargetSelection(AbsTargetSelection):
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 3
-    docs = '/documentation/similarities'
+    docs = 'sequences.html#phylogeneric-trees'
     selection_boxes = OrderedDict([
         ('targets', True),
         ('segments', True),
@@ -53,7 +53,7 @@ class SegmentSelection(AbsSegmentSelection):
 class TreeSettings(AbsMiscSelection):
     step = 3
     number_of_steps = 3
-    docs = '/documentation/similarities'
+    docs = 'sequences.html#phylogeneric-trees'
     title = 'SELECT TREE OPTIONS'
     description = 'Select options for tree generation in the middle column.\nOnce you have selected your' \
         + ' settings, click the green button.'

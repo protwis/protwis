@@ -19,7 +19,7 @@ class BrowseSelection(AbsBrowseSelection):
     description = 'Select a target or family by searching or browsing in the right column.'
     description = 'Select a receptor (family) by searching or browsing in the middle. The selection is viewed to' \
         + ' the right.'
-    docs = '/documentation/sequences'
+    docs = 'receptors.html'
     buttons = {}
         
 

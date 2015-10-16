@@ -26,6 +26,7 @@ class AbsTargetSelection(TemplateView):
     description = 'Select targets by searching or browsing in the middle column. You can select entire target' \
         + ' families or individual targets.\n\nSelected targets will appear in the right column, where you can edit' \
         + ' the list.\n\nOnce you have selected all your targets, click the green button.'
+    documentation_url = settings.DOCUMENTATION_URL
     docs = False
     filters = True
     default_species = 'Human'
@@ -141,6 +142,7 @@ class AbsSegmentSelection(TemplateView):
         + ' residues by clicking on the down arrows next to each helix.\n\nSelected segments will appear in the' \
         + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
         + ' button.'
+    documentation_url = settings.DOCUMENTATION_URL
     docs = False
     segment_list = True
     structure_upload = False
@@ -203,7 +205,8 @@ class AbsMiscSelection(TemplateView):
     number_of_steps = 3
     title = ''
     description = ''
-    docs = ''
+    documentation_url = settings.DOCUMENTATION_URL
+    docs = False
     buttons = {}
     tree_settings = False
     blast_input = False

@@ -228,12 +228,16 @@ class GenericNumberingIndex(TemplateView):
     #Left panel
     step = 1
     number_of_steps = 2
+    documentation_url = settings.DOCUMENTATION_URL
+    docs = 'structures.html#pdb-file-residue-numbering'
     title = "UPLOAD A PDB FILE"
     description = """
-    Upload a pdb file you want to be annotated with generic numbers. Note that "CA" atoms will be assigned a number in GPCRdb notation, and "N" atoms will be annotated with Ballesteros-Weinstein scheme.
+    Upload a pdb file to be annotated with generic numbers from GPCRdb.
+
+    The numbers can be visualized in molecular viewers such as PyMOL, with scripts available with the output files.
     
     Once you have selected all your targets, click the green button.
-        """
+    """
 
     #Input file form data
     header = "Select a file to upload:"
@@ -327,6 +331,8 @@ class GenericNumberingSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
 
+    docs = 'structures.html#pdb-file-residue-numbering'
+
     #Mid section
     #mid_section = 'segment_selection.html'
 
@@ -414,6 +420,8 @@ class SuperpositionWorkflowIndex(TemplateView):
     #Left panel
     step = 1
     number_of_steps = 3
+    documentation_url = settings.DOCUMENTATION_URL
+    docs = 'structures.html#structure-superposition'
     title = "UPLOAD YOUR FILES"
     description = """
     Upload a pdb file for reference structure, and one or more files that will be superposed. You can also select the structures from crystal structure browser.
@@ -491,6 +499,8 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
     #Left panel
     step = 2
     number_of_steps = 3
+
+    docs = 'structures.html#structure-superposition'
 
     #Mid section
     #mid_section = 'segment_selection.html'
@@ -726,6 +736,10 @@ class FragmentSuperpositionIndex(TemplateView):
     #Left panel
     step = 1
     number_of_steps = 1
+
+    documentation_url = settings.DOCUMENTATION_URL
+    docs = 'sites.html#pharmacophore-generation'
+    
     title = "SUPERPOSE FRAGMENTS OF CRYSTAL STRUCTURES"
     description = """
     The tool implements a fragment-based pharmacophore method, as published in <a href='http://www.ncbi.nlm.nih.gov/pubmed/25286328'>Fidom K, et al (2015)</a>. Interacting ligand moiety - residue pairs extracted from selected crystal structures of GPCRs are superposed onto the input pdb file based on gpcrdb generic residue numbers. Resulting aligned ligand fragments can be used for placement of pharmacophore features.
@@ -859,6 +873,8 @@ class TemplateTargetSelection(AbsReferenceSelection):
     number_of_steps = 2
     redirect_on_select = False
 
+    docs = 'structures.html#template-selection'
+
     # Mid section
 
     # Right panel
@@ -888,6 +904,8 @@ class TemplateSegmentSelection(AbsSegmentSelection):
    #Left panel
     step = 2
     number_of_steps = 2
+
+    docs = 'structures.html#template-selection'
 
     #Mid section
     #mid_section = 'segment_selection.html'
