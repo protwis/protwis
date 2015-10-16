@@ -18,7 +18,7 @@ from collections import OrderedDict
 class TargetSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 2
-    docs = '/documentation/sequences'
+    docs = 'sequences.html#structure-based-alignments'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -36,7 +36,7 @@ class TargetSelection(AbsTargetSelection):
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
-    docs = '/documentation/sequences'
+    docs = 'sequences.html#structure-based-alignments'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -54,6 +54,7 @@ class SegmentSelection(AbsSegmentSelection):
 class BlastSearchInput(AbsMiscSelection):
     step = 1
     number_of_steps = 1
+    docs = 'sequences.html#similarity-search-blast'
     title = 'BLAST search'
     description = 'Enter a sequence into the text box and press the green button.'
     buttons = {
