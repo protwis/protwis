@@ -409,7 +409,7 @@ class Command(BaseBuild):
                                 s.protein_conformation.protein.parent.endogenous_ligands.add(ligand)
                             except IntegrityError:
                                 self.logger.info('Endogenous ligand for protein {}, already added. Skipping.'.format(
-                                    s.protein_conformatino.protein.parent))
+                                    s.protein_conformation.protein.parent))
 
                     # ligands
                     if 'ligand' in sd and sd['ligand']:
