@@ -20,21 +20,27 @@ import sys
 import multiprocessing
 import pprint
 from datetime import datetime
-startTime = datetime.now()
 
+
+startTime = datetime.now()
+l = multiprocessing.Lock()
 
 def homology_model_multiprocessing(receptor):
     Homology_model = HomologyModeling(receptor, 'Inactive', ['Inactive'])
     alignment = Homology_model.run_alignment()
-    Homology_model.build_homology_model(alignment)#, switch_bulges=False, switch_constrictions=False, switch_rotamers=False)    
-    logger = logging.getLogger('homology_modeling')
-    logger.info('Model for {} successfully built.'.format(receptor))
-
+    if alignment!=None:
+        Homology_model.build_homology_model(alignment)#, switch_bulges=False, switch_constrictions=False, switch_rotamers=False)    
+        logger = logging.getLogger('homology_modeling')
+        l.acquire()
+        logger.info('Model for {} successfully built.'.format(receptor))
+        l.release()
         
 class Command(BaseCommand):    
     def handle(self, *args, **options):
       
-        receptor_list = ['ogr1_human']
+        receptor_list = [ 'gpr1_human', 'etbr2_human', 'gp151_human', 
+                         'gpr37_human', 'gp135_human', 'gp176_human', 'gpr55_human', 'gpr19_human', 'p2ry8_human', 
+                         'gpr32_human', 'p2y10_human']
         if os.path.isfile('./structure/homology_modeling.log'):
             os.remove('./structure/homology_modeling.log')
         logger = logging.getLogger('homology_modeling')
@@ -45,7 +51,10 @@ class Command(BaseCommand):
         logger.setLevel(logging.INFO)        
         
         pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-        pool.map(homology_model_multiprocessing,receptor_list)
+        for i in receptor_list:
+            pool.apply_async(homology_model_multiprocessing, [i])           
+        pool.close()
+        pool.join()
 
         print('\n###############################')
         print('Total runtime: ',datetime.now() - startTime)
@@ -78,7 +87,9 @@ class HomologyModeling(object):
         self.main_template_preferred_chain = ''
         self.loop_template_table = OrderedDict()
         self.logger = logging.getLogger('homology_modeling')
+        l.acquire()
         self.logger.info('Building model for {} {}.'.format(self.reference_protein, self.state))
+        l.release()        
         
     def __repr__(self):
         return "<{}, {}>".format(self.reference_entry_name, self.state)
@@ -173,11 +184,17 @@ class HomologyModeling(object):
                                         Bulge = Bulges(gn)
                                         bulge_template = Bulge.find_bulge_template(self.similarity_table_all, 
                                                                                    bulge_in_reference=False)
-                                        bulge_site = parse.fetch_residues_from_pdb(self.main_structure,
-                                                                                   [parse.gn_indecer(gn,'x',-2),
-                                                                                    parse.gn_indecer(gn,'x',-1),gn,
-                                                                                    parse.gn_indecer(gn,'x',+1),
-                                                                                    parse.gn_indecer(gn,'x',+2)])
+                                        bulge_site = OrderedDict([
+                                            (parse.gn_indecer(gn,'x',-2).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-2).replace('x','.')]),
+                                            (parse.gn_indecer(gn,'x',-1).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-1).replace('x','.')]),
+                                            (gn.replace('x','.'), 
+                                             main_pdb_array[ref_seg][gn.replace('x','.')]),
+                                            (parse.gn_indecer(gn,'x',+1).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+1).replace('x','.')]),
+                                            (parse.gn_indecer(gn,'x',+2).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+2).replace('x','.')])]) 
                                         superpose = sp.BulgeConstrictionSuperpose(bulge_site, bulge_template)
                                         new_residues = superpose.run()
                                         switch_res = 0
@@ -214,7 +231,7 @@ class HomologyModeling(object):
                                             (parse.gn_indecer(gn,'x',-1).replace('x','.'), 
                                              main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-1).replace('x','.')]),
                                             (gn.replace('x','.'), 
-                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-2).replace('x','.')]),
+                                             main_pdb_array[ref_seg][gn.replace('x','.')]),
                                             (parse.gn_indecer(gn,'x',+1).replace('x','.'), 
                                              main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+1).replace('x','.')]),
                                             (parse.gn_indecer(gn,'x',+2).replace('x','.'), 
@@ -250,11 +267,15 @@ class HomologyModeling(object):
                                         Bulge = Bulges(gn)
                                         bulge_template = Bulge.find_bulge_template(self.similarity_table_all,
                                                                                    bulge_in_reference=True)
-                                        bulge_site = parse.fetch_residues_from_pdb(self.main_structure,
-                                                                                   [parse.gn_indecer(gn,'x',-2),
-                                                                                    parse.gn_indecer(gn,'x',-1),
-                                                                                    parse.gn_indecer(gn,'x',+1),
-                                                                                    parse.gn_indecer(gn,'x',+2)])
+                                        bulge_site = OrderedDict([
+                                            (parse.gn_indecer(gn,'x',-2).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-2).replace('x','.')]),
+                                            (parse.gn_indecer(gn,'x',-1).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-1).replace('x','.')]),
+                                            (parse.gn_indecer(gn,'x',+1).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+1).replace('x','.')]),
+                                            (parse.gn_indecer(gn,'x',+2).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+2).replace('x','.')])]) 
                                         superpose = sp.BulgeConstrictionSuperpose(bulge_site, bulge_template)
                                         new_residues = superpose.run()
                                         switch_res = 0
@@ -283,11 +304,15 @@ class HomologyModeling(object):
                                         constriction_template = Const.find_constriction_template(
                                                                                        self.similarity_table_all,
                                                                                        constriction_in_reference=False)
-                                        constriction_site = parse.fetch_residues_from_pdb(self.main_structure,
-                                                                                          [parse.gn_indecer(gn,'x',-2),
-                                                                                           parse.gn_indecer(gn,'x',-1),
-                                                                                           parse.gn_indecer(gn,'x',+1),
-                                                                                           parse.gn_indecer(gn,'x',+2)])
+                                        constriction_site = OrderedDict([
+                                            (parse.gn_indecer(gn,'x',-2).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-2).replace('x','.')]),
+                                            (parse.gn_indecer(gn,'x',-1).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-1).replace('x','.')]),
+                                            (parse.gn_indecer(gn,'x',+1).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+1).replace('x','.')]),
+                                            (parse.gn_indecer(gn,'x',+2).replace('x','.'), 
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+2).replace('x','.')])]) 
                                         superpose = sp.BulgeConstrictionSuperpose(constriction_site, 
                                                                                   constriction_template)
                                         new_residues = superpose.run()
@@ -435,13 +460,13 @@ class HomologyModeling(object):
                                                          a, trimmed_residues=trimmed_residues)                                                         
         
         # Model with MODELLER
-#        self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
-#        self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
-#                          self.uniprot_id, 1, "modeller_test.pdb", atom_dict=trimmed_res_nums)
-#        
-#        with open('./structure/homology_models/{}_Inactive/{}.stat.txt'.format(self.uniprot_id, self.uniprot_id), 'w') as stat_file:
-#            for label, info in self.statistics.items():
-#                stat_file.write('{} : {}\n'.format(label, info))
+        self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
+        self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
+                          self.uniprot_id, 1, "modeller_test.pdb", atom_dict=trimmed_res_nums)
+        
+        with open('./structure/homology_models/{}_Inactive/{}.stat.txt'.format(self.uniprot_id, self.uniprot_id), 'w') as stat_file:
+            for label, info in self.statistics.items():
+                stat_file.write('{} : {}\n'.format(label, info))
                 
         print('MODELLER build: ',datetime.now() - startTime)
         pprint.pprint(self.statistics)
@@ -640,13 +665,13 @@ sequence:{uniprot}::::::::
         
         if atom_dict==None:
             a = automodel(env, alnfile = pir_file, knowns = template, sequence = reference, 
-                          assess_methods=(assess.DOPE, assess.GA341))
+                          assess_methods=(assess.DOPE))
         else:
             a = HomologyMODELLER(env, alnfile = pir_file, knowns = template, sequence = reference, 
-                                 assess_methods=(assess.DOPE, assess.GA341), atom_selection=atom_dict)
+                                 assess_methods=(assess.DOPE), atom_selection=atom_dict)
         a.starting_model = 1
         a.ending_model = number_of_models
-        a.md_level = refine.very_slow
+        a.md_level = refine.slow
         path = "./structure/homology_models/{}".format(reference+"_"+self.state)
         if not os.path.exists(path):
             os.mkdir(path)
