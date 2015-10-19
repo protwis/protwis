@@ -34,6 +34,7 @@ class WebLink(models.Model):
     
     class Meta():
         db_table = 'web_link'
+        unique_together = ('web_resource', 'index')
 
 
 class Publication(models.Model):
@@ -103,7 +104,7 @@ class Publication(models.Model):
 
     def update_from_pubmed_data(self, index=None):
         logger = logging.getLogger('build')
-        
+
         if not index:
             index = self.web_link.index
         cache_dir = ['entrez', 'pmid']
