@@ -1,4 +1,4 @@
-"""
+﻿"""
 Django settings for protwis project.
 """
 
@@ -29,7 +29,6 @@ INSTALLED_APPS = (
     'debug_toolbar',
     'rest_framework',
     'rest_framework_swagger',
-    'django_nvd3',
     'common',
     'api',
     'documentation',

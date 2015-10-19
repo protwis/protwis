@@ -58,7 +58,8 @@ def detail(request, slug):
     try:
         pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__sequence_type__slug='consensus')
     except ProteinConformation.DoesNotExist:
-        pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__species_id=1)
+        pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__species_id=1,
+            protein__sequence_type__slug='wt')
         
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
         'protein_segment', 'generic_number', 'display_generic_number')

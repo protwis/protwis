@@ -31,6 +31,7 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 class TargetSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 2
+    docs = 'mutants.html#mutant-browser'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -49,6 +50,7 @@ class TargetSelection(AbsTargetSelection):
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
+    docs = 'mutants.html#mutant-browser'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
