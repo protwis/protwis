@@ -31,7 +31,6 @@ INSTALLED_APPS = (
     'rest_framework_swagger',
     'common',
     'api',
-    'documentation',
     'news',
     'pages',
     'home',
