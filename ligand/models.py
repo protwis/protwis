@@ -4,7 +4,7 @@ from django.db import IntegrityError
 
 from common.models import WebResource
 from common.models import WebLink
-from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
+from common.tools import fetch_from_web_api
 
 from urllib.request import urlopen, quote
 import json
@@ -27,28 +27,10 @@ class Ligand(models.Model):
     def load_by_gtop_id(self, ligand_name, gtop_id, ligand_type):
         logger = logging.getLogger('build')
 
-        # check whether this data is cached
+        # get the data from cache or web services
         cache_dir = ['guidetopharmacology', 'ligands']
-        gtop = fetch_from_cache(cache_dir, str(gtop_id))
-
-        if gtop:
-            logger.info('Fetched {}/{} from cache'.format('/'.join(cache_dir), gtop_id))
-        else:
-            logger.info('No cached entry for {}/{}'.format('/'.join(cache_dir), gtop_id))
-            
-            # fetch synomyms
-            gtop_url = 'http://www.guidetopharmacology.org/services/ligands/' + str(gtop_id)
-
-            try:
-                req = fetch_from_web_api(gtop_url)
-                if req:
-                    gtop = json.loads(req.read().decode('UTF-8'))
-
-                    # save to cache
-                    save_to_cache(cache_dir, str(gtop_id), gtop)
-                    logger.info('Saved entry for {}/{} in cache'.format('/'.join(cache_dir), gtop_id))
-            except:
-                logger.error('Failed fetching properties of ligand with GuideToPharmacology ID {}'.format(gtop_id))
+        url = 'http://www.guidetopharmacology.org/services/ligands/$index'
+        gtop = fetch_from_web_api(url, gtop_id, cache_dir)
         
         if gtop:
             # get name from response
@@ -78,26 +60,8 @@ class Ligand(models.Model):
         else:
             # check cache
             cache_dir = ['pubchem', 'cid', 'synonyms']
-            pubchem = fetch_from_cache(cache_dir, str(pubchem_id))
-
-            if pubchem:
-                logger.info('Fetched {}/{} from cache'.format('/'.join(cache_dir), pubchem_id))
-            else:
-                logger.info('No cached entry for {}/{}'.format('/'.join(cache_dir), pubchem_id))
-
-                pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/' + lookup_type + '/' \
-                    + str(pubchem_id) + '/synonyms/json'
-                try:
-                    req = fetch_from_web_api(pubchem_url)
-                    if req:
-                        pubchem = json.loads(req.read().decode('UTF-8'))
-
-                        # save to cache
-                        save_to_cache(cache_dir, str(pubchem_id), pubchem)
-                        logger.info('Saved entry for {}/{} in cache'.format('/'.join(cache_dir), pubchem_id))
-                except:
-                    logger.error('Error fetching ligand {} from PubChem'.format(pubchem_id))
-                    return None
+            url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/{}/$index/synonyms/json'.format(lookup_type)
+            pubchem = fetch_from_web_api(url, pubchem_id, cache_dir)
             
             # get name from response
             try:
@@ -111,26 +75,8 @@ class Ligand(models.Model):
         
         # check cache
         cache_dir = ['pubchem', 'cid', 'property']
-        pubchem = fetch_from_cache(cache_dir, str(pubchem_id))
-
-        if pubchem:
-            logger.info('Fetched {}/{} from cache'.format('/'.join(cache_dir), pubchem_id))
-        else:
-            logger.info('No cached entry for {}/{}'.format('/'.join(cache_dir), pubchem_id))
-            
-            pubchem_url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/' + lookup_type + '/' + str(pubchem_id) \
-                + '/property/CanonicalSMILES,InChIKey/json'
-            try:
-                req = fetch_from_web_api(pubchem_url)
-                if req:
-                    pubchem = json.loads(req.read().decode('UTF-8'))
-
-                    # save to cache
-                    save_to_cache(cache_dir, str(pubchem_id), pubchem)
-                    logger.info('Saved entry for {}/{} in cache'.format('/'.join(cache_dir), pubchem_id))
-            except:
-                logger.error('Error fetching ligand {} from PubChem'.format(pubchem_id))
-                return None
+        url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/{}/$index/property/CanonicalSMILES,InChIKey/json'.format(lookup_type)
+        pubchem = fetch_from_web_api(url, pubchem_id, cache_dir)
         
         # get properties from reponse
         try:
@@ -146,13 +92,14 @@ class Ligand(models.Model):
         # does a ligand with this canonical name already exist
         try:
             return Ligand.objects.get(name=ligand_name, canonical=True)
+            # FIXME check inchikey
         except Ligand.DoesNotExist:
             pass # continue
 
         # does a (canonical) ligand with this inchikey already exist?
         try:
-            existing_ligand = Ligand.objects.get(properities__inchikey=properties['inchikey'], canonical=True)
-            self.properities = existing_ligand.properities
+            existing_lp = LigandProperities.objects.get(inchikey=properties['inchikey'])
+            self.properities = existing_lp
             self.name = ligand_name
             self.canonical = False
             self.ambigious_alias = False
@@ -162,13 +109,11 @@ class Ligand(models.Model):
                 return self
             except IntegrityError:
                 return Ligand.objects.get(name=ligand_name, canonical=False)
-        except Ligand.DoesNotExist:
+        except LigandProperities.DoesNotExist:
             return self.update_ligand(ligand_name, properties, ligand_type, web_resource, pubchem_id)
 
     def update_ligand(self, ligand_name, properties, ligand_type, web_resource=False, web_resource_index=False):
-        lp = LigandProperities()
-        lp.ligand_type = ligand_type
-        lp.save()
+        lp = LigandProperities.objects.create(ligand_type=ligand_type)
 
         # assign properties
         for prop in properties:
@@ -176,10 +121,18 @@ class Ligand(models.Model):
 
         # assign web link
         if web_resource and web_resource_index:
-            wl, created = WebLink.objects.get_or_create(index=web_resource_index, web_resource=web_resource)
+            try:
+                wl, created = WebLink.objects.get_or_create(index=web_resource_index, web_resource=web_resource)
+            except IntegrityError:
+                wl = Weblink.objects.get(index=web_resource_index, web_resource=web_resource)
             lp.web_links.add(wl)
 
-        lp.save()
+        # try saving the properties, catch IntegrityErrors due to concurrent processing
+        try:
+            lp.save()
+        except IntegrityError:
+            lp = LigandProperities.objects.get(inchikey=properties['inchikey'])
+
         self.name = ligand_name
         self.canonical = True
         self.ambigious_alias = False

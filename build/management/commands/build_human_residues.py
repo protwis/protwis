@@ -144,7 +144,7 @@ class Command(BaseBuild):
                     # if this is not the last segment, find next segments reference position
                     if (i+1) < nseg:
                         next_segment = self.segments[i+1]
-                        if (next_segment.slug in settings.REFERENCE_POSITIONS and 
+                        if (next_segment.slug in settings.REFERENCE_POSITIONS and ref_positions and
                             settings.REFERENCE_POSITIONS[next_segment.slug] in ref_positions):
                             segment_end = (ref_positions[settings.REFERENCE_POSITIONS[next_segment.slug]]
                             - self.segment_length[next_segment.slug]['before'] - 1)
