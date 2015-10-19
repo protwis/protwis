@@ -31,11 +31,10 @@ def homology_model_multiprocessing(receptor):
     logger.info('Model for {} successfully built.'.format(receptor))
 
         
-class Command(BaseCommand):
-    
+class Command(BaseCommand):    
     def handle(self, *args, **options):
       
-        receptor_list = ['gp176_human', 'gpr55_human']
+        receptor_list = ['ogr1_human']
         if os.path.isfile('./structure/homology_modeling.log'):
             os.remove('./structure/homology_modeling.log')
         logger = logging.getLogger('homology_modeling')
@@ -219,7 +218,7 @@ class HomologyModeling(object):
                                             (parse.gn_indecer(gn,'x',+1).replace('x','.'), 
                                              main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+1).replace('x','.')]),
                                             (parse.gn_indecer(gn,'x',+2).replace('x','.'), 
-                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+2).replace('x','.')])])
+                                             main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+2).replace('x','.')])])                                      
                                         superpose = sp.BulgeConstrictionSuperpose(constriction_site, 
                                                                                   constriction_template)
                                         new_residues = superpose.run()                                  
@@ -358,12 +357,18 @@ class HomologyModeling(object):
                                             main_pdb_array[seg_label][gn.replace('x','.')][0].get_parent().get_resname()):
                             pass
                         elif 'x' in gn:
-                            pdb_db_inconsistencies.append({gn:a.template_dict[seg_label][gn]})
+                            try:
+                                Residue.objects.get(
+                                        protein_conformation__protein=self.main_structure.protein_conformation.protein, 
+                                        generic_number__label=gn)
+                                pdb_db_inconsistencies.append({gn:a.template_dict[seg_label][gn]})
+                            except:
+                                pass
                     except:
                         pass
             except:
                 pass
-
+        
         if pdb_db_inconsistencies!=[]:
             for incons in pdb_db_inconsistencies:
                 seg = self.segment_coding[int(list(incons.keys())[0][0])]
@@ -430,13 +435,13 @@ class HomologyModeling(object):
                                                          a, trimmed_residues=trimmed_residues)                                                         
         
         # Model with MODELLER
-        self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
-        self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
-                          self.uniprot_id, 1, "modeller_test.pdb", atom_dict=trimmed_res_nums)
-        
-        with open('./structure/homology_models/{}_Inactive/{}.stat.txt'.format(self.uniprot_id, self.uniprot_id), 'w') as stat_file:
-            for label, info in self.statistics.items():
-                stat_file.write('{} : {}\n'.format(label, info))
+#        self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
+#        self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
+#                          self.uniprot_id, 1, "modeller_test.pdb", atom_dict=trimmed_res_nums)
+#        
+#        with open('./structure/homology_models/{}_Inactive/{}.stat.txt'.format(self.uniprot_id, self.uniprot_id), 'w') as stat_file:
+#            for label, info in self.statistics.items():
+#                stat_file.write('{} : {}\n'.format(label, info))
                 
         print('MODELLER build: ',datetime.now() - startTime)
         pprint.pprint(self.statistics)
