@@ -203,49 +203,8 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                 results.append(temp)
 
                 if 'prettyname' not in output:
-                    output['prettyname'] = temp[1]
+                    output['prettyname'] = temp[1] #use hetsyn name if possible, others 3letter
                     #continue
-
-                #print(' start ligand ' + output['prettyname'])
-                ligand = Ligand.objects.filter(properities__inchikey=output['inchikey'].strip(), canonical=True)
-                if ligand.exists():
-                    ligand = ligand.get()
-                    if output['prettyname']!=ligand.name: #add alias if same inchikey but different name.
-                        alias = Ligand.objects.filter(name=output['prettyname'], properities__inchikey=output['inchikey'].strip(), canonical=False)
-                        if alias.exists():
-                            ligand = alias.get()
-                        else:
-                            alias = Ligand()
-                            alias.name = output['prettyname']
-                            alias.canonical = False
-                            alias.properities = ligand.properities
-                            alias.save()
-
-                            ligand = alias #Use alias for structureligandinteraction
-                else: #Ligand does not exist, create it
-                    default_ligand_type = 'Small molecule'
-                    ligandtype, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
-                        defaults={'name': default_ligand_type})
-                    lp = LigandProperities()
-                    lp.inchikey = output['inchikey'].strip()
-                    lp.smiles = output['smiles'].strip()
-                    lp.ligandtype = ligandtype
-                    lp.save()
-
-                    ligand = Ligand()
-                    ligand.properities = lp
-                    ligand.name = output['prettyname']
-                    ligand.canonical = True #assume it's canonical but check.
-                    ligand.ambigious_alias = False #assume till proven otherwise
-                    ligand.save()
-                    ligand.load_by_name(output['prettyname'])
-                    ligand.save()
-
-                    #if ligand.canonical== False: 
-                        #print('looking for '+output['inchikey'].strip())
-                        #ligand = Ligand.objects.get(properities__inchikey=output['inchikey'].strip(), canonical=True)
-             
-                #proteinligand, created = ProteinLigandInteraction.objects.get_or_create(protein=protein,ligand=ligand)
 
                 f = module_dir+"/results/"+pdbname+"/interaction"+"/"+pdbname+"_"+temp[1]+".pdb"
                 if os.path.isfile(f):      
@@ -255,20 +214,32 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                     print('quitting due to no pdb for fragment in filesystem',f)
                     quit()
 
-
-                structureligandinteraction = StructureLigandInteraction.objects.filter(ligand__properities__inchikey=output['inchikey'].strip(),structure=structure)
-                if structureligandinteraction.exists():
+                structureligandinteraction = StructureLigandInteraction.objects.filter(pdb_reference=temp[1],structure=structure, annotated=True)
+                if structureligandinteraction.exists(): #if the annotated exists
                     structureligandinteraction = structureligandinteraction.get()
                     structureligandinteraction.pdb_file = pdbdata
-                    structureligandinteraction.pdb_reference = temp[1]
-                elif StructureLigandInteraction.objects.filter(pdb_reference=temp[1],structure=structure).exists(): #incase defined reference doesn't match on inchikey
+                    ligand = structureligandinteraction.ligand
+                    if structureligandinteraction.ligand.properities.inchikey!=output['inchikey'].strip():
+                        logger.error('inchikey for annotated ligand and PDB ligand mismatch' + output['prettyname'])
+                elif StructureLigandInteraction.objects.filter(pdb_reference=temp[1],structure=structure).exists():
                     structureligandinteraction = StructureLigandInteraction.objects.filter(pdb_reference=temp[1],structure=structure).get()
                     structureligandinteraction.pdb_file = pdbdata
-                    if structureligandinteraction.ligand.properities.inchikey is None:
-                        logger.info('Old ligand didnt get inchikey -- error in naming, using inchikey/properities from structure')
-                        structureligandinteraction.ligand.delete()
-                        structureligandinteraction.ligand = ligand
-                else:
+                    ligand = structureligandinteraction.ligand
+                else: #create ligand and pair
+
+                    ligand = Ligand.objects.filter(name=output['prettyname'], canonical=True)
+
+                    if ligand.exists(): #if ligand with name (either hetsyn or 3 letter) exists use that.
+                        ligand = ligand.get()
+                    else: #create it
+                        default_ligand_type = 'N/A'
+                        lt, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
+                            defaults={'name': default_ligand_type})
+
+                        ligand = Ligand()
+                        ligand = ligand.load_from_pubchem('inchikey', output['inchikey'].strip(), lt, output['prettyname'])
+                        ligand.save()
+
                     ligandrole, created = LigandRole.objects.get_or_create(name='unknown',slug='unknown')
                     structureligandinteraction = StructureLigandInteraction()
                     structureligandinteraction.ligand = ligand
@@ -278,10 +249,6 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                     structureligandinteraction.pdb_reference = temp[1]
 
                 structureligandinteraction.save()
-                
-
-                #structureligandinteraction, created = StructureLigandInteraction.objects.get_or_create(ligand=ligand,structure=structure, ligand_role=ligandrole, pdb_file=pdbdata) #, pdb_reference=pdbname <-- max length set to 3? So can't insert ones correctly
-
                 
                 for interactiontype,interactionlist in output.items():
                     if interactiontype=='hbond' or interactiontype=='hbondplus':
@@ -534,7 +501,10 @@ def calculate(request, redirect=None):
             pdbname = form.cleaned_data['pdbname'].strip()
             results = ''
 
+            if not request.session.exists(request.session.session_key):
+                request.session.create() 
             session_key = request.session.session_key
+            
             module_dirs = []
             module_dir = '/tmp/interactions'
             module_dirs.append(module_dir)
@@ -728,7 +698,7 @@ def calculate(request, redirect=None):
                                 simple[ligand[1]][value[0]] = [key]
 
                             residues_browser.append({'type':key,'aa':aa,'ligand':ligand[1],'pos':pos, 'gpcrdb':display, 'segment':segment})
-
+                break #only use the top one
 
             #RESIDUE TABLE
             segments = ProteinSegment.objects.all().filter().prefetch_related()
