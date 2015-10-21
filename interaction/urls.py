@@ -19,4 +19,5 @@ urlpatterns = patterns('',
     url(r'^fragment', views.fragment, name='fragment'),
     url(r'^ajax/(?P<slug>[-\w]+)/$', views.ajax, name='ajax'),
     url(r'^ajaxLigand/(?P<slug>[-\w]+)/(?P<ligand>.+)$', views.ajaxLigand, name='ajax'),
+    url(r'^(?P<pdbname>\w+)$', views.StructureDetails, name='structure_details'), 
 )

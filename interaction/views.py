@@ -63,6 +63,116 @@ def index(request):
     #context = {}
     return render(request,'interaction/index.html', {'form': form, 'structures':structures})
 
+def StructureDetails(request, pdbname):
+    """
+    Show structure details
+    """
+    pdbname = pdbname
+    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name','structure_ligand_pair__pdb_reference','structure_ligand_pair__annotated').filter(structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
+    resn_list = ''
+
+    for structure in structures:
+        if structure['structure_ligand_pair__annotated']:
+            resn_list += ",\""+structure['structure_ligand_pair__pdb_reference']+"\""
+    print(resn_list)
+
+    crystal = Structure.objects.get(pdb_code__index=pdbname)
+    p = Protein.objects.get(protein=crystal.protein_conformation.protein)
+    residues = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
+    residues_browser = []
+    ligands = []
+    residue_table_list = []
+    for residue in residues:
+        key = residue.interaction_type.name
+        aa = residue.rotamer.residue.amino_acid
+        pos = residue.rotamer.residue.sequence_number
+
+        if residue.rotamer.residue.generic_number:
+            residue_table_list.append(residue.rotamer.residue.generic_number.label)
+
+        if residue.rotamer.residue.protein_segment:
+            segment = residue.rotamer.residue.protein_segment.slug
+        else:
+            segment = ''
+        if residue.rotamer.residue.display_generic_number:
+            display = residue.rotamer.residue.display_generic_number.label
+        else:
+            display = ''
+        ligand = residue.structure_ligand_pair.ligand.name
+        residues_browser.append({'type':key,'aa':aa,'ligand':ligand,'pos':pos, 'gpcrdb':display, 'segment':segment})
+        if ligand not in ligands:
+            ligands.append(ligand)
+
+
+    #RESIDUE TABLE
+    segments = ProteinSegment.objects.all().filter().prefetch_related()
+
+    proteins = [p]
+
+    numbering_schemes_selection = [settings.DEFAULT_NUMBERING_SCHEME]
+    numbering_schemes_selection.append(p.residue_numbering_scheme.slug)
+
+    numbering_schemes = ResidueNumberingScheme.objects.filter(slug__in=numbering_schemes_selection).all()
+    default_scheme = numbering_schemes.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
+    data = OrderedDict()
+
+    for segment in segments:
+        data[segment.slug] = OrderedDict()
+        residues = Residue.objects.filter(protein_segment=segment,  protein_conformation__protein=p, 
+            generic_number__label__in=residue_table_list).prefetch_related('protein_conformation__protein', 
+            'protein_conformation__state', 'protein_segment',
+            'generic_number','display_generic_number','generic_number__scheme',
+            'alternative_generic_numbers__scheme')
+        for scheme in numbering_schemes:
+            if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                    data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+            elif scheme == default_scheme:
+                for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                    data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+
+        for residue in residues:
+            alternatives = residue.alternative_generic_numbers.all()
+            pos = residue.generic_number
+            for alternative in alternatives:
+                if alternative.scheme not in numbering_schemes:
+                    continue
+                scheme = alternative.scheme
+                if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                    pos = residue.generic_number
+                    if scheme == pos.scheme:
+                        data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+                    else:
+                        if scheme.slug not in data[segment.slug][pos.label].keys():
+                            data[segment.slug][pos.label][scheme.slug] = alternative.label
+                        if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                            data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
+                        data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+                else:
+                    if scheme.slug not in data[segment.slug][pos.label].keys():
+                        data[segment.slug][pos.label][scheme.slug] = alternative.label
+                    if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                        data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
+                    data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+
+    # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
+    flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
+    for s in iter(flattened_data):
+        flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
+    
+    context = {}
+    context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
+    context['segments'] = [x.slug for x in segments if len(data[x.slug])]
+    context['data'] = flattened_data
+    context['number_of_schemes'] = len(numbering_schemes)
+
+    return render(request,'interaction/structure.html',{'pdbname': pdbname, 'structures': structures, 
+        'crystal': crystal, 'protein':p, 'residues':residues_browser, 'annotated_resn': 
+        resn_list, 'ligands' : ligands,'data':context['data'], 
+        'header':context['header'], 'segments':context['segments'], 
+        'number_of_schemes':len(numbering_schemes)})
+
+
 def list_structures(request):
     form = PDBform()
     #structures = ResidueFragmentInteraction.objects.distinct('structure_ligand_pair__structure').all()
@@ -504,7 +614,7 @@ def calculate(request, redirect=None):
             if not request.session.exists(request.session.session_key):
                 request.session.create() 
             session_key = request.session.session_key
-            
+
             module_dirs = []
             module_dir = '/tmp/interactions'
             module_dirs.append(module_dir)
@@ -702,8 +812,6 @@ def calculate(request, redirect=None):
 
             #RESIDUE TABLE
             segments = ProteinSegment.objects.all().filter().prefetch_related()
-            #s = Structure.objects.get(pdb_code__index=xtal['pdb_code'])
-            #proteins = [s.protein_conformation.protein]
             proteins = []
             protein_list = Protein.objects.filter(pk__in=prot_id_list)
             numbering_schemes_selection = [settings.DEFAULT_NUMBERING_SCHEME]

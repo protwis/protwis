@@ -18,7 +18,7 @@ $(document).ready(function() {
 
         url = url.split('/');
         url.pop();
-        url = url.join('/')+"/structure/"+$(this).val(); // get selected value
+        url = url.join('/')+"/interaction/"+$(this).val(); // get selected value
         if (url) { // require a URL
             window.location = url; // redirect
         }
