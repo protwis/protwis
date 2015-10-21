@@ -159,7 +159,7 @@ def updateall(request):
     #return render(request,'interaction/view.html',{'form': form, 'pdbname': pdbname, 'structures': structures})
 
 def runcalculation(pdbname):
-    calc_script = os.sep.join([os.path.dirname(__file__), 'functions.py'])
+    calc_script = os.sep.join([os.path.dirname(__file__), 'legacy_functions.py'])
     call(["python", calc_script, "-p",pdbname], stdout=open(devnull, 'wb'), stderr=open(devnull, 'wb'))
     return None
 
@@ -458,7 +458,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
     return results
 
 def runusercalculation(filename, session):
-    calc_script = os.sep.join([os.path.dirname(__file__), 'functions.py'])
+    calc_script = os.sep.join([os.path.dirname(__file__), 'legacy_functions.py'])
     call(["python", calc_script,"-p",filename,"-s",session])
     return None
 
