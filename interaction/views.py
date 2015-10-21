@@ -956,7 +956,7 @@ def download(request):
     return response
 
 def ajax(request, slug, **response_kwargs):
-    interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name=slug).order_by('rotamer__residue__sequence_number')
+    interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name=slug, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
     print(interactions)
     #return HttpResponse("Hello, world. You're at the polls index. "+slug)
     jsondata = {}
