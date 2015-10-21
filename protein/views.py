@@ -19,8 +19,7 @@ class BrowseSelection(AbsBrowseSelection):
     description = 'Select a target or family by searching or browsing in the right column.'
     description = 'Select a receptor (family) by searching or browsing in the middle. The selection is viewed to' \
         + ' the right.'
-    docs = '/docs/sequences'
-    buttons = {}
+    docs = 'receptors.html'
         
 
 def detail(request, slug):

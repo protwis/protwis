@@ -242,9 +242,9 @@ class PrepareTree:
                 verse_count = 0
                 for item in sorted(ring[1]['items']):
                     if ring[1]['color_type']=='single':
-                        self.legend += '<rect x="'+str(ring_no*(width+40)+10)+'" y="'+str(80+verse_count*20)+'" height="10" width="30" class="chart" id="'+item+'" stroke="#000000" fill="'+ring[1]['colours'][ring[0]+'_true']+'"/><text x="'+str(ring_no*(width+40)+45)+'" y="'+str(90+verse_count*20)+'" style="font-family:Verdana; font-size:12;">'+self.famdict[item].replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')+'</text>'
+                        self.legend += '<rect x="'+str(ring_no*(width+40)+10)+'" y="'+str(80+verse_count*20)+'" height="10" width="30" class="chart" id="'+item+'" stroke="#000000" fill="'+ring[1]['colours'][ring[0]+'_true']+'"/><text x="'+str(ring_no*(width+40)+45)+'" y="'+str(90+verse_count*20)+'" style="font-family:Verdana; font-size:12;">'+self.famdict['_'.join(item.split('_')[:4])].replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')+'</text>'
                     else:
-                        self.legend += '<rect x="'+str(ring_no*(width+40)+10)+'" y="'+str(80+verse_count*20)+'" height="10" width="30" class="chart" id="'+item+'" stroke="#000000" fill="'+ring[1]['colours'][item]+'"/><text x="'+str(ring_no*(width+40)+45)+'" y="'+str(90+verse_count*20)+'" style="font-family:Verdana; font-size:12;">'+self.famdict[item].replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')+'</text>'
+                        self.legend += '<rect x="'+str(ring_no*(width+40)+10)+'" y="'+str(80+verse_count*20)+'" height="10" width="30" class="chart" id="'+item+'" stroke="#000000" fill="'+ring[1]['colours'][item]+'"/><text x="'+str(ring_no*(width+40)+45)+'" y="'+str(90+verse_count*20)+'" style="font-family:Verdana; font-size:12;">'+self.famdict['_'.join(item.split('_')[:4])].replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')+'</text>'
                     verse_count +=1
                 ring_no+=1
                 self.legend+='</g>'

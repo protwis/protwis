@@ -4,29 +4,26 @@ from django.db import connection
 from django.utils.text import slugify
 
 from mutation.models import *
-
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
 from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
-
 from residue.models import Residue
 from protein.models import Protein
 from ligand.models import Ligand, LigandProperities, LigandRole, LigandType
 from common.models import WebLink, WebResource, Publication
 
+import json
+import yaml
+import logging
+import os
+import re
 from datetime import datetime
 from collections import OrderedDict
-import json
 from urllib.request import urlopen, quote
-
-import re
 import math
 import xlrd
 import operator
-
-from optparse import make_option
-import logging, os, re
-import yaml
+import traceback
 
 ## FOR VIGNIR ORDERED DICT YAML IMPORT/DUMP
 _mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
@@ -79,6 +76,7 @@ class Command(BaseCommand):
             self.create_mutant_data(options['filename'])
         except Exception as msg:
             print(msg)
+            traceback.print_exc()
             self.logger.error(msg)
     
     def purge_mutants(self):
@@ -279,7 +277,7 @@ class Command(BaseCommand):
 
                     try:
                         pub = Publication.objects.get(web_link__index=r['reference'], web_link__web_resource__slug=pub_type)
-                    except Publication.DoesNotExist as e:
+                    except Publication.DoesNotExist:
                         pub = Publication()
                         try:
                             pub.web_link = WebLink.objects.get(index=r['reference'], web_resource__slug=pub_type)

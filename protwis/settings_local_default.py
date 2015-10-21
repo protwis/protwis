@@ -10,6 +10,7 @@ DEFAULT_NUMBERING_SCHEME = 'gpcrdb'
 DEFAULT_PROTEIN_STATE = 'inactive'
 REFERENCE_POSITIONS = {'TM1': '1x50', 'TM2': '2x50', 'TM3': '3x50', 'TM4': '4x50', 'TM5': '5x50', 'TM6': '6x50',
     'TM7': '7x50', 'H8': '8x50'}
+DOCUMENTATION_URL = 'http://gpcrdb.readthedocs.org/en/latest/'
 
 # Analytics
 GOOGLE_ANALYTICS_KEY = False
