@@ -24,7 +24,7 @@
         <h4>RECEPTOR</h4>
     </div>
     <div class="col-md-9">
-    <a href="../protein/{{ crystal.protein_conformation.protein.parent.entry_name }}">{{ crystal.protein_conformation.protein.parent.name }}</a>
+    <a href="../protein/{{ crystal.protein_conformation.protein.parent.entry_name }}">{{ crystal.protein_conformation.protein.parent.name|safe }}</a>
     </div>
 </div>
 
