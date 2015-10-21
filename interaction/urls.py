@@ -4,7 +4,8 @@ from interaction import views
 
 
 urlpatterns = patterns('',
-    url(r'^$', views.index, name='index'),
+    url(r'^oldindex', views.index, name='index'),
+    url(r'^$', views.InteractionSelection.as_view(), name='selection'),
     url(r'^list', views.list_structures, name='list'),
     url(r'^calculate', views.calculate, name='calculate'),
     url(r'^sitesearch_calculate', views.calculate, {'redirect': '/sitesearch/segmentselectionpdb'},
