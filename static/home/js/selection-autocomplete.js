@@ -40,7 +40,6 @@ $(function() {
             } else {
                 // add to selection
                 AddToSelection(type_of_selection, ui.item['type'], ui.item['id']);
-                // $( '#selection-autocomplete' ).val('');
                 
                 // redirect the user if only one target can be selected
                 if (type_of_selection == 'reference' && redirect_on_select == 'True') {
