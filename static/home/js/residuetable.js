@@ -221,9 +221,13 @@ function table_ajaxMutants() {
 }
 
 function table_ajaxInteractions() {
-
+  $('.protein').each(function( index ){
+      var protein = $(this).find('span').attr('id');
+      var protein_index = $(this).index()+1;
+      console.log(protein);
     $.getJSON( '/interaction/ajax/'+protein+'/', function( data ) {
       $.each( data, function( key, val ) {
+        console.log('#P'+protein_index+"R"+key);
 
         var flags = [], falgsAA = [], output = [], outputAA = [], l = val.length, i;
         for( i=0; i<l; i++) {
@@ -240,14 +244,13 @@ function table_ajaxInteractions() {
          extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
 
 
-         $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
-         $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+          $('#P'+protein_index+"R"+key).css("background-color", "#E60A0A");
+          $('#P'+protein_index+"R"+key).next().css("color", "#FDFF7B");
 
-         original_title = $('#'+plotid).find("#"+key).attr('original_title')
+         original_title =  $('#P'+protein_index+"R"+key).attr('original_title')
 
 
-         $('#'+plotid).find("#"+key).attr('title',original_title+extra);
-         $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+          $('#P'+protein_index+"R"+key).attr('title',extra);
 
 
       });
@@ -255,6 +258,7 @@ function table_ajaxInteractions() {
     $("text").tooltip('fixTitle');
 
     });
+  });
 }
 
 

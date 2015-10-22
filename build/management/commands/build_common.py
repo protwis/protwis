@@ -6,9 +6,7 @@ from protein.models import (ProteinSegment, ProteinAnomaly, ProteinAnomalyType, 
     ProteinAnomalyRule)
 from ligand.models import Ligand, LigandProperities, LigandType, LigandRole
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme
-from documentation.models import Documentation
 from news.models import News
-from pages.models import Pages
 
 import logging
 import shlex
