@@ -22,6 +22,7 @@ from common.models import WebLink
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
+from common.views import AbsTargetSelection
 
 import os
 from os import listdir, devnull, makedirs
@@ -55,6 +56,49 @@ def regexaa(aa):
     else:
         return None, None, None
 
+class InteractionSelection(AbsTargetSelection):
+
+    # Left panel
+    step = 1
+    number_of_steps = 1
+    docs = 'generic_numbering.html'
+    
+    # description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
+    #     + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \
+    #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
+    #     + ' have selected all your receptors, click the green button.'
+
+    description = 'Ligand Interactions description'
+
+    # Middle section
+    numbering_schemes = False
+    filters = False
+    search = False
+    title = "Select annotated receptor interactions, PDB code or upload PDB file"
+
+    template_name = 'interaction/interactionselection.html'
+
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', False),
+        ('segments', False),
+    ])
+
+    # Buttons
+    buttons = {
+        'continue' : {
+            'label' : 'Show interactions',
+            'url' : '/interaction/',
+            'color' : 'success',
+            }
+        }
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['structures'] = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index','structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate( num_ligands=Count('structure_ligand_pair', distinct = True),num_interactions=Count('pk', distinct = True)).order_by('structure_ligand_pair__structure__pdb_code__index')
+        context['form'] = PDBform()
+        return context
+
 def index(request):
     form = PDBform()
 
@@ -62,6 +106,116 @@ def index(request):
    
     #context = {}
     return render(request,'interaction/index.html', {'form': form, 'structures':structures})
+
+def StructureDetails(request, pdbname):
+    """
+    Show structure details
+    """
+    pdbname = pdbname
+    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name','structure_ligand_pair__pdb_reference','structure_ligand_pair__annotated').filter(structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
+    resn_list = ''
+
+    for structure in structures:
+        if structure['structure_ligand_pair__annotated']:
+            resn_list += ",\""+structure['structure_ligand_pair__pdb_reference']+"\""
+    print(resn_list)
+
+    crystal = Structure.objects.get(pdb_code__index=pdbname)
+    p = Protein.objects.get(protein=crystal.protein_conformation.protein)
+    residues = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
+    residues_browser = []
+    ligands = []
+    residue_table_list = []
+    for residue in residues:
+        key = residue.interaction_type.name
+        aa = residue.rotamer.residue.amino_acid
+        pos = residue.rotamer.residue.sequence_number
+
+        if residue.rotamer.residue.generic_number:
+            residue_table_list.append(residue.rotamer.residue.generic_number.label)
+
+        if residue.rotamer.residue.protein_segment:
+            segment = residue.rotamer.residue.protein_segment.slug
+        else:
+            segment = ''
+        if residue.rotamer.residue.display_generic_number:
+            display = residue.rotamer.residue.display_generic_number.label
+        else:
+            display = ''
+        ligand = residue.structure_ligand_pair.ligand.name
+        residues_browser.append({'type':key,'aa':aa,'ligand':ligand,'pos':pos, 'gpcrdb':display, 'segment':segment})
+        if ligand not in ligands:
+            ligands.append(ligand)
+
+
+    #RESIDUE TABLE
+    segments = ProteinSegment.objects.all().filter().prefetch_related()
+
+    proteins = [p]
+
+    numbering_schemes_selection = [settings.DEFAULT_NUMBERING_SCHEME]
+    numbering_schemes_selection.append(p.residue_numbering_scheme.slug)
+
+    numbering_schemes = ResidueNumberingScheme.objects.filter(slug__in=numbering_schemes_selection).all()
+    default_scheme = numbering_schemes.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
+    data = OrderedDict()
+
+    for segment in segments:
+        data[segment.slug] = OrderedDict()
+        residues = Residue.objects.filter(protein_segment=segment,  protein_conformation__protein=p, 
+            generic_number__label__in=residue_table_list).prefetch_related('protein_conformation__protein', 
+            'protein_conformation__state', 'protein_segment',
+            'generic_number','display_generic_number','generic_number__scheme',
+            'alternative_generic_numbers__scheme')
+        for scheme in numbering_schemes:
+            if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                    data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+            elif scheme == default_scheme:
+                for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                    data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+
+        for residue in residues:
+            alternatives = residue.alternative_generic_numbers.all()
+            pos = residue.generic_number
+            for alternative in alternatives:
+                if alternative.scheme not in numbering_schemes:
+                    continue
+                scheme = alternative.scheme
+                if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                    pos = residue.generic_number
+                    if scheme == pos.scheme:
+                        data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+                    else:
+                        if scheme.slug not in data[segment.slug][pos.label].keys():
+                            data[segment.slug][pos.label][scheme.slug] = alternative.label
+                        if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                            data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
+                        data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+                else:
+                    if scheme.slug not in data[segment.slug][pos.label].keys():
+                        data[segment.slug][pos.label][scheme.slug] = alternative.label
+                    if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                        data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
+                    data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+
+    # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
+    flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
+    for s in iter(flattened_data):
+        flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
+    
+    context = {}
+    context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
+    context['segments'] = [x.slug for x in segments if len(data[x.slug])]
+    context['data'] = flattened_data
+    context['number_of_schemes'] = len(numbering_schemes)
+
+    return render(request,'interaction/structure.html',{'pdbname': pdbname, 'structures': structures, 
+        'crystal': crystal, 'protein':p, 'residues':residues_browser, 'annotated_resn': 
+        resn_list, 'ligands' : ligands,'data':context['data'], 
+        'header':context['header'], 'segments':context['segments'], 
+        'number_of_schemes':len(numbering_schemes)})
+
 
 def list_structures(request):
     form = PDBform()
@@ -159,7 +313,7 @@ def updateall(request):
     #return render(request,'interaction/view.html',{'form': form, 'pdbname': pdbname, 'structures': structures})
 
 def runcalculation(pdbname):
-    calc_script = os.sep.join([os.path.dirname(__file__), 'functions.py'])
+    calc_script = os.sep.join([os.path.dirname(__file__), 'legacy_functions.py'])
     call(["python", calc_script, "-p",pdbname], stdout=open(devnull, 'wb'), stderr=open(devnull, 'wb'))
     return None
 
@@ -203,49 +357,8 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                 results.append(temp)
 
                 if 'prettyname' not in output:
-                    output['prettyname'] = temp[1]
+                    output['prettyname'] = temp[1] #use hetsyn name if possible, others 3letter
                     #continue
-
-                #print(' start ligand ' + output['prettyname'])
-                ligand = Ligand.objects.filter(properities__inchikey=output['inchikey'].strip(), canonical=True)
-                if ligand.exists():
-                    ligand = ligand.get()
-                    if output['prettyname']!=ligand.name: #add alias if same inchikey but different name.
-                        alias = Ligand.objects.filter(name=output['prettyname'], properities__inchikey=output['inchikey'].strip(), canonical=False)
-                        if alias.exists():
-                            ligand = alias.get()
-                        else:
-                            alias = Ligand()
-                            alias.name = output['prettyname']
-                            alias.canonical = False
-                            alias.properities = ligand.properities
-                            alias.save()
-
-                            ligand = alias #Use alias for structureligandinteraction
-                else: #Ligand does not exist, create it
-                    default_ligand_type = 'Small molecule'
-                    ligandtype, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
-                        defaults={'name': default_ligand_type})
-                    lp = LigandProperities()
-                    lp.inchikey = output['inchikey'].strip()
-                    lp.smiles = output['smiles'].strip()
-                    lp.ligandtype = ligandtype
-                    lp.save()
-
-                    ligand = Ligand()
-                    ligand.properities = lp
-                    ligand.name = output['prettyname']
-                    ligand.canonical = True #assume it's canonical but check.
-                    ligand.ambigious_alias = False #assume till proven otherwise
-                    ligand.save()
-                    ligand.load_by_name(output['prettyname'])
-                    ligand.save()
-
-                    #if ligand.canonical== False: 
-                        #print('looking for '+output['inchikey'].strip())
-                        #ligand = Ligand.objects.get(properities__inchikey=output['inchikey'].strip(), canonical=True)
-             
-                #proteinligand, created = ProteinLigandInteraction.objects.get_or_create(protein=protein,ligand=ligand)
 
                 f = module_dir+"/results/"+pdbname+"/interaction"+"/"+pdbname+"_"+temp[1]+".pdb"
                 if os.path.isfile(f):      
@@ -255,20 +368,32 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                     print('quitting due to no pdb for fragment in filesystem',f)
                     quit()
 
-
-                structureligandinteraction = StructureLigandInteraction.objects.filter(ligand__properities__inchikey=output['inchikey'].strip(),structure=structure)
-                if structureligandinteraction.exists():
+                structureligandinteraction = StructureLigandInteraction.objects.filter(pdb_reference=temp[1],structure=structure, annotated=True)
+                if structureligandinteraction.exists(): #if the annotated exists
                     structureligandinteraction = structureligandinteraction.get()
                     structureligandinteraction.pdb_file = pdbdata
-                    structureligandinteraction.pdb_reference = temp[1]
-                elif StructureLigandInteraction.objects.filter(pdb_reference=temp[1],structure=structure).exists(): #incase defined reference doesn't match on inchikey
+                    ligand = structureligandinteraction.ligand
+                    if structureligandinteraction.ligand.properities.inchikey!=output['inchikey'].strip():
+                        logger.error('inchikey for annotated ligand and PDB ligand mismatch' + output['prettyname'])
+                elif StructureLigandInteraction.objects.filter(pdb_reference=temp[1],structure=structure).exists():
                     structureligandinteraction = StructureLigandInteraction.objects.filter(pdb_reference=temp[1],structure=structure).get()
                     structureligandinteraction.pdb_file = pdbdata
-                    if structureligandinteraction.ligand.properities.inchikey is None:
-                        logger.info('Old ligand didnt get inchikey -- error in naming, using inchikey/properities from structure')
-                        structureligandinteraction.ligand.delete()
-                        structureligandinteraction.ligand = ligand
-                else:
+                    ligand = structureligandinteraction.ligand
+                else: #create ligand and pair
+
+                    ligand = Ligand.objects.filter(name=output['prettyname'], canonical=True)
+
+                    if ligand.exists(): #if ligand with name (either hetsyn or 3 letter) exists use that.
+                        ligand = ligand.get()
+                    else: #create it
+                        default_ligand_type = 'N/A'
+                        lt, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
+                            defaults={'name': default_ligand_type})
+
+                        ligand = Ligand()
+                        ligand = ligand.load_from_pubchem('inchikey', output['inchikey'].strip(), lt, output['prettyname'])
+                        ligand.save()
+
                     ligandrole, created = LigandRole.objects.get_or_create(name='unknown',slug='unknown')
                     structureligandinteraction = StructureLigandInteraction()
                     structureligandinteraction.ligand = ligand
@@ -278,10 +403,6 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                     structureligandinteraction.pdb_reference = temp[1]
 
                 structureligandinteraction.save()
-                
-
-                #structureligandinteraction, created = StructureLigandInteraction.objects.get_or_create(ligand=ligand,structure=structure, ligand_role=ligandrole, pdb_file=pdbdata) #, pdb_reference=pdbname <-- max length set to 3? So can't insert ones correctly
-
                 
                 for interactiontype,interactionlist in output.items():
                     if interactiontype=='hbond' or interactiontype=='hbondplus':
@@ -491,7 +612,7 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
     return results
 
 def runusercalculation(filename, session):
-    calc_script = os.sep.join([os.path.dirname(__file__), 'functions.py'])
+    calc_script = os.sep.join([os.path.dirname(__file__), 'legacy_functions.py'])
     call(["python", calc_script,"-p",filename,"-s",session])
     return None
 
@@ -534,7 +655,10 @@ def calculate(request, redirect=None):
             pdbname = form.cleaned_data['pdbname'].strip()
             results = ''
 
+            if not request.session.exists(request.session.session_key):
+                request.session.create() 
             session_key = request.session.session_key
+
             module_dirs = []
             module_dir = '/tmp/interactions'
             module_dirs.append(module_dir)
@@ -728,12 +852,10 @@ def calculate(request, redirect=None):
                                 simple[ligand[1]][value[0]] = [key]
 
                             residues_browser.append({'type':key,'aa':aa,'ligand':ligand[1],'pos':pos, 'gpcrdb':display, 'segment':segment})
-
+                break #only use the top one
 
             #RESIDUE TABLE
             segments = ProteinSegment.objects.all().filter().prefetch_related()
-            #s = Structure.objects.get(pdb_code__index=xtal['pdb_code'])
-            #proteins = [s.protein_conformation.protein]
             proteins = []
             protein_list = Protein.objects.filter(pk__in=prot_id_list)
             numbering_schemes_selection = [settings.DEFAULT_NUMBERING_SCHEME]
@@ -878,7 +1000,7 @@ def download(request):
     return response
 
 def ajax(request, slug, **response_kwargs):
-    interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name=slug).order_by('rotamer__residue__sequence_number')
+    interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name=slug, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
     print(interactions)
     #return HttpResponse("Hello, world. You're at the polls index. "+slug)
     jsondata = {}
