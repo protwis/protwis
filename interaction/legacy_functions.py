@@ -62,46 +62,24 @@ def fetch_pdb(id):
 
 
 def check_unique_ligand_mol(filename):
+    #check that only HETATM are exported to file
     f_in = open(filename, 'r')
     tempstr = ''
     check = []
-    #print filename
     ligandid = 0
     chainid = 0
     for line in f_in:
         if line.startswith('HETATM'): 
-
             residue_number = line[22:26]
             chain = line[21]
 
-            # temp = line.split()
-            # m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            # if (m):
-            #     temp.extend(temp[9])
-            #     temp[9] = m.group(2)
-            #     temp[8] = m.group(1)
-            # m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            # if (m):
-            #     temp.extend(temp[10])
-
-            #     temp[10] = temp[9]
-            #     temp[9] = temp[8]
-            #     temp[8] = temp[7]
-            #     temp[7] = temp[6]
-            #     temp[6] = temp[5]
-                
-            #     temp[4] = m.group(1)
-            #     temp[5] = m.group(2)
-
             if (residue_number!=ligandid and ligandid!=0) or (chain!=chainid and chainid!=0): continue
-
-
 
             ligandid = residue_number
             chainid = chain
 
         tempstr += line
-    #print tempstr
+
     f_in.close();
     f=open(filename,'w')
     f.write(tempstr)
@@ -109,9 +87,9 @@ def check_unique_ligand_mol(filename):
 
 
 def check_pdb():
+    #check if PDB is there, otherwise fetch
     if not os.path.exists(projectdir+'pdbs/'):
         os.makedirs(projectdir+'pdbs/')
-
 
     if not os.path.isfile(projectdir+'pdbs/'+pdbname+'.pdb'):
         pdbfile = fetch_pdb(pdbname)
@@ -122,6 +100,7 @@ def check_pdb():
 
 
 def checkdirs():
+    #check that dirs are there and have right permissions
 
     directory = projectdir + 'results/'+pdbname+'/interaction'
     if not os.path.exists(directory):
@@ -195,29 +174,6 @@ def fragment_library(ligand,atomvector,atomname,residuenr,chain,typeinteraction)
             atomvector = Vector(line[30:38],line[38:46],line[46:54])
             residue_number = line[22:26]
             tempchain = line[21]
-            #print listofvectors
-
-            # temp = line.split()
-
-            # m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            # if (m):
-            #     temp.extend(temp[9])
-            #     temp[9] = m.group(2)
-            #     temp[8] = m.group(1)
-            # m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            # if (m):
-            #     temp.extend(temp[10])
-
-            #     temp[10] = temp[9]
-            #     temp[9] = temp[8]
-            #     temp[8] = temp[7]
-            #     temp[7] = temp[6]
-            #     temp[6] = temp[5]
-                
-            #     temp[4] = m.group(1)
-            #     temp[5] = m.group(2)
-            
-            #atomvector = Vector(temp[6],temp[7],temp[8])
             skip = 1
             for targetvector in listofvectors:
                 distance = (targetvector-atomvector).norm()
@@ -229,24 +185,7 @@ def fragment_library(ligand,atomvector,atomname,residuenr,chain,typeinteraction)
 
             residue_number = line[22:26].strip()
             tempchain = line[21].strip()
-            # temp = line.split()
-            # m = re.match("(\d+\.\d{2})([\d\.]+)",temp[8]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            # if (m):
-            #     temp.extend(temp[9])
-            #     temp[9] = m.group(2)
-            #     temp[8] = m.group(1)
-            # m = re.match("(\w)(\d+)",temp[4]) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
-            # if (m):
-            #     temp.extend(temp[10])
 
-            #     temp[10] = temp[9]
-            #     temp[9] = temp[8]
-            #     temp[8] = temp[7]
-            #     temp[7] = temp[6]
-            #     temp[6] = temp[5]
-                
-            #     temp[4] = m.group(1)
-            #     temp[5] = m.group(2)
             if residue_number!=residuenr:
                 continue
             if tempchain!=chain:
@@ -301,7 +240,6 @@ def fragment_library_aromatic(ligand,atomvectors,residuenr,chain,ringnr):
             chain = tempchain
         else:
             continue #ignore all other lines
-        
 
         tempstr += line
 
