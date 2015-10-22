@@ -61,7 +61,7 @@ class InteractionSelection(AbsTargetSelection):
     # Left panel
     step = 1
     number_of_steps = 1
-    docs = 'generic_numbering.html'
+    docs = 'generic_numbering.html' #FIXME
     
     # description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
     #     + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \
@@ -80,7 +80,7 @@ class InteractionSelection(AbsTargetSelection):
 
     selection_boxes = OrderedDict([
         ('reference', False),
-        ('targets', False),
+        ('targets', True),
         ('segments', False),
     ])
 
@@ -88,7 +88,7 @@ class InteractionSelection(AbsTargetSelection):
     buttons = {
         'continue' : {
             'label' : 'Show interactions',
-            'url' : '/interaction/',
+            'onclick': 'submitupload()',
             'color' : 'success',
             }
         }
@@ -98,14 +98,6 @@ class InteractionSelection(AbsTargetSelection):
         context['structures'] = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index','structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate( num_ligands=Count('structure_ligand_pair', distinct = True),num_interactions=Count('pk', distinct = True)).order_by('structure_ligand_pair__structure__pdb_code__index')
         context['form'] = PDBform()
         return context
-
-def index(request):
-    form = PDBform()
-
-    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index','structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate( num_ligands=Count('structure_ligand_pair', distinct = True),num_interactions=Count('pk', distinct = True)).order_by('structure_ligand_pair__structure__pdb_code__index')
-   
-    #context = {}
-    return render(request,'interaction/index.html', {'form': form, 'structures':structures})
 
 def StructureDetails(request, pdbname):
     """
