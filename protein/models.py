@@ -133,6 +133,7 @@ class ProteinSegment(models.Model):
     slug = models.SlugField(max_length=100, unique=True)
     name = models.CharField(max_length=50)
     category = models.CharField(max_length=50)
+    fully_aligned = models.BooleanField(default=False)
     partial = models.BooleanField(default=False)
 
     def __str__(self):

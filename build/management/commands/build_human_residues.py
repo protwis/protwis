@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
+from django.db import IntegrityError
 
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import Protein, ProteinConformation, ProteinSegment, ProteinFamily
@@ -8,8 +9,7 @@ from residue.functions import *
 
 import os
 import yaml
-from optparse import make_option
-from multiprocessing import Queue, Process
+from collections import OrderedDict
 
 class Command(BaseBuild):
     help = 'Creates residue records for human receptors'
@@ -20,6 +20,8 @@ class Command(BaseBuild):
     default_segment_length_file_path = os.sep.join([settings.DATA_DIR, 'residue_data', 'default_segment_length.yaml'])
 
     segments = ProteinSegment.objects.filter(partial=False)
+    all_segments = {ps.slug: ps for ps in ProteinSegment.objects.all()}  # all segments dict for faster lookups
+    
     pconfs = ProteinConformation.objects.filter(protein__species__id=1).prefetch_related(
         'protein__residue_numbering_scheme__parent')
 
@@ -51,7 +53,6 @@ class Command(BaseBuild):
             pconfs = self.pconfs[positions[0]:positions[1]]
         
         for pconf in pconfs:
-            sequence_number_counter = 0
             # read reference positions for this protein
             ref_position_file_path = os.sep.join([self.ref_position_source_dir, pconf.protein.entry_name + '.yaml'])
             ref_positions = load_reference_positions(ref_position_file_path)
@@ -125,7 +126,20 @@ class Command(BaseBuild):
 
             # determine segment ranges, and create residues
             nseg = self.segments.count()
+            sequence_number_counter = 0
             for i, segment in enumerate(self.segments):
+                # next segment (for checking start positions)
+                if (i+1) < nseg:
+                    next_segment = self.segments[i+1]
+                else:
+                    next_segment = False
+
+                # segment parts. There can be many if the segment is partially aligned
+                segment_parts = OrderedDict()
+                segment_parts['before'] = False
+                segment_parts['main'] = False
+                segment_parts['after'] = False
+
                 # is this an alignable segment?
                 if segment.slug in settings.REFERENCE_POSITIONS:
                     # is there a reference position available?
@@ -138,12 +152,51 @@ class Command(BaseBuild):
                         # skip this segment if the reference position is missing
                         self.logger.warning('Reference position missing for segment {} in {}'.format(segment, pconf))
                         continue
+
+                    # is this segment fully aligned? If not add segments before and after as needed
+                    # e.g. ECL2_before, ECL2, and ECL2_after, where only ECL2 is aligned
+                    if not segment.fully_aligned:
+                        partial_suffixes = []
+                        # find normal segment start (start if segment was not partially aligned)
+                        suffix = '_before'
+                        partial_suffixes.append(suffix)
+                        normal_segment_start = sequence_number_counter + 1
+                        if segment_start > normal_segment_start:
+                            segment_parts[suffix] = {'start': normal_segment_start, 'end': segment_start-1}
+                        
+                        # find normal segment end
+                        suffix = '_after'
+                        partial_suffixes.append(suffix)
+                        if next_segment:
+                            next_segment_start = (ref_positions[settings.REFERENCE_POSITIONS[next_segment.slug]]
+                            - self.segment_length[next_segment.slug]['before'])
+                            normal_segment_end = next_segment_start - 1
+                        else:
+                            normal_segment_end = len(pconf.protein.sequence)
+                        if segment_end < normal_segment_end:
+                            segment_parts[suffix] = {'start': segment_end+1, 'end': normal_segment_end}
+
+                        for suffix in partial_suffixes:
+                            partial_slug = '{}_{}'.format(segment.slug, suffix)
+                            if partial_slug in all_segments:
+                                partial_segment = all_segments[partial_slug]
+                            else:
+                                try:
+                                    partial_segment = ProteinSegment.objects.create(slug=partial_slug,
+                                        name=segment.name, category = segment.category, partial = True,
+                                        fully_aligned = False)
+                                except IntegrityError: # for concurrency
+                                    partial_segment = ProteinSegment.objects.get(slug=partial_slug)
+
+                                # add the segment to "cache"
+                                all_segments[partial_slug] = partial_segment
+
+                            segment_parts[suffix]['segment'] = partial_segment
                 else:
                     segment_start = sequence_number_counter + 1
                     
                     # if this is not the last segment, find next segments reference position
-                    if (i+1) < nseg:
-                        next_segment = self.segments[i+1]
+                    if next_segment:
                         if (next_segment.slug in settings.REFERENCE_POSITIONS and ref_positions and
                             settings.REFERENCE_POSITIONS[next_segment.slug] in ref_positions):
                             segment_end = (ref_positions[settings.REFERENCE_POSITIONS[next_segment.slug]]
@@ -160,8 +213,12 @@ class Command(BaseBuild):
                         self.logger.warning('Start of segment {} is larger than its end'.format(segment))
                         continue
 
-                # create residues for this segment
-                create_or_update_residues_in_segment(pconf, segment, segment_start, segment_end, self.schemes,
-                    ref_positions, [], True)
+                # add main segment to segment part list
+                segment_parts['main'] = {'segment': segment, 'start': segment_start, 'end': segment_end}
+
+                # create residues for this segment(s)
+                for segment_part in segment_parts:
+                    create_or_update_residues_in_segment(pconf, segment_part['segment'], segment_part['start'],
+                        segment_part['end'], self.schemes, ref_positions, [], True)
 
                 sequence_number_counter = segment_end
