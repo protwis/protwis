@@ -17,11 +17,35 @@
             if (url) { // require a URL
                 window.location = url; // redirect
             }
+
+            toggleButtonClass('selection-button');
+            $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>"+$(this).val());
             return false;
           });
         });
     }); 
+
+        function submitupload() {
+            $("#errormsg").remove();
+            var pdbid = $('#form').find('input#id_pdbname').val() ;
+            var filename = $('input[type=file]').val().split('\\').pop();
+              if (pdbid) {
+                $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>PDB code: "+pdbid);
+                document.getElementById("form").submit();
+              } else if (filename) {
+                $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>File: "+filename);
+                document.getElementById("form").submit();
+              } else {
+                $("#form").parent('div').parent('div').parent('div').after('<div id="errormsg" class="col-md-12 panel panel-primary">' +
+                    '<div class="panel-body">' +
+                    'Please make a selection' +
+                    '</div>' +
+                    '</div>');
+                toggleButtonClass('selection-button');
+              }
+        };
     </script>
+    <script src="{% static 'home/js/selection.js' %}"></script>
 
 {% endblock %}
 
@@ -47,13 +71,11 @@
                     <h4>Run a new calculation</h4>
                     <div>
                         Enter a PDB code to analyse:
-                            <form action="calculate" method="post" enctype="multipart/form-data">
+                            <form action="calculate" id="form" method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                             <label for="pdbname">PDB code</label>
                             {{ form.pdbname }} <br> or 
                             <p>{{ form.file.label_tag }}  </p> {{ form.file }}
-                            <br>
-                            <input type="submit" value="OK">
                         </form>
                     </div>
                 </div>
