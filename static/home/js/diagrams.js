@@ -268,6 +268,8 @@
 
                     function ajaxMutants(plotid,protein) {
 
+                      resetColors(plotid);
+
                         $.getJSON( '/mutations/ajax/'+protein+'/', function( data ) {
                           $.each( data, function( key, val ) {
 
@@ -354,6 +356,8 @@
 
                     function ajaxMutantsPos(plotid) {
 
+                      resetColors(plotid);
+
                         var pos = jQuery.parseJSON(mutant_json);
 
                         $.each( pos, function( key, val ) {
@@ -437,6 +441,8 @@
                     }
 
                     function ajaxInteractions(plotid,protein) {
+
+                      resetColors(plotid);
 
                         $.getJSON( '/interaction/ajax/'+protein+'/', function( data ) {
                           $.each( data, function( key, val ) {

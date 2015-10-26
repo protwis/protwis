@@ -53,6 +53,9 @@ class Publication(models.Model):
 
     def update_from_doi(self, doi):
         logger = logging.getLogger('build')
+
+        # should entrez be tried as a backup?
+        try_entrez_on_fail = False
         
         # check whether this data is cached
         cache_dir = ['crossref', 'doi']
@@ -61,46 +64,54 @@ class Publication(models.Model):
                 
         if pub:
             # update record
-            self.title = pub['message']['title'][0]
-            
             try:
+                self.title = pub['message']['title'][0]
                 self.year = pub['message']['deposited']['date-parts'][0][0]
-            except:
-                self.year = 1000
 
-            # go from [{'family': 'Gloriam', 'given': 'David E.'}] to ['Gloriam DE']
-            authors = ['{} {}'.format(x['family'], ''.join([y[:1] for y in x['given'].split()]))
-                for x in pub['message']['author']]
-            self.authors = ', '.join(authors)
+                # go from [{'family': 'Gloriam', 'given': 'David E.'}] to ['Gloriam DE']
+                authors = ['{} {}'.format(x['family'], ''.join([y[:1] for y in x['given'].split()]))
+                    for x in pub['message']['author']]
+                self.authors = ', '.join(authors)
             
-            reference = {}
-            fields = ['volume', 'page']
-            for f in fields:
-                if f in pub['message']:
-                    reference[f] = pub['message'][f]
-                else:
-                    reference[f] = 'X'
-            self.reference = '{}:{}'.format(reference['volume'], reference['page'])
+                # get volume and pages if available
+                reference = {}
+                fields = ['volume', 'page']
+                for f in fields:
+                    if f in pub['message']:
+                        reference[f] = pub['message'][f]
+                    else:
+                        reference[f] = 'X'
+                self.reference = '{}:{}'.format(reference['volume'], reference['page'])
 
-            # journal
-            journal = pub['message']['container-title'][0]
-            try:
-                journal_abbr = pub['message']['container-title'][1]
-            except:
-                journal_abbr = slugify(journal)
-            self.journal, created = PublicationJournal.objects.get_or_create(name=journal,
-                defaults={'slug': journal_abbr})
-            if created:
-                logger.info('Created journal {}'.format(journal))
+                # journal
+                journal = pub['message']['container-title'][0]
+                try:
+                    # not all records have the journal abbreviation
+                    journal_abbr = pub['message']['container-title'][1]
+                except:
+                    journal_abbr = slugify(journal)
+                self.journal, created = PublicationJournal.objects.get_or_create(name=journal,
+                    defaults={'slug': journal_abbr})
+                if created:
+                    logger.info('Created journal {}'.format(journal))
+            except Exception as msg:
+                logger.warning('Processing data from CrossRef for {} failed: {}'.format(doi, msg))
+                try_entrez_on_fail = False
         else:
+            try_entrez_on_fail = False
+
+        if try_entrez_on_fail:
             # try searching entrez for DOI
-            Entrez.email = 'info@gpcrdb.org'
-            record = Entrez.read(Entrez.esearch(
-                db='pubmed',
-                retmax=1,
-                term=doi
-                ))
-            self.update_from_pubmed_data(record['IdList'][0])
+            try:
+                Entrez.email = 'info@gpcrdb.org'
+                record = Entrez.read(Entrez.esearch(
+                    db='pubmed',
+                    retmax=1,
+                    term=doi
+                    ))
+                self.update_from_pubmed_data(record['IdList'][0])
+            except:
+                return False
 
     def update_from_pubmed_data(self, index=None):
         logger = logging.getLogger('build')
@@ -125,8 +136,6 @@ class Publication(models.Model):
             self.reference = ""
             if 'VI' in record:
                 self.reference += record['VI']
-            if 'IP' in record:
-                self.reference += "(" + record['IP'] + ")"
             if 'PG' in record:
                 self.reference += ":" + record['PG']
         except Exception as msg:

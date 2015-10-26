@@ -16,7 +16,9 @@ class ReferenceSelection(AbsReferenceSelection):
     docs = 'sequences.html#similarity-search-gpcrdb'
     buttons = {
         'continue': {
+            'label': 'Continue to next step',
             'url': '/similaritysearch/segmentselection',
+            'color': 'success',
         },
     }
 

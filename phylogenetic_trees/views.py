@@ -166,6 +166,7 @@ class Treeclass:
             else:
                 acc = link.replace('-','_')[:6]
             spec = str(n.protein.species)
+            fam += '_'+n.protein.species.common_name.replace(' ','_').upper()
             desc = name
             if acc in crysts:
                 if not fam in self.Additional_info['crystal']['proteins']:
