@@ -144,8 +144,9 @@ class Alignment:
                 selected_residue_positions.append(segment_residue)
                 continue
             
-            # fetch split segments (e.g. ICL3_1 and ICL3_2)
+            # fetch split segments (e.g. ECL2_before and ECL2_after)
             alt_segments = ProteinSegment.objects.filter(slug__startswith=selected_segment.slug)
+
             for segment in alt_segments:
                 segment_positions = ResidueGenericNumber.objects.filter(protein_segment=segment,
                     scheme=self.default_numbering_scheme).order_by('label')
@@ -243,30 +244,56 @@ class Alignment:
         # create a dict of proteins, segments and residues
         proteins = {}
         segment_counters = {}
+        aligned_residue_encountered = {}
         fusion_protein_inserted = {}
         for r in rs:
-            # handle split segments, slug_1 and slug_2 are merged into slug, with a fusion protein in between
-            pss = r.protein_segment.slug.split("_")
-            if len(pss) > 1:
-                ps = pss[0]
-                segment_part = int(pss[1])
-            else:
-                ps = r.protein_segment.slug
-                segment_part = 1
+            ps = r.protein_segment.slug
 
             # identifiers for protein/state
             pcid = r.protein_conformation.protein.entry_name + "-" + r.protein_conformation.state.slug
             
+            # update protein dict
             if pcid not in proteins:
                 proteins[pcid] = {}
             if ps not in proteins[pcid]:
                 proteins[pcid][ps] = {}
+            
+            # update aligned residue tracker
+            if pcid not in aligned_residue_encountered:
+                aligned_residue_encountered[pcid] = {}
+            if ps not in aligned_residue_encountered[pcid]:
+                aligned_residue_encountered[pcid][ps] = False
+
+            # what part of the segment is this? There are 4 possibilities:
+            # 1. The aligned part (for both fully and partially aligned segments)
+            # 2. The part before the aligned part in a partially aligned segment
+            # 3. The part after the aligned part in a partially aligned segment
+            # 4. An unaligned segment (then there is only one part)
+            if ps in settings.REFERENCE_POSITIONS and r.protein_segment.fully_aligned:
+                segment_part = 1
+            elif ps in settings.REFERENCE_POSITIONS and not aligned_residue_encountered[pcid][ps]:
+                segment_part = 2
+            elif ps in settings.REFERENCE_POSITIONS and aligned_residue_encountered[pcid][ps]:
+                segment_part = 3
+            else:
+                segment_part = 4
+
+            # update segment counters
             if pcid not in segment_counters:
                 segment_counters[pcid] = {}
-            if ps not in segment_counters[pcid]:
-                segment_counters[pcid][ps] = 1
+            if segment_part == 2:
+                part_ps = ps + '_before'
+            elif segment_part == 3:
+                part_ps = ps + '_after'
             else:
-                segment_counters[pcid][ps] += 1
+                part_ps = ps
+            if part_ps not in segment_counters[pcid]:
+                segment_counters[pcid][part_ps] = 1
+            else:
+                segment_counters[pcid][part_ps] += 1
+            
+
+            # update fusion protein tracker
             if pcid not in fusion_protein_inserted:
                 fusion_protein_inserted[pcid] = {}
             if ps not in fusion_protein_inserted[pcid]:
@@ -275,25 +302,81 @@ class Alignment:
             # user generic numbers as keys for aligned segments
             if r.generic_number:
                 proteins[pcid][ps][r.generic_number.label] = r
-            # use residue numbers in segment as keys for non-aligned segments
-            else:
-                # position label
-                pos_label = ps + "-" + str("%04d" % (segment_counters[pcid][ps],))
 
-                # insert fusion protein
-                if not fusion_protein_inserted[pcid][ps] and segment_part == 2:
-                    fp = ProteinFusionProtein.objects.get(protein=r.protein_conformation.protein,
-                        segment_after=r.protein_segment)
-                    fusion_pos_label = ps + "-" + str("%04d" % (segment_counters[pcid][ps]-1,)) + "-fusion"
-                    proteins[pcid][ps][fusion_pos_label] = Residue(amino_acid=fp.protein_fusion.name)
-                    if fusion_pos_label not in self.segments[ps]:
-                        self.segments[ps].append(fusion_pos_label)
-                    fusion_protein_inserted[pcid][ps] = True
+                # register the presence of an aligned residue
+                aligned_residue_encountered[pcid][ps] = True
+            # use custom keys for non-aligned segments
+            else:
+                # label prefix + index
+                # Unaligned segments should be split in the middle, with the first part "left aligned", and the second
+                # "right aligned". If there is an aligned part of the segment, it goes in the middle.
+                if segment_part == 2:
+                    prefix = '00-'
+                elif segment_part == 3:
+                    prefix = 'zz-'
+                else:
+                    prefix = '01-'
+
+                # Note that there is not enough information to assign correct indicies to "right aligned" residues, but
+                # those are corrected below
+                index = str("%04d" % (segment_counters[pcid][part_ps],))
+
+                # position label
+                pos_label =  prefix + ps + "-" + index
+
+                # insert fusion protein FIXME add this
+                # if not fusion_protein_inserted[pcid][ps] and aligned_residue_encountered[pcid][ps]:
+                #     fp = ProteinFusionProtein.objects.get(protein=r.protein_conformation.protein,
+                #         segment_after=r.protein_segment)
+                #     fusion_pos_label = ps + "-" + str("%04d" % (segment_counters[pcid][ps]-1,)) + "-fusion"
+                #     proteins[pcid][ps][fusion_pos_label] = Residue(amino_acid=fp.protein_fusion.name)
+                #     if fusion_pos_label not in self.segments[ps]:
+                #         self.segments[ps].append(fusion_pos_label)
+                #     fusion_protein_inserted[pcid][ps] = True
 
                 # residue
                 proteins[pcid][ps][pos_label] = r
-                if pos_label not in self.segments[ps]:
-                    self.segments[ps].append(pos_label)
+
+        # correct alignment of split segments
+        for pcid, segments in proteins.items():
+            for ps, positions in segments.items():
+                pos_num = 1
+                pos_num_after = 1
+                for pos_label in sorted(positions):
+                    res_obj = proteins[pcid][ps][pos_label]
+                    right_align = False
+                    # In a "normal", non split, unaligned segment, is this past the middle?
+                    if (pos_label.startswith('01-')
+                        and res_obj.protein_segment.category != 'terminus'
+                        and pos_num > (segment_counters[pcid][ps] / 2 + 1)
+                        or res_obj.protein_segment.slug == 'N-term'):
+                        right_align = True
+                    # In an N-terminus, always right align everything
+                    elif pos_label.startswith('01-') and res_obj.protein_segment.slug == 'N-term':
+                        right_align = True
+
+                    if right_align:
+                        # if so, "right align" from here using a zz prefixed label
+                        updated_index = 'zz' + pos_label[2:]
+                        proteins[pcid][ps][updated_index] = proteins[pcid][ps].pop(pos_label)
+                        pos_label = updated_index
+
+                    if pos_label.startswith('zz-'):
+                        segment_label_after = ps + '_after' # only parts after a partly aligned segment start with zz
+                        if segment_label_after in segment_counters[pcid]:
+                            segment_length = segment_counters[pcid][segment_label_after]
+                            counter = pos_num_after
+                        else:
+                            segment_length = segment_counters[pcid][ps]
+                            counter = pos_num
+
+                        updated_index = pos_label[:-4] + str(9999 - (segment_length - counter))
+                        proteins[pcid][ps][updated_index] = proteins[pcid][ps].pop(pos_label)
+                        pos_label = updated_index
+                        pos_num_after += 1
+                    if pos_label not in self.segments[ps]:
+                        self.segments[ps].append(pos_label)
+                    pos_num += 1
         
         # individually selected residues (Custom segment)
         for segment in self.segments:
@@ -314,18 +397,6 @@ class Alignment:
                 del self.segments[segment]
             else:
                 self.segments[segment].sort()
-
-        # remove split segments from generic numbers list
-        for ns, gs in self.generic_numbers.items():
-            for segment, positions in gs.items():
-                s = segment.split("_")
-                if len(s) > 1:
-                    del self.generic_numbers[ns][segment]
-                else:
-                    ordered_generic_numbers = OrderedDict()
-                    for gn in sorted(self.generic_numbers[ns][segment]):
-                        ordered_generic_numbers[gn] = self.generic_numbers[ns][segment][gn]
-                    self.generic_numbers[ns][segment] = ordered_generic_numbers 
 
         for pc in self.proteins:
             row = OrderedDict()
@@ -415,12 +486,13 @@ class Alignment:
                 row_list.append(s) # FIXME redundant, remove when dependecies are removed
             pc.alignment = row
             pc.alignment_list = row_list # FIXME redundant, remove when dependecies are removed
+        self.sort_generic_numbers()
         self.merge_generic_numbers()
         self.clear_empty_positions()
 
     def clear_empty_positions(self):
         """Remove empty columns from the segments and matrix"""
-        # segments and generic_numbers
+        # segments and  
         # deepcopy is required because the dictionary changes during the loop
         generic_numbers = deepcopy(self.generic_numbers)
         for ns, segments in generic_numbers.items():
@@ -455,6 +527,19 @@ class Alignment:
                         self.generic_numbers[ns][segment][pos] = self.format_generic_number(dns[0])
                     else:
                         self.generic_numbers[ns][segment][pos] = '-'.join(dns)
+
+    def sort_generic_numbers(self):
+        # remove split segments from generic numbers list
+        for ns, gs in self.generic_numbers.items():
+            for segment, positions in gs.items():
+                s = segment.split("_")
+                if len(s) > 1:
+                    del self.generic_numbers[ns][segment]
+                else:
+                    ordered_generic_numbers = OrderedDict()
+                    for gn in sorted(self.generic_numbers[ns][segment]):
+                        ordered_generic_numbers[gn] = self.generic_numbers[ns][segment][gn]
+                    self.generic_numbers[ns][segment] = ordered_generic_numbers 
 
     def format_generic_number(self, generic_number):
         """A placeholder for an instance specific function"""

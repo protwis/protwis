@@ -134,64 +134,55 @@ class Command(BaseBuild):
                 else:
                     next_segment = False
 
-                # segment parts. There can be many if the segment is partially aligned
-                segment_parts = OrderedDict()
-                segment_parts['before'] = False
-                segment_parts['main'] = False
-                segment_parts['after'] = False
-
                 # is this an alignable segment?
                 if segment.slug in settings.REFERENCE_POSITIONS:
                     # is there a reference position available?
                     if settings.REFERENCE_POSITIONS[segment.slug] in ref_positions:
                         segment_start = (ref_positions[settings.REFERENCE_POSITIONS[segment.slug]]
                             - self.segment_length[segment.slug]['before'])
+                        aligned_segment_start = segment_start
                         segment_end = (ref_positions[settings.REFERENCE_POSITIONS[segment.slug]]
                             + self.segment_length[segment.slug]['after'])
+                        aligned_segment_end = segment_end
+                        
+                        # is this segment is not fully aligned, find the start and stop (not just the aligned start
+                        # and stop)
+                        if not segment.fully_aligned:
+                            segment_start = sequence_number_counter + 1
+                            if next_segment:
+                                next_segment_start = (ref_positions[settings.REFERENCE_POSITIONS[next_segment.slug]]
+                                - self.segment_length[next_segment.slug]['before'])
+                                segment_end = next_segment_start - 1
+
+                                if (next_segment.slug in settings.REFERENCE_POSITIONS and ref_positions and
+                                    settings.REFERENCE_POSITIONS[next_segment.slug] in ref_positions):
+                                    next_segment_start = (
+                                        ref_positions[settings.REFERENCE_POSITIONS[next_segment.slug]]
+                                        - self.segment_length[next_segment.slug]['before'])
+                                    segment_end = next_segment_start - 1
+                                else:
+                                    self.logger.warning('A non-fully aligned segment {} is followed a unaligned' \
+                                        + 'segment {}. Skipping.'.format(segment.slug, next_segment.slug))
+                                    continue
+                            else:
+                                segment_end = len(pconf.protein.sequence)
+
+                            if next_segment:
+                                if (next_segment.slug in settings.REFERENCE_POSITIONS and ref_positions and
+                                    settings.REFERENCE_POSITIONS[next_segment.slug] in ref_positions):
+                                    segment_end = (ref_positions[settings.REFERENCE_POSITIONS[next_segment.slug]]
+                                    - self.segment_length[next_segment.slug]['before'] - 1)
+                                    next_ref_found = True
+                                else: 
+                                    continue
+                            else:
+                                # for the last segment, the end is the last residue of the sequence
+                                segment_end = len(pconf.protein.sequence)
+
                     else:
                         # skip this segment if the reference position is missing
                         self.logger.warning('Reference position missing for segment {} in {}'.format(segment, pconf))
                         continue
-
-                    # is this segment fully aligned? If not add segments before and after as needed
-                    # e.g. ECL2_before, ECL2, and ECL2_after, where only ECL2 is aligned
-                    if not segment.fully_aligned:
-                        partial_suffixes = []
-                        # find normal segment start (start if segment was not partially aligned)
-                        suffix = '_before'
-                        partial_suffixes.append(suffix)
-                        normal_segment_start = sequence_number_counter + 1
-                        if segment_start > normal_segment_start:
-                            segment_parts[suffix] = {'start': normal_segment_start, 'end': segment_start-1}
-                        
-                        # find normal segment end
-                        suffix = '_after'
-                        partial_suffixes.append(suffix)
-                        if next_segment:
-                            next_segment_start = (ref_positions[settings.REFERENCE_POSITIONS[next_segment.slug]]
-                            - self.segment_length[next_segment.slug]['before'])
-                            normal_segment_end = next_segment_start - 1
-                        else:
-                            normal_segment_end = len(pconf.protein.sequence)
-                        if segment_end < normal_segment_end:
-                            segment_parts[suffix] = {'start': segment_end+1, 'end': normal_segment_end}
-
-                        for suffix in partial_suffixes:
-                            partial_slug = '{}_{}'.format(segment.slug, suffix)
-                            if partial_slug in all_segments:
-                                partial_segment = all_segments[partial_slug]
-                            else:
-                                try:
-                                    partial_segment = ProteinSegment.objects.create(slug=partial_slug,
-                                        name=segment.name, category = segment.category, partial = True,
-                                        fully_aligned = False)
-                                except IntegrityError: # for concurrency
-                                    partial_segment = ProteinSegment.objects.get(slug=partial_slug)
-
-                                # add the segment to "cache"
-                                all_segments[partial_slug] = partial_segment
-
-                            segment_parts[suffix]['segment'] = partial_segment
                 else:
                     segment_start = sequence_number_counter + 1
                     
@@ -201,24 +192,22 @@ class Command(BaseBuild):
                             settings.REFERENCE_POSITIONS[next_segment.slug] in ref_positions):
                             segment_end = (ref_positions[settings.REFERENCE_POSITIONS[next_segment.slug]]
                             - self.segment_length[next_segment.slug]['before'] - 1)
-                            next_ref_found = True
                         else: 
                             continue
                     else:
                         # for the last segment, the end is the last residue of the sequence
                         segment_end = len(pconf.protein.sequence)
 
+                    aligned_segment_start = None
+                    aligned_segment_end = None
+
                     # skip if the segment ends before it starts (can happen if the next segment is long)
                     if segment_start > segment_end:
                         self.logger.warning('Start of segment {} is larger than its end'.format(segment))
                         continue
 
-                # add main segment to segment part list
-                segment_parts['main'] = {'segment': segment, 'start': segment_start, 'end': segment_end}
-
-                # create residues for this segment(s)
-                for segment_part in segment_parts:
-                    create_or_update_residues_in_segment(pconf, segment_part['segment'], segment_part['start'],
-                        segment_part['end'], self.schemes, ref_positions, [], True)
+                # create residues for this segment
+                create_or_update_residues_in_segment(pconf, segment, segment_start, aligned_segment_start,
+                    segment_end, aligned_segment_end, self.schemes, ref_positions, [], True)
 
                 sequence_number_counter = segment_end
