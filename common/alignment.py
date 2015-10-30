@@ -269,7 +269,7 @@ class Alignment:
             # 2. The part before the aligned part in a partially aligned segment
             # 3. The part after the aligned part in a partially aligned segment
             # 4. An unaligned segment (then there is only one part)
-            if ps in settings.REFERENCE_POSITIONS and r.protein_segment.fully_aligned:
+            if r.generic_number:
                 segment_part = 1
             elif ps in settings.REFERENCE_POSITIONS and not aligned_residue_encountered[pcid][ps]:
                 segment_part = 2
@@ -362,11 +362,15 @@ class Alignment:
                         pos_label = updated_index
 
                     if pos_label.startswith('zz-'):
-                        segment_label_after = ps + '_after' # only parts after a partly aligned segment start with zz
+                        segment_label_after = ps + '_after' # parts after a partly aligned segment start with zz
                         if segment_label_after in segment_counters[pcid]:
                             segment_length = segment_counters[pcid][segment_label_after]
                             counter = pos_num_after
-                        else:
+                        
+                        # this might be the "second part" of an unaligned segment, e.g.
+                        # AAAA----AAAAA
+                        # AAAAAAAAAAAAA
+                        else: 
                             segment_length = segment_counters[pcid][ps]
                             counter = pos_num
 

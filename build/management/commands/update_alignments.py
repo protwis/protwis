@@ -323,7 +323,8 @@ class Command(BaseBuild):
                 update_segments[i]['end'] = segment_end
                 update_segments[i]['aligned_end'] = aligned_segment_end
                 update_segments[i]['protein_anomalies'] = protein_anomalies
-                sequence_number_counter = segment_end
+                if segment_end:
+                    sequence_number_counter = segment_end
                 
                 # update previous segment end if needed
                 if ('end' in update_segments[i-1] and (not update_segments[i-1]['end']
