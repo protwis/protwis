@@ -27,6 +27,11 @@ class Command(BaseBuild):
     generic_numbers_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers'])
     ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'reference_positions'])
     auto_ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'auto_reference_positions'])
+    default_segment_length_file_path = os.sep.join([settings.DATA_DIR, 'residue_data', 'default_segment_length.yaml'])
+
+    # default segment length
+    with open(default_segment_length_file_path, 'r') as default_segment_length_file:
+        segment_length = yaml.load(default_segment_length_file)  
 
     pconfs = ProteinConformation.objects.order_by('protein__parent', 'id').prefetch_related(
             'protein__residue_numbering_scheme__parent', 'protein__genes', 'template_structure')
@@ -122,6 +127,9 @@ class Command(BaseBuild):
                 self.logger.info("Updating segment borders for {} of {}, using template {}".format(segment.slug, pconf,
                     template_structure))
 
+                # should this segment be aligned? This value is updated below
+                unaligned_segment = True
+
                 # add segment to updated values
                 update_segments.append({'segment': segment})
 
@@ -129,6 +137,9 @@ class Command(BaseBuild):
                 protein_anomalies = []
 
                 if segment.slug in settings.REFERENCE_POSITIONS:
+                    # are all template requirements satisfied? Updated below
+                    templates_found = True
+
                     # find template segment (for segments borders)
                     try:
                         main_tpl_ss = StructureSegment.objects.get(structure=template_structure,
@@ -136,7 +147,7 @@ class Command(BaseBuild):
                     except StructureSegment.DoesNotExist:
                         self.logger.warning('Segment records not found for {} in template structure {}, skipping!'.format(
                             segment, template_structure))
-                        continue
+                        templates_found = False
 
                     # get reference positions of this segment (e.g. 1x50)
                     segment_ref_position = settings.REFERENCE_POSITIONS[segment.slug]
@@ -144,7 +155,7 @@ class Command(BaseBuild):
                     # is there a defined reference position for this protein and segment
                     if segment_ref_position not in ref_positions:
                         self.logger.warning("{} missing definition for {}".format(pconf, segment_ref_position))
-                        continue
+                        templates_found = False
 
                     # template segment reference residue number
                     try:
@@ -154,20 +165,22 @@ class Command(BaseBuild):
                     except Residue.DoesNotExist:
                         self.logger.warning("Template residues for {} in {} not found, skipping!".format(segment,
                             pconf))
-                        continue
+                        templates_found = False
 
+                    # if template requirements are fulfilled, treat as an aligned segment
+                    if templates_found:
+                        unaligned_segment = False
+                    # if not, stop here for fully aligned segments, otherwise treat as unaligned
+                    else:
+                        if segment.fully_aligned:
+                            continue
+
+                if not unaligned_segment:
                     # number of residues before and after the reference position
                     tpl_res_before_ref = tsrrn.sequence_number - main_tpl_ss.start
                     tpl_res_after_ref = main_tpl_ss.end - tsrrn.sequence_number
                     aligned_segment_start = ref_positions[segment_ref_position] - tpl_res_before_ref
                     aligned_segment_end = ref_positions[segment_ref_position] + tpl_res_after_ref
-                    
-                    if segment.fully_aligned:                        
-                        segment_start = aligned_segment_start
-                        segment_end = aligned_segment_end
-                    else:
-                        segment_start = sequence_number_counter + 1
-                        segment_end = 0 # will be updated in the next iteration
 
                     # protein anomaly rules
                     if segment.slug in anomaly_rule_sets:
@@ -308,6 +321,14 @@ class Command(BaseBuild):
                             aligned_segment_start += 1
                         elif (pa_generic_index < ref_generic_index and pa.anomaly_type.slug == 'constriction'):
                             aligned_segment_start -= 1
+
+                    # set start and end positions (not just the aligned)
+                    if segment.fully_aligned:                        
+                        segment_start = aligned_segment_start
+                        segment_end = aligned_segment_end
+                    else:
+                        segment_start = sequence_number_counter + 1
+                        segment_end = 0 # will be updated in the next iteration
                 else:
                     segment_start = sequence_number_counter + 1
                     if i == (nseg-1):
@@ -327,9 +348,32 @@ class Command(BaseBuild):
                     sequence_number_counter = segment_end
                 
                 # update previous segment end if needed
-                if ('end' in update_segments[i-1] and (not update_segments[i-1]['end']
-                    or update_segments[i-1]['end'] != update_segments[i-1]['aligned_end'])):
+                if (i and 'end' in update_segments[i-1] and (not update_segments[i-1]['end']
+                    or update_segments[i-1]['end'] != update_segments[i-1]['aligned_end'])):    
                     update_segments[i-1]['end'] = segment_start - 1
+                
+                # check whether minimum length is fulfilled for last segment
+                if (i and update_segments[i-1]['segment'].slug in self.segment_length
+                    and 'min' in self.segment_length[update_segments[i-1]['segment'].slug]
+                    and 'end' in update_segments[i-1]):
+                    # if it is not, find out how many residues are missing
+                    last_min_segment_length = self.segment_length[update_segments[i-1]['segment'].slug]['min']
+                    last_segment_length = update_segments[i-1]['end'] - update_segments[i-1]['start']
+                    if last_segment_length < 0:
+                        last_segment_length = 0
+                    if last_segment_length < last_min_segment_length:
+                        missing_residues = last_min_segment_length - last_segment_length
+
+                        # take the missing residues from the segments before and after
+                        add_residues_before = round(missing_residues / 2) + missing_residues % 2
+                        add_residues_after = round(missing_residues / 2)
+                        update_segments[i-1]['start'] -= add_residues_before
+                        update_segments[i-1]['end'] = update_segments[i-1]['start'] + missing_residues - 1
+
+                        # update this segment's start
+                        update_segments[i]['start'] = update_segments[i-1]['end'] + 1
+                        if update_segments[i]['aligned_start'] < update_segments[i]['start']:
+                            update_segments[i]['aligned_start'] = update_segments[i]['start']
 
             for us in update_segments:
                 if 'start' in us and 'end' in us and us['end']:

@@ -128,6 +128,9 @@ class Command(BaseBuild):
             nseg = self.segments.count()
             sequence_number_counter = 0
             for i, segment in enumerate(self.segments):
+                # should this segment be aligned? This value is updated below
+                unaligned_segment = True
+
                 # next segment (for checking start positions)
                 if (i+1) < nseg:
                     next_segment = self.segments[i+1]
@@ -138,6 +141,9 @@ class Command(BaseBuild):
                 if segment.slug in settings.REFERENCE_POSITIONS:
                     # is there a reference position available?
                     if settings.REFERENCE_POSITIONS[segment.slug] in ref_positions:
+                        # mark segment as aligned
+                        unaligned_segment = False
+
                         segment_start = (ref_positions[settings.REFERENCE_POSITIONS[segment.slug]]
                             - self.segment_length[segment.slug]['before'])
                         aligned_segment_start = segment_start
@@ -180,10 +186,17 @@ class Command(BaseBuild):
                                 segment_end = len(pconf.protein.sequence)
 
                     else:
-                        # skip this segment if the reference position is missing
-                        self.logger.warning('Reference position missing for segment {} in {}'.format(segment, pconf))
-                        continue
-                else:
+                        if segment.fully_aligned:
+                            # stop processing this segment
+                            self.logger.error('Reference position missing for fully aligned segment {} in {},' \
+                                + ' skipping'.format(segment, pconf))
+                            continue
+                        else:
+                            # log the missing reference position
+                            self.logger.warning('Reference position missing for segment {} in {}'.format(segment,
+                                pconf))
+
+                if unaligned_segment:
                     segment_start = sequence_number_counter + 1
                     
                     # if this is not the last segment, find next segments reference position
@@ -201,10 +214,10 @@ class Command(BaseBuild):
                     aligned_segment_start = None
                     aligned_segment_end = None
 
-                    # skip if the segment ends before it starts (can happen if the next segment is long)
-                    if segment_start > segment_end:
-                        self.logger.warning('Start of segment {} is larger than its end'.format(segment))
-                        continue
+                # skip if the segment ends before it starts (can happen if the next segment is long)
+                if segment_start > segment_end:
+                    self.logger.warning('Start of segment {} is larger than its end'.format(segment))
+                    continue
 
                 # create residues for this segment
                 create_or_update_residues_in_segment(pconf, segment, segment_start, aligned_segment_start,

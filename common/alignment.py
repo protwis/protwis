@@ -281,9 +281,7 @@ class Alignment:
             # update segment counters
             if pcid not in segment_counters:
                 segment_counters[pcid] = {}
-            if segment_part == 2:
-                part_ps = ps + '_before'
-            elif segment_part == 3:
+            if segment_part == 3:
                 part_ps = ps + '_after'
             else:
                 part_ps = ps
@@ -348,7 +346,13 @@ class Alignment:
                     # In a "normal", non split, unaligned segment, is this past the middle?
                     if (pos_label.startswith('01-')
                         and res_obj.protein_segment.category != 'terminus'
-                        and pos_num > (segment_counters[pcid][ps] / 2 + 1)
+                        and pos_num > (segment_counters[pcid][ps] / 2 + 0.5)):
+                        right_align = True
+                    # In an partially aligned segment (prefixed with 00), where conserved residues are lacking, treat
+                    # as an unaligned segment
+                    elif (pos_label.startswith('00-')
+                        and not aligned_residue_encountered[pcid][ps]
+                        and pos_num > (segment_counters[pcid][ps] / 2 + 0.5)
                         or res_obj.protein_segment.slug == 'N-term'):
                         right_align = True
                     # In an N-terminus, always right align everything
