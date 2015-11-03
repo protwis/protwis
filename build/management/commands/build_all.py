@@ -9,16 +9,16 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('-p', '--proc',
-            type=int,
-            action='store',
-            dest='proc',
-            default=1,
-            help='Number of processes to run')
+                            type=int,
+                            action='store',
+                            dest='proc',
+                            default=1,
+                            help='Number of processes to run')
         parser.add_argument('-t', '--test',
-            action='store_true',
-            dest='test',
-            default=False,
-            help='Include only a subset of data for testing')
+                            action='store_true',
+                            dest='test',
+                            default=False,
+                            help='Include only a subset of data for testing')
 
     def handle(self, *args, **options):
         if options['test']:
@@ -52,4 +52,5 @@ class Command(BaseCommand):
             else:
                 call_command(c[0])
 
-        print('{} Build completed'.format(datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')))
+        print('{} Build completed'.format(datetime.datetime.strftime(
+            datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')))

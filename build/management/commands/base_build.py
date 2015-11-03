@@ -20,6 +20,11 @@ class Command(BaseCommand):
             dest='proc',
             default=1,
             help='Number of processes to run')
+        parser.add_argument('-t', '--test',
+            action='store_true',
+            dest='test',
+            default=False,
+            help='Include only a subset of data for testing')
 
     def prepare_input(self, proc, items, iteration=1):
         q = Queue()

@@ -28,7 +28,7 @@ class Command(BaseBuild):
             help='Profile the script with cProfile')
 
     # segments
-    segments = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS)
+    segments = ProteinSegment.objects.filter(fully_aligned=True)
 
     # fetch representative (inactive) structures FIXME add active structure??
     structures = Structure.objects.filter(representative=True,
