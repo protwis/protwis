@@ -140,7 +140,7 @@ class Command(BaseBuild):
                 # is this an alignable segment?
                 if segment.slug in settings.REFERENCE_POSITIONS:
                     # is there a reference position available?
-                    if settings.REFERENCE_POSITIONS[segment.slug] in ref_positions:
+                    if ref_positions and settings.REFERENCE_POSITIONS[segment.slug] in ref_positions:
                         # mark segment as aligned
                         unaligned_segment = False
 

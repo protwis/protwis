@@ -358,7 +358,8 @@ class Command(BaseBuild):
                     and 'end' in update_segments[i-1]):
                     # if it is not, find out how many residues are missing
                     last_min_segment_length = self.segment_length[update_segments[i-1]['segment'].slug]['min']
-                    last_segment_length = update_segments[i-1]['end'] - update_segments[i-1]['start']
+                    # +1 because a segment starting at 6 and ending at 10 is 5 positions, but 10-6 is 4
+                    last_segment_length = update_segments[i-1]['end'] - update_segments[i-1]['start'] + 1
                     if last_segment_length < 0:
                         last_segment_length = 0
                     if last_segment_length < last_min_segment_length:
@@ -368,7 +369,11 @@ class Command(BaseBuild):
                         add_residues_before = round(missing_residues / 2) + missing_residues % 2
                         add_residues_after = round(missing_residues / 2)
                         update_segments[i-1]['start'] -= add_residues_before
-                        update_segments[i-1]['end'] = update_segments[i-1]['start'] + missing_residues - 1
+                        update_segments[i-1]['end'] = update_segments[i-1]['start'] + last_min_segment_length - 1
+                        
+                        # no alignment since the ends of the adjoining segments have been edited
+                        update_segments[i-1]['aligned_start'] = None
+                        update_segments[i-1]['aligned_end'] = None
 
                         # update this segment's start
                         update_segments[i]['start'] = update_segments[i-1]['end'] + 1
