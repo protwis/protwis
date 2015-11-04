@@ -252,21 +252,17 @@ class Command(BaseBuild):
 
                             # use similarity?
                             if use_similarity:
-                                # template anomalies
-                                tplpas = ProteinConformationTemplateStructure.objects.get(
-                                    protein_conformation=pconf, protein_segment=segment)
-                                
                                 # does the template have the anomaly in question?
-                                if pa in tplpas.structure.protein_anomalies.all().values_list(
+                                if pa in template_structure.protein_anomalies.all().values_list(
                                     'generic_number__label', flat=True):
                                     
                                     # add it to the list of anomalies for this segment
                                     protein_anomalies.append(anomalies[pa])
                                     self.logger.info("Anomaly {} included for {} (similarity to {})".format(pa,
-                                        pconf, tplpas.structure))
+                                        pconf, template_structure))
                                 else:
                                     self.logger.info("Anomaly {} excluded for {} (similarity to {})".format(pa,
-                                        pconf, tplpas.structure))
+                                        pconf, template_structure))
                             else:
                                 if anomalies[pa] in protein_anomalies:
                                     self.logger.info("Anomaly {} included for {} (rule)".format(pa, pconf))
