@@ -298,8 +298,6 @@ class GenericNumberingResults(TemplateView):
             request.session['gn_outfile'] = out_stream
             request.session['gn_outfname'] = request.FILES['pdb_file'].name
             self.success = True
-            #self.outfile = request.FILES['pdb_file'].name
-            #self.replacement_tag = 'GPCRDB'
         else:
             self.input_file = request.FILES['pdb_file'].name
             self.success = False
@@ -313,15 +311,7 @@ class GenericNumberingResults(TemplateView):
         return render(request, self.template_name, context)
 
 
-    #def get_context_data (self, **kwargs):
 
-    #    context = super(GenericNumberingResults, self).get_context_data(**kwargs)
-    #    attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
-    #    for a in attributes:
-    #        if not(a[0].startswith('__') and a[0].endswith('__')):
-    #            context[a[0]] = a[1]
-
-    #    return context
 class GenericNumberingSelection(AbsSegmentSelection):
     """
     Segment selection for download of annotated substructure.
@@ -1004,7 +994,7 @@ class PDBDownload(TemplateView):
         if simple_selection:
             selection.importer(simple_selection)
         if selection.targets != []:
-            pdb_files = [(PDBParser().get_structure('', StringIO(x.item.pdb_data.pdb))[0], x.item.pdb_code.index+'.pdb') for x in selection.targets if x.type == 'structure']
+            pdb_files = [(PDBParser().get_structure('', StringIO(x.item.pdb_data.pdb))[0], '{}_{}.pdb'.format(x.item.protein_conformation.protein.parent.entry_name, x.item.pdb_code.index)) for x in selection.targets if x.type == 'structure']
 
         if len(pdb_files) > 0:
             io = PDBIO()            
