@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 
 from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinAnomaly
 from residue.models import Residue
-from structure.models import Structure, PdbData, Rotamer
+from structure.models import Structure, PdbData, Rotamer, StructureModel
 from common.alignment import Alignment, AlignedReferenceTemplate
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
@@ -30,6 +30,7 @@ def homology_model_multiprocessing(receptor):
     alignment = Homology_model.run_alignment()
     if alignment!=None:
         Homology_model.build_homology_model(alignment)#, switch_bulges=False, switch_constrictions=False, switch_rotamers=False)    
+        Homology_model.upload_to_db()
         logger = logging.getLogger('homology_modeling')
         l.acquire()
         logger.info('Model for {} successfully built.'.format(receptor))
@@ -38,13 +39,11 @@ def homology_model_multiprocessing(receptor):
 class Command(BaseCommand):    
     def handle(self, *args, **options):
       
-        receptor_list = [ 'gpr1_human', 'etbr2_human', 'gp151_human', 
-                         'gpr37_human', 'gp135_human', 'gp176_human', 'gpr55_human', 'gpr19_human', 'p2ry8_human', 
-                         'gpr32_human', 'p2y10_human']
-        if os.path.isfile('./structure/homology_modeling.log'):
-            os.remove('./structure/homology_modeling.log')
+        receptor_list = [ 'gpr15_human','gpr32_human']
+        if os.path.isfile('./logs/homology_modeling.log'):
+            os.remove('./logs/homology_modeling.log')
         logger = logging.getLogger('homology_modeling')
-        hdlr = logging.FileHandler('./structure/homology_modeling.log')
+        hdlr = logging.FileHandler('./logs/homology_modeling.log')
         formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
         hdlr.setFormatter(formatter)
         logger.addHandler(hdlr) 
@@ -93,7 +92,11 @@ class HomologyModeling(object):
         
     def __repr__(self):
         return "<{}, {}>".format(self.reference_entry_name, self.state)
-   
+
+    def upload_to_db(self):
+        obj, created = StructureModel.objects.update_or_create(protein=self.reference_protein, main_template=self.main_structure)
+        print(self.main_structure)
+
     def run_alignment(self, core_alignment=True, query_states='default', 
                       segments=['TM1','TM2','TM3','TM4','TM5','TM6','TM7'], order_by='similarity'):
         ''' Creates pairwise alignment between reference and target receptor(s).
@@ -104,13 +107,13 @@ class HomologyModeling(object):
         '''
         if query_states=='default':
             query_states=self.query_states
-        alignment = AlignedReferenceTemplate(self.reference_protein, segments, query_states, order_by)
-        print('Alignment: ',datetime.now() - startTime)
-        enhanced_alignment = alignment.enhance_best_alignment()
-        print('Enhanced alignment: ',datetime.now() - startTime)
-        if enhanced_alignment==None:
-            return None
+        alignment = AlignedReferenceTemplate(self.reference_protein, segments, query_states, order_by)       
         if core_alignment==True:
+            print('Alignment: ',datetime.now() - startTime)
+            enhanced_alignment = alignment.enhance_best_alignment()
+            print('Enhanced alignment: ',datetime.now() - startTime)
+            if enhanced_alignment==None:
+                return None
             self.segments = segments
             self.main_structure = alignment.main_template_structure
             self.similarity_table = alignment.similarity_table
@@ -471,7 +474,7 @@ class HomologyModeling(object):
         print('MODELLER build: ',datetime.now() - startTime)
         pprint.pprint(self.statistics)
         print('################################')
-        return a
+        return self
     
     def run_non_conserved_switcher(self, main_pdb_array, reference_dict, template_dict, alignment_dict):
         ''' Switches non-conserved residues with best possible template. Returns refreshed main_pdb_array 
@@ -660,7 +663,7 @@ sequence:{uniprot}::::::::
             @param number_of_models: int, number of models to be built \n
             @param output_file_name: str, name of output file
         '''
-#        log.verbose()
+        log.none()
         env = environ(rand_seed=80851) #!!random number generator
         
         if atom_dict==None:
@@ -669,6 +672,7 @@ sequence:{uniprot}::::::::
         else:
             a = HomologyMODELLER(env, alnfile = pir_file, knowns = template, sequence = reference, 
                                  assess_methods=(assess.DOPE), atom_selection=atom_dict)
+        
         a.starting_model = 1
         a.ending_model = number_of_models
         a.md_level = refine.slow
@@ -690,7 +694,7 @@ sequence:{uniprot}::::::::
         
         # Get top model
         m = ok_models[0]
-        print("Top model: %s (DOPE score %.3f)" % (m['name'], m[key]))        
+#        print("Top model: %s (DOPE score %.3f)" % (m['name'], m[key]))        
         
         for file in os.listdir("./"):
             if file==m['name']:
@@ -698,6 +702,16 @@ sequence:{uniprot}::::::::
                                                                                  self.state)+output_file_name)
             elif file.startswith(self.uniprot_id):
                 os.remove("./"+file)#, "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)+file)
+
+
+class SilentModeller(object):
+    def __enter__(self):
+        self._stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+
+    def __exit__(self, *args):
+        sys.stdout.close()
+        sys.stdout = self._stdout
 
         
 class HomologyMODELLER(automodel):
@@ -710,8 +724,14 @@ class HomologyMODELLER(automodel):
         selection_out = []
         for seg_id, segment in self.atom_dict.items():
             for gn, atom in segment.items():
+                print(self.residues[str(atom)], str(atom))
                 selection_out.append(self.residues[str(atom)])
         return selection(selection_out)
+        
+    def make(self):
+        with SilentModeller():
+            super(HomologyMODELLER, self).make()
+
 
 class Loops(object):
     ''' Class to handle loops in GPCR structures.
@@ -958,6 +978,7 @@ class Loops(object):
         self.template_dict = temp_temp_dict
         self.alignment_dict = temp_aligned_dict
 
+
 class Bulges(object):
     ''' Class to handle bulges in GPCR structures.
     '''
@@ -1010,6 +1031,7 @@ class Bulges(object):
                     pass
         return None
             
+            
 class Constrictions(object):
     ''' Class to handle constrictions in GPCRs.
     '''
@@ -1061,6 +1083,7 @@ class Constrictions(object):
                 except:
                     pass              
         return None
+        
         
 class GPCRDBParsingPDB(object):
     ''' Class to manipulate cleaned pdb files of GPCRs.
@@ -1193,6 +1216,7 @@ class GPCRDBParsingPDB(object):
                     pass
             counter+=1
         return output
+   
    
 class CreateStatistics(object):
     ''' Statistics dictionary for HomologyModeling.

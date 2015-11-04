@@ -26,6 +26,7 @@ class Structure(models.Model):
 
 class StructureModel(models.Model):
     protein = models.ForeignKey('protein.Protein')
+    main_template = models.ForeignKey('structure.Structure')
 
     def __str__(self):
         return self.protein.entry_name
