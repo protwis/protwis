@@ -5,6 +5,7 @@ import os
 import yaml
 import time
 import logging
+from urllib.parse import quote
 from urllib.request import urlopen
 from urllib.error import HTTPError
 import json
@@ -51,7 +52,7 @@ def fetch_from_web_api(url, index, cache_dir=False):
             return d
     
     # if nothing is found in the cache, use the web API
-    full_url = Template(url).substitute(index=index)
+    full_url = Template(url).substitute(index=quote(str(index), safe=''))
     logger.info('Fetching {}'.format(full_url))
     tries = 0
     max_tries = 5

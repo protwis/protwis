@@ -828,7 +828,7 @@ def find_interactions():
                                     new_results[hetflag]['interactions'].append([aaname,fragment_file,'aro_ff','aromatic face-to-face','aromatic'])
                                     remove_hyd(aaname,hetflag)
                                 # need to be careful for edge-edge
-                                elif (shortest_center_aa_ring_to_het_atom < 4) and abs(angle_degrees[0]-90)<20 and abs(angle_degrees[2]-90)<20:
+                                elif (shortest_center_aa_ring_to_het_atom < 4.5) and abs(angle_degrees[0]-90)<30 and abs(angle_degrees[2]-90)<30:
                                     summary_results[hetflag]['aromaticfe'].append(
                                         [aaname, count, round(distance, 2), angle_degrees])
 
@@ -841,7 +841,7 @@ def find_interactions():
                                     new_results[hetflag]['interactions'].append([aaname,fragment_file,'aro_fe','aromatic face-to-edge','aromatic','protein'])
                                     remove_hyd(aaname,hetflag)
                                 # need to be careful for edge-edge
-                                elif (shortest_center_het_ring_to_res_atom < 4) and abs(angle_degrees[1]-90)<20 and abs(angle_degrees[2]-90)<20:
+                                elif (shortest_center_het_ring_to_res_atom < 4.5) and abs(angle_degrees[1]-90)<30 and abs(angle_degrees[2]-90)<30:
                                     summary_results[hetflag]['aromaticef'].append(
                                         [aaname, count, round(distance, 2), angle_degrees])
 
