@@ -1,4 +1,5 @@
 from django.db import models
+from django.db import IntegrityError
 from django.utils.text import slugify
 
 from common.tools import fetch_from_web_api, fetch_from_entrez
@@ -90,10 +91,13 @@ class Publication(models.Model):
                     journal_abbr = pub['message']['container-title'][1]
                 except:
                     journal_abbr = slugify(journal)
-                self.journal, created = PublicationJournal.objects.get_or_create(name=journal,
-                    defaults={'slug': journal_abbr})
-                if created:
-                    logger.info('Created journal {}'.format(journal))
+                try:
+                    self.journal, created = PublicationJournal.objects.get_or_create(name=journal,
+                        defaults={'slug': journal_abbr})
+                    if created:
+                        logger.info('Created journal {}'.format(journal))
+                except IntegrityError:
+                    self.journal = PublicationJournal.objects.get(name=journal)
             except Exception as msg:
                 logger.warning('Processing data from CrossRef for {} failed: {}'.format(doi, msg))
                 try_entrez_on_fail = False
@@ -144,7 +148,7 @@ class Publication(models.Model):
 
 class PublicationJournal(models.Model):
     slug = models.CharField(max_length=200, null=True)
-    name = models.TextField()
+    name = models.TextField(unique=True)
 
     def __str__(self):
         return "{!s} ({!s})".format(self.name, self.slug)
