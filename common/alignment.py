@@ -881,7 +881,7 @@ class AlignedReferenceTemplate(Alignment):
         '''
         self.structures_data = Structure.objects.filter(
             state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
-            self.reference_protein.family.parent.parent.parent).order_by(
+            self.reference_protein.family.parent.parent.parent, representative='t').order_by(
             'protein_conformation__protein__parent','resolution').distinct('protein_conformation__protein__parent')
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
@@ -907,6 +907,9 @@ class AlignedReferenceTemplate(Alignment):
                             if res[1]!=False and res[1]!='':
                                all_temp_positions.append(res[0])
                         temp_positions.append([all_temp_positions[0],all_temp_positions[-1]])
+                    print(protein)
+                    print(ref_positions)
+                    print(temp_positions)
                     if ref_positions==temp_positions:
                         for struct in self.similarity_table:
                             if protein.protein==struct.protein_conformation.protein.parent:

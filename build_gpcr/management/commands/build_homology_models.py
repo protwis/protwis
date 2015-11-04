@@ -39,7 +39,7 @@ def homology_model_multiprocessing(receptor):
 class Command(BaseCommand):    
     def handle(self, *args, **options):
       
-        receptor_list = [ 'gpr15_human','gpr32_human']
+        receptor_list = [ 'gpr15_human']
         if os.path.isfile('./logs/homology_modeling.log'):
             os.remove('./logs/homology_modeling.log')
         logger = logging.getLogger('homology_modeling')
@@ -147,6 +147,9 @@ class HomologyModeling(object):
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
         main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
+        pprint.pprint(a.reference_dict)
+        pprint.pprint(a.template_dict)
+        pprint.pprint(main_pdb_array)
         print('Create main_pdb_array: ',datetime.now() - startTime)
         # loops
         if loops==True:
@@ -461,7 +464,7 @@ class HomologyModeling(object):
             os.mkdir(path)
         trimmed_res_nums = self.write_homology_model_pdb(path+self.uniprot_id+"_post.pdb", main_pdb_array, 
                                                          a, trimmed_residues=trimmed_residues)                                                         
-        
+
         # Model with MODELLER
         self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
@@ -663,7 +666,7 @@ sequence:{uniprot}::::::::
             @param number_of_models: int, number of models to be built \n
             @param output_file_name: str, name of output file
         '''
-        log.none()
+#        log.none()
         env = environ(rand_seed=80851) #!!random number generator
         
         if atom_dict==None:
@@ -729,8 +732,8 @@ class HomologyMODELLER(automodel):
         return selection(selection_out)
         
     def make(self):
-        with SilentModeller():
-            super(HomologyMODELLER, self).make()
+#        with SilentModeller():
+        super(HomologyMODELLER, self).make()
 
 
 class Loops(object):
@@ -1184,8 +1187,10 @@ class GPCRDBParsingPDB(object):
         pref_chain = structure.preferred_chain
         for residue in pdb_struct[pref_chain]:
             try:
+#                print(residue,residue['CA'].get_bfactor(), residue['N'].get_bfactor())
                 if -8.1 < residue['CA'].get_bfactor() < 8.1:
                     gn = str(residue['CA'].get_bfactor())
+                    
                     if gn[0]=='-':
                         gn = gn[1:]+'1'
                     elif len(gn)==3:
