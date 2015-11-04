@@ -116,18 +116,6 @@ def SelectionAutocomplete(request):
         protein_source_list = []
         for protein_source in selection.annotation:
             protein_source_list.append(protein_source.item)
-
-        if type_of_selection == 'targets' or type_of_selection == 'browse':
-            # find protein families
-            pfs = ProteinFamily.objects.filter(name__icontains=q).exclude(slug='000')[:10]
-            for pf in pfs:
-                pf_json = {}
-                pf_json['id'] = pf.id
-                pf_json['label'] = pf.name
-                pf_json['slug'] = pf.slug
-                pf_json['type'] = 'family'
-                pf_json['category'] = 'Target families'
-                results.append(pf_json)
         
         # find proteins
         ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q),
@@ -155,6 +143,19 @@ def SelectionAutocomplete(request):
             pa_json['category'] = 'Targets'
             if pa_json not in results:
                 results.append(pa_json)
+
+        # protein families
+        if type_of_selection == 'targets' or type_of_selection == 'browse':
+            # find protein families
+            pfs = ProteinFamily.objects.filter(name__icontains=q).exclude(slug='000')[:10]
+            for pf in pfs:
+                pf_json = {}
+                pf_json['id'] = pf.id
+                pf_json['label'] = pf.name
+                pf_json['slug'] = pf.slug
+                pf_json['type'] = 'family'
+                pf_json['category'] = 'Target families'
+                results.append(pf_json)
         
         data = json.dumps(results)
     else:
