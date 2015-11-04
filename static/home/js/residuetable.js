@@ -88,17 +88,17 @@ function ajaxMutants(plotid,protein) {
                             color_letter = "#000";
                             if (winner==0 && winner2) {
                               if (increases>bigincreases) {
-                                color = "#87E88F";
-                              } else {
-                                color = "#66B36C";
-                              }
-                            } else if (winner==1) {
-                              if (decreases>bigdecreases) {
                                 color = "#F05960";
                                 color_letter = "#FDFF7B";
                               } else {
                                 color = "#CC434A";
                                 color_letter = "#FDFF7B";
+                              }
+                            } else if (winner==1) {
+                              if (decreases>bigdecreases) {
+                                color = "#87E88F";
+                              } else {
+                                color = "#66B36C";
                               }
                             } else if (winner==2) {
                               color = "#F7DA00";
@@ -183,17 +183,17 @@ function table_ajaxMutants() {
                             color_letter = "#000";
                             if (winner==0 && winner2) {
                               if (increases>bigincreases) {
-                                color = "#87E88F";
-                              } else {
-                                color = "#66B36C";
-                              }
-                            } else if (winner==1) {
-                              if (decreases>bigdecreases) {
                                 color = "#FF7373";
                                 color_letter = "#FFF";
                               } else {
                                 color = "#FA1111";
                                 color_letter = "#FDFF7B";
+                              }
+                            } else if (winner==1) {
+                              if (decreases>bigdecreases) {
+                                color = "#87E88F";
+                              } else {
+                                color = "#66B36C";
                               }
                             } else if (winner==2) {
                               color = "#F7DA00";

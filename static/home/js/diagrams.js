@@ -319,17 +319,17 @@
                             color_letter = "#000";
                             if (winner==0 && winner2) {
                               if (increases>bigincreases) {
-                                color = "#87E88F";
-                              } else {
-                                color = "#66B36C";
-                              }
-                            } else if (winner==1) {
-                              if (decreases>bigdecreases) {
                                 color = "#FF7373";
                                 color_letter = "#FFF";
                               } else {
                                 color = "#FA1111";
                                 color_letter = "#FDFF7B";
+                              }
+                            } else if (winner==1) {
+                              if (decreases>bigdecreases) {
+                                color = "#87E88F";
+                              } else {
+                                color = "#66B36C";
                               }
                             } else if (winner==2) {
                               color = "#F7DA00";
@@ -407,17 +407,17 @@
                             color_letter = "#000";
                             if (winner==0 && winner2) {
                               if (increases>bigincreases) {
-                                color = "#87E88F";
-                              } else {
-                                color = "#66B36C";
-                              }
-                            } else if (winner==1) {
-                              if (decreases>bigdecreases) {
                                 color = "#FF7373";
                                 color_letter = "#FFF";
                               } else {
                                 color = "#FA1111";
                                 color_letter = "#FDFF7B";
+                              }
+                            } else if (winner==1) {
+                              if (decreases>bigdecreases) {
+                                color = "#87E88F";
+                              } else {
+                                color = "#66B36C";
                               }
                             } else if (winner==2) {
                               color = "#F7DA00";
