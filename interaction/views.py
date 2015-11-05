@@ -226,8 +226,14 @@ def StructureDetails(request, pdbname):
     context['data'] = flattened_data
     context['number_of_schemes'] = len(numbering_schemes)
 
+    residuelist = Residue.objects.filter(protein_conformation__protein=p).prefetch_related('protein_segment','display_generic_number','generic_number')
+    HelixBox = DrawHelixBox(
+                residuelist, p.get_protein_class(), str(p), nobuttons=1)
+    SnakePlot = DrawSnakePlot(
+                residuelist, p.get_protein_class(), str(p), nobuttons=1)
+
     return render(request, 'interaction/structure.html', {'pdbname': pdbname, 'structures': structures,
-                                                          'crystal': crystal, 'protein': p, 'residues': residues_browser, 'annotated_resn':
+                                                          'crystal': crystal, 'protein': p, 'helixbox' : HelixBox, 'snakeplot': SnakePlot, 'residues': residues_browser, 'annotated_resn':
                                                           resn_list, 'ligands': ligands, 'data': context['data'],
                                                           'header': context['header'], 'segments': context['segments'],
                                                           'number_of_schemes': len(numbering_schemes)})
@@ -784,7 +790,7 @@ def calculate(request, redirect=None):
                     else:
                         simple[ligand[1]][interaction[0]] = [interaction[2]]
 
-                    residues_browser.append({'type': interaction[2], 'aa': aa, 'ligand': ligand[
+                    residues_browser.append({'type': interaction[3], 'aa': aa, 'ligand': ligand[
                                             1], 'pos': pos, 'gpcrdb': display, 'segment': segment})
                 break  # only use the top one
 
