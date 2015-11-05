@@ -76,7 +76,7 @@ class BlastSearchResults(TemplateView):
 
     def post(self, request, *args, **kwargs):
 
-        blast = BlastSearch(top_results=5)
+        blast = BlastSearch(top_results=50)
         blast_out = blast.run(request.POST['input_seq'])
 
         context = {}

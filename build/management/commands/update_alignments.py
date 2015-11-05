@@ -252,21 +252,17 @@ class Command(BaseBuild):
 
                             # use similarity?
                             if use_similarity:
-                                # template anomalies
-                                tplpas = ProteinConformationTemplateStructure.objects.get(
-                                    protein_conformation=pconf, protein_segment=segment)
-                                
                                 # does the template have the anomaly in question?
-                                if pa in tplpas.structure.protein_anomalies.all().values_list(
+                                if pa in template_structure.protein_anomalies.all().values_list(
                                     'generic_number__label', flat=True):
                                     
                                     # add it to the list of anomalies for this segment
                                     protein_anomalies.append(anomalies[pa])
                                     self.logger.info("Anomaly {} included for {} (similarity to {})".format(pa,
-                                        pconf, tplpas.structure))
+                                        pconf, template_structure))
                                 else:
                                     self.logger.info("Anomaly {} excluded for {} (similarity to {})".format(pa,
-                                        pconf, tplpas.structure))
+                                        pconf, template_structure))
                             else:
                                 if anomalies[pa] in protein_anomalies:
                                     self.logger.info("Anomaly {} included for {} (rule)".format(pa, pconf))
@@ -358,7 +354,8 @@ class Command(BaseBuild):
                     and 'end' in update_segments[i-1]):
                     # if it is not, find out how many residues are missing
                     last_min_segment_length = self.segment_length[update_segments[i-1]['segment'].slug]['min']
-                    last_segment_length = update_segments[i-1]['end'] - update_segments[i-1]['start']
+                    # +1 because a segment starting at 6 and ending at 10 is 5 positions, but 10-6 is 4
+                    last_segment_length = update_segments[i-1]['end'] - update_segments[i-1]['start'] + 1
                     if last_segment_length < 0:
                         last_segment_length = 0
                     if last_segment_length < last_min_segment_length:
@@ -368,7 +365,15 @@ class Command(BaseBuild):
                         add_residues_before = round(missing_residues / 2) + missing_residues % 2
                         add_residues_after = round(missing_residues / 2)
                         update_segments[i-1]['start'] -= add_residues_before
-                        update_segments[i-1]['end'] = update_segments[i-1]['start'] + missing_residues - 1
+                        update_segments[i-1]['end'] = update_segments[i-1]['start'] + last_min_segment_length - 1
+                        
+                        # update aligned start and end if they exceed the updated start and stop values
+                        if (update_segments[i-1]['aligned_start']
+                            and update_segments[i-1]['aligned_start'] < update_segments[i-1]['start']):
+                            update_segments[i-1]['aligned_start'] = update_segments[i-1]['start']
+                        if (update_segments[i-1]['aligned_end']
+                            and update_segments[i-1]['aligned_end'] > update_segments[i-1]['end']):
+                            update_segments[i-1]['aligned_end'] = update_segments[i-1]['end']
 
                         # update this segment's start
                         update_segments[i]['start'] = update_segments[i-1]['end'] + 1

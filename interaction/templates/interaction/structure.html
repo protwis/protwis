@@ -181,7 +181,7 @@
 <h2>Residue Diagrams</h2>
 <div class="row">
     <div class="col-md-10 text-center">
-        {{ protein.get_helical_box }}
+        {{ helixbox }}
         <br>
         Download: 
         <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox{{ pdbname }}.png', {scale: 3});">PNG</a> | 
@@ -191,7 +191,7 @@
 
 <div class="row">
 <div class="col-md-10 text-center">
-    {{ protein.get_snake_plot }}
+    {{ snakeplot }}
     <br>
     Download: 
     <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ pdbname }}.png', {scale: 3});">PNG</a> | 
