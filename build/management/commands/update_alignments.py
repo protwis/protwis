@@ -252,21 +252,17 @@ class Command(BaseBuild):
 
                             # use similarity?
                             if use_similarity:
-                                # template anomalies
-                                tplpas = ProteinConformationTemplateStructure.objects.get(
-                                    protein_conformation=pconf, protein_segment=segment)
-                                
                                 # does the template have the anomaly in question?
-                                if pa in tplpas.structure.protein_anomalies.all().values_list(
+                                if pa in template_structure.protein_anomalies.all().values_list(
                                     'generic_number__label', flat=True):
                                     
                                     # add it to the list of anomalies for this segment
                                     protein_anomalies.append(anomalies[pa])
                                     self.logger.info("Anomaly {} included for {} (similarity to {})".format(pa,
-                                        pconf, tplpas.structure))
+                                        pconf, template_structure))
                                 else:
                                     self.logger.info("Anomaly {} excluded for {} (similarity to {})".format(pa,
-                                        pconf, tplpas.structure))
+                                        pconf, template_structure))
                             else:
                                 if anomalies[pa] in protein_anomalies:
                                     self.logger.info("Anomaly {} included for {} (rule)".format(pa, pconf))
@@ -371,9 +367,13 @@ class Command(BaseBuild):
                         update_segments[i-1]['start'] -= add_residues_before
                         update_segments[i-1]['end'] = update_segments[i-1]['start'] + last_min_segment_length - 1
                         
-                        # no alignment since the ends of the adjoining segments have been edited
-                        update_segments[i-1]['aligned_start'] = None
-                        update_segments[i-1]['aligned_end'] = None
+                        # update aligned start and end if they exceed the updated start and stop values
+                        if (update_segments[i-1]['aligned_start']
+                            and update_segments[i-1]['aligned_start'] < update_segments[i-1]['start']):
+                            update_segments[i-1]['aligned_start'] = update_segments[i-1]['start']
+                        if (update_segments[i-1]['aligned_end']
+                            and update_segments[i-1]['aligned_end'] > update_segments[i-1]['end']):
+                            update_segments[i-1]['aligned_end'] = update_segments[i-1]['end']
 
                         # update this segment's start
                         update_segments[i]['start'] = update_segments[i-1]['end'] + 1
