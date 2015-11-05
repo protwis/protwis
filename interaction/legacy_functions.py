@@ -43,6 +43,8 @@ AROMATIC = {'TYR', 'TRP', 'PHE', 'HIS'}
 
 CHARGEDAA = {'ARG', 'LYS', 'ASP', 'GLU'}  # skip ,'HIS'
 
+HYDROPHOBIC_AA = {'A', 'C', 'F', 'I', 'L', 'M', 'P', 'V', 'W', 'Y'}
+
 projectdir = '/tmp/interactions/'
 if not os.path.exists(projectdir):
     os.makedirs(projectdir)
@@ -664,9 +666,9 @@ def build_ligand_info():
 def remove_hyd(aa,ligand):
     templist = []
     for res in new_results[ligand]['interactions']:
-        #print res[0],aa
-        if res[0]==aa and res[1]=='HYD':
-            pass
+        #print res[0],res[2],aa
+        if res[0]==aa and res[2]=='HYD':
+            continue
         else:
             templist.append(res)
     new_results[ligand]['interactions'] = templist
@@ -756,7 +758,7 @@ def find_interactions():
                                 hydrophobic_count += 1
                                 hydrophobic_check = 0
 
-                    if hydrophobic_count > 2:  # min 3 c-c interactions
+                    if hydrophobic_count > 2 and AA[aaname[0:3]] in HYDROPHOBIC_AA:  # min 3 c-c interactions
                         summary_results[hetflag]['hydrophobic'].append(
                             [aaname, hydrophobic_count])
 
@@ -825,7 +827,7 @@ def find_interactions():
 
                                     if debug:
                                         print aaname,"F2F Ring #", count, "Distance:", round(distance, 2), "Angle:", angle_degrees, 'Shortest res->ligcenter', round(shortest_center_het_ring_to_res_atom,2), 'Shortest lig->rescenter', round(shortest_center_aa_ring_to_het_atom,2)
-                                    new_results[hetflag]['interactions'].append([aaname,fragment_file,'aro_ff','aromatic face-to-face','aromatic'])
+                                    new_results[hetflag]['interactions'].append([aaname,fragment_file,'aro_ff','aromatic (face-to-face)','aromatic'])
                                     remove_hyd(aaname,hetflag)
                                 # need to be careful for edge-edge
                                 elif (shortest_center_aa_ring_to_het_atom < 4.5) and abs(angle_degrees[0]-90)<30 and abs(angle_degrees[2]-90)<30:
@@ -838,7 +840,7 @@ def find_interactions():
                                     if debug:
                                         print aaname,"FE Ring #", count, "Distance:", round(distance, 2), "Angle:", angle_degrees, 'Shortest res->ligcenter', round(shortest_center_het_ring_to_res_atom,2), 'Shortest lig->rescenter', round(shortest_center_aa_ring_to_het_atom,2)
                                 
-                                    new_results[hetflag]['interactions'].append([aaname,fragment_file,'aro_fe','aromatic face-to-edge','aromatic','protein'])
+                                    new_results[hetflag]['interactions'].append([aaname,fragment_file,'aro_fe_protein','aromatic (face-to-edge)','aromatic','protein'])
                                     remove_hyd(aaname,hetflag)
                                 # need to be careful for edge-edge
                                 elif (shortest_center_het_ring_to_res_atom < 4.5) and abs(angle_degrees[1]-90)<30 and abs(angle_degrees[2]-90)<30:
@@ -851,7 +853,7 @@ def find_interactions():
 
                                     if debug:
                                         print aaname,"EF Ring #", count, "Distance:", round(distance, 2), "Angle:", angle_degrees, 'Shortest res->ligcenter', round(shortest_center_het_ring_to_res_atom,2), 'Shortest lig->rescenter', round(shortest_center_aa_ring_to_het_atom,2)
-                                    new_results[hetflag]['interactions'].append([aaname,fragment_file,'aro_ef','aromatic edge-to-face','aromatic','protein'])
+                                    new_results[hetflag]['interactions'].append([aaname,fragment_file,'aro_ef_protein','aromatic (edge-to-face)','aromatic','protein'])
                                     remove_hyd(aaname,hetflag)
                             for charged in ligand_charged[hetflag]:
                                 distance = (center - charged[1]).norm()
@@ -863,7 +865,7 @@ def find_interactions():
                                         [aaname, count, round(distance, 2), charged])
 
                                     #FIXME fragment file
-                                    new_results[hetflag]['interactions'].append([aaname,'','aro_ion','aromatic pi-cation','aromatic','protein'])
+                                    new_results[hetflag]['interactions'].append([aaname,'','aro_ion_protein','aromatic (pi-cation)','aromatic','protein'])
                                     remove_hyd(aaname,hetflag)
 
                     if sum > 2 and aa_resname in CHARGEDAA and ligand_rings[hetflag]:
@@ -1035,10 +1037,10 @@ def analyze_interactions():
                                 found = 1
                         
                         if hbondconfirmed[0][0]=="D": 
-                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBD','hydrogen bond (donor)','hbond','protein',entry[0],entry[1],entry[2]])
+                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBD_protein','polar (hydrogen bond)','hbond','protein',entry[0],entry[1],entry[2]])
                             remove_hyd(residue,ligand)
                         if hbondconfirmed[0][0]=="A": 
-                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBA','hydrogen bond (acceptor)','hbond','protein',entry[0],entry[1],entry[2]])
+                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBA_protein','polar (hydrogen bond)','hbond','protein',entry[0],entry[1],entry[2]])
                             remove_hyd(residue,ligand)
 
                         if found == 0:
@@ -1058,25 +1060,25 @@ def analyze_interactions():
 
                         remove_hyd(residue,ligand)
                         if doublechargecheck:
-                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBC','hydrogen bond (double charge-assisted)','hbond','',entry[0],entry[1],entry[2]])
+                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_double','polar (charge-charge)','hbond','',entry[0],entry[1],entry[2]])
                         elif (charge_value>0):
-                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBC','hydrogen bond (charge-assisted positive)','hbond','ligand',entry[0],entry[1],entry[2]])
+                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_positive_ligand','polar (charge-assisted hydrogen bond)','hbond','ligand',entry[0],entry[1],entry[2]])
                         elif (charge_value<0):
-                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBC','hydrogen bond (charge-assisted negative)','hbond','ligand',entry[0],entry[1],entry[2]])
+                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_negative_ligand','polar (charge-assisted hydrogen bond)','hbond','ligand',entry[0],entry[1],entry[2]])
                         else:
                             if (res_charge_value>0):
-                                new_results[ligand]['interactions'].append([residue,fragment_file,'HBC','hydrogen bond (charge-assisted positive)','hbond','protein',entry[0],entry[1],entry[2]])
+                                new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_postive_protein','polar (charge-assisted hydrogen bond)','hbond','protein',entry[0],entry[1],entry[2]])
                             elif (res_charge_value<0):
-                                new_results[ligand]['interactions'].append([residue,fragment_file,'HBC','hydrogen bond (charge-assisted negative)','hbond','protein',entry[0],entry[1],entry[2]])
+                                new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_negative_protein','polar (charge-assisted hydrogen bond)','hbond','protein',entry[0],entry[1],entry[2]])
                             else:
-                                new_results[ligand]['interactions'].append([residue,fragment_file,'HBC','hydrogen bond (charge-assisted unknown)','hbond','protein',entry[0],entry[1],entry[2]])
+                                new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_unknown_protein','polar (charge-assisted hydrogen bond)','hbond','protein',entry[0],entry[1],entry[2]])
                                 
                     else:
                         type = 'hbond'
                         hbond.append(entry)
                         fragment_file = fragment_library(ligand, entry[3], entry[
                                          0], entry[5], entry[6], 'HB')
-                        new_results[ligand]['interactions'].append([residue,fragment_file,'HB','hydrogen bond','hbond','',entry[0],entry[1],entry[2]])
+                        new_results[ligand]['interactions'].append([residue,fragment_file,'HB','polar (hydrogen bond)','hbond','',entry[0],entry[1],entry[2]])
                         remove_hyd(residue,ligand)
 
                     entry[3] = ''
