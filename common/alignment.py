@@ -440,23 +440,22 @@ class Alignment:
                                 self.generic_numbers[ns_slug][segment][pos] = []
 
                         # add display numbers for other numbering schemes of selected proteins
-                        if (not self.ignore_alternative_residue_numbering_schemes and r.generic_number
-                            and len(self.numbering_schemes) > 1):
-                            for arn in r.alternative_generic_numbers.all():
+                        if (not self.ignore_alternative_residue_numbering_schemes and len(self.numbering_schemes) > 1):
+                            if r.generic_number:
+                                for arn in r.alternative_generic_numbers.all():
+                                    for ns in self.numbering_schemes:
+                                        if (arn.scheme.slug == ns[0] and arn.scheme.slug != ns_slug):
+                                            self.generic_numbers[arn.scheme.slug][segment][pos].append(arn.label)
+                                            break
+                            else:
                                 for ns in self.numbering_schemes:
-                                    if (arn.scheme.slug == ns[0] and arn.scheme.slug != ns):
-                                        self.generic_numbers[arn.scheme.slug][segment][pos].append(arn.label)
-                                        break
+                                    if pos not in self.generic_numbers[ns[0]][segment] and ns[0] != ns_slug:
+                                        self.generic_numbers[ns[0]][segment][pos] = []
 
                         # append the residue to the matrix
                         if r.generic_number:
-                            # FIXME this is only for making it easier to assign X.50 numbers, REMOVE THIS
-                            gen_num = int(pos.split('x')[1])
-                            class_gen_num = int(r.display_generic_number.label.split('x')[1])
-                            x50_seq_num = r.sequence_number + (class_gen_num - gen_num)
-
                             s.append([pos, r.display_generic_number.label, r.amino_acid,
-                                r.display_generic_number.scheme.short_name, r.sequence_number, x50_seq_num])
+                                r.display_generic_number.scheme.short_name, r.sequence_number])
 
                             # update generic residue object dict
                             if pos not in self.generic_number_objs:
