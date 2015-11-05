@@ -1,8 +1,12 @@
 $(function () {
-    $('a').click(function () {
-        $(this).toggleClass('active');
+    $('#selection-button').click(function () {
+        toggleButtonClass('selection-button');
     });
 });
+
+function toggleButtonClass(button_id) {
+    $('#'+button_id).toggleClass('active')
+}
 
 function AddToSelection(selection_type, selection_subtype, selection_id) {
     $.ajax({

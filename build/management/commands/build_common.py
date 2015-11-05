@@ -6,9 +6,7 @@ from protein.models import (ProteinSegment, ProteinAnomaly, ProteinAnomalyType, 
     ProteinAnomalyRule)
 from ligand.models import Ligand, LigandProperities, LigandType, LigandRole
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme
-from documentation.models import Documentation
 from news.models import News
-from pages.models import Pages
 
 import logging
 import shlex
@@ -78,11 +76,17 @@ class Command(BaseCommand):
             for row in segment_file:
                 split_row = shlex.split(row)
 
+                if int(split_row[2]):
+                    fully_aligned = True
+                else:
+                    fully_aligned = False
+
                 # create segment
                 try:
                     defaults={
                         'category': split_row[1],
-                        'name': split_row[2]
+                        'fully_aligned': fully_aligned,
+                        'name': split_row[3]
                     }
 
                     s, created = ProteinSegment.objects.get_or_create(slug=split_row[0], defaults=defaults)

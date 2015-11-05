@@ -286,7 +286,7 @@ class FamilyAlignment(views.APIView):
 
     def get(self, request, slug=None, segments=None):
         if slug is not None:
-            ps = Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith=slug)
+            ps = Protein.objects.filter(sequence_type__slug='wt', source__id=1, family__slug__startswith=slug)
             
             if segments is not None:
                 segment_list = segments.split(",")

@@ -118,7 +118,11 @@ class AbsReferenceSelection(AbsTargetSelection):
     title = 'SELECT A REFERENCE TARGET'
     description = 'Select a reference target by searching or browsing in the right column.\n\nThe reference will be compared to the targets you select later in the workflow.\n\nOnce you have selected your reference target, you will be redirected to the next step.'
     redirect_on_select = True
-    selection_boxes = {}
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
     psets = [] # protein sets not applicable for this selection
 
 class AbsBrowseSelection(AbsTargetSelection):
@@ -127,7 +131,6 @@ class AbsBrowseSelection(AbsTargetSelection):
     number_of_steps = 1
     title = 'SELECT A TARGET OR FAMILY'
     description = 'Select a target or family by searching or browsing in the right column.'
-    selection_boxes = {}
     psets = [] # protein sets not applicable for this selection
 
 class AbsSegmentSelection(TemplateView):
