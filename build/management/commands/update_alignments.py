@@ -367,9 +367,13 @@ class Command(BaseBuild):
                         update_segments[i-1]['start'] -= add_residues_before
                         update_segments[i-1]['end'] = update_segments[i-1]['start'] + last_min_segment_length - 1
                         
-                        # no alignment since the ends of the adjoining segments have been edited
-                        update_segments[i-1]['aligned_start'] = None
-                        update_segments[i-1]['aligned_end'] = None
+                        # update aligned start and end if they exceed the updated start and stop values
+                        if (update_segments[i-1]['aligned_start']
+                            and update_segments[i-1]['aligned_start'] < update_segments[i-1]['start']):
+                            update_segments[i-1]['aligned_start'] = update_segments[i-1]['start']
+                        if (update_segments[i-1]['aligned_end']
+                            and update_segments[i-1]['aligned_end'] > update_segments[i-1]['end']):
+                            update_segments[i-1]['aligned_end'] = update_segments[i-1]['end']
 
                         # update this segment's start
                         update_segments[i]['start'] = update_segments[i-1]['end'] + 1
