@@ -39,7 +39,7 @@ def homology_model_multiprocessing(receptor):
 class Command(BaseCommand):    
     def handle(self, *args, **options):
       
-        receptor_list = [ 'gpr15_human']
+        receptor_list = [ 'brs3_human']
         if os.path.isfile('./logs/homology_modeling.log'):
             os.remove('./logs/homology_modeling.log')
         logger = logging.getLogger('homology_modeling')
@@ -1187,7 +1187,7 @@ class GPCRDBParsingPDB(object):
         pref_chain = structure.preferred_chain
         for residue in pdb_struct[pref_chain]:
             try:
-#                print(residue,residue['CA'].get_bfactor(), residue['N'].get_bfactor())
+                print(residue,residue['CA'].get_bfactor(), residue['N'].get_bfactor())
                 if -8.1 < residue['CA'].get_bfactor() < 8.1:
                     gn = str(residue['CA'].get_bfactor())
                     
