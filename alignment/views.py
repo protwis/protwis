@@ -11,7 +11,7 @@ from protein.models import Protein
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 from protein.models import Protein, ProteinSegment
 
-import inspect
+import inspect, os
 from collections import OrderedDict
 
 
@@ -76,8 +76,12 @@ class BlastSearchResults(TemplateView):
 
     def post(self, request, *args, **kwargs):
 
-        blast = BlastSearch(top_results=50)
-        blast_out = blast.run(request.POST['input_seq'])
+        if 'human' in request.POST.keys():
+            blast = BlastSearch(blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_human_blastdb']), top_results=50)
+            blast_out = blast.run(request.POST['input_seq'])
+        else:
+            blast = BlastSearch(top_results=50)
+            blast_out = blast.run(request.POST['input_seq'])
 
         context = {}
         context['results'] = [(Protein.objects.get(pk=x[0]), x[1]) for x in blast_out]
