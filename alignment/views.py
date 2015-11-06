@@ -11,14 +11,14 @@ from protein.models import Protein
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 from protein.models import Protein, ProteinSegment
 
-import inspect
+import inspect, os
 from collections import OrderedDict
 
 
 class TargetSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 2
-    docs = '/documentation/sequences'
+    docs = 'sequences.html#structure-based-alignments'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -36,7 +36,7 @@ class TargetSelection(AbsTargetSelection):
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
-    docs = '/documentation/sequences'
+    docs = 'sequences.html#structure-based-alignments'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -54,6 +54,7 @@ class SegmentSelection(AbsSegmentSelection):
 class BlastSearchInput(AbsMiscSelection):
     step = 1
     number_of_steps = 1
+    docs = 'sequences.html#similarity-search-blast'
     title = 'BLAST search'
     description = 'Enter a sequence into the text box and press the green button.'
     buttons = {
@@ -75,8 +76,12 @@ class BlastSearchResults(TemplateView):
 
     def post(self, request, *args, **kwargs):
 
-        blast = BlastSearch(top_results=5)
-        blast_out = blast.run(request.POST['input_seq'])
+        if 'human' in request.POST.keys():
+            blast = BlastSearch(blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_human_blastdb']), top_results=50)
+            blast_out = blast.run(request.POST['input_seq'])
+        else:
+            blast = BlastSearch(top_results=50)
+            blast_out = blast.run(request.POST['input_seq'])
 
         context = {}
         context['results'] = [(Protein.objects.get(pk=x[0]), x[1]) for x in blast_out]

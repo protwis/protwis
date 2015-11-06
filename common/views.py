@@ -26,6 +26,7 @@ class AbsTargetSelection(TemplateView):
     description = 'Select targets by searching or browsing in the middle column. You can select entire target' \
         + ' families or individual targets.\n\nSelected targets will appear in the right column, where you can edit' \
         + ' the list.\n\nOnce you have selected all your targets, click the green button.'
+    documentation_url = settings.DOCUMENTATION_URL
     docs = False
     filters = True
     default_species = 'Human'
@@ -117,7 +118,11 @@ class AbsReferenceSelection(AbsTargetSelection):
     title = 'SELECT A REFERENCE TARGET'
     description = 'Select a reference target by searching or browsing in the right column.\n\nThe reference will be compared to the targets you select later in the workflow.\n\nOnce you have selected your reference target, you will be redirected to the next step.'
     redirect_on_select = True
-    selection_boxes = {}
+    selection_boxes = OrderedDict([
+        ('reference', True),
+        ('targets', False),
+        ('segments', False),
+    ])
     psets = [] # protein sets not applicable for this selection
 
 class AbsBrowseSelection(AbsTargetSelection):
@@ -126,7 +131,6 @@ class AbsBrowseSelection(AbsTargetSelection):
     number_of_steps = 1
     title = 'SELECT A TARGET OR FAMILY'
     description = 'Select a target or family by searching or browsing in the right column.'
-    selection_boxes = {}
     psets = [] # protein sets not applicable for this selection
 
 class AbsSegmentSelection(TemplateView):
@@ -141,6 +145,7 @@ class AbsSegmentSelection(TemplateView):
         + ' residues by clicking on the down arrows next to each helix.\n\nSelected segments will appear in the' \
         + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
         + ' button.'
+    documentation_url = settings.DOCUMENTATION_URL
     docs = False
     segment_list = True
     structure_upload = False
@@ -203,7 +208,8 @@ class AbsMiscSelection(TemplateView):
     number_of_steps = 3
     title = ''
     description = ''
-    docs = ''
+    documentation_url = settings.DOCUMENTATION_URL
+    docs = False
     buttons = {}
     tree_settings = False
     blast_input = False

@@ -85,9 +85,9 @@ class MutationExperiment(models.Model):
                 if self.exp_measure.measure!='Qualitative effect' and temp!=0:
                     
                     if temp>1: 
-                        temp =  "<font color='green'>"+sign + str(temp) + "↑</font>"
+                        temp =  "<font color='red'>"+sign + str(temp) + "↓</font>"
                     elif temp<1:
-                        temp =  "<font color='red'>"+sign + str(-temp) + "↓</font>"
+                        temp =  "<font color='green'>"+sign + str(-temp) + "↑</font>"
                     
                 if self.exp_qual:
                     temp = self.exp_qual.qual +  " " +  self.exp_qual.prop  

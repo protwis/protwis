@@ -15,14 +15,15 @@ from ligand.models import Ligand, LigandType, LigandRole, LigandProperities
 from interaction.models import *
 from interaction.views import runcalculation,parsecalculation
 
-from optparse import make_option
-from datetime import datetime
-import logging, os, re
+import logging
+import os
+import re
 import yaml
 from collections import OrderedDict
 import json
 from urllib.request import urlopen
 from Bio.PDB import parse_pdb_header
+
 
 ## FOR VIGNIR ORDERED DICT YAML IMPORT/DUMP
 _mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
@@ -401,10 +402,14 @@ class Command(BaseBuild):
 
                             if 'iupharId' not in endogenous_ligand:
                                 endogenous_ligand['iupharId'] = 0
-                            
+
                             ligand = ligand.load_by_gtop_id(endogenous_ligand['name'], endogenous_ligand['iupharId'],
                                 lt)
-                            s.protein_conformation.protein.parent.endogenous_ligands.add(ligand)
+                            try:
+                                s.protein_conformation.protein.parent.endogenous_ligands.add(ligand)
+                            except IntegrityError:
+                                self.logger.info('Endogenous ligand for protein {}, already added. Skipping.'.format(
+                                    s.protein_conformation.protein.parent))
 
                     # ligands
                     if 'ligand' in sd and sd['ligand']:
@@ -416,88 +421,52 @@ class Command(BaseBuild):
                             l = False
                             if ligand['name'] and ligand['name'] != 'None': # some inserted as none.
 
+                                # use annoted ligand type or default type
+                                if ligand['type']:
+                                    lt, created = LigandType.objects.get_or_create(slug=slugify(ligand['type']),
+                                        defaults={'name': ligand['type']})
+                                else:
+                                    lt, created = LigandType.objects.get_or_create(
+                                        slug=slugify(default_ligand_type), defaults={'name': default_ligand_type})
+
+                                # set pdb reference for structure-ligand interaction
+                                pdb_reference = ligand['name']
+
                                 # use pubchem_id
                                 if 'pubchemId' in ligand and ligand['pubchemId'] and ligand['pubchemId'] != 'None':
                                     # create ligand
                                     l = Ligand()
 
-                                    # use annoted ligand type or default type
-                                    if ligand['type']:
-                                        lt, created = LigandType.objects.get_or_create(slug=slugify(ligand['type']),
-                                            defaults={'name': ligand['type']})
-                                    else:
-                                        lt, created = LigandType.objects.get_or_create(
-                                            slug=slugify(default_ligand_type), defaults={'name': default_ligand_type})
 
                                     # update ligand by pubchem id
                                     ligand_title = False
                                     if 'title' in ligand and ligand['title']:
                                         ligand_title = ligand['title']
-                                    l = l.load_by_pubchem_id(ligand['pubchemId'], lt, ligand_title)
+                                    l = l.load_from_pubchem('cid', ligand['pubchemId'], lt, ligand_title)
 
-                                    # set pdb reference for structure-ligand interaction
-                                    pdb_reference = ligand['name']
 
                                 # if no pubchem id is specified, use name
                                 else:
-                                    # USE HETSYN NAME, not 3letter pdb reference
-                                    if ligand['name'] in hetsyn_reverse:
-                                        ligand['name'] = hetsyn_reverse[ligand['name']]
-                                    
-                                    pdb_reference = None
-                                    if ligand['name'] in hetsyn:
-                                        pdb_reference = hetsyn[ligand['name']]
-
                                     # use ligand title, if specified
                                     if 'title' in ligand and ligand['title']:
                                         ligand['name'] = ligand['title']
+
+                                    # create empty properties
+                                    lp = LigandProperities.objects.create()
                                     
-                                    # if this name is canonical and it has a ligand record already
-                                    if Ligand.objects.filter(name=ligand['name'], canonical=True).exists():
-                                        try:
-                                            l = Ligand.objects.get(name=ligand['name'], canonical=True)
-                                        except: 
-                                            try:
-                                                l = Ligand.objects.filter(name=ligand['name'], canonical=True,
-                                                    properities__inchikey__isnull=False)[0]
-                                            except:
-                                                self.logger.error('Skipping '+ligand['name']+" for "+sd['pdb'] \
-                                                    +' Something wrong with getting ligand from DB')
-                                                continue
-                                    # if this matches an alias that only has "one" parent canonical name - eg distinct
-                                    elif Ligand.objects.filter(name=ligand['name'], canonical=False,
-                                        ambigious_alias=False).exists(): 
-                                        l = Ligand.objects.get(name=ligand['name'], canonical=False, ambigious_alias=False)
-                                    # if this matches an alias that only has several canonical parents, must investigate,
-                                    # start with empty.
-                                    elif Ligand.objects.filter(name=ligand['name'], canonical=False,
-                                        ambigious_alias=True).exists():
-                                        lp = LigandProperities()
-                                        lp.save()
-                                        l = Ligand()
-                                        l.properities = lp
-                                        l.name = ligand['name']
-                                        l.canonical = False
-                                        l.ambigious_alias = True
-                                        l.save()
-                                        l.load_by_name(ligand['name'])
-                                    # if neither a canonical or alias exists, create the records. Remember to check
-                                    # for canonical / alias status.
-                                    else:
-                                        self.logger.info('Inserting '+ligand['name']+" for "+sd['pdb'])
-                                        lp = LigandProperities()
-                                        lp.save()
-                                        l = Ligand()
-                                        l.properities = lp
-                                        l.name = ligand['name']
-                                        l.canonical = True
-                                        l.ambigious_alias = False
-                                        l.save()
-                                        l.load_by_name(ligand['name'])
-                                    
+                                    # create the ligand
+                                    try:
+                                        l, created = Ligand.objects.get_or_create(name=ligand['name'], canonical=True,
+                                            defaults={'properities': lp, 'ambigious_alias': False})
+                                        if created:
+                                            self.logger.info('Created ligand {}'.format(ligand['name']))
+                                        else:
+                                            continue
+                                    except IntegrityError:
+                                        l = Ligand.objects.get(name=ligand['name'], canonical=True)
+
                                     # save ligand
                                     l.save()
-
                             else:
                                 continue
 
@@ -619,8 +588,11 @@ class Command(BaseBuild):
                         else:
                             aps = [sd[index]]
                         for aux_protein in aps:
-                            sa, created = StructureStabilizingAgent.objects.get_or_create(slug=slugify(aux_protein),
-                                name=aux_protein)
+                            try:
+                                sa, created = StructureStabilizingAgent.objects.get_or_create(
+                                    slug=slugify(aux_protein), defaults={'name': aux_protein})
+                            except IntegrityError:
+                                sa = StructureStabilizingAgent.objects.get(slug=slugify(aux_protein))
                             s.stabilizing_agents.add(sa)
 
                     # save structure

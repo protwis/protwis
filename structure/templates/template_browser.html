@@ -17,7 +17,7 @@
         $(document).ready(function() {
             var table = $('#crystal_structures').DataTable({
                 "scrollX": true,
-                "scrollY": 600,
+                'scrollY': $(window).height()-300,
                 "bScrollCollapse": true,
                 'paging': false,
                 'orderCellsTop': true,
@@ -87,7 +87,7 @@
             });
             $.fn.dataTable.ext.search.push(
                 function (settings, data, dataIndex) {
-                    if ($('#representative_btn').hasClass('active')) {
+                    if ($('#representative_btn').hasClass('toggled')) {
                         if ($(table.row(dataIndex).node()).hasClass("repr-st")) {
                             return true;
                         }
@@ -99,7 +99,7 @@
                 });
 
             $('#representative_btn').click(function () {
-                $(this).toggleClass("active");
+                $(this).toggleClass("toggled");
                 table.draw();
             });
             $('#download_btn').click(function () {

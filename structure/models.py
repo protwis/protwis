@@ -1,4 +1,4 @@
-from django.db import models
+﻿from django.db import models
 
 
 class Structure(models.Model):
@@ -19,6 +19,15 @@ class Structure(models.Model):
 
     def __str__(self):
         return self.pdb_code.index
+
+    def get_preferred_chain_pdb(self):
+
+        tmp = []
+        for line in self.pdb_data.pdb.split('\n'):
+            # http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM
+            if (line.startswith('ATOM') or line.startswith('HET')) and line[21] == self.preferred_chain[0]:
+                tmp.append(line)
+        return '\n'.join(tmp)
 
     class Meta():
         db_table = 'structure'
@@ -46,7 +55,7 @@ class StructureType(models.Model):
 
 
 class StructureStabilizingAgent(models.Model):
-    slug = models.SlugField(max_length=20)
+    slug = models.SlugField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
 
     def __str__(self):

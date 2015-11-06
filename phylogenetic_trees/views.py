@@ -7,7 +7,7 @@ from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
 from common.selection import SelectionItem
 from mutation.models import *
-
+import math
 import os, shutil, subprocess
 import uuid
 from phylogenetic_trees.PrepareTree import *
@@ -19,7 +19,7 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 class TargetSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 3
-    docs = '/documentation/similarities'
+    docs = 'sequences.html#phylogeneric-trees'
     selection_boxes = OrderedDict([
         ('targets', True),
         ('segments', False),
@@ -36,7 +36,7 @@ class TargetSelection(AbsTargetSelection):
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 3
-    docs = '/documentation/similarities'
+    docs = 'sequences.html#phylogeneric-trees'
     selection_boxes = OrderedDict([
         ('targets', True),
         ('segments', True),
@@ -53,7 +53,7 @@ class SegmentSelection(AbsSegmentSelection):
 class TreeSettings(AbsMiscSelection):
     step = 3
     number_of_steps = 3
-    docs = '/documentation/similarities'
+    docs = 'sequences.html#phylogeneric-trees'
     title = 'SELECT TREE OPTIONS'
     description = 'Select options for tree generation in the middle column.\nOnce you have selected your' \
         + ' settings, click the green button.'
@@ -166,6 +166,7 @@ class Treeclass:
             else:
                 acc = link.replace('-','_')[:6]
             spec = str(n.protein.species)
+            fam += '_'+n.protein.species.common_name.replace(' ','_').upper()
             desc = name
             if acc in crysts:
                 if not fam in self.Additional_info['crystal']['proteins']:
@@ -262,14 +263,22 @@ def modify_tree(request):
     phylogeny_input = Tree_class.get_phylogeny('/tmp/modify')
     branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.get_data()
     shutil.rmtree('/tmp/modify')
+    if ttype == '1':
+        float(total)/4*100
+    else:
+        count = 1900 - 1400/math.sqrt(float(total))
     
     return render(request, 'phylogenetic_trees/main.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree})
 
 def render_tree(request):
     Tree_class=Treeclass()
     phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.Prepare_file(request)
+    if ttype == '1':
+        float(total)/4*100
+    else:
+        count = 1900 - 1400/math.sqrt(float(total))
    
     request.session['Tree']=Tree_class
-    return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
+    return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
 
 

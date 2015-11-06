@@ -21,6 +21,7 @@ import inspect
 import os
 import zipfile
 import math
+import json
 from copy import deepcopy
 from io import StringIO, BytesIO
 from collections import OrderedDict
@@ -57,7 +58,6 @@ def StructureDetails(request, pdbname):
     Show structure details
     """
     pdbname = pdbname
-    print(pdbname,'here')
     structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name','structure_ligand_pair__pdb_reference','structure_ligand_pair__annotated').filter(structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
     resn_list = ''
 
@@ -68,7 +68,7 @@ def StructureDetails(request, pdbname):
 
     crystal = Structure.objects.get(pdb_code__index=pdbname)
     p = Protein.objects.get(protein=crystal.protein_conformation.protein)
-    residues = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname).order_by('rotamer__residue__sequence_number')
+    residues = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
     return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list})
 
 def ServePdbDiagram(request, pdbname):       
@@ -116,25 +116,10 @@ class StructureStatistics(TemplateView):
         context['unique_by_class'] = tmp
         context['unique_complexes'] = len(StructureLigandInteraction.objects.filter(annotated=True).distinct('structure__protein_conformation__protein__family__name', 'ligand__name'))
 
-        extra = {
-            'x_axis_format': '',
-            'y_axis_format': 'f',
-            'stacked': 'True',
-            }
-        context['charttype'] = "multiBarChart"
         context['chartdata'] = self.get_per_family_cumulative_data_series(years, families, unique_structs)
-        context['extra'] = extra
-
-        context['charttype2'] = "multiBarChart"
-        context['chartdata2'] = self.get_per_family_data_series(years, families, unique_structs)
-        context['extra2'] = extra
-
+        context['chartdata_y'] = self.get_per_family_data_series(years, families, unique_structs)
         context['chartdata_all'] = self.get_per_family_cumulative_data_series(years, families, all_structs)
-        context['extra_all'] = extra
-
-        context['charttype_reso'] = "discreteBarChart"
         context['chartdata_reso'] = self.get_resolution_coverage_data_series(all_structs)
-        context['extra_reso'] = extra
 
         return context
 
@@ -150,7 +135,7 @@ class StructureStatistics(TemplateView):
         """
         Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
         """
-        series = {'x' : years,}
+        series = []
         data = {}
         for year in years:
             for family in families:
@@ -161,17 +146,22 @@ class StructureStatistics(TemplateView):
                     if structure.protein_conformation.protein.get_protein_family() == family and structure.publication_date.year == year:
                         count += 1
                 data[family].append(count)
-        for idx, family in enumerate(data.keys()):
-            series['name{:n}'.format(idx+1)] = family
-            series['y{:n}'.format(idx+1)] = data[family]
-        return series
+        for family in families:
+            series.append({"values": 
+                [{
+                    'x': years[i],
+                    'y': j
+                    } for i, j in enumerate(data[family])],
+                "key": family,
+                "yAxis": "1"})
+        return json.dumps(series)
 
 
     def get_per_family_cumulative_data_series(self, years, families, structures):
         """
         Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
         """
-        series = {'x' : years,}
+        series = []
         data = {}
         for year in years:
             for family in families:
@@ -185,11 +175,15 @@ class StructureStatistics(TemplateView):
                     data[family].append(count + data[family][-1])
                 else:
                     data[family].append(count)
-
-        for idx, family in enumerate(data.keys()):
-            series['name{:n}'.format(idx+1)] = family
-            series['y{:n}'.format(idx+1)] = data[family]
-        return series
+        for family in families:
+            series.append({"values": 
+                [{
+                    'x': years[i],
+                    'y': j
+                    } for i, j in enumerate(data[family])],
+                "key": family,
+                "yAxis": "1"})
+        return json.dumps(series)
 
 
     def get_resolution_coverage_data_series(self, structures):
@@ -204,13 +198,22 @@ class StructureStatistics(TemplateView):
         brackets = [reso_min + step*x for x in range(10)] + [reso_max]
 
         reso_count = []
+        bracket_labels = []
         for idx, bracket in enumerate(brackets):
             if idx == 0:
                 reso_count.append(len([x for x in structures if x.resolution <= bracket]))
+                bracket_labels.append('< {:.1f}'.format(bracket))
             else:
                 reso_count.append(len([x for x in structures if bracket-step < x.resolution <= bracket]))
+                bracket_labels.append('{:.1f}-{:.1f}'.format(brackets[idx-1],bracket))
         
-        return {'x': ["{:.1f}".format(x) for x in brackets], 'y': reso_count}
+        return json.dumps([{"values": [{
+                    'x': bracket_labels[i],
+                    'y': j
+                    } for i, j in enumerate(reso_count)],
+                "key": 'Resolution coverage',
+                "yAxis": "1"}])
+         
             
 
 
@@ -224,12 +227,16 @@ class GenericNumberingIndex(TemplateView):
     #Left panel
     step = 1
     number_of_steps = 2
+    documentation_url = settings.DOCUMENTATION_URL
+    docs = 'structures.html#pdb-file-residue-numbering'
     title = "UPLOAD A PDB FILE"
     description = """
-    Upload a pdb file you want to be annotated with generic numbers. Note that "CA" atoms will be assigned a number in GPCRdb notation, and "N" atoms will be annotated with Ballesteros-Weinstein scheme.
+    Upload a pdb file to be annotated with generic numbers from GPCRdb.
+
+    The numbers can be visualized in molecular viewers such as PyMOL, with scripts available with the output files.
     
     Once you have selected all your targets, click the green button.
-        """
+    """
 
     #Input file form data
     header = "Select a file to upload:"
@@ -291,8 +298,6 @@ class GenericNumberingResults(TemplateView):
             request.session['gn_outfile'] = out_stream
             request.session['gn_outfname'] = request.FILES['pdb_file'].name
             self.success = True
-            #self.outfile = request.FILES['pdb_file'].name
-            #self.replacement_tag = 'GPCRDB'
         else:
             self.input_file = request.FILES['pdb_file'].name
             self.success = False
@@ -306,15 +311,7 @@ class GenericNumberingResults(TemplateView):
         return render(request, self.template_name, context)
 
 
-    #def get_context_data (self, **kwargs):
 
-    #    context = super(GenericNumberingResults, self).get_context_data(**kwargs)
-    #    attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
-    #    for a in attributes:
-    #        if not(a[0].startswith('__') and a[0].endswith('__')):
-    #            context[a[0]] = a[1]
-
-    #    return context
 class GenericNumberingSelection(AbsSegmentSelection):
     """
     Segment selection for download of annotated substructure.
@@ -322,6 +319,8 @@ class GenericNumberingSelection(AbsSegmentSelection):
 
     step = 2
     number_of_steps = 2
+
+    docs = 'structures.html#pdb-file-residue-numbering'
 
     #Mid section
     #mid_section = 'segment_selection.html'
@@ -410,6 +409,8 @@ class SuperpositionWorkflowIndex(TemplateView):
     #Left panel
     step = 1
     number_of_steps = 3
+    documentation_url = settings.DOCUMENTATION_URL
+    docs = 'structures.html#structure-superposition'
     title = "UPLOAD YOUR FILES"
     description = """
     Upload a pdb file for reference structure, and one or more files that will be superposed. You can also select the structures from crystal structure browser.
@@ -487,6 +488,8 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
     #Left panel
     step = 2
     number_of_steps = 3
+
+    docs = 'structures.html#structure-superposition'
 
     #Mid section
     #mid_section = 'segment_selection.html'
@@ -594,11 +597,11 @@ class SuperpositionWorkflowResults(TemplateView):
         if 'ref_file' in self.request.session.keys():
             ref_file = StringIO(self.request.session['ref_file'].file.read().decode('UTF-8'))
         elif selection.reference != []:
-            ref_file = StringIO(selection.reference[0].item.pdb_data.pdb)
+            ref_file = StringIO(selection.reference[0].item.get_preferred_chain_pdb())
         if 'alt_files' in self.request.session.keys():
             alt_files = [StringIO(alt_file.file.read().decode('UTF-8')) for alt_file in self.request.session['alt_files']]
         elif selection.targets != []:
-            alt_files = [StringIO(x.item.pdb_data.pdb) for x in selection.targets if x.type == 'structure']
+            alt_files = [StringIO(x.item.get_preferred_chain_pdb()) for x in selection.targets if x.type == 'structure']
         superposition = ProteinSuperpose(deepcopy(ref_file),alt_files, selection)
         out_structs = superposition.run()
         if 'alt_files' in self.request.session.keys():
@@ -651,7 +654,7 @@ class SuperpositionWorkflowDownload(View):
                 ref_struct = gn_assigner.assign_generic_numbers()
             ref_name = self.request.session['ref_file'].name
         elif selection.reference != []:
-            ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', StringIO(selection.reference[0].item.pdb_data.pdb))[0]
+            ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', StringIO(selection.reference[0].item.get_preferred_chain_pdb()))[0]
             if not check_gn(ref_struct):
                 gn_assigner = GenericNumbering(structure=ref_struct)
                 ref_struct = gn_assigner.assign_generic_numbers()
@@ -722,6 +725,10 @@ class FragmentSuperpositionIndex(TemplateView):
     #Left panel
     step = 1
     number_of_steps = 1
+
+    documentation_url = settings.DOCUMENTATION_URL
+    docs = 'sites.html#pharmacophore-generation'
+    
     title = "SUPERPOSE FRAGMENTS OF CRYSTAL STRUCTURES"
     description = """
     The tool implements a fragment-based pharmacophore method, as published in <a href='http://www.ncbi.nlm.nih.gov/pubmed/25286328'>Fidom K, et al (2015)</a>. Interacting ligand moiety - residue pairs extracted from selected crystal structures of GPCRs are superposed onto the input pdb file based on gpcrdb generic residue numbers. Resulting aligned ligand fragments can be used for placement of pharmacophore features.
@@ -855,6 +862,8 @@ class TemplateTargetSelection(AbsReferenceSelection):
     number_of_steps = 2
     redirect_on_select = False
 
+    docs = 'structures.html#template-selection'
+
     # Mid section
 
     # Right panel
@@ -884,6 +893,8 @@ class TemplateSegmentSelection(AbsSegmentSelection):
    #Left panel
     step = 2
     number_of_steps = 2
+
+    docs = 'structures.html#template-selection'
 
     #Mid section
     #mid_section = 'segment_selection.html'
@@ -983,7 +994,7 @@ class PDBDownload(TemplateView):
         if simple_selection:
             selection.importer(simple_selection)
         if selection.targets != []:
-            pdb_files = [(PDBParser().get_structure('', StringIO(x.item.pdb_data.pdb))[0], x.item.pdb_code.index+'.pdb') for x in selection.targets if x.type == 'structure']
+            pdb_files = [(PDBParser().get_structure('', StringIO(x.item.pdb_data.pdb))[0], '{}_{}.pdb'.format(x.item.protein_conformation.protein.parent.entry_name, x.item.pdb_code.index)) for x in selection.targets if x.type == 'structure']
 
         if len(pdb_files) > 0:
             io = PDBIO()            
@@ -1053,7 +1064,7 @@ def ServeZipOutfile (request, outfile):
 
 def RenderTrees(request):
     number = request.GET['number']
-    tree = open('static/home/images/00'+number+'_tree.xml').read()
-    legend = open('static/home/images/00'+number+'_legend.svg').read()
+    tree = open(settings.STATICFILES_DIRS[0] +'/home/images/00'+number+'_tree.xml').read()
+    legend = open(settings.STATICFILES_DIRS[0] +'/home/images/00'+number+'_legend.svg').read()
     context = {'tree':tree, 'leg':legend, 'num':number}
     return render(request, 'phylogenetic_trees.html', context)
