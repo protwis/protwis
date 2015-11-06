@@ -14,6 +14,7 @@ from collections import OrderedDict
 class TargetSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 2
+    docs = 'sites.html#site-search-manual'
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -28,21 +29,10 @@ class TargetSelection(AbsTargetSelection):
     }
 
 
-class TargetSelectionPdb(TargetSelection):
-    step = 1
-    number_of_steps = 3
-    buttons = {
-        'continue': {
-            'label': 'Continue to next step',
-            'url': '/sitesearch/structureupload',
-            'color': 'success',
-        },
-    }
-
-
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
+    docs = 'sites.html#site-search-manual'
     position_type = 'site_residue'
     selection_boxes = OrderedDict([
         ('reference', False),
@@ -74,9 +64,23 @@ class SegmentSelection(AbsSegmentSelection):
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
 
+class TargetSelectionPdb(TargetSelection):
+    step = 1
+    number_of_steps = 3
+    docs = 'sites.html#site-search-from-pdb-complex'
+    buttons = {
+        'continue': {
+            'label': 'Continue to next step',
+            'url': '/sitesearch/structureupload',
+            'color': 'success',
+        },
+    }
+
+
 class StructureUpload(AbsSegmentSelection):
     step = 2
     number_of_steps = 3
+    docs = 'sites.html#site-search-from-pdb-complex'
     segment_list = False
     structure_upload = True
 
@@ -101,6 +105,7 @@ class StructureUpload(AbsSegmentSelection):
 class SegmentSelectionPdb(SegmentSelection):
     step = 3
     number_of_steps = 3
+    docs = 'sites.html#site-search-from-pdb-complex'
 
     ss = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS, partial=False).prefetch_related(
         'generic_numbers')

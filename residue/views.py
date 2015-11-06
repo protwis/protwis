@@ -17,6 +17,7 @@ class ResidueTablesSelection(AbsTargetSelection):
     # Left panel
     step = 1
     number_of_steps = 2
+    docs = 'generic_numbering.html'
     
     description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
         + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \

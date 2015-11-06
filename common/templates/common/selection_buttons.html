@@ -1,7 +1,8 @@
 <div class="col-md-12 panel panel-primary">
     <div class="panel-body" id="selection-{{ selection_box }}">
     {% for button_name, button in buttons.items %}
-        <a {% if button.url %}href="{{ button.url }}" {% endif %} class="btn btn-{{ button.color }}
+        <a id='selection-button'
+        {% if button.url %}href="{{ button.url }}" {% endif %} class="btn btn-{{ button.color }}
         {% if forloop.counter > 1 %}
         btn-sm
         {% else %}
