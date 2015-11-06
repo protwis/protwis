@@ -147,9 +147,7 @@ class HomologyModeling(object):
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
         main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
-        pprint.pprint(a.reference_dict)
-        pprint.pprint(a.template_dict)
-        pprint.pprint(main_pdb_array)
+        
         print('Create main_pdb_array: ',datetime.now() - startTime)
         # loops
         if loops==True:
