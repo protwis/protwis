@@ -253,7 +253,7 @@ class LoopSuperpose(BulgeConstrictionSuperpose):
         for gn, atoms in self.template_dict.items():
             res_count+=1
             for atom in atoms:
-                if (res_count<=8 or array_length-8<res_count) and atom.get_name() in ['N','CA','C','O']:
+                if (res_count<=4 or array_length-4<res_count) and atom.get_name() in ['N','CA','C','O']:
                     temp_backbone_atoms.append(atom)
                 all_template_atoms.append(atom)
         super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
