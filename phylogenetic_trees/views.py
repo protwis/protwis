@@ -7,7 +7,7 @@ from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
 from common.selection import SelectionItem
 from mutation.models import *
-
+import math
 import os, shutil, subprocess
 import uuid
 from phylogenetic_trees.PrepareTree import *
@@ -263,14 +263,22 @@ def modify_tree(request):
     phylogeny_input = Tree_class.get_phylogeny('/tmp/modify')
     branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.get_data()
     shutil.rmtree('/tmp/modify')
+    if ttype == '1':
+        float(total)/4*100
+    else:
+        count = 1900 - 1400/math.sqrt(float(total))
     
     return render(request, 'phylogenetic_trees/main.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree})
 
 def render_tree(request):
     Tree_class=Treeclass()
     phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.Prepare_file(request)
+    if ttype == '1':
+        float(total)/4*100
+    else:
+        count = 1900 - 1400/math.sqrt(float(total))
    
     request.session['Tree']=Tree_class
-    return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':total, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
+    return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
 
 
