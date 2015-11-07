@@ -15,7 +15,7 @@
             phylocanvas = new Smits.PhyloCanvas(
             dataObject,
             "svgCanvas",
-            950, {{ count }}/4*100
+            950, {{ count }}
             )
             mergeSVG();
             colours();
@@ -30,7 +30,7 @@
             phylocanvas = new Smits.PhyloCanvas(
                             dataObject,
                             "svgCanvas",
-                            800 + {{ count }}*10, 800 + {{ count }}*10,
+                            {{ count }}, {{ count }},
                             'circular'
                             )
             mergeSVG();

@@ -597,11 +597,11 @@ class SuperpositionWorkflowResults(TemplateView):
         if 'ref_file' in self.request.session.keys():
             ref_file = StringIO(self.request.session['ref_file'].file.read().decode('UTF-8'))
         elif selection.reference != []:
-            ref_file = StringIO(selection.reference[0].item.pdb_data.pdb)
+            ref_file = StringIO(selection.reference[0].item.get_preferred_chain_pdb())
         if 'alt_files' in self.request.session.keys():
             alt_files = [StringIO(alt_file.file.read().decode('UTF-8')) for alt_file in self.request.session['alt_files']]
         elif selection.targets != []:
-            alt_files = [StringIO(x.item.pdb_data.pdb) for x in selection.targets if x.type == 'structure']
+            alt_files = [StringIO(x.item.get_preferred_chain_pdb()) for x in selection.targets if x.type == 'structure']
         superposition = ProteinSuperpose(deepcopy(ref_file),alt_files, selection)
         out_structs = superposition.run()
         if 'alt_files' in self.request.session.keys():
@@ -654,7 +654,7 @@ class SuperpositionWorkflowDownload(View):
                 ref_struct = gn_assigner.assign_generic_numbers()
             ref_name = self.request.session['ref_file'].name
         elif selection.reference != []:
-            ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', StringIO(selection.reference[0].item.pdb_data.pdb))[0]
+            ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', StringIO(selection.reference[0].item.get_preferred_chain_pdb()))[0]
             if not check_gn(ref_struct):
                 gn_assigner = GenericNumbering(structure=ref_struct)
                 ref_struct = gn_assigner.assign_generic_numbers()
@@ -1064,7 +1064,7 @@ def ServeZipOutfile (request, outfile):
 
 def RenderTrees(request):
     number = request.GET['number']
-    tree = open('static/home/images/00'+number+'_tree.xml').read()
-    legend = open('static/home/images/00'+number+'_legend.svg').read()
+    tree = open(settings.STATICFILES_DIRS[0] +'/home/images/00'+number+'_tree.xml').read()
+    legend = open(settings.STATICFILES_DIRS[0] +'/home/images/00'+number+'_legend.svg').read()
     context = {'tree':tree, 'leg':legend, 'num':number}
     return render(request, 'phylogenetic_trees.html', context)
