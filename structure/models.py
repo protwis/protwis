@@ -39,8 +39,8 @@ class StructureModel(models.Model):
     main_template = models.ForeignKey('structure.Structure', null=True)
     pdb = models.TextField(null=True)
     
-    def __str__(self):
-        return '<HomologyModel: '+self.protein.entry_name+' '+self.state+'>'
+    def __repr__(self):
+        return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
 
     class Meta():
         db_table = 'structure_model'      
@@ -67,10 +67,12 @@ class StructureModelAnomalies(models.Model):
         
 class StructureModelResidues(models.Model):
     homology_model = models.ForeignKey('structure.StructureModel', null=True)
+    sequence_number = models.IntegerField(default=0)
     residue = models.ForeignKey('residue.Residue', null=True)
     rotamer = models.ForeignKey('structure.Rotamer', null=True)
     template = models.ForeignKey('structure.Structure', null=True)
     origin = models.CharField(max_length=15)
+    segment = models.ForeignKey('protein.ProteinSegment', null=True)
     
     class Meta():
         db_table = 'structure_model_residues'
