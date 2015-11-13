@@ -1037,10 +1037,10 @@ def analyze_interactions():
                                 found = 1
                         
                         if hbondconfirmed[0][0]=="D": 
-                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBD_protein','polar (hydrogen bond)','hbond','protein',entry[0],entry[1],entry[2]])
+                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBD_protein','polar (hydrogen bond)','polar','protein',entry[0],entry[1],entry[2]])
                             remove_hyd(residue,ligand)
                         if hbondconfirmed[0][0]=="A": 
-                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBA_protein','polar (hydrogen bond)','hbond','protein',entry[0],entry[1],entry[2]])
+                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBA_protein','polar (hydrogen bond)','polar','protein',entry[0],entry[1],entry[2]])
                             remove_hyd(residue,ligand)
 
                         if found == 0:
@@ -1060,25 +1060,25 @@ def analyze_interactions():
 
                         remove_hyd(residue,ligand)
                         if doublechargecheck:
-                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_double','polar (charge-charge)','hbond','',entry[0],entry[1],entry[2]])
+                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_double','polar (charge-charge)','polar','',entry[0],entry[1],entry[2]])
                         elif (charge_value>0):
-                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_positive_ligand','polar (charge-assisted hydrogen bond)','hbond','ligand',entry[0],entry[1],entry[2]])
+                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_positive_ligand','polar (charge-assisted hydrogen bond)','polar','ligand',entry[0],entry[1],entry[2]])
                         elif (charge_value<0):
-                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_negative_ligand','polar (charge-assisted hydrogen bond)','hbond','ligand',entry[0],entry[1],entry[2]])
+                            new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_negative_ligand','polar (charge-assisted hydrogen bond)','polar','ligand',entry[0],entry[1],entry[2]])
                         else:
                             if (res_charge_value>0):
-                                new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_postive_protein','polar (charge-assisted hydrogen bond)','hbond','protein',entry[0],entry[1],entry[2]])
+                                new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_postive_protein','polar (charge-assisted hydrogen bond)','polar','protein',entry[0],entry[1],entry[2]])
                             elif (res_charge_value<0):
-                                new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_negative_protein','polar (charge-assisted hydrogen bond)','hbond','protein',entry[0],entry[1],entry[2]])
+                                new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_negative_protein','polar (charge-assisted hydrogen bond)','polar','protein',entry[0],entry[1],entry[2]])
                             else:
-                                new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_unknown_protein','polar (charge-assisted hydrogen bond)','hbond','protein',entry[0],entry[1],entry[2]])
+                                new_results[ligand]['interactions'].append([residue,fragment_file,'HBC_unknown_protein','polar (charge-assisted hydrogen bond)','polar','protein',entry[0],entry[1],entry[2]])
                                 
                     else:
                         type = 'hbond'
                         hbond.append(entry)
                         fragment_file = fragment_library(ligand, entry[3], entry[
                                          0], entry[5], entry[6], 'HB')
-                        new_results[ligand]['interactions'].append([residue,fragment_file,'HB','polar (hydrogen bond)','hbond','',entry[0],entry[1],entry[2]])
+                        new_results[ligand]['interactions'].append([residue,fragment_file,'HB','polar (hydrogen bond)','polar','',entry[0],entry[1],entry[2]])
                         remove_hyd(residue,ligand)
 
                     entry[3] = ''
