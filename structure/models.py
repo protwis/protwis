@@ -69,8 +69,8 @@ class StructureModelResidues(models.Model):
     homology_model = models.ForeignKey('structure.StructureModel')
     sequence_number = models.IntegerField()
     residue = models.ForeignKey('residue.Residue')
-    rotamer = models.ForeignKey('structure.Rotamer')
-    template = models.ForeignKey('structure.Structure')
+    rotamer = models.ForeignKey('structure.Rotamer', null=True)
+    template = models.ForeignKey('structure.Structure', null=True)
     origin = models.CharField(max_length=15)
     segment = models.ForeignKey('protein.ProteinSegment')
     
