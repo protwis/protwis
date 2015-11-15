@@ -118,7 +118,7 @@ class GenericNumbering(object):
                         if db_res.display_generic_number:
                             num = db_res.display_generic_number.label
                             bw, gpcrdb = num.split('x')
-                            gpcrdb = "{}.{}".format(bw[0], gpcrdb)
+                            gpcrdb = "{}.{}".format(bw.split('.')[0], gpcrdb)
                             self.residues[chain][resn].add_bw_number(bw)
                             self.residues[chain][resn].add_gpcrdb_number(gpcrdb)
                             self.residues[chain][resn].add_gpcrdb_number_id(db_res.display_generic_number.id)
