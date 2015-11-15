@@ -1,8 +1,8 @@
 from django.core.management.base import BaseCommand
 
-from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinAnomaly
+from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinAnomaly, ProteinState
 from residue.models import Residue
-from structure.models import Structure, PdbData, Rotamer, StructureModel
+from structure.models import Structure, PdbData, Rotamer, StructureModel, StructureModelLoopTemplates, StructureModelAnomalies, StructureModelResidues
 from common.alignment import Alignment, AlignedReferenceTemplate
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
@@ -19,6 +19,7 @@ from io import StringIO
 import sys
 import multiprocessing
 import pprint
+import re
 from datetime import datetime
 
 
@@ -39,7 +40,7 @@ def homology_model_multiprocessing(receptor):
 class Command(BaseCommand):    
     def handle(self, *args, **options):
       
-        receptor_list = [ 'brs3_human']
+        receptor_list = [ 'gpr15_human']
         if os.path.isfile('./logs/homology_modeling.log'):
             os.remove('./logs/homology_modeling.log')
         logger = logging.getLogger('homology_modeling')
@@ -94,8 +95,109 @@ class HomologyModeling(object):
         return "<{}, {}>".format(self.reference_entry_name, self.state)
 
     def upload_to_db(self):
-        obj, created = StructureModel.objects.update_or_create(protein=self.reference_protein, main_template=self.main_structure)
-        print(self.main_structure)
+        # upload StructureModel        
+        state=ProteinState.objects.get(name=self.state)
+        hommod, created = StructureModel.objects.update_or_create(protein=self.reference_protein, state=state, 
+                                                                  main_template=self.main_structure, 
+                                                                  pdb=self.format_final_model())
+                                                                  
+        # upload StructureModelLoopTemplates
+        for loop,template in self.statistics.info_dict['loops'].items():
+            seg = ProteinSegment.objects.get(slug=loop[:4])
+            StructureModelLoopTemplates.objects.update_or_create(homology_model=hommod,template=template,segment=seg)
+            
+        # upload StructureModelAnomalies
+        ref_bulges = self.statistics.info_dict['reference_bulges']
+        temp_bulges = self.statistics.info_dict['template_bulges']
+        ref_const = self.statistics.info_dict['reference_constrictions']
+        temp_const = self.statistics.info_dict['template_constrictions']
+
+        if ref_bulges!=[]:        
+            for r_b in ref_bulges:
+                print(r_b.keys()[0], r_b.values()[0])
+                
+        # upload StructureModelResidues
+        for gn, res in self.statistics.info_dict['conserved_residues'].items():
+            if gn[0] not in ['E','I']:
+                res = Residue.objects.get(protein_conformation__protein=self.reference_protein, 
+                                          generic_number__label=gn)
+                res_temp = Residue.objects.get(protein_conformation=self.main_structure.protein_conformation, 
+                                               generic_number__label=gn)
+            else:
+                res = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
+                                             protein_segment__slug=gn.split('|')[0])[int(gn.split('|')[1])-1]
+                res_temp = Residue.objects.filter(protein_conformation=self.main_structure.protein_conformation, 
+                                                  protein_segment__slug=gn.split('|')[0])[int(gn.split('|')[1])-1]
+            rotamer = Rotamer.objects.filter(structure=self.main_structure, residue=res_temp)
+            rotamer = self.right_rotamer_select(rotamer)
+            StructureModelResidues.objects.update_or_create(homology_model=hommod, sequence_number=res.sequence_number,
+                                                            residue=res, rotamer=rotamer, template=self.main_structure,
+                                                            origin='conserved', segment=res.protein_segment)            
+        for gn, temp in self.statistics.info_dict['non_conserved_residue_templates'].items():
+            res = Residue.objects.get(protein_conformation__protein=self.reference_protein, generic_number__label=gn)
+            res_temp = Residue.objects.get(protein_conformation=self.main_structure.protein_conformation,
+                                           generic_number__label=gn)
+            rotamer = Rotamer.objects.filter(structure=self.main_structure, residue=res_temp)
+            rotamer = self.right_rotamer_select(rotamer)
+            StructureModelResidues.objects.update_or_create(homology_model=hommod, sequence_number=res.sequence_number, 
+                                                            residue=res, rotamer=rotamer, template=temp, 
+                                                            origin='switched', segment=res.protein_segment)
+        for gn in self.statistics.info_dict['trimmed_residues']:
+            if gn[0] not in ['E','I']:
+                gn = gn.replace('.','x')
+                res = Residue.objects.get(protein_conformation__protein=self.reference_protein, 
+                                          generic_number__label=gn)
+            else:
+                gn = gn.replace('?','|')
+                res = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
+                                             protein_segment__slug=gn.split('|')[0])[int(gn.split('|')[1])-1]
+            StructureModelResidues.objects.update_or_create(homology_model=hommod, sequence_number=res.sequence_number,
+                                                            residue=res, rotamer__isnull=True, template__isnull=True,
+                                                            origin='free', segment=res.protein_segment)
+                                   
+    def right_rotamer_select(self, rotamer):
+        if len(rotamer)>1:
+            for i in rotamer:
+                if i.pdbdata.pdb.startswith('COMPND')==False:
+                    rotamer = i
+                    break
+        else:
+            rotamer=rotamer[0]
+        return rotamer
+                                                            
+    def format_final_model(self):
+        self.starting_res_num = list(Residue.objects.filter(protein_segment=2, 
+                                     protein_conformation__protein=self.reference_protein))[0].sequence_number
+        resnum = self.starting_res_num
+        with open ('./structure/homology_models/{}_{}/modeller_test.pdb'.format(self.uniprot_id, self.state), 'r+') as f:
+            pdblines = f.readlines()
+            out_list = []
+            prev_num = 1
+            for line in pdblines:
+                try:
+                    pdb_re = re.search('(ATOM[A-Z\s\d]+\S{3}\s+)(\d+)([A-Z\s\d.-]+)',line)
+                    if int(pdb_re.group(2))>prev_num:
+                        resnum+=1
+                        prev_num = int(pdb_re.group(2))
+                    whitespace = (len(str(resnum))-len(pdb_re.group(2)))*-1
+                    if whitespace==0:
+                        out_line = pdb_re.group(1)+str(resnum)+pdb_re.group(3)
+                    else:
+                        out_line = pdb_re.group(1)[:whitespace]+str(resnum)+pdb_re.group(3)
+                    out_list.append(out_line)
+                except:
+                    out_list.append(line)
+#            io = StringIO(''.join(out_list))
+#            pdb_struct = PDB.PDBParser(PERMISSIVE=True).get_structure('structure', io)[0]
+#            assign_gn = as_gn.GenericNumbering(structure=pdb_struct)
+#            pdb_struct = assign_gn.assign_generic_numbers()
+#            assign_gn.save_gn_to_pdb()
+#            outio = PDB.PDBIO()
+#            outio.set_structure(pdb_struct)
+#            outio.save('./structure/homology_models/{}_{}/modeller_test_ready.pdb'.format(self.uniprot_id, self.state))
+#        with open('./structure/homology_models/{}_{}/modeller_test_GPCRDB.pdb'.format(self.uniprot_id, self.state),'r+') as f:
+#            pdbdata = f.read()
+        return ''.join(out_list)
 
     def run_alignment(self, core_alignment=True, query_states='default', 
                       segments=['TM1','TM2','TM3','TM4','TM5','TM6','TM7'], order_by='similarity'):
@@ -147,9 +249,7 @@ class HomologyModeling(object):
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
         main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
-        pprint.pprint(a.reference_dict)
-        pprint.pprint(a.template_dict)
-        pprint.pprint(main_pdb_array)
+        
         print('Create main_pdb_array: ',datetime.now() - startTime)
         # loops
         if loops==True:
@@ -666,7 +766,7 @@ sequence:{uniprot}::::::::
             @param number_of_models: int, number of models to be built \n
             @param output_file_name: str, name of output file
         '''
-#        log.none()
+        log.none()
         env = environ(rand_seed=80851) #!!random number generator
         
         if atom_dict==None:
@@ -732,8 +832,8 @@ class HomologyMODELLER(automodel):
         return selection(selection_out)
         
     def make(self):
-#        with SilentModeller():
-        super(HomologyMODELLER, self).make()
+        with SilentModeller():
+            super(HomologyMODELLER, self).make()
 
 
 class Loops(object):
@@ -1187,7 +1287,7 @@ class GPCRDBParsingPDB(object):
         pref_chain = structure.preferred_chain
         for residue in pdb_struct[pref_chain]:
             try:
-                print(residue,residue['CA'].get_bfactor(), residue['N'].get_bfactor())
+#                print(residue,residue['CA'].get_bfactor(), residue['N'].get_bfactor())
                 if -8.1 < residue['CA'].get_bfactor() < 8.1:
                     gn = str(residue['CA'].get_bfactor())
                     

@@ -906,9 +906,6 @@ class AlignedReferenceTemplate(Alignment):
                             if res[1]!=False and res[1]!='':
                                all_temp_positions.append(res[0])
                         temp_positions.append([all_temp_positions[0],all_temp_positions[-1]])
-                    print(protein)
-                    print(ref_positions)
-                    print(temp_positions)
                     if ref_positions==temp_positions:
                         for struct in self.similarity_table:
                             if protein.protein==struct.protein_conformation.protein.parent:
