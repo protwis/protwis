@@ -558,7 +558,6 @@ def parseusercalculation(pdbname, session, debug=True, ignore_ligand_preset=Fals
             output = result
 
             temp = f.replace('.yaml', '').split("_")
-            # print(output)
             temp.append([output])
             temp.append(round(output['score']))
             temp.append((output['inchikey']).strip())
@@ -567,14 +566,15 @@ def parseusercalculation(pdbname, session, debug=True, ignore_ligand_preset=Fals
 
             if 'prettyname' not in output:
                 output['prettyname'] = temp[1]
-                # continue
 
-            #print(' start ligand ' + output['prettyname'])
-
-            # print(results)
     results = sorted(results, key=itemgetter(3), reverse=True)
     return results
 
+def showcalculation(request):
+
+    context = calculate(request)
+
+    return render(request, 'interaction/diagram.html', context)
 
 def calculate(request, redirect=None):
     if request.method == 'POST':
@@ -775,12 +775,12 @@ def calculate(request, redirect=None):
                         if generic != "":
                             residue_table_list.append(generic)
 
-                        if generic != "" and generic in simple_generic_number[ligand[1]]:
+                        if display != "" and display in simple_generic_number[ligand[1]]:
                             simple_generic_number[ligand[1]][
-                                generic].append(interaction[2])
-                        elif generic != "":
+                                display].append(interaction[2])
+                        elif display != "":
                             simple_generic_number[
-                                ligand[1]][generic] = [interaction[2]]
+                                ligand[1]][display] = [interaction[2]]
                     else:
                         display = ''
                         segment = ''
@@ -932,10 +932,10 @@ def calculate(request, redirect=None):
                 # interactions already selected)
                 return HttpResponseRedirect(redirect)
             else:
-                return render(request, 'interaction/diagram.html', {'result': "Looking at " + pdbname, 'outputs': results,
+                return {'result': "Looking at " + pdbname, 'outputs': results,
                                                                     'simple': simple, 'simple_generic_number': simple_generic_number, 'xtal': xtal, 'pdbname': pdbname, 'mainligand': mainligand, 'residues': residues_browser,
                                                                     'HelixBox': HelixBox, 'SnakePlot': SnakePlot, 'data': context['data'],
-                                                                    'header': context['header'], 'segments': context['segments'], 'number_of_schemes': len(numbering_schemes)})
+                                                                    'header': context['header'], 'segments': context['segments'], 'number_of_schemes': len(numbering_schemes)}
 
         else:
             print(form.errors)
