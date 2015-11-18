@@ -35,12 +35,47 @@ class Structure(models.Model):
 
 class StructureModel(models.Model):
     protein = models.ForeignKey('protein.Protein')
-
-    def __str__(self):
-        return self.protein.entry_name
+    state = models.ForeignKey('protein.ProteinState')
+    main_template = models.ForeignKey('structure.Structure')
+    pdb = models.TextField()
+    
+    def __repr__(self):
+        return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
 
     class Meta():
-        db_table = 'structure_model'
+        db_table = 'structure_model'      
+
+
+class StructureModelLoopTemplates(models.Model):
+    homology_model = models.ForeignKey('structure.StructureModel')
+    template = models.ForeignKey('structure.Structure')
+    segment = models.ForeignKey('protein.ProteinSegment')
+        
+    class Meta():
+        db_table = 'structure_model_loop_templates'
+        
+        
+class StructureModelAnomalies(models.Model):
+    homology_model = models.ForeignKey('structure.StructureModel')
+    anomaly = models.ForeignKey('protein.ProteinAnomaly')
+    reference = models.CharField(max_length=1)
+    template = models.ForeignKey('structure.Structure')
+    
+    class Meta():
+        db_table = 'structure_model_anomalies'
+        
+        
+class StructureModelResidues(models.Model):
+    homology_model = models.ForeignKey('structure.StructureModel')
+    sequence_number = models.IntegerField()
+    residue = models.ForeignKey('residue.Residue')
+    rotamer = models.ForeignKey('structure.Rotamer', null=True)
+    template = models.ForeignKey('structure.Structure', null=True)
+    origin = models.CharField(max_length=15)
+    segment = models.ForeignKey('protein.ProteinSegment')
+    
+    class Meta():
+        db_table = 'structure_model_residues'
 
 
 class StructureType(models.Model):
