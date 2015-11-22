@@ -13,7 +13,7 @@ from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from residue.models import Residue,ResidueNumberingScheme
 from residue.views import ResidueTablesDisplay
 from protein.models import Protein,ProteinSegment
-from interaction.models import ResidueFragmentInteraction
+from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction
 from interaction.views import calculate
 from interaction.forms import PDBform
 
@@ -27,6 +27,7 @@ import re
 import math
 import urllib
 import xlsxwriter #sudo pip3 install XlsxWriter
+import operator
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -380,10 +381,10 @@ class design(AbsTargetSelection):
     # Middle section
     numbering_schemes = False
     filters = False
-    search = False
+    search = True
     title = "Select annotated receptor interactions, PDB code or upload PDB file"
 
-    template_name = 'interaction/interactionselection.html'
+    template_name = 'mutation/designselection.html'
 
     selection_boxes = OrderedDict([
         ('reference', False),
@@ -394,11 +395,14 @@ class design(AbsTargetSelection):
     # Buttons
     buttons = {
         'continue': {
-            'label': 'Show interactions',
+            'label': 'Show results',
             'onclick': 'submitupload()',
             'color': 'success',
+            #'url': 'calculate/'
         }
     }
+
+    redirect_on_select = False
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -410,8 +414,148 @@ class design(AbsTargetSelection):
 
 
 def showcalculation(request):
+    print(request.method)
+    if request.method == 'POST':
+        form = PDBform(request.POST, request.FILES)
 
-    context = calculate(request)
+        if 'file' in request.FILES: #uploaded file
+            print('user upload')
+        else:
+            print('pdb code entered')
+
+        context = calculate(request)
+
+    else:
+        print('protein selected')
+        simple_selection = request.session.get('selection', False)
+        proteins = []
+        for target in simple_selection.targets:
+            if target.type == 'protein':
+                proteins.append(target.item)
+
+        context = {}
+        context['proteins'] = proteins
+
+    print(context['proteins'])
+
+    family_ids = []
+    parent_ids = []
+
+    for p in context['proteins']:
+        family_ids.append(p.family.parent) #first level is receptor across speciest, parent is then "family"
+        parent_ids.append(p.family.parent.parent) #see above, go to parent.parent to get true parent.
+
+    if len(context['proteins'])>1:
+        return HttpResponse("Only pick one protein")
+
+    print(family_ids,parent_ids)
+
+    residues = Residue.objects.filter(protein_conformation__protein=context['proteins'][0]).prefetch_related('display_generic_number')
+
+    lookup = {}
+    for r in residues:
+        if r.display_generic_number: 
+            lookup[r.display_generic_number.label] = r.amino_acid
+
+    protein_interaction_pairs = StructureLigandInteraction.objects.filter(structure__protein_conformation__protein__parent__in=context['proteins'],annotated=True)
+  
+    family_interaction_pairs = StructureLigandInteraction.objects.filter(structure__protein_conformation__protein__parent__family__parent__in=family_ids,annotated=True)
+    
+    parent_interaction_pairs = StructureLigandInteraction.objects.filter(structure__protein_conformation__protein__parent__family__parent__parent__in=parent_ids,annotated=True)
+
+    protein_interactions = ResidueFragmentInteraction.objects.filter(
+        structure_ligand_pair__structure__protein_conformation__protein__parent__in=context['proteins'], structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number').prefetch_related('rotamer__residue__display_generic_number','interaction_type')
+
+    family_interactions = ResidueFragmentInteraction.objects.filter(
+        structure_ligand_pair__structure__protein_conformation__protein__parent__family__parent__in=family_ids, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number').prefetch_related('rotamer__residue__display_generic_number','interaction_type')
+    
+    parent_interactions = ResidueFragmentInteraction.objects.filter(
+        structure_ligand_pair__structure__protein_conformation__protein__parent__family__parent__parent__in=parent_ids, structure_ligand_pair__annotated=True).prefetch_related('rotamer__residue__display_generic_number','interaction_type')
+
+    protein_mutations = MutationExperiment.objects.filter(protein__in=context['proteins']).order_by('residue__sequence_number').prefetch_related('residue__display_generic_number')
+
+    family_mutations = MutationExperiment.objects.filter(protein__family__parent__in=family_ids).order_by('residue__sequence_number').prefetch_related('residue__display_generic_number')
+
+    parent_mutations = MutationExperiment.objects.filter(protein__family__parent__parent__in=parent_ids).order_by('residue__sequence_number').prefetch_related('residue__display_generic_number')
+
+
+    results = {}
+    level = 0
+    for data in [protein_interactions,family_interactions,parent_interactions]:
+
+        for i in data:
+            interaction_type = i.interaction_type.slug
+            if i.rotamer.residue.display_generic_number:
+                generic = i.rotamer.residue.display_generic_number.label
+                if generic in results:
+                    results[generic]['interaction'][level].append([interaction_type,i.rotamer.residue.amino_acid])
+                else:
+                    results[generic] = {'interaction': {0:[], 1:[], 2:[]}, 'mutant': {0:[], 1:[], 2:[] } }
+                    results[generic]['interaction'][level].append([interaction_type,i.rotamer.residue.amino_acid])
+            else:
+                pass
+                #print('no generic number',interaction_type)
+        level += 1
+    level = 0
+    for data in [protein_mutations,family_mutations,parent_mutations]: 
+        for m in data:
+            if m.residue.display_generic_number:
+                generic = m.residue.display_generic_number.label
+                if m.foldchange==0:
+                    continue #skip null foldchange (should add qualitive later)
+                if generic in results:
+                    results[generic]['mutant'][level].append([m.foldchange,m.residue.amino_acid]) #add more info
+                else:
+                    results[generic] = {'interaction': {0:[], 1:[], 2:[] }, 'mutant': {0:[], 1:[], 2:[] } }
+                    results[generic]['mutant'][level].append([m.foldchange,m.residue.amino_acid])#add more info
+            else:
+                pass
+                #print(m.residue.sequence_number,m.foldchange)  
+        level += 1
+
+    summary = {}
+    for res,values in results.items():
+        #print(res)
+        if res in lookup:
+            summary[res] = {}
+            summary[res]['aa'] = lookup[res]
+        else: #skip those that are not present in reference
+            continue
+        for type, level in values.items():
+            #print(type)
+            summary[res][type] = {}
+            for level, values in level.items():
+                #print(level)
+                #print(values) 
+                temp = {}
+                for value in values:
+                    if value[0] in temp:
+                        temp[value[0]] += 1
+                    else:
+                        temp[value[0]] = 1
+                temp = sorted(temp.items(), key=operator.itemgetter(1),reverse=True)
+                s = ''
+                for t in temp:
+                    s += t[0] + '('+str(t[1])+')'
+                summary[res][type][level]= s
+
+
+    context['results'] = summary
+    context['family_ids'] = family_ids
+    context['parent_ids'] = parent_ids
+
+    context['protein_interaction_pairs'] = len(protein_interaction_pairs)
+    context['family_interaction_pairs'] = len(family_interaction_pairs)
+    context['parent_interaction_pairs'] = len(parent_interaction_pairs)
+
+    context['protein_interactions'] = protein_interactions
+    context['family_interactions'] = family_interactions
+    context['parent_interactions'] = parent_interactions
+
+    context['protein_mutations'] = protein_mutations
+    context['family_mutations'] = family_mutations
+    context['parent_mutations'] = parent_mutations
+
 
     return render(request, 'mutation/design.html', context)
 
