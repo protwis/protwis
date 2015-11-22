@@ -151,10 +151,10 @@ class Command(BaseBuild):
                             p.entry_name))
 
                     # create residue records
-                    truncations = []
-                    if 'truncations' in sd and sd['truncations']:
-                        for t in sd['truncations']:
-                            truncations += list(range(t[0],t[1]+1))
+                    deletions = []
+                    if 'deletions' in sd and sd['deletions']:
+                        for t in sd['deletions']:
+                            deletions += list(range(t[0],t[1]+1))
 
                     mutations = {}
                     if 'mutations' in sd and sd['mutations']:
@@ -166,52 +166,52 @@ class Command(BaseBuild):
                                 'full': m,
                             }
 
-                    # fusion proteins
+                    # insertions
                     split_segments = {}
-                    if 'fusion_proteins' in sd and sd['fusion_proteins']:
-                        for fp in sd['fusion_proteins']:
-                            fp_start = Residue.objects.get(protein_conformation=ppc,
-                                sequence_number=fp['positions'][0])
-                            fp_end = Residue.objects.get(protein_conformation=ppc, sequence_number=fp['positions'][1])
+                    if 'insertions' in sd and sd['insertions']:
+                        for ins in sd['insertions']:
+                            ins_start = Residue.objects.get(protein_conformation=ppc,
+                                sequence_number=ins['positions'][0])
+                            ins_end = Residue.objects.get(protein_conformation=ppc, sequence_number=ins['positions'][1])
                             # if the fusion protein is inserted within only one segment (the usual case), split that
                             # segment into two segments
-                            if fp_start and fp_start.protein_segment == fp_end.protein_segment:
+                            if ins_start and ins_start.protein_segment == ins_end.protein_segment:
                                 # get/create split protein segments
-                                slug_1 = fp_start.protein_segment.slug + "_1"
+                                slug_1 = ins_start.protein_segment.slug + "_1"
                                 try:
                                     segment_before, created = ProteinSegment.objects.get_or_create(slug=slug_1,
-                                        defaults={'name': fp_start.protein_segment.name,
-                                        'category': fp_start.protein_segment.category, 'partial': True})
+                                        defaults={'name': ins_start.protein_segment.name,
+                                        'category': ins_start.protein_segment.category, 'partial': True})
                                     if created:
                                         self.logger.info('Created protein segment {}'.format(segment_before))
                                 except IntegrityError:
                                     segment_before = ProteinSegment.objects.get(slug=slug_1)
 
-                                slug_2 = fp_start.protein_segment.slug + "_2"
+                                slug_2 = ins_start.protein_segment.slug + "_2"
                                 try:
                                     segment_after, created = ProteinSegment.objects.get_or_create(slug=slug_2,
-                                        defaults={'name': fp_start.protein_segment.name,
-                                        'category': fp_start.protein_segment.category, 'partial': True})
+                                        defaults={'name': ins_start.protein_segment.name,
+                                        'category': ins_start.protein_segment.category, 'partial': True})
                                     if created:
                                         self.logger.info('Created protein segment {}'.format(segment_after))
                                 except IntegrityError:
                                     segment_after = ProteinSegment.objects.get(slug=slug_2)
 
                                 # keep track of  information about split segments
-                                split_segments[fp_start.protein_segment.slug] = {
+                                split_segments[ins_start.protein_segment.slug] = {
                                     'start': {
-                                        'sequence_number': fp['positions'][0],
+                                        'sequence_number': ins['positions'][0],
                                         'segment': segment_before,
                                     },
                                     'end': {
-                                        'sequence_number': fp['positions'][1],
+                                        'sequence_number': ins['positions'][1],
                                         'segment': segment_after,
                                     },
                                 }
 
                             # get/insert fusion protein
-                            fusion, create = ProteinFusion.objects.get_or_create(name=fp['name'], defaults={
-                                'sequence': fp['sequence']})
+                            fusion, create = ProteinFusion.objects.get_or_create(name=ins['name'], defaults={
+                                'sequence': ins['sequence']})
 
                             # create relationship with protein
                             ProteinFusionProtein.objects.create(protein=p, protein_fusion=fusion,
@@ -222,7 +222,7 @@ class Command(BaseBuild):
                         'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
                     updated_sequence = ''
                     for pr in prs:
-                        if pr.sequence_number not in truncations:
+                        if pr.sequence_number not in deletions:
                             r = Residue()
                             r.protein_conformation = pc
                             r.generic_number = pr.generic_number
