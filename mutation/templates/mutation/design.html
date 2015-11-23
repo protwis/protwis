@@ -1,0 +1,197 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+<link href="{% static 'home/css/residue_table.css' %}" rel="stylesheet">
+</style>
+
+{% endblock %}
+{% block content %}
+<h2>Structure information</h2>
+ <script src="http://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script> 
+ <div class="row">
+    <table width="100%">
+      <tr>
+        <td width="50%" style="border:0px;">
+        <div class="row text-success">
+        <div class="text-center">
+                <h2>{{ crystal.protein_conformation.protein.family.name|safe }}</h2>
+            </div>
+        </div>
+
+<!--         <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>Protein Class</h4>
+            </div>
+            <div class="col-md-6">
+            {{ crystal.protein_conformation.protein.get_protein_class }}
+            </div>
+        </div> -->
+
+        <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>PDB code</h4>
+            </div>
+            <div class="col-md-6">
+            {{ xtal.pdb_code }}
+            </div>
+        </div>
+
+<!--         <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>Species</h4>
+            </div>
+            <div class="col-md-6">
+            {{ crystal.protein_conformation.protein.species.latin_name }}
+            </div>
+        </div> -->
+
+        <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>Resolution</h4>
+            </div>
+            <div class="col-md-6">
+            {{ xtal.resolution}}
+            </div>
+        </div>
+
+<!--         <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>Preferred chain</h4>
+            </div>
+            <div class="col-md-6">
+            {{ crystal.preferred_chain }}
+            </div>
+        </div> -->
+
+        <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>PMID</h4>
+            </div>
+            <div class="col-md-6">
+            {{ xtal.pubmed_id }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>Publication date</h4>
+            </div>
+            <div class="col-md-6">
+            {{ xtal.publication_date }}
+            </div>
+        </div>
+    </td>
+    <td style="border:0px;">
+
+            <div style="height: 300px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xf6f6f6' data-href='../interaction/pdb?session=1&pdb={{ pdbname }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test","{{ mainligand}}"]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
+                 <a href="../interaction/pdb?session=1&pdb={{ pdbname }}">Download PDB file</a>
+                
+    </td>
+    </tr>
+    </table>
+</div>
+
+<h2>Ligand Interaction Browser</h2>
+<div class="row">
+    <div class="col-md-11 text-center">
+        {% if residues %}              
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+            <table width="100%" class="display" id="residues">
+
+                <thead>
+                    <tr>
+                        <th>Ligand</th>
+                        <th>Amino Acid</th>
+                        <th>Generic Number</th>
+                        <th>Segment</th>
+                        <th>Interaction Type</th>
+                        <th>Suggested mutants</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th>Ligand</th>
+                        <th>Amino Acid</th>
+                        <th>Generic Number</th>
+                        <th>Segment</th>
+                        <th>Interaction Type</th>
+                        <th>Suggested mutants</th>
+                    </tr>
+                </tfoot>
+                {% for residue in residues %}
+                <tr>
+                <td>{{residue.ligand}}</td>
+                <td>{{residue.aa}}{{residue.pos}}</td>
+                <td>{{residue.gpcrdb}}</td>
+                <td>{{residue.segment}}</td>
+                <td>{{residue.type}}</td>
+                <td></td>
+                {% endfor %}
+            </table>
+        </div>
+    {% else %}
+        <p> Ooops! There is no data to show here yet. </p>
+    {% endif %}
+
+    </div>
+</div>
+<br>
+
+{% endblock %}
+{% block addon_js %}
+   <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            var table = $('#residues').DataTable({
+                "scrollX": true,
+                "scrollY": 600,
+                "bScrollCollapse": true,
+                'paging': false,
+                orderCellsTop: true,
+                "autoWidth": true,
+                dom: 'T<"clear">lfrtip',
+                "aoColumnDefs": [
+                    { "sType": "string", "aTargets": [0] },
+                ],
+                tableTools: {
+                    "sRowSelect": "multi",
+                    "aButtons": []
+                },
+                initComplete: function () {
+                    $('#residues').dataTable().columnFilter({
+                        sPlaceHolder: "head:after",
+                        aoColumns: [
+                            { type: "select" }, //ligand
+                            { type: "select" }, //protein name
+                            { type: "select" }, //Alt Position
+                            { type: "select" }, //Position
+                            { type: "select" }, //Segment
+                            { type: "select" }, //Suggestion
+                        ]
+                    });
+                }
+            });
+
+            });
+    </script> 
+{% endblock %}

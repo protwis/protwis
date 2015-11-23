@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.template import loader, Context
-
+from django.db.models import Count, Min, Sum, Avg, Q
 from django.http import HttpResponse
 from django.conf import settings
 from mutation.functions import *
@@ -13,7 +13,9 @@ from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from residue.models import Residue,ResidueNumberingScheme
 from residue.views import ResidueTablesDisplay
 from protein.models import Protein,ProteinSegment
-
+from interaction.models import ResidueFragmentInteraction
+from interaction.views import calculate
+from interaction.forms import PDBform
 
 from datetime import datetime
 from collections import OrderedDict
@@ -360,6 +362,58 @@ def render_mutations(request, protein = None, family = None, download = None, **
 # Create your views here.
 def index(request):
     return HttpResponse("Hello, world. You're at the polls index.")
+
+class design(AbsTargetSelection):
+
+    # Left panel
+    step = 1
+    number_of_steps = 1
+    docs = 'generic_numbering.html'  # FIXME
+
+    # description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
+    #     + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \
+    #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
+    #     + ' have selected all your receptors, click the green button.'
+
+    description = 'Mutant Design Tool'
+
+    # Middle section
+    numbering_schemes = False
+    filters = False
+    search = False
+    title = "Select annotated receptor interactions, PDB code or upload PDB file"
+
+    template_name = 'interaction/interactionselection.html'
+
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+
+    # Buttons
+    buttons = {
+        'continue': {
+            'label': 'Show interactions',
+            'onclick': 'submitupload()',
+            'color': 'success',
+        }
+    }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['structures'] = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index', 'structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate(
+            num_ligands=Count('structure_ligand_pair', distinct=True), num_interactions=Count('pk', distinct=True)).order_by('structure_ligand_pair__structure__pdb_code__index')
+        context['form'] = PDBform()
+        return context
+
+
+def showcalculation(request):
+
+    context = calculate(request)
+
+    return render(request, 'mutation/design.html', context)
 
 
 # Create your views here.
