@@ -45,20 +45,20 @@ function ajaxMutants(plotid,protein) {
                              var ligands = [], bigincreases=0, increases = 0, bigdecreases=0, decreases = 0, unchanged=0, unspecified = 0;
                              
                              
-                             $.each( val, function( key, v ) {
+                              $.each( val, function( key, v ) {
                               if( !(ligands[v[1]]) ) ligands[v[1]] = [];
                               ligands[v[1]].push(v[0])
-                              if (v[1]>10) {
-                                bigincreases ++;
-                              } else if (v[1]>5) {
+                              if (v[0]>10) {
+                                bigincreases ++; //mix-up increase is decrease.
+                              } else if (v[0]>5) {
                                 increases ++;
-                              } else if (v[1]>0) {
+                              } else if (v[0]>0) {
                                 unchanged ++;
-                              }  else if (v[1]<-10) {
+                              }  else if (v[0]<-10) {
                                 bigdecreases ++;
-                              } else if (v[1]<-5) {
+                              } else if (v[0]<-5) {
                                 decreases ++;
-                              } else if (v[1]<0) {
+                              } else if (v[0]<0) {
                                 unchanged ++;
                               } else if (v[2]=='No effect on') {
                                 unchanged ++;
@@ -75,9 +75,9 @@ function ajaxMutants(plotid,protein) {
                               }
                              });
                              
-                             extra = "\n" + String(val.length) + " mutations: " +
-                             (increases+bigincreases) +" increases |  " +
-                              (decreases+bigdecreases) +" decreases | " +
+                             extra = "\n" + String(val[0].length) + " mutations: " +
+                              (decreases+bigdecreases) +" increases | " +
+                             (increases+bigincreases) +" decreases  |  " +
                               (unchanged) +" Unchanged | " +
                               unspecified + " Unspecified";
 
@@ -142,7 +142,6 @@ function table_ajaxMutants() {
                              $.each( val, function( key, v ) {
                               if( !(ligands[v[1]]) ) ligands[v[1]] = [];
                               ligands[v[1]].push(v[0])
-                              console.log(v[1]);
                               if (v[0]>10) {
                                 bigincreases ++;
                               } else if (v[0]>5) {
@@ -170,9 +169,9 @@ function table_ajaxMutants() {
                               }
                              });
                              
-                             extra =  String(val.length) + " mutations: " +
-                             (increases+bigincreases) +" increases |  " +
-                              (decreases+bigdecreases) +" decreases | " +
+                             extra = "\n" + String(val[0].length) + " mutations: " +
+                              (decreases+bigdecreases) +" increases | " +
+                             (increases+bigincreases) +" decreases  |  " +
                               (unchanged) +" Unchanged | " +
                               unspecified + " Unspecified";
 
