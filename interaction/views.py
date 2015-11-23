@@ -935,7 +935,7 @@ def calculate(request, redirect=None):
                 return {'result': "Looking at " + pdbname, 'outputs': results,
                                                                     'simple': simple, 'simple_generic_number': simple_generic_number, 'xtal': xtal, 'pdbname': pdbname, 'mainligand': mainligand, 'residues': residues_browser,
                                                                     'HelixBox': HelixBox, 'SnakePlot': SnakePlot, 'data': context['data'],
-                                                                    'header': context['header'], 'segments': context['segments'], 'number_of_schemes': len(numbering_schemes)}
+                                                                    'header': context['header'], 'segments': context['segments'], 'number_of_schemes': len(numbering_schemes), 'proteins': protein_list}
 
         else:
             print(form.errors)
