@@ -1,15 +1,13 @@
 PROTWIS
-====
+=======
 
-The next generation of GPCRdb and related systems.
+Welcome to the Protwis project, the technology behind [GPCRdb](http://gpcrdb.org) and related systems.
 
-Please read our [Wiki](https://bitbucket.org/gpcr/protwis/wiki/Home) for more information.
+For more information, please refer to our [documentation](http://docs.gpcrdb.org).
 
 INSTALLATION
----
+------------
 
 The recommended method of installation is using our Vagrant configuration.
 
-Please follow the instructions [HERE][1].
-
-[1]: https://bitbucket.org/gpcr/protwis_vagrant
+Please follow the [instructions in the documentation](http://docs.gpcrdb.org/local_installation.html#for-development).
