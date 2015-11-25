@@ -763,7 +763,6 @@ def calculate(request, redirect=None):
 
                 simple[ligand[1]] = {'score': ligand_score}
                 simple_generic_number[ligand[1]] = {'score': ligand_score}
-                #print(ligand[2])
                 for interaction in ligand[2][0]['interactions']:
                     aa, pos, chain = regexaa(interaction[0])
                     if int(pos) in structure_residues[chain]:
@@ -775,12 +774,9 @@ def calculate(request, redirect=None):
                         if generic != "":
                             residue_table_list.append(generic)
 
-                        if display != "" and display in simple_generic_number[ligand[1]]:
-                            simple_generic_number[ligand[1]][
-                                display].append(interaction[2])
-                        elif display != "":
-                            simple_generic_number[
-                                ligand[1]][display] = [interaction[2]]
+                            if generic not in simple_generic_number[ligand[1]]:
+                                simple_generic_number[ligand[1]][generic] = []
+                            simple_generic_number[ligand[1]][generic].append(interaction[2])
                     else:
                         display = ''
                         segment = ''
@@ -885,35 +881,47 @@ def calculate(request, redirect=None):
                 if simple_selection:
                     selection.importer(simple_selection)
 
-                # convert identified interactions to the correct names and add them to the session
-                # FIXME use the correct names from the beginning
+                # convert identified interactions to residue features and add them to the session
+                # numbers in lists represent the interaction "hierarchy", i.e. if a residue has more than one
+                # interaction, 
                 interaction_name_dict = {
-                    'aromatic': 'ar',
-                    'aromaticplus': 'ar',
-                    'aromaticfe': 'ar',
-                    'hbond': 'hba',
-                    'hbond_confirmed': 'hba',
-                    'hbondplus': 'hba',
-                    # 'hydrophobic': 'hp',
+                    'polar_double_neg_protein': [1, 'neg'],
+                    'polar_double_pos_protein': [1, 'neg'],
+                    'polar_pos_protein': [2, 'pos'],
+                    'polar_neg_protein': [3, 'neg'],
+                    'polar_neg_ligand': [4, 'hbd'],
+                    'polar_pos_ligand': [5, 'hba'],
+                    'polar_unknown_protein': [5, 'charge'],
+                    'polar_donor_protein': [6, 'hbd'],
+                    'polar_acceptor_protein': [7, 'hba'],
+                    'polar_unspecified': [8, 'hb'],
+                    'aro_ff': [9, 'ar'],
+                    'aro_ef_protein': [10, 'ar'],
+                    'aro_fe_protein':  [11, 'ar'],
+                    'aro_ion_protein':  [12, 'pos'],
+                    'aro_ion_ligand':  [12, 'ar'],
                 }
+
+                interaction_counter = 0
                 for gn, interactions in simple_generic_number[mainligand].items():
-                    print(gn, interactions)
                     if gn != 'score' and gn != 0.0:  # FIXME leave these out when dict is created
+                        feature = False
                         for interaction in interactions:
                             if interaction in interaction_name_dict:
-                                feature = interaction_name_dict[interaction]
-                                break
-                        else:
+                                if (not feature
+                                    or interaction_name_dict[interaction][0] < interaction_name_dict[feature][0]):
+                                    feature = interaction
+                        
+                        if not feature:
                             continue
 
                         # get residue number equivalent object
-                        rne = ResidueGenericNumberEquivalent.objects.get(label=gn,
-                                                                         scheme__slug='gpcrdba')
+                        rne = ResidueGenericNumberEquivalent.objects.get(label=gn, scheme__slug='gpcrdba')
 
                         # create a selection item
                         properties = {
-                            'feature': feature,
-                            'amino_acids': ','.join(definitions.AMINO_ACID_GROUPS[feature])
+                            'feature': interaction_name_dict[feature][1],
+                            'amino_acids': ','.join(definitions.AMINO_ACID_GROUPS[interaction_name_dict[feature][1]])
                         }
                         selection_item = SelectionItem(
                             'site_residue', rne, properties)
@@ -922,20 +930,23 @@ def calculate(request, redirect=None):
                         selection.add('segments', 'site_residue',
                                       selection_item)
 
+                        # update the minimum match count for the active group
+                        interaction_counter += 1
+                        selection.site_residue_groups[selection.active_site_residue_group - 1][0] = interaction_counter
+
                 # export simple selection that can be serialized
                 simple_selection = selection.exporter()
 
                 # add simple selection to session
                 request.session['selection'] = simple_selection
 
-                # re-direct to segment selection (with the extracted
-                # interactions already selected)
+                # re-direct to segment selection (with the extracted interactions already selected)
                 return HttpResponseRedirect(redirect)
             else:
                 return {'result': "Looking at " + pdbname, 'outputs': results,
                                                                     'simple': simple, 'simple_generic_number': simple_generic_number, 'xtal': xtal, 'pdbname': pdbname, 'mainligand': mainligand, 'residues': residues_browser,
                                                                     'HelixBox': HelixBox, 'SnakePlot': SnakePlot, 'data': context['data'],
-                                                                    'header': context['header'], 'segments': context['segments'], 'number_of_schemes': len(numbering_schemes)}
+                                                                    'header': context['header'], 'segments': context['segments'], 'number_of_schemes': len(numbering_schemes), 'proteins': protein_list}
 
         else:
             print(form.errors)
