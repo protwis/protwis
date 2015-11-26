@@ -40,110 +40,20 @@
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-md-6 text-right text-info">
-                <h4> Structures with interactions in protein, family and in parent family</h4>
-            </div>
-            <div class="col-md-4">
-                {{protein_interaction_pairs}} {{family_interaction_pairs}} {{parent_interaction_pairs}}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 text-right text-info">
-                <h4> Interactions in protein, family and in parent family</h4>
-            </div>
-            <div class="col-md-4">
-                {{protein_interactions|length}} {{family_interactions|length}} {{parent_interactions|length}}
-            </div>
-        </div>
-
                 <div class="row">
             <div class="col-md-6 text-right text-info">
-                <h4> Mutations in protein, family and in parent family</h4>
+                <h4>Used Ligand</h4>
             </div>
-            <div class="col-md-4">
-                {{protein_mutations|length}} {{family_mutations|length}} {{parent_mutations|length}}
+            <div class="col-md-5">
+                {{ outputs.0.2.0.prettyname}} ({{ mainligand }})
             </div>
         </div>
+
 </div>
 
 <h2>Results</h2>
-<div class="row">
-    <div class="col-md-11 text-center">             
-        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
-            <table width="100%" class="display" id="residues">
-
-                <thead>
-                    <tr>
-                        <th>Generic Number</th>
-                        <th>Amino Acid</th>
-                        <th>Protein level</th>
-                        <th>Family level</th>
-                        <th>Parent level</th>
-                        <th>Suggested mutants</th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tfoot>
-                    <tr>
-                        <th>Generic Number</th>
-                        <th>Amino Acid</th>
-                        <th>Protein level</th>
-                        <th>Family level</th>
-                        <th>Parent level</th>
-                        <th>Suggested mutants</th>
-                    </tr>
-                </tfoot>
-                {% for key, types in results.items %}
-                    <tr>
-                    <td>{{key}}</td>
-                    <td>{{types.aa}}</td>
-                    {% for key, values in types.interaction.items %} 
-                        <td>
-                            {{values|safe}}
-                        </td>
-                    {% endfor %}
-                    <td>{{types.scores}}
-
-                    {% if types.sub %}
-                        <br>Suggested mutant: {{types.sub}}
-
-                        {% if types.existing_mutants_protein %}
-                        <br>Existing mutant for protein: {{types.existing_mutants_protein|safe}}
-                        {% endif %}
-
-                        {% if types.existing_mutants_family %}
-                        <br>Existing mutant for family: {{types.existing_mutants_family|safe}}
-                        {% endif %}
-
-                    {% endif %}
-                    </td>
-                    </tr>
-                {% endfor %}
-            </table>
-        </div>
-    </div>
-</div>
-
 
 {% if residues %} 
-<h2>Ligand Interaction Browser</h2>
 <div class="row">
     <div class="col-md-11 text-center">             
         <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
@@ -151,10 +61,9 @@
 
                 <thead>
                     <tr>
-                        <th>Ligand</th>
-                        <th>Amino Acid</th>
                         <th>Generic Number</th>
                         <th>Segment</th>
+                        <th>Amino Acid</th>
                         <th>Interaction Type</th>
                         <th>Suggested mutants</th>
                     </tr>
@@ -164,10 +73,8 @@
                         <th></th>
                         <th></th>
                         <th></th>
-                        <th></th>
                     </tr>
                     <tr>
-                        <th></th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -177,22 +84,20 @@
                 </thead>
                 <tfoot>
                     <tr>
-                        <th>Ligand</th>
-                        <th>Amino Acid</th>
                         <th>Generic Number</th>
                         <th>Segment</th>
+                        <th>Amino Acid</th>
                         <th>Interaction Type</th>
                         <th>Suggested mutants</th>
                     </tr>
                 </tfoot>
                 {% for residue in residues %}
                 <tr>
-                <td>{{residue.ligand}}</td>
-                <td>{{residue.aa}}{{residue.pos}}</td>
                 <td>{{residue.gpcrdb}}</td>
                 <td>{{residue.segment}}</td>
+                <td>{{residue.aa}}{{residue.pos}}</td>
                 <td>{{residue.type}}</td>
-                <td></td>
+                <td>{{residue.suggested|safe}}</td>
                 {% endfor %}
             </table>
         </div>
@@ -229,11 +134,10 @@
                     $('#residues').dataTable().columnFilter({
                         sPlaceHolder: "head:after",
                         aoColumns: [
-                            { type: "select" }, //ligand
-                            { type: "select" }, //protein name
-                            { type: "select" }, //Alt Position
-                            { type: "select" }, //Position
+                            { type: "select" }, //Generic Number
                             { type: "select" }, //Segment
+                            { type: "select" }, //AA
+                            { type: "select" }, //Type
                             { type: "select" }, //Suggestion
                         ]
                     });

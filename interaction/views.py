@@ -791,7 +791,7 @@ def calculate(request, redirect=None):
                         simple[ligand[1]][interaction[0]] = [interaction[2]]
 
                     residues_browser.append({'type': interaction[3], 'aa': aa, 'ligand': ligand[
-                                            1], 'pos': pos, 'gpcrdb': display, 'segment': segment})
+                                            1], 'pos': pos, 'gpcrdb': display, 'segment': segment, 'slug':interaction[2]})
                 break  # only use the top one
 
             # RESIDUE TABLE
@@ -935,7 +935,7 @@ def calculate(request, redirect=None):
                 return {'result': "Looking at " + pdbname, 'outputs': results,
                                                                     'simple': simple, 'simple_generic_number': simple_generic_number, 'xtal': xtal, 'pdbname': pdbname, 'mainligand': mainligand, 'residues': residues_browser,
                                                                     'HelixBox': HelixBox, 'SnakePlot': SnakePlot, 'data': context['data'],
-                                                                    'header': context['header'], 'segments': context['segments'], 'number_of_schemes': len(numbering_schemes), 'proteins': protein_list}
+                                                                    'header': context['header'], 'segments': context['segments'], 'number_of_schemes': len(numbering_schemes), 'proteins': proteins}
 
         else:
             print(form.errors)
