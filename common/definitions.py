@@ -97,5 +97,8 @@ DESIGN_SUBSTITUTION_MATRIX = OrderedDict([
             'W':[['F','A'],['F - remove h-bond and keep aromaticity and size','A - remove the side chain and all interactions']],
             'Y':[['F','A'],['F - remove h-bond and keep aromaticity and size','A - remove the side chain and all interactions']],
             }
+        ),
+        ('unknown', { #empty
+            }
         )
     ])
