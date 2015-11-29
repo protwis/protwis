@@ -14,10 +14,10 @@
 
 <h4>Structures overview</h4>
 <ul>
-    <li>{{ all_structures }} total crystalized complexes.</li>
+    <li>{{ all_structures }} total crystal structures.</li>
     <li>{{ unique_structures }} unique crystalized receptors.</li>
-    <li>{% for class in unique_by_class.items %}{{ class.0 }} : {{ class.1 }} {% endfor %}</li>
     <li>{{ unique_complexes }} unique ligand-receptor complexes.</li>
+    <li>{% for class in unique_by_class.items %}{{ class.0 }} : {{ class.1 }} {% endfor %}</li>
 </ul>
 <br />
 <div id="charts" visibility="hidden">

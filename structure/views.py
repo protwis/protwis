@@ -107,8 +107,8 @@ class StructureStatistics(TemplateView):
         families = list(set([x.protein_conformation.protein.get_protein_family() for x in unique_structs]))
         classes = [x.protein_conformation.protein.get_protein_class() for x in unique_structs]
         
-        tmp = {}
-        for x in list(set(classes)):
+        tmp = OrderedDict()
+        for x in sorted(list(set(classes))):
             tmp[x] = classes.count(x)
         #Basic stats
         context['all_structures'] = len(all_structs)
