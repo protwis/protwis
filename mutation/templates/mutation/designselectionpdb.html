@@ -90,14 +90,14 @@
  -->
             <div class="col-md-12 panel panel-primary">
                 <div class="panel-body">
-                    <h4>Run a new calculation</h4>
+                    <h4>Mutant Design Tool</h4>
                     <div>
-                        Enter a PDB code to analyse:
+                        
                             <form action="calculatepdb" id="form" method="post" enctype="multipart/form-data">
                         {% csrf_token %}
-                            <label for="pdbname">PDB code</label>
+                            <label for="pdbname">Enter PDB code:</label>
                             {{ form.pdbname }} <br> or 
-                            <p>{{ form.file.label_tag }}  </p> {{ form.file }}
+                            <p><label for="pdbname">Upload PDB file:</label>{{ form.file }}</p> 
                         </form>
                     </div>
                 </div>

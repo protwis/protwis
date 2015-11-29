@@ -15,28 +15,28 @@
 
         <div class="row">
             <div class="col-md-6 text-right text-info">
-                <h4>Identified protein name</h4>
+                <h4>Receptor</h4>
             </div>
             <div class="col-md-4">
-            {%for p in proteins%} {{ p.entry_name }} {%endfor%}
+            {%for p in proteins%} {{ p.name|safe }} ({{ p.entry_name }}) {%endfor%}
             </div>
         </div>
 
         <div class="row">
             <div class="col-md-6 text-right text-info">
-                <h4>Identified family name</h4>
+                <h4>Receptor family</h4>
             </div>
             <div class="col-md-4">
-                {%for f in family_ids%} {{ f.name }} {%endfor%}
+                {%for p in proteins%} {{ p.family.parent.name|safe }} {%endfor%}
             </div>
         </div>
 
         <div class="row">
             <div class="col-md-6 text-right text-info">
-                <h4>Identified parent name</h4>
+                <h4>Ligand type</h4>
             </div>
             <div class="col-md-5">
-                {%for f in parent_ids%} {{ f.name }} {%endfor%}
+                {%for p in proteins%} {{ p.family.parent.parent.name|safe }} {%endfor%}
             </div>
         </div>
 
@@ -61,8 +61,8 @@
 
                 <thead>
                     <tr>
-                        <th>Generic Number</th>
                         <th>Segment</th>
+                        <th>Generic Number</th>
                         <th>Amino Acid</th>
                         <th>Interaction Type</th>
                         <th>Suggested mutants</th>
@@ -84,8 +84,8 @@
                 </thead>
                 <tfoot>
                     <tr>
-                        <th>Generic Number</th>
                         <th>Segment</th>
+                        <th>Generic Number</th>
                         <th>Amino Acid</th>
                         <th>Interaction Type</th>
                         <th>Suggested mutants</th>
@@ -93,8 +93,8 @@
                 </tfoot>
                 {% for residue in residues %}
                 <tr>
-                <td>{{residue.gpcrdb}}</td>
                 <td>{{residue.segment}}</td>
+                <td>{{residue.gpcrdb}}</td>
                 <td>{{residue.aa}}{{residue.pos}}</td>
                 <td>{{residue.type}}</td>
                 <td>{{residue.suggested|safe}}</td>
