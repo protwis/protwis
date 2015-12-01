@@ -8,95 +8,144 @@
 
 {% endblock %}
 {% block content %}
-<h2>Structure information</h2>
+<h2>Mutant Design Tool</h2>
  <script src="http://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script> 
  <div class="row">
-    <table width="100%">
-      <tr>
-        <td width="50%" style="border:0px;">
-        <div class="row text-success">
-        <div class="text-center">
-                <h2>{{ crystal.protein_conformation.protein.family.name|safe }}</h2>
-            </div>
-        </div>
 
-<!--         <div class="row">
-            <div class="col-md-4 text-right text-info">
-                <h4>Protein Class</h4>
-            </div>
-            <div class="col-md-6">
-            {{ crystal.protein_conformation.protein.get_protein_class }}
-            </div>
-        </div> -->
 
         <div class="row">
-            <div class="col-md-4 text-right text-info">
-                <h4>PDB code</h4>
+            <div class="col-md-6 text-right text-info">
+                <h4>Identified protein name</h4>
             </div>
-            <div class="col-md-6">
-            {{ xtal.pdb_code }}
-            </div>
-        </div>
-
-<!--         <div class="row">
-            <div class="col-md-4 text-right text-info">
-                <h4>Species</h4>
-            </div>
-            <div class="col-md-6">
-            {{ crystal.protein_conformation.protein.species.latin_name }}
-            </div>
-        </div> -->
-
-        <div class="row">
-            <div class="col-md-4 text-right text-info">
-                <h4>Resolution</h4>
-            </div>
-            <div class="col-md-6">
-            {{ xtal.resolution}}
-            </div>
-        </div>
-
-<!--         <div class="row">
-            <div class="col-md-4 text-right text-info">
-                <h4>Preferred chain</h4>
-            </div>
-            <div class="col-md-6">
-            {{ crystal.preferred_chain }}
-            </div>
-        </div> -->
-
-        <div class="row">
-            <div class="col-md-4 text-right text-info">
-                <h4>PMID</h4>
-            </div>
-            <div class="col-md-6">
-            {{ xtal.pubmed_id }}
+            <div class="col-md-4">
+            {%for p in proteins%} {{ p.entry_name }} {%endfor%}
             </div>
         </div>
 
         <div class="row">
-            <div class="col-md-4 text-right text-info">
-                <h4>Publication date</h4>
+            <div class="col-md-6 text-right text-info">
+                <h4>Identified family name</h4>
             </div>
-            <div class="col-md-6">
-            {{ xtal.publication_date }}
+            <div class="col-md-4">
+                {%for f in family_ids%} {{ f.name }} {%endfor%}
             </div>
         </div>
-    </td>
-    <td style="border:0px;">
 
-            <div style="height: 300px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xf6f6f6' data-href='../interaction/pdb?session=1&pdb={{ pdbname }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test","{{ mainligand}}"]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
-                 <a href="../interaction/pdb?session=1&pdb={{ pdbname }}">Download PDB file</a>
-                
-    </td>
-    </tr>
-    </table>
+        <div class="row">
+            <div class="col-md-6 text-right text-info">
+                <h4>Identified parent name</h4>
+            </div>
+            <div class="col-md-5">
+                {%for f in parent_ids%} {{ f.name }} {%endfor%}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 text-right text-info">
+                <h4> Structures with interactions in protein, family and in parent family</h4>
+            </div>
+            <div class="col-md-4">
+                {{protein_interaction_pairs}} {{family_interaction_pairs}} {{parent_interaction_pairs}}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 text-right text-info">
+                <h4> Interactions in protein, family and in parent family</h4>
+            </div>
+            <div class="col-md-4">
+                {{protein_interactions|length}} {{family_interactions|length}} {{parent_interactions|length}}
+            </div>
+        </div>
+
+                <div class="row">
+            <div class="col-md-6 text-right text-info">
+                <h4> Mutations in protein, family and in parent family</h4>
+            </div>
+            <div class="col-md-4">
+                {{protein_mutations|length}} {{family_mutations|length}} {{parent_mutations|length}}
+            </div>
+        </div>
 </div>
 
+<h2>Results</h2>
+<div class="row">
+    <div class="col-md-11 text-center">             
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+            <table width="100%" class="display" id="residues">
+
+                <thead>
+                    <tr>
+                        <th>Generic Number</th>
+                        <th>Amino Acid</th>
+                        <th>Protein level</th>
+                        <th>Family level</th>
+                        <th>Parent level</th>
+                        <th>Suggested mutants</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th>Generic Number</th>
+                        <th>Amino Acid</th>
+                        <th>Protein level</th>
+                        <th>Family level</th>
+                        <th>Parent level</th>
+                        <th>Suggested mutants</th>
+                    </tr>
+                </tfoot>
+                {% for key, types in results.items %}
+                    <tr>
+                    <td>{{key}}</td>
+                    <td>{{types.aa}}</td>
+                    {% for key, values in types.interaction.items %} 
+                        <td>
+                            {{values|safe}}
+                        </td>
+                    {% endfor %}
+                    <td>{{types.scores}}
+
+                    {% if types.sub %}
+                        <br>Suggested mutant: {{types.sub}}
+
+                        {% if types.existing_mutants_protein %}
+                        <br>Existing mutant for protein: {{types.existing_mutants_protein|safe}}
+                        {% endif %}
+
+                        {% if types.existing_mutants_family %}
+                        <br>Existing mutant for family: {{types.existing_mutants_family|safe}}
+                        {% endif %}
+
+                    {% endif %}
+                    </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</div>
+
+
+{% if residues %} 
 <h2>Ligand Interaction Browser</h2>
 <div class="row">
-    <div class="col-md-11 text-center">
-        {% if residues %}              
+    <div class="col-md-11 text-center">             
         <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
             <table width="100%" class="display" id="residues">
 
@@ -147,12 +196,11 @@
                 {% endfor %}
             </table>
         </div>
-    {% else %}
-        <p> Ooops! There is no data to show here yet. </p>
-    {% endif %}
-
     </div>
 </div>
+    {% else %}
+        
+    {% endif %}
 <br>
 
 {% endblock %}
@@ -164,7 +212,7 @@
         $(document).ready(function() {
             var table = $('#residues').DataTable({
                 "scrollX": true,
-                "scrollY": 600,
+                "scrollY": false,
                 "bScrollCollapse": true,
                 'paging': false,
                 orderCellsTop: true,

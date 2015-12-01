@@ -279,17 +279,17 @@
                              $.each( val, function( key, v ) {
                               if( !(ligands[v[1]]) ) ligands[v[1]] = [];
                               ligands[v[1]].push(v[0])
-                              if (v[1]>10) {
-                                bigincreases ++;
-                              } else if (v[1]>5) {
+                              if (v[0]>10) {
+                                bigincreases ++; //mix-up increase is decrease.
+                              } else if (v[0]>5) {
                                 increases ++;
-                              } else if (v[1]>0) {
+                              } else if (v[0]>0) {
                                 unchanged ++;
-                              }  else if (v[1]<-10) {
+                              }  else if (v[0]<-10) {
                                 bigdecreases ++;
-                              } else if (v[1]<-5) {
+                              } else if (v[0]<-5) {
                                 decreases ++;
-                              } else if (v[1]<0) {
+                              } else if (v[0]<0) {
                                 unchanged ++;
                               } else if (v[2]=='No effect on') {
                                 unchanged ++;
@@ -306,9 +306,9 @@
                               }
                              });
                              
-                             extra = "\n" + String(val.length) + " mutations: " +
-                             (increases+bigincreases) +" increases |  " +
-                              (decreases+bigdecreases) +" decreases | " +
+                             extra = "\n" + String(val[0].length) + " mutations: " +
+                              (decreases+bigdecreases) +" increases | " +
+                             (increases+bigincreases) +" decreases  |  " +
                               (unchanged) +" Unchanged | " +
                               unspecified + " Unspecified";
 
@@ -367,17 +367,17 @@
                              $.each( val[0], function( key, v ) {
                               if( !(ligands[v[1]]) ) ligands[v[1]] = [];
                               ligands[v[1]].push(v[0])
-                              if (v[1]>10) {
-                                bigincreases ++;
-                              } else if (v[1]>5) {
+                              if (v[0]>10) {
+                                bigincreases ++; //mix-up increase is decrease.
+                              } else if (v[0]>5) {
                                 increases ++;
-                              } else if (v[1]>0) {
+                              } else if (v[0]>0) {
                                 unchanged ++;
-                              }  else if (v[1]<-10) {
+                              }  else if (v[0]<-10) {
                                 bigdecreases ++;
-                              } else if (v[1]<-5) {
+                              } else if (v[0]<-5) {
                                 decreases ++;
-                              } else if (v[1]<0) {
+                              } else if (v[0]<0) {
                                 unchanged ++;
                               } else if (v[2]=='No effect on') {
                                 unchanged ++;
@@ -395,8 +395,8 @@
                              });
                              
                              extra = "\n" + String(val[0].length) + " mutations: " +
-                             (increases+bigincreases) +" increases |  " +
-                              (decreases+bigdecreases) +" decreases | " +
+                              (decreases+bigdecreases) +" increases | " +
+                             (increases+bigincreases) +" decreases  |  " +
                               (unchanged) +" Unchanged | " +
                               unspecified + " Unspecified";
 

@@ -1,0 +1,149 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+<link href="{% static 'home/css/residue_table.css' %}" rel="stylesheet">
+</style>
+
+{% endblock %}
+{% block content %}
+<h2>Mutant Design Tool</h2>
+ <script src="http://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script> 
+ <div class="row">
+
+
+        <div class="row">
+            <div class="col-md-6 text-right text-info">
+                <h4>Receptor</h4>
+            </div>
+            <div class="col-md-4">
+            {%for p in proteins%} {{ p.name|safe }} ({{ p.entry_name }}) {%endfor%}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 text-right text-info">
+                <h4>Receptor family</h4>
+            </div>
+            <div class="col-md-4">
+                {%for p in proteins%} {{ p.family.parent.name|safe }} {%endfor%}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 text-right text-info">
+                <h4>Ligand type</h4>
+            </div>
+            <div class="col-md-5">
+                {%for p in proteins%} {{ p.family.parent.parent.name|safe }} {%endfor%}
+            </div>
+        </div>
+
+                <div class="row">
+            <div class="col-md-6 text-right text-info">
+                <h4>Used Ligand</h4>
+            </div>
+            <div class="col-md-5">
+                {{ outputs.0.2.0.prettyname}} ({{ mainligand }})
+            </div>
+        </div>
+
+</div>
+
+<h2>Results</h2>
+
+{% if residues %} 
+<div class="row">
+    <div class="col-md-11 text-center">             
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+            <table width="100%" class="display" id="residues">
+
+                <thead>
+                    <tr>
+                        <th>Segment</th>
+                        <th>Generic Number</th>
+                        <th>Amino Acid</th>
+                        <th>Interaction Type</th>
+                        <th>Suggested mutants</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th>Segment</th>
+                        <th>Generic Number</th>
+                        <th>Amino Acid</th>
+                        <th>Interaction Type</th>
+                        <th>Suggested mutants</th>
+                    </tr>
+                </tfoot>
+                {% for residue in residues %}
+                <tr>
+                <td>{{residue.segment}}</td>
+                <td>{{residue.gpcrdb}}</td>
+                <td>{{residue.aa}}{{residue.pos}}</td>
+                <td>{{residue.type}}</td>
+                <td>{{residue.suggested|safe}}</td>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</div>
+    {% else %}
+        
+    {% endif %}
+<br>
+
+{% endblock %}
+{% block addon_js %}
+   <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            var table = $('#residues').DataTable({
+                "scrollX": true,
+                "scrollY": false,
+                "bScrollCollapse": true,
+                'paging': false,
+                orderCellsTop: true,
+                "autoWidth": true,
+                dom: 'T<"clear">lfrtip',
+                "aoColumnDefs": [
+                    { "sType": "string", "aTargets": [0] },
+                ],
+                tableTools: {
+                    "sRowSelect": "multi",
+                    "aButtons": []
+                },
+                initComplete: function () {
+                    $('#residues').dataTable().columnFilter({
+                        sPlaceHolder: "head:after",
+                        aoColumns: [
+                            { type: "select" }, //Generic Number
+                            { type: "select" }, //Segment
+                            { type: "select" }, //AA
+                            { type: "select" }, //Type
+                            { type: "select" }, //Suggestion
+                        ]
+                    });
+                }
+            });
+
+            });
+    </script> 
+{% endblock %}
