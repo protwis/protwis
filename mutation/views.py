@@ -659,6 +659,12 @@ def showcalculation(request):
                         scoretype = 'aromatic'
                     elif value[0][:3]=='HYD':
                         scoretype = 'hyd'
+                    elif value[0][:5]=='polar':
+                        scoretype = 'polar'
+                    elif value[0][:3]=='aro':
+                        scoretype = 'aromatic'
+                    elif value[0][:3]=='hyd':
+                        scoretype = 'hyd'
                     else:
                         scoretype = 'unknown'
 
