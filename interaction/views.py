@@ -38,6 +38,7 @@ import collections
 from collections import OrderedDict
 from io import StringIO, BytesIO
 from Bio.PDB import PDBIO, PDBParser
+import xlsxwriter
 
 AA = {'ALA': 'A', 'ARG': 'R', 'ASN': 'N', 'ASP': 'D',
       'CYS': 'C', 'GLN': 'Q', 'GLU': 'E', 'GLY': 'G',
@@ -973,6 +974,88 @@ def download(request):
         response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
     return response
 
+def excel(request, slug, **response_kwargs):
+    if ('session' in response_kwargs):
+        session = request.session.session_key
+
+        mypath = '/tmp/interactions/' + session + '/pdbs/' + slug + '.pdb'
+
+        generic_numbering = GenericNumbering(mypath)
+        out_struct = generic_numbering.assign_generic_numbers()
+        structure_residues = generic_numbering.residues
+        results = parseusercalculation(slug,session)
+
+        data = []
+        for interaction in results[0][2][0]['interactions']:
+            aa, pos, chain = regexaa(interaction[0])
+            if int(pos) in structure_residues[chain]:
+                r = structure_residues[chain][int(pos)]
+                display = r.display
+                segment = r.segment
+                generic = r.gpcrdb
+            else:
+                display = ''
+                segment = ''
+            row = {}
+            row['Sequence Number'] = pos
+            row['Amino Acid'] = aa
+            row['Generic Number'] = display
+            row['Segment'] = segment
+            row['Interaction'] = interaction[3]
+            row['Interaction Slug'] = interaction[2]
+            row['Ligand'] = results[0][2][0]['prettyname']
+
+            data.append(row)
+
+    else:
+
+        interactions = ResidueFragmentInteraction.objects.filter(
+            structure_ligand_pair__structure__pdb_code__index=slug, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
+        print(interactions)
+        # return HttpResponse("Hello, world. You're at the polls index. "+slug)
+        data = []
+        for interaction in interactions:
+
+            row = {}
+            row['Sequence Number'] = interaction.rotamer.residue.sequence_number
+            row['Amino Acid'] = interaction.rotamer.residue.amino_acid
+            if interaction.rotamer.residue.display_generic_number:
+                row['Generic Number'] = interaction.rotamer.residue.display_generic_number.label
+            else:
+                row['Generic Number'] = 'N/A'
+
+            row['Segment'] = interaction.rotamer.residue.protein_segment.slug
+            row['Interaction'] = interaction.interaction_type.name
+            row['Interaction Slug'] = interaction.interaction_type.slug
+            row['Ligand'] = interaction.structure_ligand_pair.ligand.name
+
+            data.append(row)
+
+    headers = ['Ligand','Amino Acid','Sequence Number','Generic Number','Segment','Interaction','Interaction Slug']
+
+    #EXCEL SOLUTION
+    output = BytesIO()
+    workbook = xlsxwriter.Workbook(output)
+    worksheet = workbook.add_worksheet()
+
+    col = 0
+    for h in headers:
+        worksheet.write(0, col, h)
+        col += 1
+    row = 1
+    for d in data:
+        col = 0
+        for h in headers:
+            worksheet.write(row, col, d[h])
+            col += 1
+        row += 1
+    workbook.close()
+    output.seek(0)
+    xlsx_data = output.read()
+
+    response = HttpResponse(xlsx_data,content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=Interaction_data_%s.xlsx' % slug
+    return response
 
 def ajax(request, slug, **response_kwargs):
     interactions = ResidueFragmentInteraction.objects.filter(
