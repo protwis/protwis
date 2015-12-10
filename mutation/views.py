@@ -9,6 +9,7 @@ from mutation.models import *
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
+from common import definitions
 
 from residue.models import Residue,ResidueNumberingScheme
 from residue.views import ResidueTablesDisplay
@@ -364,6 +365,54 @@ def render_mutations(request, protein = None, family = None, download = None, **
 def index(request):
     return HttpResponse("Hello, world. You're at the polls index.")
 
+class designPDB(AbsTargetSelection):
+
+    # Left panel
+    step = 1
+    number_of_steps = 1
+    docs = 'generic_numbering.html'  # FIXME
+
+    # description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
+    #     + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \
+    #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
+    #     + ' have selected all your receptors, click the green button.'
+
+    description = 'Mutant Design Tool'
+
+    # Middle section
+    numbering_schemes = False
+    filters = False
+    search = True
+    title = "Select PDB code or upload PDB file"
+
+    template_name = 'mutation/designselectionpdb.html'
+
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+
+    # Buttons
+    buttons = {
+        'continue': {
+            'label': 'Show results',
+            'onclick': 'submitupload()',
+            'color': 'success',
+            #'url': 'calculate/'
+        }
+    }
+
+    redirect_on_select = False
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['structures'] = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index', 'structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate(
+            num_ligands=Count('structure_ligand_pair', distinct=True), num_interactions=Count('pk', distinct=True)).order_by('structure_ligand_pair__structure__pdb_code__index')
+        context['form'] = PDBform()
+        return context
+
 class design(AbsTargetSelection):
 
     # Left panel
@@ -413,6 +462,48 @@ class design(AbsTargetSelection):
         return context
 
 
+def showcalculationPDB(request):
+    if request.method == 'POST':
+        form = PDBform(request.POST, request.FILES)
+
+        if 'file' in request.FILES: #uploaded file
+            print('user upload')
+        else:
+            print('pdb code entered')
+
+        context = calculate(request) 
+        
+        #print(context['residues'])   
+        matrix = definitions.DESIGN_SUBSTITUTION_MATRIX
+        newresidues = []
+        for r in context['residues']:
+
+            if r['slug'][:5]=='polar':
+                scoretype = 'polar'
+            elif r['slug'][:3]=='aro':
+                scoretype = 'aromatic'
+            elif r['slug'][:3]=='hyd':
+                scoretype = 'hyd'
+            else:
+                scoretype = 'unknown'
+            possible_subs = ''
+            if r['aa'] in matrix[scoretype]:
+                possible_subs = matrix[scoretype][r['aa']][0]
+                possible_rea = matrix[scoretype][r['aa']][1]
+            
+            i = 0
+            s = ''
+            for p in possible_subs:
+                s += ', '.join(p) + " : "+ possible_rea[i] + "<br>"
+                i += 1
+
+            r['suggested'] = s
+            newresidues.append(r)
+
+        context['residues'] = newresidues
+
+        return render(request, 'mutation/designpdb.html', context)
+
 def showcalculation(request):
     print(request.method)
     if request.method == 'POST':
@@ -438,10 +529,12 @@ def showcalculation(request):
 
     print(context['proteins'])
 
+    protein_ids = []
     family_ids = []
     parent_ids = []
 
     for p in context['proteins']:
+        protein_ids.append(p.family) #first level is receptor across speciest, parent is then "family"
         family_ids.append(p.family.parent) #first level is receptor across speciest, parent is then "family"
         parent_ids.append(p.family.parent.parent) #see above, go to parent.parent to get true parent.
 
@@ -457,29 +550,37 @@ def showcalculation(request):
         if r.display_generic_number: 
             lookup[r.display_generic_number.label] = r.amino_acid
 
-    protein_interaction_pairs = StructureLigandInteraction.objects.filter(structure__protein_conformation__protein__parent__in=context['proteins'],annotated=True)
+    protein_interaction_pairs = StructureLigandInteraction.objects.filter(structure__protein_conformation__protein__parent__family__in=protein_ids,annotated=True)
   
     family_interaction_pairs = StructureLigandInteraction.objects.filter(structure__protein_conformation__protein__parent__family__parent__in=family_ids,annotated=True)
     
     parent_interaction_pairs = StructureLigandInteraction.objects.filter(structure__protein_conformation__protein__parent__family__parent__parent__in=parent_ids,annotated=True)
 
     protein_interactions = ResidueFragmentInteraction.objects.filter(
-        structure_ligand_pair__structure__protein_conformation__protein__parent__in=context['proteins'], structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number').prefetch_related('rotamer__residue__display_generic_number','interaction_type')
+        structure_ligand_pair__structure__protein_conformation__protein__parent__family__in=protein_ids, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number').prefetch_related('rotamer__residue__display_generic_number','interaction_type')
 
     family_interactions = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__protein_conformation__protein__parent__family__parent__in=family_ids, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number').prefetch_related('rotamer__residue__display_generic_number','interaction_type')
     
+    family_interactions = family_interactions.exclude(structure_ligand_pair__structure__protein_conformation__protein__parent__family__in=protein_ids)
+
     parent_interactions = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__protein_conformation__protein__parent__family__parent__parent__in=parent_ids, structure_ligand_pair__annotated=True).prefetch_related('rotamer__residue__display_generic_number','interaction_type')
 
-    protein_mutations = MutationExperiment.objects.filter(protein__in=context['proteins']).order_by('residue__sequence_number').prefetch_related('residue__display_generic_number')
+    parent_interactions = parent_interactions.exclude(structure_ligand_pair__structure__protein_conformation__protein__parent__family__parent__in=family_ids)
 
-    family_mutations = MutationExperiment.objects.filter(protein__family__parent__in=family_ids).order_by('residue__sequence_number').prefetch_related('residue__display_generic_number')
+    protein_mutations = MutationExperiment.objects.filter(protein__family__in=protein_ids).order_by('refs__year').prefetch_related('residue__display_generic_number','mutation','refs__web_link')
 
-    parent_mutations = MutationExperiment.objects.filter(protein__family__parent__parent__in=parent_ids).order_by('residue__sequence_number').prefetch_related('residue__display_generic_number')
+    family_mutations = MutationExperiment.objects.filter(protein__family__parent__in=family_ids).order_by('refs__year').prefetch_related('residue__display_generic_number','mutation','refs__web_link')
 
+    family_mutations = family_mutations.exclude(protein__family__in=protein_ids)
+
+    parent_mutations = MutationExperiment.objects.filter(protein__family__parent__parent__in=parent_ids).order_by('refs__year').prefetch_related('residue__display_generic_number','mutation','refs__web_link')
+
+    parent_mutations = parent_mutations.exclude(protein__family__parent__in=family_ids)
 
     results = {}
+    mutant_lookup = {}
     level = 0
     for data in [protein_interactions,family_interactions,parent_interactions]:
 
@@ -492,6 +593,7 @@ def showcalculation(request):
                 else:
                     results[generic] = {'interaction': {0:[], 1:[], 2:[]}, 'mutant': {0:[], 1:[], 2:[] } }
                     results[generic]['interaction'][level].append([interaction_type,i.rotamer.residue.amino_acid])
+                    mutant_lookup[generic] = []
             else:
                 pass
                 #print('no generic number',interaction_type)
@@ -501,44 +603,136 @@ def showcalculation(request):
         for m in data:
             if m.residue.display_generic_number:
                 generic = m.residue.display_generic_number.label
-                if m.foldchange==0:
-                    continue #skip null foldchange (should add qualitive later)
+                # if m.foldchange==0:
+                #     continue #skip null foldchange (should add qualitive later)
                 if generic in results:
                     results[generic]['mutant'][level].append([m.foldchange,m.residue.amino_acid]) #add more info
+                    if level==0 or level==1: #save mutants that will be interesting for user
+                        mutant_lookup[generic].append([m.residue.amino_acid,m.mutation.amino_acid,str(m.refs.web_link)+" "+str(m.refs.year),level])
                 else:
-                    results[generic] = {'interaction': {0:[], 1:[], 2:[] }, 'mutant': {0:[], 1:[], 2:[] } }
-                    results[generic]['mutant'][level].append([m.foldchange,m.residue.amino_acid])#add more info
+                    #results[generic] = {'interaction': {0:[], 1:[], 2:[] }, 'mutant': {0:[], 1:[], 2:[] } }
+                    #results[generic]['mutant'][level].append([m.foldchange,m.residue.amino_acid,m.mutation.amino_acid,m.refs.web_link])#add more info
+                    #mutant_lookup[generic] = []
+                    #mutant_lookup[generic].append([m.residue.amino_acid,m.mutation.amino_acid,str(m.refs.web_link)])
+                    pass ### DO NOT calc on postions without interaction data
+
             else:
                 pass
                 #print(m.residue.sequence_number,m.foldchange)  
         level += 1
 
+    matrix = definitions.DESIGN_SUBSTITUTION_MATRIX
+
     summary = {}
     for res,values in results.items():
         #print(res)
+
+
         if res in lookup:
             summary[res] = {}
             summary[res]['aa'] = lookup[res]
         else: #skip those that are not present in reference
             continue
+
+        scores = {'hyd':0,'aromatic':0,'polar':0,'unknown':0} #dict to keep track of scores to select subs.
         for type, level in values.items():
             #print(type)
+            if type!='interaction': continue
             summary[res][type] = {}
             for level, values in level.items():
+
+                if level==0: #weight for scoring
+                    weight = 5
+                elif level==1:
+                    weight = 4
+                elif level==2:
+                    weight = 1
+
                 #print(level)
                 #print(values) 
                 temp = {}
+                temp_same_aa = {}
                 for value in values:
+                    if value[0][:2]=='HB':
+                        scoretype = 'polar'
+                    elif value[0][:3]=='aro':
+                        scoretype = 'aromatic'
+                    elif value[0][:3]=='HYD':
+                        scoretype = 'hyd'
+                    elif value[0][:5]=='polar':
+                        scoretype = 'polar'
+                    elif value[0][:3]=='aro':
+                        scoretype = 'aromatic'
+                    elif value[0][:3]=='hyd':
+                        scoretype = 'hyd'
+                    else:
+                        scoretype = 'unknown'
+
                     if value[0] in temp:
                         temp[value[0]] += 1
                     else:
                         temp[value[0]] = 1
+
+                    if value[1]==summary[res]['aa']: #keep seperat those with same AA (should be weighted higher)
+                        if value[0] in temp_same_aa:
+                            temp_same_aa[value[0]] += 1
+                        else:
+                            temp_same_aa[value[0]] = 1
+
+                        scores[scoretype] += 1*weight
+
+
+
                 temp = sorted(temp.items(), key=operator.itemgetter(1),reverse=True)
+                temp_same_aa = sorted(temp_same_aa.items(), key=operator.itemgetter(1),reverse=True)
                 s = ''
                 for t in temp:
                     s += t[0] + '('+str(t[1])+')'
-                summary[res][type][level]= s
 
+                s += '<br><font color=red>'
+
+                for t in temp_same_aa:
+                    s += t[0] + '('+str(t[1])+')'
+
+                s += '</font>'
+                summary[res][type][level]= s
+        scores = sorted(scores.items(), key=operator.itemgetter(1),reverse=True)
+        summary[res]['scores'] = scores
+
+        summary[res]['sub'] = ''
+        summary[res]['existing_mutants_protein'] = ''
+        summary[res]['existing_mutants_family'] = ''
+        if scores[0][1]>=5: #minimum to look at the top score
+            interaction_type = scores[0][0]
+            if summary[res]['aa'] in matrix[interaction_type]:
+                possible_subs = matrix[interaction_type][summary[res]['aa']][0]
+                summary[res]['sub'] = possible_subs
+                if res in mutant_lookup:
+                    for subs in possible_subs:
+                        if len(subs)==1:
+                            print(res,summary[res]['aa'],subs,'mutant data?')
+                            for m in mutant_lookup[res]:
+                                if summary[res]['aa']==m[0] : #and subs==m[1]
+                                    if m[3]==0:
+                                        summary[res]['existing_mutants_protein'] += "<br>"+m[0]+"=>"+m[1]+" "+m[2]
+                                    else:
+                                        summary[res]['existing_mutants_family'] += "<br>"+m[0]+"=>"+m[1]+" "+m[2]
+
+                                    #print(m)
+                        else:
+                            for sub in subs:
+                                print(res,summary[res]['aa'],sub,'mutant data?')
+                                for m in mutant_lookup[res]:
+                                    if summary[res]['aa']==m[0] : #and sub==m[1]
+                                        if m[3]==0:
+                                            summary[res]['existing_mutants_protein'] += "<br>"+m[0]+"=>"+m[1]+" "+m[2]
+                                        else:
+                                            summary[res]['existing_mutants_family'] += "<br>"+m[0]+"=>"+m[1]+" "+m[2]
+
+                                        #print(m)
+            else:
+                print('error',interaction_type,summary[res]['aa'])
+    print(mutant_lookup)
 
     context['results'] = summary
     context['family_ids'] = family_ids

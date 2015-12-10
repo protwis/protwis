@@ -116,10 +116,24 @@
                     <td>{{types.aa}}</td>
                     {% for key, values in types.interaction.items %} 
                         <td>
-                            {{values}}
+                            {{values|safe}}
                         </td>
                     {% endfor %}
-                    <td></td>
+                    <td>{{types.scores}}
+
+                    {% if types.sub %}
+                        <br>Suggested mutant: {{types.sub}}
+
+                        {% if types.existing_mutants_protein %}
+                        <br>Existing mutant for protein: {{types.existing_mutants_protein|safe}}
+                        {% endif %}
+
+                        {% if types.existing_mutants_family %}
+                        <br>Existing mutant for family: {{types.existing_mutants_family|safe}}
+                        {% endif %}
+
+                    {% endif %}
+                    </td>
                     </tr>
                 {% endfor %}
             </table>
@@ -198,7 +212,7 @@
         $(document).ready(function() {
             var table = $('#residues').DataTable({
                 "scrollX": true,
-                "scrollY": 600,
+                "scrollY": false,
                 "bScrollCollapse": true,
                 'paging': false,
                 orderCellsTop: true,

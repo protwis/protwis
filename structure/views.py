@@ -107,8 +107,8 @@ class StructureStatistics(TemplateView):
         families = list(set([x.protein_conformation.protein.get_protein_family() for x in unique_structs]))
         classes = [x.protein_conformation.protein.get_protein_class() for x in unique_structs]
         
-        tmp = {}
-        for x in list(set(classes)):
+        tmp = OrderedDict()
+        for x in sorted(list(set(classes))):
             tmp[x] = classes.count(x)
         #Basic stats
         context['all_structures'] = len(all_structs)
@@ -607,7 +607,7 @@ class SuperpositionWorkflowResults(TemplateView):
         if 'alt_files' in self.request.session.keys():
             alt_file_names = [x.name for x in self.request.session['alt_files']]
         else:
-            alt_file_names = [x.item.pdb_code.index+'.pdb' for x in selection.targets if x.type == 'structure']
+            alt_file_names = ['{}_{}.pdb'.format(x.item.protein_conformation.protein.parent.entry_name, x.item.pdb_code.index) for x in selection.targets if x.type == 'structure']
         if len(out_structs) == 0:
             self.success = False
         elif len(out_structs) >= 1:
@@ -658,7 +658,7 @@ class SuperpositionWorkflowDownload(View):
             if not check_gn(ref_struct):
                 gn_assigner = GenericNumbering(structure=ref_struct)
                 ref_struct = gn_assigner.assign_generic_numbers()
-            ref_name = "{!s}_ref.pdb".format(str(selection.reference[0].item).upper())
+            ref_name = '{}_{}_ref.pdb'.format(selection.reference[0].item.protein_conformation.protein.parent.entry_name, selection.reference[0].item.pdb_code.index)
 
         alt_structs = {}
         for alt_id, st in self.request.session['alt_structs'].items():

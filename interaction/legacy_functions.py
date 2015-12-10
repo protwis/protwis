@@ -784,7 +784,7 @@ def find_interactions():
                         fragment_file = fragment_library(hetflag, None, '',
                                          aa_seqid, chainid, 'hydrop')
 
-                        new_results[hetflag]['interactions'].append([aaname,fragment_file,'HYD','hydrophobic','hydrophobic',''])
+                        new_results[hetflag]['interactions'].append([aaname,fragment_file,'hyd','hydrophobic','hydrophobic',''])
 
 
                     if sum > 1 and aa_resname in AROMATIC:
