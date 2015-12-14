@@ -151,6 +151,8 @@ class Treeclass:
         os.mkdir('/tmp/%s' %dirname)
         infile = open('/tmp/%s/infile' %dirname,'w')
         infile.write('    '+str(self.total)+'    '+str(total_length)+'\n')
+        if len(a.proteins) < 3:
+            return 'More_prots',None, None, None, None,None,None,None
         ####Get additional protein information
         for n in a.proteins:
             fam = self.Tree.trans_0_2_A(n.protein.family.slug)
@@ -273,11 +275,14 @@ def modify_tree(request):
 def render_tree(request):
     Tree_class=Treeclass()
     phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.Prepare_file(request)
+    if phylogeny_input == 'More_prots':
+        return render(request, 'phylogenetic_trees/warning.html')
+    
     if ttype == '1':
         float(total)/4*100
     else:
         count = 1900 - 1400/math.sqrt(float(total))
-   
+    
     request.session['Tree']=Tree_class
     return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
 
