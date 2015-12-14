@@ -2,7 +2,6 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from django import forms
-from django.core.servers.basehttp import FileWrapper
 from django.db.models import Count, Min, Sum, Avg, Q
 from django.utils.text import slugify
 
