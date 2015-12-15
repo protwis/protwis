@@ -78,9 +78,11 @@
                     <tr>
                         <th>Generic Number</th>
                         <th>Amino Acid</th>
+                        <th>Closest reference (Interaction)</th>
                         <th>Protein level</th>
                         <th>Family level</th>
                         <th>Parent level</th>
+                        <th>Closest reference (mutation)</th>
                         <th>Suggested mutants</th>
                     </tr>
                     <tr>
@@ -90,8 +92,12 @@
                         <th></th>
                         <th></th>
                         <th></th>
+                        <th></th>
+                        <th></th>
                     </tr>
                     <tr>
+                        <th></th>
+                        <th></th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -104,9 +110,11 @@
                     <tr>
                         <th>Generic Number</th>
                         <th>Amino Acid</th>
+                        <th>Closest reference (Interaction)</th>
                         <th>Protein level</th>
                         <th>Family level</th>
                         <th>Parent level</th>
+                        <th>Closest reference (mutation)</th>
                         <th>Suggested mutants</th>
                     </tr>
                 </tfoot>
@@ -114,11 +122,25 @@
                     <tr>
                     <td>{{key}}</td>
                     <td>{{types.aa}}</td>
+                    <td>
+                        {% for key,mut in types.bestinteraction.items %}
+                        {{key}}:{{mut}}<br>
+                        {% endfor %}
+                    </td>
                     {% for key, values in types.interaction.items %} 
                         <td>
                             {{values|safe}}
                         </td>
                     {% endfor %}
+                    <td>Species: {{types.bestmutation.species}}<br>
+                        Foldchange: {{types.bestmutation.foldchange}}<br>
+                        Similarity: {{types.bestmutation.similarity}}<br>
+                        To: {{types.bestmutation.aa}}<br>
+                        Other: 
+                        {% for mut in types.bestmutation.allmut %}
+                        {{mut}}<br>
+                        {% endfor %}
+                    </td>
                     <td>{{types.scores}}
 
                     {% if types.sub %}
@@ -210,7 +232,7 @@
     <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
-            var table = $('#residues').DataTable({
+            var table = $('#residues2').DataTable({
                 "scrollX": true,
                 "scrollY": false,
                 "bScrollCollapse": true,
