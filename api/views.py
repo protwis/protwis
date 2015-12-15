@@ -3,7 +3,6 @@ from rest_framework import views, generics, viewsets
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, FileUploadParser
 from django.template.loader import render_to_string
-from django.core.servers.basehttp import FileWrapper
 from django.db.models import Q
 from django.conf import settings
 
