@@ -214,6 +214,10 @@ class Command(BaseBuild):
                                 segment_before = ins_start.protein_segment
                                 segment_after = ins_end.protein_segment
 
+                            # if the insertion replaces a part of the sequence, add that range as a deletion
+                            if ins['positions'][1] > (ins['positions'][0] + 1):
+                                deletions += list(range((ins['positions'][0] + 1), ins['positions'][1]))
+
                             # get/insert fusion protein
                             fusion, create = ProteinFusion.objects.get_or_create(name=ins['name'], defaults={
                                 'sequence': ins['sequence']})
