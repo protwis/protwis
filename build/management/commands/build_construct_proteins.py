@@ -172,8 +172,9 @@ class Command(BaseBuild):
                         for ins in sd['insertions']:
                             ins_start = Residue.objects.get(protein_conformation=ppc,
                                 sequence_number=ins['positions'][0])
-                            ins_end = Residue.objects.get(protein_conformation=ppc, sequence_number=ins['positions'][1])
-                            # if the fusion protein is inserted within only one segment (the usual case), split that
+                            ins_end = Residue.objects.get(protein_conformation=ppc,
+                                sequence_number=ins['positions'][1])
+                            # if the insertion is within only one segment (the usual case), split that
                             # segment into two segments
                             if ins_start and ins_start.protein_segment == ins_end.protein_segment:
                                 # get/create split protein segments
@@ -208,6 +209,10 @@ class Command(BaseBuild):
                                         'segment': segment_after,
                                     },
                                 }
+                            # if the insertion covers two segments, use those two as the segments before and after
+                            elif ins_start:
+                                segment_before = ins_start.protein_segment
+                                segment_after = ins_end.protein_segment
 
                             # get/insert fusion protein
                             fusion, create = ProteinFusion.objects.get_or_create(name=ins['name'], defaults={
