@@ -78,6 +78,7 @@
                     <tr>
                         <th>Generic Number</th>
                         <th>Amino Acid</th>
+                        <th>Conservation</th>
                         <th>Closest reference (Interaction)</th>
                         <th>Protein level</th>
                         <th>Family level</th>
@@ -94,8 +95,10 @@
                         <th></th>
                         <th></th>
                         <th></th>
+                        <th></th>
                     </tr>
                     <tr>
+                        <th></th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -110,6 +113,7 @@
                     <tr>
                         <th>Generic Number</th>
                         <th>Amino Acid</th>
+                        <th>Conservation</th>
                         <th>Closest reference (Interaction)</th>
                         <th>Protein level</th>
                         <th>Family level</th>
@@ -122,6 +126,7 @@
                     <tr>
                     <td>{{key}}</td>
                     <td>{{types.aa}}</td>
+                    <td>{{types.conservation}}%</td>
                     <td>
                         {% for key,mut in types.bestinteraction.items %}
                         {{key}}:{{mut}}<br>
