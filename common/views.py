@@ -384,6 +384,31 @@ def ClearSelection(request):
     
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
+def SelectRange(request):
+    """Adds generic numbers within the given range"""
+
+    selection_type = request.GET['selection_type']
+    selection_subtype = request.GET['selection_subtype']
+    range_start = request.GET['range_start']
+    range_end = request.GET['range_end']
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # process selected object
+    o = []
+    if selection_type == 'segments' and selection_subtype == 'residue':
+        residue_nums = ResidueGenericNumberEquivalent.objects.all()
+        for resn in residue_nums:
+            if range_start < float(resn.label.replace('x','.')) < range_end:
+                o.append(resn)
+
+
 def SelectFullSequence(request):
     """Adds all segments to the selection"""
     selection_type = request.GET['selection_type']
