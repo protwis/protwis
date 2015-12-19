@@ -981,6 +981,44 @@ class PDBDownload(TemplateView):
     """
     template_name = "pdb_download.html"
 
+    def post(self, request, *args, **kwargs):
+
+        pref = True
+        water = False
+        
+        if request.POST['pref_chain'] != "True":
+            pref = false
+        if request.POST['water'] == "True":
+            water = True
+
+        pdb_files = []
+        self.success = False
+
+        # get simple selection from session
+        simple_selection = self.request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+        if selection.targets != []:
+            pdb_files = [(PDBParser().get_structure('', StringIO(x.item.get_cleaned_pdb(pref, water)))[0], '{}_{}.pdb'.format(x.item.protein_conformation.protein.parent.entry_name, x.item.pdb_code.index)) for x in selection.targets if x.type == 'structure']
+
+        if len(pdb_files) > 0:
+            io = PDBIO()            
+            out_stream = BytesIO()
+            zipf = zipfile.ZipFile(out_stream, 'w')
+            for structure, fname in pdb_files:
+                tmp = StringIO()
+                io.set_structure(structure)
+                io.save(tmp)
+                zipf.writestr(fname, tmp.getvalue())
+            zipf.close()
+            if len(out_stream.getvalue()) > 0:
+                response = HttpResponse(content_type="application/zip")
+                response['Content-Disposition'] = 'attachment; filename="pdb_structures.zip"'
+                response.write(out_stream.getvalue())
+
+        return response
+        
 
     def get_context_data (self, **kwargs):
 
