@@ -34,7 +34,7 @@ class Structure(models.Model):
                     save_line = True
             else:
                 save_line = True
-            if remove_waters and line[17-19] == 'HOH':
+            if remove_waters and line.startswith('HET') and line[17-19] == 'HOH':
                 save_line = False
             if save_line:
                 tmp.append(line)
