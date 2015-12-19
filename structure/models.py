@@ -1,6 +1,6 @@
 ﻿from django.db import models
 
-from structure.assign_generic_numbers_gpcr import GenericNumbering
+#from structure.assign_generic_numbers_gpcr import GenericNumbering
 
 from io import StringIO
 from Bio.PDB import PDBIO
@@ -39,14 +39,14 @@ class Structure(models.Model):
             if save_line:
                 tmp.append(line)
 
-        generic_numbering = GenericNumbering(StringIO('\n'.join(tmp)))
-        out_struct = generic_numbering.assign_generic_numbers()
-        out_stream = StringIO()
-        io = PDBIO()
-        io.set_structure(out_struct)
-        io.save(out_stream)
+        #generic_numbering = GenericNumbering(StringIO('\n'.join(tmp)))
+        #out_struct = generic_numbering.assign_generic_numbers()
+        #out_stream = StringIO()
+        #io = PDBIO()
+        #io.set_structure(out_struct)
+        #io.save(out_stream)
 
-        return out_stream.getvalue()
+        return '\n'.join(tmp)
 
                         
     def get_preferred_chain_pdb(self):

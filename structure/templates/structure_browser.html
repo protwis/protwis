@@ -137,6 +137,9 @@
                 }
                 window.location.href = '/structure/selection_convert';
             });
+            $('.select-all').change(function () {
+                $('.alt').prop('checked', $(this).prop("checked"));
+            });
 
         });
     </script> 
@@ -163,7 +166,7 @@
         <table width="100%" class="display" id="structures">
             <thead>
                 <tr>
-                    <th></th>
+                    <th><input class="select-all" type="checkbox"> Select all</th>
                     <th class="protein-th">Protein name</th>
                     <th class="protein-th">Protein class</th>
                     <th class="protein-th">Species</th>

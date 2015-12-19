@@ -130,6 +130,9 @@
                 }
                 window.location.href = '/structure/selection_convert';
             });
+            $('.select-all').change(function () {
+                $('.alt').prop('checked', $(this).prop("checked"));
+            });
         });
     </script> 
 {% endblock %}
@@ -156,7 +159,7 @@
 
                 <thead>
                     <tr>
-                        <th></th>
+                        <th><input class="select-all" type="checkbox"> Select all</th>
                         <th class="similarity-th">Sequence similarity</th>
                         <th class="similarity-th">Sequence identity</th>
                         <th class="protein-th">Protein name</th>
