@@ -975,18 +975,26 @@ class TemplateBrowser(TemplateView):
         return context
 
 #==============================================================================
-class PDBDownload(TemplateView):
+class PDBClean(TemplateView):
     """
     Extraction, packing and serving out the pdb records selected via structure/template browser.
     """
     template_name = "pdb_download.html"
 
+    def post(self, request, *args, **kwargs):
 
-    def get_context_data (self, **kwargs):
+        context = super(PDBClean, self).get_context_data(**kwargs)
 
-        context = super(PDBDownload, self).get_context_data(**kwargs)
-        pdb_files = []
-        self.success = False
+        self.posted = True
+        pref = True
+        water = False
+        
+        if 'pref_chain' in request.POST.keys():
+            pref = False
+        if 'water' in request.POST.keys():
+            water = True
+
+        cleaned_structures = []
 
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)
@@ -994,31 +1002,130 @@ class PDBDownload(TemplateView):
         if simple_selection:
             selection.importer(simple_selection)
         if selection.targets != []:
-            pdb_files = [(PDBParser().get_structure('', StringIO(x.item.pdb_data.pdb))[0], '{}_{}.pdb'.format(x.item.protein_conformation.protein.parent.entry_name, x.item.pdb_code.index)) for x in selection.targets if x.type == 'structure']
+            pdb_structures = [(PDBParser().get_structure('{}_{}.pdb'.format(x.item.protein_conformation.protein.parent.entry_name, x.item.pdb_code.index), StringIO(x.item.get_cleaned_pdb(pref, water)))[0], '{}_{}.pdb'.format(x.item.protein_conformation.protein.parent.entry_name, x.item.pdb_code.index)) for x in selection.targets if x.type == 'structure']
+            for cleaned_struct in pdb_structures:
+                gn_assigner = GenericNumbering(structure=cleaned_struct[0])
+                cleaned_structures.append(gn_assigner.assign_generic_numbers())
+                self.request.session['cleaned_structures'] = cleaned_structures
 
-        if len(pdb_files) > 0:
-            io = PDBIO()            
-            out_stream = BytesIO()
-            zipf = zipfile.ZipFile(out_stream, 'w')
-            for structure, fname in pdb_files:
-                tmp = StringIO()
-                io.set_structure(structure)
-                io.save(tmp)
-                zipf.writestr(fname, tmp.getvalue())
-            zipf.close()
-            if len(out_stream.getvalue()) > 0:
-                self.request.session['outfile'] = { "pdb_structures.zip" : out_stream, }
-                self.outfile = "pdb_structures.zip"
-                self.success = True
-                self.zip = 'zip'
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
 
-        context = super(PDBDownload, self).get_context_data(**kwargs)
+        return render(request, self.template_name, context)
+        
+
+    def get_context_data (self, **kwargs):
+
+        context = super(PDBClean, self).get_context_data(**kwargs)
+        self.success = False
+        self.posted = False
+
+        # get simple selection from session
+        simple_selection = self.request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+        if selection.targets != []:
+            self.success = True
+
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
 
         return context
+
+
+class PDBSegmentSelection(AbsSegmentSelection):
+
+    #Left panel
+    step = 2
+    number_of_steps = 2
+
+    #Mid section
+    #mid_section = 'segment_selection.html'
+
+    #Right panel
+    segment_list = True
+
+    # OrderedDict to preserve the order of the boxes
+    selection_boxes = OrderedDict([('reference', False),
+        ('targets', False),
+        ('segments', True),])
+
+    def get_context_data(self, **kwargs):
+
+        self.buttons = {
+            'continue': {
+                'label': 'Download substructures',
+                'url': '/structure/pdb_download/custom',
+                'color': 'success',
+            },
+        }
+        context = super(PDBSegmentSelection, self).get_context_data(**kwargs)
+
+        simple_selection = self.request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+
+        context['selection'] = {}
+        context['selection']['site_residue_groups'] = selection.site_residue_groups
+        context['selection']['active_site_residue_group'] = selection.active_site_residue_group
+        for selection_box, include in self.selection_boxes.items():
+            if include:
+                context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
+
+        # get attributes of this class and add them to the context
+        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
+        for a in attributes:
+            if not(a[0].startswith('__') and a[0].endswith('__')):
+                context[a[0]] = a[1]
+        return context
+
+#==============================================================================
+class PDBDownload(View):
+    """
+    Serve the PDB (sub)structures depending on user's choice.
+    """
+    
+    def get(self, request, *args, **kwargs):
+
+        if self.kwargs['substructure'] == 'select':
+            return HttpResponseRedirect('/structure/pdb_segment_selection')
+
+        io = PDBIO()            
+        out_stream = BytesIO()
+        zipf = zipfile.ZipFile(out_stream, 'w')
+        simple_selection = self.request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+
+        if self.kwargs['substructure'] == 'full':
+            for structure in request.session['cleaned_structures']:                
+                tmp = StringIO()
+                io.set_structure(structure)
+                io.save(tmp)
+                zipf.writestr(structure.get_full_id()[0], tmp.getvalue())
+
+        elif self.kwargs['substructure'] == 'custom':
+            for structure in self.request.session['cleaned_structures']:
+                print(structure.get_full_id()[0])
+                tmp = StringIO()
+                io.set_structure(structure)
+                io.save(tmp, GenericNumbersSelector(parsed_selection=SelectionParser(selection)))
+                zipf.writestr(structure.get_full_id()[0], tmp.getvalue())
+
+        zipf.close()
+        if len(out_stream.getvalue()) > 0:
+            response = HttpResponse(content_type="application/zip")
+            response['Content-Disposition'] = 'attachment; filename="pdb_structures.zip"'
+            response.write(out_stream.getvalue())
+
+        return response
 
 #==============================================================================
 def ConvertStructuresToProteins(request):
