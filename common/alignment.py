@@ -557,7 +557,6 @@ class Alignment:
 
     def calculate_statistics(self):
         """Calculate consesus sequence and amino acid and feature frequency"""
-        #aa_count = OrderedDict()
         feature_count = OrderedDict()
         most_freq_aa = OrderedDict()
         amino_acids = OrderedDict([(a, 0) for a in AMINO_ACIDS]) # from common.definitions
