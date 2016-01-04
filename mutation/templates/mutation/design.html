@@ -78,12 +78,13 @@
                     <tr>
                         <th>Generic Number</th>
                         <th>Amino Acid</th>
-                        <th>Conservation</th>
+                        <th>Conservation (family, ligand family, class wide)</th>
                         <th>Closest reference (Interaction)</th>
-                        <th>Protein level</th>
-                        <th>Family level</th>
-                        <th>Parent level</th>
+                        <th>Orthlog/Family/Ligand family interaction data</th>
                         <th>Closest reference (mutation)</th>
+                        <th>AA count for mutations in class for position</th>
+                        <th>AA count for mutations in class for position (close)</th>
+                        <th>Related alternatives</th>
                         <th>Suggested mutants</th>
                     </tr>
                     <tr>
@@ -113,18 +114,19 @@
                     <tr>
                         <th>Generic Number</th>
                         <th>Amino Acid</th>
-                        <th>Conservation</th>
+                        <th>Conservation (family, ligand family, class wide)</th>
                         <th>Closest reference (Interaction)</th>
-                        <th>Protein level</th>
-                        <th>Family level</th>
-                        <th>Parent level</th>
+                        <th>Orthlog/Family/Ligand family interaction data</th>
                         <th>Closest reference (mutation)</th>
+                        <th>AA count for mutations in class for position</th>
+                        <th>AA count for mutations in class for position (close)</th>
+                        <th>Related alternatives</th>
                         <th>Suggested mutants</th>
                     </tr>
                 </tfoot>
                 {% for key, types in results.items %}
                     <tr>
-                    <td>{{key}}</td>
+                    <td>{{key}} {{types.interest_score}}</td>
                     <td>{{types.aa}}</td>
                     <td>{{types.conservation}}%</td>
                     <td>
@@ -132,32 +134,55 @@
                         {{key}}:{{mut}}<br>
                         {% endfor %}
                     </td>
+                    <td>
                     {% for key, values in types.interaction.items %} 
-                        <td>
-                            {{values|safe}}
-                        </td>
+                        
+                            Level {{key}}:<br>{{values|safe}}<br>
+                        
                     {% endfor %}
+                    </td>
                     <td>Species: {{types.bestmutation.species}}<br>
                         Foldchange: {{types.bestmutation.foldchange}}<br>
                         Similarity: {{types.bestmutation.similarity}}<br>
                         To: {{types.bestmutation.aa}}<br>
-                        Other: 
-                        {% for mut in types.bestmutation.allmut %}
+                        Total: {{types.bestmutation.allmut|length}} total mutation points <br>
+                        Big Decreases: {{types.bestmutation.bigdecrease}}<br>
+                        Big Increases: {{types.bestmutation.bigincrease}}<br>
+                        Nonsignificant: {{types.bestmutation.nonsignificant}}<br>
+                        No Data: {{types.bestmutation.nodata}}<br>
+<!--                         {% for mut in types.bestmutation.allmut %}
                         {{mut}}<br>
+                        {% endfor %} -->
+                    </td>
+                    <td>
+                        Counts: <br>
+                        {% for aa, c in types.bestmutation.counts.items %}
+                        {{aa}}:{{c}}<br>
                         {% endfor %}
                     </td>
-                    <td>{{types.scores}}
+                    <td>
+                        Close Counts (>60% similarity): <br>
+                        {% for aa, c in types.bestmutation.counts_close.items %}
+                        {{aa}}:{{c}}<br>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for a in types.alternatives %}
+                        {{a.2}} in {{a.0}}({{a.1}}%)<br>
+                        {% endfor %}
+                    </td>
+                    <td>Score: {{types.scores}}
 
                     {% if types.sub %}
                         <br>Suggested mutant: {{types.sub}}
 
-                        {% if types.existing_mutants_protein %}
+<!--                         {% if types.existing_mutants_protein %}
                         <br>Existing mutant for protein: {{types.existing_mutants_protein|safe}}
                         {% endif %}
 
                         {% if types.existing_mutants_family %}
                         <br>Existing mutant for family: {{types.existing_mutants_family|safe}}
-                        {% endif %}
+                        {% endif %} -->
 
                     {% endif %}
                     </td>

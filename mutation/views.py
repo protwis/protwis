@@ -593,6 +593,8 @@ def showcalculation(request):
     a.calculate_statistics()
     family_generic_aa_count = a.calculate_aa_count_per_generic_number()
 
+    print('alignment 1')
+
     a = Alignment()
     a.load_reference_protein(context['proteins'][0])
     a.load_proteins(ligand_proteins)
@@ -603,7 +605,10 @@ def showcalculation(request):
     a.calculate_statistics()
     ligand_generic_aa_count = a.calculate_aa_count_per_generic_number()
 
+    print('alignment 2')
 
+
+    #Consider caching result! Would be by protein since it compares protein to whole class. 
     a = Alignment()
     a.load_reference_protein(context['proteins'][0])
     a.load_proteins(class_p)
@@ -621,6 +626,10 @@ def showcalculation(request):
     generic_aa_count = a.calculate_aa_count_per_generic_number()
     alternative_aa = a.aa_count_with_protein
 
+    print('alignment 3 (class)')
+
+    print('built all alignments')
+
     similarity_list = {}
     for p in a.proteins:
         similarity_list[p.protein.entry_name] = [int(p.identity),int(p.similarity),p.similarity_score]
@@ -632,6 +641,11 @@ def showcalculation(request):
     results = {}
     mutant_lookup = {}
     level = 0
+
+    empty_result = {'interaction': {0:[], 1:[], 2:[]}, 'mutant': {0:[], 1:[], 2:[] }, 
+                'bestinteraction': { 'closest' : { 'similarity' : 0} }, 
+                'bestmutation':{ 'species' : '', 'similarity' : 0, 'foldchange' : '', 'qual' : '', 'allmut' : [], 'counts':{}, 'counts_close':{}, 'bigdecrease':0,'bigincrease':0,'nonsignificant':0,'nodata':0}}
+
     for data in [protein_interactions,family_interactions,parent_interactions]:
 
         for i in data:
@@ -642,8 +656,8 @@ def showcalculation(request):
                     results[generic]['interaction'][level].append([interaction_type,i.rotamer.residue.amino_acid])
                 else:
                     results[generic] = {'interaction': {0:[], 1:[], 2:[]}, 'mutant': {0:[], 1:[], 2:[] }, 
-                    'bestinteraction': { 'closest' : { 'similarity' : 0} }, 
-                    'bestmutation':{ 'species' : '', 'similarity' : 0, 'foldchange' : '', 'qual' : '', 'allmut' : [], 'counts':{}, 'counts_close':{}, 'bigdecrease':0,'bigincrease':0,'nonsignificant':0,'nodata':0} }
+                'bestinteraction': { 'closest' : { 'similarity' : 0} }, 
+                'bestmutation':{ 'species' : '', 'similarity' : 0, 'foldchange' : '', 'qual' : '', 'allmut' : [], 'counts':{}, 'counts_close':{}, 'bigdecrease':0,'bigincrease':0,'nonsignificant':0,'nodata':0}}
                     results[generic]['interaction'][level].append([interaction_type,i.rotamer.residue.amino_acid])
                     mutant_lookup[generic] = []
             else:
@@ -685,7 +699,10 @@ def showcalculation(request):
             pass
             #print('no generic number',interaction_type)
 
+    print('parsed interaction data')
+
     level = 0
+    #Fetch mutants for levels -- consider deleting and use the class_mutations instead with a similarity cutoff
     for data in [protein_mutations,family_mutations,parent_mutations]: 
         for m in data:
             if m.residue.display_generic_number:
@@ -696,7 +713,7 @@ def showcalculation(request):
                     results[generic]['mutant'][level].append([m.foldchange,m.residue.amino_acid]) #add more info
                     if level==0 or level==1: #save mutants that will be interesting for user
                         mutant_lookup[generic].append([m.residue.amino_acid,m.mutation.amino_acid,str(m.refs.web_link)+" "+str(m.refs.year),level])
-                else:
+                else: #including below results in MANY rows -- many without merit since almost all positions have been mutated at one point or another.
                     #results[generic] = {'interaction': {0:[], 1:[], 2:[] }, 'mutant': {0:[], 1:[], 2:[] } }
                     #results[generic]['mutant'][level].append([m.foldchange,m.residue.amino_acid,m.mutation.amino_acid,m.refs.web_link])#add more info
                     #mutant_lookup[generic] = []
@@ -716,87 +733,64 @@ def showcalculation(request):
                 qual = m.exp_qual.qual +" "+m.exp_qual.prop
             else:
                 qual = ''
-            if generic in lookup:
-                if generic in results:
-                    if (similarity_list[entry_name][1]>=results[generic]['bestmutation']['similarity'] and lookup[generic] == m.residue.amino_acid):
-                        results[generic]['bestmutation']['species'] = entry_name
-                        #if results[generic]['bestmutation']['similarity']!=similarity_list[entry_name][1]:#reset allmut
-                        #    results[generic]['bestmutation']['allmut'] = []
-                        results[generic]['bestmutation']['similarity'] = similarity_list[entry_name][1]
-                        results[generic]['bestmutation']['foldchange'] = m.foldchange
-                        results[generic]['bestmutation']['qual'] = qual
-                        results[generic]['bestmutation']['aa'] = m.mutation.amino_acid
+            #only select positions where interaction data is present / or mutant has real data or is closely related.
+            if generic in lookup and (generic in results or m.foldchange!=0 or qual!='' or similarity_list[entry_name][1]>60):
 
-                    if lookup[generic] == m.residue.amino_acid:
+                #skip data that is far away
+                if similarity_list[entry_name][1]<50:
+                    continue
 
-                        results[generic]['bestmutation']['allmut'].append([entry_name,m.foldchange,qual,m.mutation.amino_acid,results[generic]['bestmutation']['similarity']])
-
-                        if m.foldchange>5:
-                            results[generic]['bestmutation']['bigdecrease'] += 1
-                        elif m.foldchange<-5:
-                            results[generic]['bestmutation']['bigincrease'] += 1
-                        elif (m.foldchange<5 or m.foldchange>-5) and m.foldchange!=0:
-                            results[generic]['bestmutation']['nonsignificant'] += 1
-                        else:
-                            if m.exp_qual:
-                                if m.exp_qual.qual=='Abolish':
-                                    results[generic]['bestmutation']['bigdecrease'] += 1
-                                elif m.exp_qual.qual=='Gain of':
-                                    results[generic]['bestmutation']['bigincrease'] += 1
-                                elif m.exp_qual.qual=='Increase':
-                                    results[generic]['bestmutation']['nonsignificant'] += 1
-                                elif m.exp_qual.qual=='Decrease':
-                                    results[generic]['bestmutation']['nonsignificant'] += 1
-                            else:
-                                results[generic]['bestmutation']['nodata'] += 1
-
-                        if m.mutation.amino_acid in results[generic]['bestmutation']['counts']:
-                            results[generic]['bestmutation']['counts'][m.mutation.amino_acid] += 1
-                        else:
-                            results[generic]['bestmutation']['counts'][m.mutation.amino_acid] = 1
-
-                        if m.mutation.amino_acid in results[generic]['bestmutation']['counts_close'] and similarity_list[entry_name][1]>60:
-                            results[generic]['bestmutation']['counts_close'][m.mutation.amino_acid] += 1
-                        elif similarity_list[entry_name][1]>60:
-                            results[generic]['bestmutation']['counts_close'][m.mutation.amino_acid] = 1
-
-
-
-            else:
-                results[generic] = {'interaction': {0:[], 1:[], 2:[]}, 'mutant': {0:[], 1:[], 2:[] }, 
+                #if row is allowed due to mutant data, create entry if it isnt there.
+                if generic not in results:
+                    results[generic] = {'interaction': {0:[], 1:[], 2:[]}, 'mutant': {0:[], 1:[], 2:[] }, 
                 'bestinteraction': { 'closest' : { 'similarity' : 0} }, 
-                'bestmutation':{ 'species' : '', 'similarity' : 0, 'foldchange' : '', 'qual' : '', 'allmut' : [], 'counts':{}, 'counts_close':{}, 'bigdecrease':0,'bigincrease':0,'nonsignificant':0,'nodata':0 }}
-                if generic in lookup:
-                    if (lookup[generic] == m.residue.amino_acid): #only for same aa (FIXME substitution)
-                        results[generic]['bestmutation']['species'] = entry_name
-                        results[generic]['bestmutation']['similarity'] = similarity_list[entry_name][1]
-                        results[generic]['bestmutation']['foldchange'] = m.foldchange
-                        results[generic]['bestmutation']['qual'] = qual
-                        results[generic]['bestmutation']['aa'] = m.mutation.amino_acid
-                        results[generic]['bestmutation']['allmut'].append([entry_name,m.foldchange,qual,m.mutation.amino_acid,results[generic]['bestmutation']['similarity']])
+                'bestmutation':{ 'species' : '', 'similarity' : 0, 'foldchange' : '', 'qual' : '', 'allmut' : [], 'counts':{}, 'counts_close':{}, 'bigdecrease':0,'bigincrease':0,'nonsignificant':0,'nodata':0}}
+
+                #If next is closer in similarity replace "closest"
+                if ((similarity_list[entry_name][1]>results[generic]['bestmutation']['similarity'] or similarity_list[entry_name][1]==results[generic]['bestmutation']['similarity'] and
+                        m.foldchange>results[generic]['bestmutation']['foldchange']) and lookup[generic] == m.residue.amino_acid):
+                    results[generic]['bestmutation']['species'] = entry_name
+                    results[generic]['bestmutation']['similarity'] = similarity_list[entry_name][1]
+                    results[generic]['bestmutation']['foldchange'] = m.foldchange
+                    results[generic]['bestmutation']['qual'] = qual
+                    results[generic]['bestmutation']['aa'] = m.mutation.amino_acid
+
+                #Only look at same residues (Expand with substitution possibilities)
+                if lookup[generic] == m.residue.amino_acid:
+
+                    results[generic]['bestmutation']['allmut'].append([entry_name,m.foldchange,qual,m.mutation.amino_acid,results[generic]['bestmutation']['similarity']])
+
+                    if m.foldchange>5:
+                        results[generic]['bestmutation']['bigdecrease'] += 1
+                    elif m.foldchange<-5:
+                        results[generic]['bestmutation']['bigincrease'] += 1
+                    elif (m.foldchange<5 or m.foldchange>-5) and m.foldchange!=0:
+                        results[generic]['bestmutation']['nonsignificant'] += 1
+                    else:
+                        if m.exp_qual:
+                            if m.exp_qual.qual=='Abolish':
+                                results[generic]['bestmutation']['bigdecrease'] += 1
+                            elif m.exp_qual.qual=='Gain of':
+                                results[generic]['bestmutation']['bigincrease'] += 1
+                            elif m.exp_qual.qual=='Increase':
+                                results[generic]['bestmutation']['nonsignificant'] += 1
+                            elif m.exp_qual.qual=='Decrease':
+                                results[generic]['bestmutation']['nonsignificant'] += 1
+                        else:
+                            results[generic]['bestmutation']['nodata'] += 1
+
+                    if m.mutation.amino_acid in results[generic]['bestmutation']['counts']:
+                        results[generic]['bestmutation']['counts'][m.mutation.amino_acid] += 1
+                    else:
                         results[generic]['bestmutation']['counts'][m.mutation.amino_acid] = 1
 
-                        if similarity_list[entry_name][1]>60:
-                            results[generic]['bestmutation']['counts_close'][m.mutation.amino_acid] = 1
+                    if m.mutation.amino_acid in results[generic]['bestmutation']['counts_close'] and similarity_list[entry_name][1]>60:
+                        results[generic]['bestmutation']['counts_close'][m.mutation.amino_acid] += 1
+                    elif similarity_list[entry_name][1]>60:
+                        results[generic]['bestmutation']['counts_close'][m.mutation.amino_acid] = 1
 
-                        if m.foldchange>5:
-                            results[generic]['bestmutation']['bigdecrease'] += 1
-                        elif m.foldchange<-5:
-                            results[generic]['bestmutation']['bigincrease'] += 1
-                        elif (m.foldchange<5 or m.foldchange>-5) and m.foldchange!=0:
-                            results[generic]['bestmutation']['nonsignificant'] += 1
-                        else:
-                            if m.exp_qual:
-                                if m.exp_qual.qual=='Abolish':
-                                    results[generic]['bestmutation']['bigdecrease'] += 1
-                                elif m.exp_qual.qual=='Gain of':
-                                    results[generic]['bestmutation']['bigincrease'] += 1
-                                elif m.exp_qual.qual=='Increase':
-                                    results[generic]['bestmutation']['nonsignificant'] += 1
-                                elif m.exp_qual.qual=='Decrease':
-                                    results[generic]['bestmutation']['nonsignificant'] += 1
-                            else:
-                                results[generic]['bestmutation']['nodata'] += 1
+
+
 
                 
                 mutant_lookup[generic] = []
@@ -804,27 +798,35 @@ def showcalculation(request):
             pass
             #print('no generic number')
 
+    print('parsed mutant data')
 
+    #Fetch defined subsitution matrix for mutant design tool
     matrix = definitions.DESIGN_SUBSTITUTION_MATRIX
 
     summary = {}
+    summary_score = []
     for res,values in results.items():
-        #print(res)
-
 
         if res in lookup:
             summary[res] = {}
             summary[res]['aa'] = lookup[res]
         else: #skip those that are not present in reference
             continue
+
         summary[res]['bestinteraction'] = values['bestinteraction']
         summary[res]['bestmutation'] = values['bestmutation']
+        summary[res]['alternatives'] = []
+        summary[res]['interest_score'] = 0
 
-        for aalist in alternative_aa[res].items():
+        summary[res]['interest_score'] += len(summary[res]['bestmutation']['allmut']) #add a small value for each mutation for position
+
+        #Find alternatives for position (useful for specificity investigation)
+        for aalist in alternative_aa[res].items(): 
             if aalist[0] !=summary[res]['aa']:
                 for p in aalist[1]:
                     if similarity_list[p][1]>60: #close enough to suggest
-                        print (res,p,similarity_list[p][1],aalist[0])
+                         summary[res]['alternatives'].append([p,similarity_list[p][1],aalist[0]])
+                         summary[res]['interest_score'] += 1 #add a small value for these hits
 
         if res in generic_aa_count:
             summary[res]['conservation'] = [family_generic_aa_count[res][lookup[res]],ligand_generic_aa_count[res][lookup[res]],generic_aa_count[res][lookup[res]]]
@@ -842,8 +844,8 @@ def showcalculation(request):
                 elif level==2:
                     weight = 1
 
-                #print(level)
-                #print(values) 
+
+
                 temp = {}
                 temp_same_aa = {}
                 for value in values:
@@ -874,8 +876,7 @@ def showcalculation(request):
                             temp_same_aa[value[0]] = 1
 
                         scores[scoretype] += 1*weight
-
-
+                        summary[res]['interest_score'] += 10*weight #add a big value if interaction data exists
 
                 temp = sorted(temp.items(), key=operator.itemgetter(1),reverse=True)
                 temp_same_aa = sorted(temp_same_aa.items(), key=operator.itemgetter(1),reverse=True)
@@ -890,6 +891,7 @@ def showcalculation(request):
 
                 s += '</font>'
                 summary[res][type][level]= s
+
         scores = sorted(scores.items(), key=operator.itemgetter(1),reverse=True)
         summary[res]['scores'] = scores
 
@@ -903,6 +905,8 @@ def showcalculation(request):
             if summary[res]['aa'] in matrix[interaction_type]:
                 possible_subs = matrix[interaction_type][summary[res]['aa']][0]
                 summary[res]['sub'] = possible_subs
+
+                #Make list of references of existing mutants -- can be depreciated or moved to "popover"
                 if res in mutant_lookup:
                     for subs in possible_subs:
                         if len(subs)==1:
@@ -914,11 +918,9 @@ def showcalculation(request):
                                     else:
                                         summary[res]['existing_mutants_family'] += "<br>"+m[0]+"=>"+m[1]+" "+m[2]
                                         #summary[res]['existing_mutants_family'] += 1
-
-                                    #print(m)
                         else:
                             for sub in subs:
-                                print(res,summary[res]['aa'],sub,'mutant data?')
+                                #print(res,summary[res]['aa'],sub,'mutant data?')
                                 for m in mutant_lookup[res]:
                                     if summary[res]['aa']==m[0] : #and sub==m[1]
                                         if m[3]==0:
@@ -928,12 +930,24 @@ def showcalculation(request):
                                             summary[res]['existing_mutants_family'] += "<br>"+m[0]+"=>"+m[1]+" "+m[2]
                                             #summary[res]['existing_mutants_family'] += 1
 
-                                        #print(m)
             else:
                 print('error',interaction_type,summary[res]['aa'])
-    #print(mutant_lookup)
 
-    context['results'] = summary
+        summary_score.append([summary[res]['interest_score'],summary[res],res])
+
+    print('made summary')
+
+
+    sorted_summary = sorted(summary_score,key=lambda x: x[0],reverse=True)
+    new_summary = OrderedDict();
+    for res in sorted_summary:
+        new_summary[res[2]] = res[1]
+
+    #print(sorted_summary)
+
+    #summary = sorted_summary
+
+    context['results'] = new_summary
     context['family_ids'] = family_ids
     context['parent_ids'] = parent_ids
 
@@ -949,7 +963,7 @@ def showcalculation(request):
     context['family_mutations'] = family_mutations
     context['parent_mutations'] = parent_mutations
 
-
+    print('sending to render')
     return render(request, 'mutation/design.html', context)
 
 
