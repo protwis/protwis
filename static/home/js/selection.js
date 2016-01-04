@@ -53,6 +53,23 @@ function ClearSelection(selection_type) {
     });
 }
 
+function SelectRange(selection_type, selection_subtype, range_start, range_end) {
+    $.ajax({
+        'url': '/common/selectrange',
+        'data': {
+            selection_type: selection_type,
+            selection_subtype: selection_subtype,
+            range_start: range_start,
+            range_end: range_end,
+        },
+        'type': 'GET',
+        'async': false,
+        'success': function (data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}
+
 function SelectFullSequence(selection_type) {
     $.ajax({
         'url': '/common/selectfullsequence',

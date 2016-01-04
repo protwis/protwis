@@ -32,6 +32,8 @@ class Alignment:
         self.similarity_matrix = OrderedDict()
         self.amino_acids = []
         self.amino_acid_stats = []
+        self.aa_count = OrderedDict()
+        self.aa_count_with_protein = OrderedDict()
         self.features = []
         self.feature_stats = []
         self.default_numbering_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
@@ -555,7 +557,7 @@ class Alignment:
 
     def calculate_statistics(self):
         """Calculate consesus sequence and amino acid and feature frequency"""
-        aa_count = OrderedDict()
+        #aa_count = OrderedDict()
         feature_count = OrderedDict()
         most_freq_aa = OrderedDict()
         amino_acids = OrderedDict([(a, 0) for a in AMINO_ACIDS]) # from common.definitions
@@ -563,9 +565,10 @@ class Alignment:
         features = OrderedDict([(a, 0) for a in AMINO_ACID_GROUPS])
         self.features = AMINO_ACID_GROUP_NAMES.values()
         for i, p in enumerate(self.proteins):
+            entry_name = p.protein.entry_name
             for j, s in p.alignment.items():
                 if i == 0:
-                    aa_count[j] = OrderedDict()
+                    self.aa_count[j] = OrderedDict()
                     feature_count[j] = OrderedDict()
                     most_freq_aa[j] = OrderedDict()
                 for p in s:
@@ -573,8 +576,10 @@ class Alignment:
                     amino_acid = p[2]
                     
                     # init counters
-                    if generic_number not in aa_count[j]:
-                        aa_count[j][generic_number] = amino_acids.copy()
+                    if generic_number not in self.aa_count[j]:
+                        self.aa_count[j][generic_number] = amino_acids.copy()
+                        if generic_number in self.generic_number_objs:
+                            self.aa_count_with_protein[self.generic_number_objs[generic_number].label] = {}
                     if generic_number not in feature_count[j]:
                         feature_count[j][generic_number] = features.copy()
                     if generic_number not in most_freq_aa[j]:
@@ -585,7 +590,12 @@ class Alignment:
                         continue
 
                     # update amino acid counter for this generic number
-                    aa_count[j][generic_number][amino_acid] += 1
+                    self.aa_count[j][generic_number][amino_acid] += 1
+                    if generic_number in self.generic_number_objs:
+                        if amino_acid not in self.aa_count_with_protein[self.generic_number_objs[generic_number].label]:
+                            self.aa_count_with_protein[self.generic_number_objs[generic_number].label][amino_acid] = []
+                        if entry_name not in self.aa_count_with_protein[self.generic_number_objs[generic_number].label][amino_acid]:
+                            self.aa_count_with_protein[self.generic_number_objs[generic_number].label][amino_acid].append(entry_name)
 
                     # update feature counter for this generic number
                     for feature, members in AMINO_ACID_GROUPS.items():
@@ -593,12 +603,11 @@ class Alignment:
                             feature_count[j][generic_number][feature] += 1
 
                     # update most frequent amino_acids for this generic number
-                    if aa_count[j][generic_number][amino_acid] > most_freq_aa[j][generic_number][1]:
-                        most_freq_aa[j][generic_number] = [[amino_acid], aa_count[j][generic_number][amino_acid]]
-                    elif aa_count[j][generic_number][amino_acid] == most_freq_aa[j][generic_number][1]:
+                    if self.aa_count[j][generic_number][amino_acid] > most_freq_aa[j][generic_number][1]:
+                        most_freq_aa[j][generic_number] = [[amino_acid], self.aa_count[j][generic_number][amino_acid]]
+                    elif self.aa_count[j][generic_number][amino_acid] == most_freq_aa[j][generic_number][1]:
                         if amino_acid not in most_freq_aa[j][generic_number][0]:
                             most_freq_aa[j][generic_number][0].append(amino_acid)
-
 
         # merge the amino acid counts into a consensus sequence
         num_proteins = len(self.proteins)
@@ -645,7 +654,7 @@ class Alignment:
         for i, amino_acid in enumerate(AMINO_ACIDS):
             self.amino_acid_stats.append([])
             j = 0
-            for segment, segment_num in aa_count.items():
+            for segment, segment_num in self.aa_count.items():
                 self.amino_acid_stats[i].append([])
                 k = 0
                 for gn, aas in segment_num.items():
@@ -682,6 +691,21 @@ class Alignment:
                             self.feature_stats[i][j][k] = [frequency, freq_interval]
                     k += 1
                 j += 1
+
+    def calculate_aa_count_per_generic_number(self):
+        ''' Small function to return a dictionary of display_generic_number and the frequency of each AA '''
+        generic_lookup_aa_freq = {}
+        num_proteins = len(self.proteins)
+        for j, a in self.aa_count.items():
+            for g, p in a.items():
+                for aa, c in p.items():
+                    if g in self.generic_number_objs:
+                        if self.generic_number_objs[g].label in generic_lookup_aa_freq:
+                            generic_lookup_aa_freq[self.generic_number_objs[g].label][aa] = round(c/num_proteins*100)
+                        else:
+                            generic_lookup_aa_freq[self.generic_number_objs[g].label] = {aa: round(c/num_proteins*100) }
+        return generic_lookup_aa_freq
+
 
     def calculate_similarity(self):
         """Calculate the sequence identity/similarity of every selected protein compared to a selected reference"""

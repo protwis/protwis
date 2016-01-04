@@ -1,5 +1,9 @@
 ﻿from django.db import models
 
+#from structure.assign_generic_numbers_gpcr import GenericNumbering
+
+from io import StringIO
+from Bio.PDB import PDBIO
 
 class Structure(models.Model):
     protein_conformation = models.ForeignKey('protein.ProteinConformation')
@@ -20,6 +24,31 @@ class Structure(models.Model):
     def __str__(self):
         return self.pdb_code.index
 
+    def get_cleaned_pdb(self, pref_chain=True, remove_waters=True, remove_aux=False, aux_range=5.0):
+        
+        tmp = []
+        for line in self.pdb_data.pdb.split('\n'):
+            save_line = False
+            if pref_chain:
+                if (line.startswith('ATOM') or line.startswith('HET')) and line[21] == self.preferred_chain[0]:
+                    save_line = True
+            else:
+                save_line = True
+            if remove_waters and line.startswith('HET') and line[17-19] == 'HOH':
+                save_line = False
+            if save_line:
+                tmp.append(line)
+
+        #generic_numbering = GenericNumbering(StringIO('\n'.join(tmp)))
+        #out_struct = generic_numbering.assign_generic_numbers()
+        #out_stream = StringIO()
+        #io = PDBIO()
+        #io.set_structure(out_struct)
+        #io.save(out_stream)
+
+        return '\n'.join(tmp)
+
+                        
     def get_preferred_chain_pdb(self):
 
         tmp = []
