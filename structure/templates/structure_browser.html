@@ -139,6 +139,7 @@
             });
             $('.select-all').change(function () {
                 $('.alt').prop('checked', $(this).prop("checked"));
+                $('.alt').parent().parent().toggleClass('alt_selected');
             });
 
         });
