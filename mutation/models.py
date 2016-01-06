@@ -40,9 +40,9 @@ class MutationExperiment(models.Model):
     exp_qual = models.ForeignKey('MutationQual', null=True)
 
     #Values
-    wt_value = models.DecimalField(max_digits=10, decimal_places=2)
+    wt_value = models.FloatField()
     wt_unit = models.CharField(max_length=10)
-    mu_value = models.DecimalField(max_digits=10, decimal_places=2)
+    mu_value = models.FloatField()
     mu_sign = models.CharField(max_length=2)
     foldchange = models.FloatField()
 
@@ -70,30 +70,20 @@ class MutationExperiment(models.Model):
         return temp
 
     def getFoldorQual(self):
-        if self.exp_measure:
-            temp = self.exp_measure.measure
-            if self.wt_value>0:
-                if self.exp_measure.measure=='Activity/affinity':
-                    temp = round(self.mu_value/self.wt_value,2)
-                elif self.exp_measure.measure=='Fold effect (mut/wt)':
-                    temp = round(self.mu_value,2)
-                sign = ''
-                if self.mu_sign!="=": sign = self.mu_sign
-                
-                if self.exp_measure.measure!='Qualitative effect': temp = round(self.foldchange,2) #use saved foldchange instaed
-                
-                if self.exp_measure.measure!='Qualitative effect' and temp!=0:
-                    
-                    if temp>1: 
-                        temp =  "<font color='red'>"+sign + str(temp) + "↓</font>"
-                    elif temp<1:
-                        temp =  "<font color='green'>"+sign + str(-temp) + "↑</font>"
-                    
-                if self.exp_qual:
-                    temp = self.exp_qual.qual +  " " +  self.exp_qual.prop  
+        if self.foldchange!=0:
+            temp = self.foldchange
+            sign = ''
+            if self.mu_sign!="=": 
+                sign = self.mu_sign
+            if temp>1: 
+                temp =  "<font color='red'>"+sign + str(temp) + "↓</font>"
+            elif temp<1:
+                temp =  "<font color='green'>"+sign + str(-temp) + "↑</font>"
+            if self.exp_qual:
+                temp = self.exp_qual.qual +  " " +  self.exp_qual.prop  
 
-            elif self.exp_qual: #only display those with qual_id
-                temp = self.exp_qual.qual +  " " + self.exp_qual.prop  
+        elif self.exp_qual: #only display those with qual_id
+            temp = self.exp_qual.qual +  " " + self.exp_qual.prop 
         else:
             temp = "N/A"
         return temp
@@ -109,10 +99,10 @@ class MutationOptional(models.Model):
 
     type = models.CharField(max_length=100)
 
-    wt = models.DecimalField(max_digits=10, decimal_places=2)
-    mu = models.DecimalField(max_digits=10, decimal_places=2)
+    wt = models.FloatField()
+    mu = models.FloatField()
     sign = models.CharField(max_length=2)
-    percentage = models.DecimalField(max_digits=10, decimal_places=2)
+    percentage = models.FloatField()
     qual = models.CharField(max_length=100)
     agonist = models.CharField(max_length=100)
 
@@ -136,21 +126,22 @@ class MutationRaw(models.Model):
     exp_type = models.CharField(max_length=100)
     exp_func = models.CharField(max_length=100)
 
-    exp_wt_value = models.DecimalField(max_digits=10, decimal_places=2)
+    exp_wt_value = models.FloatField()
     exp_wt_unit = models.CharField(max_length=10)
 
     exp_mu_effect_type = models.CharField(max_length=100)
     exp_mu_effect_sign = models.CharField(max_length=2)
-    exp_mu_effect_value = models.DecimalField(max_digits=10, decimal_places=2)
+    exp_mu_effect_value = models.FloatField()
+    exp_fold_change = models.FloatField()
     exp_mu_effect_qual = models.CharField(max_length=100)
     exp_mu_effect_ligand_prop = models.CharField(max_length=100)
     exp_mu_ligand_ref = models.CharField(max_length=100)
 
     opt_type = models.CharField(max_length=100)
-    opt_wt = models.DecimalField(max_digits=10, decimal_places=2)
-    opt_mu = models.DecimalField(max_digits=10, decimal_places=2)
+    opt_wt = models.FloatField()
+    opt_mu = models.FloatField()
     opt_sign = models.CharField(max_length=5)
-    opt_percentage  = models.DecimalField(max_digits=10, decimal_places=2)
+    opt_percentage  = models.FloatField()
     opt_qual = models.CharField(max_length=100)
     opt_agonist = models.CharField(max_length=100)
 
