@@ -196,15 +196,19 @@ class Ligand(models.Model):
         # InChIKey
         pubchem_inchikey = pubchem['PropertyTable']['Properties'][0]['InChIKey']
 
-        wl, created = WebLink.objects.get_or_create(index=pubchem_id, web_resource=web_resource)
-        self.properities.web_links.add(wl)
-        # ligand type
-        self.properities.ligand_type, created = LigandType.objects.get_or_create(slug='sm', defaults={'name':'Small molecule'})
-        self.properities.inchikey = pubchem_inchikey
-        self.properities.smiles = pubchem_smiles
-        self.properities.save()
+        try: #now that we have inchikey, try and see if it exists in DB
+            existing_lp = LigandProperities.objects.get(inchikey=pubchem_inchikey)
+            self.properities = existing_lp
+        except:
+            wl, created = WebLink.objects.get_or_create(index=pubchem_id, web_resource=web_resource)
+            self.properities.web_links.add(wl)
+            # ligand type
+            self.properities.ligand_type, created = LigandType.objects.get_or_create(slug='sm', defaults={'name':'Small molecule'})
+            self.properities.inchikey = pubchem_inchikey
+            self.properities.smiles = pubchem_smiles
+            self.properities.save()
 
-        if pubchem_name!=name: #if not canonical name
+        if pubchem_name.lower()!=name.lower(): #if not canonical name
             logger.info("Updating canonical flag to Pubchem. PubChem canonical: "+pubchem_name +". DB canonical: "+ name)
             self.canonical = False
             self.save()
