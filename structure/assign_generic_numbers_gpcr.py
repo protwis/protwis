@@ -35,9 +35,9 @@ class GenericNumbering(object):
         self.blast = BlastSearch(blast_path=blast_path, blastdb=blastdb)
         
         if self.pdb_file:
-            self.pdb_structure = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_file)[0]
+            self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_file)[0]
         elif self.pdb_filename:
-            self.pdb_structure = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_filename)[0]
+            self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_filename)[0]
         else:
             self.pdb_structure = structure
 
