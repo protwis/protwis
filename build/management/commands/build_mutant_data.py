@@ -140,9 +140,10 @@ class Command(BaseCommand):
             d['exp_func'] = r[12]
             d['exp_wt_value'] = float(r[13]) if r[13] else 0
             d['exp_wt_unit'] = r[14]
-            d['exp_mu_effect_type'] = '' #removed / consider setting as function of raw mu data, qual or fold.
+            #d['exp_mu_effect_type'] = '' #removed / consider setting as function of raw mu data, qual or fold.
             d['exp_mu_effect_sign'] = r[15]
             d['exp_mu_value_raw'] = float(r[16]) if r[16] else 0
+            d['fold_effect'] = float(r[17]) if r[17] else 0
             d['exp_mu_effect_qual'] = r[18]
             d['exp_mu_effect_ligand_prop'] = '' #removed
             d['exp_mu_ligand_ref'] = r[10] #check if correct?
@@ -179,7 +180,8 @@ class Command(BaseCommand):
         exp_func=r['exp_func'], 
         exp_wt_value=r['exp_wt_value'], #
         exp_wt_unit=r['exp_wt_unit'], 
-        exp_mu_effect_type=r['exp_mu_effect_type'], 
+        #exp_mu_effect_type=r['exp_mu_effect_type'], 
+        exp_fold_change=r['fold_effect'],
         exp_mu_effect_sign=r['exp_mu_effect_sign'], 
         exp_mu_effect_value=r['exp_mu_value_raw'], #
         exp_mu_effect_qual=r['exp_mu_effect_qual'], 
@@ -243,9 +245,10 @@ class Command(BaseCommand):
                         d['exp_func'] = ''
                         d['exp_wt_value'] = 0
                         d['exp_wt_unit'] = ''
-                        d['exp_mu_effect_type'] = ''
+                        #d['exp_mu_effect_type'] = ''
                         d['exp_mu_effect_sign'] = ''
                         d['exp_mu_value_raw'] = 0
+                        d['fold_change'] = 0
                         d['exp_mu_effect_qual'] = ''
                         d['exp_mu_effect_ligand_prop'] = ''
                         d['exp_mu_ligand_ref'] = ''
@@ -458,10 +461,10 @@ class Command(BaseCommand):
                     else:
                         exp_func_id = None
 
-                    if r['exp_mu_effect_type']:
-                        exp_measure_id, created = MutationMeasure.objects.get_or_create(measure=r['exp_mu_effect_type'])
-                    else:
-                        exp_measure_id = None
+                    # if r['exp_mu_effect_type']:
+                    #     exp_measure_id, created = MutationMeasure.objects.get_or_create(measure=r['exp_mu_effect_type'])
+                    # else:
+                    #     exp_measure_id = None
 
                     if r['exp_mu_effect_ligand_prop'] or r['exp_mu_effect_qual']:
                         exp_qual_id, created = MutationQual.objects.get_or_create(qual=r['exp_mu_effect_qual'], prop=r['exp_mu_effect_ligand_prop'])
@@ -494,8 +497,8 @@ class Command(BaseCommand):
                         
                         if foldchange<1 and foldchange!=0:
                             foldchange = -round((1/foldchange),3)
-                        elif r['exp_mu_effect_type'] =='Fold effect (mut/wt)':
-                            foldchange = round(r['exp_mu_value_raw'],3);
+                    elif r['fold_effect']!=0:
+                            foldchange = round(r['fold_effect'],3);
                             if foldchange<1: foldchange = -round((1/foldchange),3);
                     
 
@@ -511,7 +514,7 @@ class Command(BaseCommand):
                     optional = exp_opt_id,
                     exp_type=exp_type_id, 
                     exp_func=exp_func_id, 
-                    exp_measure = exp_measure_id,
+                    #exp_measure = exp_measure_id,
                     exp_qual = exp_qual_id,
 
                     mutation=mutation, 
