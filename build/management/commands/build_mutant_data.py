@@ -90,8 +90,10 @@ class Command(BaseCommand):
             worksheet = workbook.sheet_by_name(worksheet_name)
             #print(worksheet_name)
 
-            if worksheet.cell_value(0, 0) == "REFERENCE \nDOI (or PMID)":
+            if worksheet.cell_value(0, 0) == "REFERENCE \nDOI (or PMID)": #old format FIXME
                 #print("MATCH")
+                pass
+            elif worksheet.cell_value(0, 0) == "REFERENCE \nDOI or PMID": #new format
                 pass
             else:
                 #print("SKIPPING")
@@ -128,27 +130,29 @@ class Command(BaseCommand):
             d['mutation_pos'] = r[2]
             d['mutation_from'] = r[3]
             d['mutation_to'] = r[4]
-            d['ligand_name'] = r[5]
-            d['ligand_type'] = r[6]
-            d['ligand_id'] = r[7]
-            d['ligand_class'] = r[8]
-            d['exp_type'] = r[9]
-            d['exp_func'] = r[10]
-            d['exp_wt_value'] = float(r[11]) if r[11] else 0
-            d['exp_wt_unit'] = r[12]
-            d['exp_mu_effect_type'] = r[13]
-            d['exp_mu_effect_sign'] = r[14]
-            d['exp_mu_value_raw'] = float(r[15]) if r[15] else 0
-            d['exp_mu_effect_qual'] = r[16]
-            d['exp_mu_effect_ligand_prop'] = r[17]
-            d['exp_mu_ligand_ref'] = r[18]
-            d['opt_type'] = r[21]
-            d['opt_wt'] = float(r[22]) if r[22] else 0
-            d['opt_mu'] = float(r[23]) if r[23] else 0
-            d['opt_sign'] = r[24]
-            d['opt_percentage'] = float(r[25]) if r[25] else 0
-            d['opt_qual'] = r[26]
-            d['opt_agonist'] = r[27]
+            #r[5] is new double multi mutant group
+            d['ligand_name'] = r[6]
+            d['ligand_type'] = r[7]
+            d['ligand_id'] = r[8]
+            d['ligand_class'] = r[9]
+            #r[10] is new reference ligand
+            d['exp_type'] = r[11]
+            d['exp_func'] = r[12]
+            d['exp_wt_value'] = float(r[13]) if r[13] else 0
+            d['exp_wt_unit'] = r[14]
+            d['exp_mu_effect_type'] = '' #removed / consider setting as function of raw mu data, qual or fold.
+            d['exp_mu_effect_sign'] = r[15]
+            d['exp_mu_value_raw'] = float(r[16]) if r[16] else 0
+            d['exp_mu_effect_qual'] = r[18]
+            d['exp_mu_effect_ligand_prop'] = '' #removed
+            d['exp_mu_ligand_ref'] = r[10] #check if correct?
+            d['opt_type'] = r[19]
+            d['opt_wt'] = float(r[20]) if r[20] else 0
+            d['opt_mu'] = float(r[22]) if r[22] else 0
+            d['opt_sign'] = r[21]
+            d['opt_percentage'] = float(r[23]) if r[23] else 0
+            d['opt_qual'] = r[24]
+            d['opt_agonist'] = r[25]
 
 
 
@@ -269,6 +273,11 @@ class Command(BaseCommand):
                         self.logger.info('Parsed '+str(c)+' mutant data entries')
 
                     # publication
+                    try: #fix if it thinks it's float.
+                        float(r['reference'])
+                        r['reference'] = str(int(r['reference']))
+                    except ValueError:
+                        pass
 
                     if r['reference'].isdigit(): #assume pubmed
                         pub_type = 'pubmed'
@@ -472,7 +481,8 @@ class Command(BaseCommand):
                     
                     foldchange = 0
                     typefold = ''
-                    if r['exp_mu_effect_type']=='Activity/affinity' and r['exp_wt_value']!=0:
+                    #if r['exp_mu_effect_type']=='Activity/affinity' and r['exp_wt_value']!=0:
+                    if r['exp_wt_value']!=0 and r['exp_mu_value_raw']!=0: #fix for new format
                                 
                         if re.match("(" + ")|(".join(logtypes) + ")", r['exp_type']):  #-log values!
                             foldchange = round(math.pow(10,-r['exp_mu_value_raw'])/pow(10,-r['exp_wt_value']),3);
@@ -524,7 +534,5 @@ class Command(BaseCommand):
 
         sorted_missing_proteins = sorted(missing_proteins.items(), key=operator.itemgetter(1),reverse=True)
         sorted_mutants_for_proteins = sorted(mutants_for_proteins.items(), key=operator.itemgetter(1),reverse=True)
-        #print(sorted_missing_proteins)
-        #print(sorted_mutants_for_proteins)
 
         self.logger.info('COMPLETED CREATING MUTANTS')
