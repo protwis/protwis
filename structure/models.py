@@ -1,6 +1,4 @@
-﻿from django.db import models
-
-#from structure.assign_generic_numbers_gpcr import GenericNumbering
+from django.db import models
 
 from io import StringIO
 from Bio.PDB import PDBIO
@@ -38,13 +36,6 @@ class Structure(models.Model):
                 save_line = False
             if save_line:
                 tmp.append(line)
-
-        #generic_numbering = GenericNumbering(StringIO('\n'.join(tmp)))
-        #out_struct = generic_numbering.assign_generic_numbers()
-        #out_stream = StringIO()
-        #io = PDBIO()
-        #io.set_structure(out_struct)
-        #io.save(out_stream)
 
         return '\n'.join(tmp)
 
@@ -169,3 +160,11 @@ class StructureSegment(models.Model):
 
     class Meta():
         db_table = "structure_segment"
+
+class StructureSegmentModeling(StructureSegment):
+    """Annotations of segment borders that are observed in exp. structures, and can be used for modeling.
+    This class is indentical to StructureSegment, but is kept separate to avoid confusion."""
+
+    class Meta():
+        db_table = "structure_segment_modeling"
+
