@@ -41,9 +41,6 @@ def represent_ordereddict(dumper, data):
 
     return yaml.nodes.MappingNode(u'tag:yaml.org,2002:map', value)
 
-#yaml.add_representer(OrderedDict, represent_ordereddict)
-#yaml.add_constructor(_mapping_tag, dict_constructor)
-
 class Command(BaseCommand):
     help = 'Reads source data and creates pdb structure records'
     
@@ -88,15 +85,12 @@ class Command(BaseCommand):
         temp = []
         for worksheet_name in worksheets:
             worksheet = workbook.sheet_by_name(worksheet_name)
-            #print(worksheet_name)
 
             if worksheet.cell_value(0, 0) == "REFERENCE \nDOI (or PMID)": #old format FIXME
-                #print("MATCH")
                 pass
             elif worksheet.cell_value(0, 0) == "REFERENCE \nDOI or PMID": #new format
                 pass
-            else:
-                #print("SKIPPING")
+            else: #skip non-matching xls files
                 continue
 
             num_rows = worksheet.nrows - 1
@@ -105,17 +99,14 @@ class Command(BaseCommand):
             while curr_row < num_rows:
                 curr_row += 1
                 row = worksheet.row(curr_row)
-                #print('Row:', curr_row)
                 curr_cell = -1
                 temprow = []
                 if worksheet.cell_value(curr_row, 0) == '': #if empty
                     continue
                 while curr_cell < num_cells:
                     curr_cell += 1
-                    # Cell Types: 0=Empty, 1=Text, 2=Number, 3=Date, 4=Boolean, 5=Error, 6=Blank
                     cell_type = worksheet.cell_type(curr_row, curr_cell)
                     cell_value = worksheet.cell_value(curr_row, curr_cell)
-                    #print('    ', cell_type, ':', cell_value)
                     temprow.append(cell_value)
                 temp.append(temprow)
                 #if curr_row>10: break
@@ -130,19 +121,19 @@ class Command(BaseCommand):
             d['mutation_pos'] = r[2]
             d['mutation_from'] = r[3]
             d['mutation_to'] = r[4]
-            #r[5] is new double multi mutant group
+            #r[5] is new double multi mutant group #FIXME FOR LATER
             d['ligand_name'] = r[6]
             d['ligand_type'] = r[7]
             d['ligand_id'] = r[8]
             d['ligand_class'] = r[9]
-            #r[10] is new reference ligand
+            #r[10] is new reference ligand #FIXME FOR LATER
             d['exp_type'] = r[11]
             d['exp_func'] = r[12]
             d['exp_wt_value'] = float(r[13]) if r[13] else 0
             d['exp_wt_unit'] = r[14]
-            d['exp_mu_effect_type'] = '' #removed / consider setting as function of raw mu data, qual or fold.
             d['exp_mu_effect_sign'] = r[15]
             d['exp_mu_value_raw'] = float(r[16]) if r[16] else 0
+            d['fold_effect'] = float(r[17]) if r[17] else 0
             d['exp_mu_effect_qual'] = r[18]
             d['exp_mu_effect_ligand_prop'] = '' #removed
             d['exp_mu_ligand_ref'] = r[10] #check if correct?
@@ -177,19 +168,19 @@ class Command(BaseCommand):
         ligand_class=r['ligand_class'], 
         exp_type=r['exp_type'], 
         exp_func=r['exp_func'], 
-        exp_wt_value=r['exp_wt_value'], #
+        exp_wt_value=r['exp_wt_value'], 
         exp_wt_unit=r['exp_wt_unit'], 
-        exp_mu_effect_type=r['exp_mu_effect_type'], 
+        exp_fold_change=r['fold_effect'],
         exp_mu_effect_sign=r['exp_mu_effect_sign'], 
-        exp_mu_effect_value=r['exp_mu_value_raw'], #
+        exp_mu_effect_value=r['exp_mu_value_raw'], 
         exp_mu_effect_qual=r['exp_mu_effect_qual'], 
         exp_mu_effect_ligand_prop=r['exp_mu_effect_ligand_prop'], 
         exp_mu_ligand_ref=r['exp_mu_ligand_ref'], 
         opt_type=r['opt_type'], 
-        opt_wt=r['opt_wt'], #
-        opt_mu=r['opt_mu'], #
+        opt_wt=r['opt_wt'], 
+        opt_mu=r['opt_mu'], 
         opt_sign=r['opt_sign'], 
-        opt_percentage=r['opt_percentage'], #
+        opt_percentage=r['opt_percentage'], 
         opt_qual=r['opt_qual'], 
         opt_agonist=r['opt_agonist'], 
         added_by='munk', 
@@ -243,9 +234,9 @@ class Command(BaseCommand):
                         d['exp_func'] = ''
                         d['exp_wt_value'] = 0
                         d['exp_wt_unit'] = ''
-                        d['exp_mu_effect_type'] = ''
                         d['exp_mu_effect_sign'] = ''
                         d['exp_mu_value_raw'] = 0
+                        d['fold_change'] = 0
                         d['exp_mu_effect_qual'] = ''
                         d['exp_mu_effect_ligand_prop'] = ''
                         d['exp_mu_ligand_ref'] = ''
@@ -389,7 +380,6 @@ class Command(BaseCommand):
                     elif Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=False, ambigious_alias=False).exists(): #if this matches an alias that only has "one" parent canonical name - eg distinct
                         l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False, ambigious_alias=False)
                     elif Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=False, ambigious_alias=True).exists(): #if this matches an alias that only has several canonical parents, must investigate, start with empty.
-                        #print('Inserting '+ligand['name']+" for "+sd['pdb'])
                         lp = LigandProperities()
                         lp.save()
                         l_ref = Ligand()
@@ -458,11 +448,6 @@ class Command(BaseCommand):
                     else:
                         exp_func_id = None
 
-                    if r['exp_mu_effect_type']:
-                        exp_measure_id, created = MutationMeasure.objects.get_or_create(measure=r['exp_mu_effect_type'])
-                    else:
-                        exp_measure_id = None
-
                     if r['exp_mu_effect_ligand_prop'] or r['exp_mu_effect_qual']:
                         exp_qual_id, created = MutationQual.objects.get_or_create(qual=r['exp_mu_effect_qual'], prop=r['exp_mu_effect_ligand_prop'])
                     else:
@@ -481,7 +466,6 @@ class Command(BaseCommand):
                     
                     foldchange = 0
                     typefold = ''
-                    #if r['exp_mu_effect_type']=='Activity/affinity' and r['exp_wt_value']!=0:
                     if r['exp_wt_value']!=0 and r['exp_mu_value_raw']!=0: #fix for new format
                                 
                         if re.match("(" + ")|(".join(logtypes) + ")", r['exp_type']):  #-log values!
@@ -494,8 +478,8 @@ class Command(BaseCommand):
                         
                         if foldchange<1 and foldchange!=0:
                             foldchange = -round((1/foldchange),3)
-                        elif r['exp_mu_effect_type'] =='Fold effect (mut/wt)':
-                            foldchange = round(r['exp_mu_value_raw'],3);
+                    elif r['fold_effect']!=0:
+                            foldchange = round(r['fold_effect'],3);
                             if foldchange<1: foldchange = -round((1/foldchange),3);
                     
 
@@ -503,7 +487,7 @@ class Command(BaseCommand):
                     obj, created = MutationExperiment.objects.get_or_create(
                     refs=pub, 
                     protein=protein, 
-                    residue=res, #MISSING 
+                    residue=res, 
                     ligand=l, 
                     ligand_role=l_role, 
                     ligand_ref = l_ref,
@@ -511,7 +495,6 @@ class Command(BaseCommand):
                     optional = exp_opt_id,
                     exp_type=exp_type_id, 
                     exp_func=exp_func_id, 
-                    exp_measure = exp_measure_id,
                     exp_qual = exp_qual_id,
 
                     mutation=mutation, 
@@ -521,12 +504,7 @@ class Command(BaseCommand):
                     mu_value = r['exp_mu_value_raw'],
                     mu_sign = r['exp_mu_effect_sign'], 
                     foldchange = foldchange
-                    #foldchange = 1
-
-                    #added_by='munk', 
-                    #added_date=datetime.now()
                     )
-                    #print(foldchange)
                     mut_id = obj.id
                     inserted += 1
 
