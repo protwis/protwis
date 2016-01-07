@@ -17,8 +17,12 @@ class ResidueTablesSelection(AbsTargetSelection):
     # Left panel
     step = 1
     number_of_steps = 2
+    docs = 'generic_numbering.html'
     
-    description = 'Select receptors to index by searching or browsing in the middle column. You can select entire receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column, where you can edit the list.\n\nSelect which numbering schemes to use in the middle column. By default, only the GPCRDB numbering scheme is selected.\n\nOnce you have selected all your receptors, click the green button.'
+    description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
+        + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \
+        + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
+        + ' have selected all your receptors, click the green button.'
 
 
     # Middle section
@@ -70,7 +74,7 @@ class ResidueTablesDisplay(TemplateView):
                     
                 family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
                     species__in=(species_list),
-                    source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                    source__in=(protein_source_list)).prefetch_related('residue_numbering_scheme', 'species')
                 for fp in family_proteins:
                     proteins.append(fp)
 
@@ -103,11 +107,12 @@ class ResidueTablesDisplay(TemplateView):
                     for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
                         data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
                 elif scheme == default_scheme:
-                    for pos in list(set([x.alternative_generic_numbers.filter(scheme__slug=scheme.slug).label for x in residues if x.protein_segment == segment])):
-                        data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
-            
+                    for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                            data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+
             for residue in residues:
                 alternatives = residue.alternative_generic_numbers.all()
+                pos = residue.generic_number
                 for alternative in alternatives:
                     scheme = alternative.scheme
                     if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
@@ -117,11 +122,14 @@ class ResidueTablesDisplay(TemplateView):
                         else:
                             if scheme.slug not in data[segment.slug][pos.label].keys():
                                 data[segment.slug][pos.label][scheme.slug] = alternative.label
+                            if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                                data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
                             data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
                     else:
-                        pos = residue.alternative_generic_numbers.get(scheme__slug=default_scheme.slug)
                         if scheme.slug not in data[segment.slug][pos.label].keys():
                             data[segment.slug][pos.label][scheme.slug] = alternative.label
+                        if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                            data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
                         data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
 
         # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
@@ -129,7 +137,7 @@ class ResidueTablesDisplay(TemplateView):
         for s in iter(flattened_data):
             flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
         
-        context['header'] = zip([x.short_name for x in numbering_schemes] + [x.entry_name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins])
+        context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
         context['segments'] = [x.slug for x in segments]
         context['data'] = flattened_data
         context['number_of_schemes'] = len(numbering_schemes)

@@ -1,0 +1,24 @@
+{% if tree %}
+<div id="legend" class="hidden">{{ leg|safe }} </div>
+{% load staticfiles %}
+        <script src="{% static 'home/js/statistics.js' %}">
+        </script>
+        <script src="{% static 'home/js/raphael-min.js' %}">
+        </script>
+        <script src="{% static 'home/js/jsphylosvg.js' %}">
+        </script>
+        <script type="text/javascript">
+            function draw_phylo() {
+                var dataObject = { phyloxml: "{{ tree|safe }}" };
+                phylocanvas = new Smits.PhyloCanvas(
+                dataObject,
+                "svg{{ num }}",
+                1550, 1550,
+                'circular'
+                )
+                
+            };
+            draw_phylo();
+            mergeSVG("svg{{ num }}")
+        </script>
+{% endif %}

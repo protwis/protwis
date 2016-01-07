@@ -1,13 +1,13 @@
 {% block upload_file_form %}
-<div class='col-md-4'>
-    <div class='row-fluid well selection-box'>
+<div class='col-md-4 panel panel-primary'>
+    <div class="panel-body">
         <div class='selection-heading'>
            <span class='selection-heading-text'>{{ header }}</span>
         </div>
         <div style="width:370px;height:{{ form_height }}px;">
             <br />
             <form id="{{form_id}}" action="{{ url }}" method="post" enctype="multipart/form-data"> {% csrf_token %}
-                {{ form_code }}
+                {{ form_code|safe }}
              </form>
         </div>
     </div>

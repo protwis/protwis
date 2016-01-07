@@ -1,0 +1,8 @@
+<div class="col-md-12 panel panel-primary">
+    <div class="panel-body">
+        <form id='form' action="/alignment/blastsearchresults" method="post" enctype="multipart/form-data"> {% csrf_token %}
+            <input id="human" name="human" type="checkbox" value="human" /> Query human sequences only.
+            <textarea name="input_seq" rows="15" cols="40"></textarea>
+        </form>
+    </div>
+</div>

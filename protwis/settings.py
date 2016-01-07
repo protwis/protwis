@@ -1,4 +1,4 @@
-"""
+﻿"""
 Django settings for protwis project.
 """
 
@@ -25,12 +25,14 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'debug_toolbar',
     'rest_framework',
     'rest_framework_swagger',
-    'django_nvd3',
     'common',
     'api',
+    'news',
+    'pages',
     'home',
     'protein',
     'family',
@@ -43,6 +45,7 @@ INSTALLED_APPS = (
     'interaction',
     'mutation',
     'phylogenetic_trees',
+    'sitesearch',
     'build_' + SITE_NAME,
     'construct',
 )

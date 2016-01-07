@@ -22,7 +22,7 @@ class ProteinSuperpose(object):
     
         self.selection = SelectionParser(simple_selection)
     
-        self.ref_struct = PDBParser().get_structure('ref', ref_file)[0]
+        self.ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', ref_file)[0]
         assert self.ref_struct, self.logger.error("Can't parse the ref file %s".format(ref_file))
         if self.selection.generic_numbers != [] or self.selection.helices != []:
             if not check_gn(self.ref_struct):
@@ -37,10 +37,10 @@ class ProteinSuperpose(object):
                     if not check_gn(tmp_struct):
                         gn_assigner = GenericNumbering(structure=tmp_struct)
                         self.alt_structs.append(gn_assigner.assign_generic_numbers())
+                        self.alt_structs[-1].id = alt_id
                     else:
                         self.alt_structs.append(tmp_struct)
             except Exception as e:
-                print(e)
                 logger.warning("Can't parse the file {!s}\n{!s}".format(alt_id, e))
         self.selector = CASelector(self.selection, self.ref_struct, self.alt_structs)
 
@@ -79,10 +79,9 @@ class FragmentSuperpose(object):
         if not check_gn(self.pdb_struct):
             gn_assigner = GenericNumbering(structure=self.pdb_struct)
             self.pdb_struct = gn_assigner.assign_generic_numbers()
-
-        rec = self.identify_receptor()
-        print(rec)
-        self.target = Protein.objects.get(pk=self.identify_receptor())
+            self.target = Protein.objects.get(pk=gn_assigner.prot_id_list[0])
+        else:
+            self.target = Protein.objects.get(pk=self.identify_receptor())
 
 
     def parse_pdb (self):
@@ -147,12 +146,12 @@ class FragmentSuperpose(object):
     def get_representative_fragments(self, state):
         
         template = get_segment_template(self.target, state)
-        return list(ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__protein_conformation__protein=template.id))
+        return list(ResidueFragmentInteraction.objects.prefetch_related('rotamer__residue__display_generic_number', 'rotamer__residue', 'interaction_type').filter(structure_ligand_pair__structure__protein_conformation__protein=template.id))
 
 
     def get_all_fragments(self):
 
-        return list(ResidueFragmentInteraction.objects.exclude(structure_ligand_pair__structure__protein_conformation__protein__parent=self.target))
+        return list(ResidueFragmentInteraction.objects.exclude(structure_ligand_pair__structure__protein_conformation__protein__parent=self.target).prefetch_related('rotamer__residue__display_generic_number', 'rotamer__residue', 'interaction_type'))
 
 #==============================================================================  
 class RotamerSuperpose(object):
@@ -204,8 +203,12 @@ class BulgeConstrictionSuperpose(object):
         ''' Run the superpositioning.
         '''
         super_imposer = Superimposer()
-        ref_backbone_atoms = [atom for atom in self.reference_dict[self.reference_gns[0]] if atom.get_name() in ['N','CA','C']] + [atom for atom in self.reference_dict[self.reference_gns[-1]] if atom.get_name() in ['N','CA','C']]
-        temp_backbone_atoms= [atom for atom in self.template_dict[self.template_gns[0]] if atom.get_name() in ['N','CA','C']] + [atom for atom in self.template_dict[self.template_gns[-1]] if atom.get_name() in ['N','CA','C']]
+        ref_backbone_atoms = [atom for atom in self.reference_dict[self.reference_gns[0]] if atom.get_name() in 
+                                ['N','CA','C','O']] + [atom for atom in self.reference_dict[self.reference_gns[-1]] if 
+                                atom.get_name() in ['N','CA','C','O']]
+        temp_backbone_atoms= [atom for atom in self.template_dict[self.template_gns[0]] if atom.get_name() in 
+                                ['N','CA','C','O']] + [atom for atom in self.template_dict[self.template_gns[-1]] if 
+                                atom.get_name() in ['N','CA','C','O']]
         all_template_atoms = []
         for gn, atoms in self.template_dict.items():
             all_template_atoms+=atoms
@@ -245,9 +248,12 @@ class LoopSuperpose(BulgeConstrictionSuperpose):
             for atom in atoms:
                 if atom.get_name() in ['N','CA','C','O']:
                     ref_backbone_atoms.append(atom)
+        res_count=0
+        array_length = len(self.template_dict.keys())
         for gn, atoms in self.template_dict.items():
+            res_count+=1
             for atom in atoms:
-                if '.' in str(gn) and atom.get_name() in ['N','CA','C','O']:
+                if (res_count<=4 or array_length-4<res_count) and atom.get_name() in ['N','CA','C','O']:
                     temp_backbone_atoms.append(atom)
                 all_template_atoms.append(atom)
         super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
@@ -257,7 +263,6 @@ class LoopSuperpose(BulgeConstrictionSuperpose):
             array1 = np.vstack((array1, list(atom1.get_coord())))
             array2 = np.vstack((array2, list(atom2.get_coord())))
         self.backbone_rmsd = np.sqrt(((array1[1:]-array2[1:])**2).mean())
-        print(self.backbone_rmsd)
         return self.rebuild_dictionary(all_template_atoms)
 
 

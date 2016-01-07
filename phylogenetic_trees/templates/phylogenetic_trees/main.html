@@ -1,0 +1,51 @@
+<div id="legend" class="hidden">{{ leg|safe }} </div>
+
+{% load staticfiles %}
+{% if branch == 1 %}
+    <script src="{% static 'home/js/jsphylosvg2.js' %}"></script>
+    {% else %}
+    <script src="{% static 'home/js/jsphylosvg.js' %}"></script>
+    {% endif %}   
+<script src="{% static 'home/js/raphael-min.js' %}"></script>
+
+   {% if ttype == 1 %}
+    <script type="text/javascript">
+        function draw_phylo(){
+            var dataObject = { phyloxml: "{{ phylo|safe }}" };
+            phylocanvas = new Smits.PhyloCanvas(
+            dataObject,
+            "svgCanvas",
+            950, {{ count }}
+            )
+            mergeSVG();
+            colours();
+            colour_lines();
+
+        };
+    </script>
+    {% else %}
+    <script type="text/javascript">
+        function draw_phylo(){
+            var dataObject = { phyloxml: "{{ phylo|safe }}" };
+            phylocanvas = new Smits.PhyloCanvas(
+                            dataObject,
+                            "svgCanvas",
+                            {{ count }}, {{ count }},
+                            'circular'
+                            )
+            mergeSVG();
+            colours();
+            colour_lines();
+        };
+
+    </script>
+    {% endif %}
+<script type="text/javascript"> draw_phylo();
+predefined_colours({{add.crystal.proteins|safe}},'{{ add.crystal.colours.crystal_true }}');
+
+</script>
+
+
+
+
+

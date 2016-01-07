@@ -27,7 +27,8 @@ ATOM_FORMAT_STRING="%s%5i %-4s%c%3s %c%4i%c   %8.3f%8.3f%8.3f%s%6.2f      %4s%2s
 class BlastSearch(object):
     
     
-    def __init__ (self, blast_path='blastp', blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']), top_results=1):
+    def __init__ (self, blast_path='blastp',
+        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']), top_results=1):
   
         self.blast_path = blast_path
         self.blastdb = blastdb
@@ -47,11 +48,13 @@ class BlastSearch(object):
             logger.debug("Running Blast with sequence: {}".format(input_seq))
             tmp.write(bytes(str(input_seq) + '\n', 'latin1'))
             tmp.seek(0)
-            blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, stdin=tmp, stdout=PIPE, stderr=PIPE)
+            blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, stdin=tmp,
+                stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate()
         else:
         #Rest of the world:
-            blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, shell=True,
+                stdin=PIPE, stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate(input=str(input_seq))
         if len(blast_err) != 0:
             logger.debug(blast_err)
@@ -74,18 +77,32 @@ class MappedResidue(object):
         self.pos_in_aln = 0
         self.mapping = {}
         self.bw = 0.
-        self.gpcrdb = 0.       
+        self.gpcrdb = 0.  
+        self.gpcrdb_id = 0     
+        self.segment = ''
+        self.display = ''      
   
     def add_bw_number (self, bw_number=''):
     
         self.bw = bw_number
 
+    def add_segment (self, segment=''):
+    
+        self.segment = segment
+
+    def add_display_number (self, display = ''):
+
+        self.display = display
+
+    def add_gpcrdb_number_id (self, gpcrdb_number_id=''):
+
+        self.gpcrdb_id = gpcrdb_number_id
 
     def add_gpcrdb_number (self, gpcrdb_number=''):
 
         #PDB format does not allow fractional part longer than 2 digits
         #so numbers x.xx1 are negative
-        if len(gpcrdb_number) > 4:
+        if len(gpcrdb_number.split('.')[1]) > 2:
           self.gpcrdb = '-' + gpcrdb_number[:4].replace('x', '.')
         else:
           self.gpcrdb = gpcrdb_number.replace('x', '.')
@@ -119,18 +136,17 @@ class GenericNumbersSelector(Select):
         if parsed_selection:
             self.generic_numbers=parsed_selection.generic_numbers
             self.helices = parsed_selection.helices
-
-
     def accept_residue(self, residue):
 
         try:
-            if str(residue['CA'].get_bfactor()) in self.generic_numbers:
+            if "{:.2f}".format(residue['CA'].get_bfactor()) in self.generic_numbers:
                 return 1
-            if -8.1 < res['CA'].get_bfactor() < 0 and str(-res['CA'].get_bfactor() + 0.001) in self.generic_numbers:
+            if -8.1 < residue['CA'].get_bfactor() < 0 and "{:.3f}".format(-residue['CA'].get_bfactor() + 0.001) in self.generic_numbers:
                 return 1
             if -8.1 < residue['CA'].get_bfactor() < 8.1 and int(math.floor(abs(residue['CA'].get_bfactor()))) in self.helices:
                 return 1
         except:
+
             return 0
         
 
@@ -169,9 +185,9 @@ class CASelector(object):
         for chain in structure:
             for res in chain:
                 try:
-                    if 0 < res['CA'].get_bfactor() < 8.1 and str(res["CA"].get_bfactor()) in self.selection.generic_numbers:
+                    if 0 < res['CA'].get_bfactor() < 8.1 and "{:.2f}".format(res['CA'].get_bfactor()) in self.selection.generic_numbers:
                         atom_list.append(res['CA'])
-                    if -8.1 < res['CA'].get_bfactor() < 0 and str(-res['CA'].get_bfactor() + 0.001) in self.selection.generic_numbers:
+                    if -8.1 < res['CA'].get_bfactor() < 0 and "{:.3f}".format(-res['CA'].get_bfactor() + 0.001) in self.selection.generic_numbers:
                         atom_list.append(res['CA'])
                 except :
                     continue
@@ -227,9 +243,9 @@ class CASelector(object):
             for ref_ca in tmp_ref:
                 for alt_ca in tmp_alt:
                     if ref_ca.get_bfactor() == alt_ca.get_bfactor():
-                        if 0 < ref_ca.get_bfactor() < 8.1 and str(ref_ca.get_bfactor()) in self.selection.generic_numbers:
+                        if 0 < ref_ca.get_bfactor() < 8.1 and "{:.2f}".format(ref_ca.get_bfactor()) in self.selection.generic_numbers:
                             gn_list.append("{:.2f}".format(ref_ca.get_bfactor()))
-                        if -8.1 < ref_ca.get_bfactor() < 0 and str(-ref_ca.get_bfactor() + 0.001) in self.selection.generic_numbers:
+                        if -8.1 < ref_ca.get_bfactor() < 0 and "{:.3f}".format(-ref_ca.get_bfactor() + 0.001) in self.selection.generic_numbers:
                             gn_list.append("{:.3f}".format(-ref_ca.get_bfactor() + 0.001))
                         if 0 < ref_ca.get_bfactor() < 8.1 and int(math.floor(abs(ref_ca.get_bfactor()))) in self.selection.helices:
                             gn_list.append("{:.2f}".format(ref_ca.get_bfactor()))
@@ -286,8 +302,9 @@ class BackboneSelector():
         for chain in ref_pdbio_struct:
             for res in chain:
                 try:
-                    if self.get_generic_number(res) == fragment.rotamer.residue.display_generic_number.label:
-                        print("Ref {}:{}\tFragment {}:{}".format(polypeptide.three_to_one(res.resname), self.get_generic_number(res), fragment.rotamer.residue.amino_acid, fragment.rotamer.residue.display_generic_number.label))
+                    gn = self.get_generic_number(res)
+                    if gn == fragment.rotamer.residue.display_generic_number.label:
+                        logger.info("Ref {}:{}\tFragment {}:{}".format(polypeptide.three_to_one(res.resname), self.get_generic_number(res), fragment.rotamer.residue.amino_acid, fragment.rotamer.residue.display_generic_number.label))
                         if use_similar:
                             for rule in self.similarity_rules:
                                 if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and fragment.rotamer.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
@@ -295,7 +312,6 @@ class BackboneSelector():
                         else:
                             return [res['CA'], res['N'], res['O']] 
                 except Exception as msg:
-                    #print(msg)
                     continue
         return []                  
 

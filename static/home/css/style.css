@@ -2,7 +2,9 @@ body { padding-top: 70px; }
 
 h1, h2, h3, h4 { margin-top: 0px; }
 
-.carousel-caption { color: #000000; }
+.carousel-caption{
+    background: rgba(0,0,0,0.6);
+}
 
 .main-logo { height:20px;width:20px; }
 
@@ -80,7 +82,12 @@ h1, h2, h3, h4 { margin-top: 0px; }
 }
 select.form-control {
     width: auto;
-    height: auto;
+    height:22px;
     font-size: 11px;
+    display: inline;
+}
+input.form-control {
+    width: 250px;
+    font-size: 14px;
     display: inline;
 }

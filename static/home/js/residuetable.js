@@ -12,19 +12,22 @@ presetColors = {'D': ['#E60A0A', '#FDFF7B'],'E': ['#E60A0A', '#FDFF7B'],
                 '+': ['#FFFFFF', '#000000']        
                 };
 
-function applyPresentColors() {
+function table_applyPresentColors() {
 
     //console.log( $('#'+target));
 
     $('.residue').each(function( index ){
+          console.log($(this).text());
+
           aa =  $(this).text().trim().charAt(0);
+          console.log(aa);
           $(this).css("background-color", presetColors[aa][0]);
           $(this).css("color", presetColors[aa][1]);
         });
 
 };
 
-function resetColors() {
+function table_resetColors() {
 
 
     $('.residue').each(function( index ){
@@ -34,28 +37,173 @@ function resetColors() {
 
 }
 
+function ajaxMutants(plotid,protein) {
 
-function ajaxMutants() {
+                        $.getJSON( '/mutations/ajax/'+protein+'/', function( data ) {
+                          $.each( data, function( key, val ) {
+
+                             var ligands = [], bigincreases=0, increases = 0, bigdecreases=0, decreases = 0, unchanged=0, unspecified = 0;
+                             
+                             
+                              $.each( val, function( key, v ) {
+                              if( !(ligands[v[1]]) ) ligands[v[1]] = [];
+                              ligands[v[1]].push(v[0])
+                              if (v[0]>10) {
+                                bigincreases ++; //mix-up increase is decrease.
+                              } else if (v[0]>5) {
+                                increases ++;
+                              } else if (v[0]>0) {
+                                unchanged ++;
+                              }  else if (v[0]<-10) {
+                                bigdecreases ++;
+                              } else if (v[0]<-5) {
+                                decreases ++;
+                              } else if (v[0]<0) {
+                                unchanged ++;
+                              } else if (v[2]=='No effect on') {
+                                unchanged ++;
+                              } else if (v[2]=='Abolish') {
+                                bigdecreases ++;
+                              } else if (v[2]=='Gain of') {
+                                bigincreases ++;
+                              } else if (v[2]=='Increase') {
+                                increases ++;
+                              } else if (v[2]=='Decrease') {
+                                decreases ++;
+                              } else {
+                                unspecified ++;
+                              }
+                             });
+                             
+                             extra = "\n" + String(val[0].length) + " mutations: " +
+                              (decreases+bigdecreases) +" increases | " +
+                             (increases+bigincreases) +" decreases  |  " +
+                              (unchanged) +" Unchanged | " +
+                              unspecified + " Unspecified";
+
+                            counts = [(increases+bigincreases),(decreases+bigdecreases),(unchanged)];
+                            winner = counts.indexOf(Math.max.apply(window,counts));
+                            winner2 = Math.max.apply(window,counts);
+                            color = "#D9D7CE";
+                            color_letter = "#000";
+                            if (winner==0 && winner2) {
+                              if (increases>bigincreases) {
+                                color = "#F05960";
+                                color_letter = "#FDFF7B";
+                              } else {
+                                color = "#CC434A";
+                                color_letter = "#FDFF7B";
+                              }
+                            } else if (winner==1) {
+                              if (decreases>bigdecreases) {
+                                color = "#87E88F";
+                              } else {
+                                color = "#66B36C";
+                              }
+                            } else if (winner==2) {
+                              color = "#F7DA00";
+                              color_letter = "#000";
+                            }
+
+                            console.log(counts + " " + counts.indexOf(Math.max.apply(window,counts)));
+
+
+                             original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+                             $('#'+plotid).find("#"+key).css("fill", color);
+                             $('#'+plotid).find("#"+key).next().css("fill",color_letter );
+                             $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+                          });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
+    
+                        });
+                    }
+
+function table_ajaxMutants() {
+
 
     $('.protein').each(function( index ){
-        console.log($(this).find('span').text());
-        console.log($(this).index());
-        var protein = $(this).find('span').text();
+        var protein = $(this).find('span').attr('id');
         var protein_index = $(this).index()+1;
+        console.log(protein);
         $.getJSON( '/mutations/ajax/'+protein+'/', function( data ) {
                 count = 0;
               $.each( data, function( key, val ) {
                 count = count + 1;
-                 //console.log('#'+protein_index+"#"+key);
+                 console.log('#'+protein_index+"#"+key+" val:"+val);
 
-                 max = String(Math.max.apply(null, val));
-                 min = String(Math.min.apply(null, val));
-                 extra = "\n" + String(val.length) + " mutations | "+ max +" maxFold | "+ min +" minFold";
+                            var ligands = [], bigincreases=0, increases = 0, bigdecreases=0, decreases = 0, unchanged=0, unspecified = 0;
+                             
+                             
+                             $.each( val, function( key, v ) {
+                              if( !(ligands[v[1]]) ) ligands[v[1]] = [];
+                              ligands[v[1]].push(v[0])
+                              if (v[0]>10) {
+                                bigincreases ++;
+                              } else if (v[0]>5) {
+                                increases ++;
+                              } else if (v[0]>0) {
+                                unchanged ++;
+                              }  else if (v[0]<-10) {
+                                bigdecreases ++;
+                              } else if (v[0]<-5) {
+                                decreases ++;
+                              } else if (v[0]<0) {
+                                unchanged ++;
+                              } else if (v[2]=='No effect on') {
+                                unchanged ++;
+                              } else if (v[2]=='Abolish') {
+                                bigdecreases ++;
+                              } else if (v[2]=='Gain of') {
+                                bigincreases ++;
+                              } else if (v[2]=='Increase') {
+                                increases ++;
+                              } else if (v[2]=='Decrease') {
+                                decreases ++;
+                              } else {
+                                unspecified ++;
+                              }
+                             });
+                             
+                             extra = "\n" + String(val[0].length) + " mutations: " +
+                              (decreases+bigdecreases) +" increases | " +
+                             (increases+bigincreases) +" decreases  |  " +
+                              (unchanged) +" Unchanged | " +
+                              unspecified + " Unspecified";
+
+                            counts = [(increases+bigincreases),(decreases+bigdecreases),(unchanged)];
+                            winner = counts.indexOf(Math.max.apply(window,counts));
+                            winner2 = Math.max.apply(window,counts);
+                            color = "#D9D7CE";
+                            color_letter = "#000";
+                            if (winner==0 && winner2) {
+                              if (increases>bigincreases) {
+                                color = "#FF7373";
+                                color_letter = "#FFF";
+                              } else {
+                                color = "#FA1111";
+                                color_letter = "#FDFF7B";
+                              }
+                            } else if (winner==1) {
+                              if (decreases>bigdecreases) {
+                                color = "#87E88F";
+                              } else {
+                                color = "#66B36C";
+                              }
+                            } else if (winner==2) {
+                              color = "#F7DA00";
+                              color_letter = "#000";
+                            }
 
                  //original_title = $('#'+plotid).find("#"+key).attr('original_title')
                  //console.log($('#P'+protein_index+"R"+key).text());
-                 $('#P'+protein_index+"R"+key).css("background-color", "#E60A0A");
-                 $('#P'+protein_index+"R"+key).css("color", "#FDFF7B");
+                 $('#P'+protein_index+"R"+key).css("background-color", color);
+                 $('#P'+protein_index+"R"+key).css("color", color_letter);
+                 $('#P'+protein_index+"R"+key).attr('title', extra);
                  //$('#'+plotid).find("#"+key).attr('title',original_title+extra);
                  //$('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
 
@@ -71,10 +219,14 @@ function ajaxMutants() {
 
 }
 
-function ajaxInteractions() {
-
+function table_ajaxInteractions() {
+  $('.protein').each(function( index ){
+      var protein = $(this).find('span').attr('id');
+      var protein_index = $(this).index()+1;
+      console.log(protein);
     $.getJSON( '/interaction/ajax/'+protein+'/', function( data ) {
       $.each( data, function( key, val ) {
+        console.log('#P'+protein_index+"R"+key);
 
         var flags = [], falgsAA = [], output = [], outputAA = [], l = val.length, i;
         for( i=0; i<l; i++) {
@@ -91,14 +243,13 @@ function ajaxInteractions() {
          extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
 
 
-         $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
-         $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+          $('#P'+protein_index+"R"+key).css("background-color", "#E60A0A");
+          $('#P'+protein_index+"R"+key).next().css("color", "#FDFF7B");
 
-         original_title = $('#'+plotid).find("#"+key).attr('original_title')
+         original_title =  $('#P'+protein_index+"R"+key).attr('original_title')
 
 
-         $('#'+plotid).find("#"+key).attr('title',original_title+extra);
-         $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+          $('#P'+protein_index+"R"+key).attr('title',extra);
 
 
       });
@@ -106,6 +257,7 @@ function ajaxInteractions() {
     $("text").tooltip('fixTitle');
 
     });
+  });
 }
 
 

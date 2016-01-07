@@ -1,26 +1,28 @@
         <li>
             <a href="/"class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
                 GPCRdb<span class="caret"></span>
-            </a>
+        </a>
             <ul class="dropdown-menu" role="menu">
                 <li class="nav-header disabled"><a>INFORMATION</a></li>
-                <li class="disabled"><a href="#">GPCRDB Poster</a></li>
-                <li class="disabled"><a href="#">Documentation</a></li>
-                <li class="nav-header disabled"><a>FOR DEVELOPERS</a></li>
-                <li><a href="/api">API</a></li>
+                <li><a href="http://files.gpcrdb.org/GPCRdb_Poster.pdf">GPCRdb Poster</a></li>
+                <li><a href="{{ documentation_url }}">Documentation</a></li>
+                <li class="nav-header disabled"><a>ABOUT GPCRdb</a></li>
+                <li><a href="{{ documentation_url }}about.html">About</a></li>
+                <li><a href="{{ documentation_url }}contact.html">Contact</a></li>
+                <li><a href="{{ documentation_url }}citing.html">Citing GPCRdb</a></li>
+                <li><a href="{{ documentation_url }}acknowledgements.html">Acknowledgements</a></li>
+                <li><a href="{{ documentation_url }}legal_notice.html">Legal notice</a></li>
                 <li class="nav-header disabled"><a>UPDATES</a></li>
-                <li class="disabled"><a href="#">News</a></li>
-                <li class="disabled"><a href="#">Meetings</a></li>
-                <li class="disabled"><a href="#">Update history</a></li>
-                <li class="nav-header disabled"><a>ABOUT GPCRDB</a></li>
-                <li class="disabled"><a href="#">Committees</a></li>
-                <li class="disabled"><a href="#">Contributors</a></li>
-                <li class="disabled"><a href="#">Contact</a></li>
-                <li class="disabled"><a href="#">Citing GPCRDB</a></li>
+                <li><a href="/news">News</a></li>
+                <li><a href="{{ documentation_url }}meetings.html">Meetings</a></li>
+                <li><a href="/pages/releasenotes">Release notes</a></li>
+                <li class="nav-header disabled"><a>FOR DEVELOPERS</a></li>
+                <li><a href="{{ documentation_url }}linking.html">Linking to GPCRdb</a></li>
+                <li><a href="{{ documentation_url }}web_services.html">Web services</a></li>
             </ul>
         </li>
         
-        <!-- BROWSE -->
+        <!-- RECEPTORS -->
         <li><a href="/protein">Receptors</a></li>
        
         <!-- SEQUENCES -->
@@ -31,11 +33,11 @@
             <ul class="dropdown-menu" role="menu">
                 <li class="nav-header disabled"><a>DATA</a></li>
                 <li><a href="/alignment/targetselection">Structure-based alignments</a></li>
-                <li><a href="/similaritymatrix/targetselection">Similarity matrix</a></li>
                 <li class="nav-header disabled"><a>TOOLS</a></li>
-                <li><a href="/similaritysearch/referenceselection">Similarity search tool</a></li>
                 <li><a href="/phylogenetic_trees/targetselection">Phylogenetic trees</a></li>
-                <li class="disabled"><a href="/alignment/blastsearch">BLAST search</a></li>
+                <li><a href="/similaritysearch/referenceselection">Similarity search - GPCRdb</a></li>
+                <li><a href="/alignment/blastsearch">Similarity search - BLAST</a></li>
+                <li><a href="/similaritymatrix/targetselection">Similarity matrix</a></li>
             </ul>
         </li>
         
@@ -48,7 +50,6 @@
                 <li class="nav-header disabled"><a>DATA</a></li>
                 <li><a href="/structure">Structure browser</a></li>
                 <li><a href="/structure/statistics">Structure statistics</a></li>
-                <li class="disabled"><a href="/structure/coverage">Structure coverage</a></li>
                 <li class="nav-header disabled"><a>TOOLS</a></li>
                 <li><a href="/structure/superposition_workflow_index/true">Structure superposition</a></li>
                 <li><a href="/structure/generic_numbering_index">PDB file residue numbering</a></li>
@@ -56,16 +57,19 @@
             </ul>
         </li>
 
-        <!-- MUTANTS -->
+        <!-- MUTATIONS -->
         <li>
             <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                Mutants<span class="caret"></span>
+                Mutations<span class="caret"></span>
             </a>
             <ul class="dropdown-menu" role="menu">
                 <li class="nav-header disabled"><a>DATA</a></li>
-                <li><a href="/mutations">Mutant browser</a></li>
-                <li class="disabled"><a href="/mutations">Residue tables</a></li>
-                <li class="disabled"><a href="#">Mutant data submission</a></li>
+                <li><a href="/mutations">Mutation browser</a></li>
+                <li>
+                    <a href="{{ documentation_url }}mutations.html#mutation-data-submission">
+                        Mutation data submission
+                    </a>
+                </li>
             </ul>
         </li>
 
@@ -75,12 +79,12 @@
                 Sites<span class="caret"></span>
             </a>
             <ul class="dropdown-menu" role="menu">
+                <li class="nav-header disabled"><a>DATA</a></li>
+                <li><a href="/interaction">Ligand interactions</a></li>
                 <li class="nav-header disabled"><a>TOOLS</a></li>
-                <li class="disabled"><a href="/sitesearch">Site search</a></li>
+                <li><a href="/sitesearch/targetselection">Site search - manual</a></li>
+                <li><a href="/sitesearch/targetselectionpdb">Site search - from PDB complex</a></li>
                 <li><a href="/structure/fragment_superposition_index">Pharmacophore generation</a></li>
-                <li class="disabled"><a href="#">Ligand interaction diagrams</a></li>
-                <li class="disabled"><a href="#">Residue tables</a></li>
-                <li class="disabled"><a href="#">Residue diagrams</a></li>
             </ul>
         </li>
 
@@ -94,7 +98,7 @@
                 <li><a href="/residue/residuetable">Residue tables</a></li>
                 <li class="nav-header disabled"><a>TOOLS</a></li>
                 <li><a href="/structure/generic_numbering_index">PDB file residue numbering</a></li>
-                <li class="disabled"><a href="#">GPCR specific PDF reader</a></li>
+                <!-- <li><a href="http://www.gpcr.org/7tm/?wicket:bookmarkablePage=:nl.ru.cmbi.mcsis.web.pages.info.UtopiaDocumentGPCRDBPage">GPCR specific PDF reader</a></li> -->
             </ul>
         </li>
 
@@ -104,7 +108,11 @@
                 Links<span class="caret"></span>
             </a>
             <ul class="dropdown-menu" role="menu">
-                <li class="disabled"><a href="#">GPCR specific PDF reader</a></li>
-                <li class="disabled"><a href="#">External GPCR modeling servers</a></li>
+                <!-- <li><a href="http://www.gpcr.org/7tm/?wicket:bookmarkablePage=:nl.ru.cmbi.mcsis.web.pages.info.UtopiaDocumentGPCRDBPage">GPCR specific PDF reader</a></li> -->
+                <li><a href="{{ documentation_url }}linking.html">Linking to GPCRdb</a></li>
+                <li><a href="{{ documentation_url }}external_servers.html">External GPCR modeling servers</a></li>
             </ul>
         </li>
+
+        <!-- TUTORIAL -->
+        <li><a href="http://docs.gpcrdb.org/index.html#tutorial">Tutorial</a></li>

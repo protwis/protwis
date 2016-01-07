@@ -1,9 +1,12 @@
 from django.db import models
+from django.db import IntegrityError
+from django.utils.text import slugify
+
+from common.tools import fetch_from_web_api, fetch_from_entrez
+
 from Bio import Entrez, Medline
 from string import Template
-
 import urllib.request,json
-
 import logging
 import re
 
@@ -12,9 +15,9 @@ class WebResource(models.Model):
     slug = models.SlugField(max_length=20)
     name = models.CharField(max_length=200, default='')
     url = models.TextField()
-    #url should be a string template, so it can be automaticaly filled with index in proper place
-    #https://docs.python.org/3.4/library/string.html#string.Template
-    #Example: 'http://www.ncbi.nlm.nih.gov/pubmed/$index'
+    # url should be a string template, so it can be automaticaly filled with index in proper place
+    # https://docs.python.org/3.4/library/string.html#string.Template
+    # Example: 'http://www.ncbi.nlm.nih.gov/pubmed/$index'
 
     def __str__(self):
         return self.url
@@ -26,12 +29,13 @@ class WebLink(models.Model):
     web_resource = models.ForeignKey('WebResource')
     index = models.TextField()
 
-    #And now generating the working url is just a piece of cake
+    # And now generating the working url is just a piece of cake
     def __str__(self):
         return Template(str(self.web_resource)).substitute(index=self.index)
     
     class Meta():
         db_table = 'web_link'
+        unique_together = ('web_resource', 'index')
 
 
 class Publication(models.Model):
@@ -48,52 +52,84 @@ class Publication(models.Model):
     class Meta():
         db_table = 'publication'
 
-    def update_from_pubmed_data(self, index=None):
+    def update_from_doi(self, doi):
         logger = logging.getLogger('build')
-        try:
-            Entrez.email = 'info@gpcrdb.org'
-            if index:
-                handle = Entrez.efetch(
-                    db="pubmed", 
-                    id=str(index), 
-                    rettype="medline", 
-                    retmode="text"
-                    )
-            else:
-                handle = Entrez.efetch(
-                    db="pubmed", 
-                    id=str(self.web_link.index),
-                    rettype="medline",
-                    retmode="text"
-                    )
-        except Exception as e:
-            logger.error("Failed 1x to retrieve data for pubmed id: {} - trying again".format(index))
+
+        # should entrez be tried as a backup?
+        try_entrez_on_fail = False
+        
+        # check whether this data is cached
+        cache_dir = ['crossref', 'doi']
+        url = 'http://api.crossref.org/works/$index'
+        pub = fetch_from_web_api(url, doi, cache_dir)
+                
+        if pub:
+            # update record
+            try:
+                self.title = pub['message']['title'][0]
+                self.year = pub['message']['deposited']['date-parts'][0][0]
+
+                # go from [{'family': 'Gloriam', 'given': 'David E.'}] to ['Gloriam DE']
+                authors = ['{} {}'.format(x['family'], ''.join([y[:1] for y in x['given'].split()]))
+                    for x in pub['message']['author']]
+                self.authors = ', '.join(authors)
+            
+                # get volume and pages if available
+                reference = {}
+                fields = ['volume', 'page']
+                for f in fields:
+                    if f in pub['message']:
+                        reference[f] = pub['message'][f]
+                    else:
+                        reference[f] = 'X'
+                self.reference = '{}:{}'.format(reference['volume'], reference['page'])
+
+                # journal
+                journal = pub['message']['container-title'][0]
+                try:
+                    # not all records have the journal abbreviation
+                    journal_abbr = pub['message']['container-title'][1]
+                except:
+                    journal_abbr = slugify(journal)
+                try:
+                    self.journal, created = PublicationJournal.objects.get_or_create(name=journal,
+                        defaults={'slug': journal_abbr})
+                    if created:
+                        logger.info('Created journal {}'.format(journal))
+                except IntegrityError:
+                    self.journal = PublicationJournal.objects.get(name=journal)
+            except Exception as msg:
+                logger.warning('Processing data from CrossRef for {} failed: {}'.format(doi, msg))
+                try_entrez_on_fail = False
+        else:
+            try_entrez_on_fail = False
+
+        if try_entrez_on_fail:
+            # try searching entrez for DOI
             try:
                 Entrez.email = 'info@gpcrdb.org'
-                if index:
-                    handle = Entrez.efetch(
-                        db="pubmed", 
-                        id=str(index), 
-                        rettype="medline", 
-                        retmode="text"
-                        )
-                else:
-                    handle = Entrez.efetch(
-                        db="pubmed", 
-                        id=str(self.web_link.index),
-                        rettype="medline",
-                        retmode="text"
-                        )
-            except Exception as e:
-                logger.error("Failed 2x to retrieve data for pubmed id: {}".format(index))
-                return
+                record = Entrez.read(Entrez.esearch(
+                    db='pubmed',
+                    retmax=1,
+                    term=doi
+                    ))
+                self.update_from_pubmed_data(record['IdList'][0])
+            except:
+                return False
+
+    def update_from_pubmed_data(self, index=None):
+        logger = logging.getLogger('build')
+
+        if not index:
+            index = self.web_link.index
+        cache_dir = ['entrez', 'pmid']
+        record = fetch_from_entrez(index, cache_dir)
         try:
-            record = Medline.read(handle)
             self.title = record['TI']
-            self.authors = record['AU']
+            self.authors = ', '.join(record['AU'])
             self.year = record['DA'][:4]
-            record['JT'] = record['JT'][:29] #not allowed longer by model. FIXME
-            record['TA'] = record['TA'][:29] #not allowed longer by model. FIXME
+            record['JT'] = record['JT']
+            record['TA'] = record['TA']
             try:
                 self.journal = PublicationJournal.objects.get(slug=record['TA'], name=record['JT'])
             except PublicationJournal.DoesNotExist:
@@ -104,76 +140,54 @@ class Publication(models.Model):
             self.reference = ""
             if 'VI' in record:
                 self.reference += record['VI']
-            if 'IP' in record:
-                self.reference += "(" + record['IP'] + ")"
             if 'PG' in record:
                 self.reference += ":" + record['PG']
         except Exception as msg:
-            logger.error("Publication update on pubmed error! Pubmed: "+index+" error:" + str(msg) )
-
-    def update_from_doi(self, doi):
-        logger = logging.getLogger('build')
-        #Pubmed by doi
-        try: #try entrez first -- faster.
-            Entrez.email = 'info@gpcrdb.org'
-            record = Entrez.read(Entrez.esearch(
-                db='pubmed',
-                retmax=1,
-                term=doi
-                ))
-            self.update_from_pubmed_data(record['IdList'][0])
-        except Exception as msg:
-            #Crossref doi search
-            logger.error("Publication update on doi via entrez error - trying crossref! DOI: "+doi+" error:" + str(msg) )
-            try:
-                url = "http://search.crossref.org/dois?q={}".format(doi)
-                pub = json.loads(urllib.request.urlopen(url).read().decode('ascii', "ignore"))
-                # print(pub)
-                # print(pub[0])
-                # print(pub[0]['title'])
-                self.title = pub[0]['title'].strip()
-                self.year = pub[0]['year'].strip()
-                full_cit = [x.strip() for x in reversed(pub[0]['fullCitation'].split(','))]
-                tmp_authors = []   
-                p = re.compile(r'\d\d\d\d') #FIXME SOMETHING ERRORS HERE
-                item = full_cit.pop()  
-                while item.strip()[0] != "'" and p.match(item.strip()) is None:
-                    tmp_authors.append(item.strip())
-                    item = full_cit.pop()
-                self.authors = ','.join(tmp_authors)      
-                pages = ''
-                vol = ''
-                issue = ''    
-                for i in full_cit:
-                    if '<i>' in i:
-                        try:
-                            self.journal = PublicationJournal.objects.get(name=i.replace('<i>','').replace('</i>',''))
-                        except PublicationJournal.DoesNotExist:
-                            j = PublicationJournal(name=i.replace('<i>','').replace('</i>',''))
-                            j.save()
-                            self.journal = j
-                    if i.replace("'",'').strip() == self.title:
-                        continue
-                    if i.startswith('pp.'):
-                        pages = i.replace('pp. ','')
-                    if i.startswith('no.'):
-                        issue = '({})'.format(i.replace('no. ',''))
-                    if i.startswith('vol.'):
-                        vol = i.replace('vol. ','')
-                self.reference = "{}{}:{}".format(vol,issue,pages)    
-
-
-            except Exception as e:
-                logger.error("Publication update on pubmed error! DOI: "+doi+" error:" + str(e) )
-                pass
+            logger.warning('Publication update on pubmed error! Pubmed: {} error {}'.format(index, msg))
 
 
 class PublicationJournal(models.Model):
-    slug = models.CharField(max_length=30, null=True)
-    name = models.TextField()
+    slug = models.CharField(max_length=200, null=True)
+    name = models.TextField(unique=True)
 
     def __str__(self):
         return "{!s} ({!s})".format(self.name, self.slug)
 
     class Meta():
         db_table = 'publication_journal'
+
+
+class ReleaseNotes(models.Model):
+    date = models.DateField()
+    html = models.TextField()
+
+    def __str__(self):
+        return str(self.date)
+
+    class Meta():
+        ordering = ('-date', )
+        db_table = 'release_notes'
+
+
+class ReleaseStatistics(models.Model):
+    release = models.ForeignKey('ReleaseNotes')
+    statistics_type = models.ForeignKey('ReleaseStatisticsType')
+    value = models.IntegerField()
+
+    def __str__(self):
+        return "{} {}".format(self.date, self.statistics_type)
+
+    class Meta():
+        ordering = ('id', )
+        db_table = 'release_statistics'
+
+
+class ReleaseStatisticsType(models.Model):
+    name = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'release_statistics_type'
+

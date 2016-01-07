@@ -1,68 +1,27 @@
-{% extends "home/base.html" %}
+{% extends "common/selection.html" %}
 {% load staticfiles %}
 
-{% block content %}
-    <div class="row">
-        
-        <!-- description boxes -->
-        <div class="col-md-4">
-
-            <!-- main description -->
-            <div class="col-md-12 well">
-                {% if step and number_of_steps %}
-                <h2>STEP {{ step }} of {{ number_of_steps }}</h2>
-                {% endif %}
-                <h4>{{ title }}</h4>
-                {{ description|linebreaks }}
-            </div>
-
-            <!-- link to docs -->
-            {% if docs %}
-            <div class="col-md-12 well">
-                <p>For more information on this tool, see the <a href="{{ docs }}">docs</a>.</p>
-            </div>
-            {% endif %}
-
-        </div>
-        
-        <!-- selection boxes -->
-        <div class="col-md-4">
-
-            <!-- segment list -->
-            {% if segment_list %}
-            <div class="col-md-12 well">
-                <h4>Sequence segments</h4>
-                {% include 'common/selection_segments.html' %}
-            </div>
-            {% endif %}
-
-        </div>
-        
-        <!-- selection -->
-        <div class="col-md-4">
-
-            <!-- button(s) -->
-            {% if buttons %}
-            <div id="selection-buttons">
-                {% include 'common/selection_buttons.html' %}
-            </div>
-            {% endif %}
-
-            <!-- show the selection -->
-            {% for selection_box, include in selection_boxes.items %}
-                {% if include %}
-                <div class="col-md-12 well" id="selection-{{ selection_box }}">
-                {% with selection_type=selection_box %}
-                    {% include 'common/selection_lists.html' %}
-                {% endwith %}
-                </div>
-                {% endif %}
-            {% endfor %}
-
-        </div>
-
-    </div>
-{% endblock %}
 {% block addon_js %}
     <script src="{% static 'home/js/selection.js' %}"></script>
+{% endblock %}
+
+{% block middle_column %}
+            {% if segment_list %}
+            <!-- segment list -->
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Sequence segments</h4>
+                    {% if position_type == 'site_residue' %}
+                        {% include 'common/selection_segments_sitesearch.html' %}
+                    {% else %}
+                        {% include 'common/selection_segments.html' %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if structure_upload %}
+            <!-- structure upload -->
+                {% include 'common/selection_pdb_upload.html' %}
+            {% endif %}
 {% endblock %}

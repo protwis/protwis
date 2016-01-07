@@ -1,95 +1,314 @@
 from django.shortcuts import render
-from django.http import HttpResponse
-#from interaction.functions import *
-# Create your views here.
-from subprocess import call
-from .forms import PDBform
+from django.http import HttpResponse, HttpResponseRedirect
+from django.conf import settings
 from django import forms
-from django.core.servers.basehttp import FileWrapper
-from django.db.models import Count, Min, Sum, Avg,Q
+from django.db.models import Count, Min, Sum, Avg, Q
+from django.utils.text import slugify
+
 
 from interaction.models import *
+from interaction.forms import PDBform
 from ligand.models import Ligand
 from ligand.models import LigandType
 from ligand.models import LigandRole, LigandProperities
-from structure.models import Structure,PdbData,Rotamer,Fragment
-from protein.models import ProteinConformation,Protein
-from residue.models import Residue
+from structure.models import Structure, PdbData, Rotamer, Fragment
+from structure.functions import BlastSearch
+from structure.assign_generic_numbers_gpcr import GenericNumbering
+from protein.models import ProteinConformation, Protein, ProteinSegment
+from residue.models import Residue, ResidueGenericNumber, ResidueGenericNumberEquivalent, ResidueNumberingScheme
 from common.models import WebResource
 from common.models import WebLink
+from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
+from common.selection import SimpleSelection, Selection, SelectionItem
+from common import definitions
+from common.views import AbsTargetSelection
 
-
-from os import path, listdir, devnull
-from os.path import isfile, join
+import os
+from os import listdir, devnull, makedirs
 import yaml
 from operator import itemgetter
 from datetime import datetime
 import re
 import json
 import logging
-from subprocess import Popen, DEVNULL
+from subprocess import call, Popen, DEVNULL
+import urllib
+import collections
+from collections import OrderedDict
+from io import StringIO, BytesIO
+from Bio.PDB import PDBIO, PDBParser
+import xlsxwriter
 
-AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
-     'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
-     'HIS':'H', 'ILE':'I', 'LEU':'L', 'LYS':'K',
-     'MET':'M', 'PHE':'F', 'PRO':'P', 'SER':'S',
-     'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V'}
+AA = {'ALA': 'A', 'ARG': 'R', 'ASN': 'N', 'ASP': 'D',
+      'CYS': 'C', 'GLN': 'Q', 'GLU': 'E', 'GLY': 'G',
+      'HIS': 'H', 'ILE': 'I', 'LEU': 'L', 'LYS': 'K',
+      'MET': 'M', 'PHE': 'F', 'PRO': 'P', 'SER': 'S',
+      'THR': 'T', 'TRP': 'W', 'TYR': 'Y', 'VAL': 'V'}
+
 
 def regexaa(aa):
-    aaPattern = re.compile(r'^(\w{3})(\d+)(\w+)$') 
-    result = aaPattern.search(aa).groups() #Splits the string into AA number CHAIN : LEU339A => ('LEU', '339', 'A')
+    aaPattern = re.compile(r'^(\w{3})(\d+)(\w+)$')
+    # Splits the string into AA number CHAIN : LEU339A => ('LEU', '339', 'A')
+    result = aaPattern.search(aa).groups()
     if result:
         aa = AA[result[0]]
         number = result[1]
         chain = result[2]
-        return aa,number,chain
+        return aa, number, chain
     else:
         return None, None, None
 
-def index(request):
 
-    form = PDBform()
+class InteractionSelection(AbsTargetSelection):
 
-    #context = {}
-    return render(request,'interaction/index.html',{'form': form})
+    # Left panel
+    step = 1
+    number_of_steps = 1
+    docs = 'generic_numbering.html'  # FIXME
 
-def list(request):
+    # description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
+    #     + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \
+    #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
+    #     + ' have selected all your receptors, click the green button.'
+
+    description = 'Ligand Interactions description'
+
+    # Middle section
+    numbering_schemes = False
+    filters = False
+    search = False
+    title = "Select annotated receptor interactions, PDB code or upload PDB file"
+
+    template_name = 'interaction/interactionselection.html'
+
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+
+    # Buttons
+    buttons = {
+        'continue': {
+            'label': 'Show interactions',
+            'onclick': 'submitupload()',
+            'color': 'success',
+        }
+    }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['structures'] = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index', 'structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate(
+            num_ligands=Count('structure_ligand_pair', distinct=True), num_interactions=Count('pk', distinct=True)).order_by('structure_ligand_pair__structure__pdb_code__index')
+        context['form'] = PDBform()
+        return context
+
+
+def StructureDetails(request, pdbname):
+    """
+    Show structure details
+    """
+    pdbname = pdbname
+    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name', 'structure_ligand_pair__pdb_reference', 'structure_ligand_pair__annotated').filter(
+        structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes=Count('pk', distinct=True)).order_by('-numRes')
+    resn_list = ''
+
+    for structure in structures:
+        if structure['structure_ligand_pair__annotated']:
+            resn_list += ",\"" + \
+                structure['structure_ligand_pair__pdb_reference'] + "\""
+    print(resn_list)
+
+    crystal = Structure.objects.get(pdb_code__index=pdbname)
+    p = Protein.objects.get(protein=crystal.protein_conformation.protein)
+    residues = ResidueFragmentInteraction.objects.filter(
+        structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
+    residues_browser = []
+    ligands = []
+    residue_table_list = []
+    for residue in residues:
+        key = residue.interaction_type.name
+        aa = residue.rotamer.residue.amino_acid
+        pos = residue.rotamer.residue.sequence_number
+
+        if residue.rotamer.residue.generic_number:
+            residue_table_list.append(
+                residue.rotamer.residue.generic_number.label)
+
+        if residue.rotamer.residue.protein_segment:
+            segment = residue.rotamer.residue.protein_segment.slug
+        else:
+            segment = ''
+        if residue.rotamer.residue.display_generic_number:
+            display = residue.rotamer.residue.display_generic_number.label
+        else:
+            display = ''
+        ligand = residue.structure_ligand_pair.ligand.name
+        residues_browser.append({'type': key, 'aa': aa, 'ligand': ligand,
+                                 'pos': pos, 'gpcrdb': display, 'segment': segment})
+        if ligand not in ligands:
+            ligands.append(ligand)
+
+    # RESIDUE TABLE
+    segments = ProteinSegment.objects.all().filter().prefetch_related()
+
+    proteins = [p]
+
+    numbering_schemes_selection = [settings.DEFAULT_NUMBERING_SCHEME]
+    numbering_schemes_selection.append(p.residue_numbering_scheme.slug)
+
+    numbering_schemes = ResidueNumberingScheme.objects.filter(
+        slug__in=numbering_schemes_selection).all()
+    default_scheme = numbering_schemes.get(
+        slug=settings.DEFAULT_NUMBERING_SCHEME)
+    data = OrderedDict()
+
+    for segment in segments:
+        data[segment.slug] = OrderedDict()
+        residues = Residue.objects.filter(protein_segment=segment,  protein_conformation__protein=p,
+                                          generic_number__label__in=residue_table_list).prefetch_related('protein_conformation__protein',
+                                                                                                         'protein_conformation__state', 'protein_segment',
+                                                                                                         'generic_number', 'display_generic_number', 'generic_number__scheme',
+                                                                                                         'alternative_generic_numbers__scheme')
+        for scheme in numbering_schemes:
+            if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                    data[segment.slug][pos] = {
+                        scheme.slug: pos, 'seq': ['-'] * len(proteins)}
+            elif scheme == default_scheme:
+                for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                    data[segment.slug][pos] = {
+                        scheme.slug: pos, 'seq': ['-'] * len(proteins)}
+
+        for residue in residues:
+            alternatives = residue.alternative_generic_numbers.all()
+            pos = residue.generic_number
+            for alternative in alternatives:
+                if alternative.scheme not in numbering_schemes:
+                    continue
+                scheme = alternative.scheme
+                if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                    pos = residue.generic_number
+                    if scheme == pos.scheme:
+                        data[segment.slug][pos.label]['seq'][proteins.index(
+                            residue.protein_conformation.protein)] = str(residue)
+                    else:
+                        if scheme.slug not in data[segment.slug][pos.label].keys():
+                            data[segment.slug][pos.label][
+                                scheme.slug] = alternative.label
+                        if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                            data[segment.slug][pos.label][
+                                scheme.slug] += " " + alternative.label
+                        data[segment.slug][pos.label]['seq'][proteins.index(
+                            residue.protein_conformation.protein)] = str(residue)
+                else:
+                    if scheme.slug not in data[segment.slug][pos.label].keys():
+                        data[segment.slug][pos.label][
+                            scheme.slug] = alternative.label
+                    if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                        data[segment.slug][pos.label][
+                            scheme.slug] += " " + alternative.label
+                    data[segment.slug][pos.label]['seq'][proteins.index(
+                        residue.protein_conformation.protein)] = str(residue)
+
+    # Preparing the dictionary of list of lists. Dealing with tripple nested
+    # dictionary in django templates is a nightmare
+    flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
+    for s in iter(flattened_data):
+        flattened_data[s] = [[data[s][x][y.slug]
+                              for y in numbering_schemes] + data[s][x]['seq'] for x in sorted(data[s])]
+
+    context = {}
+    context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name for x in proteins], [x.name for x in numbering_schemes] + [
+                            x.name for x in proteins], [x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
+    context['segments'] = [x.slug for x in segments if len(data[x.slug])]
+    context['data'] = flattened_data
+    context['number_of_schemes'] = len(numbering_schemes)
+
+    residuelist = Residue.objects.filter(protein_conformation__protein=p).prefetch_related('protein_segment','display_generic_number','generic_number')
+    HelixBox = DrawHelixBox(
+                residuelist, p.get_protein_class(), str(p), nobuttons=1)
+    SnakePlot = DrawSnakePlot(
+                residuelist, p.get_protein_class(), str(p), nobuttons=1)
+
+    return render(request, 'interaction/structure.html', {'pdbname': pdbname, 'structures': structures,
+                                                          'crystal': crystal, 'protein': p, 'helixbox' : HelixBox, 'snakeplot': SnakePlot, 'residues': residues_browser, 'annotated_resn':
+                                                          resn_list, 'ligands': ligands, 'data': context['data'],
+                                                          'header': context['header'], 'segments': context['segments'],
+                                                          'number_of_schemes': len(numbering_schemes)})
+
+
+def list_structures(request):
     form = PDBform()
     #structures = ResidueFragmentInteraction.objects.distinct('structure_ligand_pair__structure').all()
-    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index','structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate( num_ligands=Count('structure_ligand_pair', distinct = True),num_interactions=Count('pk', distinct = True)).order_by('structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name')
+    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index', 'structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name').annotate(
+        num_ligands=Count('structure_ligand_pair', distinct=True), num_interactions=Count('pk', distinct=True)).order_by('structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name')
     #structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__structure__pdb_code__index','structure_ligand_pair__structure').annotate(Count('structure_ligand_pair__ligand'))
-    print(structures.count())
+    # print(structures.count())
+    genes = {}
+    countligands = {}
+    totalligands = 0
+    totalinteractions = 0
+    totaltopinteractions = 0
     for structure in structures:
-        print(structure)
-        #print(structure.structure_ligand_pair.structure.pdb_code.index)
-        #print(structure.numRes)
+        # print(structure)
+        if structure['structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name'] not in genes:
+            genes[structure[
+                'structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name']] = 1
+        totalligands += structure['num_ligands']
+        totalinteractions += structure['num_interactions']
+        ligands = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name').filter(structure_ligand_pair__structure__pdb_code__index=structure[
+            'structure_ligand_pair__structure__pdb_code__index']).annotate(numRes=Count('pk', distinct=True)).order_by('-numRes')
+        for ligand in ligands:
+            totaltopinteractions += ligand['numRes']
+            if ligand['structure_ligand_pair__ligand__name'] not in countligands:
+                countligands[ligand['structure_ligand_pair__ligand__name']] = 1
+            break
+
+        # print(structure.structure_ligand_pair.structure.pdb_code.index)
+        # print(structure.numRes)
     #objects = Model.objects.filter(id__in=object_ids)
     #context = {}
-    return render(request,'interaction/list.html',{'form': form, 'structures': structures})
+    print('Structures with ligand information:' + str(structures.count()))
+    print('Distinct genes:' + str(len(genes)))
+    #print('ligands:' + str(totalligands))
+    print('interactions:' + str(totalinteractions))
+    print('interactions from top ligands:' + str(totaltopinteractions))
+    print('Distinct ligands as top ligand:' + str(len(countligands)))
+
+    return render(request, 'interaction/list.html', {'form': form, 'structures': structures})
+
 
 def crystal(request):
     pdbname = request.GET.get('pdb')
     form = PDBform()
-    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name').filter(structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
+    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name').filter(
+        structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes=Count('pk', distinct=True)).order_by('-numRes')
     crystal = Structure.objects.get(pdb_code__index=pdbname)
     p = Protein.objects.get(protein=crystal.protein_conformation.protein)
-    residues = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname).order_by('rotamer__residue__sequence_number')
-    print("residues",residues)
-    return render(request,'interaction/crystal.html',{'form': form, 'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues })
+    residues = ResidueFragmentInteraction.objects.filter(
+        structure_ligand_pair__structure__pdb_code__index=pdbname).order_by('rotamer__residue__sequence_number')
+    print("residues", residues)
+    return render(request, 'interaction/crystal.html', {'form': form, 'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein': p, 'residues': residues})
 
 
 def view(request):
     pdbname = request.GET.get('pdb')
     form = PDBform()
-    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name').filter(structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
-    return render(request,'interaction/view.html',{'form': form, 'pdbname': pdbname, 'structures': structures})
+    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name').filter(
+        structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes=Count('pk', distinct=True)).order_by('-numRes')
+    return render(request, 'interaction/view.html', {'form': form, 'pdbname': pdbname, 'structures': structures})
+
 
 def ligand(request):
     pdbname = request.GET.get('pdb')
     ligand = request.GET.get('ligand')
     form = PDBform()
-    fragments = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname).filter(structure_ligand_pair__ligand__name=ligand).order_by('interaction_type')
-    return render(request,'interaction/ligand.html',{'form': form, 'pdbname': pdbname, 'ligand': ligand, 'fragments': fragments})
+    fragments = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname).filter(
+        structure_ligand_pair__ligand__name=ligand).order_by('interaction_type')
+    return render(request, 'interaction/ligand.html', {'form': form, 'pdbname': pdbname, 'ligand': ligand, 'fragments': fragments})
+
 
 def fragment(request):
     pdbname = request.GET.get('pdb')
@@ -97,144 +316,182 @@ def fragment(request):
     fragment = request.GET.get('fragment')
     form = PDBform()
     fragments = ResidueFragmentInteraction.objects.get(id=fragment)
-    return render(request,'interaction/fragment.html',{'form': form, 'pdbname': pdbname, 'ligand': ligand, 'fragmentid': fragment, 'fragments': fragments})
+    return render(request, 'interaction/fragment.html', {'form': form, 'pdbname': pdbname, 'ligand': ligand, 'fragmentid': fragment, 'fragments': fragments})
+
 
 def updateall(request):
     structures = Structure.objects.values('pdb_code__index').distinct()
     for s in structures:
         pdbname = s['pdb_code__index']
-        check = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname).all()
+        check = ResidueFragmentInteraction.objects.filter(
+            structure_ligand_pair__structure__pdb_code__index=pdbname).all()
 
-        if check.count()==0:
+        if check.count() == 0:
             t1 = datetime.now()
             runcalculation(pdbname)
             t2 = datetime.now()
             delta = t2 - t1
             seconds = delta.total_seconds()
-            print("Calculation: Total time "+str(seconds)+" seconds for "+pdbname)
+            print("Calculation: Total time " +
+                  str(seconds) + " seconds for " + pdbname)
             t1 = datetime.now()
-            results = parsecalculation(pdbname,False)
+            results = parsecalculation(pdbname, False)
             t2 = datetime.now()
             delta = t2 - t1
             seconds = delta.total_seconds()
-            print("Parsing: Total time "+str(seconds)+" seconds for "+pdbname)
-            check = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname).all()
+            print("Parsing: Total time " +
+                  str(seconds) + " seconds for " + pdbname)
+            check = ResidueFragmentInteraction.objects.filter(
+                structure_ligand_pair__structure__pdb_code__index=pdbname).all()
             print("Interactions found: " + str(check.count()))
         else:
             print(pdbname + " already calculated")
-       
-    #return render(request,'interaction/view.html',{'form': form, 'pdbname': pdbname, 'structures': structures})
+
+    # return render(request,'interaction/view.html',{'form': form, 'pdbname':
+    # pdbname, 'structures': structures})
+
 
 def runcalculation(pdbname):
-    call(["python", "interaction/functions.py","-p",pdbname], stdout=open(devnull, 'wb'), stderr=open(devnull, 'wb'))
+    calc_script = os.sep.join(
+        [os.path.dirname(__file__), 'legacy_functions.py'])
+    call(["python", calc_script, "-p", pdbname],
+         stdout=open(devnull, 'wb'), stderr=open(devnull, 'wb'))
     return None
 
-def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #consider skipping non hetsym ligands FIXME
+
+def check_residue(protein, pos, aa):
+    residue = Residue.objects.filter(
+        protein_conformation=protein, sequence_number=pos)
+    if residue.exists():
+        residue = Residue.objects.get(
+            protein_conformation=protein, sequence_number=pos)
+        if residue.amino_acid != aa:
+            residue.amino_acid = aa
+            residue.save()
+    else:
+        residue, created = Residue.objects.get_or_create(
+            protein_conformation=protein, sequence_number=pos, amino_acid=aa)
+        # continue #SKIP THESE -- mostly fusion residues that aren't mapped
+        # yet.
+    return residue
+
+
+def extract_fragment_rotamer(f, residue, structure, ligand):
+    if os.path.isfile(f):
+        f_in = open(f, 'r')
+        rotamer_pdb = ''
+        fragment_pdb = ''
+        for line in f_in:
+            if line.startswith('HETATM') or line.startswith('CONECT') or line.startswith('MASTER') or line.startswith('END'):
+                fragment_pdb += line
+            elif line.startswith('ATOM'):
+                rotamer_pdb += line
+            else:
+                fragment_pdb += line
+                rotamer_pdb += line
+        f_in.close()
+
+        rotamer_data, created = PdbData.objects.get_or_create(pdb=rotamer_pdb)
+        rotamer, created = Rotamer.objects.get_or_create(
+            residue=residue, structure=structure, pdbdata=rotamer_data)
+
+        fragment_data, created = PdbData.objects.get_or_create(
+            pdb=fragment_pdb)
+        fragment, created = Fragment.objects.get_or_create(
+            ligand=ligand, structure=structure, pdbdata=fragment_data, residue=residue)
+    else:
+        quit("Could not find " + f)
+
+    return fragment, rotamer
+
+
+# consider skipping non hetsym ligands FIXME
+def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
     logger = logging.getLogger('build')
-    mypath = '/tmp/interactions/results/'+pdbname+'/output'
+    mypath = '/tmp/interactions/results/' + pdbname + '/output'
     module_dir = '/tmp/interactions'
     results = []
-    web_resource, created = WebResource.objects.get_or_create(slug='pdb',url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
-    web_link, created = WebLink.objects.get_or_create(web_resource=web_resource,index=pdbname)
+    web_resource, created = WebResource.objects.get_or_create(
+        slug='pdb', url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
+    web_link, created = WebLink.objects.get_or_create(
+        web_resource=web_resource, index=pdbname)
 
-    structure=Structure.objects.filter(pdb_code=web_link) 
+    structure = Structure.objects.filter(pdb_code=web_link)
     if structure.exists():
-        structure=Structure.objects.get(pdb_code=web_link)
-   
-        
-        #quit() #quit!
+        structure = Structure.objects.get(pdb_code=web_link)
 
         if structure.pdb_data is None:
-            f = module_dir+"/pdbs/"+pdbname+".pdb"
-            if isfile(f):      
-                pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read()) #does this close the file?
+            f = module_dir + "/pdbs/" + pdbname + ".pdb"
+            if os.path.isfile(f):
+                pdbdata, created = PdbData.objects.get_or_create(
+                    pdb=open(f, 'r').read())  # does this close the file?
             else:
                 print('quitting due to no pdb in filesystem')
                 quit()
             structure.pdb_data = pdbdata
             structure.save()
 
-        protein=structure.protein_conformation
+        protein = structure.protein_conformation
 
         for f in listdir(mypath):
-            if isfile(join(mypath,f)):       
-                result = yaml.load(open(mypath+"/"+f, 'rb'))
+            if os.path.isfile(os.path.join(mypath, f)):
+                result = yaml.load(open(mypath + "/" + f, 'rb'))
                 output = result
-
-                temp = f.replace('.yaml','').split("_")
-                #print(output)
+                temp = f.replace('.yaml', '').split("_")
                 temp.append([output])
-                temp.append(round(output['score'][0][0]))
+                temp.append(round(output['score']))
                 temp.append((output['inchikey']).strip())
                 temp.append((output['smiles']).strip())
                 results.append(temp)
 
                 if 'prettyname' not in output:
+                    # use hetsyn name if possible, others 3letter
                     output['prettyname'] = temp[1]
-                    #continue
 
-                #print(' start ligand ' + output['prettyname'])
-                ligand = Ligand.objects.filter(properities__inchikey=output['inchikey'].strip(), canonical=True)
-                if ligand.exists():
-                    ligand = ligand.get()
-                    if output['prettyname']!=ligand.name: #add alias if same inchikey but different name.
-                        alias = Ligand.objects.filter(name=output['prettyname'], properities__inchikey=output['inchikey'].strip(), canonical=False)
-                        if alias.exists():
-                            ligand = alias.get()
-                        else:
-                            alias = Ligand()
-                            alias.name = output['prettyname']
-                            alias.canonical = False
-                            alias.properities = ligand.properities
-                            alias.save()
-
-                            ligand = alias #Use alias for structureligandinteraction
-                else: #Ligand does not exist, create it
-                    ligandtype, created = LigandType.objects.get_or_create(slug="sm", name='Small molecule') #FIXME
-                    lp = LigandProperities()
-                    lp.inchikey = output['inchikey'].strip()
-                    lp.smiles = output['smiles'].strip()
-                    lp.ligandtype = ligandtype
-                    lp.save()
-
-                    ligand = Ligand()
-                    ligand.properities = lp
-                    ligand.name = output['prettyname']
-                    ligand.canonical = True #assume it's canonical but check.
-                    ligand.ambigious_alias = False #assume till proven otherwise
-                    ligand.save()
-                    ligand.load_by_name(output['prettyname'])
-                    ligand.save()
-
-                    #if ligand.canonical== False: 
-                        #print('looking for '+output['inchikey'].strip())
-                        #ligand = Ligand.objects.get(properities__inchikey=output['inchikey'].strip(), canonical=True)
-             
-                #proteinligand, created = ProteinLigandInteraction.objects.get_or_create(protein=protein,ligand=ligand)
-
-                f = module_dir+"/results/"+pdbname+"/interaction"+"/"+pdbname+"_"+temp[1]+".pdb"
-                if isfile(f):      
-                    pdbdata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read()) #does this close the file?
-                    if debug: print("Found file"+f)
+                f = module_dir + "/results/" + pdbname + "/interaction" + \
+                    "/" + pdbname + "_" + temp[1] + ".pdb"
+                if os.path.isfile(f):
+                    pdbdata, created = PdbData.objects.get_or_create(
+                        pdb=open(f, 'r').read())  # does this close the file?
+                    if debug:
+                        print("Found file" + f)
                 else:
-                    print('quitting due to no pdb for fragment in filesystem',f)
+                    print('quitting due to no pdb for fragment in filesystem', f)
                     quit()
 
-
-                structureligandinteraction = StructureLigandInteraction.objects.filter(ligand__properities__inchikey=output['inchikey'].strip(),structure=structure)
-                if structureligandinteraction.exists():
+                structureligandinteraction = StructureLigandInteraction.objects.filter(
+                    pdb_reference=temp[1], structure=structure, annotated=True)
+                if structureligandinteraction.exists():  # if the annotated exists
                     structureligandinteraction = structureligandinteraction.get()
                     structureligandinteraction.pdb_file = pdbdata
-                    structureligandinteraction.pdb_reference = temp[1]
-                elif StructureLigandInteraction.objects.filter(pdb_reference=temp[1],structure=structure).exists(): #incase defined reference doesn't match on inchikey
-                    structureligandinteraction = StructureLigandInteraction.objects.filter(pdb_reference=temp[1],structure=structure).get()
+                    ligand = structureligandinteraction.ligand
+                    if structureligandinteraction.ligand.properities.inchikey != output['inchikey'].strip():
+                        logger.error(
+                            'inchikey for annotated ligand and PDB ligand mismatch' + output['prettyname'])
+                elif StructureLigandInteraction.objects.filter(pdb_reference=temp[1], structure=structure).exists():
+                    structureligandinteraction = StructureLigandInteraction.objects.filter(
+                        pdb_reference=temp[1], structure=structure).get()
                     structureligandinteraction.pdb_file = pdbdata
-                    if structureligandinteraction.ligand.properities.inchikey is None:
-                        logger.info('Old ligand didnt get inchikey -- error in naming, using inchikey/properities from structure')
-                        structureligandinteraction.ligand.delete()
-                        structureligandinteraction.ligand = ligand
-                else:
-                    ligandrole, created = LigandRole.objects.get_or_create(name='unknown',slug='unknown')
+                    ligand = structureligandinteraction.ligand
+                else:  # create ligand and pair
+
+                    ligand = Ligand.objects.filter(
+                        name=output['prettyname'], canonical=True)
+
+                    if ligand.exists():  # if ligand with name (either hetsyn or 3 letter) exists use that.
+                        ligand = ligand.get()
+                    else:  # create it
+                        default_ligand_type = 'N/A'
+                        lt, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
+                                                                       defaults={'name': default_ligand_type})
+
+                        ligand = Ligand()
+                        ligand = ligand.load_from_pubchem(
+                            'inchikey', output['inchikey'].strip(), lt, output['prettyname'])
+                        ligand.save()
+
+                    ligandrole, created = LigandRole.objects.get_or_create(
+                        name='unknown', slug='unknown')
                     structureligandinteraction = StructureLigandInteraction()
                     structureligandinteraction.ligand = ligand
                     structureligandinteraction.structure = structure
@@ -243,309 +500,640 @@ def parsecalculation(pdbname, debug = True, ignore_ligand_preset = False): #cons
                     structureligandinteraction.pdb_reference = temp[1]
 
                 structureligandinteraction.save()
-                
 
-                #structureligandinteraction, created = StructureLigandInteraction.objects.get_or_create(ligand=ligand,structure=structure, ligand_role=ligandrole, pdb_file=pdbdata) #, pdb_reference=pdbname <-- max length set to 3? So can't insert ones correctly
+                ResidueFragmentInteraction.objects.filter(structure_ligand_pair=structureligandinteraction).delete()
 
-                
-                for interactiontype,interactionlist in output.items():
-                    if interactiontype=='hbond' or interactiontype=='hbondplus':
-                        for entry in interactionlist:
-                            #print(interactiontype,entry)
-                            aa = entry[0]
-                            aa,pos,chain = regexaa(aa)
+                for interaction in output['interactions']:
+                    aa = interaction[0]
+                    aa, pos, chain = regexaa(aa)
+                    residue = check_residue(protein, pos, aa)
+                    f = interaction[1]
 
-                            residue=Residue.objects.filter(protein_conformation=protein, sequence_number=pos)
-                            if residue.exists():
-                                residue=Residue.objects.get(protein_conformation=protein, sequence_number=pos)
-                                if residue.amino_acid!=aa:
-                                    if debug: print("Updated amino acid from",residue.amino_acid,"to",aa)
-                                    residue.amino_acid = aa
-                                    residue.save()
-                            else:
-                                if debug: print("Not found residue!",pdbname,pos,aa)
-                                residue, created=Residue.objects.get_or_create(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
-                                #continue #SKIP THESE -- mostly fusion residues that aren't mapped yet.
+                    fragment, rotamer = extract_fragment_rotamer(
+                                    f, residue, structure, ligand)
 
-                            for pair in entry[3]:
-                                fragment = pair[0] #NEED TO EXPAND THIS TO INCLUDE MORE INFO
+                    interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(
+                                    slug=interaction[2], name=interaction[3], type=interaction[4], direction=interaction[5])
+                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(
+                                    structure_ligand_pair=structureligandinteraction, interaction_type=interaction_type, fragment=fragment, rotamer=rotamer)
 
-                                f = module_dir+"/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_"+fragment+"_HB.pdb"
-                                if interactiontype=='hbondplus':  f = module_dir+"/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_"+fragment+"_HBC.pdb"
-                                if isfile(f):      
-                                    if debug: print("Found file"+f)
-                                    f_in = open(f, 'r')
-                                    rotamer_pdb = ''
-                                    fragment_pdb = ''
-                                    for line in f_in:
-                                        if line.startswith('HETATM') or line.startswith('CONECT') or line.startswith('MASTER') or line.startswith('END'): 
-                                            fragment_pdb += line
-                                        elif line.startswith('ATOM'): 
-                                            rotamer_pdb += line
-                                        else:
-                                            fragment_pdb += line
-                                            rotamer_pdb += line
-                                    f_in.close();
-
-                                    rotamer_data, created = PdbData.objects.get_or_create(pdb=rotamer_pdb)
-                                    rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
-
-                                    fragment_data, created = PdbData.objects.get_or_create(pdb=fragment_pdb) 
-                                    fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data, residue=residue)
-                                else:
-                                    quit("Could not find "+f)
-
-                                interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug=interactiontype,name=interactiontype)
-                                fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure_ligand_pair=structureligandinteraction,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
-                                
-                                
-                    elif interactiontype=='hbond_confirmed':
-                        for entry in interactionlist:
-                            #print(interactiontype,entry)
-                            aa = entry[0]
-                            aa,pos,chain = regexaa(aa)
-                            interactiontype="HB"+entry[1][0][0]
-
-                            residue=Residue.objects.filter(protein_conformation=protein, sequence_number=pos)
-                            if residue.exists():
-                                residue=Residue.objects.get(protein_conformation=protein, sequence_number=pos)
-                                if residue.amino_acid!=aa:
-                                    if debug: logger.info("Updated amino acid from",residue.amino_acid,"to",aa)
-                                    residue.amino_acid = aa
-                                    residue.save()
-                            else:
-                                if debug: logger.info("Not found residue!",pdbname,pos,aa)
-                                residue, created=Residue.objects.get_or_create(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
-                                #continue #SKIP THESE -- mostly fusion residues that aren't mapped yet.
-
-                            for pair in entry[1]:  
-                                fragment = pair[1] #NEED TO EXPAND THIS TO INCLUDE MORE INFO
-
-                                #mypath = module_dir+'/temp/results/'+pdbname+'/fragments'
-                                f = module_dir+"/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_"+fragment+"_HB.pdb"
-                                if isfile(f):      
-                                    if debug: print("Found file"+f)
-                                    f_in = open(f, 'r')
-                                    rotamer_pdb = ''
-                                    fragment_pdb = ''
-                                    for line in f_in:
-                                        if line.startswith('HETATM') or line.startswith('CONECT') or line.startswith('MASTER') or line.startswith('END'): 
-                                            fragment_pdb += line
-                                        elif line.startswith('ATOM'): 
-                                            rotamer_pdb += line
-                                        else:
-                                            fragment_pdb += line
-                                            rotamer_pdb += line
-                                    f_in.close();
-
-                                    rotamer_data, created = PdbData.objects.get_or_create(pdb=rotamer_pdb)
-                                    rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
-
-                                    fragment_data, created = PdbData.objects.get_or_create(pdb=fragment_pdb) 
-                                    fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data, residue=residue)
-                                else:
-                                    quit("Could not find "+f)
-
-                                interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug=interactiontype,name=interactiontype)
-                                #fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
-                                fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure_ligand_pair=structureligandinteraction,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
-                    elif interactiontype=='hydrophobic': #NO FRAGMENT FOR THESE, WHAT TO DO? USE WHOLE LIGAND?
-                        for entry in interactionlist:
-                            if debug: print(entry)
-                            aa = entry[0]
-                            aa,pos,chain = regexaa(aa)
-                            #fragment = entry[1][0][1] #NEED TO EXPAND THIS TO INCLUDE MORE INFO
-
-                            residue=Residue.objects.filter(protein_conformation=protein, sequence_number=pos)
-                            if residue.exists():
-                                residue=Residue.objects.get(protein_conformation=protein, sequence_number=pos)
-                                if residue.amino_acid!=aa:
-                                    if debug: logger.info("Updated amino acid from",residue.amino_acid,"to",aa)
-                                    residue.amino_acid = aa
-                                    residue.save()
-                            else:
-                                if debug: logger.info("Not found residue!",pdbname,pos,aa)
-                                residue, created=Residue.objects.get_or_create(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
-                                #continue #SKIP THESE -- mostly fusion residues that aren't mapped yet.
-
-                            fragment = '' #NEED TO EXPAND THIS TO INCLUDE MORE INFO
-
-                            f = module_dir+"/results/"+pdbname+"/ligand/"+temp[1]+"_"+pdbname+".pdb"
-                            if isfile(f):      
-                                liganddata, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read()) #does this close the file?
-                                if debug: logger.info("Hydro Found file"+f)
-                            else:
-                                quit()
-
-                            f = module_dir+"/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"__hydrop.pdb"
-                            rotamer_data, created = PdbData.objects.get_or_create(pdb=open(f, 'r').read())
-
-                            rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
-
-                            fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=liganddata, residue=residue)
-
-                            interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug='hydrofob',name=interactiontype)
-                            #fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment)
-                            fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure_ligand_pair=structureligandinteraction,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
-                    elif interactiontype=='aromaticplus' or interactiontype=='aromatic' or interactiontype=='aromaticfe':
-                        for entry in interactionlist:
-                            if debug: logger.info(entry)
-                            aa = entry[0]
-                            aa,pos,chain = regexaa(aa)
-                            fragment = entry[1]
-
-                            residue=Residue.objects.filter(protein_conformation=protein, sequence_number=pos)
-                            if residue.exists():
-                                residue=Residue.objects.get(protein_conformation=protein, sequence_number=pos)
-                                if residue.amino_acid!=aa:
-                                    if debug: logger.info("Updated amino acid from",residue.amino_acid,"to",aa)
-                                    residue.amino_acid = aa
-                                    residue.save()
-                            else:
-                                if debug: logger.info("Not found residue!",pdbname,pos,aa)
-                                residue, created=Residue.objects.get_or_create(protein_conformation=protein, sequence_number=pos,amino_acid=aa)
-                                #continue #SKIP THESE -- mostly fusion residues that aren't mapped yet.
-
-                            f = module_dir+"/results/"+pdbname+"/fragments"+"/"+pdbname+"_"+temp[1]+"_"+entry[0]+"_aromatic_"+str(entry[1])+".pdb"
-                            if isfile(f):      
-                                if debug: logger.info("Found file"+f)
-                                f_in = open(f, 'r')
-                                rotamer_pdb = ''
-                                fragment_pdb = ''
-                                for line in f_in:
-                                    if line.startswith('HETATM') or line.startswith('CONECT') or line.startswith('MASTER') or line.startswith('END'): 
-                                        fragment_pdb += line
-                                    elif line.startswith('ATOM'): 
-                                        rotamer_pdb += line
-                                    else:
-                                        fragment_pdb += line
-                                        rotamer_pdb += line
-                                f_in.close();   
-
-                                rotamer_data, created = PdbData.objects.get_or_create(pdb=rotamer_pdb)
-                                rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
-
-                                fragment_data, created = PdbData.objects.get_or_create(pdb=fragment_pdb) 
-                                fragment, created = Fragment.objects.get_or_create(ligand=ligand, structure=structure, pdbdata=fragment_data, residue=residue)
-                            else:
-                                quit("Could not find "+f)
-
-                            interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(slug=interactiontype,name=interactiontype)
-                            #fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure=structure,residue=residue,ligand=ligand,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
-                            fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(structure_ligand_pair=structureligandinteraction,interaction_type=interaction_type,fragment=fragment, rotamer=rotamer)
 
     else:
-        if debug: logger.info("Structure not in DB?!??!")
+        if debug:
+            logger.info("Structure not in DB?!??!")
         for f in listdir(mypath):
-            if isfile(join(mypath,f)):       
-                result = yaml.load(open(mypath+"/"+f, 'rb'))
+            if os.path.isfile(os.path.join(mypath, f)):
+                result = yaml.load(open(mypath + "/" + f, 'rb'))
                 output = result
 
-                temp = f.replace('.yaml','').split("_")
+                temp = f.replace('.yaml', '').split("_")
                 temp.append([output])
                 temp.append(round(output['score'][0][0]))
                 temp.append((output['inchikey']).strip())
                 temp.append((output['smiles']).strip())
                 results.append(temp)
 
-
-
-            #print(results)
-    results = sorted(results,key=itemgetter(3), reverse=True)
+    results = sorted(results, key=itemgetter(3), reverse=True)
 
     return results
 
-def calculate(request):     
+
+def runusercalculation(filename, session):
+    calc_script = os.sep.join(
+        [os.path.dirname(__file__), 'legacy_functions.py'])
+    call(["python", calc_script, "-p", filename, "-s", session])
+    return None
+
+
+# consider skipping non hetsym ligands FIXME
+def parseusercalculation(pdbname, session, debug=True, ignore_ligand_preset=False, ):
+    logger = logging.getLogger('build')
+    mypath = '/tmp/interactions/' + session + '/results/' + pdbname + '/output'
+    module_dir = '/tmp/interactions/' + session
+    results = []
+
+    for f in listdir(mypath):
+        if os.path.isfile(os.path.join(mypath, f)):
+            result = yaml.load(open(mypath + "/" + f, 'rb'))
+            output = result
+
+            temp = f.replace('.yaml', '').split("_")
+            temp.append([output])
+            temp.append(round(output['score']))
+            temp.append((output['inchikey']).strip())
+            temp.append((output['smiles']).strip())
+            results.append(temp)
+
+            if 'prettyname' not in output:
+                output['prettyname'] = temp[1]
+
+    results = sorted(results, key=itemgetter(3), reverse=True)
+    return results
+
+def showcalculation(request):
+
+    context = calculate(request)
+
+    return render(request, 'interaction/diagram.html', context)
+
+def calculate(request, redirect=None):
     if request.method == 'POST':
-        form = PDBform(request.POST)
+        form = PDBform(request.POST, request.FILES)
         if form.is_valid():
+
             pdbname = form.cleaned_data['pdbname'].strip()
-            t1 = datetime.now()
-            runcalculation(pdbname)
-            t2 = datetime.now()
-            delta = t2 - t1
-            seconds = delta.total_seconds()
-            print("Total time "+str(seconds)+" seconds")
+            results = ''
 
-            results = parsecalculation(pdbname)
+            if not request.session.exists(request.session.session_key):
+                request.session.create()
+            session_key = request.session.session_key
 
-            return render(request,'interaction/calculate.html',{'result' : "Looking at "+pdbname, 'outputs' : results })
+            module_dirs = []
+            module_dir = '/tmp/interactions'
+            module_dirs.append(module_dir)
+            module_dir = os.sep.join([module_dir, session_key])
+            module_dirs.append(module_dir)
+            module_dirs.append(os.sep.join([module_dir, 'pdbs']))
+            module_dirs.append(os.sep.join([module_dir, 'temp']))
+
+            # create dirs and set permissions (needed on some systems)
+            for mdir in module_dirs:
+                os.makedirs(mdir, exist_ok=True)
+                os.chmod(mdir, 0o777)
+
+            if 'file' in request.FILES:
+                pdbdata = request.FILES['file']
+                pdbname = os.path.splitext(str(pdbdata))[0]
+                with open(module_dir + '/pdbs/' + str(pdbdata), 'wb+') as destination:
+                    for chunk in pdbdata.chunks():
+                        destination.write(chunk)
+
+                temp_path = module_dir + '/pdbs/' + str(pdbdata)
+                pdbdata = open(temp_path, 'r').read()
+                runusercalculation(pdbname, session_key)
+
+            else:
+                pdbname = form.cleaned_data['pdbname'].strip()
+                #print('pdbname selected!',pdbname)
+                temp_path = module_dir + '/pdbs/' + pdbname + '.pdb'
+
+                if not os.path.isfile(temp_path):
+                    url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
+                    pdbdata = urllib.request.urlopen(
+                        url).read().decode('utf-8')
+                    f = open(temp_path, 'w')
+                    f.write(pdbdata)
+                    f.close()
+                else:
+                    pdbdata = open(temp_path, 'r').read()
+                runusercalculation(pdbname, session_key)
+
+            # MAPPING GPCRdb numbering onto pdb.
+            generic_numbering = GenericNumbering(temp_path)
+            out_struct = generic_numbering.assign_generic_numbers()
+            structure_residues = generic_numbering.residues
+            prot_id_list = generic_numbering.prot_id_list
+            segments = {}
+
+            generic_ids = []
+            generic_number = []
+            previous_seg = 'N-term'
+
+            for c, res in structure_residues.items():
+                for i, r in sorted(res.items()):  # sort to be able to assign loops
+                    if r.gpcrdb:
+                        if r.gpcrdb[0] == '-':
+                            # fix stefan - for bulge
+                            r.gpcrdb = r.gpcrdb[1:] + "1"
+                        r.gpcrdb = str(r.gpcrdb).replace('.', 'x')
+                        generic_number.append(r.gpcrdb)
+                    if r.gpcrdb_id:
+                        generic_ids.append(r.gpcrdb_id)
+                    if (r.segment):
+                        if not r.segment in segments:
+                            segments[r.segment] = {}
+                        segments[r.segment][r.number] = [
+                            r.display, r.name, r.gpcrdb]
+                        previous_seg = r.segment
+                    else:  # if no segment assigned by blast
+                        if previous_seg in ['N-term', 'ICL1', 'ECL1', 'ICL2', 'ECL2', 'ICL3', 'ICL3', 'C-term']:
+                            if not previous_seg in segments:
+                                segments[previous_seg] = {}
+                            segments[previous_seg][r.number] = ['', r.name, '']
+                        else:
+                            if previous_seg == 'TM1':
+                                previous_seg = 'ICL1'
+                            elif previous_seg == 'TM2':
+                                previous_seg = 'ECL1'
+                            elif previous_seg == 'TM3':
+                                previous_seg = 'ICL2'
+                            elif previous_seg == 'TM4':
+                                previous_seg = 'ECL2'
+                            elif previous_seg == 'TM5':
+                                previous_seg = 'ICL3'
+                            elif previous_seg == 'TM6':
+                                previous_seg = 'ECL3'
+                            elif previous_seg == 'TM7':
+                                previous_seg = 'C-term'
+                            elif previous_seg == 'H8':
+                                previous_seg = 'C-term'
+
+                            if not previous_seg in segments:
+                                segments[previous_seg] = {}
+                            segments[previous_seg][r.number] = ['', r.name, '']
+
+            rs = ResidueGenericNumber.objects.filter(id__in=generic_ids)
+
+            reference_generic_numbers = {}
+            for r in rs:  # make lookup dic.
+                reference_generic_numbers[r.label] = r
+
+            rs = ResidueGenericNumber.objects.filter(label__in=generic_number)
+            reference_numbers = {}
+            for r in rs:  # make lookup dic.
+                reference_numbers[r.label] = r
+
+            residue_list = []
+            for seg, reslist in segments.items():
+
+                for seq_number, v in sorted(reslist.items()):
+                    r = Residue()
+                    r.sequence_number = seq_number
+                    if "x" in v[0]:
+                        r.display_number = reference_numbers[v[2]]  # FIXME
+                        r.display_generic_number = reference_generic_numbers[
+                            v[0]]  # FIXME
+                        r.segment_slug = seg
+                        r.family_generic_number = v[2]
+                    else:
+                        r.segment_slug = seg
+                    r.amino_acid = v[1]
+                    residue_list.append(r)
+
+            HelixBox = DrawHelixBox(
+                residue_list, 'Class A', str('test'), nobuttons=1)
+            SnakePlot = DrawSnakePlot(
+                residue_list, 'Class A', str('test'), nobuttons=1)
+
+            xtal = {}
+            hetsyn = {}
+            hetsyn_reverse = {}
+            for line in pdbdata.splitlines():
+                if line.startswith('HETSYN'):
+                    # need to fix bad PDB formatting where col4 and col5 are
+                    # put together for some reason -- usually seen when the id
+                    # is +1000
+                    m = re.match("HETSYN[\s]+([\w]{3})[\s]+(.+)", line)
+                    if (m):
+                        hetsyn[m.group(2).strip()] = m.group(1).upper()
+                        hetsyn_reverse[m.group(1)] = m.group(2).strip().upper()
+                if line.startswith('HETNAM'):
+                    # need to fix bad PDB formatting where col4 and col5 are
+                    # put together for some reason -- usually seen when the id
+                    # is +1000
+                    m = re.match("HETNAM[\s]+([\w]{3})[\s]+(.+)", line)
+                    if (m):
+                        hetsyn[m.group(2).strip()] = m.group(1).upper()
+                        hetsyn_reverse[m.group(1)] = m.group(2).strip().upper()
+                if line.startswith('REVDAT   1'):
+                    xtal['publication_date'] = line[13:22]
+                    xtal['pdb_code'] = line[23:27]
+                if line.startswith('JRNL        PMID'):
+                    xtal['pubmed_id'] = line[19:].strip()
+                if line.startswith('JRNL        DOI'):
+                    xtal['doi_id'] = line[19:].strip()
+                if line.startswith('REMARK   2 RESOLUTION.'):
+                    xtal['resolution'] = line[22:].strip()
+
+            results = parseusercalculation(
+                pdbname, request.session.session_key)
+
+            simple = collections.OrderedDict()
+            simple_generic_number = collections.OrderedDict()
+            residues_browser = []
+            residue_table_list = []
+            mainligand = ''
+
+            for ligand in results:
+                ligand_score = round(ligand[2][0]['score'])
+
+                # select top hit
+                if mainligand == '':
+                    mainligand = ligand[1]
+
+                simple[ligand[1]] = {'score': ligand_score}
+                simple_generic_number[ligand[1]] = {'score': ligand_score}
+                for interaction in ligand[2][0]['interactions']:
+                    aa, pos, chain = regexaa(interaction[0])
+                    if int(pos) in structure_residues[chain]:
+                        r = structure_residues[chain][int(pos)]
+                        display = r.display
+                        segment = r.segment
+                        generic = r.gpcrdb
+
+                        if generic != "":
+                            residue_table_list.append(generic)
+
+                            if generic not in simple_generic_number[ligand[1]]:
+                                simple_generic_number[ligand[1]][generic] = []
+                            simple_generic_number[ligand[1]][generic].append(interaction[2])
+                    else:
+                        display = ''
+                        segment = ''
+
+                    if interaction[0] in simple[ligand[1]]:
+                        simple[ligand[1]][interaction[0]].append(interaction[2])
+                    else:
+                        simple[ligand[1]][interaction[0]] = [interaction[2]]
+
+                    residues_browser.append({'type': interaction[3], 'aa': aa, 'ligand': ligand[
+                                            1], 'pos': pos, 'gpcrdb': display, 'segment': segment, 'slug':interaction[2]})
+                break  # only use the top one
+
+            # RESIDUE TABLE
+            segments = ProteinSegment.objects.all().filter().prefetch_related()
+            proteins = []
+            protein_list = Protein.objects.filter(pk__in=prot_id_list)
+            numbering_schemes_selection = [settings.DEFAULT_NUMBERING_SCHEME]
+            for p in protein_list:
+                proteins.append(p)
+                if p.residue_numbering_scheme.slug not in numbering_schemes_selection:
+                    numbering_schemes_selection.append(
+                        p.residue_numbering_scheme.slug)
+
+            numbering_schemes = ResidueNumberingScheme.objects.filter(
+                slug__in=numbering_schemes_selection).all()
+            default_scheme = numbering_schemes.get(
+                slug=settings.DEFAULT_NUMBERING_SCHEME)
+            data = OrderedDict()
+
+            for segment in segments:
+                data[segment.slug] = OrderedDict()
+                residues = Residue.objects.filter(protein_segment=segment,  protein_conformation__protein__in=proteins,
+                                                  generic_number__label__in=residue_table_list).prefetch_related('protein_conformation__protein',
+                                                                                                                 'protein_conformation__state', 'protein_segment',
+                                                                                                                 'generic_number', 'display_generic_number', 'generic_number__scheme',
+                                                                                                                 'alternative_generic_numbers__scheme')
+                for scheme in numbering_schemes:
+                    if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                        for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                            data[segment.slug][pos] = {
+                                scheme.slug: pos, 'seq': ['-'] * len(proteins)}
+                    elif scheme == default_scheme:
+                        for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                            data[segment.slug][pos] = {
+                                scheme.slug: pos, 'seq': ['-'] * len(proteins)}
+
+                for residue in residues:
+                    alternatives = residue.alternative_generic_numbers.all()
+                    pos = residue.generic_number
+                    for alternative in alternatives:
+                        if alternative.scheme not in numbering_schemes:
+                            continue
+                        scheme = alternative.scheme
+                        if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                            pos = residue.generic_number
+                            if scheme == pos.scheme:
+                                data[segment.slug][pos.label]['seq'][proteins.index(
+                                    residue.protein_conformation.protein)] = str(residue)
+                            else:
+                                if scheme.slug not in data[segment.slug][pos.label].keys():
+                                    data[segment.slug][pos.label][
+                                        scheme.slug] = alternative.label
+                                if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                                    data[segment.slug][pos.label][
+                                        scheme.slug] += " " + alternative.label
+                                data[segment.slug][pos.label]['seq'][proteins.index(
+                                    residue.protein_conformation.protein)] = str(residue)
+                        else:
+                            if scheme.slug not in data[segment.slug][pos.label].keys():
+                                data[segment.slug][pos.label][
+                                    scheme.slug] = alternative.label
+                            if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                                data[segment.slug][pos.label][
+                                    scheme.slug] += " " + alternative.label
+                            data[segment.slug][pos.label]['seq'][proteins.index(
+                                residue.protein_conformation.protein)] = str(residue)
+
+            # Preparing the dictionary of list of lists. Dealing with tripple
+            # nested dictionary in django templates is a nightmare
+            flattened_data = OrderedDict.fromkeys(
+                [x.slug for x in segments], [])
+            for s in iter(flattened_data):
+                flattened_data[s] = [[data[s][x][
+                    y.slug] for y in numbering_schemes] + data[s][x]['seq'] for x in sorted(data[s])]
+
+            context = {}
+            context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name for x in proteins], [x.name for x in numbering_schemes] + [
+                                    x.name for x in proteins], [x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
+            context['segments'] = [
+                x.slug for x in segments if len(data[x.slug])]
+            context['data'] = flattened_data
+            context['number_of_schemes'] = len(numbering_schemes)
+
+            if redirect:
+                # get simple selection from session
+                simple_selection = request.session.get('selection', False)
+
+                # create full selection and import simple selection (if it
+                # exists)
+                selection = Selection()
+                if simple_selection:
+                    selection.importer(simple_selection)
+
+                # convert identified interactions to residue features and add them to the session
+                # numbers in lists represent the interaction "hierarchy", i.e. if a residue has more than one
+                # interaction, 
+                interaction_name_dict = {
+                    'polar_double_neg_protein': [1, 'neg'],
+                    'polar_double_pos_protein': [1, 'neg'],
+                    'polar_pos_protein': [2, 'pos'],
+                    'polar_neg_protein': [3, 'neg'],
+                    'polar_neg_ligand': [4, 'hbd'],
+                    'polar_pos_ligand': [5, 'hba'],
+                    'polar_unknown_protein': [5, 'charge'],
+                    'polar_donor_protein': [6, 'hbd'],
+                    'polar_acceptor_protein': [7, 'hba'],
+                    'polar_unspecified': [8, 'hb'],
+                    'aro_ff': [9, 'ar'],
+                    'aro_ef_protein': [10, 'ar'],
+                    'aro_fe_protein':  [11, 'ar'],
+                    'aro_ion_protein':  [12, 'pos'],
+                    'aro_ion_ligand':  [12, 'ar'],
+                }
+
+                interaction_counter = 0
+                for gn, interactions in simple_generic_number[mainligand].items():
+                    if gn != 'score' and gn != 0.0:  # FIXME leave these out when dict is created
+                        feature = False
+                        for interaction in interactions:
+                            if interaction in interaction_name_dict:
+                                if (not feature
+                                    or interaction_name_dict[interaction][0] < interaction_name_dict[feature][0]):
+                                    feature = interaction
+                        
+                        if not feature:
+                            continue
+
+                        # get residue number equivalent object
+                        rne = ResidueGenericNumberEquivalent.objects.get(label=gn, scheme__slug='gpcrdba')
+
+                        # create a selection item
+                        properties = {
+                            'feature': interaction_name_dict[feature][1],
+                            'amino_acids': ','.join(definitions.AMINO_ACID_GROUPS[interaction_name_dict[feature][1]])
+                        }
+                        selection_item = SelectionItem(
+                            'site_residue', rne, properties)
+
+                        # add to selection
+                        selection.add('segments', 'site_residue',
+                                      selection_item)
+
+                        # update the minimum match count for the active group
+                        interaction_counter += 1
+                        selection.site_residue_groups[selection.active_site_residue_group - 1][0] = interaction_counter
+
+                # export simple selection that can be serialized
+                simple_selection = selection.exporter()
+
+                # add simple selection to session
+                request.session['selection'] = simple_selection
+
+                # re-direct to segment selection (with the extracted interactions already selected)
+                return HttpResponseRedirect(redirect)
+            else:
+                return {'result': "Looking at " + pdbname, 'outputs': results,
+                                                                    'simple': simple, 'simple_generic_number': simple_generic_number, 'xtal': xtal, 'pdbname': pdbname, 'mainligand': mainligand, 'residues': residues_browser,
+                                                                    'HelixBox': HelixBox, 'SnakePlot': SnakePlot, 'data': context['data'],
+                                                                    'header': context['header'], 'segments': context['segments'], 'number_of_schemes': len(numbering_schemes), 'proteins': proteins}
 
         else:
-            return HttpResponse("Error with form")
+            print(form.errors)
+            return HttpResponse("Error with form ")
     else:
         return HttpResponse("Ooops how did you get here?")
 
 
-def download(request):      
+def download(request):
     pdbname = request.GET.get('pdb')
     ligand = request.GET.get('ligand')
 
-    pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(Q(ligand__properities__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
-    response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
+    session = request.GET.get('session')
+
+    if session:
+        session = request.session.session_key
+        pdbdata = open('/tmp/interactions/' + session + '/results/' + pdbname +
+                       '/interaction/' + pdbname + '_' + ligand + '.pdb', 'r').read()
+        response = HttpResponse(pdbdata, content_type='text/plain')
+    else:
+
+        pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(
+            Q(ligand__properities__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
+        response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
+    return response
+
+def excel(request, slug, **response_kwargs):
+    if ('session' in response_kwargs):
+        session = request.session.session_key
+
+        mypath = '/tmp/interactions/' + session + '/pdbs/' + slug + '.pdb'
+
+        generic_numbering = GenericNumbering(mypath)
+        out_struct = generic_numbering.assign_generic_numbers()
+        structure_residues = generic_numbering.residues
+        results = parseusercalculation(slug,session)
+
+        data = []
+        for interaction in results[0][2][0]['interactions']:
+            aa, pos, chain = regexaa(interaction[0])
+            if int(pos) in structure_residues[chain]:
+                r = structure_residues[chain][int(pos)]
+                display = r.display
+                segment = r.segment
+                generic = r.gpcrdb
+            else:
+                display = ''
+                segment = ''
+            row = {}
+            row['Sequence Number'] = pos
+            row['Amino Acid'] = aa
+            row['Generic Number'] = display
+            row['Segment'] = segment
+            row['Interaction'] = interaction[3]
+            row['Interaction Slug'] = interaction[2]
+            row['Ligand'] = results[0][2][0]['prettyname']
+
+            data.append(row)
+
+    else:
+
+        interactions = ResidueFragmentInteraction.objects.filter(
+            structure_ligand_pair__structure__pdb_code__index=slug, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
+        print(interactions)
+        # return HttpResponse("Hello, world. You're at the polls index. "+slug)
+        data = []
+        for interaction in interactions:
+
+            row = {}
+            row['Sequence Number'] = interaction.rotamer.residue.sequence_number
+            row['Amino Acid'] = interaction.rotamer.residue.amino_acid
+            if interaction.rotamer.residue.display_generic_number:
+                row['Generic Number'] = interaction.rotamer.residue.display_generic_number.label
+            else:
+                row['Generic Number'] = 'N/A'
+
+            row['Segment'] = interaction.rotamer.residue.protein_segment.slug
+            row['Interaction'] = interaction.interaction_type.name
+            row['Interaction Slug'] = interaction.interaction_type.slug
+            row['Ligand'] = interaction.structure_ligand_pair.ligand.name
+
+            data.append(row)
+
+    headers = ['Ligand','Amino Acid','Sequence Number','Generic Number','Segment','Interaction','Interaction Slug']
+
+    #EXCEL SOLUTION
+    output = BytesIO()
+    workbook = xlsxwriter.Workbook(output)
+    worksheet = workbook.add_worksheet()
+
+    col = 0
+    for h in headers:
+        worksheet.write(0, col, h)
+        col += 1
+    row = 1
+    for d in data:
+        col = 0
+        for h in headers:
+            worksheet.write(row, col, d[h])
+            col += 1
+        row += 1
+    workbook.close()
+    output.seek(0)
+    xlsx_data = output.read()
+
+    response = HttpResponse(xlsx_data,content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=Interaction_data_%s.xlsx' % slug
     return response
 
 def ajax(request, slug, **response_kwargs):
-    interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name=slug).order_by('rotamer__residue__sequence_number')
+    interactions = ResidueFragmentInteraction.objects.filter(
+        structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name=slug, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
     print(interactions)
-    #return HttpResponse("Hello, world. You're at the polls index. "+slug)
+    # return HttpResponse("Hello, world. You're at the polls index. "+slug)
     jsondata = {}
     for interaction in interactions:
         sequence_number = interaction.rotamer.residue.sequence_number
         aa = interaction.rotamer.residue.amino_acid
         interactiontype = interaction.interaction_type.name
-        if sequence_number not in jsondata: jsondata[sequence_number] = []
-        jsondata[sequence_number].append([aa,interactiontype])
+        if sequence_number not in jsondata:
+            jsondata[sequence_number] = []
+        jsondata[sequence_number].append([aa, interactiontype])
 
     jsondata = json.dumps(jsondata)
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
+
 
 def ajaxLigand(request, slug, ligand, **response_kwargs):
     print(ligand)
-    interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name=slug,structure_ligand_pair__ligand__name=ligand).order_by('rotamer__residue__sequence_number')
+    interactions = ResidueFragmentInteraction.objects.filter(
+        structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name=slug, structure_ligand_pair__ligand__name=ligand).order_by('rotamer__residue__sequence_number')
     print(interactions)
-    #return HttpResponse("Hello, world. You're at the polls index. "+slug)
+    # return HttpResponse("Hello, world. You're at the polls index. "+slug)
     jsondata = {}
     for interaction in interactions:
         sequence_number = interaction.rotamer.residue.sequence_number
         aa = interaction.rotamer.residue.amino_acid
         interactiontype = interaction.interaction_type.name
-        if sequence_number not in jsondata: jsondata[sequence_number] = []
-        jsondata[sequence_number].append([aa,interactiontype])
+        if sequence_number not in jsondata:
+            jsondata[sequence_number] = []
+        jsondata[sequence_number].append([aa, interactiontype])
 
     jsondata = json.dumps(jsondata)
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
 
-def pdbfragment(request):      
+
+def pdbfragment(request):
     pdbname = request.GET.get('pdb')
     ligand = request.GET.get('ligand')
     fragment = request.GET.get('fragment')
 
     result = ResidueFragmentInteraction.objects.filter(id=fragment).get()
-    response = HttpResponse(result.rotamer.pdbdata.pdb+result.fragment.pdbdata.pdb, content_type='text/plain')
+    response = HttpResponse(result.rotamer.pdbdata.pdb +
+                            result.fragment.pdbdata.pdb, content_type='text/plain')
     return response
 
-def pdb(request):       
+
+def pdb(request):
     pdbname = request.GET.get('pdb')
+    session = request.GET.get('session')
     # response = HttpResponse(mimetype='application/force-download')
     # #response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(file_name)
     # response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(pdbname+'_'+ligand+'.pdb')
     # mypath = module_dir+'/temp/results/'+pdbname+'/interaction/'+pdbname+'_'+ligand+'.pdb'
     # response['X-Sendfile'] = smart_str(mypath)
-
-    web_resource, created = WebResource.objects.get_or_create(slug='pdb',url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
-    web_link, created = WebLink.objects.get_or_create(web_resource=web_resource,index=pdbname)
-
-    structure=Structure.objects.filter(pdb_code=web_link) 
-    if structure.exists():
-        structure=Structure.objects.get(pdb_code=web_link)
+    if session:
+        session = request.session.session_key
+        pdbdata = open('/tmp/interactions/' + session +
+                       '/pdbs/' + pdbname + '.pdb', 'r').read()
+        response = HttpResponse(pdbdata, content_type='text/plain')
     else:
-         quit() #quit!
+        web_resource, created = WebResource.objects.get_or_create(
+            slug='pdb', url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
+        web_link, created = WebLink.objects.get_or_create(
+            web_resource=web_resource, index=pdbname)
 
-    if structure.pdb_data is None:
-        quit()
+        structure = Structure.objects.filter(pdb_code=web_link)
+        if structure.exists():
+            structure = Structure.objects.get(pdb_code=web_link)
+        else:
+            quit()  # quit!
 
-    response = HttpResponse(structure.pdb_data.pdb, content_type='text/plain')
+        if structure.pdb_data is None:
+            quit()
+
+        response = HttpResponse(structure.pdb_data.pdb,
+                                content_type='text/plain')
     return response

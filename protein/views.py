@@ -5,6 +5,8 @@ from django.db.models import Q
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene
 from residue.models import Residue
+from structure.models import Structure
+from mutation.models import MutationExperiment
 from common.selection import Selection
 from common.views import AbsBrowseSelection
 
@@ -17,13 +19,12 @@ class BrowseSelection(AbsBrowseSelection):
     description = 'Select a target or family by searching or browsing in the right column.'
     description = 'Select a receptor (family) by searching or browsing in the middle. The selection is viewed to' \
         + ' the right.'
-    docs = '/docs/browse'
-    buttons = {}
+    docs = 'receptors.html'
         
 
 def detail(request, slug):
     # get protein
-    p = Protein.objects.get(entry_name=slug, sequence_type__slug='wt')
+    p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
 
     # get family list
     pf = p.family
@@ -44,10 +45,16 @@ def detail(request, slug):
     gene = genes[0]
     alt_genes = genes[1:]
 
+    # get structures of this protein
+    structures = Structure.objects.filter(protein_conformation__protein__parent=p).order_by('-representative',
+        'resolution')
+
     # get residues
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
         'protein_segment', 'generic_number', 'display_generic_number')
 
+    mutations = MutationExperiment.objects.filter(protein=p)
+    
     # process residues and return them in chunks of 10
     # this is done for easier scaling on smaller screens
     chunk_size = 10
@@ -83,8 +90,10 @@ def detail(request, slug):
     if r_buffer:
         r_chunks.append(r_buffer)
 
-    return render(request, 'protein/protein_detail.html', {'p': p, 'families': families, 'r_chunks': r_chunks,
-        'chunk_size': chunk_size, 'aliases': aliases, 'gene': gene, 'alt_genes': alt_genes})
+    context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
+        'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations}
+
+    return render(request, 'protein/protein_detail.html', context)
 
 def SelectionAutocomplete(request):
     if request.is_ajax():
@@ -107,18 +116,6 @@ def SelectionAutocomplete(request):
         protein_source_list = []
         for protein_source in selection.annotation:
             protein_source_list.append(protein_source.item)
-
-        if type_of_selection == 'targets' or type_of_selection == 'browse':
-            # find protein families
-            pfs = ProteinFamily.objects.filter(name__icontains=q).exclude(slug='000')[:10]
-            for pf in pfs:
-                pf_json = {}
-                pf_json['id'] = pf.id
-                pf_json['label'] = pf.name
-                pf_json['slug'] = pf.slug
-                pf_json['type'] = 'family'
-                pf_json['category'] = 'Target families'
-                results.append(pf_json)
         
         # find proteins
         ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q),
@@ -134,7 +131,7 @@ def SelectionAutocomplete(request):
             results.append(p_json)
 
         # find protein aliases
-        pas = ProteinAlias.objects.select_related('protein').filter(name__icontains=q,
+        pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
             protein__species__in=(species_list),
             protein__source__in=(protein_source_list))[:10]
         for pa in pas:
@@ -146,6 +143,19 @@ def SelectionAutocomplete(request):
             pa_json['category'] = 'Targets'
             if pa_json not in results:
                 results.append(pa_json)
+
+        # protein families
+        if type_of_selection == 'targets' or type_of_selection == 'browse':
+            # find protein families
+            pfs = ProteinFamily.objects.filter(name__icontains=q).exclude(slug='000')[:10]
+            for pf in pfs:
+                pf_json = {}
+                pf_json['id'] = pf.id
+                pf_json['label'] = pf.name
+                pf_json['slug'] = pf.slug
+                pf_json['type'] = 'family'
+                pf_json['category'] = 'Target families'
+                results.append(pf_json)
         
         data = json.dumps(results)
     else:

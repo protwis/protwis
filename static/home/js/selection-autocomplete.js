@@ -29,18 +29,25 @@ $(function() {
         create: function(event, ui) { this.focus();return false; },
         focus: function(event, ui) { return false; },
         select: function(event, ui) {
+            $( '#selection-autocomplete' ).val('');
+            
+            // redirect if select a target/family to browse
             if (type_of_selection == 'browse') {
-                // redirect if select a target/family to browse
+                AddToSelection('targets', ui.item['type'], ui.item['id']);
+                toggleButtonClass('selection-button'); // loading effect on button
                 setTimeout(function(){window.location = '/' + ui.item['type'] + '/' + ui.item['slug'];}, 200);
+            
             } else {
-                // otherwise add to selection
+                // add to selection
                 AddToSelection(type_of_selection, ui.item['type'], ui.item['id']);
-                $( '#selection-autocomplete' ).val('');
+                
                 // redirect the user if only one target can be selected
-                if (type_of_selection == 'reference') {
+                if (type_of_selection == 'reference' && redirect_on_select == 'True') {
+                    toggleButtonClass('selection-button'); // loading effect on button
                     setTimeout(function(){window.location = redirect_url;}, 200);
                 }
             }
+
             return false;
         }
     }).data("custom-catcomplete")._renderItem = function (ul, item) {

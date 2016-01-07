@@ -14,164 +14,254 @@
     <script src="{% static 'home/js/selection.js' %}"> </script>
 
     <script type="text/javascript" charset="utf-8">
-        $(document).ready(function() {
-            var table = $('#crystal_structures').DataTable({
-                "scrollX": true,
-                "scrollY": 600,
-                "bScrollCollapse": true,
+        $(document).ready(function () {
+            ClearSelection('targets');
+            ClearSelection('reference');
+            var table = $('#structures').DataTable({
+                'scrollX': true,
+                'scrollY': $(window).height()-300,
+                'bScrollCollapse': true,
                 'paging': false,
-                orderCellsTop: true,
-                "autoWidth": true,
-                dom: 'T<"clear">lfrtip',
-                "aoColumnDefs": [
-                    { "sType": "string", "aTargets": [0] },
-                    { "sType": "string", "aTargets": [9] },
+                'orderCellsTop': true,
+                'autoWidth': true,
+                'dom': 'iTlfrt',
+                'order': [[14, "asc"]], // order by date
+                'aoColumnDefs': [
+                    { 'bSortable' : false, 'aTargets': [0] },
+                    { 'sType': 'string', 'aTargets': [1] },
+                    { 'sType': 'string', 'aTargets': [10] },
                 ],
-                tableTools: {
-                    "sRowSelect": "multi",
-                    "aButtons": ["select_all", "select_none"]
+                'tableTools': {
+                    "sRowSelect": "single",
+                    "aButtons": []
                 },
                 initComplete: function () {
-                    $('#crystal_structures').dataTable().columnFilter({
+                    $('#structures').dataTable().columnFilter({
                         sPlaceHolder: "head:after",
                         sRangeFormat: "{from}:{to}",
                         aoColumns: [
-                            { type: "select" }, //protein name
-                            { type: "select" }, //class
-                            { type: "select" }, //specie
-                            { type: "text" }, //pdb code
-                            { type: "text" }, //endogenous ligand name
-                            { type: "number-range" }, //resolution
-                            { type: "text" }, //x-ray ligand
-                            { type: "text" }, //preferred chain
-                            { type: "text" }, //pmid
-                            { type: "date-range" }, //publication date
-                            { type: "text" }, //stabilizing agent - left as type-in for now
+                            null,
+                            { type: "select" }, // protein name
+                            { type: "select" }, // class
+                            { type: "select" }, // species
+                            { type: "text" }, // pdb code
+                            { type: "number-range" }, // resolution
+                            { type: "text" }, // preferred chain
+                            { type: "text" }, // stabilizing agent - left as type-in for now
+                            { type: "text" }, // endogenous ligand name
+                            { type: "text" }, // endogenous ligand type
+                            { type: "text" }, // x-ray ligand
+                            { type: "text" }, // x-ray ligand function
+                            { type: "text" }, // x-ray ligand type
+                            { type: "text" }, // reference
+                            { type: "date-range" }, // publication date
                         ]
                     });
                 }
             });
             $.datepicker.regional[""].dateFormat = "yy-mm-dd";
             $.datepicker.setDefaults($.datepicker.regional['']);
-            $('#crystal_structures tbody').on('click', 'tr', function () {
-                $(this).toggleClass('selected');
+            $('.alt').change(function () {
+                $(this).parent().parent().toggleClass('alt_selected');
             });
-            $('#ref_btn').click(function () {
-                if ( table.rows('.selected').data().length != 1 ) {
-                    alert("Can only use one reference structure!!!");
-                }
-                else {
-                    alert('You have selected ' + table.rows('.selected').data()[0][3])
-                    AddToSelection('reference', 'structure', table.rows('.selected').data()[0][3]);
-                }
+            $('#superpose_btn').click(function () {
+                ClearSelection('targets');
+                ClearSelection('reference');
+                if (table.rows('.selected').data().length == 1) {
+                    var div = document.createElement("div");
+                    div.innerHTML = table.rows('.selected').data()[0][4];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('reference', 'structure', div.textContent.replace(/\s+/g, ''));
+                    }
 
-            });
-            $('#alt_btn').click(function () {
-                var selected_data = table.rows('.selected').data();
-                for (i = 0; i < selected_data.length; i++) {
-                    AddToSelection('targets', 'structure', selected_data[i][3]);
-                    alert(selected_data[i][3])
                 }
+                var checked_data = table.rows('.alt_selected').data();
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][4];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                    }
+
+                }
+                window.location.href = '/structure/superposition_workflow_index';
             });
+            $.fn.dataTable.ext.search.push(
+                function (settings, data, dataIndex) {
+                    if ($('#representative_btn').hasClass('toggled')) {
+                        if ($(table.row(dataIndex).node()).hasClass("repr-st")) {
+                            return true;
+                        }
+                        return false;
+                    }
+                    else {
+                        return true;
+                    }
             });
+
+            $('#representative_btn').click(function () {
+                //class 'active' is conflicting with something else o.O
+                $(this).toggleClass('toggled');
+                table.draw();
+            });
+            $('#download_btn').click(function () {
+                ClearSelection('targets');
+                var checked_data = table.rows('.alt_selected').data();
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][4];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '') );
+                    } else {
+                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                    }
+                }
+                window.location.href = '/structure/pdb_download_index';
+            });
+            $('#align_btn').click(function () {
+                var checked_data = table.rows('.alt_selected').data();
+                ClearSelection('targets');
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][4];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                    }
+
+                }
+                window.location.href = '/structure/selection_convert';
+            });
+            $('.select-all').change(function () {
+                $('.alt').prop('checked', $(this).prop("checked"));
+                $('.alt').parent().parent().toggleClass('alt_selected');
+            });
+
+        });
     </script> 
 {% endblock %}
 
 {% block content %}
-
+    <div style="font-size: 10px;">Select (tick box) structures, and Highlight the reference template</div><br />
     <div class="btn-group">
-        <a id="ref_btn" class="btn btn-primary btn-mini" href="#"><i class="icon-download icon-white"></i>Select as reference</a>
+        <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superpose structures</a>
     </div>
     <div class="btn-group">
-        <a id="alt_btn" class="btn btn-primary btn-mini " href="#"><i class="icon-download icon-white"></i>Select as altering</a>
+        <a id="representative_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show representative</a>
     </div>
     <div class="btn-group">
-        <a class="btn btn-primary btn-mini " href="/structure/superposition_workflow_index">Go to superposition workflow</a>
+        <a id="download_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Download</a>
+    </div>
+    <div class="btn-group">
+        <a id="align_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Align</a>
     </div>
     <br />
     <br />
-    {% if crystals %}              
-        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
-            <table width="100%" class="display" id="crystal_structures">
 
-                <thead>
-                    <tr>
-                        <th>Protein name</th>
-                        <th>Protein class</th>
-                        <th>Species</th>
-                        <th>PDB code</th>
-                        <th>Endogenous ligand</th>
-                        <th>Resolution</th>
-                        <th>X-ray ligand</th>
-                        <th>Preferred chain</th>
-                        <th>PMID</th>
-                        <th>Publication date</th>
-                        <th>Stabilizing agents</th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tfoot>
-                    <tr>
-                        <th>Protein name</th>
-                        <th>Protein class</th>
-                        <th>Species</th>
-                        <th>PDB code</th>
-                        <th>Endogenous ligand</th>
-                        <th>Resolution</th>
-                        <th>X-ray ligand</th>
-                        <!--<th>Ligand function</th>-->
-                        <th>Preferred chain</th>
-                        <th>PMID</th>
-                        <th>Publication date</th>
-                        <!--<th>G protein-bound</th>-->
-                        <th>Stabilizing agents</th>
-                    </tr>
-                </tfoot>
-                {% for crystal in crystals.select_related.all %}
+    <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+        <table width="100%" class="display" id="structures">
+            <thead>
                 <tr>
-                    <td>{{ crystal.protein_conformation.protein.family.name|safe }}</td>
-                    <td>{{ crystal.protein_conformation.protein.get_protein_class }}</td>
-                    <td>{{ crystal.protein_conformation.protein.species.latin_name }}</td>
-                    <td><a href="{{ crystal.pdb_code.index}}">{{ crystal.pdb_code.index}}</a></td>
-                    <td>{{ crystal.protein_conformation.protein.endogenous_ligands.all|join_attr:"name" }}</td>
-                    <td>{{ crystal.resolution}}</td>
-                    <td>{{ crystal.ligands.all|join_attr:"name" }}</td>
-                    <!--<td>{{ crystal.ligand.role.role }}</td>-->
-                    <td>{{ crystal.preferred_chain }}</td>
-                    <td>{{ crystal.publication.web_link.index }}</td>
-                    <td>{{ crystal.publication_date|date:"Y-m-d" }}</td>
-                    <td>{{ crystal.stabilizing_agents.all|join_attr:"name" }}</td>
+                    <th><input class="select-all" type="checkbox"> Select all</th>
+                    <th class="protein-th">Protein name</th>
+                    <th class="protein-th">Protein class</th>
+                    <th class="protein-th">Species</th>
+                    <th class="pdb-th">PDB code</th>
+                    <th class="pdb-th">Resolution</th>
+                    <th class="pdb-th">Pre. chain</th>
+                    <th class='pdb-th'>Aux. proteins</th>
+                    <th class="ligand-th">Endo. ligand</th>
+                    <th class="ligand-th">Ligand type</th>
+                    <th class="ligand-th">X-ray ligand</th>
+                    <th class="ligand-th">X-ray lig. function</th>
+                    <th class="ligand-th">X-ray lig. type</th>
+                    <th class="pub-th">Reference</th>
+                    <th class="pub-th">Date</th>
+                </tr>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for structure in structures.all %}
+                {% if structure.representative %}
+                    <tr class="repr-st">
+                {% else %}
+                    <tr>
+                {% endif %}
+                    <td><input class="alt" type="checkbox"></td>
+                    <td>{{ structure.protein_conformation.protein.family.name|safe }}</td>
+                    <td>{{ structure.protein_conformation.protein.family.parent.parent.parent.name }}</td>
+                    <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
+                    <td class="text-center"><a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}
+                    </a></td>
+                    <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
+                    <td class="text-center">{{ structure.preferred_chain }}</td>
+                    <td>
+                        {% for sa in structure.stabilizing_agents.all %}
+                            {{ sa.name }}<br />
+                        {% empty %}
+                        N/A
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for ligand in structure.protein_conformation.protein.parent.endogenous_ligands.all %}
+                        {{ ligand|safe }}<br />
+                        {% empty %}
+                        N/A
+                        {% endfor %}
+                    </td>
+                    <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
+                    <td>
+                        {% for ligand in structure.ligands.all %}
+                        {{ ligand.ligand.name|safe }}<br />
+                        {% empty %}
+                        N/A
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for ligand in structure.ligands.all %}
+                        {{ ligand.ligand_role.name }}<br />
+                        {% empty %}
+                        N/A
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for ligand in structure.ligands.all %}
+                        {{ ligand.ligand.properities.ligand_type }}<br />
+                        {% empty %}
+                        N/A
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <a href="{{ structure.publication.web_link }}">
+                        {{ structure.publication.web_link.index }}
+                        </a>
+                    </td>
+                    <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
                 </tr>
                 {% endfor %}
-            </table>
-        </div>
-    {% else %}
-        <p> Ooops! There is no data to show here yet. </p>
-    {% endif %}
+            </tbody>
+        </table>
+    </div>
 
 {% endblock %}

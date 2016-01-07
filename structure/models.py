@@ -1,5 +1,7 @@
 from django.db import models
 
+from io import StringIO
+from Bio.PDB import PDBIO
 
 class Structure(models.Model):
     protein_conformation = models.ForeignKey('protein.ProteinConformation')
@@ -14,10 +16,38 @@ class Structure(models.Model):
     resolution = models.DecimalField(max_digits=5, decimal_places=3)
     publication_date = models.DateField()
     pdb_data = models.ForeignKey('PdbData', null=True) #allow null for now, since dump file does not contain.
+    representative = models.BooleanField(default=False)
 
 
     def __str__(self):
         return self.pdb_code.index
+
+    def get_cleaned_pdb(self, pref_chain=True, remove_waters=True, remove_aux=False, aux_range=5.0):
+        
+        tmp = []
+        for line in self.pdb_data.pdb.split('\n'):
+            save_line = False
+            if pref_chain:
+                if (line.startswith('ATOM') or line.startswith('HET')) and line[21] == self.preferred_chain[0]:
+                    save_line = True
+            else:
+                save_line = True
+            if remove_waters and line.startswith('HET') and line[17-19] == 'HOH':
+                save_line = False
+            if save_line:
+                tmp.append(line)
+
+        return '\n'.join(tmp)
+
+                        
+    def get_preferred_chain_pdb(self):
+
+        tmp = []
+        for line in self.pdb_data.pdb.split('\n'):
+            # http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM
+            if (line.startswith('ATOM') or line.startswith('HET')) and line[21] == self.preferred_chain[0]:
+                tmp.append(line)
+        return '\n'.join(tmp)
 
     class Meta():
         db_table = 'structure'
@@ -25,16 +55,51 @@ class Structure(models.Model):
 
 class StructureModel(models.Model):
     protein = models.ForeignKey('protein.Protein')
-
-    def __str__(self):
-        return self.protein.entry_name
+    state = models.ForeignKey('protein.ProteinState')
+    main_template = models.ForeignKey('structure.Structure')
+    pdb = models.TextField()
+    
+    def __repr__(self):
+        return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
 
     class Meta():
-        db_table = 'structure_model'
+        db_table = 'structure_model'      
+
+
+class StructureModelLoopTemplates(models.Model):
+    homology_model = models.ForeignKey('structure.StructureModel')
+    template = models.ForeignKey('structure.Structure')
+    segment = models.ForeignKey('protein.ProteinSegment')
+        
+    class Meta():
+        db_table = 'structure_model_loop_templates'
+        
+        
+class StructureModelAnomalies(models.Model):
+    homology_model = models.ForeignKey('structure.StructureModel')
+    anomaly = models.ForeignKey('protein.ProteinAnomaly')
+    reference = models.CharField(max_length=1)
+    template = models.ForeignKey('structure.Structure')
+    
+    class Meta():
+        db_table = 'structure_model_anomalies'
+        
+        
+class StructureModelResidues(models.Model):
+    homology_model = models.ForeignKey('structure.StructureModel')
+    sequence_number = models.IntegerField()
+    residue = models.ForeignKey('residue.Residue')
+    rotamer = models.ForeignKey('structure.Rotamer', null=True)
+    template = models.ForeignKey('structure.Structure', null=True)
+    origin = models.CharField(max_length=15)
+    segment = models.ForeignKey('protein.ProteinSegment')
+    
+    class Meta():
+        db_table = 'structure_model_residues'
 
 
 class StructureType(models.Model):
-    slug = models.SlugField(max_length=20)
+    slug = models.SlugField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
 
     def __str__(self):
@@ -45,7 +110,7 @@ class StructureType(models.Model):
 
 
 class StructureStabilizingAgent(models.Model):
-    slug = models.SlugField(max_length=20)
+    slug = models.SlugField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
 
     def __str__(self):
@@ -95,3 +160,11 @@ class StructureSegment(models.Model):
 
     class Meta():
         db_table = "structure_segment"
+
+class StructureSegmentModeling(StructureSegment):
+    """Annotations of segment borders that are observed in exp. structures, and can be used for modeling.
+    This class is indentical to StructureSegment, but is kept separate to avoid confusion."""
+
+    class Meta():
+        db_table = "structure_segment_modeling"
+

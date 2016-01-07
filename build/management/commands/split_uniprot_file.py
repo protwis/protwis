@@ -16,7 +16,10 @@ class Command(BaseCommand):
     logger = logging.getLogger(__name__)
 
     def add_arguments(self, parser):
-        parser.add_argument('--filename', action='store', dest='filename', help='Path to Uniprot text file')
+        parser.add_argument('-f', '--filename',
+            action='store',
+            dest='filename',
+            help='Path to Uniprot text file')
 
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
 

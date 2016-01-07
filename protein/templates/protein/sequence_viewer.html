@@ -34,12 +34,11 @@
                     {% for r in rs %}
                         <td class="seqv seqv-sequence">
                             <div data-toggle="tooltip" data-placement="top" data-html="true"
-                            title="<div class='no-wrap'>{{ r.0.protein_segment.slug }}</div>
-                            <div class='no-wrap'>Sequence # {{ r.0.amino_acid }}{{ r.0.sequence_number }}<div>
+                            title="<div class='no-wrap'>{{ r.0.protein_segment.slug }}
+                            <div class='no-wrap'>Sequence # {{ r.0.amino_acid }}{{ r.0.sequence_number }}
                             {% if r.0.generic_number.label %}
                             <div class='no-wrap'>GPCRdb # {{ r.0.amino_acid }}{{ r.0.display_generic_number.label }}
                             </div>
-                            <div class='no-wrap'>{{ r.0.generic_number.label }}</div>
                             {% endif %}
                             ">
                             {{ r.0.amino_acid }}

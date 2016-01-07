@@ -15,16 +15,25 @@ class Command(BaseBuild):
         + 'each helix individually'
 
     def add_arguments(self, parser):
-        parser.add_argument('--njobs', action='store', dest='njobs', help='Number of jobs to run')
-        parser.add_argument('--profile', action='store_true', dest='profile', default=False,
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=1,
+            help='Number of processes to run')
+        parser.add_argument('-r', '--profile',
+            action='store_true',
+            dest='profile',
+            default=False,
             help='Profile the script with cProfile')
 
     # segments
-    segments = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS)
+    segments = ProteinSegment.objects.filter(fully_aligned=True)
 
-    # fetch wild-type sequences of receptors with available structures
-    structures = Structure.objects.order_by('protein_conformation__protein__parent', 'resolution').distinct(
-        'protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__parent__family')
+    # fetch representative (inactive) structures FIXME add active structure??
+    structures = Structure.objects.filter(representative=True,
+        protein_conformation__state__slug=settings.DEFAULT_PROTEIN_STATE).prefetch_related(
+        'protein_conformation__protein__parent__family')
 
     # fetch all protein conformations
     pconfs = ProteinConformation.objects.all().prefetch_related('protein__family', 'template_structure')
@@ -40,21 +49,15 @@ class Command(BaseBuild):
             self._handle(*args, **options)
 
     def _handle(self, *args, **options):
-        # how many jobs to run?
-        if 'njobs' in options and options['njobs']:
-            njobs = int(options['njobs'])
-        else:
-            njobs = 1
-
         try:
             self.logger.info('ASSIGNING STRUCTURE TEMPLATES FOR PROTEINS')
-            self.prepare_input(njobs, self.pconfs)
+            self.prepare_input(options['proc'], self.pconfs)
             self.logger.info('COMPLETED ASSIGNING STRUCTURE TEMPLATES FOR PROTEINS')
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
 
-    def main_func(self, positions):
+    def main_func(self, positions, iteration):
         # pconfs
         if not positions[1]:
             pconfs = self.pconfs[positions[0]:]

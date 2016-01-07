@@ -1,74 +1,136 @@
-﻿
-<div class="container">
-    <table class="table table-bordered">
-        <thead>
+<div class="button_container"><br />
+    <b>(Un-)display data with coloured rings</b> <br>  <a href="javascript:void(0)" id="rings_btn" onclick="GetRings()" class="btn btn-primary">Update figure</a>
 
-            <tr>
-                <th>Attribute</th>
-                <th>Value</th>
-                <th>Type</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>
-                    <div class="btn-group">
-                        <a href="javascript:void(0)" onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm
-            {% if current.0 == '0' %} active{% endif %}
-           ">No bootstrapping</a><br />
-                        <a href="javascript:void(0)" onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm
-            {% if current.0 == '0' %} active{% endif %}
-           ">No bootstrapping</a><br />
-                        <a href="javascript:void(0)" onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm
-            {% if current.0 == '0' %} active{% endif %}
-           ">No bootstrapping</a><br />
-                        <a href="javascript:void(0)" onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm
-            {% if current.0 == '0' %} active{% endif %}
-           ">No bootstrapping</a><br />
-                        <a href="javascript:void(0)" onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm
-            {% if current.0 == '0' %} active{% endif %}
-           ">No bootstrapping</a>
-                    </div>
-                </td>
-                <td>
-                    <div class="btn-group">
-                        <a href="javascript:void(0)" onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm
-            {% if current.0 == '0' %} active{% endif %}
-           ">No bootstrapping</a><br />
-                        <a href="javascript:void(0)" onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm
-            {% if current.0 == '0' %} active{% endif %}
-           ">No bootstrapping</a><br />
-                        <a href="javascript:void(0)" onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm
-            {% if current.0 == '0' %} active{% endif %}
-           ">No bootstrapping</a><br />
-                        <a href="javascript:void(0)" onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm
-            {% if current.0 == '0' %} active{% endif %}
-           ">No bootstrapping</a><br />
-                        <a href="javascript:void(0)" onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm
-            {% if current.0 == '0' %} active{% endif %}
-           ">No bootstrapping</a>
-                    </div>
-                </td>
-                <td>
-                    <div class="btn-group">
-                        <a href="javascript:void(0)" onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm
-            {% if current.0 == '0' %} active{% endif %}
-           ">No bootstrapping</a><br />
-                        <a href="javascript:void(0)" onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm
-            {% if current.0 == '0' %} active{% endif %}
-           ">No bootstrapping</a><br />
-                        <a href="javascript:void(0)" onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm
-            {% if current.0 == '0' %} active{% endif %}
-           ">No bootstrapping</a><br />
-                        <a href="javascript:void(0)" onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm
-            {% if current.0 == '0' %} active{% endif %}
-           ">No bootstrapping</a><br />
-                        <a href="javascript:void(0)" onclick="SetTreeSelection(0,0)" class="btn btn-primary btn-sm
-            {% if current.0 == '0' %} active{% endif %}
-           ">No bootstrapping</a>
-                    </div>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+   <table class="table table-bordered">
+
+       <thead>
+
+           <tr>
+
+               <th>Data type</th>
+
+               <th>Data</th>
+
+               <th>Chosen attributes (Click to deselect)</th>
+
+           </tr>
+
+       </thead>
+
+       <tbody>
+
+           <tr style="width:200px;">
+
+               <td style="width:200px;"> 
+
+                   <div style="width:200px" class="btn-group" id='types'>
+
+                       <a href="javascript:void(0)" onclick="SelectSubmenu('phylo')" class="btn btn-primary btn-block
+
+          ">Class/Family</a><br>
+
+                       <!--<a href="javascript:void(0)" onclick="SelectSubmenu('mutants')" class="btn btn-primary btn-block
+
+          ">Mutagenesis</a><br>-->
+
+                       <a href="javascript:void(0)" onclick="SelectSubmenu('crystals')" class="btn btn-primary btn-block
+
+          ">Crystal structure</a><br>
+
+                      
+
+                   </div>
+
+               </td>
+
+               <td style="width:200px;">
+
+                   <div style="display: none; width:200px;" id='phylo' class="btn-group">
+
+                       <a href="javascript:void(0)" onclick="SelectButtons('class_btn')" class="btn btn-primary btn-block
+
+          ">Class</a><br>
+
+                       <a href="javascript:void(0)" onclick="SelectButtons('family_btn')" class="btn btn-primary btn-block
+
+          ">Ligand type</a><br>
+
+                       <a href="javascript:void(0)" onclick="SelectButtons('ligand_btn')" class="btn btn-primary btn-block
+
+          ">Receptor type</a><br>
+
+                      </div>
+
+           <!--<div style="display: none; width:200px;" id='mutants' class="btn-group">
+
+                       <a href="javascript:void(0)" onclick="SelectButtons('mutant_btn')" class="btn btn-primary btn-block
+
+          ">Any mutant</a><br>
+
+                       <a href="javascript:void(0)" onclick="SelectButtons('mutant_plus_btn')" class="btn btn-primary btn-block
+
+          ">Positive mutant</a><br>
+
+                       <a href="javascript:void(0)" onclick="SelectButtons('mutant_minus_btn')" class="btn btn-primary btn-block
+
+          ">Negative mutant</a><br>
+
+                      </div>-->
+
+           <div style="display: none; width:200px;" id='crystals' class="btn-group">
+
+                       <a href="javascript:void(0)" onclick="SelectButtons('crystal_btn')" class="btn btn-primary btn-block
+
+          ">Crystallized receptors</a><br>
+
+
+                      </div>
+
+               </td>
+
+               <td style="width: 200px;">
+                <div id='choice' class="btn-group">
+
+                       <a href="javascript:void(0)" style="display: none;" id="class_btn" onclick="DeselectButtons('class_btn')" class="btn btn-default 
+
+          ">Class</a>
+
+                       <a href="javascript:void(0)" style="display: none;" id="family_btn" onclick="DeselectButtons('family_btn')" class="btn btn-default 
+
+          ">Ligand type</a>
+
+                       <a href="javascript:void(0)" style="display: none;" id="ligand_btn" onclick="DeselectButtons('ligand_btn')" class="btn btn-default 
+
+          ">Receptor type</a>
+
+                       <a href="javascript:void(0)" style="display: none;" id="mutant_btn" onclick="DeselectButtons('mutant_btn')" class="btn btn-default 
+
+          ">Any mutant</a>
+
+                       <a href="javascript:void(0)" style="display: none;" id="mutant_plus_btn" onclick="DeselectButtons('mutant_plus_btn')" class="btn btn-default 
+
+          ">Positive mutant</a>
+
+                       <a href="javascript:void(0)" style="display: none;" id="mutant_minus_btn" onclick="DeselectButtons('mutant_minus_btn')" class="btn btn-default 
+
+          ">Negative mutant</a>
+
+
+                       <a href="javascript:void(0)" style="display: none;" id="crystal_btn" onclick="DeselectButtons('crystal_btn')" class="btn btn-default 
+
+          ">Crystallized receptors</a><br>
+
+
+                      </div>
+                   
+
+               </td>
+
+           </tr>
+
+       </tbody>
+
+   </table>
+<br>
+<!--<a href="javascript:void(0)" id="fields_btn" onclick="DeselectButtons('crystal_btn')" class="btn btn-primary">Field colours</a>-->
 </div>

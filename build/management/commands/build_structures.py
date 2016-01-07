@@ -2,7 +2,9 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
 from django.utils.text import slugify
+from django.db import IntegrityError
 
+from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinAnomaly, ProteinAnomalyType,
     ProteinSegment)
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue
@@ -13,16 +15,15 @@ from ligand.models import Ligand, LigandType, LigandRole, LigandProperities
 from interaction.models import *
 from interaction.views import runcalculation,parsecalculation
 
-from optparse import make_option
-from datetime import datetime
-import logging, os, re
+import logging
+import os
+import re
 import yaml
 from collections import OrderedDict
 import json
 from urllib.request import urlopen
-
-
 from Bio.PDB import parse_pdb_header
+
 
 ## FOR VIGNIR ORDERED DICT YAML IMPORT/DUMP
 _mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
@@ -43,19 +44,32 @@ def represent_ordereddict(dumper, data):
 yaml.add_representer(OrderedDict, represent_ordereddict)
 yaml.add_constructor(_mapping_tag, dict_constructor)
 
-class Command(BaseCommand):
+class Command(BaseBuild):
     help = 'Reads source data and creates pdb structure records'
     
     def add_arguments(self, parser):
-        parser.add_argument('--filename', action='append', dest='filename',
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=1,
+            help='Number of processes to run')
+        parser.add_argument('-f', '--filename',
+            action='append',
+            dest='filename',
             help='Filename to import. Can be used multiple times')
-        parser.add_argument('--purge', action='store_true', dest='purge', default=False,
-            help='Purge existing construct records')
-
-    logger = logging.getLogger(__name__)
+        parser.add_argument('-u', '--purge',
+            action='store_true',
+            dest='purge',
+            default=False,
+            help='Purge existing records')
 
     # source file directory
     structure_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'structures'])
+    pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
+
+    # read source files
+    filenames = os.listdir(structure_data_dir)
 
     def handle(self, *args, **options):
         # delete any existing structure data
@@ -65,9 +79,20 @@ class Command(BaseCommand):
             except Exception as msg:
                 print(msg)
                 self.logger.error(msg)
-        # import the structure data
+
+        # where filenames specified?
+        if options['filename']:
+            self.filenames = options['filename']
+
         try:
-            self.create_structures(options['filename'])
+            self.logger.info('CREATING STRUCTURES')
+
+            # run the function twice (once for representative structures, once for non-representative)
+            iterations = 2
+            for i in range(1,iterations+1):
+                self.prepare_input(options['proc'], self.filenames, i)
+
+            self.logger.info('COMPLETED CREATING STRUCTURES')
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
@@ -137,12 +162,12 @@ class Command(BaseCommand):
             self.logger.error(structure.pdb_code.index + " had " + str(errors) + " residues that did not match in the database")
         return None
 
-    def create_structures(self, filenames):
-        self.logger.info('CREATING PDB STRUCTURES')
-        
-        # what files should be parsed?
-        if not filenames:
-            filenames = os.listdir(self.structure_data_dir)
+    def main_func(self, positions, iteration):
+        # filenames
+        if not positions[1]:
+            filenames = self.filenames[positions[0]:]
+        else:
+            filenames = self.filenames[positions[0]:positions[1]]
 
         for source_file in filenames:
             source_file_path = os.sep.join([self.structure_data_dir, source_file])
@@ -151,6 +176,19 @@ class Command(BaseCommand):
                 # read the yaml file
                 with open(source_file_path, 'r') as f:
                     sd = yaml.load(f)
+                    
+                    # is this a representative structure (will be used to guide structure-based alignments)?
+                    representative = False
+                    if 'representative' in sd and sd['representative']:
+                        representative = True
+
+                    # only process representative structures on first iteration
+                    if not representative and iteration == 1:
+                        continue
+
+                    # skip representative structures on second iteration
+                    if representative and iteration == 2:
+                        continue
 
                     # is there a construct?
                     if 'construct' not in sd:
@@ -169,26 +207,53 @@ class Command(BaseCommand):
                         s = Structure.objects.get(protein_conformation__protein=con)
                     except Structure.DoesNotExist:
                         s = Structure()
+                        s.representative = representative
+
+                    # protein state
+                    if 'state' not in sd:
+                        self.logger.warning('State not defined, using default state {}'.format(
+                            settings.DEFAULT_PROTEIN_STATE))
+                        state = settings.DEFAULT_STATE.title()
+                    else:
+                        state = sd['state']
+                    state_slug = slugify(state)
+                    try:
+                        ps, created = ProteinState.objects.get_or_create(slug=state_slug, defaults={'name': state})
+                        if created:
+                            self.logger.info('Created protein state {}'.format(ps.name))
+                    except IntegrityError:
+                        ps = ProteinState.objects.get(slug=state_slug)
+                    s.state = ps
+
+                    # protein conformation
+                    try:
+                        s.protein_conformation = ProteinConformation.objects.get(protein=con)
+                    except ProteinConformation.DoesNotExist:
+                        self.logger.error('Protein conformation for construct {} does not exists'.format(con))
+                        continue
+                    if s.protein_conformation.state is not state:
+                        ProteinConformation.objects.filter(protein=con).update(state=ps)
 
                     # get the PDB file and save to DB
-                    if not os.path.exists(self.structure_data_dir+'/../pdbs/'):
-                        os.makedirs(self.structure_data_dir+'/../pdbs/')
-                    pdb_path = self.structure_data_dir+'/../pdbs/'+sd['pdb']+'.pdb'
+                    sd['pdb'] = sd['pdb'].upper()
+                    if not os.path.exists(self.pdb_data_dir):
+                        os.makedirs(self.pdb_data_dir)
+                    
+                    pdb_path = os.sep.join([self.pdb_data_dir, sd['pdb'] + '.pdb'])
                     if not os.path.isfile(pdb_path):
                         self.logger.info('Fetching PDB file {}'.format(sd['pdb']))
                         url = 'http://www.rcsb.org/pdb/files/%s.pdb' % sd['pdb']
                         pdbdata_raw = urlopen(url).read().decode('utf-8')
-                        f=open(pdb_path,'w')
-                        f.write(pdbdata_raw)
-                        f.close();
+                        with open(pdb_path, 'w') as f:
+                            f.write(pdbdata_raw)
                     else:
-                        pdbdata_raw = open(pdb_path, 'r').read()
+                        with open(pdb_path, 'r') as pdb_file:
+                            pdbdata_raw = pdb_file.read()
                     
                     pdbdata, created = PdbData.objects.get_or_create(pdb=pdbdata_raw)
                     s.pdb_data = pdbdata
 
-
-                    #### UPDATE HETSYN with its PDB reference instead + GRAB PUB DATE, PUMBEDID AND RESOLUTION #####
+                    # UPDATE HETSYN with its PDB reference instead + GRAB PUB DATE, PMID, DOI AND RESOLUTION
                     hetsyn = {}
                     hetsyn_reverse = {}
                     for line in pdbdata_raw.splitlines():
@@ -212,33 +277,48 @@ class Command(BaseCommand):
                     if len(hetsyn) == 0:
                         self.logger.info("PDB file contained NO hetsyn")
 
-                    header=open(pdb_path,'r')
-                    header_dict=parse_pdb_header(header)
-                    header.close()
+                    with open(pdb_path,'r') as header:
+                        header_dict = parse_pdb_header(header)
                     sd['publication_date'] = header_dict['release_date']
                     sd['resolution'] = str(header_dict['resolution']).strip()
+                    sd['structure_method'] = header_dict['structure_method']
+
+                    # structure type
+                    if 'structure_method' in sd and sd['structure_method']:
+                        structure_type = sd['structure_method'].capitalize()
+                        structure_type_slug = slugify(sd['structure_method'])
+                        
+                        try:
+                            st, created = StructureType.objects.get_or_create(slug=structure_type_slug,
+                                defaults={'name': structure_type})
+                            if created:
+                                self.logger.info('Created structure type {}'.format(st))
+                        except IntegrityError:
+                            st = StructureType.objects.get(slug=structure_type_slug)
+                        s.structure_type = st
+                    else:
+                        self.logger.warning('No structure type specified in PDB file {}'.format(sd['pdb']))
 
                     matched = 0
-                    if 'ligand' in sd:
+                    if 'ligand' in sd and sd['ligand']:
                         if isinstance(sd['ligand'], list):
                             ligands = sd['ligand']
                         else:
                             ligands = [sd['ligand']]
                         for ligand in ligands:
-                            if ligand['name'].upper() in hetsyn:
-                                self.logger.info('match')
-                                matched = 1
-                                ligand['name'] = hetsyn[ligand['name'].upper()]
-                            elif ligand['name'].upper() in hetsyn_reverse:
-                                matched = 1
+                            if 'name' in ligand:
+                                if ligand['name'].upper() in hetsyn:
+                                    self.logger.info('Ligand {} matched to PDB records'.format(ligand['name']))
+                                    matched = 1
+                                    ligand['name'] = hetsyn[ligand['name'].upper()]
+                                elif ligand['name'].upper() in hetsyn_reverse:
+                                    matched = 1
 
                     if matched==0 and len(hetsyn)>0:
-                        self.logger.info('No ligand names found in HET in structure')
-                        self.logger.info(hetsyn)
-                        self.logger.info(ligands)
+                        self.logger.info('No ligand names found in HET in structure {}'.format(sd['pdb']))
 
-                    yaml.dump(sd,open(source_file_path, 'w'),indent=4)
-
+                    # REMOVE? can be used to dump structure files with updated ligands
+                    # yaml.dump(sd, open(source_file_path, 'w'), indent=4)
 
                     # pdb code
                     if 'pdb' in sd:
@@ -251,29 +331,6 @@ class Command(BaseCommand):
                             web_resource=web_resource)
                     else:
                         self.logger.error('PDB code not specified for structure {}, skipping!'.format(sd['pdb']))
-                        continue
-
-                    # protein state
-                    if 'state' not in sd:
-                        self.logger.error('State not defined, using default state {}'.format(
-                            settings.DEFAULT_PROTEIN_STATE))
-                        state = settings.DEFAULT_STATE.title()
-                    else:
-                        state = sd['state']
-                    ps, created = ProteinState.objects.get_or_create(slug=slugify(state), defaults={'name': state})
-                    if created:
-                        self.logger.info('Created protein state {}'.format(ps.name))
-                    s.state = ps
-
-                    # protein conformation
-                    try:
-                        s.protein_conformation, created = ProteinConformation.objects.get_or_create(protein=con,
-                            state=ps)
-                        if created:
-                            self.logger.info('Created conformation {} for protein {}'.format(ps.name, con.name))
-                    except Protein.DoesNotExist:
-                        self.logger.error('Construct {} for structure {} does not exists, skipping!'.format(
-                            sd['construct'], sd['pdb']))
                         continue
 
                     # insert into plain text fields
@@ -289,10 +346,6 @@ class Command(BaseCommand):
                         s.publication_date = sd['publication_date']
                     else:
                         self.logger.warning('Publication date not specified for structure {}'.format(sd['pdb']))
-
-                    # structure type
-                    st, created = StructureType.objects.get_or_create(slug='xray', defaults={'name': 'X-ray'})
-                    s.structure_type = st
 
                     # publication
                     try:                     
@@ -316,7 +369,8 @@ class Command(BaseCommand):
                             except Publication.DoesNotExist as e:
                                 p = Publication()
                                 try:
-                                    p.web_link = WebLink.objects.get(index=sd['pubmed_id'], web_resource__slug='pubmed')
+                                    p.web_link = WebLink.objects.get(index=sd['pubmed_id'],
+                                        web_resource__slug='pubmed')
                                 except WebLink.DoesNotExist:
                                     wl = WebLink.objects.create(index=sd['pubmed_id'],
                                         web_resource = WebResource.objects.get(slug='pubmed'))
@@ -329,66 +383,107 @@ class Command(BaseCommand):
 
                     # save structure before adding M2M relations
                     s.save()
+
+                    # endogenous ligand(s)
+                    default_ligand_type = 'Small molecule'
+                    if representative and 'endogenous_ligand' in sd and sd['endogenous_ligand']:
+                        if isinstance(sd['endogenous_ligand'], list):
+                            endogenous_ligands = sd['endogenous_ligand']
+                        else:
+                            endogenous_ligands = [sd['endogenous_ligand']]
+                        for endogenous_ligand in endogenous_ligands:
+                            if endogenous_ligand['type']:
+                                lt, created = LigandType.objects.get_or_create(slug=slugify(endogenous_ligand['type']),
+                                    defaults={'name': endogenous_ligand['type']})
+                            else:
+                                lt, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
+                                    defaults={'name': default_ligand_type})
+                            ligand = Ligand()
+
+                            if 'iupharId' not in endogenous_ligand:
+                                endogenous_ligand['iupharId'] = 0
+
+                            ligand = ligand.load_by_gtop_id(endogenous_ligand['name'], endogenous_ligand['iupharId'],
+                                lt)
+                            try:
+                                s.protein_conformation.protein.parent.endogenous_ligands.add(ligand)
+                            except IntegrityError:
+                                self.logger.info('Endogenous ligand for protein {}, already added. Skipping.'.format(
+                                    s.protein_conformation.protein.parent))
+
                     # ligands
-                    if 'ligand' in sd:
+                    if 'ligand' in sd and sd['ligand']:
                         if isinstance(sd['ligand'], list):
                             ligands = sd['ligand']
                         else:
                             ligands = [sd['ligand']]
                         for ligand in ligands:
                             l = False
-                            if ligand['name'] and ligand['name']!='None': #some inserted as none.
+                            if ligand['name'] and ligand['name'] != 'None': # some inserted as none.
 
-                                if ligand['name'] in hetsyn_reverse: ligand['name'] = hetsyn_reverse[ligand['name']] #USE HETSYN NAME, not 3letter pdb reference
-                                pdb_reference = None
-                                if ligand['name'] in hetsyn: pdb_reference = hetsyn[ligand['name']]
-                                if Ligand.objects.filter(name=ligand['name'], canonical=True).exists(): #if this name is canonical and it has a ligand record already
+                                # use annoted ligand type or default type
+                                if ligand['type']:
+                                    lt, created = LigandType.objects.get_or_create(slug=slugify(ligand['type']),
+                                        defaults={'name': ligand['type']})
+                                else:
+                                    lt, created = LigandType.objects.get_or_create(
+                                        slug=slugify(default_ligand_type), defaults={'name': default_ligand_type})
+
+                                # set pdb reference for structure-ligand interaction
+                                pdb_reference = ligand['name']
+
+                                # use pubchem_id
+                                if 'pubchemId' in ligand and ligand['pubchemId'] and ligand['pubchemId'] != 'None':
+                                    # create ligand
+                                    l = Ligand()
+
+
+                                    # update ligand by pubchem id
+                                    ligand_title = False
+                                    if 'title' in ligand and ligand['title']:
+                                        ligand_title = ligand['title']
+                                    l = l.load_from_pubchem('cid', ligand['pubchemId'], lt, ligand_title)
+
+
+                                # if no pubchem id is specified, use name
+                                else:
+                                    # use ligand title, if specified
+                                    if 'title' in ligand and ligand['title']:
+                                        ligand['name'] = ligand['title']
+
+                                    # create empty properties
+                                    lp = LigandProperities.objects.create()
+                                    
+                                    # create the ligand
                                     try:
-                                        l = Ligand.objects.get(name=ligand['name'], canonical=True)
-                                    except: 
-                                        try:
-                                            l = Ligand.objects.filter(name=ligand['name'], canonical=True, properities__inchikey__isnull=False)[0]
-                                        except:
-                                            self.logger.error('Skipping '+ligand['name']+" for "+sd['pdb'] +' Something wrong with getting ligand from DB')
+                                        l, created = Ligand.objects.get_or_create(name=ligand['name'], canonical=True,
+                                            defaults={'properities': lp, 'ambigious_alias': False})
+                                        if created:
+                                            self.logger.info('Created ligand {}'.format(ligand['name']))
+                                        else:
                                             continue
-                                elif Ligand.objects.filter(name=ligand['name'], canonical=False, ambigious_alias=False).exists(): #if this matches an alias that only has "one" parent canonical name - eg distinct
-                                    l = Ligand.objects.get(name=ligand['name'], canonical=False, ambigious_alias=False)
-                                elif Ligand.objects.filter(name=ligand['name'], canonical=False, ambigious_alias=True).exists(): #if this matches an alias that only has several canonical parents, must investigate, start with empty.
-                                    lp = LigandProperities()
-                                    lp.save()
-                                    l = Ligand()
-                                    l.properities = lp
-                                    l.name = ligand['name']
-                                    l.canonical = False
-                                    l.ambigious_alias = True
-                                    l.save()
-                                    l.load_by_name(ligand['name'])
-                                else: #if niether a canonical or alias exists, create the records. Remember to check for canonical / alias status.
-                                    self.logger.info('Inserting '+ligand['name']+" for "+sd['pdb'])
-                                    lp = LigandProperities()
-                                    lp.save()
-                                    l = Ligand()
-                                    l.properities = lp
-                                    l.name = ligand['name']
-                                    l.canonical = True
-                                    l.ambigious_alias = False
-                                    l.save()
-                                    l.load_by_name(ligand['name'])
-                            # save ligand
-                                l.save()
+                                    except IntegrityError:
+                                        l = Ligand.objects.get(name=ligand['name'], canonical=True)
 
-                            # elif ligand['inchi']:
-                            #     pass # FIXME write!
+                                    # save ligand
+                                    l.save()
                             else:
                                 continue
 
+                            # structure-ligand interaction
+                            if l and ligand['role']:
+                                role_slug = slugify(ligand['role'])
+                                try:
+                                    lr, created = LigandRole.objects.get_or_create(slug=role_slug,
+                                    defaults={'name': ligand['role']})
+                                    if created:
+                                        self.logger.info('Created ligand role {}'.format(ligand['role']))
+                                except IntegrityError:
+                                    lr = LigandRole.objects.get(slug=role_slug)
 
-                            if l:
-                                if ligand['role']:
-                                    lr, created = LigandRole.objects.get_or_create(slug=slugify(ligand['role']),
-                                        defaults={'name': ligand['role']})
-                                    i, created = StructureLigandInteraction.objects.get_or_create(structure=s, ligand=l,
-                                        ligand_role=lr, annotated=True, defaults={'pdb_reference':pdb_reference})
+                                i, created = StructureLigandInteraction.objects.get_or_create(structure=s,
+                                    ligand=l, ligand_role=lr, annotated=True,
+                                    defaults={'pdb_reference': pdb_reference})
                     
                     # structure segments
                     if 'segments' in sd and sd['segments']:
@@ -413,40 +508,92 @@ class Command(BaseCommand):
                             ps.start = positions[0]
                             ps.end = positions[1]
                             ps.save()
+                    # all representive structures should have defined segments
+                    elif representative:
+                        self.logger.warning('Segments not defined for representative structure {}'.format(sd['pdb']))
 
                     # protein anomalies
+                    scheme = s.protein_conformation.protein.residue_numbering_scheme
                     if 'bulges' in sd and sd['bulges']:
-                        scheme = s.protein_conformation.protein.residue_numbering_scheme
-                        pab, created = ProteinAnomalyType.objects.get_or_create(slug='bulge', defaults={
-                            'name': 'Bulge'})
+                        pa_slug = 'bulge'
+                        try:
+                            pab, created = ProteinAnomalyType.objects.get_or_create(slug=pa_slug, defaults={
+                                'name': 'Bulge'})
+                            if created:
+                                self.logger.info('Created protein anomaly type {}'.format(pab))
+                        except IntegrityError:
+                            pab = ProteinAnomalyType.objects.get(slug=pa_slug)
+                        
                         for segment, bulges in sd['bulges'].items():
                             for bulge in bulges:
-                                gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge, scheme=scheme,
-                                    defaults={'protein_segment': ProteinSegment.objects.get(slug=segment)})
-                                pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pab, generic_number=gn)
+                                try:
+                                    gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge,
+                                        scheme=scheme, defaults={'protein_segment': ProteinSegment.objects.get(
+                                        slug=segment)})
+                                    if created:
+                                        self.logger.info('Created generic number {}'.format(gn))
+                                except IntegrityError:
+                                    gn =  ResidueGenericNumber.objects.get(label=bulge, scheme=scheme)
+
+                                try:
+                                    pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pab,
+                                        generic_number=gn)
+                                    if created:
+                                        self.logger.info('Created protein anomaly {}'.format(pa))
+                                except IntegrityError:
+                                    pa, created = ProteinAnomaly.objects.get(anomaly_type=pab, generic_number=gn)
+
                                 s.protein_anomalies.add(pa)
                     if 'constrictions' in sd and sd['constrictions']:
-                        pac, created = ProteinAnomalyType.objects.get_or_create(slug='constriction', defaults={
-                            'name': 'Constriction'})
+                        pa_slug = 'constriction'
+                        try:
+                            pac, created = ProteinAnomalyType.objects.get_or_create(slug=pa_slug, defaults={
+                                'name': 'Constriction'})
+                            if created:
+                                self.logger.info('Created protein anomaly type {}'.format(pac))
+                        except IntegrityError:
+                            pac = ProteinAnomalyType.objects.get(slug=pa_slug)
+                        
                         for segment, constrictions in sd['constrictions'].items():
                             for constriction in constrictions:
-                                gn, created = ResidueGenericNumber.objects.get_or_create(label=constriction, defaults={
-                                    'protein_segment': ProteinSegment.objects.get(slug=segment),
-                                    'scheme': ResidueNumberingScheme.objects.get(slug=scheme.slug)})
-                                pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pac, generic_number=gn)
+                                try:
+                                    gn, created = ResidueGenericNumber.objects.get_or_create(label=constriction,
+                                        scheme=scheme, defaults={'protein_segment': ProteinSegment.objects.get(
+                                        slug=segment)})
+                                    if created:
+                                        self.logger.info('Created generic number {}'.format(gn))
+                                except IntegrityError:
+                                    gn =  ResidueGenericNumber.objects.get(label=constriction, scheme=scheme)
+
+                                try:
+                                    pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pac,
+                                        generic_number=gn)
+                                    if created:
+                                        self.logger.info('Created protein anomaly {}'.format(pa))
+                                except IntegrityError:
+                                    pa, created = ProteinAnomaly.objects.get(anomaly_type=pac, generic_number=gn)
+
                                 s.protein_anomalies.add(pa)
                     
-                    # stabilizing agents
+                    # stabilizing agents, FIXME - redesign this!
                     # fusion proteins moved to constructs, use this for G-proteins and other agents?
-                    # if 'fusion_protein' in sd:
-                    #     if isinstance(sd['fusion_protein'], list):
-                    #         fusion_proteins = sd['fusion_protein']
-                    #     else:
-                    #         fusion_proteins = [sd['fusion_protein']]
-                    #     for fusion_protein in fusion_proteins:
-                    #         sa, created = StructureStabilizingAgent.objects.get_or_create(slug=slugify(fusion_protein),
-                    #             name=fusion_protein)
-                    #         s.stabilizing_agents.add(sa)
+                    aux_proteins = []
+                    if 'g_protein' in sd and sd['g_protein'] and sd['g_protein'] != 'None':
+                        aux_proteins.append('g_protein')
+                    if 'auxiliary_protein' in sd and sd['auxiliary_protein'] and sd['auxiliary_protein'] != 'None':
+                        aux_proteins.append('auxiliary_protein')
+                    for index in aux_proteins:
+                        if isinstance(sd[index], list):
+                            aps = sd[index]
+                        else:
+                            aps = [sd[index]]
+                        for aux_protein in aps:
+                            try:
+                                sa, created = StructureStabilizingAgent.objects.get_or_create(
+                                    slug=slugify(aux_protein), defaults={'name': aux_protein})
+                            except IntegrityError:
+                                sa = StructureStabilizingAgent.objects.get(slug=slugify(aux_protein))
+                            s.stabilizing_agents.add(sa)
 
                     # save structure
                     s.save()
@@ -459,5 +606,3 @@ class Command(BaseCommand):
                         parsecalculation(sd['pdb'],False)
                     except:
                         self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
-
-        self.logger.info('COMPLETED CREATING PDB STRUCTURES')

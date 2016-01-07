@@ -6,6 +6,7 @@ from protein.models import (ProteinSegment, ProteinAnomaly, ProteinAnomalyType, 
     ProteinAnomalyRule)
 from ligand.models import Ligand, LigandProperities, LigandType, LigandRole
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme
+from news.models import News
 
 import logging
 import shlex
@@ -28,8 +29,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         functions = [
             'create_resources',
-            'create_ligands',
-            'create_publications',
             'create_protein_segments',
             'create_residue_numbering_schemes',
             'create_anomalies',
@@ -69,68 +68,6 @@ class Command(BaseCommand):
 
         self.logger.info('COMPLETED CREATING RESOURCES')
 
-    def create_ligands(self):
-        self.logger.info('CREATING LIGANDS')
-        self.logger.info('Parsing file ' + self.ligands_source_file)
-
-        with open(self.ligands_source_file, 'r') as f:
-            ls = yaml.load(f)
-            for l in ls:
-
-                try:
-                    web_resource = WebResource.objects.get(slug='pubchem')
-                except:
-                    # abort if pdb resource is not found
-                    raise Exception('PubChem resource not found, aborting!')
-
-                if 'ligand_type__slug' in l:
-                    lt, created = LigandType.objects.get_or_create(slug=l['ligand_type__slug'],name=l['ligand_type__name'])
-                else:
-                    lt = None
-
-                if l['smiles']==None and l['inchikey']==None: #If they are None they need their own entry, in case the smiles get determined
-                    #Test first if there exists a ligand with the properities, so duplicates are not inserted
-                    if not Ligand.objects.filter(name=l['name'], canonical=l['canonical'], ambigious_alias=l['ambigious_alias'], properities__smiles=None).exists():
-                        lp = LigandProperities.objects.create(smiles=l['smiles'], inchikey=l['inchikey'],ligand_type=lt)
-                    else: #if no properities but ligand is already there, don't create more properities.
-                        continue
-                else:
-                    lp, created = LigandProperities.objects.get_or_create(smiles=l['smiles'], inchikey=l['inchikey'],ligand_type=lt)
-
-                for weblink in l['ligand__weblinks']:
-                    web_resource = WebResource.objects.get(slug=weblink[1])
-                    wl, created = WebLink.objects.get_or_create(index=weblink[0], web_resource=web_resource)
-                    lp.web_links.add(wl)
-
-                lig, created = Ligand.objects.get_or_create(name=l['name'], canonical=l['canonical'], ambigious_alias=l['ambigious_alias'], properities=lp)
-                if created:
-                    self.logger.info('Created ligand ' + l['name'])
-
-        self.logger.info('COMPLETED CREATING LIGANDS')
-
-    def create_publications(self):
-        self.logger.info('CREATING PUBLICATIONS')
-        self.logger.info('Parsing file ' + self.publications_source_file)
-
-        with open(self.publications_source_file, 'r') as f:
-            ps = yaml.load(f)
-            for p in ps:
-
-                try:
-                    web_resource = WebResource.objects.get(slug=p['weblink_resource'])
-                except:
-                    # abort if pdb resource is not found
-                    raise Exception(p['weblink_resource'] + ' resource not found, aborting!')
-
-                wl, created = WebLink.objects.get_or_create(index=p['weblink_index'], web_resource=web_resource)
-                j, created = PublicationJournal.objects.get_or_create(slug=p['journal_slug'], name=p['journal_name'])
-                pub, created = Publication.objects.get_or_create(title=p['title'] , authors=p['authors'] , year=p['year'] , reference=p['reference'] , journal=j, web_link=wl)
-
-                if created:
-                    self.logger.info('Created publication ' + p['title'])
-
-        self.logger.info('COMPLETED CREATING PUBLICATIONS')
-
     def create_protein_segments(self):
         self.logger.info('CREATING PROTEIN SEGMENTS')
         self.logger.info('Parsing file ' + self.segment_source_file)
@@ -139,11 +76,17 @@ class Command(BaseCommand):
             for row in segment_file:
                 split_row = shlex.split(row)
 
+                if int(split_row[2]):
+                    fully_aligned = True
+                else:
+                    fully_aligned = False
+
                 # create segment
                 try:
                     defaults={
                         'category': split_row[1],
-                        'name': split_row[2]
+                        'fully_aligned': fully_aligned,
+                        'name': split_row[3]
                     }
 
                     s, created = ProteinSegment.objects.get_or_create(slug=split_row[0], defaults=defaults)

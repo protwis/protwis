@@ -8,7 +8,6 @@ from residue.functions import *
 from protein.models import Protein, ProteinConformation, ProteinFamily, ProteinSegment, ProteinSequenceType
 from common.alignment import Alignment
 
-import logging
 import os
 import yaml
 
@@ -29,17 +28,11 @@ class Command(BuildHumanProteins):
     # fetch families
     families = ProteinFamily.objects.all()
 
-    def handle(self, *args, **options):
-        # how many jobs to run?
-        if 'njobs' in options and options['njobs']:
-            njobs = int(options['njobs'])
-        else:
-            njobs = 1
-        
+    def handle(self, *args, **options):        
         try:
             self.purge_consensus_sequences()
             self.logger.info('CREATING CONSENSUS SEQUENCES')
-            self.prepare_input(njobs, self.families)
+            self.prepare_input(options['proc'], self.families)
             self.logger.info('COMPLETED CREATING CONSENSUS SEQUENCES')
         except Exception as msg:
             print(msg)
@@ -51,8 +44,11 @@ class Command(BuildHumanProteins):
     def get_segment_residue_information(self, consensus_sequence):
         ref_positions = dict()
         segment_starts = dict()
+        segment_aligned_starts = dict()
         segment_ends = dict()
+        segment_aligned_ends = dict()
         sequence_num = 1
+        unaligned_prefixes = ['00', '01', 'zz']
         for segment_slug, s in consensus_sequence.items():
             segment = ProteinSegment.objects.get(slug=segment_slug)
             i = 1
@@ -63,11 +59,24 @@ class Command(BuildHumanProteins):
                     segment_starts[segment_slug] = sequence_num
                 if i == len(s):
                     segment_ends[segment_slug] = sequence_num
+
+                # aligned start and end
+                if gn[:2] not in unaligned_prefixes:
+                    if segment_slug not in segment_aligned_starts:
+                        segment_aligned_starts[segment_slug] = sequence_num
+                    segment_aligned_ends[segment_slug] = sequence_num
+
                 sequence_num += 1
                 i += 1
-        return ref_positions, segment_starts, segment_ends
+        for segment_slug in consensus_sequence:
+            if segment_slug not in segment_aligned_starts:
+                segment_aligned_starts[segment_slug] = None
+            if segment_slug not in segment_aligned_ends:
+                segment_aligned_ends[segment_slug] = None
 
-    def main_func(self, positions):
+        return ref_positions, segment_starts, segment_aligned_starts, segment_ends, segment_aligned_ends
+
+    def main_func(self, positions, iteration):
         # families
         if not positions[1]:
             families = self.families[positions[0]:]
@@ -161,7 +170,8 @@ class Command(BuildHumanProteins):
             # create residues
             pc = ProteinConformation.objects.get(protein__entry_name=up['entry_name'],
                 state__slug=settings.DEFAULT_PROTEIN_STATE)
-            ref_positions, segment_starts, segment_ends = self.get_segment_residue_information(a.forced_consensus)
+            segment_info = self.get_segment_residue_information(a.forced_consensus)
+            ref_positions, segment_starts, segment_aligned_starts, segment_ends, segment_aligned_ends = segment_info
             for segment_slug, s in a.forced_consensus.items():
                 segment = ProteinSegment.objects.get(slug=segment_slug)
                 if segment_slug in consensus_pas:
@@ -170,4 +180,5 @@ class Command(BuildHumanProteins):
                     protein_anomalies = []
                 if segment_slug in segment_starts:
                     create_or_update_residues_in_segment(pc, segment, segment_starts[segment_slug],
-                        segment_ends[segment_slug], self.schemes, ref_positions, protein_anomalies, True)
+                        segment_aligned_starts[segment_slug], segment_ends[segment_slug],
+                        segment_aligned_ends[segment_slug], self.schemes, ref_positions, protein_anomalies, True)

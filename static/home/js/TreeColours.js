@@ -27,6 +27,7 @@
         newcolor = $(".pick-color.selected").attr('id');
         newcolor = newcolor.split('-');
         $(this).css("fill", newcolor[1]);
+        $(this).css("stroke", newcolor[1]);
     });
     $("[class^=chart]").click(function () {
         if ($(this).attr('id')) {
@@ -61,15 +62,17 @@
          $(this).css("stroke-width", '4');
      });
  };
+
  function predefined_colours(defs, colours) {
-     resetColors(defs);
+     resetColors();
      $('#svgCanvas').find(".bgfield").each(function (index) {
-         if (colours['proteins'].indexOf($(this).attr("id")) > -1) {
-             $(this).css("fill", colours['colours'][0]);
+         if (defs.indexOf($(this).attr("id")) > -1) {
+             $(this).css("fill", colours);
          };
      });
  };
- function resetColors(defs) {
+ 
+ function resetColors() {
      $('#svgCanvas').find(".path").each(function (index) {
          $(this).css("stroke", '');
          $(this).css("stroke-width", '');
@@ -84,38 +87,102 @@
      });
      $("[class^=chart]").each(function (index) {
          if ($(this).attr('id')) {
-             $(this).css("fill", defs[$(this).attr('id')][0]);
+             $(this).css("fill",'');
+             $(this).css("stroke", '');
          };
      });
 
 
  };
 
- function toggleLegend() {
-     var chart0 = $('#svgCanvas').find(".chart0")
-     var chart1 = $('#svgCanvas').find(".chart1")
-     var chart2 = $('#svgCanvas').find(".chart2")
-     if ($(chart0).css("visibility") == 'hidden' && $(chart1).css("visibility") == 'hidden' && $(chart2).css("visibility") == 'hidden') {
-         $(chart0).css("visibility", 'visible');
-         $(chart1).css("visibility", 'visible');
-         $(chart2).css("visibility", 'visible');
-     } else {
-         $(chart0).css("visibility", 'hidden');
-         $(chart1).css("visibility", 'hidden');
-         $(chart2).css("visibility", 'hidden');
-     };
+function toggleAll() {
+     var style = ''
+     $('#svgCanvas').find("[class^=chart]").each(function (index) {
+         if ($(this).css("visibility") == 'visible'){
+             style = 'hidden'};
+     });
+     $('#svgCanvas').find("[class^=chart]").each(function (index) {
+         $(this).css("visibility", style);
+    });
  };
-
-
- function toggleRings(ring) {
-     $('#svgCanvas').find("." + ring).each(function (index) {
-         if ($(this).css("visibility") == 'hidden') {
-             $(this).css("visibility", 'visible');
+function toggleLegend() {
+    var style = 'visible'
+    $('#svgCanvas').find(".legend").each(function (index) {
+        if ($(this).css("visibility") == 'visible' || $(this).css("visibility") == '') {
+            style = 'hidden'
+        };
+    });
+    $('#svgCanvas').find(".legend").each(function (index) {
+        $(this).css("visibility", style);
+    });
+};
+ //function toggleRings(ring) {
+ //    $('#svgCanvas').find("." + ring).each(function (index) {
+ //        if ($(this).css("visibility") == 'hidden') {
+ //            $(this).css("visibility", 'visible');
+ //        } else {
+ //            $(this).css("visibility", 'hidden');
+ //        };
+ //    });
+ //};
+ 
+  function SelectSubmenu(name) {
+     $('.button_container').find('.btn-group').each(function (index) {
+         if ($(this).attr('id') == name || $(this).attr('id') == 'types' || $(this).attr('id') == 'choice') {
+             $(this).css("display", '');
          } else {
-             $(this).css("visibility", 'hidden');
+             $(this).css("display", 'none');
          };
      });
  };
+ function SelectButtons(name) {
+     $('.button_container').find('.btn-default').each(function (index) {
+         if ($(this).attr('id') == name) {
+             $(this).css("display", '');
+         };
+     });
+ };
+  function DeselectButtons(name) {
+     $('.button_container').find('.btn-default').each(function (index) {
+         if ($(this).attr('id') == name) {
+             $(this).css("display", 'none');
+         };
+     });
+ };
+ function GetRings() {
+     var args = [];
+     var values = [];
+     $('.button_container').find('.btn-default').each(function (index) {
+         if ($(this).css("display") != 'none'){
+             args.push($(this).attr('id'));
+             values.push('True');
+         } else if ($(this).css("display") == 'none'){
+             args.push($(this).attr('id'));
+             values.push('False');
+         };
+     });
+    $("#svgCanvas").empty(); 
+    $.ajax({
+    'url': '/phylogenetic_trees/showrings',
+    'data': {
+        arg: args,
+        value: values
+    },
+    'type': 'GET',
+    'success': function(data) {
+           $("#main").html(data);
+       }
+     });
+    $.ajax({
+    'url': '/phylogenetic_trees/get_buttons',
+    'type': 'GET',
+    'success': function(data) {
+           $("#ring_buttons").html(data);
+       }
+     });
+       };
+
+
 
  function mergeSVG() {
      var SVG = $('#svgCanvas').find('svg')[0];
@@ -124,12 +191,22 @@
      var legend = $('#legend').find('svg')[0];
      h2 = parseInt($(legend).attr('height'));
      w2 = parseInt($(legend).attr('width'));
-     new_w = (w-w2)/2
+     leg_w = (w-w2)/2
+     
      SVG.setAttribute('height', (h + h2));
+     if (w2 > w) {
+         SVG.setAttribute('width', (w2));
+         leg_w = 0 
+         svg_w = Math.abs(w-w2)/2
+     } else {
+         leg_w = Math.abs(w-w2)/2 
+         svg_w = 0
+     };
      for (i = 0; i < legend.children.length; i++) {
-         legend.children[i].setAttribute('transform', 'translate ('+new_w.toString()+' ' + h.toString()+')');
+         legend.children[i].setAttribute('transform', 'translate ('+leg_w.toString()+' ' + h.toString()+')');
          $(SVG).append(legend.children[i]);
-     }
+     };
+
 
  };
 $( document ).ready(function (){
@@ -143,7 +220,7 @@ $( document ).ready(function (){
         $(this).addClass('selected');
 
     });
-
+    
 
 
     $("#tree_svg_link").click(function () {
