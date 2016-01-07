@@ -6,6 +6,7 @@ from django.utils.html import strip_tags
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinSequenceType, ProteinSegment,
 ProteinFusion, ProteinFusionProtein, ProteinSource)
 from residue.models import Residue
+from construct.models import *
 
 from optparse import make_option
 from datetime import datetime
@@ -94,13 +95,13 @@ class Command(BaseCommand):
                     p.entry_name = slugify(strip_tags(sd['name']))
                     p.name = sd['name']
                     p.sequence = ppc.protein.sequence
-                    
                     # save protein (construct)
                     try:
                         p.save()
                         self.logger.info('Created construct {} with parent protein {}'.format(p.name,
                             ppc.protein.entry_name))
-                    except:
+                    except Exception as e:
+                        print(e)
                         self.logger.error('Failed creating construct {} with parent protein {}'.format(p.name,
                             ppc.protein.entry_name))
                         continue
@@ -117,10 +118,15 @@ class Command(BaseCommand):
                             p.entry_name))
 
                     # create residue records
-                    truncations = []
-                    if 'truncations' in sd and sd['truncations']:
-                        for t in sd['truncations']:
-                            truncations += list(range(t[0],t[1]+1))
+                    deletions = []
+                    deletions_list = []
+                    if 'deletions' in sd and sd['deletions']:
+                        for t in sd['deletions']:
+                            deletions += list(range(t[0],t[1]+1))
+                            deletions_list.append(str(t[0])+'-'+str(t[1])) 
+                    s = ","
+                    deletion_string = s.join(deletions_list)
+                         
 
                     mutations = {}
                     if 'mutations' in sd and sd['mutations']:
@@ -131,7 +137,143 @@ class Command(BaseCommand):
                                 'mut_res': m[-1],
                                 'full': m,
                             }
+                    
+                    # Create construct record
+                    c = Construct()            
+                    c.protein_conformation = pc
+                    c.deletions =  deletion_string
+                    c.save()
+                      
 
+                    # Create Auxiliary proteins
+#                    if 'auxiliary_proteins' in sd and sd['auxiliary_proteins']:
+#                        ap = AuxProtein()
+#                        ap.construct = c
+#                        apct = AuxProteinType.objects.create()
+                       # ap.protein_type = apct 
+#                        apct.save()
+#                        if 'remarks' in sd['auxiliary_proteins']:
+#                            ap.remarks = sd['auxiliary_proteins']['remarks']
+#                        ap.save()
+ 
+
+#                        for step in sd['auxiliary_proteins']:
+#                            if 'type' in step and 'name' in step and'sequence' in step:
+#                                ap.protein_type = apct
+                 #              ap.protein_type, created = AuxProteinType.objects.get_or_create()
+#                                ap.name = sd['auxiliary_proteins']['name']
+#                                ap.uniprot_id = sd['auxiliary_proteins']['uniprot_id']
+#                                ap.sequence = sd['auxiliary_proteins']['sequence']
+                                #mutations if any to be included from mutation model along with reason of mutation
+#                                ap.position = sd['auxiliary_proteins']['position']
+#                                ap.deletions = sd['auxiliary_proteins']['deletions']
+                                
+#                            else:
+#                                self.logger.error('Auxiliary protein step incorrectly defined for {}'.format(p))
+
+
+
+                     # create expression records
+                    if 'expression_sys' in sd and sd['expression_sys']:
+                        ce = ConstructExpression()           
+                        ce.construct = c
+                        ce.expression_system, created = ConstructExpressionSystem.objects.get_or_create(expression_method = sd['expression_sys']['expression_method'], host_cell_type = sd['expression_sys']['host_cell_type'], host_cell = sd['expression_sys']['host_cell'])
+                        if 'remarks' in sd:
+                            ce.remarks = sd['expression_sys']['remarks']
+                        ce.save()
+ 
+               
+                    # create solubilization records
+                    if 'solubilization' in sd and sd['solubilization'] and 'steps' in sd['solubilization'] and sd['solubilization']['steps']:
+                        so = ConstructSolubilization()
+                        so.construct = c
+                        cl = ChemicalList.objects.create()
+                        so.chemical_list = cl 
+
+                        for step in sd['solubilization']['steps']:
+                            if 'type' in step and 'item' in step and'concentration' in step:
+                                chem = Chemical()
+                                chem.chemical_type,  created = ChemicalType.objects.get_or_create(name = step['type']) 
+                                chem.name =  step['item']
+                                chem.save()
+
+                                cc = ChemicalConc()
+                                cc.concentration = step['concentration']
+                                cc.chemical = chem    # since ChemicalConc has a ForeignKey to Chemical
+                                cc.save()
+                                cl.chemicals.add(cc)                          
+                            else:
+                                self.logger.error('Solubilization step incorrectly defined for {}'.format(p))                                 
+
+                        if 'remarks' in sd['solubilization']:
+                            so.remarks = sd['solubilization']['remarks']
+                        so.save()
+
+
+
+                    # create  purification records
+                    if 'purification' in sd and sd['purification'] and sd['purification']['steps']:
+                        pu = ConstructPurification()
+                        pu.construct = c
+                        if 'remarks' in sd['purification']:
+                            pu.remarks = sd['purification']['remarks']
+                        pu.save() 
+                        for step in sd['purification']['steps']:
+                            if 'type' in step and 'description' in step:
+                                pust = PurificationStep()
+                                pust.description = step['description']
+                                pust.purification = pu
+                                pust.purification_type, created = PurificationStepType.objects.get_or_create(name = step['type'] ) # 2 values returned by get_or_create
+                                if created: 
+                                    self.logger.info('Created purification step type {}'.format(pust.purification_type))
+                                pust.save()
+
+                            else:
+                                self.logger.error('Purification step incorrectly defined for {}'.format(p))
+
+                        
+
+
+                   # create crystallization records
+                    if 'crystallization' in sd and sd['crystallization']: 
+                        cy = ConstructCrystallization()
+                        cy.construct = c
+                        cyt = CrystallizationMethodTypes.objects.create()
+                        cy.crystal_type = cyt
+                        cy.method = sd['crystallization']['method']
+                        cy.settings = sd['crystallization']['settings']
+                        cy.protein_conc = sd['crystallization']['protein_conc']
+                        cl = ChemicalList.objects.create()
+                        cy.chemical_list = cl   
+
+                        for step in sd['crystallization']['chemicallist']:
+                            if 'type' in step and 'item' in step and'concentration' in step:
+                                chem = Chemical()
+                                chem.chemical_type,  created = ChemicalType.objects.get_or_create(name = step['type']) 
+                                
+                                chem.name =  step['item']
+                                chem.save()
+                                cc = ChemicalConc()
+                                cc.concentration = step['concentration']
+                                cc.chemical = chem    # since ChemicalConc has a ForeignKey to Chemical
+                                cc.save()
+                                
+                                cl.chemicals.add(cc)                          
+                            else:
+                                self.logger.error('Crystallization step incorrectly defined for {}'.format(p))                        
+
+                        cy.aqueous_solution_lipid_ratio = sd['crystallization']['aqueous_solution_lipid_ratio_LCP']
+                        cy.lcp_bolus_volume = sd['crystallization']['LCP_bolus_volume']
+                        cy.precipitant_solution_volume = sd['crystallization']['precipitant_solution_volume']
+                        cy.temp = sd['crystallization']['temperature']
+                        cy.ph = sd['crystallization']['ph']  
+
+
+                        if 'remarks' in sd['crystallization']:
+                            cy.remarks = sd['crystallization']['remarks']
+                        cy.save()
+
+                                     
                     # fusion proteins
                     split_segments = {}
                     if 'fusion_proteins' in sd and sd['fusion_proteins']:
@@ -179,7 +321,7 @@ class Command(BaseCommand):
                         'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
                     updated_sequence = ''
                     for pr in prs:
-                        if pr.sequence_number not in truncations:
+                        if pr.sequence_number not in deletions:
                             r = Residue()
                             r.protein_conformation = pc
                             r.generic_number = pr.generic_number

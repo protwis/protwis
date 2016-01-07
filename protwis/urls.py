@@ -20,6 +20,7 @@ urlpatterns = patterns('',
     url(r'^phylogenetic_trees/', include('phylogenetic_trees.urls')),
     url(r'^similaritymatrix/', include('similaritymatrix.urls')),
     url(r'^structure/',include('structure.urls')),
+    url(r'^construct/',include('construct.urls')),
     url(r'^sitesearch/',include('sitesearch.urls')),
 )
 
