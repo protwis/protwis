@@ -1009,7 +1009,7 @@ class PDBClean(TemplateView):
             for selected_struct in [x for x in selection.targets if x.type == 'structure']:
                 struct_name = '{}_{}.pdb'.format(selected_struct.item.protein_conformation.protein.parent.entry_name, selected_struct.item.pdb_code.index)
                 if hets:
-                    lig_names = [x.pdb_reference for x in StructureLigandInteraction.objects.filter(structure=selected_struct.item)]
+                    lig_names = [x.pdb_reference for x in StructureLigandInteraction.objects.filter(structure=selected_struct.item, annotated=True)]
                 else:
                     lig_names = None
                 print(lig_names)
