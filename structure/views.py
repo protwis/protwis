@@ -988,11 +988,14 @@ class PDBClean(TemplateView):
         self.posted = True
         pref = True
         water = False
+        hets = False
         
         if 'pref_chain' in request.POST.keys():
             pref = False
         if 'water' in request.POST.keys():
             water = True
+        if 'hets' in request.POST.keys():
+            hets = True
 
         # get simple selection from session
         simple_selection = request.session.get('selection', False)
@@ -1005,7 +1008,12 @@ class PDBClean(TemplateView):
         if selection.targets != []:
             for selected_struct in [x for x in selection.targets if x.type == 'structure']:
                 struct_name = '{}_{}.pdb'.format(selected_struct.item.protein_conformation.protein.parent.entry_name, selected_struct.item.pdb_code.index)
-                gn_assigner = GenericNumbering(structure=PDBParser(QUIET=True).get_structure(struct_name, StringIO(selected_struct.item.get_cleaned_pdb(pref, water)))[0])
+                if hets:
+                    lig_names = [x.pdb_reference for x in StructureLigandInteraction.objects.filter(structure=selected_struct.item)]
+                else:
+                    lig_names = None
+                print(lig_names)
+                gn_assigner = GenericNumbering(structure=PDBParser(QUIET=True).get_structure(struct_name, StringIO(selected_struct.item.get_cleaned_pdb(pref, water, lig_names)))[0])
                 tmp = StringIO()
                 io.set_structure(gn_assigner.assign_generic_numbers())
                 io.save(tmp)

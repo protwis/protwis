@@ -22,7 +22,7 @@ class Structure(models.Model):
     def __str__(self):
         return self.pdb_code.index
 
-    def get_cleaned_pdb(self, pref_chain=True, remove_waters=True, remove_aux=False, aux_range=5.0):
+    def get_cleaned_pdb(self, pref_chain=True, remove_waters=True, ligands_to_keep=None, remove_aux=False, aux_range=5.0):
         
         tmp = []
         for line in self.pdb_data.pdb.split('\n'):
@@ -34,6 +34,8 @@ class Structure(models.Model):
                 save_line = True
             if remove_waters and line.startswith('HET') and line[17-19] == 'HOH':
                 save_line = False
+            if ligands_to_keep and line.startswith('HET') and line[17-19] != 'HOH' and line[17-19] in ligands_to_keep:
+                save_line = True
             if save_line:
                 tmp.append(line)
 
