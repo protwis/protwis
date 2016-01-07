@@ -20,7 +20,11 @@ urlpatterns = patterns('',
     url(r'^phylogenetic_trees/', include('phylogenetic_trees.urls')),
     url(r'^similaritymatrix/', include('similaritymatrix.urls')),
     url(r'^structure/',include('structure.urls')),
+<<<<<<< HEAD
+    url(r'^construct/',include('construct.urls')),
+=======
     url(r'^sitesearch/',include('sitesearch.urls')),
+>>>>>>> bdaf66b520d7d448fe50ddbbefd393d65b3d55ea
 )
 
 if settings.DEBUG:

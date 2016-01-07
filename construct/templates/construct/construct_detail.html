@@ -1,0 +1,176 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+<div class="row text-success">
+    <div class="text-center">
+        <h2> {{ pc.protein.entry_name }} </h2>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>NAME</h4>
+    </div>
+    <div class="col-md-10">
+        <h4><small>
+            {{ pc.protein.name }}
+        </h4></small>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>MUTATIONS</h4>
+    </div>
+    <div class="col-md-10">
+        <li><h6> WT_res: {{ mut.residue }} </h6></li>
+        <li><h6> MUTATED TO:{{ mut.amino_acid }} </h6> </li> 
+        <li><h6> REASON for MUTATION: {{mut.mutation_type}} </h6></li>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>DELETIONS</h4>
+    </div>
+    <div class="col-md-10">
+        <h4><small>{{ c.deletions }} </small></h4>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>ORGANISM</h4>
+    </div>
+    <div class="col-md-10">
+        <h4><small>{{ pc.protein.species.common_name }} ({{ pc.protein.species.latin_name.strip }})</small></h4>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>PROTEIN NAME</h4>
+    </div>
+    <div class="col-md-10">
+        <h4><small>{{ pc.protein.parent }}</small></h4>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>SOURCE</h4>
+    </div>
+    <div class="col-md-10">
+        <h4><small>{{ pc.protein.source.name }}</small></h4>
+    </div>
+</div>
+
+{% include "construct/sequence_viewer.html" %}
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>AUXILIARY PROTEINS</h4>
+    </div>
+    <div class="col-md-10">
+        <h4><small> Protein_type: {{ aux.aux_protein_type.name }} </small></h4>
+        <h6> Name: {{ aux.name }} </h6>
+        <h6> Uniprot_id:{{ aux.uniprot_id }} </h6> 
+        <h6> Sequence: {{ aux.sequence }} </h6>
+        <h6> Deletions: {{ aux.deletions }} </h6>
+        <h6> Positions:{{ aux.position }} </h6>
+        <h6> Remarks: {{ aux.remarks }} </h6>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>EXPRESSION</h4>
+    </div>
+    <div class="col-md-10">
+             <table style="width:100%">
+                 <tr>
+                     <th>Expression method</th>
+                     <th>Host cell type</th>
+                     <th>Host cell</th>
+                     <th>Remarks</th>
+                 </tr>
+                 <tr>
+                     <td>{{ exprsn.expression_method }} </td>
+                     <td>{{ exprsn.host_cell_type }}</td>
+                     <td>{{ exprsn.host_cell }}</td>
+                     <td>NA</td>
+                 </tr>
+             </table> 
+    </div>
+ </div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>SOLUBILIZATION</h4>
+    </div>
+    <div class="col-md-10">
+        <table style="width:80%">
+            <tr>
+                <th>Solvent type</th>
+                <th>Item</th>
+                <th>Concentration</th>
+            </tr>
+            {% for listitem in sol.chemical_list.chemicals.all %}
+            <tr>
+                <td>{{ listitem.chemical.chemical_type.name }} </td>
+                <td>{{ listitem.chemical.name }}</td>
+                <td>{{ listitem.concentration }} </td>
+            </tr>
+            {% endfor %} 
+        </table>
+        <h4><small>Remarks:{{ sol.remarks }} </small></h4> 
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>PURIFICATION</h4>
+    </div>
+    <div class="col-md-10">
+    <table style="width:80%">
+            <tr>
+                <th>Purification type</th>
+                <th>Description  </th>
+            </tr>
+            {% for listitem in purstep.all %}
+            <tr>
+                <td> {{ listitem.purification_type.name }}  </td>
+                <td> {{ listitem.description }} </td>
+            </tr>
+             {% endfor %}
+        </table>
+        <h4><small>Remarks:{{ pur.remarks }}</small></h4>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>CRYSTALLIZATION</h4>
+    </div>
+    <div class="col-md-10">
+    <h6>TYPE: {{ crystalexp.crystal_type.name }}</h6>
+    <h6>METHOD: {{ crystalexp.method }} </h6>   
+    <h6>SETTINGS: {{ crystalexp.settings }}</h6>
+    <h6>PROTEIN CONCENTRATION: {{ crystalexp.protein_conc }}</h6>
+    <h6>Aqueous_solution_lipid_ratio_LCP:{{ crystalexp.aqueous_solution_lipid_ratio }}</h6>
+    <h6>LCP_bolus_volume: {{ crystalexp.lcp_bolus_volume }} </h6>
+    <h6>Precipitant_solution_volume: {{ crystalexp.precipitant_solution_volume }}</h6>
+    <h6>Temperature: {{ crystalexp.temp }} </h6>
+    <h6>ph : {{ crystalexp.ph }}</h6>
+    <h4><small>Remarks: {{ crystalexp.remarks }} </small></h4>
+    <h4>Chemical list</h4>
+    <table style="width:100%">
+            <tr>
+                <th>Type</th>
+                <th>Item</th>
+                <th>Concentration</th>
+            </tr>
+           {% for listitem in crystalexp.chemical_list.chemicals.all %}
+            <tr>
+                <td>{{ listitem.chemical.chemical_type.name }} </td>
+                <td>{{listitem.chemical.name}}</td>
+                <td>{{ listitem.concentration }} </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}
