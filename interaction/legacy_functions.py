@@ -666,7 +666,7 @@ def build_ligand_info():
 def remove_hyd(aa,ligand):
     templist = []
     for res in new_results[ligand]['interactions']:
-        print res[0],res[2],aa
+        #print res[0],res[2],aa
         if res[0]==aa and (res[2]=='HYD' or res[2]=='hyd'):
             continue
         else:
