@@ -137,6 +137,9 @@ class Rotamer(models.Model):
     structure = models.ForeignKey('structure.Structure')
     pdbdata = models.ForeignKey('PdbData')
 
+    def __str__(self):
+        return '{} {}{}'.format(self.structure.pdb_code.index, self.residue.amino_acid, self.residue.sequence_number)
+
     class Meta():
         db_table = "structure_rotamer"
 
@@ -146,6 +149,10 @@ class Fragment(models.Model):
     ligand = models.ForeignKey('ligand.Ligand')
     structure = models.ForeignKey('structure.Structure')
     pdbdata = models.ForeignKey('PdbData')
+
+    def __str__(self):
+        return '{} {}{} {}'.format(self.structure.pdb_code.index, self.residue.amino_acid,
+            self.residue.sequence_number, self.ligand.name)
 
     class Meta():
         db_table = "structure_fragment"
@@ -163,10 +170,61 @@ class StructureSegment(models.Model):
     class Meta():
         db_table = "structure_segment"
 
-class StructureSegmentModeling(StructureSegment):
+
+class StructureSegmentModeling(models.Model):
     """Annotations of segment borders that are observed in exp. structures, and can be used for modeling.
     This class is indentical to StructureSegment, but is kept separate to avoid confusion."""
+    structure = models.ForeignKey('Structure')
+    protein_segment = models.ForeignKey('protein.ProteinSegment')
+    start = models.IntegerField()
+    end = models.IntegerField()
+
+    def __str__(self):
+        return self.structure.pdb_code.index + " " + protein_segment.slug
 
     class Meta():
         db_table = "structure_segment_modeling"
 
+
+class StructureCoordinates(models.Model):
+    structure = models.ForeignKey('Structure')
+    protein_segment = models.ForeignKey('protein.ProteinSegment')
+    description = models.ForeignKey('StructureCoordinatesDescription')
+
+    def __str__(self):
+        return "{} {} {}".format(self.structure.pdb_code.index, self.protein_segment.slug, self.description.text)
+
+    class Meta():
+        db_table = "structure_coordinates"
+
+
+class StructureCoordinatesDescription(models.Model):
+    text = models.TextField()
+
+    def __str__(self):
+        return self.text
+
+    class Meta():
+        db_table = "structure_coordinates_description"
+
+
+class StructureEngineering(models.Model):
+    structure = models.ForeignKey('Structure')
+    protein_segment = models.ForeignKey('protein.ProteinSegment')
+    description = models.ForeignKey('StructureEngineeringDescription')
+
+    def __str__(self):
+        return "{} {} {}".format(self.structure.pdb_code.index, self.protein_segment.slug, self.description.text)
+
+    class Meta():
+        db_table = "structure_engineering"
+
+
+class StructureEngineeringDescription(models.Model):
+    text = models.TextField()
+
+    def __str__(self):
+        return self.text
+
+    class Meta():
+        db_table = "structure_engineering_description"
