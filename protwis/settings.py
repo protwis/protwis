@@ -47,6 +47,7 @@ INSTALLED_APPS = (
     'phylogenetic_trees',
     'sitesearch',
     'build_' + SITE_NAME,
+    'construct',
 )
 
 MIDDLEWARE_CLASSES = (
