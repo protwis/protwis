@@ -496,12 +496,8 @@ class Command(BaseBuild):
                                 self.logger.error('Segment {} not found'.format(segment))
                                 continue
 
-                            ps = StructureSegment()
-                            ps.structure = s
-                            ps.protein_segment = protein_segment
-                            ps.start = positions[0]
-                            ps.end = positions[1]
-                            ps.save()
+                            struct_seg, created = StructureSegment.objects.update_or_create(structure=s,
+                                protein_segment=protein_segment, defaults={'start': positions[0], 'end': positions[1]})
                     # all representive structures should have defined segments
                     elif representative:
                         self.logger.warning('Segments not defined for representative structure {}'.format(sd['pdb']))
@@ -516,12 +512,8 @@ class Command(BaseBuild):
                                 self.logger.error('Segment {} not found'.format(segment))
                                 continue
 
-                            ps = StructureSegmentModeling()
-                            ps.structure = s
-                            ps.protein_segment = protein_segment
-                            ps.start = positions[0]
-                            ps.end = positions[1]
-                            ps.save()
+                            struct_seg_mod, created = StructureSegmentModeling.objects.update_or_create(structure=s,
+                                protein_segment=protein_segment, defaults={'start': positions[0], 'end': positions[1]})
 
                     # structure coordinates
                     if 'coordinates' in sd and sd['coordinates']:
