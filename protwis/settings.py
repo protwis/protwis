@@ -93,6 +93,33 @@ MEDIA_ROOT = '/web/media/protwis'
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 
+# Templates
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            # insert your TEMPLATE_DIRS here
+        ],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+if DEBUG:
+    TEMPLATES[0]['OPTIONS']['debug'] = True
+
+
 # Logging
 
 LOGGING = {
