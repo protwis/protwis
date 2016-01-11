@@ -649,11 +649,12 @@ class Command(BaseBuild):
                         else:
                             aps = [sd[index]]
                         for aux_protein in aps:
+                            aux_protein_slug = slugify(aux_protein)[:50]
                             try:
                                 sa, created = StructureStabilizingAgent.objects.get_or_create(
-                                    slug=slugify(aux_protein), defaults={'name': aux_protein})
+                                    slug=aux_protein_slug, defaults={'name': aux_protein})
                             except IntegrityError:
-                                sa = StructureStabilizingAgent.objects.get(slug=slugify(aux_protein))
+                                sa = StructureStabilizingAgent.objects.get(slug=aux_protein_slug)
                             s.stabilizing_agents.add(sa)
 
                     # save structure
