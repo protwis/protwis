@@ -10,7 +10,8 @@ from protein.models import (Protein, ProteinConformation, ProteinState, ProteinA
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue
 from common.models import WebLink, WebResource, Publication
 from structure.models import (Structure, StructureType, StructureSegment, StructureStabilizingAgent,PdbData,
-    Rotamer)
+    Rotamer, StructureSegmentModeling, StructureCoordinates, StructureCoordinatesDescription, StructureEngineering,
+    StructureEngineeringDescription)
 from ligand.models import Ligand, LigandType, LigandRole, LigandProperities
 from interaction.models import *
 from interaction.views import runcalculation,parsecalculation
@@ -492,25 +493,85 @@ class Command(BaseBuild):
                             try:
                                 protein_segment = ProteinSegment.objects.get(slug=segment)
                             except ProteinSegment.DoesNotExist:
-                                try:
-                                    parent_slug = segment.split('_')[0]
-                                    parent_protein_segment = ProteinSegment.objects.get(slug=parent_slug)
-                                    protein_segment = ProteinSegment.objects.create(slug=segment,
-                                        name=parent_protein_segment.name, category=parent_protein_segment.category,
-                                        partial=True)
-                                    self.logger.info('Created protein segment {}'.format(segment))
-                                except:
-                                    self.logger.error('Protein segment {} could not be created'.format(segment))
-                                    continue
+                                self.logger.error('Segment {} not found'.format(segment))
+                                continue
+
                             ps = StructureSegment()
                             ps.structure = s
-                            ps.protein_segment = ProteinSegment.objects.get(slug=segment)
+                            ps.protein_segment = protein_segment
                             ps.start = positions[0]
                             ps.end = positions[1]
                             ps.save()
                     # all representive structures should have defined segments
                     elif representative:
                         self.logger.warning('Segments not defined for representative structure {}'.format(sd['pdb']))
+
+                    # structure segments for modeling
+                    if 'segments_in_structure' in sd and sd['segments_in_structure']:
+                        for segment, positions in sd['segments_in_structure'].items():
+                            # fetch (create if needed) sequence segment
+                            try:
+                                protein_segment = ProteinSegment.objects.get(slug=segment)
+                            except ProteinSegment.DoesNotExist:
+                                self.logger.error('Segment {} not found'.format(segment))
+                                continue
+
+                            ps = StructureSegmentModeling()
+                            ps.structure = s
+                            ps.protein_segment = protein_segment
+                            ps.start = positions[0]
+                            ps.end = positions[1]
+                            ps.save()
+
+                    # structure coordinates
+                    if 'coordinates' in sd and sd['coordinates']:
+                        for segment, coordinates in sd['coordinates'].items():
+                            # fetch (create if needed) sequence segment
+                            try:
+                                protein_segment = ProteinSegment.objects.get(slug=segment)
+                            except ProteinSegment.DoesNotExist:
+                                self.logger.error('Segment {} not found'.format(segment))
+                                continue
+
+                            # fetch (create if needed) coordinates description
+                            try:
+                                description, created = StructureCoordinatesDescription.objects.get_or_create(
+                                    text=coordinates)
+                                if created:
+                                    self.logger.info('Created structure coordinate description {}'.format(coordinates))
+                            except IntegrityError:
+                                description = StructureCoordinatesDescription.objects.get(text=coordinates)
+
+                            sc = StructureCoordinates()
+                            sc.structure = s
+                            sc.protein_segment = protein_segment
+                            sc.description = description
+                            sc.save()
+
+                    # structure engineering
+                    if 'engineering' in sd and sd['engineering']:
+                        for segment, engineering in sd['engineering'].items():
+                            # fetch (create if needed) sequence segment
+                            try:
+                                protein_segment = ProteinSegment.objects.get(slug=segment)
+                            except ProteinSegment.DoesNotExist:
+                                self.logger.error('Segment {} not found'.format(segment))
+                                continue
+
+                            # fetch (create if needed) engineering description
+                            try:
+                                description, created = StructureEngineeringDescription.objects.get_or_create(
+                                    text=engineering)
+                                if created:
+                                    self.logger.info('Created structure coordinate description {}'.format(engineering))
+                            except IntegrityError:
+                                description = StructureEngineeringDescription.objects.get(text=engineering)
+
+                            se = StructureEngineering()
+                            se.structure = s
+                            se.protein_segment = protein_segment
+                            se.description = description
+                            se.save()
 
                     # protein anomalies
                     scheme = s.protein_conformation.protein.residue_numbering_scheme
@@ -578,8 +639,8 @@ class Command(BaseBuild):
                     # stabilizing agents, FIXME - redesign this!
                     # fusion proteins moved to constructs, use this for G-proteins and other agents?
                     aux_proteins = []
-                    if 'g_protein' in sd and sd['g_protein'] and sd['g_protein'] != 'None':
-                        aux_proteins.append('g_protein')
+                    if 'signaling_protein' in sd and sd['signaling_protein'] and sd['signaling_protein'] != 'None':
+                        aux_proteins.append('signaling_protein')
                     if 'auxiliary_protein' in sd and sd['auxiliary_protein'] and sd['auxiliary_protein'] != 'None':
                         aux_proteins.append('auxiliary_protein')
                     for index in aux_proteins:
@@ -588,11 +649,12 @@ class Command(BaseBuild):
                         else:
                             aps = [sd[index]]
                         for aux_protein in aps:
+                            aux_protein_slug = slugify(aux_protein)[:50]
                             try:
                                 sa, created = StructureStabilizingAgent.objects.get_or_create(
-                                    slug=slugify(aux_protein), defaults={'name': aux_protein})
+                                    slug=aux_protein_slug, defaults={'name': aux_protein})
                             except IntegrityError:
-                                sa = StructureStabilizingAgent.objects.get(slug=slugify(aux_protein))
+                                sa = StructureStabilizingAgent.objects.get(slug=aux_protein_slug)
                             s.stabilizing_agents.add(sa)
 
                     # save structure
