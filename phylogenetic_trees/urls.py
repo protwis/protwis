@@ -2,7 +2,7 @@
 from phylogenetic_trees import views
 
 
-urlpatterns = patterns('',
+urlpatterns = [
    # url(r'^referenceselection', views.ReferenceSelection.as_view(), name='referenceselection'),
     url(r'^targetselection', views.TargetSelection.as_view(), name='targetselection'),
     url(r'^segmentselection', views.SegmentSelection.as_view(), name='segmentselection'),
@@ -11,4 +11,4 @@ urlpatterns = patterns('',
     url(r'^showrings', views.modify_tree, name='render'),
     url(r'^get_buttons', views.get_buttons, name='render'),
 
-)
+]
