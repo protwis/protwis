@@ -3,7 +3,7 @@ from rest_framework import routers
 
 from api import views
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^reference/', include('rest_framework_swagger.urls')),
     url(r'^protein/accession/(?P<accession>[^/].+)/$', views.ProteinByAccessionDetail.as_view(),
         name='proteinbyaccession'),
@@ -47,4 +47,4 @@ urlpatterns = patterns('',
 
     url(r'^species/$', views.SpeciesList.as_view(), name='species-list'),
     url(r'^species/(?P<latin_name>[^/]+)/$', views.SpeciesDetail.as_view(), name='species-detail'),
-)
+]

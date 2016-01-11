@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.conf import settings
 
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$', include('home.urls')),
     url(r'^services/', include('api_' + settings.SITE_NAME + '.urls')),
     url(r'^admin/', include(admin.site.urls)),
@@ -22,10 +22,8 @@ urlpatterns = patterns('',
     url(r'^structure/',include('structure.urls')),
     url(r'^construct/',include('construct.urls')),
     url(r'^sitesearch/',include('sitesearch.urls')),
-)
+]
 
 if settings.DEBUG:
     import debug_toolbar
-    urlpatterns += patterns('',
-        url(r'^__debug__/', include(debug_toolbar.urls)),
-    )
+    urlpatterns.append( url(r'^__debug__/', include(debug_toolbar.urls)) )
