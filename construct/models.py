@@ -13,7 +13,7 @@ class Construct(models.Model):
     deletions = models.TextField(max_length=100, null=True)
 
     def __str__(self):
-        return self.protein.slug
+        return self.protein_conformation.protein.entry_name
     
     class Meta():
         db_table = 'construct'
@@ -34,7 +34,7 @@ class AuxProtein(models.Model):
         return self.name
 
     class Meta():
-        db_table = 'aux_protein'
+        db_table = 'construct_aux_protein'
 
 
 class AuxProteinType(models.Model):
@@ -45,7 +45,7 @@ class AuxProteinType(models.Model):
         return self.name
 
     class Meta():
-        db_table = 'aux_protein_type'
+        db_table = 'construct_aux_protein_type'
 
             
 
@@ -58,7 +58,7 @@ class Chemical(models.Model):
         return self.name
     
     class Meta():
-        db_table = 'chemical'
+        db_table = 'construct_chemical'
 
 
 class ChemicalType(models.Model):
@@ -69,7 +69,7 @@ class ChemicalType(models.Model):
         return self.name
 
     class Meta():
-        db_table = 'chemical_type'
+        db_table = 'construct_chemical_type'
 
 
 class ChemicalConc(models.Model):
@@ -81,7 +81,7 @@ class ChemicalConc(models.Model):
         return self.chemical.name
 
     class Meta():
-        db_table = 'chemical_conc'
+        db_table = 'construct_chemical_conc'
 
 
 class ChemicalList(models.Model):   ## includes all chemicals, type & concentration. Chemicals can be from LCPlipid, detergent, etc.
@@ -92,7 +92,7 @@ class ChemicalList(models.Model):   ## includes all chemicals, type & concentrat
         return self.chemicals.concentration
 
     class Meta():
-        db_table = 'chemical_list'
+        db_table = 'construct_chemical_list'
 
 
 class ChemicalModification(models.Model):
@@ -104,7 +104,7 @@ class ChemicalModification(models.Model):
         return self.description
 
     class Meta():
-        db_table = 'chemical_modification'
+        db_table = 'construct_chemical_modification'
 
 
 class PurificationStep(models.Model):
@@ -119,7 +119,7 @@ class PurificationStep(models.Model):
         return self.description
 
     class Meta():
-        db_table = 'purification_step'
+        db_table = 'construct_purification_step'
 
 
 
@@ -132,7 +132,7 @@ class PurificationStepType(models.Model):
         return self.name
 
     class Meta():
-        db_table = 'purification_step_type'
+        db_table = 'construct_purification_step_type'
 
 
 
@@ -223,7 +223,7 @@ class ConstructCrystallizationLigandConc(models.Model):
         return self.ligand_conc
 
     class Meta():
-        db_table = 'ligand_conc_of_crystallization'
+        db_table = 'construct_ligand_conc_of_crystallization'
 
 class CrystallizationMethodTypes(models.Model):
 
@@ -233,6 +233,6 @@ class CrystallizationMethodTypes(models.Model):
         return self.name
 
     class Meta():
-        db_table = 'crystallization_method_types'  
+        db_table = 'construct_crystallization_method_types'  
 
 
