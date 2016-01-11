@@ -199,7 +199,7 @@ class StructureCoordinates(models.Model):
 
 
 class StructureCoordinatesDescription(models.Model):
-    text = models.TextField()
+    text = models.CharField(max_length=200, unique=True)
 
     def __str__(self):
         return self.text
@@ -221,7 +221,7 @@ class StructureEngineering(models.Model):
 
 
 class StructureEngineeringDescription(models.Model):
-    text = models.TextField()
+    text = models.CharField(max_length=200, unique=True)
 
     def __str__(self):
         return self.text
