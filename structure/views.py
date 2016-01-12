@@ -990,7 +990,7 @@ class PDBClean(TemplateView):
         water = False
         hets = False
         
-        if 'pref_chain' in request.POST.keys():
+        if 'pref_chain' not in request.POST.keys():
             pref = False
         if 'water' in request.POST.keys():
             water = True
@@ -1012,7 +1012,6 @@ class PDBClean(TemplateView):
                     lig_names = [x.pdb_reference for x in StructureLigandInteraction.objects.filter(structure=selected_struct.item, annotated=True)]
                 else:
                     lig_names = None
-                print(lig_names)
                 gn_assigner = GenericNumbering(structure=PDBParser(QUIET=True).get_structure(struct_name, StringIO(selected_struct.item.get_cleaned_pdb(pref, water, lig_names)))[0])
                 tmp = StringIO()
                 io.set_structure(gn_assigner.assign_generic_numbers())
