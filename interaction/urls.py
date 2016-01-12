@@ -3,7 +3,7 @@ from django.conf.urls import patterns, url
 from interaction import views
 
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$', views.InteractionSelection.as_view(), name='selection'),
     url(r'^list', views.list_structures, name='list'),
     url(r'^calculate', views.showcalculation, name='showcalculation'),
@@ -22,4 +22,4 @@ urlpatterns = patterns('',
     url(r'^ajax/(?P<slug>[-\w]+)/$', views.ajax, name='ajax'),
     url(r'^ajaxLigand/(?P<slug>[-\w]+)/(?P<ligand>.+)$', views.ajaxLigand, name='ajax'),
     url(r'^(?P<pdbname>\w+)$', views.StructureDetails, name='structure_details'), 
-)
+]
