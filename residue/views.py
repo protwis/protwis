@@ -9,6 +9,8 @@ from residue.models import Residue,ResidueNumberingScheme
 
 from collections import OrderedDict
 
+import re
+
 class TargetSelection(AbsTargetSelection):
     pass
 
@@ -71,12 +73,34 @@ class ResidueTablesDisplay(TemplateView):
                 protein_source_list = []
                 for protein_source in simple_selection.annotation:
                     protein_source_list.append(protein_source.item)
+
+                if species_list:
+                    family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                        species__in=(species_list),
+                        source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                else:
+                    family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                        source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
                     
-                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                    species__in=(species_list),
-                    source__in=(protein_source_list)).prefetch_related('residue_numbering_scheme', 'species')
                 for fp in family_proteins:
                     proteins.append(fp)
+
+            longest_name = 0
+            species_list = {}
+            for protein in proteins:
+                if protein.species.common_name not in species_list:
+                    if len(protein.species.common_name)>10 and len(protein.species.common_name.split())>1:
+                        name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])
+                        if len(" ".join(protein.species.common_name.split()[1:]))>11:
+                            name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])[:8]+".."
+                    else:
+                        name = protein.species.common_name
+                    species_list[protein.species.common_name] = name
+
+                    if len(re.sub('<[^>]*>', '', protein.name)+" "+name)>longest_name:
+                        longest_name = len(re.sub('<[^>]*>', '', protein.name)+" "+name)
+
+            print(longest_name)
 
         # get the selection from session
         selection = Selection()
@@ -137,9 +161,10 @@ class ResidueTablesDisplay(TemplateView):
         for s in iter(flattened_data):
             flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
         
-        context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
+        context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
         context['segments'] = [x.slug for x in segments]
         context['data'] = flattened_data
         context['number_of_schemes'] = len(numbering_schemes)
+        context['longest_name'] = {'div' : longest_name*2, 'height': longest_name*2+75}
 
         return context
