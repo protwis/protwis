@@ -172,19 +172,19 @@ input.form-control {
     <h4>Diagrams</h4>
 </div>
     <div class="col-md-10">
-     <small>Increased binding/potency: <font style="color: #000; background-color: #87E88F" color="#87E88F">>5-fold</font>, <font style="color: #000; background-color: #66B36C" color="#66B36C">>10-fold</font>; Reduced binding/potency: <font style="color: #FFF; background-color: #FF7373" color="#FF7373">>5-fold</font>, <font style="color: #FDFF7B; background-color: #FA1111" color="#FA1111">>10-fold</font>; <font style="color: #000; background-color: #F7DA00" color="#F7DA00">No/low effect (<5-fold)</font>; and <font style="color: #000; background-color: #D9D7CE" color="#D9D7CE">N/A</font> </small><br>
-    {{ HelixBox }}
-    <br>    
-    Download: 
-        <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_mutants.png', {scale: 3});">PNG</a> | 
-        <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_mutants">SVG</a>  
-    {{ SnakePlot }}
+       {{ SnakePlot }}
     <br>    
     Download: 
         <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_mutants.png', {scale: 3});">PNG</a> | 
         <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_mutants">SVG</a>  
    </a> 
 
+     <small>Increased binding/potency: <font style="color: #000; background-color: #87E88F" color="#87E88F">>5-fold</font>, <font style="color: #000; background-color: #66B36C" color="#66B36C">>10-fold</font>; Reduced binding/potency: <font style="color: #FFF; background-color: #FF7373" color="#FF7373">>5-fold</font>, <font style="color: #FDFF7B; background-color: #FA1111" color="#FA1111">>10-fold</font>; <font style="color: #000; background-color: #F7DA00" color="#F7DA00">No/low effect (<5-fold)</font>; and <font style="color: #000; background-color: #D9D7CE" color="#D9D7CE">N/A</font> </small><br>
+    {{ HelixBox }}
+    <br>    
+    Download: 
+        <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_mutants.png', {scale: 3});">PNG</a> | 
+        <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_mutants">SVG</a>  
     </div>
     {% else %}
         <p> Ooops! There is no data to show here yet. </p>
@@ -194,7 +194,7 @@ input.form-control {
     <h4>Residue Table</h4>
 </div>
 <div class="col-md-10">
-{% include "residue/residue_table_only.html" with header=header segments=segments data=data onlymutants=1 %}
+{% include "residue/residue_table_only.html" with header=header segments=segments data=data onlymutants=1 longest_name=longest_name%}
 </div>
 <!-- sequence alignment ends -->
 {% endblock %}
