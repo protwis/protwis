@@ -100,8 +100,6 @@ class ResidueTablesDisplay(TemplateView):
                     if len(re.sub('<[^>]*>', '', protein.name)+" "+name)>longest_name:
                         longest_name = len(re.sub('<[^>]*>', '', protein.name)+" "+name)
 
-            print(longest_name)
-
         # get the selection from session
         selection = Selection()
         if simple_selection:
