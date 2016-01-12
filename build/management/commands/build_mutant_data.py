@@ -236,7 +236,7 @@ class Command(BaseCommand):
                         d['exp_wt_unit'] = ''
                         d['exp_mu_effect_sign'] = ''
                         d['exp_mu_value_raw'] = 0
-                        d['fold_change'] = 0
+                        d['fold_effect'] = 0
                         d['exp_mu_effect_qual'] = ''
                         d['exp_mu_effect_ligand_prop'] = ''
                         d['exp_mu_ligand_ref'] = ''

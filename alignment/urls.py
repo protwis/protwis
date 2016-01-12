@@ -4,7 +4,7 @@ from django.views.generic import TemplateView
 from alignment import views
 
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^targetselection', views.TargetSelection.as_view(), name='targetselection'),
     url(r'^segmentselection', views.SegmentSelection.as_view(), name='segmentselection'),
     url(r'^render/(?P<slug>[^/]+)/$', views.render_family_alignment, name='render-family'),
@@ -14,4 +14,4 @@ urlpatterns = patterns('',
     url(r'^csv', views.render_csv_alignment, name='csv'),
     url(r'blastsearch$', views.BlastSearchInput.as_view(), name='blastsearch'),
     url(r'blastsearchresults', views.BlastSearchResults.as_view(), name='blastsearch_results'),
-)
+]

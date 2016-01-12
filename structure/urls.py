@@ -4,7 +4,7 @@ from structure import views
 from django.conf import settings
 from django.views.generic import TemplateView
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$', StructureBrowser.as_view(), name='structure_browser'),
     url(r'^selection_convert$', ConvertStructuresToProteins, name='convert'),
     url(r'^template_browser', TemplateBrowser.as_view(), name='structure_browser'),
@@ -33,4 +33,4 @@ urlpatterns = patterns('',
     url(r'^pdb/(?P<pdbname>\w+)$', ServePdbDiagram, name='structure_serve_pdb'), 
     url(r'^pdb/(?P<pdbname>\w+)/ligand/(?P<ligand>.+)$', ServePdbLigandDiagram, name='structure_serve_pdb_ligand'), 
 
-)
+]
