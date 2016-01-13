@@ -7,7 +7,7 @@ from django import forms
 
 from protein.models import Gene, ProteinSegment
 from structure.models import Structure
-from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, check_gn
+from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
@@ -380,7 +380,7 @@ class GenericNumberingDownload(View):
         out_stream = StringIO()
         io = PDBIO()
         request.session['gn_outfile'].seek(0)
-        gn_struct = PDBParser(PERMISSIVE=True).get_structure(request.session['gn_outfname'], request.session['gn_outfile'])[0]
+        gn_struct = PDBParser(PERMISSIVE=True, QUIET=True).get_structure(request.session['gn_outfname'], request.session['gn_outfile'])[0]
 
         if self.kwargs['substructure'] == 'full':
             io.set_structure(gn_struct)
@@ -597,11 +597,11 @@ class SuperpositionWorkflowResults(TemplateView):
         if 'ref_file' in self.request.session.keys():
             ref_file = StringIO(self.request.session['ref_file'].file.read().decode('UTF-8'))
         elif selection.reference != []:
-            ref_file = StringIO(selection.reference[0].item.get_preferred_chain_pdb())
+            ref_file = StringIO(selection.reference[0].item.get_cleaned_pdb())
         if 'alt_files' in self.request.session.keys():
             alt_files = [StringIO(alt_file.file.read().decode('UTF-8')) for alt_file in self.request.session['alt_files']]
         elif selection.targets != []:
-            alt_files = [StringIO(x.item.get_preferred_chain_pdb()) for x in selection.targets if x.type == 'structure']
+            alt_files = [StringIO(x.item.get_cleaned_pdb()) for x in selection.targets if x.type == 'structure']
         superposition = ProteinSuperpose(deepcopy(ref_file),alt_files, selection)
         out_structs = superposition.run()
         if 'alt_files' in self.request.session.keys():
@@ -645,25 +645,29 @@ class SuperpositionWorkflowDownload(View):
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
+        self.alt_substructure_mapping = {}
         #reference
         if 'ref_file' in request.session.keys():
             self.request.session['ref_file'].file.seek(0)
-            ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', StringIO(self.request.session['ref_file'].file.read().decode('UTF-8')))[0]
-            if not check_gn(ref_struct):
-                gn_assigner = GenericNumbering(structure=ref_struct)
-                ref_struct = gn_assigner.assign_generic_numbers()
+            ref_struct = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', StringIO(self.request.session['ref_file'].file.read().decode('UTF-8')))[0]
+            gn_assigner = GenericNumbering(structure=ref_struct)
+            gn_assigner.assign_generic_numbers()
+            self.ref_substructure_mapping = gn_assigner.get_substructure_mapping_dict()
             ref_name = self.request.session['ref_file'].name
         elif selection.reference != []:
-            ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', StringIO(selection.reference[0].item.get_preferred_chain_pdb()))[0]
-            if not check_gn(ref_struct):
-                gn_assigner = GenericNumbering(structure=ref_struct)
-                ref_struct = gn_assigner.assign_generic_numbers()
+            ref_struct = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', StringIO(selection.reference[0].item.get_cleaned_pdb()))[0]
+            gn_assigner = GenericNumbering(structure=ref_struct)
+            gn_assigner.assign_generic_numbers()
+            self.ref_substructure_mapping = gn_assigner.get_substructure_mapping_dict()
             ref_name = '{}_{}_ref.pdb'.format(selection.reference[0].item.protein_conformation.protein.parent.entry_name, selection.reference[0].item.pdb_code.index)
 
         alt_structs = {}
         for alt_id, st in self.request.session['alt_structs'].items():
             st.seek(0)
-            alt_structs[alt_id] = PDBParser(PERMISSIVE=True).get_structure(alt_id, st)[0]
+            alt_structs[alt_id] = PDBParser(PERMISSIVE=True, QUIET=True).get_structure(alt_id, st)[0]
+            gn_assigner = GenericNumbering(structure=alt_structs[alt_id])
+            gn_assigner.assign_generic_numbers()
+            self.alt_substructure_mapping[alt_id] = gn_assigner.get_substructure_mapping_dict()
 
         if self.kwargs['substructure'] == 'full':
 
@@ -695,12 +699,12 @@ class SuperpositionWorkflowDownload(View):
 
             io.set_structure(ref_struct)
             tmp = StringIO()
-            io.save(tmp, GenericNumbersSelector(parsed_selection=SelectionParser(selection)))
+            io.save(tmp, SubstructureSelector(self.ref_substructure_mapping, parsed_selection=SelectionParser(selection)))
             zipf.writestr(ref_name, tmp.getvalue())
             for alt_name in self.request.session['alt_structs']:
                 tmp = StringIO()
                 io.set_structure(alt_structs[alt_name])
-                io.save(tmp, GenericNumbersSelector(parsed_selection=SelectionParser(selection)))
+                io.save(tmp, SubstructureSelector(self.alt_substructure_mapping[alt_name], parsed_selection=SelectionParser(selection)))
                 zipf.writestr(alt_name, tmp.getvalue())
 
         zipf.close()
@@ -988,31 +992,49 @@ class PDBClean(TemplateView):
         self.posted = True
         pref = True
         water = False
+        hets = False
         
-        if 'pref_chain' in request.POST.keys():
+        if 'pref_chain' not in request.POST.keys():
             pref = False
         if 'water' in request.POST.keys():
             water = True
-
-        cleaned_structures = []
+        if 'hets' in request.POST.keys():
+            hets = True
 
         # get simple selection from session
-        simple_selection = self.request.session.get('selection', False)
+        simple_selection = request.session.get('selection', False)
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
+        out_stream = BytesIO()
+        io = PDBIO()
+        zipf = zipfile.ZipFile(out_stream, 'w', zipfile.ZIP_DEFLATED)
         if selection.targets != []:
-            pdb_structures = [(PDBParser().get_structure('{}_{}.pdb'.format(x.item.protein_conformation.protein.parent.entry_name, x.item.pdb_code.index), StringIO(x.item.get_cleaned_pdb(pref, water)))[0], '{}_{}.pdb'.format(x.item.protein_conformation.protein.parent.entry_name, x.item.pdb_code.index)) for x in selection.targets if x.type == 'structure']
-            for cleaned_struct in pdb_structures:
-                gn_assigner = GenericNumbering(structure=cleaned_struct[0])
-                cleaned_structures.append(gn_assigner.assign_generic_numbers())
-                self.request.session['cleaned_structures'] = cleaned_structures
+            for selected_struct in [x for x in selection.targets if x.type == 'structure']:
+                struct_name = '{}_{}.pdb'.format(selected_struct.item.protein_conformation.protein.parent.entry_name, selected_struct.item.pdb_code.index)
+                if hets:
+                    lig_names = [x.pdb_reference for x in StructureLigandInteraction.objects.filter(structure=selected_struct.item, annotated=True)]
+                else:
+                    lig_names = None
+                gn_assigner = GenericNumbering(structure=PDBParser(QUIET=True).get_structure(struct_name, StringIO(selected_struct.item.get_cleaned_pdb(pref, water, lig_names)))[0])
+                tmp = StringIO()
+                io.set_structure(gn_assigner.assign_generic_numbers())
+                request.session['substructure_mapping'] = gn_assigner.get_substructure_mapping_dict()
+                io.save(tmp)
+                zipf.writestr(struct_name, tmp.getvalue())
+                del gn_assigner, tmp
+            for struct in selection.targets:
+                selection.remove('targets', 'structure', struct.item.id)
+            # export simple selection that can be serialized
+            simple_selection = selection.exporter()
+
+            request.session['selection'] = simple_selection
+            request.session['cleaned_structures'] = out_stream
 
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
-
         return render(request, self.template_name, context)
         
 
@@ -1096,30 +1118,27 @@ class PDBDownload(View):
         if self.kwargs['substructure'] == 'select':
             return HttpResponseRedirect('/structure/pdb_segment_selection')
 
-        io = PDBIO()            
-        out_stream = BytesIO()
-        zipf = zipfile.ZipFile(out_stream, 'w')
-        simple_selection = self.request.session.get('selection', False)
-        selection = Selection()
-        if simple_selection:
-            selection.importer(simple_selection)
-
         if self.kwargs['substructure'] == 'full':
-            for structure in request.session['cleaned_structures']:                
-                tmp = StringIO()
-                io.set_structure(structure)
-                io.save(tmp)
-                zipf.writestr(structure.get_full_id()[0], tmp.getvalue())
+            out_stream = request.session['cleaned_structures']
 
         elif self.kwargs['substructure'] == 'custom':
-            for structure in self.request.session['cleaned_structures']:
-                print(structure.get_full_id()[0])
+            simple_selection = request.session.get('selection', False)
+            selection = Selection()
+            if simple_selection:
+                selection.importer(simple_selection)
+            io = PDBIO()
+            zipf_in = zipfile.ZipFile(request.session['cleaned_structures'], 'r')
+            out_stream = BytesIO()
+            zipf_out = zipfile.ZipFile(out_stream, 'w', zipfile.ZIP_DEFLATED)
+            for name in zipf_in.namelist():
                 tmp = StringIO()
-                io.set_structure(structure)
-                io.save(tmp, GenericNumbersSelector(parsed_selection=SelectionParser(selection)))
-                zipf.writestr(structure.get_full_id()[0], tmp.getvalue())
+                io.set_structure(PDBParser(QUIET=True).get_structure(name, StringIO(zipf_in.read(name).decode('utf-8')))[0])
+                io.save(tmp, SubstructureSelector(request.session['substructure_mapping'], parsed_selection=SelectionParser(selection)))
+                zipf_out.writestr(name, tmp.getvalue())
 
-        zipf.close()
+            zipf_in.close()
+            zipf_out.close()
+            del request.session['substructure_mapping']
         if len(out_stream.getvalue()) > 0:
             response = HttpResponse(content_type="application/zip")
             response['Content-Disposition'] = 'attachment; filename="pdb_structures.zip"'

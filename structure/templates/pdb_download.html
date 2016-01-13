@@ -19,6 +19,7 @@
     <form id="cleanup-form" action="/structure/pdb_download_index"  method="post" enctype="multipart/form-data"> {% csrf_token %}
         <input checked="checked" id="pref_chain" name="pref_chain" type="checkbox" {% if posted %} disabled="disabled" {% endif %} /> Extract the preferred chain only</br>
         <input  id="water" name="water" type="checkbox" {% if posted %} disabled="disabled" {% endif %} /> Remove crystalline water</br>
+        <input id="hets" name="hets" type="checkbox" {% if posted %} disabled="disabled" {% endif %}/> Remove non-ligand heteroatom groups</br>
     </form>
 </div>
 {% if posted %}
