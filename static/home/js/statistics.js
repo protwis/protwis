@@ -45,7 +45,6 @@
         d3.select('#unique_cryst_container svg')
             .datum(datum)
             .transition().duration(500)
-            .attr('height', 450)
             .call(chart);
         d3.select('#unique_cryst_container svg').selectAll('g.nv-wrap.nv-multiBarWithLegend').append("g")
             .attr("class", "nv-y nv-axis")
@@ -76,7 +75,6 @@
         d3.select('#unique_cryst_year_container svg')
             .datum(datum)
             .transition().duration(500)
-            .attr('height', 450)
             .call(chart);
         d3.select('#unique_cryst_year_container svg').selectAll('g.nv-wrap.nv-multiBarWithLegend').append("g")
             .attr("class", "nv-y nv-axis")
@@ -106,7 +104,6 @@
         d3.select('#cryst_year_container svg')
             .datum(datum)
             .transition().duration(500)
-            .attr('height', 450)
             .call(chart);
         d3.select('#cryst_year_container svg').selectAll('g.nv-wrap.nv-multiBarWithLegend').append("g")
             .attr("class", "nv-y nv-axis")
@@ -134,7 +131,6 @@
         d3.select('#reso_container svg')
             .datum(datum)
             .transition().duration(500)
-            .attr('height', 450)
             .call(chart);
         d3.select('#reso_container svg').selectAll('g.nv-wrap.nv-discreteBarWithAxes').append("g")
             .attr("class", "nv-y nv-axis")
