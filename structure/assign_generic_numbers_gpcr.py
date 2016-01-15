@@ -134,8 +134,20 @@ class GenericNumbering(object):
             subj_counter += 1
             tmp_seq.pop(0)
             q_seq.pop(0)        
-            
     
+                    
+    def get_substructure_mapping_dict(self):
+
+        mapping_dict = {}
+        for chain in self.residues.keys():
+            for res in self.residues[chain].keys():
+                if self.residues[chain][res].segment in mapping_dict.keys():
+                    mapping_dict[self.residues[chain][res].segment].append(self.residues[chain][res].number)
+                else:
+                    mapping_dict[self.residues[chain][res].segment] = [self.residues[chain][res].number,]
+        return mapping_dict
+
+
     def get_annotated_structure(self):
     
         for chain in self.pdb_structure:

@@ -121,6 +121,7 @@ class SelectionParser(object):
     
         self.generic_numbers = []
         self.helices = []
+        self.substructures = []
         
         for segment in selection.segments:
             logger.debug('Segments in selection: {}'.format(segment))
@@ -128,7 +129,9 @@ class SelectionParser(object):
                 self.helices.append(int(segment.item.slug[-1]))
             elif segment.type == 'residue':
                 self.generic_numbers.append(segment.item.label.replace('x','.'))
-        logger.debug("Helices selected: {}; Residues: {}".format(self.helices, self.generic_numbers))
+            else:
+                self.substructures.append(segment.item.slug)
+        logger.debug("Helices selected: {}; Residues: {}; Other substructures:{}".format(self.helices, self.generic_numbers, self.substructures))
 
     
 #==============================================================================
@@ -141,6 +144,7 @@ class GenericNumbersSelector(Select):
         if parsed_selection:
             self.generic_numbers=parsed_selection.generic_numbers
             self.helices = parsed_selection.helices
+
     def accept_residue(self, residue):
 
         try:
@@ -151,9 +155,29 @@ class GenericNumbersSelector(Select):
             if -8.1 < residue['CA'].get_bfactor() < 8.1 and int(math.floor(abs(residue['CA'].get_bfactor()))) in self.helices:
                 return 1
         except:
-
             return 0
-        
+        return 0        
+
+#==============================================================================
+class SubstructureSelector(Select):
+
+    def __init__(self, segment_mapping, parsed_selection=None):
+
+        self.residues = []
+
+        for tm in parsed_selection.helices:
+            self.residues.extend(segment_mapping['TM{}'.format(tm)])
+        for substr in parsed_selection.substructures:
+            self.residues.extend(segment_mapping[substr])
+
+    def accept_residue(self, residue):
+
+        try:
+            if int(residue.id[1]) in self.residues:
+                return 1
+        except:
+            return 0
+        return 0
 
 #==============================================================================
 class CASelector(object):
