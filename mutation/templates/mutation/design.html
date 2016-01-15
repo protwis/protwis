@@ -9,7 +9,6 @@
 {% endblock %}
 {% block content %}
 <h2>Mutant Design Tool</h2>
- <script src="http://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script> 
  <div class="row">
 
 
@@ -40,7 +39,7 @@
             </div>
         </div>
 
-        <div class="row">
+<!--         <div class="row">
             <div class="col-md-6 text-right text-info">
                 <h4> Structures with interactions in protein, family and in parent family</h4>
             </div>
@@ -64,8 +63,8 @@
             </div>
             <div class="col-md-4">
                 {{protein_mutations|length}} {{family_mutations|length}} {{parent_mutations|length}}
-            </div>
-        </div>
+            </div> 
+        </div>-->
 </div>
 
 <h2>Results</h2>
@@ -78,14 +77,15 @@
                     <tr>
                         <th>Generic Number</th>
                         <th>Amino Acid</th>
-                        <th>Conservation (family, ligand family, class wide)</th>
-                        <th>Closest reference (Interaction)</th>
-                        <th>Orthlog/Family/Ligand family interaction data</th>
-                        <th>Closest reference (mutation)</th>
-                        <th>AA count for mutations in class for position</th>
-                        <th>AA count for mutations in class for position (close)</th>
-                        <th>Related alternatives</th>
-                        <th>Suggested mutants</th>
+                        <th>Cons. (family)</th>
+                        <th>Cons. (class)</th>
+                        <th>Cons. (span)</th>
+                        <th>Closest Interaction</th>
+                        <th>Class wide (Interaction)</th>
+                        <th>Closest mutation</th>
+                        <th>Mutants overview</th>
+                        <th>Score</th>
+                        <th>suggestion</th>
                     </tr>
                     <tr>
                         <th></th>
@@ -114,67 +114,81 @@
                     <tr>
                         <th>Generic Number</th>
                         <th>Amino Acid</th>
-                        <th>Conservation (family, ligand family, class wide)</th>
-                        <th>Closest reference (Interaction)</th>
-                        <th>Orthlog/Family/Ligand family interaction data</th>
-                        <th>Closest reference (mutation)</th>
-                        <th>AA count for mutations in class for position</th>
-                        <th>AA count for mutations in class for position (close)</th>
-                        <th>Related alternatives</th>
-                        <th>Suggested mutants</th>
+                        <th>Cons. (family)</th>
+                        <th>Cons. (class)</th>
+                        <th>Cons. (span)</th>
+                        <th>Closest Interaction</th>
+                        <th>Class wide (Interaction)</th>
+                        <th>Closest mutation</th>
+                        <th>Mutants overview</th>
+                        <th>Score</th>
+                        <th>suggestion</th>
                     </tr>
                 </tfoot>
                 {% for key, types in results.items %}
                     <tr>
-                    <td>{{key}} {{types.interest_score}}</td>
+                    <td>{{key}}</td>
                     <td>{{types.aa}}</td>
-                    <td>{{types.conservation}}%</td>
+                    <td>{{types.conservation.0}}%</td>
+                    <td>{{types.conservation.2}}%</td>
+                    <td>{{types.conservation.4}}</td>
                     <td>
-                        {% for key,mut in types.bestinteraction.items %}
-                        {{key}}:{{mut}}<br>
+                        {% if types.closestinteraction.type %}
+                        Type: {{types.closestinteraction.type}} (<b>{{types.closestinteraction.type_class}}</b>)<br>
+                        Species: {{types.closestinteraction.species}} (Similarity: {{types.closestinteraction.similarity}}) (PDB: {{types.closestinteraction.pdbcode}})
+                        {% else %} 
+                        No interaction data for generic number
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% for key,int in types.interactions.items %}
+                        <b>{{key}}</b>: {{int|length}} interactions <br>
+                        <!-- {% for i in int %}
+                        {{i}}
+                        <br>
+                        {% endfor %} -->
                         {% endfor %}
                     </td>
                     <td>
-                    {% for key, values in types.interaction.items %} 
-                        
-                            Level {{key}}:<br>{{values|safe}}<br>
-                        
-                    {% endfor %}
-                    </td>
-                    <td>Species: {{types.bestmutation.species}}<br>
+                        {% if types.bestmutation.similarity %} 
+                        Species: {{types.bestmutation.species}}<br>
+                        {% if types.bestmutation.qual %}
+                        Qual: {{types.bestmutation.qual}}<br>
                         Foldchange: {{types.bestmutation.foldchange}}<br>
+                        {% else %} 
+                        Foldchange: {{types.bestmutation.foldchange}}<br>
+                        {% endif %}
                         Similarity: {{types.bestmutation.similarity}}<br>
                         To: {{types.bestmutation.aa}}<br>
-                        Total: {{types.bestmutation.allmut|length}} total mutation points <br>
-                        Big Decreases: {{types.bestmutation.bigdecrease}}<br>
-                        Big Increases: {{types.bestmutation.bigincrease}}<br>
-                        Nonsignificant: {{types.bestmutation.nonsignificant}}<br>
-                        No Data: {{types.bestmutation.nodata}}<br>
+                        {% else %} 
+                        No mutant data for generic number
+                        {% endif %}
 <!--                         {% for mut in types.bestmutation.allmut %}
                         {{mut}}<br>
                         {% endfor %} -->
                     </td>
                     <td>
-                        Counts: <br>
-                        {% for aa, c in types.bestmutation.counts.items %}
-                        {{aa}}:{{c}}<br>
-                        {% endfor %}
-                    </td>
-                    <td>
-                        Close Counts (>60% similarity): <br>
-                        {% for aa, c in types.bestmutation.counts_close.items %}
-                        {{aa}}:{{c}}<br>
-                        {% endfor %}
-                    </td>
-                    <td>
-                        {% for a in types.alternatives %}
-                        {{a.2}} in {{a.0}}({{a.1}}%)<br>
-                        {% endfor %}
-                    </td>
-                    <td>Score: {{types.scores}}
+                        <b>{{types.bestmutation.allmut|length}}</b> total mutation points <br>
+                        Big Decreases: {{types.bestmutation.bigdecrease}}<br>
+                        Big Increases: {{types.bestmutation.bigincrease}}<br>
+                        Nonsignificant: {{types.bestmutation.nonsignificant}}<br>
+                        No Data: {{types.bestmutation.nodata}}<br>
+                        <!-- {{types.bestmutation.allmut}} -->
 
-                    {% if types.sub %}
-                        <br>Suggested mutant: {{types.sub}}
+                    </td>
+                    <td><b>Score:  {{types.interest_score}}</b><br>
+                    {{types.score_text|safe}}
+
+                    </td>
+                     <td>
+                    {% if types.suggestion %}
+                        <b>Suggestion</b>: <br>
+                        {% for key, v in types.suggestion.items %}
+                        <u>{{key}} assumption</u><br>
+                        {% for s,t in v %}
+                            {{s}} ({{t}})<br>
+                        {% endfor %}
+                        {% endfor %}
 
 <!--                         {% if types.existing_mutants_protein %}
                         <br>Existing mutant for protein: {{types.existing_mutants_protein|safe}}
@@ -184,6 +198,19 @@
                         <br>Existing mutant for family: {{types.existing_mutants_family|safe}}
                         {% endif %} -->
 
+                    {% endif %}
+                    {% if types.alternatives %}
+                    <b>Related alternatives (>60% similarity)</b><br>
+                    {% for a in types.alternatives %}
+                        {{a.2}} in {{a.0}}({{a.1}}%)<br>
+                        {% endfor %}
+                    {% endif %}
+                    {% if types.bestmutation.counts|length > 0 %}
+                    <b>Number of mutants in literature:</b> <br>
+                        {% for aa, c in types.bestmutation.counts.items %}
+                        {% if forloop.counter|divisibleby:5 %}<br>{% endif %}
+                        {{c}} {{aa}},  
+                        {% endfor %}
                     {% endif %}
                     </td>
                     </tr>
@@ -260,6 +287,7 @@
    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
     <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+    <script src="{% static 'home/js/3dmol.js' %}"> </script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             var table = $('#residues2').DataTable({

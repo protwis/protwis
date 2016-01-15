@@ -490,6 +490,76 @@ def showcalculationPDB(request):
 
         return render(request, 'mutation/designpdb.html', context)
 
+def pocket(request):
+
+    context = {}
+
+    gpcr_class = '004' #class a
+
+    class_interactions = ResidueFragmentInteraction.objects.filter(
+        structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=gpcr_class, structure_ligand_pair__annotated=True).prefetch_related(
+        'rotamer__residue__display_generic_number','interaction_type',
+        'structure_ligand_pair__structure__protein_conformation__protein__parent',
+        'structure_ligand_pair__ligand__properities')
+
+    class_mutations = MutationExperiment.objects.filter(
+        protein__family__slug__startswith=gpcr_class).prefetch_related('protein','residue__display_generic_number','mutation','refs__web_link', 'exp_qual','ligand').order_by('foldchange','exp_qual')
+
+    generic = {}
+
+    score_copy = {'score': {'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0} , 'interaction' : {},'mutation': {}}
+
+    for i in class_interactions:
+        print(i)
+        ligand = i.structure_ligand_pair.ligand.name
+        receptor = i.structure_ligand_pair.structure.protein_conformation.protein.parent.entry_name
+        interaction_type = i.interaction_type.slug
+        interaction_type_class = i.interaction_type.type
+        if i.rotamer.residue.display_generic_number:
+            gn = i.rotamer.residue.display_generic_number.label
+        else:
+            continue
+        if gn not in generic:
+            generic[gn] = copy.deepcopy(score_copy)
+        if receptor not in generic[gn]['interaction']:
+            generic[gn]['interaction'][receptor] = {}
+        if ligand not in generic[gn]['interaction'][receptor]:
+            print('count')
+            generic[gn]['interaction'][receptor][ligand] = {}
+            generic[gn]['score']['i'] += 1
+            generic[gn]['score']['s'] += 1
+            generic[gn]['score']['s_weight'] += 1
+    for m in class_mutations:
+        if not m.ligand: #ignore non ligand
+            continue
+        receptor = m.protein.entry_name
+        ligand = m.ligand.name
+        if m.residue.display_generic_number:
+            gn = m.residue.display_generic_number.label
+        else:
+            continue
+        if gn not in generic:
+            generic[gn] = copy.deepcopy(score_copy)
+        if receptor not in generic[gn]['mutation']:
+            generic[gn]['mutation'][receptor] = {}
+        if ligand not in generic[gn]['mutation'][receptor]:
+            generic[gn]['mutation'][receptor][ligand] = {}
+            generic[gn]['score']['m'] += 1
+            generic[gn]['score']['s'] += 1
+
+            if m.foldchange>5:
+                generic[gn]['score']['m_weight'] += 1
+                generic[gn]['score']['s_weight'] += 1
+            elif m.exp_qual:
+                if m.exp_qual.qual=='Abolish' or m.exp_qual.qual.find('abolish')!=-1:
+                   generic[gn]['score']['m_weight'] += 1
+                   generic[gn]['score']['s_weight'] += 1
+
+    generic = OrderedDict(sorted(generic.items(), key=lambda x: x[1]['score']['s_weight'], reverse=True))
+
+    context['gn'] = generic
+    return render(request, 'mutation/pocket.html', context)
+
 def showcalculation(request):
     print(request.method)
     if request.method == 'POST':
@@ -677,7 +747,7 @@ def showcalculation(request):
 
     empty_result = {'interaction': {0:[], 1:[], 2:[]}, 'mutant': {0:[], 1:[], 2:[] }, 'closestinteraction' : { 'similarity' : 0},
                 'interactions': { }, 
-                'bestmutation':{ 'species' : '', 'similarity' : 0, 'foldchange' : 0, 'qual' : '', 'allmut' : [], 'counts':{}, 'counts_close':{}, 'bigdecrease':0,'bigincrease':0,'nonsignificant':0,'nodata':0}}
+                'bestmutation':{ 'species' : '', 'similarity' : 0, 'foldchange' : 0, 'qual' : '', 'allmut' : [], 'counts':OrderedDict(), 'counts_close':{}, 'bigdecrease':0,'bigincrease':0,'nonsignificant':0,'nodata':0}}
 
     # for data in [protein_interactions,family_interactions,parent_interactions]:
 
@@ -731,6 +801,7 @@ def showcalculation(request):
                                 results[generic]['closestinteraction']['similarity'] = similarity_list[entry_name][1]
                                 results[generic]['closestinteraction']['type'] = interaction_type
                                 results[generic]['closestinteraction']['type_class'] = interaction_type_class
+                                results[generic]['closestinteraction']['pdbcode'] = pdbcode
                                 results[generic]['interactions'][interaction_type_class] = [{ 'species' : entry_name, 'similarity' : similarity_list[entry_name][1], 'pdbcode' : pdbcode}]
         else:
             pass
@@ -788,6 +859,32 @@ def showcalculation(request):
                     #should be fixed with order by
                         continue
 
+                    if m.foldchange>5:
+                        results[generic]['bestmutation']['bigdecrease'] += 1
+                    elif m.foldchange<-5:
+                        results[generic]['bestmutation']['bigincrease'] += 1
+                    elif (m.foldchange<5 or m.foldchange>-5) and m.foldchange!=0:
+                        results[generic]['bestmutation']['nonsignificant'] += 1
+                    else:
+                        if m.exp_qual:
+                            #print( m.exp_qual.qual.find('abolish'))
+                            #print(m.exp_qual.qual)
+                            if m.exp_qual.qual=='Abolish' or m.exp_qual.qual.find('abolish')!=-1:
+                                results[generic]['bestmutation']['bigdecrease'] += 1
+                                # print(m.exp_qual.qual)
+                                # print(m.foldchange)
+                                m.foldchange = 10 #insert a 'fake' foldchange to make it count
+                            elif m.exp_qual.qual=='Gain of':
+                                results[generic]['bestmutation']['bigincrease'] += 1
+                            elif m.exp_qual.qual=='Increase':
+                                results[generic]['bestmutation']['nonsignificant'] += 1
+                            elif m.exp_qual.qual=='Decrease':
+                                results[generic]['bestmutation']['nonsignificant'] += 1
+                            else:
+                                results[generic]['bestmutation']['nonsignificant'] += 1 #non-abolish qual
+                        else:
+                            results[generic]['bestmutation']['nodata'] += 1
+
                     #If next is closer in similarity replace "closest"
                     if int(m.foldchange)!=0 or qual!='': #FIXME qual values need a corresponding foldchange value to outrank other values
                         if ((similarity_list[entry_name][1]>=results[generic]['bestmutation']['similarity'] and
@@ -800,24 +897,7 @@ def showcalculation(request):
 
                     results[generic]['bestmutation']['allmut'].append([entry_name,m.foldchange,qual,m.mutation.amino_acid,results[generic]['bestmutation']['similarity']])
 
-                    if m.foldchange>5:
-                        results[generic]['bestmutation']['bigdecrease'] += 1
-                    elif m.foldchange<-5:
-                        results[generic]['bestmutation']['bigincrease'] += 1
-                    elif (m.foldchange<5 or m.foldchange>-5) and m.foldchange!=0:
-                        results[generic]['bestmutation']['nonsignificant'] += 1
-                    else:
-                        if m.exp_qual:
-                            if m.exp_qual.qual=='Abolish':
-                                results[generic]['bestmutation']['bigdecrease'] += 1
-                            elif m.exp_qual.qual=='Gain of':
-                                results[generic]['bestmutation']['bigincrease'] += 1
-                            elif m.exp_qual.qual=='Increase':
-                                results[generic]['bestmutation']['nonsignificant'] += 1
-                            elif m.exp_qual.qual=='Decrease':
-                                results[generic]['bestmutation']['nonsignificant'] += 1
-                        else:
-                            results[generic]['bestmutation']['nodata'] += 1
+
 
                     if m.mutation.amino_acid in results[generic]['bestmutation']['counts']:
                         results[generic]['bestmutation']['counts'][m.mutation.amino_acid] += 1
@@ -829,7 +909,9 @@ def showcalculation(request):
                     elif similarity_list[entry_name][1]>60:
                         results[generic]['bestmutation']['counts_close'][m.mutation.amino_acid] = 1
 
-
+                   # print(sorted(results[generic]['bestmutation']['counts'],key=lambda x: x[0],reverse=True))
+                    
+                    #results[generic]['bestmutation']['counts_close'] = sorted(results[generic]['bestmutation']['counts_close'],key=lambda x: x[0],reverse=True)
 
 
                 
@@ -858,36 +940,96 @@ def showcalculation(request):
         summary[res]['bestmutation'] = values['bestmutation']
         summary[res]['alternatives'] = []
         summary[res]['interest_score'] = 0
+        summary[res]['score_text'] = ''
+        #reverse counts
+        if 'counts' in summary[res]['bestmutation']:
+            summary[res]['bestmutation']['counts'] = OrderedDict(sorted(summary[res]['bestmutation']['counts'].items(), key=lambda x: x[1], reverse=True))
 
         summary[res]['interest_score'] += len(summary[res]['bestmutation']['allmut'])/10 #add a small value for each mutation for position
+        summary[res]['score_text'] += '# mutants: '+str(len(summary[res]['bestmutation']['allmut'])/10)+'<br>'
+
 
         #Find alternatives for position (useful for specificity investigation)
+        temp = 0
         for aalist in alternative_aa[res].items(): 
             if aalist[0] !=summary[res]['aa']:
                 for p in aalist[1]:
                     if similarity_list[p][1]>60: #close enough to suggest
                          summary[res]['alternatives'].append([p,similarity_list[p][1],aalist[0]])
                          summary[res]['interest_score'] += 1 #add a small value for these hits
+                         temp += 1
+        if temp: #if alternatives found
+            summary[res]['score_text'] += '# alternatives: '+str(temp)+'<br>'
 
         if res in generic_aa_count:
             #removed ligand_generic_aa_count[res][lookup[res]] -- not used
             summary[res]['conservation'] = [family_generic_aa_count[res][lookup[res]],0,generic_aa_count[res][lookup[res]], round(family_generic_aa_count[res][lookup[res]] / generic_aa_count[res][lookup[res]],1), round(family_generic_aa_count[res][lookup[res]] - generic_aa_count[res][lookup[res]],1)]
+
+            summary[res]['interest_score'] += summary[res]['conservation'][4]/10
+            summary[res]['score_text'] += '# cons span: '+str(summary[res]['conservation'][4]/10)+'<br>'
+
         scores = {'hyd':0,'aromatic':0,'polar':0,'unknown':0} #dict to keep track of scores to select subs.
         
+        secondary_interaction = ''
         if 'type_class' in summary[res]['closestinteraction']:
+            temp = 0
             if summary[res]['closestinteraction']['type_class']=='hydrophobic':
                 summary[res]['interest_score'] += 10
+                temp = 10
+                if 'polar' in summary[res]['interactions']: #if secondary there is polar
+                    summary[res]['score_text'] += '# secondary interaction: '+str(25)+'<br>'
+                    summary[res]['interest_score'] += 25
+                    secondary_interaction = 'polar'
+                elif 'aromatic' in summary[res]['interactions']: #if secondary there is polar
+                    summary[res]['score_text'] += '# secondary interaction: '+str(10)+'<br>'
+                    summary[res]['interest_score'] += 10
+                    secondary_interaction = 'aromatic'
             elif summary[res]['closestinteraction']['type_class']=='polar':
                 summary[res]['interest_score'] += 50
+                temp = 50
             elif summary[res]['closestinteraction']['type_class']=='aromatic':
                 summary[res]['interest_score'] += 20
+                temp = 20
 
-        if summary[res]['bestmutation']['foldchange']>10:
+            summary[res]['score_text'] += '# closest interaction: '+str(temp)+'<br>'
+
+        if 'type_class' in summary[res]['closestinteraction']: #if there is a closest interaction, calculate supporting data
+            distinct_species = []
+            similarity_sum = 0
+            for interaction in summary[res]['interactions'][summary[res]['closestinteraction']['type_class']]:
+                if interaction['species'] not in distinct_species and interaction['species']!=summary[res]['closestinteraction']['species']:
+                    similarity_sum += interaction['similarity']
+                    distinct_species.append(interaction['species'])
+            if len(distinct_species): #if there was supporting
+                summary[res]['interest_score'] += min(len(distinct_species)*5,temp) #can't add more than the actual closest interaction
+                summary[res]['score_text'] += '# supporting interactions: '+str(min(len(distinct_species)*5,temp))+'<br>'
+
+        temp = 0
+        if summary[res]['bestmutation']['foldchange']>50:
+            summary[res]['interest_score'] += 70
+            temp = 70
+        elif summary[res]['bestmutation']['foldchange']>10:
             summary[res]['interest_score'] += 50
+            temp = 50
         elif summary[res]['bestmutation']['foldchange']>5:
             summary[res]['interest_score'] += 20
+            temp = 20
         elif summary[res]['bestmutation']['foldchange']>1:
-            summary[res]['interest_score'] += 5
+            summary[res]['interest_score'] += 0
+            temp = 0
+
+        wildcard_interaction = 0
+        if temp>=50 and 'type_class' not in summary[res]['closestinteraction']: #if big foldchange but no interaction
+            wildcard_interaction = 1
+        elif summary[res]['bestmutation']['bigdecrease']>1 and 'type_class' not in summary[res]['closestinteraction']: #if big decrease in class
+            wildcard_interaction = 1
+
+        if summary[res]['bestmutation']['foldchange']>5:
+            summary[res]['score_text'] += '# closest foldchange: '+str(temp)+'<br>'
+
+        if not summary[res]['bestmutation']['foldchange']>5 and summary[res]['bestmutation']['bigdecrease']>1:
+            summary[res]['score_text'] += '# class decrease: '+str(10)+'<br>'
+            summary[res]['interest_score'] += 10
 
         #summary[res]['scores'] = scores
 
@@ -896,11 +1038,18 @@ def showcalculation(request):
         summary[res]['existing_mutants_family'] = '' #Change to number of
         #summary[res]['existing_mutants_protein'] = 0
         #summary[res]['existing_mutants_family'] = 0
+
+
+        summary[res]['suggestion'] = {}
         if 'type_class' in summary[res]['closestinteraction']:
             interaction_type = summary[res]['closestinteraction']['type_class']
             if summary[res]['aa'] in matrix[interaction_type]:
                 possible_subs = matrix[interaction_type][summary[res]['aa']][0]
+                possible_subs_text = matrix[interaction_type][summary[res]['aa']][1]
                 summary[res]['sub'] = possible_subs
+                summary[res]['subtext'] = possible_subs_text
+                summary[res]['subtextfull']  = zip(possible_subs, possible_subs_text)
+                summary[res]['suggestion'][interaction_type] = zip(possible_subs, possible_subs_text)
 
                 #Make list of references of existing mutants -- can be depreciated or moved to "popover"
                 if res in mutant_lookup:
@@ -929,6 +1078,19 @@ def showcalculation(request):
             else:
                 print('error',interaction_type,summary[res]['aa'])
 
+        if secondary_interaction:
+            if summary[res]['aa'] in matrix[secondary_interaction]:
+                possible_subs = matrix[secondary_interaction][summary[res]['aa']][0]
+                possible_subs_text = matrix[secondary_interaction][summary[res]['aa']][1]
+                summary[res]['suggestion'][secondary_interaction] = zip(possible_subs, possible_subs_text)
+
+        if wildcard_interaction:
+            for interaction_type in matrix:
+                if summary[res]['aa'] in matrix[interaction_type]:
+                    possible_subs = matrix[interaction_type][summary[res]['aa']][0]
+                    possible_subs_text = matrix[interaction_type][summary[res]['aa']][1]
+                    summary[res]['suggestion'][interaction_type] = zip(possible_subs, possible_subs_text)
+
         summary_score.append([summary[res]['interest_score'],summary[res],res])
 
     print('made summary')
@@ -937,7 +1099,8 @@ def showcalculation(request):
     sorted_summary = sorted(summary_score,key=lambda x: x[0],reverse=True)
     new_summary = OrderedDict();
     for res in sorted_summary:
-        new_summary[res[2]] = res[1]
+        if res[0]>10:
+            new_summary[res[2]] = res[1]
 
     #print(sorted_summary)
 

@@ -123,6 +123,7 @@ class GenericNumbering(object):
                             self.residues[chain][resn].add_gpcrdb_number(gpcrdb)
                             self.residues[chain][resn].add_gpcrdb_number_id(db_res.display_generic_number.id)
                             self.residues[chain][resn].add_display_number(num)
+                            self.residues[chain][resn].add_residue_record(db_res)
                     else:
                         logger.warning("Could not find residue {} {} in the database.".format(resn, subj_counter))
 

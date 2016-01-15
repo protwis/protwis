@@ -639,6 +639,7 @@ def calculate(request, redirect=None):
             generic_number = []
             previous_seg = 'N-term'
 
+            #Get segments built correctly for non-aligned residues
             for c, res in structure_residues.items():
                 for i, r in sorted(res.items()):  # sort to be able to assign loops
                     if r.gpcrdb:
@@ -649,17 +650,17 @@ def calculate(request, redirect=None):
                         generic_number.append(r.gpcrdb)
                     if r.gpcrdb_id:
                         generic_ids.append(r.gpcrdb_id)
-                    if (r.segment):
+                    if r.segment:
                         if not r.segment in segments:
                             segments[r.segment] = {}
                         segments[r.segment][r.number] = [
-                            r.display, r.name, r.gpcrdb]
+                            r.display, r.name, r.gpcrdb,r.residue_record]
                         previous_seg = r.segment
                     else:  # if no segment assigned by blast
                         if previous_seg in ['N-term', 'ICL1', 'ECL1', 'ICL2', 'ECL2', 'ICL3', 'ICL3', 'C-term']:
                             if not previous_seg in segments:
                                 segments[previous_seg] = {}
-                            segments[previous_seg][r.number] = ['', r.name, '']
+                            segments[previous_seg][r.number] = ['', r.name, '',r.residue_record]
                         else:
                             if previous_seg == 'TM1':
                                 previous_seg = 'ICL1'
@@ -680,33 +681,17 @@ def calculate(request, redirect=None):
 
                             if not previous_seg in segments:
                                 segments[previous_seg] = {}
-                            segments[previous_seg][r.number] = ['', r.name, '']
-
-            rs = ResidueGenericNumber.objects.filter(id__in=generic_ids)
-
-            reference_generic_numbers = {}
-            for r in rs:  # make lookup dic.
-                reference_generic_numbers[r.label] = r
-
-            rs = ResidueGenericNumber.objects.filter(label__in=generic_number)
-            reference_numbers = {}
-            for r in rs:  # make lookup dic.
-                reference_numbers[r.label] = r
+                            segments[previous_seg][r.number] = ['', r.name, '',r.residue_record]
 
             residue_list = []
             for seg, reslist in segments.items():
-
                 for seq_number, v in sorted(reslist.items()):
-                    r = Residue()
-                    r.sequence_number = seq_number
-                    if "x" in v[0]:
-                        r.display_number = reference_numbers[v[2]]  # FIXME
-                        r.display_generic_number = reference_generic_numbers[
-                            v[0]]  # FIXME
-                        r.segment_slug = seg
-                        r.family_generic_number = v[2]
+                    if v[3]: #if blast assigned a residue, then use it. Otherwise just make something empty
+                        r = v[3]
                     else:
-                        r.segment_slug = seg
+                        r = Residue()
+                    r.sequence_number = seq_number
+                    r.segment_slug = seg
                     r.amino_acid = v[1]
                     residue_list.append(r)
 
