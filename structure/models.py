@@ -168,7 +168,7 @@ class StructureSegment(models.Model):
     end = models.IntegerField()
 
     def __str__(self):
-        return self.structure.pdb_code.index + " " + protein_segment.slug
+        return self.structure.pdb_code.index + " " + self.protein_segment.slug
 
     class Meta():
         db_table = "structure_segment"
@@ -183,7 +183,7 @@ class StructureSegmentModeling(models.Model):
     end = models.IntegerField()
 
     def __str__(self):
-        return self.structure.pdb_code.index + " " + protein_segment.slug
+        return self.structure.pdb_code.index + " " + self.protein_segment.slug
 
     class Meta():
         db_table = "structure_segment_modeling"
