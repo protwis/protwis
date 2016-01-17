@@ -8,6 +8,7 @@ urlpatterns = [
     url(r'^import', views.importmutation, name='import'),
     url(r'^designpdb', views.designPDB.as_view(), name='design'),
     url(r'^design', views.design.as_view(), name='design'),
+    url(r'^pocket', views.pocket, name='pocket'),
     url(r'^calculatepdb', views.showcalculationPDB, name='showcalculationPDB'),
     url(r'^calculate', views.showcalculation, name='showcalculation'),
     url(r'^targetselection', views.TargetSelection.as_view(), name='targetselection'),

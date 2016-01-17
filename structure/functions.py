@@ -80,7 +80,8 @@ class MappedResidue(object):
         self.gpcrdb = 0.  
         self.gpcrdb_id = 0     
         self.segment = ''
-        self.display = ''      
+        self.display = ''
+        self.residue_record = None     
   
     def add_bw_number (self, bw_number=''):
     
@@ -97,6 +98,10 @@ class MappedResidue(object):
     def add_gpcrdb_number_id (self, gpcrdb_number_id=''):
 
         self.gpcrdb_id = gpcrdb_number_id
+
+    def add_residue_record (self, residue_record= None):
+
+        self.residue_record = residue_record
 
     def add_gpcrdb_number (self, gpcrdb_number=''):
 
