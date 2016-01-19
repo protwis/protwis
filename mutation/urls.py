@@ -3,11 +3,12 @@ from django.conf.urls import patterns, url
 from mutation import views
 
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$', views.TargetSelection.as_view(), name='targetselection'),
     url(r'^import', views.importmutation, name='import'),
     url(r'^designpdb', views.designPDB.as_view(), name='design'),
     url(r'^design', views.design.as_view(), name='design'),
+    url(r'^pocket', views.pocket, name='pocket'),
     url(r'^calculatepdb', views.showcalculationPDB, name='showcalculationPDB'),
     url(r'^calculate', views.showcalculation, name='showcalculation'),
     url(r'^targetselection', views.TargetSelection.as_view(), name='targetselection'),
@@ -20,4 +21,4 @@ urlpatterns = patterns('',
     url(r'^family/(?P<family>[^/]*?)/(?P<download>download)$', views.render_mutations, name='render'),
     url(r'^ajax/(?P<slug>[^/]*?)/$', views.ajax, name='ajax'),
     url(r'^ajax/(?P<slug>[^/]*?)/(?P<segments>.+)/$', views.ajaxSegments, name='ajaxSegments'),
-)
+]

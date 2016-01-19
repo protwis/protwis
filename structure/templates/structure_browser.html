@@ -120,7 +120,7 @@
                         AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
                     }
                 }
-                window.location.href = '/structure/pdb_download';
+                window.location.href = '/structure/pdb_download_index';
             });
             $('#align_btn').click(function () {
                 var checked_data = table.rows('.alt_selected').data();
@@ -136,6 +136,10 @@
 
                 }
                 window.location.href = '/structure/selection_convert';
+            });
+            $('.select-all').change(function () {
+                $('.alt').prop('checked', $(this).prop("checked"));
+                $('.alt').parent().parent().toggleClass('alt_selected');
             });
 
         });
@@ -163,7 +167,7 @@
         <table width="100%" class="display" id="structures">
             <thead>
                 <tr>
-                    <th></th>
+                    <th><input class="select-all" type="checkbox"> Select all</th>
                     <th class="protein-th">Protein name</th>
                     <th class="protein-th">Protein class</th>
                     <th class="protein-th">Species</th>

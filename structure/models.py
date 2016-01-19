@@ -1,5 +1,7 @@
-﻿from django.db import models
+from django.db import models
 
+from io import StringIO
+from Bio.PDB import PDBIO
 
 class Structure(models.Model):
     protein_conformation = models.ForeignKey('protein.ProteinConformation')
@@ -20,6 +22,29 @@ class Structure(models.Model):
     def __str__(self):
         return self.pdb_code.index
 
+    def get_cleaned_pdb(self, pref_chain=True, remove_waters=True, ligands_to_keep=None, remove_aux=False, aux_range=5.0):
+        
+        tmp = []
+        for line in self.pdb_data.pdb.split('\n'):
+            save_line = False
+            if pref_chain:
+                if (line.startswith('ATOM') or line.startswith('HET')) and line[21] == self.preferred_chain[0]:
+                    save_line = True
+            else:
+                save_line = True
+            if remove_waters and line.startswith('HET') and line[17:20] == 'HOH':
+                save_line = False
+            if ligands_to_keep and line.startswith('HET'):
+                if line[17:20] != 'HOH' and line[17:20] in ligands_to_keep:
+                    save_line = True
+                elif line[17:20] != 'HOH':
+                    save_line=False
+            if save_line:
+                tmp.append(line)
+
+        return '\n'.join(tmp)
+
+                        
     def get_preferred_chain_pdb(self):
 
         tmp = []
@@ -90,7 +115,7 @@ class StructureType(models.Model):
 
 
 class StructureStabilizingAgent(models.Model):
-    slug = models.SlugField(max_length=20, unique=True)
+    slug = models.SlugField(max_length=50, unique=True)
     name = models.CharField(max_length=100)
 
     def __str__(self):
@@ -115,6 +140,9 @@ class Rotamer(models.Model):
     structure = models.ForeignKey('structure.Structure')
     pdbdata = models.ForeignKey('PdbData')
 
+    def __str__(self):
+        return '{} {}{}'.format(self.structure.pdb_code.index, self.residue.amino_acid, self.residue.sequence_number)
+
     class Meta():
         db_table = "structure_rotamer"
 
@@ -124,6 +152,10 @@ class Fragment(models.Model):
     ligand = models.ForeignKey('ligand.Ligand')
     structure = models.ForeignKey('structure.Structure')
     pdbdata = models.ForeignKey('PdbData')
+
+    def __str__(self):
+        return '{} {}{} {}'.format(self.structure.pdb_code.index, self.residue.amino_acid,
+            self.residue.sequence_number, self.ligand.name)
 
     class Meta():
         db_table = "structure_fragment"
@@ -136,7 +168,66 @@ class StructureSegment(models.Model):
     end = models.IntegerField()
 
     def __str__(self):
-        return self.structure.pdb_code.index + " " + protein_segment.slug
+        return self.structure.pdb_code.index + " " + self.protein_segment.slug
 
     class Meta():
         db_table = "structure_segment"
+
+
+class StructureSegmentModeling(models.Model):
+    """Annotations of segment borders that are observed in exp. structures, and can be used for modeling.
+    This class is indentical to StructureSegment, but is kept separate to avoid confusion."""
+    structure = models.ForeignKey('Structure')
+    protein_segment = models.ForeignKey('protein.ProteinSegment')
+    start = models.IntegerField()
+    end = models.IntegerField()
+
+    def __str__(self):
+        return self.structure.pdb_code.index + " " + self.protein_segment.slug
+
+    class Meta():
+        db_table = "structure_segment_modeling"
+
+
+class StructureCoordinates(models.Model):
+    structure = models.ForeignKey('Structure')
+    protein_segment = models.ForeignKey('protein.ProteinSegment')
+    description = models.ForeignKey('StructureCoordinatesDescription')
+
+    def __str__(self):
+        return "{} {} {}".format(self.structure.pdb_code.index, self.protein_segment.slug, self.description.text)
+
+    class Meta():
+        db_table = "structure_coordinates"
+
+
+class StructureCoordinatesDescription(models.Model):
+    text = models.CharField(max_length=200, unique=True)
+
+    def __str__(self):
+        return self.text
+
+    class Meta():
+        db_table = "structure_coordinates_description"
+
+
+class StructureEngineering(models.Model):
+    structure = models.ForeignKey('Structure')
+    protein_segment = models.ForeignKey('protein.ProteinSegment')
+    description = models.ForeignKey('StructureEngineeringDescription')
+
+    def __str__(self):
+        return "{} {} {}".format(self.structure.pdb_code.index, self.protein_segment.slug, self.description.text)
+
+    class Meta():
+        db_table = "structure_engineering"
+
+
+class StructureEngineeringDescription(models.Model):
+    text = models.CharField(max_length=200, unique=True)
+
+    def __str__(self):
+        return self.text
+
+    class Meta():
+        db_table = "structure_engineering_description"

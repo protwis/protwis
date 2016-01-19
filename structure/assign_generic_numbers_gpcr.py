@@ -35,9 +35,9 @@ class GenericNumbering(object):
         self.blast = BlastSearch(blast_path=blast_path, blastdb=blastdb)
         
         if self.pdb_file:
-            self.pdb_structure = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_file)[0]
+            self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_file)[0]
         elif self.pdb_filename:
-            self.pdb_structure = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_filename)[0]
+            self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_filename)[0]
         else:
             self.pdb_structure = structure
 
@@ -123,6 +123,7 @@ class GenericNumbering(object):
                             self.residues[chain][resn].add_gpcrdb_number(gpcrdb)
                             self.residues[chain][resn].add_gpcrdb_number_id(db_res.display_generic_number.id)
                             self.residues[chain][resn].add_display_number(num)
+                            self.residues[chain][resn].add_residue_record(db_res)
                     else:
                         logger.warning("Could not find residue {} {} in the database.".format(resn, subj_counter))
 
@@ -133,8 +134,20 @@ class GenericNumbering(object):
             subj_counter += 1
             tmp_seq.pop(0)
             q_seq.pop(0)        
-            
     
+                    
+    def get_substructure_mapping_dict(self):
+
+        mapping_dict = {}
+        for chain in self.residues.keys():
+            for res in self.residues[chain].keys():
+                if self.residues[chain][res].segment in mapping_dict.keys():
+                    mapping_dict[self.residues[chain][res].segment].append(self.residues[chain][res].number)
+                else:
+                    mapping_dict[self.residues[chain][res].segment] = [self.residues[chain][res].number,]
+        return mapping_dict
+
+
     def get_annotated_structure(self):
     
         for chain in self.pdb_structure:

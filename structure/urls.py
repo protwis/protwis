@@ -4,14 +4,17 @@ from structure import views
 from django.conf import settings
 from django.views.generic import TemplateView
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$', StructureBrowser.as_view(), name='structure_browser'),
     url(r'^selection_convert$', ConvertStructuresToProteins, name='convert'),
     url(r'^template_browser', TemplateBrowser.as_view(), name='structure_browser'),
     url(r'^template_selection', TemplateTargetSelection.as_view(), name='structure_browser'),
     url(r'^template_segment_selection', TemplateSegmentSelection.as_view(), name='structure_browser'),
     url(r'^statistics$', StructureStatistics.as_view(), name='structure_statistics'),
-    url(r'pdb_download', PDBDownload.as_view(), name='pdb_download'),
+    url(r'^pdb_download_index$', PDBClean.as_view(), name='pdb_download'),
+    url(r'pdb_segment_selection', PDBSegmentSelection.as_view(), name='pdb_download'),
+    url(r'^pdb_download$', PDBClean.as_view(), name='pdb_download'),
+    url(r'^pdb_download/(?P<substructure>\w+)$', PDBDownload.as_view(), name='pdb_download'),
     url(r'^generic_numbering_index', GenericNumberingIndex.as_view(), name='generic_numbering'),
     url(r'^generic_numbering_results$', GenericNumberingResults.as_view(), name='generic_numbering'),
     url(r'^generic_numbering_results/(?P<substructure>\w+)$', GenericNumberingDownload.as_view(), name='generic_numbering'),
@@ -30,4 +33,4 @@ urlpatterns = patterns('',
     url(r'^pdb/(?P<pdbname>\w+)$', ServePdbDiagram, name='structure_serve_pdb'), 
     url(r'^pdb/(?P<pdbname>\w+)/ligand/(?P<ligand>.+)$', ServePdbLigandDiagram, name='structure_serve_pdb_ligand'), 
 
-)
+]

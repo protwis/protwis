@@ -3,10 +3,11 @@
 from common import views
 
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^addtoselection', views.AddToSelection, name='addtoselection'),
     url(r'^removefromselection', views.RemoveFromSelection, name='removefromselection'),
     url(r'^clearselection', views.ClearSelection, name='clearselection'),
+    url(r'^selectrange', views.SelectRange, name='selectrange'),
     url(r'^togglefamilytreenode', views.ToggleFamilyTreeNode, name='togglefamilytreenode'),
     url(r'^selectionannotation', views.SelectionAnnotation, name='selectionannotation'),
     url(r'^selectionspeciespredefined', views.SelectionSpeciesPredefined, name='selectionspeciespredefined'),
@@ -22,4 +23,4 @@ urlpatterns = patterns('',
     url(r'selectresiduegroup', views.SelectResidueGroup, name='selectresiduegroup'),
     url(r'removeresiduegroup', views.RemoveResidueGroup, name='removeresiduegroup'),
     url(r'setgroupminmatch', views.SetGroupMinMatch, name='setgroupminmatch'),
-)
+]

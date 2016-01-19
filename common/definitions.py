@@ -64,7 +64,7 @@ AMINO_ACID_GROUP_NAMES = OrderedDict([
     ])
 
 DESIGN_SUBSTITUTION_MATRIX = OrderedDict([
-        ('hyd', {
+        ('hydrophobic', {
             'A':[[['L','V','I']],['Increase size to "block" binding']],
             'C':[[['L','V','I']],['Increase size to "block" binding']],
             'F':[['A'],['Remove vdW interactions / change the shape of the site']],
