@@ -193,6 +193,7 @@ class Treeclass:
         ###
             subprocess.check_output(['phylip seqboot<temp'], shell=True, cwd = '/tmp/%s' %dirname)
             os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
+
         ### Write phylip input options
         inp = open('/tmp/%s/temp' %dirname,'w')
         if self.bootstrap:
