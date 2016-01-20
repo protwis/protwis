@@ -82,10 +82,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 
 STATIC_URL = '/static/'
-STATIC_ROOT = '/web/static/protwis'
+STATIC_ROOT = '/protwis/static/protwis'
 STATICFILES_DIRS = (os.sep.join([BASE_DIR, "static"]),)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/web/media/protwis'
+MEDIA_ROOT = '/protwis/media/protwis'
 
 
 # Serializer
@@ -121,49 +121,49 @@ if DEBUG:
 
 
 # Logging
-
-LOGGING = {
-   'version': 1,
-   'disable_existing_loggers': False,
-   'formatters': {
-       'verbose': {
-           'format' : "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
-           'datefmt' : "%d/%b/%Y %H:%M:%S"
+if DEBUG:
+    LOGGING = {
+       'version': 1,
+       'disable_existing_loggers': False,
+       'formatters': {
+           'verbose': {
+               'format' : "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+               'datefmt' : "%d/%b/%Y %H:%M:%S"
+           },
        },
-   },
-   'handlers': {
-       'django': {
-           'level': 'DEBUG',
-           'class': 'logging.FileHandler',
-           'filename': 'logs/django.log',
-           'formatter': 'verbose'
+       'handlers': {
+           'django': {
+               'level': 'DEBUG',
+               'class': 'logging.FileHandler',
+               'filename': 'logs/django.log',
+               'formatter': 'verbose'
+           },
+           'build': {
+               'level': 'DEBUG',
+               'class': 'logging.FileHandler',
+               'filename': 'logs/build.log',
+               'formatter': 'verbose'
+           },
+           'protwis': {
+               'level': 'DEBUG',
+               'class': 'logging.FileHandler',
+               'filename': 'logs/protwis.log',
+               'formatter': 'verbose'
+           },
        },
-       'build': {
-           'level': 'DEBUG',
-           'class': 'logging.FileHandler',
-           'filename': 'logs/build.log',
-           'formatter': 'verbose'
-       },
-       'protwis': {
-           'level': 'DEBUG',
-           'class': 'logging.FileHandler',
-           'filename': 'logs/protwis.log',
-           'formatter': 'verbose'
-       },
-   },
-   'loggers': {
-       'django': {
-           'handlers':['django'],
-           'propagate': True,
-           'level':'DEBUG',
-       },
-       'build': {
-           'handlers': ['build'],
-           'level': 'DEBUG',
-       },
-       'protwis': {
-           'handlers': ['protwis'],
-           'level': 'DEBUG',
-       },
-   }
-}
+       'loggers': {
+           'django': {
+               'handlers':['django'],
+               'propagate': True,
+               'level':'DEBUG',
+           },
+           'build': {
+               'handlers': ['build'],
+               'level': 'DEBUG',
+           },
+           'protwis': {
+               'handlers': ['protwis'],
+               'level': 'DEBUG',
+           },
+       }
+    }
