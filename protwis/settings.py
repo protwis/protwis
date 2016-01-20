@@ -9,7 +9,7 @@ Django settings for protwis project.
 try:
     from protwis.settings_local import *
 except ImportError:
-    from protwis.settings_local_default import *
+    from protwis.settings_local_development import *
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
@@ -118,6 +118,12 @@ TEMPLATES = [
 
 if DEBUG:
     TEMPLATES[0]['OPTIONS']['debug'] = True
+
+
+# Debug toolbar
+if DEBUG:
+    DEBUG_TOOLBAR_PATCH_SETTINGS = False
+    INTERNAL_IPS = ('10.0.2.2')
 
 
 # Logging

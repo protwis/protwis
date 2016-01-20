@@ -4,7 +4,7 @@
 # Site specific constants
 SITE_NAME = 'gpcr' # used for site specific files
 SITE_TITLE = 'GPCRdb' # for display in templates
-DATA_DIR = '/vagrant/data/protwis/' + SITE_NAME
+DATA_DIR = '/protwis/data/protwis/' + SITE_NAME
 BUILD_CACHE_DIR = DATA_DIR + '/cache'
 DEFAULT_NUMBERING_SCHEME = 'gpcrdb'
 DEFAULT_PROTEIN_STATE = 'inactive'
@@ -34,10 +34,5 @@ SECRET_KEY = '-eqrx61@n*z3y1mc1w_@x1+yo(@^!k7i-vjaz0tx1$902a!4mu'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-# Debug toolbar
-if DEBUG:
-    DEBUG_TOOLBAR_PATCH_SETTINGS = False
-    INTERNAL_IPS = ('10.0.2.2')
 
 ALLOWED_HOSTS = []
