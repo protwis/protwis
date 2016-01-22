@@ -35,7 +35,7 @@ class ResidueFragmentInteraction(models.Model):
 
 
 class ResidueFragmentInteractionType(models.Model):
-    slug = models.SlugField(max_length=20)
+    slug = models.SlugField(max_length=40)
     name = models.CharField(max_length=100)
     type = models.CharField(max_length=50, null=True)
     direction = models.CharField(max_length=30, null=True)
