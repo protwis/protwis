@@ -9,7 +9,7 @@ Django settings for protwis project.
 try:
     from protwis.settings_local import *
 except ImportError:
-    from protwis.settings_local_default import *
+    from protwis.settings_local_development import *
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
@@ -82,10 +82,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 
 STATIC_URL = '/static/'
-STATIC_ROOT = '/web/static/protwis'
+STATIC_ROOT = '/protwis/static/protwis'
 STATICFILES_DIRS = (os.sep.join([BASE_DIR, "static"]),)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/web/media/protwis'
+MEDIA_ROOT = '/protwis/media/protwis'
 
 
 # Serializer
@@ -120,50 +120,56 @@ if DEBUG:
     TEMPLATES[0]['OPTIONS']['debug'] = True
 
 
-# Logging
+# Debug toolbar
+if DEBUG:
+    DEBUG_TOOLBAR_PATCH_SETTINGS = False
+    INTERNAL_IPS = ('10.0.2.2')
 
-LOGGING = {
-   'version': 1,
-   'disable_existing_loggers': False,
-   'formatters': {
-       'verbose': {
-           'format' : "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
-           'datefmt' : "%d/%b/%Y %H:%M:%S"
+
+# Logging
+if DEBUG:
+    LOGGING = {
+       'version': 1,
+       'disable_existing_loggers': False,
+       'formatters': {
+           'verbose': {
+               'format' : "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+               'datefmt' : "%d/%b/%Y %H:%M:%S"
+           },
        },
-   },
-   'handlers': {
-       'django': {
-           'level': 'DEBUG',
-           'class': 'logging.FileHandler',
-           'filename': 'logs/django.log',
-           'formatter': 'verbose'
+       'handlers': {
+           'django': {
+               'level': 'DEBUG',
+               'class': 'logging.FileHandler',
+               'filename': 'logs/django.log',
+               'formatter': 'verbose'
+           },
+           'build': {
+               'level': 'DEBUG',
+               'class': 'logging.FileHandler',
+               'filename': 'logs/build.log',
+               'formatter': 'verbose'
+           },
+           'protwis': {
+               'level': 'DEBUG',
+               'class': 'logging.FileHandler',
+               'filename': 'logs/protwis.log',
+               'formatter': 'verbose'
+           },
        },
-       'build': {
-           'level': 'DEBUG',
-           'class': 'logging.FileHandler',
-           'filename': 'logs/build.log',
-           'formatter': 'verbose'
-       },
-       'protwis': {
-           'level': 'DEBUG',
-           'class': 'logging.FileHandler',
-           'filename': 'logs/protwis.log',
-           'formatter': 'verbose'
-       },
-   },
-   'loggers': {
-       'django': {
-           'handlers':['django'],
-           'propagate': True,
-           'level':'DEBUG',
-       },
-       'build': {
-           'handlers': ['build'],
-           'level': 'DEBUG',
-       },
-       'protwis': {
-           'handlers': ['protwis'],
-           'level': 'DEBUG',
-       },
-   }
-}
+       'loggers': {
+           'django': {
+               'handlers':['django'],
+               'propagate': True,
+               'level':'DEBUG',
+           },
+           'build': {
+               'handlers': ['build'],
+               'level': 'DEBUG',
+           },
+           'protwis': {
+               'handlers': ['protwis'],
+               'level': 'DEBUG',
+           },
+       }
+    }
