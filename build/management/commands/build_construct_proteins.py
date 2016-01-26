@@ -16,7 +16,7 @@ import yaml
 
 class Command(BaseBuild):
     help = 'Reads source data and creates protein records for constructs'
-    
+
     def add_arguments(self, parser):
         parser.add_argument('-p', '--proc',
             type=int,
@@ -60,7 +60,7 @@ class Command(BaseBuild):
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
-    
+
     def purge_constructs(self):
         try:
             pst = ProteinSequenceType.objects.get(slug='mod')
@@ -128,7 +128,7 @@ class Command(BaseBuild):
                     p.entry_name = slugify(strip_tags(sd['name']))
                     p.name = sd['name']
                     p.sequence = ppc.protein.sequence
-                    
+
                     # save protein (construct)
                     try:
                         p.save()
@@ -159,7 +159,7 @@ class Command(BaseBuild):
                     mutations = {}
                     if 'mutations' in sd and sd['mutations']:
                         for m in sd['mutations']:
-                            res_num = m[1:-1]
+                            res_num = int(m[1:-1])
                             mutations[res_num] = {
                                 'wt_res': m[0],
                                 'mut_res': m[-1],
@@ -237,7 +237,7 @@ class Command(BaseBuild):
                             r.generic_number = pr.generic_number
                             r.display_generic_number = pr.display_generic_number
                             r.sequence_number = pr.sequence_number
-                            
+
                             # check for split segments
                             if pr.protein_segment.slug in split_segments:
                                 rsns = split_segments[pr.protein_segment.slug]['start']['sequence_number']
@@ -270,7 +270,7 @@ class Command(BaseBuild):
                             agns = pr.alternative_generic_numbers.all()
                             for agn in agns:
                                 r.alternative_generic_numbers.add(agn)
-                    
+
                     # update sequence
                     p.sequence = updated_sequence
                     p.save()
