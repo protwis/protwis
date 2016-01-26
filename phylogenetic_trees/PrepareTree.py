@@ -10,7 +10,7 @@ class PrepareTree:
         self.rings={'crystal': {'include':'False', 'order':6, 'colours':{'crystal_true':'#6dcde1','crystal_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':None, 'child': None, 'name':'Crystallized structures'},
             'class': {'include':'False', 'order':0, 'colours':{}, 'items':[], 'color_type':'grayscale', 'parent':[], 'child': ['family,ligand'], 'name':'Class'},
             'family': {'include':'False', 'order':1, 'colours':{}, 'items':[], 'color_type':'spectrum', 'parent':[], 'child': ['ligand'], 'name':'Ligand type'},
-            'ligand': {'include':'False', 'order':2, 'colours':{}, 'items':[], 'color_type':'spectrum', 'parent':['family','class'], 'child': [], 'name':'Receptor type'},
+            'ligand': {'include':'False', 'order':2, 'colours':{}, 'items':[], 'color_type':'spectrum', 'parent':['family','class'], 'child': [], 'name':'Receptor family'},
             'mutant': {'include':'False', 'order':3, 'colours':{'mutant_true':'#6dcde1','mutant_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':[], 'child': ['mutant_plus','mutant_minus'], 'name':'Mutated proteins'},
             'mutant_plus': {'include':'False', 'order':4, 'colours':{'mutant_plus_true':'#6dcde1','mutant_plus_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':'mutant', 'child': [], 'name':'Positive affinity mutants'},
             'mutant_minus': {'include':'False', 'order':5, 'colours':{'mutant_minus_true':'#6dcde1','mutant_minus_false':'#EEE'}, 'color_type':'single', 'items':[], 'parent':'mutant', 'child': [], 'name':'Negative affinity mutants'}
@@ -283,14 +283,13 @@ class PrepareTree:
         raw = open(d+'/raw.xml','w')
         Phylo.convert(d+'/rong','newick',raw,'phyloxml')
         raw.close()
-
         xml = open(d+'/raw.xml','r').readlines()
         out = open(d+'/out.xml','w')
         self.get_tree_data(Additional_info)
         if self.build !=False:
             self.rings['class']['include']=False
             #self.rings['ligand']['include']=False
-            self.rings['family']['include']=False
+            #self.rings['family']['include']=False
         self.get_family_meta(family)
         charts=self.get_charts()
         self.get_colours()
