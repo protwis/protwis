@@ -8,6 +8,7 @@ from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinSequenceType, ProteinSegment,
 ProteinFusion, ProteinFusionProtein, ProteinSource)
 from residue.models import Residue
+from construct.models import ConstructDeletion
 
 import os
 import logging
@@ -150,12 +151,17 @@ class Command(BaseBuild):
                         self.logger.error('Failed creating conformation {} of protein {}'.format(pc.state.name,
                             p.entry_name))
 
-                    # create residue records
+                    # process deletions (save in db, and for sequence processing)
                     deletions = []
                     if 'deletions' in sd and sd['deletions']:
                         for t in sd['deletions']:
                             deletions += list(range(t[0],t[1]+1))
+                            deletion = ConstructDeletion.objects.create(pc, t[0], t[1])
+                            if created:
+                                self.logger.info('Created deletion {}-{} for {}'.format(t[0], t[1],
+                                    pc.protein.entry_name))
 
+                    # process mutations (save in db, and for sequence processing)
                     mutations = {}
                     if 'mutations' in sd and sd['mutations']:
                         for m in sd['mutations']:
@@ -165,6 +171,9 @@ class Command(BaseBuild):
                                 'mut_res': m[-1],
                                 'full': m,
                             }
+
+                            # mutation = ConstructMutation.objects.get_or_create
+                            # FIXME write this
 
                     # insertions
                     split_segments = {}
