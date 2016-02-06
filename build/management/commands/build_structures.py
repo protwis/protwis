@@ -18,8 +18,6 @@ from ligand.models import Ligand, LigandType, LigandRole, LigandProperities
 from interaction.models import *
 from interaction.views import runcalculation,parsecalculation
 
-from Bio.PDB import PDBParser, PPBuilder
-
 import logging
 import os
 import re
