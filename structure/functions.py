@@ -58,11 +58,11 @@ class BlastSearch(object):
             (blast_out, blast_err) = blast.communicate(input=str(input_seq))
         if len(blast_err) != 0:
             logger.debug(blast_err)
-
-        result = NCBIXML.read(StringIO(blast_out))
-        for aln in result.alignments[:self.top_results]:         
-            logger.debug("Looping over alignments, current hit: {}".format(aln.hit_id))
-            output.append((aln.hit_id, aln))
+        if blast_out!='\n':
+            result = NCBIXML.read(StringIO(blast_out))
+            for aln in result.alignments[:self.top_results]:         
+                logger.debug("Looping over alignments, current hit: {}".format(aln.hit_id))
+                output.append((aln.hit_id, aln))
         return output
 
 #==============================================================================

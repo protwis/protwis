@@ -11,10 +11,14 @@ from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue
 from common.models import WebLink, WebResource, Publication
 from structure.models import (Structure, StructureType, StructureSegment, StructureStabilizingAgent,PdbData,
     Rotamer, StructureSegmentModeling, StructureCoordinates, StructureCoordinatesDescription, StructureEngineering,
-    StructureEngineeringDescription)
+    StructureEngineeringDescription, Fragment)
+#from structure.functions import BlastSearch
+from structure.assign_generic_numbers_gpcr import GenericNumbering
 from ligand.models import Ligand, LigandType, LigandRole, LigandProperities
 from interaction.models import *
 from interaction.views import runcalculation,parsecalculation
+
+from Bio.PDB import PDBParser, PPBuilder
 
 import logging
 import os
@@ -101,7 +105,36 @@ class Command(BaseBuild):
     def purge_structures(self):
         Structure.objects.all().delete()
 
-    def create_rotamers(self, structure):
+    def create_rotamers(self, structure, pdb_path):
+        wt_lookup = {}
+        segments = {}
+        generic_ids = []
+        generic_number = []
+        previous_seg = 'N-term'
+
+        try:
+            generic_numbering = GenericNumbering(pdb_path,top_results=5)
+            out_struct = generic_numbering.assign_generic_numbers()
+            structure_residues = generic_numbering.residues
+
+            #Get segments built correctly for non-aligned residues
+            for c, res in structure_residues.items():
+                for i, r in sorted(res.items()):  # sort to be able to assign loops
+
+                    if str(i) in wt_lookup:
+                        if wt_lookup[str(i)][3] is not None: #if position has GN info, then it is probably right
+                            continue
+
+                    GN = None
+                    if r.residue_record: #might have matched but no Generic Number
+                        if r.residue_record.generic_number:
+                            GN = r.residue_record.generic_number.label
+
+                    wt_lookup[str(i)] = [r.display,GN,r.segment,r.residue_record]
+
+        except:
+            print('error in blast')
+
         AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
      'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
      'HIS':'H', 'ILE':'I', 'LEU':'L', 'LYS':'K',
@@ -113,9 +146,10 @@ class Command(BaseBuild):
         temp = ''
         check = 0
         errors = 0
+
         for line in pdb.splitlines():
             if line.startswith('ATOM'): #If it is a residue
-                residue_number = line[22:26]
+                residue_number = line[22:26].strip()
                 chain = line[21]
                 if preferred_chain and chain!=preferred_chain: #If perferred is defined and is not the same as the current line, then skip
                     continue
@@ -123,44 +157,31 @@ class Command(BaseBuild):
                 if check==0 or residue_number==check: #If this is either the begining or the same as previous line add to current rotamer
                     temp += line + "\n"
                 else: #if this is a new residue
-                    try:
-                        residue=Residue.objects.get(protein_conformation=protein_conformation, sequence_number=check)
-                        if not residue_name==residue.three_letter():
-                            #print('Residue not found in '+structure.pdb_code.index+', skipping! '+residue_name+' vs '+residue.three_letter()+ ' at position '+residue_number)
-                            #errors += 1
-                            self.logger.error("Changing WT residue amino_acid for sequence_number "+str(residue.sequence_number)+" from "+residue.amino_acid+" to "+AA[residue_name.upper()])
-                            residue.amino_acid = AA[residue_name.upper()]
-                            residue.save()
-                        else:
-                            rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
-                            rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
-                    except Residue.DoesNotExist:
-                        #print('Residue not found in '+structure.pdb_code.index+' ' +residue_name+' at position '+residue_number)
-                        residue = None
-                        errors += 1
-                        #self.logger.error("No residue found for sequence_number "+str(check))
+                    residue = Residue()
+                    residue.sequence_number = check.strip()
+                    residue.amino_acid = AA[residue_name.upper()]
+                    residue.protein_conformation = protein_conformation
+
+                    if residue.sequence_number in wt_lookup:
+                        blastinfo = wt_lookup[check.strip()]
+                        if blastinfo[3] is not None:
+                            residue.display_generic_number = blastinfo[3].display_generic_number
+                            residue.generic_number = blastinfo[3].generic_number 
+                            residue.protein_segment = blastinfo[3].protein_segment
+                    else:
+                        residue.display_generic_number = None
+                        residue.generic_number = None
+                        residue.protein_segment = None
+                    residue.save()
+
+                    rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
+                    rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
+
+                    temp = line + "\n" #start new line for rotamer
                     
-                    temp = line + "\n"
                 check = residue_number
                 residue_name = line[17:20].title() #use title to get GLY to Gly so it matches
-        try:
-            residue=Residue.objects.get(protein_conformation=protein_conformation, sequence_number=check)
-            if not residue_name==residue.three_letter():
-                #print('Residue not found in '+structure.pdb_code.index+', skipping! '+residue_name+' vs '+residue.three_letter()+ ' at position '+residue_number)
-                #prerrors += 1
-                self.logger.error("Changing WT residue amino_acid for sequence_number "+str(residue.sequence_number)+" from "+residue.amino_acid+" to "+AA[residue_name.upper()])
-                residue.amino_acid = AA[residue_name.upper()]
-                residue.save()
-            else:
-                rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
-                rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
-        except Residue.DoesNotExist:
-            #print('Residue not found in '+structure.pdb_code.index+' ' +residue_name+' at position '+residue_number)
-            residue = None
-            errors += 1
-            #self.logger.error("No residue found for sequence_number "+str(check))
-        if errors:
-            self.logger.error(structure.pdb_code.index + " had " + str(errors) + " residues that did not match in the database")
+                
         return None
 
     def main_func(self, positions, iteration):
@@ -652,9 +673,15 @@ class Command(BaseBuild):
                     # save structure
                     s.save()
 
-                    self.create_rotamers(s)
-                    self.logger.info('Calculate interactions')
+                    #Remove previous Rotamers/Residues to prepare repopulate
+                    Fragment.objects.filter(structure=s).delete()
+                    Rotamer.objects.filter(structure=s).all().delete()
+                    Residue.objects.filter(protein_conformation=s.protein_conformation).delete()
 
+                    self.logger.info('Calculate rotamers / residues')
+                    self.create_rotamers(s,pdb_path)
+
+                    self.logger.info('Calculate interactions')
                     runcalculation(sd['pdb'])
                     try:
                         parsecalculation(sd['pdb'],False)
