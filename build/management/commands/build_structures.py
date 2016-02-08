@@ -14,8 +14,7 @@ from structure.models import (Structure, StructureType, StructureSegment, Struct
     StructureEngineeringDescription, Fragment)
 #from structure.functions import BlastSearch
 from Bio.PDB import PDBParser,PPBuilder
-from Bio import AlignIO
-from Bio.Align.Applications import ClustalOmegaCommandline
+from Bio import AlignIO, pairwise2
 
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from ligand.models import Ligand, LigandType, LigandRole, LigandProperities
@@ -113,6 +112,11 @@ class Command(BaseBuild):
         ref_positions = {} #WT postions in alignment
         mapped_seq = {} # index in contruct, tuple of AA and WT [position,AA]
 
+        preferred_chain = structure.preferred_chain
+
+        if len(preferred_chain.split(','))>1: #if A,B
+            preferred_chain = preferred_chain.split(',')[0]
+
 
         AA = {'ALA':'A', 'ARG':'R', 'ASN':'N', 'ASP':'D',
      'CYS':'C', 'GLN':'Q', 'GLU':'E', 'GLY':'G',
@@ -122,11 +126,23 @@ class Command(BaseBuild):
 
 
         s = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', pdb_path)[0]
+        chain = s[preferred_chain] #select only one chain (avoid n-mer receptors)
         ppb=PPBuilder()
         seq = ''
         i = 1
-        for pp in ppb.build_peptides(s): 
-            seq += str(pp.get_sequence())
+
+        check_1000 = 0
+        for pp in ppb.build_peptides(chain): #remove >1000 pos (fusion protein / gprotein)
+            for res in pp:
+                id = res.id
+                if id[1]<600: 
+                    check_1000 += 1
+                    #need check_1000 to catch structures where they lie in 1000s (4LDE, 4LDL, 4LDO, 4N4W, 4QKX)
+                if id[1]>1000 and check_1000>200: 
+                    chain.detach_child(id)
+
+        for pp in ppb.build_peptides(chain): 
+            seq += str(pp.get_sequence()) #get seq from fasta (only chain A)
             for residue in pp:
                 residue_id = residue.get_full_id()
                 chain = residue_id[2]
@@ -143,25 +159,13 @@ class Command(BaseBuild):
         for r in rs: #required to match WT position to a record (for duplication of GN values)
             wt_lookup[r.sequence_number] = r
 
-        # write sequences to files
-        seq_filename = "/tmp/" + structure.pdb_code.index + ".fa"
-        with open(seq_filename, 'w') as seq_file:
-            seq_file.write("> ref\n")
-            seq_file.write(parent_seq + "\n")
-            seq_file.write("> seq\n")
-            seq_file.write(seq + "\n")
-
-        try:
-            ali_filename = "/tmp/out_"+structure.pdb_code.index+".fa"
-            acmd = ClustalOmegaCommandline(infile=seq_filename, outfile=ali_filename, force=True)
-            stdout, stderr = acmd()
-            a = AlignIO.read(ali_filename, "fasta")
-        except:
-            return False
+        #align WT with structure seq -- make gaps penalties big, so to avoid too much overfitting
+        pw2 = pairwise2.align.localms(parent_seq, seq, 2, -4, -4, -.1)
 
         gaps = 0
-        for i, r in enumerate(a[0].seq, 1):
-            #print(i,r,a[1][i-1]) #print alignment for sanity check
+        unmapped_ref = {}
+        for i, r in enumerate(pw2[0][0], 1): #loop over alignment to create lookups (track pos)
+            #print(i,r,pw2[0][1][i-1]) #print alignment for sanity check
             if r == "-":
                 gaps += 1
             if r != "-":
@@ -169,94 +173,123 @@ class Command(BaseBuild):
             elif r == "-":
                 ref_positions[i] = [None,'-']
 
+            if pw2[0][1][i-1]=='-':
+                unmapped_ref[i-gaps] = '-'
+
         gaps = 0
-        for i, r in enumerate(a[1].seq, 1):
+        for i, r in enumerate(pw2[0][1], 1): #make second lookup
             if r == "-":
                 gaps += 1
             if r != "-":
                 mapped_seq[i-gaps] = [r,ref_positions[i]]
 
-        # try: 
-        #     generic_numbering = GenericNumbering(pdb_path,top_results=5)
-        #     out_struct = generic_numbering.assign_generic_numbers()
-        #     structure_residues = generic_numbering.residues
-
-        #     #Get segments built correctly for non-aligned residues
-        #     for c, res in structure_residues.items():
-        #         for i, r in sorted(res.items()):  # sort to be able to assign loops
-
-        #             if str(i) in wt_lookup:
-        #                 if wt_lookup[str(i)][3] is not None: #if position has GN info, then it is probably right
-        #                     continue
-
-        #             GN = None
-        #             if r.residue_record: #might have matched but no Generic Number
-        #                 if r.residue_record.generic_number:
-        #                     GN = r.residue_record.generic_number.label
-
-        #             #wt_lookup[str(i)] = [r.display,GN,r.segment,r.residue_record]
-
-        # except:
-        #     print('error in blast')
 
         pdb = structure.pdb_data.pdb
         protein_conformation=structure.protein_conformation
-        preferred_chain = structure.preferred_chain
         temp = ''
         check = 0
         errors = 0
+        mismatch_seq = 0
+        match_seq = 0
+        not_matched = 0
+        matched_by_pos = 0
+        aa_mismatch = 0
 
-        for line in pdb.splitlines():
-            if line.startswith('ATOM'): #If it is a residue
-                residue_number = line[22:26].strip()
-                #if preferred_chain and chain!=preferred_chain: #If perferred is defined and is not the same as the current line, then skip
-                    #continue
-                preferred_chain = chain #If reached this point either the preferred_chain is specified or needs to be the first one and is thus specified now.
-                if check==0 or residue_number==check: #If this is either the begining or the same as previous line add to current rotamer
-                    temp += line + "\n"
-                else: #if this is a new residue
-                    residue = Residue()
-                    residue.sequence_number = int(check.strip())
-                    residue.amino_acid = AA[residue_name.upper()]
-                    residue.protein_conformation = protein_conformation
+        pdblines_temp = pdb.splitlines()
+        pdblines = []
+        for line in pdblines_temp: #Get rid of all odd records
+            if line.startswith('ATOM'):
+                pdblines.append(line)
+        pdblines.append('') #add a line to not "run out"
 
-                    #print(chain,residue.sequence_number,residue.amino_acid) #sanity check
+        for i,line in enumerate(pdblines):
+            if line.startswith('ATOM'): 
+                chain = line[21]
+                if preferred_chain and chain!=preferred_chain: #If perferred is defined and is not the same as the current line, then skip
+                    pass
+                else:   
+                    nextline = pdblines[i+1]
+                    residue_number = line[22:26].strip()
+                    if (check==0 or nextline[22:26].strip()==check) and nextline.startswith('TER')==False and nextline.startswith('ATOM')==True: #If this is either the begining or the same as previous line add to current rotamer
+                        temp += line + "\n"
+                        #print('same res',pdb.splitlines()[i+1])
+                    else: #if this is a new residue
+                        #print(pdb.splitlines()[i+1][22:26].strip(),check)
+                        temp += line + "\n"
+                        if int(check.strip())<2000:
+                            residue = Residue()
+                            residue.sequence_number = int(check.strip())
+                            residue.amino_acid = AA[residue_name.upper()]
+                            residue.protein_conformation = protein_conformation
 
-                    seq_num_pos = pdbseq[chain][residue.sequence_number][0]
-                    if seq_num_pos in mapped_seq:
-                        if mapped_seq[seq_num_pos][1][0]==None:
-                            #print('no match found') #sanity check
-                            residue.display_generic_number = None
-                            residue.generic_number = None
-                            residue.protein_segment = None
-                        else:
-                            wt_r = wt_lookup[mapped_seq[seq_num_pos][1][0]]
-                            #print('match found',wt_r) #sanity check
-                            if wt_r.generic_number is not None:
-                                residue.display_generic_number = wt_r.display_generic_number
-                                residue.generic_number = wt_r.generic_number 
+                            #print(residue.sequence_number,residue.amino_acid) #sanity check
+                            try:
+                                seq_num_pos = pdbseq[chain][residue.sequence_number][0]
+                            except:
+                                #print('failed residue',pdb_path,residue.sequence_number)
+                                temp = "" #start new line for rotamer
+                                check = pdblines[i+1][22:26].strip()
+                                continue
+                            if seq_num_pos in mapped_seq:
+                                if mapped_seq[seq_num_pos][1][0]==None:
+                                    #print('no match found') #sanity check
+                                    #print(residue.sequence_number,residue.amino_acid) #sanity check
+                                    residue.display_generic_number = None
+                                    residue.generic_number = None
+                                    residue.protein_segment = None
+                                    not_matched +=1
+                                else:
+                                    wt_r = wt_lookup[mapped_seq[seq_num_pos][1][0]]
+                                    if residue.sequence_number!=wt_r.sequence_number and residue.amino_acid!=wt_r.amino_acid and residue.sequence_number in wt_lookup: #if pos numbers not work -- see if the pos number might be in WT and unmapped
+                                        if wt_lookup[residue.sequence_number].amino_acid==residue.amino_acid:
+                                            if residue.sequence_number in unmapped_ref: #WT was not mapped, so could be it
+                                               # print(residue.sequence_number,residue.amino_acid) #sanity check
+                                                #print('wrongly matched, better match on pos+aa',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
+                                                wt_r = wt_lookup[residue.sequence_number]
+                                                matched_by_pos +=1
+                                                match_seq += 1
+                                            else:
+                                                mismatch_seq += 1
+                                                #print('could have been matched, but already aligned to another position',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
+                                        else:
+                                            #print('WT pos not same AA, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
+                                            mismatch_seq += 1
+                                    elif residue.sequence_number!=wt_r.sequence_number:
+                                        #print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
+                                        mismatch_seq += 1
+                                    elif residue.amino_acid!=wt_r.amino_acid:
+                                        #print('aa mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
+                                        aa_mismatch += 1
+
+                                    else:
+                                        match_seq += 1
+                                    if wt_r.generic_number is not None:
+                                        residue.display_generic_number = wt_r.display_generic_number
+                                        residue.generic_number = wt_r.generic_number 
+                                    else:
+                                        residue.display_generic_number = None
+                                        residue.generic_number = None
+                                        #print('no GN')
+                                    residue.protein_segment = wt_r.protein_segment
                             else:
+                                #print('wierd error') #sanity check
                                 residue.display_generic_number = None
                                 residue.generic_number = None
-                                #print('no GN')
-                            residue.protein_segment = wt_r.protein_segment
-                    else:
-                        #print('wierd error') #sanity check
-                        residue.display_generic_number = None
-                        residue.generic_number = None
-                        residue.protein_segment = None
-                    residue.save()
+                                residue.protein_segment = None
 
-                    rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
-                    rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
+                            #print('inserted',residue.sequence_number) #sanity check
+                            residue.save()
 
-                    temp = line + "\n" #start new line for rotamer
+                            rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
+                            rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
+
+                        temp = "" #start new line for rotamer
+                        check = pdblines[i+1][22:26].strip()
                     
-                check = residue_number
+                    check = pdblines[i+1][22:26].strip()
                 chain = line[21]
                 residue_name = line[17:20].title() #use title to get GLY to Gly so it matches
-
-                
+        #print(structure.pdb_code.index,'length',len(seq),len(mapped_seq),'mapped res',str(mismatch_seq+match_seq+aa_mismatch),'pos mismatch',mismatch_seq,'aa mismatch',aa_mismatch,'not mapped',not_matched,' mapping off, matched on pos,aa',matched_by_pos)
         return None
 
     def main_func(self, positions, iteration):
@@ -751,14 +784,14 @@ class Command(BaseBuild):
                     #Remove previous Rotamers/Residues to prepare repopulate
                     Fragment.objects.filter(structure=s).delete()
                     Rotamer.objects.filter(structure=s).all().delete()
-                    Residue.objects.filter(protein_conformation=s.protein_conformation).delete()
+                    Residue.objects.filter(protein_conformation=s.protein_conformation).all().delete()
 
                     self.logger.info('Calculate rotamers / residues')
                     self.create_rotamers(s,pdb_path)
 
                     self.logger.info('Calculate interactions')
                     runcalculation(sd['pdb'])
-                    try:
-                        parsecalculation(sd['pdb'],False)
-                    except:
-                        self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
+                    parsecalculation(sd['pdb'],False)
+                    #try:
+                    #except:
+                    #    self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
