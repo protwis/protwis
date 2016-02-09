@@ -20,7 +20,7 @@ class GenericNumbering(object):
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
   
     def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, blast_path='blastp',
-        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb'])):
+        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']),top_results=1):
     
         # pdb_file can be either a name/path or a handle to an open file
         self.pdb_file = pdb_file
@@ -32,7 +32,7 @@ class GenericNumbering(object):
         # list of uniprot ids returned from blast
         self.prot_id_list = []
         #setup for local blast search
-        self.blast = BlastSearch(blast_path=blast_path, blastdb=blastdb)
+        self.blast = BlastSearch(blast_path=blast_path, blastdb=blastdb,top_results=top_results)
         
         if self.pdb_file:
             self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_file)[0]

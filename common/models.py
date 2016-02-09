@@ -131,7 +131,8 @@ class Publication(models.Model):
             record['JT'] = record['JT']
             record['TA'] = record['TA']
             try:
-                self.journal = PublicationJournal.objects.get(slug=record['TA'], name=record['JT'])
+                self.journal, created = PublicationJournal.objects.get_or_create(name=record['JT'],
+                        defaults={'slug': record['TA']})
             except PublicationJournal.DoesNotExist:
                 j = PublicationJournal(slug=record['TA'], name=record['JT'])
                 j.save()
