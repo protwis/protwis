@@ -334,6 +334,22 @@ class Command(BaseCommand):
                                     defaults={'name': default_ligand_type})
                                 l = Ligand()
                                 l = l.load_from_pubchem(pubchem_lookup_value, r['ligand_id'], lt, ligand_name)
+                                if l == None and r['ligand_type']=='SMILES': #insert manually if smiles and unfound in pubchem
+                                    try:
+                                        l = Ligand.objects.get(name=ligand_name, canonical=True,
+                                                                properities__smiles=r['ligand_id'])
+                                    except Ligand.DoesNotExist:
+                                        l = Ligand()
+                                        l.name = ligand_name
+                                        lp = LigandProperities()
+                                        lp.smiles = r['ligand_id']
+                                        lp.ligand_type = lt
+                                        lp.save()
+                                        l.properities = lp
+                                        l.canonical = True #maybe false, but that would break stuff.
+                                        l.ambigious_alias = False
+                                        l.save()
+                                        self.logger.info('Created Ligand {} manually'.format(l.name))
                         
                     elif r['ligand_name']:
                         
@@ -424,11 +440,11 @@ class Command(BaseCommand):
                             self.logger.error('Skipped due to no protein '+ r['protein'])
                         continue
 
-                    res=Residue.objects.filter(protein_conformation__protein=protein,sequence_number=r['mutation_pos'])
+                    res=Residue.objects.filter(protein_conformation__protein=protein,amino_acid=r['mutation_from'],sequence_number=r['mutation_pos']) #FIXME MAKE AA CHECK
                     if res.exists():
                         res=res.get()
                     else:
-                        self.logger.error('Skipped due to no residue ' + r['protein'] + ' pos:'+str(r['mutation_pos']))
+                        self.logger.error('Skipped due to no residue or mismatch AA ' + r['protein'] + ' pos:'+str(r['mutation_pos']) + ' AA:'+r['mutation_from'])
                         skipped += 1
                         continue
 
