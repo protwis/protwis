@@ -153,13 +153,13 @@ def find_ligand_full_names():
 def fragment_library(ligand, atomvector, atomname, residuenr, chain, typeinteraction):
     #if debug:
         #print "Make fragment pdb file for ligand:", ligand, "atom vector", atomvector, "atomname", atomname, "residuenr from protein", residuenr, typeinteraction, 'chain', chain
-
+    residuename = 'unknown'
     ligand_pdb = projectdir + 'results/' + pdbname + \
         '/ligand/' + ligand + '_' + pdbname + '.pdb'
-    # print "Look in",ligand_pdb
     mol = pybel.readfile("pdb", ligand_pdb).next()
     mol.removeh()
     listofvectors = []
+    chain = chain.strip()
     if atomvector is not None:
         for atom in mol:
             distance = (Vector(getattr(atom, 'coords')) - atomvector).norm()
@@ -204,7 +204,6 @@ def fragment_library(ligand, atomvector, atomname, residuenr, chain, typeinterac
 
             residue_number = line[22:26].strip()
             tempchain = line[21].strip()
-
             if residue_number != residuenr:
                 continue
             if tempchain != chain:
@@ -235,7 +234,7 @@ def fragment_library(ligand, atomvector, atomname, residuenr, chain, typeinterac
 def fragment_library_aromatic(ligand, atomvectors, residuenr, chain, ringnr):
     # print "Make aromatic fragment pdb file for ligand:",ligand,"atom
     # vectors",atomvectors,"residuenr from protein", residuenr
-
+    chain = chain.strip()
     pdbfile = projectdir + 'pdbs/' + pdbname + '.pdb'
     residuename = ''
 
@@ -721,7 +720,6 @@ def find_interactions():
                 # could probably make a check here to see if this residue was
                 # anywhere near the ligand, otherwise skip the check per atom
                 for hetflag, atomlist in hetlist.iteritems():
-                    # print aa_resname
 
                     if not 'CA' in residue:  # prevent errors
                         continue
@@ -735,6 +733,7 @@ def find_interactions():
                     count_atom = countresidue
                     sum = 0
                     hydrophobic_count = 0
+                    accesible_check = 0
 
                     # if goodhet!='' and hetflag!=goodhet and
                     # "H_"+goodhet!=hetflag: continue ### Only look at the
@@ -752,6 +751,7 @@ def find_interactions():
                             count_atom += 1
                             aa_vector = atom.get_vector()
                             aa_atom = atom.name
+                            aa_atom_type = atom.element
                             aaatomlist.append([count_atom, aa_vector, aa_atom])
 
                             d = (het_vector - aa_vector)
@@ -762,24 +762,38 @@ def find_interactions():
                                     summary_results[hetflag] = {'score': [], 'hbond': [], 'hbondplus': [],
                                                                 'hbond_confirmed': [], 'aromatic': [],'aromaticff': [],
                                                                 'ionaromatic': [], 'aromaticion': [], 'aromaticef': [],
-                                                                'aromaticfe': [], 'hydrophobic': [], 'waals': []}
+                                                                'aromaticfe': [], 'hydrophobic': [], 'waals': [], 'accessible':[]}
                                     new_results[hetflag] = {'interactions':[]}
                                 if not aaname in results[hetflag]:
                                     results[hetflag][aaname] = []
-                                results[hetflag][aaname].append([het_atom, aa_atom, round(
-                                    d.norm(), 2), het_vector, aa_vector, aa_seqid, chainid])
-                                tempdistance = round(d.norm(), 2)
-                                sum += 1
+                                if not (het_atom[0] == 'H' or aa_atom[0] == 'H' or aa_atom_type=='H'):
+                                    #print(aa_atom_type)
+                                    results[hetflag][aaname].append([het_atom, aa_atom, round(
+                                        d.norm(), 2), het_vector, aa_vector, aa_seqid, chainid])
+                                    tempdistance = round(d.norm(), 2)
+                                    sum += 1
                             # if both are carbon then we are making a hydrophic
                             # interaction
                             if het_atom[0] == 'C' and aa_atom[0] == 'C' and d.norm() < hydrophob_radius and hydrophobic_check:
                                 hydrophobic_count += 1
                                 hydrophobic_check = 0
 
+                            if d.norm() < 5 and (aa_atom!='C' and aa_atom!='O' and aa_atom!='N'):
+                                #print(aa_atom)
+                                accesible_check = 1
+
+                    if accesible_check: #if accessible!
+                        summary_results[hetflag]['accessible'].append(
+                            [aaname])
+
+                        fragment_file = fragment_library(hetflag, None, '',
+                                         aa_seqid, chainid, 'access')
+
+                        new_results[hetflag]['interactions'].append([aaname,fragment_file,'acc','accessible','hidden',''])
+
                     if hydrophobic_count > 2 and AA[aaname[0:3]] in HYDROPHOBIC_AA:  # min 3 c-c interactions
                         summary_results[hetflag]['hydrophobic'].append(
                             [aaname, hydrophobic_count])
-
 
                         fragment_file = fragment_library(hetflag, None, '',
                                          aa_seqid, chainid, 'hydrop')
@@ -820,19 +834,19 @@ def find_interactions():
                                 # take vector from two centers, and compare against
                                 # vector from center to outer point -- this will
                                 # give the perpendicular angel.
-                                angle = Vector.angle(center - ring[1], ring[2])
+                                angle = Vector.angle(center - ring[1], ring[2]) #aacenter to ring center vs ring normal
                                 # take vector from two centers, and compare against
                                 # vector from center to outer point -- this will
                                 # give the perpendicular angel.
-                                angle2 = Vector.angle(center - ring[1], aaring[2])
+                                angle2 = Vector.angle(center - ring[1], aaring[2]) #aacenter to ring center vs AA normal
 
-                                angle3 = Vector.angle(ring[2], aaring[2])
+                                angle3 = Vector.angle(ring[2], aaring[2]) #two normal vectors against eachother
                                 #print "angleaa",aaring[2],"anglelig",ring[2]
                                 angle_degrees = [
                                     round(degrees(angle), 1), round(degrees(angle2), 1), round(degrees(angle3), 1)]
                                 distance = (center - ring[1]).norm()
                                 #if debug:
-                                #print aaname,"Ring #", count, "Distance:", round(distance, 2), "Angle:", angle_degrees, 'Shortest res->ligcenter', shortest_center_het_ring_to_res_atom, 'Shortest lig->rescenter', shortest_center_aa_ring_to_het_atom
+                                    #print aaname,"Ring #", count, "Distance:", round(distance, 2), "Angle:", angle_degrees, 'Shortest res->ligcenter', shortest_center_het_ring_to_res_atom, 'Shortest lig->rescenter', shortest_center_aa_ring_to_het_atom
                                 if distance < 5 and (angle_degrees[2]<20 or abs(angle_degrees[2]-180)<20):  # poseview uses <5
                                     # print "Ring
                                     # #",count,"Distance:",round(distance,2),
@@ -920,11 +934,15 @@ def analyze_interactions():
                 hbondconfirmed = []
                 if entry[2] < 3.3:
 
+                    print(entry)
                     # if debug:
                     #     print "Likely H-Bond", entry
 
                     if entry[0][0] == 'C' or entry[1][0] == 'C':
                         continue  # If either atom is C then no hydrogen bonding
+
+                    if entry[1] == 'N': #if residue atom is N, then it is backbone!
+                        print('backbone interaction!')
 
                     aa_donors = get_hydrogen_from_aa(entry[5])
                     hydrogenmatch = 0
@@ -1042,7 +1060,17 @@ def analyze_interactions():
                             res_charge_value = -1
 
 
-                    if hydrogenmatch:
+                    if entry[1] == 'N': #backbone connection!
+                        fragment_file = fragment_library(ligand, entry[3], entry[
+                                         0], entry[5], entry[6], 'HB_backbone')
+                        new_results[ligand]['interactions'].append([residue,fragment_file,'polar_backbone','polar (hydrogen bond with backbone)','polar','protein',entry[0],entry[1],entry[2]])
+                        remove_hyd(residue,ligand)
+                    elif entry[1] == 'O': #backbone connection!
+                        fragment_file = fragment_library(ligand, entry[3], entry[
+                                         0], entry[5], entry[6], 'HB_backbone')
+                        new_results[ligand]['interactions'].append([residue,fragment_file,'polar_backbone','polar (hydrogen bond with backbone)','polar','protein',entry[0],entry[1],entry[2]])
+                        remove_hyd(residue,ligand)
+                    elif hydrogenmatch:
                         found = 0
 
                         fragment_file = fragment_library(ligand, entry[3], entry[
@@ -1104,7 +1132,7 @@ def analyze_interactions():
                                          0], entry[5], entry[6], 'HB')
                         new_results[ligand]['interactions'].append([residue,fragment_file,'polar_unspecified','polar (hydrogen bond)','polar','',entry[0],entry[1],entry[2]])
                         remove_hyd(residue,ligand)
-
+                    print type,hbondconfirmed
                     entry[3] = ''
 
                 if (entry[2] < 4.5):
