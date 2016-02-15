@@ -14,7 +14,7 @@ from structure.models import (Structure, StructureType, StructureSegment, Struct
     StructureEngineeringDescription, Fragment)
 #from structure.functions import BlastSearch
 from Bio.PDB import PDBParser,PPBuilder
-from Bio import AlignIO, pairwise2
+from Bio import pairwise2
 
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from ligand.models import Ligand, LigandType, LigandRole, LigandProperities
