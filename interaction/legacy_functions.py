@@ -934,15 +934,15 @@ def analyze_interactions():
                 hbondconfirmed = []
                 if entry[2] < 3.3:
 
-                    print(entry)
+                    # print(entry)
                     # if debug:
                     #     print "Likely H-Bond", entry
 
                     if entry[0][0] == 'C' or entry[1][0] == 'C':
                         continue  # If either atom is C then no hydrogen bonding
 
-                    if entry[1] == 'N': #if residue atom is N, then it is backbone!
-                        print('backbone interaction!')
+                    # if entry[1] == 'N': #if residue atom is N, then it is backbone!
+                    #     print('backbone interaction!')
 
                     aa_donors = get_hydrogen_from_aa(entry[5])
                     hydrogenmatch = 0
@@ -1132,7 +1132,7 @@ def analyze_interactions():
                                          0], entry[5], entry[6], 'HB')
                         new_results[ligand]['interactions'].append([residue,fragment_file,'polar_unspecified','polar (hydrogen bond)','polar','',entry[0],entry[1],entry[2]])
                         remove_hyd(residue,ligand)
-                    print type,hbondconfirmed
+                    #print type,hbondconfirmed
                     entry[3] = ''
 
                 if (entry[2] < 4.5):
