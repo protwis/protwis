@@ -37,10 +37,13 @@ input.form-control {
     <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
     <script src="{% static 'home/js/selection.js' %}"> </script>
     <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
-    <script src="{% static 'home/js/diagrams.js' %}"></script>
     <script src="{% static 'home/js/alignment.js' %}"></script>
-    <script src="{% static 'home/js/residuetable.js' %}"></script>
 
+
+    {% if HelixBox %} 
+    <script src="{% static 'home/js/diagrams.js' %}"></script> 
+    <script src="{% static 'home/js/residuetable.js' %}"></script>
+    {% endif %}
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             var table = $('#mutations').DataTable({
@@ -78,13 +81,15 @@ input.form-control {
 
             $('[data-toggle="tooltip"]').tooltip(); 
             //$('[data-toggle="tooltip"]').tooltip({html:true});
-
+            {% if HelixBox %} 
             mutant_json = '{{mutations_pos_list|safe}}';
 
             ajaxMutantsPos("snakeplot");
             ajaxMutantsPos("helixbox");
             table_ajaxMutants();
+            {% endif %}
             });
+        
     </script> 
 {% endblock %}
 
@@ -167,6 +172,7 @@ input.form-control {
         </div>
         <br><br>
 
+{% if HelixBox %}
 <h2>Residue</h2>
 <div class="col-md-2 text-right text-info">
     <h4>Diagrams</h4>
@@ -186,9 +192,12 @@ input.form-control {
         <a href="javascript:saveSvgAsPng(document.getElementById('helixbox'), 'helixbox_mutants.png', {scale: 3});">PNG</a> | 
         <a id=helix_svg_link href-lang="image/svg+xml" href="" download="helixbox_mutants">SVG</a>  
     </div>
+{% endif %}
+
     {% else %}
         <p> Ooops! There is no data to show here yet. </p>
     {% endif %}
+ {% if HelixBox %}   
 <br><br><br><br>
 <div class="col-md-2 text-right text-info">
     <h4>Residue Table</h4>
@@ -196,6 +205,7 @@ input.form-control {
 <div class="col-md-10">
 {% include "residue/residue_table_only.html" with header=header segments=segments data=data onlymutants=1 longest_name=longest_name%}
 </div>
+{% endif %}
 <!-- sequence alignment ends -->
 {% endblock %}
 
