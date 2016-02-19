@@ -13,7 +13,7 @@ from common import definitions
 
 from residue.models import Residue,ResidueNumberingScheme
 from residue.views import ResidueTablesDisplay
-from protein.models import Protein,ProteinSegment
+from protein.models import Protein,ProteinSegment,ProteinFamily
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction
 from interaction.views import calculate
 from interaction.forms import PDBform
@@ -25,7 +25,7 @@ import yaml
 import os
 import copy
 #env/bin/python3 -m pip install xlrd
-
+import csv
 from io import BytesIO
 import re
 import math
@@ -71,7 +71,7 @@ class SegmentSelection(AbsSegmentSelection):
         },
     }
 
-def render_mutations(request, protein = None, family = None, download = None, **response_kwargs):  
+def render_mutations(request, protein = None, family = None, download = None, receptor_class = None, gn = None, aa = None, **response_kwargs):  
 
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
@@ -79,84 +79,102 @@ def render_mutations(request, protein = None, family = None, download = None, **
      # local protein list
     proteins = []
 
-    if protein: # if protein static page
+    if receptor_class==None: 
 
-        proteins.append(Protein.objects.get(entry_name = protein))
-        segments_ids = ProteinSegment.objects.all().values('id')
-        original_segments = ProteinSegment.objects.all()
+        if protein: # if protein static page
 
-    elif family:
+            proteins.append(Protein.objects.get(entry_name = protein))
+            segments_ids = ProteinSegment.objects.all().values('id')
+            original_segments = ProteinSegment.objects.all()
 
-        family_proteins = Protein.objects.filter(family__slug__startswith=family, sequence_type__slug='wt')
-        for fp in family_proteins:
-            proteins.append(fp)
-        segments_ids = ProteinSegment.objects.all().values('id')
-        original_segments = ProteinSegment.objects.all()
+        elif family:
+
+            family_proteins = Protein.objects.filter(family__slug__startswith=family, sequence_type__slug='wt')
+            for fp in family_proteins:
+                proteins.append(fp)
+            segments_ids = ProteinSegment.objects.all().values('id')
+            original_segments = ProteinSegment.objects.all()
+
+        else:
+
+            # flatten the selection into individual proteins
+            for target in simple_selection.targets:
+                if target.type == 'protein':
+                    proteins.append(target.item)
+                elif target.type == 'family':
+                    # species filter
+                    species_list = []
+                    for species in simple_selection.species:
+                        species_list.append(species.item)
+
+                    # annotation filter
+                    protein_source_list = []
+                    for protein_source in simple_selection.annotation:
+                        protein_source_list.append(protein_source.item)
+                        
+                    if species_list:
+                        family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                            species__in=(species_list),
+                            source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                    else:
+                        family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                            source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+
+                    for fp in family_proteins:
+                        proteins.append(fp)
+
+            original_segments = []
+            segments_ids = []
+            for segment in simple_selection.segments:
+                original_segments.append(segment.item)
+                segments_ids.append(segment.item.id)
+
+           #scheme
+        used_schemes = {}
+        species_list = {}
+        longest_name = 0
+        for protein in proteins:
+            if protein.residue_numbering_scheme.slug not in used_schemes:
+                used_schemes[protein.residue_numbering_scheme.slug] = 0
+            used_schemes[protein.residue_numbering_scheme.slug] += 1
+            if protein.species.common_name not in species_list:
+                if len(protein.species.common_name)>10 and len(protein.species.common_name.split())>1:
+                    name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])
+                    if len(" ".join(protein.species.common_name.split()[1:]))>11:
+                        name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])[:8]+".."
+                else:
+                    name = protein.species.common_name
+                species_list[protein.species.common_name] = name
+
+                if len(re.sub('<[^>]*>', '', protein.name)+" "+name)>longest_name:
+                    longest_name = len(re.sub('<[^>]*>', '', protein.name)+" "+name)
+
+        used_scheme = max(used_schemes, key=used_schemes.get)
+
+        mutations = MutationExperiment.objects.filter(protein__in=proteins, 
+                                residue__protein_segment__in=original_segments).prefetch_related('residue__display_generic_number',
+                                'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
+                                'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
+                                'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource')
 
     else:
+        print(gn,receptor_class,aa)
+        protein_ids = ''
+        HelixBox = ''
+        SnakePlot = ''
+        numbering_schemes = ''
+        mutations_pos_list = []
+        mutations = MutationExperiment.objects.filter(protein__family__slug__startswith=receptor_class, 
+                                residue__display_generic_number__label=gn, residue__amino_acid=aa).prefetch_related('residue__display_generic_number',
+                                'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
+                                'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
+                                'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource')
 
-        # flatten the selection into individual proteins
-        for target in simple_selection.targets:
-            if target.type == 'protein':
-                proteins.append(target.item)
-            elif target.type == 'family':
-                # species filter
-                species_list = []
-                for species in simple_selection.species:
-                    species_list.append(species.item)
 
-                # annotation filter
-                protein_source_list = []
-                for protein_source in simple_selection.annotation:
-                    protein_source_list.append(protein_source.item)
-                    
-                if species_list:
-                    family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                        species__in=(species_list),
-                        source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
-                else:
-                    family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                        source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
-
-                for fp in family_proteins:
-                    proteins.append(fp)
-
-        original_segments = []
-        segments_ids = []
-        for segment in simple_selection.segments:
-            original_segments.append(segment.item)
-            segments_ids.append(segment.item.id)
-
-       #scheme
-    used_schemes = {}
-    species_list = {}
-    longest_name = 0
-    for protein in proteins:
-        if protein.residue_numbering_scheme.slug not in used_schemes:
-            used_schemes[protein.residue_numbering_scheme.slug] = 0
-        used_schemes[protein.residue_numbering_scheme.slug] += 1
-        if protein.species.common_name not in species_list:
-            if len(protein.species.common_name)>10 and len(protein.species.common_name.split())>1:
-                name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])
-                if len(" ".join(protein.species.common_name.split()[1:]))>11:
-                    name = protein.species.common_name.split()[0][0]+". "+" ".join(protein.species.common_name.split()[1:])[:8]+".."
-            else:
-                name = protein.species.common_name
-            species_list[protein.species.common_name] = name
-
-            if len(re.sub('<[^>]*>', '', protein.name)+" "+name)>longest_name:
-                longest_name = len(re.sub('<[^>]*>', '', protein.name)+" "+name)
-
-    used_scheme = max(used_schemes, key=used_schemes.get)
-
-    mutations = MutationExperiment.objects.filter(protein__in=proteins, 
-                            residue__protein_segment__in=original_segments).prefetch_related('residue__display_generic_number',
-                            'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
-                            'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
-                            'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource')
      
     mutations_list = {}
     mutations_display_generic_number = {}
+    context = {}
 
     residue_table_list = []
     for mutation in mutations:
@@ -175,68 +193,69 @@ def render_mutations(request, protein = None, family = None, download = None, **
 
         mutations_display_generic_number[mutation.raw.id] = mutation.residue.display_generic_number.label
 
-    # create an alignment object
-    a = Alignment()
+    if receptor_class==None: #if not a small lookup
+        # create an alignment object
+        a = Alignment()
 
-    a.load_proteins(proteins)
-    segments = ProteinSegment.objects.all().filter().prefetch_related()
-    a.load_segments(segments) #get all segments to make correct diagrams
+        a.load_proteins(proteins)
+        segments = ProteinSegment.objects.all().filter().prefetch_related()
+        a.load_segments(segments) #get all segments to make correct diagrams
 
-    # build the alignment data matrix
-    a.build_alignment()
+        # build the alignment data matrix
+        a.build_alignment()
 
-    # calculate consensus sequence + amino acid and feature frequency
-    a.calculate_statistics()
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
 
-    residue_list = []
-    generic_numbers = []
-    reference_generic_numbers = {}
-    count = 1 #build sequence_number
+        residue_list = []
+        generic_numbers = []
+        reference_generic_numbers = {}
+        count = 1 #build sequence_number
 
-    mutations_pos_list = {}
-    for aa in a.full_consensus:
-        # for aa,v in a.full_consensus[seg].items():
-        r = Residue()
-        r.sequence_number =  aa.sequence_number #FIXME is this certain to be correct that the position in consensus is seq position? 
-        if aa.family_generic_number and aa.display_generic_number:
-            r.display_generic_number = aa.display_generic_number #FIXME
-            if r.display_generic_number.label in mutations_list:
-                if r.sequence_number not in mutations_pos_list: 
-                    mutations_pos_list[r.sequence_number] = []
-                mutations_pos_list[r.sequence_number].append(mutations_list[r.display_generic_number.label])
-            r.segment_slug = aa.segment_slug
-            r.family_generic_number = aa.family_generic_number
+        mutations_pos_list = {}
+        for aa in a.full_consensus:
+            # for aa,v in a.full_consensus[seg].items():
+            r = Residue()
+            r.sequence_number =  aa.sequence_number #FIXME is this certain to be correct that the position in consensus is seq position? 
+            if aa.family_generic_number and aa.display_generic_number:
+                r.display_generic_number = aa.display_generic_number #FIXME
+                if r.display_generic_number.label in mutations_list:
+                    if r.sequence_number not in mutations_pos_list: 
+                        mutations_pos_list[r.sequence_number] = []
+                    mutations_pos_list[r.sequence_number].append(mutations_list[r.display_generic_number.label])
+                r.segment_slug = aa.segment_slug
+                r.family_generic_number = aa.family_generic_number
+            else:
+                r.segment_slug = aa.segment_slug
+                r.family_generic_number = aa.family_generic_number
+            r.amino_acid = aa.amino_acid
+            r.frequency = aa.frequency #Grab consensus information
+            residue_list.append(r)
+
+            count += 1         
+
+        protein_ids = list(set([x.id for x in proteins]))
+        HelixBox = DrawHelixBox(a.full_consensus,'Class A',str(protein_ids), nobuttons = 1)
+        SnakePlot = DrawSnakePlot(a.full_consensus,'Class A',str(protein_ids), nobuttons = 1)
+
+        
+        numbering_schemes_selection = ['gpcrdba','gpcrdbb','gpcrdbc','gpcrdbf'] #there is a residue_numbering_scheme attribute on the protein model, so it's easy to find out
+        numbering_schemes_selection = list(used_schemes.keys())
+        numbering_schemes_selection = ['gpcrdb'] + numbering_schemes_selection #always use A for reference
+        numbering_schemes = ResidueNumberingScheme.objects.filter(slug__in=numbering_schemes_selection).all()
+
+        segments = ProteinSegment.objects.filter(pk__in=segments_ids,category='helix')
+
+        if ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME) in numbering_schemes:
+            default_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
         else:
-            r.segment_slug = aa.segment_slug
-            r.family_generic_number = aa.family_generic_number
-        r.amino_acid = aa.amino_acid
-        r.frequency = aa.frequency #Grab consensus information
-        residue_list.append(r)
-
-        count += 1         
-
-    protein_ids = list(set([x.id for x in proteins]))
-    HelixBox = DrawHelixBox(a.full_consensus,'Class A',str(protein_ids), nobuttons = 1)
-    SnakePlot = DrawSnakePlot(a.full_consensus,'Class A',str(protein_ids), nobuttons = 1)
-
-    context = {}
-    numbering_schemes_selection = ['gpcrdba','gpcrdbb','gpcrdbc','gpcrdbf'] #there is a residue_numbering_scheme attribute on the protein model, so it's easy to find out
-    numbering_schemes_selection = list(used_schemes.keys())
-    numbering_schemes_selection = ['gpcrdb'] + numbering_schemes_selection #always use A for reference
-    numbering_schemes = ResidueNumberingScheme.objects.filter(slug__in=numbering_schemes_selection).all()
-
-    segments = ProteinSegment.objects.filter(pk__in=segments_ids,category='helix')
-
-    if ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME) in numbering_schemes:
-        default_scheme = ResidueNumberingScheme.objects.get(slug=settings.DEFAULT_NUMBERING_SCHEME)
-    else:
-        default_scheme = numbering_schemes[0]
+            default_scheme = numbering_schemes[0]
 
     # prepare the dictionary
     # each helix has a dictionary of positions
     # default_generic_number or first scheme on the list is the key
     # value is a dictionary of other gn positions and residues from selected proteins 
-    if len(protein_ids)<100 and not download: #too many to make meaningful residuetable / not run when download
+    if len(protein_ids)<100 and not download and receptor_class==None: #too many to make meaningful residuetable / not run when download
         data = OrderedDict()
         for segment in segments:
             data[segment.slug] = OrderedDict()
@@ -294,7 +313,7 @@ def render_mutations(request, protein = None, family = None, download = None, **
         context['header'] = ''
         context['segments'] = ''
         context['number_of_schemes'] = ''
-        context['longest_name'] = {'div' : longest_name, 'height': longest_name}
+        context['longest_name'] = {'div' : 0, 'height': 0}
 
     if download:
         raws = mutations.values('raw')
@@ -463,13 +482,14 @@ def showcalculationPDB(request):
         matrix = definitions.DESIGN_SUBSTITUTION_MATRIX
         newresidues = []
         for r in context['residues']:
-
+            if r['slug']=='acc':
+                continue
             if r['slug'][:5]=='polar':
                 scoretype = 'polar'
             elif r['slug'][:3]=='aro':
                 scoretype = 'aromatic'
             elif r['slug'][:3]=='hyd':
-                scoretype = 'hyd'
+                scoretype = 'hydrophobic'
             else:
                 scoretype = 'unknown'
             possible_subs = ''
@@ -490,11 +510,188 @@ def showcalculationPDB(request):
 
         return render(request, 'mutation/designpdb.html', context)
 
+def coverage(request):
+
+    context = {}
+
+    #gpcr_class = '004' #class a
+
+    families = ProteinFamily.objects.all()
+    lookup = {}
+    for f in families:
+        lookup[f.slug] = f.name
+
+    class_proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('family').order_by('family__slug')
+
+
+    coverage = OrderedDict()
+
+    temp = OrderedDict([
+                        ('name',''), 
+                        ('interactions', 0),
+                        ('receptor_i', 0) , 
+                        ('mutations' , 0),
+                        ('receptor_m', 0), 
+                        ('mutations_an' , 0),
+                        ('receptor_m_an', 0), 
+                        ('receptor_t',0), 
+                        ('children', OrderedDict()) , 
+                        ('fraction_i',0), 
+                        ('fraction_m',0), 
+                        ('fraction_m_an',0)  
+                        ])
+
+    for p in class_proteins:
+        #print(p,p.family.slug)
+        fid = p.family.slug.split("_")
+        if fid[0] not in coverage:
+            coverage[fid[0]] = copy.deepcopy(temp)
+            coverage[fid[0]]['name'] = lookup[fid[0]]
+        if fid[1] not in coverage[fid[0]]['children']:
+            coverage[fid[0]]['children'][fid[1]] = copy.deepcopy(temp)
+            coverage[fid[0]]['children'][fid[1]]['name'] = lookup[fid[0]+"_"+fid[1]]
+        if fid[2] not in coverage[fid[0]]['children'][fid[1]]['children']:
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]] = copy.deepcopy(temp)
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['name'] = lookup[fid[0]+"_"+fid[1]+"_"+fid[2]][:35]
+        if fid[3] not in coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children']:
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]] = copy.deepcopy(temp)
+            coverage[fid[0]]['receptor_t'] += 1
+            coverage[fid[0]]['children'][fid[1]]['receptor_t'] += 1
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t'] += 1
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['name'] = p.entry_name.split("_")[0] #[:10]
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_t'] = 1
+
+
+
+
+
+    class_interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__annotated=True).prefetch_related(
+        'rotamer__residue__display_generic_number','interaction_type',
+        'structure_ligand_pair__structure__protein_conformation__protein__parent__family',
+        'structure_ligand_pair__ligand__properities',
+        )
+
+    class_mutations = MutationExperiment.objects.all().prefetch_related('protein__parent__family','exp_func','residue__display_generic_number','mutation','refs__web_link', 'exp_qual','ligand').order_by('foldchange','exp_qual')
+
+    generic = {}
+
+    score_copy = {'score': {'a':0,'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0} , 'interaction' : {},'mutation': {}}
+
+    dump_interactions = []
+
+    for i in class_interactions:
+        fid = i.structure_ligand_pair.structure.protein_conformation.protein.parent.family.slug.split("_")
+        interaction_type = i.interaction_type.slug
+        interaction_type_class = i.interaction_type.type
+        if i.rotamer.residue.display_generic_number:
+            dgn = i.rotamer.residue.display_generic_number.label
+        else:
+            dgn = 'N/A'
+        dump_interactions.append([dgn,i.rotamer.residue.sequence_number, i.rotamer.residue.amino_acid,i.structure_ligand_pair.structure.pdb_code.index,interaction_type,interaction_type_class,i.interaction_type.name,i.structure_ligand_pair.structure.protein_conformation.protein.parent.entry_name])
+        if interaction_type=='polar_backbone':
+            continue
+        if interaction_type=='acc':
+            continue
+        coverage[fid[0]]['interactions'] += 1
+        coverage[fid[0]]['children'][fid[1]]['interactions'] += 1
+        coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['interactions'] += 1
+        coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['interactions'] += 1
+
+        if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['interactions']==1: #if first time receptor gets a point
+            coverage[fid[0]]['receptor_i'] += 1
+            coverage[fid[0]]['children'][fid[1]]['receptor_i'] += 1
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_i'] += 1
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_i'] = 1
+
+            coverage[fid[0]]['fraction_i'] = coverage[fid[0]]['receptor_i']/coverage[fid[0]]['receptor_t']
+            coverage[fid[0]]['children'][fid[1]]['fraction_i'] = coverage[fid[0]]['children'][fid[1]]['receptor_i']/coverage[fid[0]]['children'][fid[1]]['receptor_t']
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['fraction_i'] = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_i']/coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t']
+
+    # FOR ALEX
+    # print(dump_interactions)
+    # with open('interactions_dump.csv', 'w', newline='') as myfile:
+    #     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)    
+    #     wr.writerows(dump_interactions)
+
+    for m in class_mutations:
+        fid = m.protein.family.slug.split("_")
+        coverage[fid[0]]['mutations'] += 1
+        coverage[fid[0]]['children'][fid[1]]['mutations'] += 1
+        coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['mutations'] += 1
+        coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['mutations'] += 1
+
+        if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['mutations']==1: #if first time receptor gets a point
+            coverage[fid[0]]['receptor_m'] += 1
+            coverage[fid[0]]['children'][fid[1]]['receptor_m'] += 1
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_m'] += 1
+
+            coverage[fid[0]]['fraction_m'] = coverage[fid[0]]['receptor_m']/coverage[fid[0]]['receptor_t']
+            coverage[fid[0]]['children'][fid[1]]['fraction_m'] = coverage[fid[0]]['children'][fid[1]]['receptor_m']/coverage[fid[0]]['children'][fid[1]]['receptor_t']
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['fraction_m'] = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_m']/coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t']
+
+        if m.exp_func is not None or m.foldchange!=0 or m.exp_qual is not None or m.ligand is not None: #if exp with data
+            coverage[fid[0]]['mutations_an'] += 1
+            coverage[fid[0]]['children'][fid[1]]['mutations_an'] += 1
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['mutations_an'] += 1
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['mutations_an'] += 1
+
+            if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['mutations_an']==1: #if first time receptor gets a point
+                coverage[fid[0]]['receptor_m_an'] += 1
+                coverage[fid[0]]['children'][fid[1]]['receptor_m_an'] += 1
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_m_an'] += 1
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_m_an'] += 1
+
+                coverage[fid[0]]['fraction_m_an'] = coverage[fid[0]]['receptor_m_an']/coverage[fid[0]]['receptor_t']
+                coverage[fid[0]]['children'][fid[1]]['fraction_m_an'] = coverage[fid[0]]['children'][fid[1]]['receptor_m_an']/coverage[fid[0]]['children'][fid[1]]['receptor_t']
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['fraction_m_an'] = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_m_an']/coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t']
+
+    CSS_COLOR_NAMES = ["AliceBlue","AntiqueWhite","Aqua","Aquamarine","Azure","Beige","Bisque","Black","BlanchedAlmond","Blue","BlueViolet","Brown","BurlyWood","CadetBlue","Chartreuse","Chocolate","Coral","CornflowerBlue","Cornsilk","Crimson","Cyan","DarkBlue","DarkCyan","DarkGoldenRod","DarkGray","DarkGrey","DarkGreen","DarkKhaki","DarkMagenta","DarkOliveGreen","Darkorange","DarkOrchid","DarkRed","DarkSalmon","DarkSeaGreen","DarkSlateBlue","DarkSlateGray","DarkSlateGrey","DarkTurquoise","DarkViolet","DeepPink","DeepSkyBlue","DimGray","DimGrey","DodgerBlue","FireBrick","FloralWhite","ForestGreen","Fuchsia","Gainsboro","GhostWhite","Gold","GoldenRod","Gray","Grey","Green","GreenYellow","HoneyDew","HotPink","IndianRed","Indigo","Ivory","Khaki","Lavender","LavenderBlush","LawnGreen","LemonChiffon","LightBlue","LightCoral","LightCyan","LightGoldenRodYellow","LightGray","LightGrey","LightGreen","LightPink","LightSalmon","LightSeaGreen","LightSkyBlue","LightSlateGray","LightSlateGrey","LightSteelBlue","LightYellow","Lime","LimeGreen","Linen","Magenta","Maroon","MediumAquaMarine","MediumBlue","MediumOrchid","MediumPurple","MediumSeaGreen","MediumSlateBlue","MediumSpringGreen","MediumTurquoise","MediumVioletRed","MidnightBlue","MintCream","MistyRose","Moccasin","NavajoWhite","Navy","OldLace","Olive","OliveDrab","Orange","OrangeRed","Orchid","PaleGoldenRod","PaleGreen","PaleTurquoise","PaleVioletRed","PapayaWhip","PeachPuff","Peru","Pink","Plum","PowderBlue","Purple","Red","RosyBrown","RoyalBlue","SaddleBrown","Salmon","SandyBrown","SeaGreen","SeaShell","Sienna","Silver","SkyBlue","SlateBlue","SlateGray","SlateGrey","Snow","SpringGreen","SteelBlue","Tan","Teal","Thistle","Tomato","Turquoise","Violet","Wheat","White","WhiteSmoke","Yellow","YellowGreen"];
+
+    CSS_COLOR_NAMES = ["LightBlue","SlateBlue","LightCoral","Orange","LightGreen","Ivory","PeachPuff","PaleGoldenRod"]
+
+    generic = OrderedDict(sorted(generic.items(), key=lambda x: x[1]['score']['s_weight'], reverse=True))
+    tree = OrderedDict({'name':'GPCRs','children':[]})
+    i = 0
+    n = 0
+    for c,c_v in coverage.items():
+        children = []
+        for lt,lt_v in c_v['children'].items():
+            children_rf = []
+            for rf,rf_v in lt_v['children'].items():
+                children_r = []
+                for r,r_v in rf_v['children'].items():
+                    # pass
+
+                    r_v['color'] = CSS_COLOR_NAMES[i]
+                    r_v['sort'] = n
+                    children_r.append(r_v)
+                    n += 1
+                    #print(r_v)
+                rf_v['children'] = children_r
+                rf_v['sort'] = n
+                rf_v['color'] = CSS_COLOR_NAMES[i]
+                children_rf.append(rf_v)
+            lt_v['children'] = children_rf
+            lt_v['sort'] = n
+            lt_v['color'] = CSS_COLOR_NAMES[i]
+            children.append(lt_v)
+        c_v['children'] = children
+        c_v['sort'] = n
+        c_v['color'] = CSS_COLOR_NAMES[i]
+        tree['children'].append(c_v)
+        i += 1
+        # break
+    #print(json.dumps(tree))
+    context['coverage'] = 1 #coverage
+    context['tree'] = json.dumps(tree)
+    return render(request, 'mutation/coverage.html', context)
+
+
 def pocket(request):
 
     context = {}
 
-    gpcr_class = '004' #class a
+    gpcr_class = '001' #class a
 
     class_interactions = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=gpcr_class, structure_ligand_pair__annotated=True).prefetch_related(
@@ -507,12 +704,12 @@ def pocket(request):
 
     generic = {}
 
-    score_copy = {'score': {'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0} , 'interaction' : {},'mutation': {}}
+    score_copy = {'score': {'a':0,'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0} , 'interaction' : {},'mutation': {}}
 
     for i in class_interactions:
-        print(i)
         ligand = i.structure_ligand_pair.ligand.name
         receptor = i.structure_ligand_pair.structure.protein_conformation.protein.parent.entry_name
+        receptor = receptor.split("_")[0]
         interaction_type = i.interaction_type.slug
         interaction_type_class = i.interaction_type.type
         if i.rotamer.residue.display_generic_number:
@@ -523,16 +720,25 @@ def pocket(request):
             generic[gn] = copy.deepcopy(score_copy)
         if receptor not in generic[gn]['interaction']:
             generic[gn]['interaction'][receptor] = {}
+        
         if ligand not in generic[gn]['interaction'][receptor]:
-            print('count')
             generic[gn]['interaction'][receptor][ligand] = {}
-            generic[gn]['score']['i'] += 1
-            generic[gn]['score']['s'] += 1
-            generic[gn]['score']['s_weight'] += 1
+        if interaction_type=='acc':
+            if 'a' not in generic[gn]['interaction'][receptor][ligand]:
+                generic[gn]['score']['a'] += 1
+                generic[gn]['score']['s'] += 1
+                generic[gn]['interaction'][receptor][ligand]['a'] = 1
+        elif interaction_type!='acc':
+            if 'i' not in generic[gn]['interaction'][receptor][ligand]:
+                generic[gn]['interaction'][receptor][ligand]['i'] = 1
+                generic[gn]['score']['i'] += 1
+                generic[gn]['score']['s'] += 1
+                generic[gn]['score']['s_weight'] += 1
     for m in class_mutations:
         if not m.ligand: #ignore non ligand
             continue
         receptor = m.protein.entry_name
+        receptor = receptor.split("_")[0]
         ligand = m.ligand.name
         if m.residue.display_generic_number:
             gn = m.residue.display_generic_number.label
@@ -543,37 +749,30 @@ def pocket(request):
         if receptor not in generic[gn]['mutation']:
             generic[gn]['mutation'][receptor] = {}
         if ligand not in generic[gn]['mutation'][receptor]:
-            generic[gn]['mutation'][receptor][ligand] = {}
             generic[gn]['score']['m'] += 1
             generic[gn]['score']['s'] += 1
 
             if m.foldchange>5:
                 generic[gn]['score']['m_weight'] += 1
                 generic[gn]['score']['s_weight'] += 1
+                generic[gn]['mutation'][receptor][ligand] = {}
             elif m.exp_qual:
-                if m.exp_qual.qual=='Abolish' or m.exp_qual.qual.find('abolish')!=-1:
-                   generic[gn]['score']['m_weight'] += 1
-                   generic[gn]['score']['s_weight'] += 1
+                if m.exp_qual.qual=='Abolish' or m.exp_qual.qual.find('abolish')!=-1 or m.exp_qual.qual.find('Abolish')!=-1:
+                    generic[gn]['score']['m_weight'] += 1
+                    generic[gn]['score']['s_weight'] += 1
+                    generic[gn]['mutation'][receptor][ligand] = {}
 
     generic = OrderedDict(sorted(generic.items(), key=lambda x: x[1]['score']['s_weight'], reverse=True))
-
+    #print(generic)
     context['gn'] = generic
     return render(request, 'mutation/pocket.html', context)
 
 def showcalculation(request):
-    print(request.method)
     if request.method == 'POST':
         form = PDBform(request.POST, request.FILES)
-
-        if 'file' in request.FILES: #uploaded file
-            print('user upload')
-        else:
-            print('pdb code entered')
-
         context = calculate(request)
 
     else:
-        print('protein selected')
         simple_selection = request.session.get('selection', False)
         proteins = []
         for target in simple_selection.targets:
@@ -600,64 +799,176 @@ def showcalculation(request):
             family = family.parent
 
 
-
-
+    family_level_ids = protein_ids[0].slug.split("_")
 
     if len(context['proteins'])>1:
         return HttpResponse("Only pick one protein")
 
-    #print(family_ids,parent_ids)
 
-    residues = Residue.objects.filter(protein_conformation__protein=context['proteins'][0]).prefetch_related('display_generic_number')
+    residues = Residue.objects.filter(protein_conformation__protein=context['proteins'][0]).prefetch_related('protein_segment','display_generic_number','generic_number')
+
+    HelixBox = DrawHelixBox(
+                residues, context['proteins'][0], str(p), nobuttons=1)
+    SnakePlot = DrawSnakePlot(
+                residues, context['proteins'][0], str(p), nobuttons=1)
 
     lookup = {}
+    lookup_with_pos = {}
+    lookup_pos = {}
     for r in residues:
         if r.display_generic_number: 
             lookup[r.display_generic_number.label] = r.amino_acid
+            lookup_with_pos[r.display_generic_number.label] = r.amino_acid+str(r.sequence_number)
+            lookup_pos[r.display_generic_number.label] = str(r.sequence_number)
+            
+    gpcr_class = family
+    class_interactions = ResidueFragmentInteraction.objects.filter(
+        structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=gpcr_class.slug, structure_ligand_pair__annotated=True).prefetch_related(
+        'rotamer__residue__display_generic_number','interaction_type',
+        'structure_ligand_pair__structure__protein_conformation__protein__parent__family',
+        'structure_ligand_pair__ligand__properities')
 
-    # protein_interaction_pairs = StructureLigandInteraction.objects.filter(structure__protein_conformation__protein__parent__family__in=protein_ids,annotated=True)
-  
-    # family_interaction_pairs = StructureLigandInteraction.objects.filter(structure__protein_conformation__protein__parent__family__parent__in=family_ids,annotated=True)
-    
-    # parent_interaction_pairs = StructureLigandInteraction.objects.filter(structure__protein_conformation__protein__parent__family__parent__parent__in=parent_ids,annotated=True)
+    class_mutations = MutationExperiment.objects.filter(
+        protein__family__slug__startswith=gpcr_class.slug).prefetch_related('protein__family','residue__display_generic_number','mutation','refs__web_link', 'exp_qual','ligand').order_by('foldchange','exp_qual')
 
-    # protein_interactions = ResidueFragmentInteraction.objects.filter(
-    #     structure_ligand_pair__structure__protein_conformation__protein__parent__family__in=protein_ids, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number').prefetch_related('rotamer__residue__display_generic_number','interaction_type')
+    generic = {}
 
-    # family_interactions = ResidueFragmentInteraction.objects.filter(
-    #     structure_ligand_pair__structure__protein_conformation__protein__parent__family__parent__in=family_ids, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number').prefetch_related('rotamer__residue__display_generic_number','interaction_type')
-    
-    # family_interactions = family_interactions.exclude(structure_ligand_pair__structure__protein_conformation__protein__parent__family__in=protein_ids)
+    score_copy = {'score': {'a':0,'i':0,'i_aa':0,'i_weight':0,'m':0,'m_aa':0,'m_weight':0,'s':0,'s_weight':0,'s_aa':0}, 'homology' : {0:0,1:0,2:0,3:0} , 'interaction_aa' : {},'mutation_aa': {}, 'interaction' : {},'mutation': {}}
 
-    # parent_interactions = ResidueFragmentInteraction.objects.filter(
-    #     structure_ligand_pair__structure__protein_conformation__protein__parent__family__parent__parent__in=parent_ids, structure_ligand_pair__annotated=True).prefetch_related('rotamer__residue__display_generic_number','interaction_type')
+    for i in class_interactions:
+        #continue
+        ligand = i.structure_ligand_pair.ligand.name
+        receptor = i.structure_ligand_pair.structure.protein_conformation.protein.parent.entry_name
+        receptor = receptor.split("_")[0]
+        family_id = i.structure_ligand_pair.structure.protein_conformation.protein.parent.family.slug.split("_")
+        interaction_type = i.interaction_type.slug
+        interaction_type_class = i.interaction_type.type
 
-    # parent_interactions = parent_interactions.exclude(structure_ligand_pair__structure__protein_conformation__protein__parent__family__parent__in=family_ids)
+        if family_level_ids[0:3]==family_id[0:3]:
+            pass
+            #continue
 
-    protein_mutations = MutationExperiment.objects.filter(protein__family__in=protein_ids).order_by('refs__year').prefetch_related('residue__display_generic_number','mutation','refs__web_link')
+        if interaction_type=='polar_backbone':
+            continue
+        if i.rotamer.residue.display_generic_number:
+            gn = i.rotamer.residue.display_generic_number.label
+        else:
+            continue
+        if gn not in generic:
+            generic[gn] = copy.deepcopy(score_copy)
+        if receptor not in generic[gn]['interaction']:
+            generic[gn]['interaction'][receptor] = {}
+        if ligand not in generic[gn]['interaction'][receptor]:
+            generic[gn]['interaction'][receptor][ligand] = {}
+            generic[gn]['score']['i'] += 1
+            generic[gn]['score']['s'] += 1
+            generic[gn]['score']['s_weight'] += 1
+            #print(gn,receptor,ligand)
+        if gn in lookup and interaction_type=='acc':
+            generic[gn]['score']['a'] += 1
+        if gn in lookup and interaction_type!='acc':
+            if lookup[gn] == i.rotamer.residue.amino_acid:
+                if receptor not in generic[gn]['interaction_aa']:
+                    generic[gn]['interaction_aa'][receptor] = {}
+                if ligand not in generic[gn]['interaction_aa'][receptor]:
+                    generic[gn]['interaction_aa'][receptor][ligand] = {}
+                    generic[gn]['score']['i_aa'] += 1
+                    generic[gn]['score']['s_aa'] += 1
+                    if family_id==family_level_ids:
+                        generic[gn]['homology'][0] += 1
+                    elif family_id[0:3]==family_level_ids[0:3]:
+                        generic[gn]['homology'][1] += 1
+                    elif family_id[0:2]==family_level_ids[0:2]:
+                        generic[gn]['homology'][2] += 1
+                    elif family_id[0:1]==family_level_ids[0:1]:
+                        generic[gn]['homology'][3] += 1
+                    else:
+                        print("error",family_id,family_level_ids)
 
-    family_mutations = MutationExperiment.objects.filter(protein__family__parent__in=family_ids).order_by('refs__year').prefetch_related('residue__display_generic_number','mutation','refs__web_link')
+    for m in class_mutations:
+        #continue
+        if not m.ligand: #ignore non ligand
+            continue
+        receptor = m.protein.entry_name
+        receptor = receptor.split("_")[0]
+        family_id = m.protein.family.slug.split("_")
+        ligand = m.ligand.name
 
-    family_mutations = family_mutations.exclude(protein__family__in=protein_ids)
+        if family_level_ids[0:3]==family_id[0:3]:
+            pass
+            #continue
 
-    parent_mutations = MutationExperiment.objects.filter(protein__family__parent__parent__in=parent_ids).order_by('refs__year').prefetch_related('residue__display_generic_number','mutation','refs__web_link')
+        if m.residue.display_generic_number:
+            gn = m.residue.display_generic_number.label
+        else:
+            continue
+        if gn not in generic:
+            generic[gn] = copy.deepcopy(score_copy)
+        if receptor not in generic[gn]['mutation']:
+            generic[gn]['mutation'][receptor] = {}
+        if ligand not in generic[gn]['mutation'][receptor]:
+            generic[gn]['score']['m'] += 1
+            generic[gn]['score']['s'] += 1
 
-    parent_mutations = parent_mutations.exclude(protein__family__parent__in=family_ids)
+            if m.foldchange>5:
+                generic[gn]['score']['m_weight'] += 1
+                generic[gn]['score']['s_weight'] += 1
+
+                generic[gn]['mutation'][receptor][ligand] = {}
+                #print(gn,receptor,ligand)
+            elif m.exp_qual:
+                if m.exp_qual.qual=='Abolish' or m.exp_qual.qual.find('abolish')!=-1 or m.exp_qual.qual.find('Abolish')!=-1:
+                   generic[gn]['score']['m_weight'] += 1
+                   generic[gn]['score']['s_weight'] += 1
+                   m.foldchange = 6
+
+                   generic[gn]['mutation'][receptor][ligand] = {}
+                   #print(gn,receptor,ligand)
+        if gn in lookup:
+            if lookup[gn] == m.residue.amino_acid and m.foldchange>5:
+                if receptor not in generic[gn]['mutation_aa']:
+                    generic[gn]['mutation_aa'][receptor] = {}
+                if ligand not in generic[gn]['mutation_aa'][receptor]:
+                    generic[gn]['mutation_aa'][receptor][ligand] = {}
+                    generic[gn]['score']['m_aa'] += 1
+                    generic[gn]['score']['s_aa'] += 1
+                    if family_id==family_level_ids:
+                        generic[gn]['homology'][0] += 1
+                    elif family_id[0:3]==family_level_ids[0:3]:
+                        generic[gn]['homology'][1] += 1
+                    elif family_id[0:2]==family_level_ids[0:2]:
+                        generic[gn]['homology'][2] += 1
+                    elif family_id[0:1]==family_level_ids[0:1]:
+                        generic[gn]['homology'][3] += 1
+                    else:
+                        print("error",family_id,family_level_ids)
+
+    position_scores = OrderedDict(sorted(generic.items(), key=lambda x: (x[1]['homology'][0],x[1]['homology'][1],x[1]['homology'][2],x[1]['homology'][3]), reverse=True))
+    pocket_scores = {}
+    score = 21
+    prev_homology = ''
+    for g,s in position_scores.items():
+        if s['homology']=={0: 0, 1: 0, 2: 0, 3: 0}:
+            score = 0
+        if s['homology']!=prev_homology: #give same score if same homology numbers
+            score = max(0,score-1) #give less and less score value
+            prev_homology = s['homology']
+        pocket_scores[g] = score
+
 
     #NEW CLASS METHOD, then select closest
     class_interactions = ResidueFragmentInteraction.objects.filter(
-        structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=family.slug, structure_ligand_pair__annotated=True).prefetch_related('rotamer__residue__display_generic_number','interaction_type','structure_ligand_pair__structure__protein_conformation__protein__parent')
+        structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=family.slug, structure_ligand_pair__annotated=True).prefetch_related('rotamer__residue__display_generic_number','interaction_type','structure_ligand_pair__structure__protein_conformation__protein__parent__family','structure_ligand_pair__structure__pdb_code','structure_ligand_pair__ligand__properities')
 
     class_mutations = MutationExperiment.objects.filter(
-        protein__family__slug__startswith=family.slug).prefetch_related('protein','residue__display_generic_number','mutation','refs__web_link', 'exp_qual').order_by('foldchange','exp_qual')
+        protein__family__slug__startswith=family.slug).prefetch_related('protein__family','residue__display_generic_number','mutation','refs__web_link', 'exp_qual','ligand__properities').order_by('-foldchange','exp_qual')
 
     class_proteins = Protein.objects.filter(family__slug__startswith=family.slug, source__name='SWISSPROT',species__common_name='Human').all()
 
-    family_proteins = Protein.objects.filter(family__parent__in=family_ids, source__name='SWISSPROT',species__common_name='Human').all()
+    family_proteins = Protein.objects.filter(family__parent__in=family_ids, source__name='SWISSPROT').all() #,species__common_name='Human'
     ligand_proteins = Protein.objects.filter(family__parent__parent__in =parent_ids, source__name='SWISSPROT',species__common_name='Human').all()
 
     class_p = []
-
     for i in class_interactions:
         p = i.structure_ligand_pair.structure.protein_conformation.protein.parent
         if p not in class_p:
@@ -671,7 +982,7 @@ def showcalculation(request):
             class_p.append(p)
     print("Proteins in alignment",len(class_p),'proteins in family',len(family_proteins),'proteins in ligand class',len(ligand_proteins))
 
-    #print(list(settings.REFERENCE_POSITIONS.keys()))
+    # print(list(settings.REFERENCE_POSITIONS.keys()))
     segments = ProteinSegment.objects.filter(slug__in=list(settings.REFERENCE_POSITIONS.keys()))
 
     a = Alignment()
@@ -685,18 +996,6 @@ def showcalculation(request):
     family_generic_aa_count = a.calculate_aa_count_per_generic_number()
 
     print('alignment 1')
-
-    # a = Alignment()
-    # a.load_reference_protein(context['proteins'][0])
-    # a.load_proteins(ligand_proteins)
-    # #segments = ProteinSegment.objects.filter(category='helix')
-    # a.load_segments(segments)
-    # a.build_alignment()
-    # a.calculate_similarity()
-    # a.calculate_statistics()
-    # ligand_generic_aa_count = a.calculate_aa_count_per_generic_number()
-
-    # print('alignment 2')
 
 
     #Consider caching result! Would be by protein since it compares protein to whole class. 
@@ -743,53 +1042,94 @@ def showcalculation(request):
     print('built all alignments')
     results = {}
     mutant_lookup = {}
+    distinct_species = {}
+    distinct_ligands = {}
+    distinct_big_decrease = {}
     level = 0
 
-    empty_result = {'interaction': {0:[], 1:[], 2:[]}, 'mutant': {0:[], 1:[], 2:[] }, 'closestinteraction' : { 'similarity' : 0},
+    empty_result = {'homology':{0:0, 1:0, 2:0, 3:0},'interaction': {0:[], 1:[], 2:[]}, 'mutant': {0:[], 1:[], 2:[] }, 'closestinteraction' : { 'similarity' : 0},
                 'interactions': { }, 
-                'bestmutation':{ 'species' : '', 'similarity' : 0, 'foldchange' : 0, 'qual' : '', 'allmut' : [], 'counts':OrderedDict(), 'counts_close':{}, 'bigdecrease':0,'bigincrease':0,'nonsignificant':0,'nodata':0}}
+                'bestmutation':{ 'species' : '', 'similarity' : 0, 'foldchange' : 0, 'qual' : '', 'allmut' : [], 'counts':OrderedDict(), 'counts_close':{}, 'bigdecrease_distinct':0,'bigdecrease':0,'decrease':0,'bigincrease':0,'nonsignificant':0,'nodata':0}}
 
-    # for data in [protein_interactions,family_interactions,parent_interactions]:
-
-    #     for i in data:
-    #         interaction_type = i.interaction_type.slug
-    #         if i.rotamer.residue.display_generic_number:
-    #             generic = i.rotamer.residue.display_generic_number.label
-    #             if generic in results:
-    #                 results[generic]['interaction'][level].append([interaction_type,i.rotamer.residue.amino_acid])
-    #             else:
-    #                 results[generic] = copy.deepcopy(empty_result)
-    #                 results[generic]['interaction'][level].append([interaction_type,i.rotamer.residue.amino_acid])
-    #                 mutant_lookup[generic] = []
-    #         else:
-    #             pass
-    #             #print('no generic number',interaction_type)
-    #     level += 1
 
     for i in class_interactions:
+        #continue
         interaction_type = i.interaction_type.slug
         interaction_type_class = i.interaction_type.type
+
+        if interaction_type_class=='hidden':
+            interaction_type_class = 'accessible'
+
+        if interaction_type=='polar_backbone':
+            continue
+
+        if interaction_type_class=='accessible':
+            continue
 
         if i.rotamer.residue.display_generic_number:
             generic = i.rotamer.residue.display_generic_number.label
 
             entry_name = i.structure_ligand_pair.structure.protein_conformation.protein.parent.entry_name
+            family_id = i.structure_ligand_pair.structure.protein_conformation.protein.parent.family.slug.split("_")
             pdbcode = i.structure_ligand_pair.structure.pdb_code.index
+            ligand = i.structure_ligand_pair.ligand.name
+            if i.structure_ligand_pair.ligand.properities:
+                smiles = i.structure_ligand_pair.ligand.properities.smiles
+            else:
+                smiles = ""
+
+            if family_level_ids[0:3]==family_id[0:3]:
+                pass
+                #continue
+
             if generic in lookup:
+                if generic not in distinct_species:
+                    distinct_species[generic] = []
+                    distinct_ligands[generic] = []
+                    distinct_big_decrease[generic] = []
+
                 if lookup[generic] == i.rotamer.residue.amino_acid:
 
+
+                    if entry_name.split("_")[0] not in distinct_species[generic]:
+                        distinct_species[generic].append(entry_name.split("_")[0])
+
+                    if ligand not in distinct_ligands[generic]:
+                        distinct_ligands[generic].append(ligand)
+
                     if generic  in results:
-                        
+
                         if interaction_type_class not in results[generic]['interactions']:
                             results[generic]['interactions'][interaction_type_class] = []
+
+                        results[generic]['interactions'][interaction_type_class].append({ 'species' : entry_name, 'similarity' : similarity_list[entry_name][1], 'pdbcode' : pdbcode, 'ligand' : ligand,'smiles':smiles})
+
+
+
+                        if family_id==family_level_ids:
+                            results[generic]['homology'][0] += 1
+                        elif family_id[0:3]==family_level_ids[0:3]:
+                            results[generic]['homology'][1] += 1
+                        elif family_id[0:2]==family_level_ids[0:2]:
+                            results[generic]['homology'][2] += 1
+                        elif family_id[0:1]==family_level_ids[0:1]:
+                            results[generic]['homology'][3] += 1
+                        else:
+                            print("error",family_id,family_level_ids)
+                        
                         if similarity_list[entry_name][1]>results[generic]['closestinteraction']['similarity']:
                             results[generic]['closestinteraction']['species'] = entry_name
                             results[generic]['closestinteraction']['similarity'] = similarity_list[entry_name][1]
                             results[generic]['closestinteraction']['type'] = interaction_type
                             results[generic]['closestinteraction']['type_class'] = interaction_type_class
                             results[generic]['closestinteraction']['pdbcode'] = pdbcode
+                        elif similarity_list[entry_name][1]==results[generic]['closestinteraction']['similarity'] and results[generic]['closestinteraction']['type_class']=='hydrophobic':
+                            results[generic]['closestinteraction']['species'] = entry_name
+                            results[generic]['closestinteraction']['similarity'] = similarity_list[entry_name][1]
+                            results[generic]['closestinteraction']['type'] = interaction_type
+                            results[generic]['closestinteraction']['type_class'] = interaction_type_class
+                            results[generic]['closestinteraction']['pdbcode'] = pdbcode
                         #if similarity_list[entry_name][1]>results[generic]['interactions'][interaction_type_class]['similarity']:
-                        results[generic]['interactions'][interaction_type_class].append({ 'species' : entry_name, 'similarity' : similarity_list[entry_name][1], 'pdbcode' : pdbcode})
                             #results[generic]['interactions'][interaction_type_class]['similarity'] = similarity_list[entry_name][1]
 
                     else:
@@ -797,53 +1137,62 @@ def showcalculation(request):
                         mutant_lookup[generic] = []
                         if generic in lookup:
                             if (lookup[generic] == i.rotamer.residue.amino_acid): #only for same aa (FIXME substitution)
+                                if interaction_type_class=='accessible':
+                                        continue
+
+                                if family_id==family_level_ids:
+                                    results[generic]['homology'][0] += 1
+                                elif family_id[0:3]==family_level_ids[0:3]:
+                                    results[generic]['homology'][1] += 1
+                                elif family_id[0:2]==family_level_ids[0:2]:
+                                    results[generic]['homology'][2] += 1
+                                elif family_id[0:1]==family_level_ids[0:1]:
+                                    results[generic]['homology'][3] += 1
+                                else:
+                                    print("error",family_id,family_level_ids)
+                                results[generic]['interactions'][interaction_type_class] = [{ 'species' : entry_name, 'similarity' : similarity_list[entry_name][1], 'pdbcode' : pdbcode, 'ligand' : ligand,'smiles': smiles}]
+                                
                                 results[generic]['closestinteraction']['species'] = entry_name
                                 results[generic]['closestinteraction']['similarity'] = similarity_list[entry_name][1]
                                 results[generic]['closestinteraction']['type'] = interaction_type
                                 results[generic]['closestinteraction']['type_class'] = interaction_type_class
                                 results[generic]['closestinteraction']['pdbcode'] = pdbcode
-                                results[generic]['interactions'][interaction_type_class] = [{ 'species' : entry_name, 'similarity' : similarity_list[entry_name][1], 'pdbcode' : pdbcode}]
         else:
             pass
             #print('no generic number',interaction_type)
 
     print('parsed interaction data',len(results))
 
-    # level = 0
-    # #Fetch mutants for levels -- consider deleting and use the class_mutations instead with a similarity cutoff
-    # for data in [protein_mutations,family_mutations,parent_mutations]: 
-    #     for m in data:
-    #         if m.residue.display_generic_number:
-    #             generic = m.residue.display_generic_number.label
-    #             # if m.foldchange==0:
-    #             #     continue #skip null foldchange (should add qualitive later)
-    #             if generic in results:
-    #                 results[generic]['mutant'][level].append([m.foldchange,m.residue.amino_acid]) #add more info
-    #                 if level==0 or level==1: #save mutants that will be interesting for user
-    #                     mutant_lookup[generic].append([m.residue.amino_acid,m.mutation.amino_acid,str(m.refs.web_link)+" "+str(m.refs.year),level])
-    #             else: #including below results in MANY rows -- many without merit since almost all positions have been mutated at one point or another.
-    #                 #results[generic] = {'interaction': {0:[], 1:[], 2:[] }, 'mutant': {0:[], 1:[], 2:[] } }
-    #                 #results[generic]['mutant'][level].append([m.foldchange,m.residue.amino_acid,m.mutation.amino_acid,m.refs.web_link])#add more info
-    #                 #mutant_lookup[generic] = []
-    #                 #mutant_lookup[generic].append([m.residue.amino_acid,m.mutation.amino_acid,str(m.refs.web_link)])
-    #                 pass ### DO NOT calc on postions without interaction data
-
-    #         else:
-    #             pass
-    #             #print(m.residue.sequence_number,m.foldchange)  
-    #     level += 1
-
     for m in class_mutations:
+        #continue
         if m.residue.display_generic_number:
             generic = m.residue.display_generic_number.label
             entry_name = m.protein.entry_name
+            family_id = m.protein.family.slug.split("_")
+            if m.ligand:
+                ligand = m.ligand.name
+                if m.ligand.properities:
+                    smiles = m.ligand.properities.smiles
+                else:
+                    smiles = ""
+            else:
+                ligand = "N/A"
+                smiles = ""
+
+            if family_level_ids[0:3]==family_id[0:3]:
+                pass
+                #continue
+
             if m.exp_qual:
                 qual = m.exp_qual.qual +" "+m.exp_qual.prop
             else:
                 qual = ''
             #only select positions where interaction data is present and mutant has real data 
             if generic in lookup: # or similarity_list[entry_name][1]>60 (or is closely related.)
-                
+                if generic not in distinct_species:
+                    distinct_species[generic] = []
+                    distinct_ligands[generic] = []
+                    distinct_big_decrease[generic] = []
                 #skip data that is far away / disable this for now
                 #if similarity_list[entry_name][1]<50:
                 #   continue
@@ -859,8 +1208,13 @@ def showcalculation(request):
                     #should be fixed with order by
                         continue
 
-                    if m.foldchange>5:
+                    if m.foldchange>20:
                         results[generic]['bestmutation']['bigdecrease'] += 1
+                        if entry_name.split("_")[0] not in distinct_big_decrease[generic]:
+                            results[generic]['bestmutation']['bigdecrease_distinct'] += 1
+                            distinct_big_decrease[generic].append(entry_name.split("_")[0])
+                    elif m.foldchange>5:
+                        results[generic]['bestmutation']['decrease'] += 1
                     elif m.foldchange<-5:
                         results[generic]['bestmutation']['bigincrease'] += 1
                     elif (m.foldchange<5 or m.foldchange>-5) and m.foldchange!=0:
@@ -869,11 +1223,13 @@ def showcalculation(request):
                         if m.exp_qual:
                             #print( m.exp_qual.qual.find('abolish'))
                             #print(m.exp_qual.qual)
-                            if m.exp_qual.qual=='Abolish' or m.exp_qual.qual.find('abolish')!=-1:
+                            if m.exp_qual.qual=='Abolish' or m.exp_qual.qual.find('abolish')!=-1 or m.exp_qual.qual.find('Abolish')!=-1:
                                 results[generic]['bestmutation']['bigdecrease'] += 1
-                                # print(m.exp_qual.qual)
-                                # print(m.foldchange)
-                                m.foldchange = 10 #insert a 'fake' foldchange to make it count
+                                if entry_name.split("_")[0] not in distinct_big_decrease[generic]:
+                                    results[generic]['bestmutation']['bigdecrease_distinct'] += 1
+                                    distinct_big_decrease[generic].append(entry_name.split("_")[0])
+
+                                m.foldchange = 20 #insert a 'fake' foldchange to make it count
                             elif m.exp_qual.qual=='Gain of':
                                 results[generic]['bestmutation']['bigincrease'] += 1
                             elif m.exp_qual.qual=='Increase':
@@ -885,6 +1241,13 @@ def showcalculation(request):
                         else:
                             results[generic]['bestmutation']['nodata'] += 1
 
+                    if m.foldchange>5:
+                        if entry_name.split("_")[0] not in distinct_species[generic]:
+                            distinct_species[generic].append(entry_name.split("_")[0])
+                        if ligand not in distinct_ligands[generic]:
+                            distinct_ligands[generic].append(ligand)
+
+
                     #If next is closer in similarity replace "closest"
                     if int(m.foldchange)!=0 or qual!='': #FIXME qual values need a corresponding foldchange value to outrank other values
                         if ((similarity_list[entry_name][1]>=results[generic]['bestmutation']['similarity'] and
@@ -895,9 +1258,19 @@ def showcalculation(request):
                             results[generic]['bestmutation']['qual'] = qual
                             results[generic]['bestmutation']['aa'] = m.mutation.amino_acid
 
-                    results[generic]['bestmutation']['allmut'].append([entry_name,m.foldchange,qual,m.mutation.amino_acid,results[generic]['bestmutation']['similarity']])
+                        results[generic]['bestmutation']['allmut'].append([entry_name,m.foldchange,qual,m.mutation.amino_acid,similarity_list[entry_name][1],ligand,smiles])
 
-
+                    if int(m.foldchange>5):
+                        if family_id==family_level_ids:
+                            results[generic]['homology'][0] += 1
+                        elif family_id[0:3]==family_level_ids[0:3]:
+                            results[generic]['homology'][1] += 1
+                        elif family_id[0:2]==family_level_ids[0:2]:
+                            results[generic]['homology'][2] += 1
+                        elif family_id[0:1]==family_level_ids[0:1]:
+                            results[generic]['homology'][3] += 1
+                        else:
+                            print("error",family_id,family_level_ids)
 
                     if m.mutation.amino_acid in results[generic]['bestmutation']['counts']:
                         results[generic]['bestmutation']['counts'][m.mutation.amino_acid] += 1
@@ -909,17 +1282,11 @@ def showcalculation(request):
                     elif similarity_list[entry_name][1]>60:
                         results[generic]['bestmutation']['counts_close'][m.mutation.amino_acid] = 1
 
-                   # print(sorted(results[generic]['bestmutation']['counts'],key=lambda x: x[0],reverse=True))
-                    
-                    #results[generic]['bestmutation']['counts_close'] = sorted(results[generic]['bestmutation']['counts_close'],key=lambda x: x[0],reverse=True)
-
-
-                
+           
                 mutant_lookup[generic] = []
         else:
             pass
             #print('no generic number')
-
     print('parsed mutant data',len(results))
 
     #Fetch defined subsitution matrix for mutant design tool
@@ -929,25 +1296,69 @@ def showcalculation(request):
     summary_score = []
     for res,values in results.items():
 
+        if position_scores[res]['score']['a']==0: #skip those who have no evidence of being in pocket
+            continue
+
         if res in lookup:
             summary[res] = {}
             summary[res]['aa'] = lookup[res]
+            summary[res]['aa_pos'] = lookup_with_pos[res]
+            summary[res]['pos'] = lookup_pos[res]
         else: #skip those that are not present in reference
             continue
 
+        summary[res]['receptor_class'] =  family.slug
         summary[res]['closestinteraction'] = values['closestinteraction']
         summary[res]['interactions'] = values['interactions']
         summary[res]['bestmutation'] = values['bestmutation']
+        summary[res]['homology'] = values['homology']
+        summary[res]['homology_color'] = ''
         summary[res]['alternatives'] = []
         summary[res]['interest_score'] = 0
         summary[res]['score_text'] = ''
+        summary[res]['pocket'] = 0
+        summary[res]['freq'] = 0
+        summary[res]['freq_r'] = []
+        if res in distinct_species:
+            summary[res]['freq_r'] = distinct_species[res]
+        summary[res]['freq_l'] = []
+        if res in distinct_ligands:
+            summary[res]['freq_l'] = distinct_ligands[res]
+        summary[res]['pocket_rank'] = 0
+        summary[res]['pocket_sum'] = position_scores[res]['score']['s_aa']
+        summary[res]['pocket_acc'] = position_scores[res]['score']['a']
+        summary[res]['pocket_homology'] = position_scores[res]['homology']
+        summary[res]['distinct_interaction'] = {}
+        summary[res]['ranking_score'] = 0
         #reverse counts
+
+        #homology and position freq rank
+        if summary[res]['homology'][0]>0:
+            summary[res]['ranking_score']=4000
+            summary[res]['homology_color'] = '#1e6a00'
+        elif summary[res]['homology'][1]>0:
+            summary[res]['ranking_score']=3000
+            summary[res]['homology_color'] = '#519d32'
+        elif summary[res]['homology'][2]>0:
+            summary[res]['ranking_score']=2000
+            summary[res]['homology_color'] = '#92c27f'
+        elif summary[res]['homology'][3]>0:
+            summary[res]['ranking_score']=1000
+            summary[res]['homology_color'] = '#d3e6cc'
+
+
         if 'counts' in summary[res]['bestmutation']:
             summary[res]['bestmutation']['counts'] = OrderedDict(sorted(summary[res]['bestmutation']['counts'].items(), key=lambda x: x[1], reverse=True))
 
         summary[res]['interest_score'] += len(summary[res]['bestmutation']['allmut'])/10 #add a small value for each mutation for position
         summary[res]['score_text'] += '# mutants: '+str(len(summary[res]['bestmutation']['allmut'])/10)+'<br>'
 
+        if res in pocket_scores:
+            summary[res]['pocket_rank'] = 21-pocket_scores[res]
+            summary[res]['interest_score'] += pocket_scores[res]
+            summary[res]['ranking_score'] += pocket_scores[res]
+            summary[res]['score_text'] += '# freq of interactions/mutants within class: '+ str(pocket_scores[res])+'<br>'
+            summary[res]['pocket'] = pocket_scores[res]
 
         #Find alternatives for position (useful for specificity investigation)
         temp = 0
@@ -973,6 +1384,7 @@ def showcalculation(request):
         secondary_interaction = ''
         if 'type_class' in summary[res]['closestinteraction']:
             temp = 0
+            summary[res]['freq'] = 1
             if summary[res]['closestinteraction']['type_class']=='hydrophobic':
                 summary[res]['interest_score'] += 10
                 temp = 10
@@ -987,22 +1399,37 @@ def showcalculation(request):
             elif summary[res]['closestinteraction']['type_class']=='polar':
                 summary[res]['interest_score'] += 50
                 temp = 50
+                if 'hydrophobic' in summary[res]['interactions']:
+                    secondary_interaction = 'hydrophobic'
             elif summary[res]['closestinteraction']['type_class']=='aromatic':
                 summary[res]['interest_score'] += 20
                 temp = 20
+                if 'hydrophobic' in summary[res]['interactions']:
+                    secondary_interaction = 'hydrophobic'
 
             summary[res]['score_text'] += '# closest interaction: '+str(temp)+'<br>'
 
         if 'type_class' in summary[res]['closestinteraction']: #if there is a closest interaction, calculate supporting data
-            distinct_species = []
+            summary[res]['distinct_interaction'][summary[res]['closestinteraction']['type_class']] = 0
+            distinct_species_i = [summary[res]['closestinteraction']['species'].split("_")[0]]
             similarity_sum = 0
             for interaction in summary[res]['interactions'][summary[res]['closestinteraction']['type_class']]:
-                if interaction['species'] not in distinct_species and interaction['species']!=summary[res]['closestinteraction']['species']:
+                if interaction['species'].split("_")[0] not in distinct_species and interaction['species']!=summary[res]['closestinteraction']['species']:
                     similarity_sum += interaction['similarity']
-                    distinct_species.append(interaction['species'])
-            if len(distinct_species): #if there was supporting
-                summary[res]['interest_score'] += min(len(distinct_species)*5,temp) #can't add more than the actual closest interaction
-                summary[res]['score_text'] += '# supporting interactions: '+str(min(len(distinct_species)*5,temp))+'<br>'
+                    distinct_species_i.append(interaction['species'].split("_")[0])
+                    summary[res]['distinct_interaction'][summary[res]['closestinteraction']['type_class']] += 1
+            if len(distinct_species)>1: #if there was supporting
+                summary[res]['interest_score'] += min((len(distinct_species_i)-1)*5,temp) #can't add more than the actual closest interaction
+                summary[res]['score_text'] += '# supporting interactions: '+str(min((len(distinct_species)-1)*5,temp))+'<br>'
+                summary[res]['freq'] += len(distinct_species_i)
+        
+            #summary[res]['freq_r'] += list(set(distinct_species_i) - set(summary[res]['freq_r']))
+
+        summary[res]['freq_r'] = sorted(summary[res]['freq_r'])
+        
+        #print(len(summary[res]['freq_r']),summary[res]['freq_r'])
+
+        summary[res]['freq'] = len(summary[res]['freq_r'])
 
         temp = 0
         if summary[res]['bestmutation']['foldchange']>50:
@@ -1019,17 +1446,20 @@ def showcalculation(request):
             temp = 0
 
         wildcard_interaction = 0
-        if temp>=50 and 'type_class' not in summary[res]['closestinteraction']: #if big foldchange but no interaction
+        if temp>=20 and 'type_class' not in summary[res]['closestinteraction']: #if big foldchange but no interaction
             wildcard_interaction = 1
-        elif summary[res]['bestmutation']['bigdecrease']>1 and 'type_class' not in summary[res]['closestinteraction']: #if big decrease in class
+        elif summary[res]['bestmutation']['bigdecrease_distinct']>=1 and 'type_class' not in summary[res]['closestinteraction']: #if big decrease in class
             wildcard_interaction = 1
 
         if summary[res]['bestmutation']['foldchange']>5:
             summary[res]['score_text'] += '# closest foldchange: '+str(temp)+'<br>'
+            #summary[res]['freq'] += summary[res]['bestmutation']['bigdecrease_distinct']
 
         if not summary[res]['bestmutation']['foldchange']>5 and summary[res]['bestmutation']['bigdecrease']>1:
             summary[res]['score_text'] += '# class decrease: '+str(10)+'<br>'
             summary[res]['interest_score'] += 10
+            #summary[res]['freq'] += summary[res]['bestmutation']['bigdecrease_distinct']
+
 
         #summary[res]['scores'] = scores
 
@@ -1040,87 +1470,112 @@ def showcalculation(request):
         #summary[res]['existing_mutants_family'] = 0
 
 
-        summary[res]['suggestion'] = {}
+        summary[res]['suggestion'] = OrderedDict()
         if 'type_class' in summary[res]['closestinteraction']:
             interaction_type = summary[res]['closestinteraction']['type_class']
-            if summary[res]['aa'] in matrix[interaction_type]:
-                possible_subs = matrix[interaction_type][summary[res]['aa']][0]
-                possible_subs_text = matrix[interaction_type][summary[res]['aa']][1]
-                summary[res]['sub'] = possible_subs
-                summary[res]['subtext'] = possible_subs_text
-                summary[res]['subtextfull']  = zip(possible_subs, possible_subs_text)
-                summary[res]['suggestion'][interaction_type] = zip(possible_subs, possible_subs_text)
+            if interaction_type in matrix:
+                if summary[res]['aa'] in matrix[interaction_type]:
+                    possible_subs = copy.deepcopy(matrix[interaction_type][summary[res]['aa']][0])
+                    for i,sub in enumerate(possible_subs):
+                        if len(sub)>1:
+                            possible_subs[i] = '/'.join(sub)
+                    possible_subs_text = matrix[interaction_type][summary[res]['aa']][1]
+                    summary[res]['sub'] = possible_subs
+                    summary[res]['subtext'] = possible_subs_text
+                    summary[res]['subtextfull']  = list(zip(possible_subs, possible_subs_text))
+                    summary[res]['suggestion'][interaction_type] = list(zip(possible_subs, possible_subs_text))
 
-                #Make list of references of existing mutants -- can be depreciated or moved to "popover"
-                if res in mutant_lookup:
-                    for subs in possible_subs:
-                        if len(subs)==1:
-                            for m in mutant_lookup[res]:
-                                if summary[res]['aa']==m[0] : #and subs==m[1]
-                                    if m[3]==0:
-                                        summary[res]['existing_mutants_protein'] += "<br>"+m[0]+"=>"+m[1]+" "+m[2]
-                                        #summary[res]['existing_mutants_protein'] += 1
-                                    else:
-                                        summary[res]['existing_mutants_family'] += "<br>"+m[0]+"=>"+m[1]+" "+m[2]
-                                        #summary[res]['existing_mutants_family'] += 1
-                        else:
-                            for sub in subs:
-                                #print(res,summary[res]['aa'],sub,'mutant data?')
+                    #Make list of references of existing mutants -- can be depreciated or moved to "popover"
+                    if res in mutant_lookup:
+                        for subs in possible_subs:
+                            if len(subs)==1:
                                 for m in mutant_lookup[res]:
-                                    if summary[res]['aa']==m[0] : #and sub==m[1]
+                                    if summary[res]['aa']==m[0] : #and subs==m[1]
                                         if m[3]==0:
                                             summary[res]['existing_mutants_protein'] += "<br>"+m[0]+"=>"+m[1]+" "+m[2]
                                             #summary[res]['existing_mutants_protein'] += 1
                                         else:
                                             summary[res]['existing_mutants_family'] += "<br>"+m[0]+"=>"+m[1]+" "+m[2]
                                             #summary[res]['existing_mutants_family'] += 1
+                            else:
+                                for sub in subs:
+                                    #print(res,summary[res]['aa'],sub,'mutant data?')
+                                    for m in mutant_lookup[res]:
+                                        if summary[res]['aa']==m[0] : #and sub==m[1]
+                                            if m[3]==0:
+                                                summary[res]['existing_mutants_protein'] += "<br>"+m[0]+"=>"+m[1]+" "+m[2]
+                                                #summary[res]['existing_mutants_protein'] += 1
+                                            else:
+                                                summary[res]['existing_mutants_family'] += "<br>"+m[0]+"=>"+m[1]+" "+m[2]
+                                                #summary[res]['existing_mutants_family'] += 1
+                else: #if no aa in that type (ODD!) allow wildtype
+                    wildcard_interaction = 1 
 
             else:
                 print('error',interaction_type,summary[res]['aa'])
 
         if secondary_interaction:
             if summary[res]['aa'] in matrix[secondary_interaction]:
-                possible_subs = matrix[secondary_interaction][summary[res]['aa']][0]
+                possible_subs = copy.deepcopy(matrix[secondary_interaction][summary[res]['aa']][0])
+                for i,sub in enumerate(possible_subs):
+                    if len(sub)>1:
+                        possible_subs[i] = '/'.join(sub)
                 possible_subs_text = matrix[secondary_interaction][summary[res]['aa']][1]
-                summary[res]['suggestion'][secondary_interaction] = zip(possible_subs, possible_subs_text)
+                summary[res]['suggestion'][secondary_interaction +' (secondary)'] = list(zip(possible_subs, possible_subs_text))
 
         if wildcard_interaction:
+            ignore_hyd = 0
+            if summary[res]['aa'] in list(matrix['aromatic'].keys())+list(matrix['polar'].keys()):
+                #ignore hydrophobic sug if there is from arom and polar
+                ignore_hyd=1
             for interaction_type in matrix:
+                if interaction_type=='hydrophobic' and ignore_hyd:
+                    continue
                 if summary[res]['aa'] in matrix[interaction_type]:
-                    possible_subs = matrix[interaction_type][summary[res]['aa']][0]
+                    possible_subs = copy.deepcopy(matrix[interaction_type][summary[res]['aa']][0])
+                    for i,sub in enumerate(possible_subs):
+                        if len(sub)>1:
+                            possible_subs[i] = '/'.join(sub)
                     possible_subs_text = matrix[interaction_type][summary[res]['aa']][1]
-                    summary[res]['suggestion'][interaction_type] = zip(possible_subs, possible_subs_text)
+                    summary[res]['suggestion'][interaction_type] = list(zip(possible_subs, possible_subs_text))
 
-        summary_score.append([summary[res]['interest_score'],summary[res],res])
+        summary[res]['final_suggestions'] = {}
+        for interaction_type,sugs in summary[res]['suggestion'].items():
+            for sug in sugs:
+                if sug[0] in summary[res]['final_suggestions']:
+                    summary[res]['final_suggestions'][sug[0]][interaction_type] = sug[1]
+                else:
+                    summary[res]['final_suggestions'][sug[0]] = OrderedDict()
+                    summary[res]['final_suggestions'][sug[0]][interaction_type] = sug[1]
+
+        #print(summary[res]['final_suggestions'])
+        summary[res]['suggestion'] = summary[res]['final_suggestions']
+
+        #summary_score.append([summary[res]['interest_score'],summary[res],res])
+        summary[res]['ranking_score'] += summary[res]['interest_score']*0.00001 #add a tiny ordering by magnitude if all else is  the same
+        summary_score.append([summary[res]['ranking_score'],summary[res],res])
 
     print('made summary')
 
 
     sorted_summary = sorted(summary_score,key=lambda x: x[0],reverse=True)
     new_summary = OrderedDict();
+    diagram_summary = []
     for res in sorted_summary:
         if res[0]>10:
             new_summary[res[2]] = res[1]
+            diagram_summary.append({'pos':res[1]['pos'],'homology':res[1]['homology']})
 
     #print(sorted_summary)
 
     #summary = sorted_summary
 
     context['results'] = new_summary
+    context['results_json'] = list(diagram_summary)
     context['family_ids'] = family_ids
     context['parent_ids'] = parent_ids
-
-    # context['protein_interaction_pairs'] = len(protein_interaction_pairs)
-    # context['family_interaction_pairs'] = len(family_interaction_pairs)
-    # context['parent_interaction_pairs'] = len(parent_interaction_pairs)
-
-    # context['protein_interactions'] = protein_interactions
-    # context['family_interactions'] = family_interactions
-    # context['parent_interactions'] = parent_interactions
-
-    context['protein_mutations'] = protein_mutations
-    context['family_mutations'] = family_mutations
-    context['parent_mutations'] = parent_mutations
+    context['HelixBox'] = HelixBox
+    context['SnakePlot'] = SnakePlot
 
     print('sending to render')
     return render(request, 'mutation/design.html', context)
