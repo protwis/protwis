@@ -514,6 +514,14 @@ class Command(BaseBuild):
                     # save structure before adding M2M relations
                     s.save()
 
+                    #Delete previous interaction data to prevent errors.
+                    ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure=s).delete()
+                    StructureLigandInteraction.objects.filter(structure=s).delete()
+                    #Remove previous Rotamers/Residues to prepare repopulate
+                    Fragment.objects.filter(structure=s).delete()
+                    Rotamer.objects.filter(structure=s).all().delete()
+                    Residue.objects.filter(protein_conformation=s.protein_conformation).all().delete()
+
                     # endogenous ligand(s)
                     default_ligand_type = 'Small molecule'
                     if representative and 'endogenous_ligand' in sd and sd['endogenous_ligand']:
@@ -549,6 +557,10 @@ class Command(BaseBuild):
                             ligands = [sd['ligand']]
                         for ligand in ligands:
                             l = False
+                            peptide_chain = ""
+                            if 'chain' in ligand:
+                                peptide_chain = ligand['chain']
+                                ligand['name'] = 'pep'
                             if ligand['name'] and ligand['name'] != 'None': # some inserted as none.
 
                                 # use annoted ligand type or default type
@@ -591,7 +603,7 @@ class Command(BaseBuild):
                                         if created:
                                             self.logger.info('Created ligand {}'.format(ligand['name']))
                                         else:
-                                            continue
+                                            pass
                                     except IntegrityError:
                                         l = Ligand.objects.get(name=ligand['name'], canonical=True)
 
@@ -614,6 +626,11 @@ class Command(BaseBuild):
                                 i, created = StructureLigandInteraction.objects.get_or_create(structure=s,
                                     ligand=l, ligand_role=lr, annotated=True,
                                     defaults={'pdb_reference': pdb_reference})
+                                if i.pdb_reference != pdb_reference:
+                                    i.pdb_reference = pdb_reference
+                                    i.save()
+
+
                     
                     # structure segments
                     if 'segments' in sd and sd['segments']:
@@ -781,16 +798,11 @@ class Command(BaseBuild):
                     # save structure
                     s.save()
 
-                    #Remove previous Rotamers/Residues to prepare repopulate
-                    Fragment.objects.filter(structure=s).delete()
-                    Rotamer.objects.filter(structure=s).all().delete()
-                    Residue.objects.filter(protein_conformation=s.protein_conformation).all().delete()
-
                     self.logger.info('Calculate rotamers / residues')
                     self.create_rotamers(s,pdb_path)
 
-                    self.logger.info('Calculate interactions')
-                    runcalculation(sd['pdb'])
+                    self.logger.info('Calculate interactions') #Should not error anymore. If it does, fix.
+                    runcalculation(sd['pdb'],peptide_chain)
                     parsecalculation(sd['pdb'],False)
                     #try:
                     #except:

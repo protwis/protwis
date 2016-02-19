@@ -27,6 +27,7 @@ from operator import itemgetter, attrgetter, methodcaller
 
 import getopt
 import sys
+import shutil
 
 AA = {'ALA': 'A', 'ARG': 'R', 'ASN': 'N', 'ASP': 'D',
       'CYS': 'C', 'GLN': 'Q', 'GLU': 'E', 'GLY': 'G',
@@ -110,6 +111,9 @@ def check_pdb():
 
 def checkdirs():
     # check that dirs are there and have right permissions
+    directory = projectdir + 'results/' + pdbname
+    if os.path.exists(directory):
+        shutil.rmtree(directory)
 
     directory = projectdir + 'results/' + pdbname + '/interaction'
     if not os.path.exists(directory):
@@ -289,6 +293,14 @@ def create_ligands_and_poseview():
             else:
                 return 0
 
+    class ClassSelect(Select):
+
+        def accept_residue(self, residue):
+            if residue.get_parent().id == peptideligand:
+                return 1
+            else:
+                return 0
+
     p = PDBParser(QUIET=True)
     s = p.get_structure(pdbname, projectdir + 'pdbs/' +
                         pdbname + '.pdb')  # Disable warnings
@@ -302,6 +314,12 @@ def create_ligands_and_poseview():
 
                 hetflag = hetflag.replace("H_", "").strip()
                 #hetflag = hetflag.replace("W","")
+                #print(hetflag)
+                if peptideligand and chain.id==peptideligand:
+                    hetflag= 'pep'
+
+                if peptideligand and chain.id!=peptideligand:
+                    continue
 
                 if hetflag and hetflag not in ignore_het:
                     if not hetflag in hetflag_done:
@@ -326,7 +344,10 @@ def create_ligands_and_poseview():
                         if not os.path.isfile(ligand_pdb) or 1 == 1:
                             io = PDBIO()
                             io.set_structure(s)
-                            io.save(ligand_pdb, HetSelect())
+                            if peptideligand and chain.id==peptideligand:
+                                io.save(ligand_pdb, ClassSelect())
+                            else:
+                                io.save(ligand_pdb, HetSelect())
 
                             check_unique_ligand_mol(ligand_pdb)
 
@@ -547,120 +568,150 @@ def build_ligand_info():
                 hetflag = hetflag.replace("H_", "").strip()
                 #hetflag = hetflag.replace("W","")
 
+                if peptideligand and chain.id==peptideligand:
+                    hetflag= 'pep'
+                if peptideligand and chain.id!=peptideligand:
+                    continue
+
                 if hetflag and hetflag not in ignore_het:
                     # if goodhet!='' and hetflag!=goodhet and
                     # "H_"+goodhet!=hetflag: continue ### Only look at the
                     # ligand that has an image from poseview made for it.
-                    if not hetflag in hetlist:
+                    if  hetflag not in hetlist or (peptideligand and chain.id==peptideligand):
 
                         if len(list(pybel.readfile("pdb", projectdir + 'results/' + pdbname + '/ligand/' + hetflag + '_' + pdbname + '.pdb'))) == 0:
                             # This ligand has no molecules
+                            # print('no info for',hetflag)
                             continue
 
-                        hetlist[hetflag] = []
-                        ligand_charged[hetflag] = []
-                        ligand_donors[hetflag] = []
-                        ligand_acceptors[hetflag] = []
-                        count_atom_ligand[hetflag] = 0
+                        if hetflag not in hetlist: #do not recreate for peptides
+                            hetlist[hetflag] = []
+                            ligand_charged[hetflag] = []
+                            ligand_donors[hetflag] = []
+                            ligand_acceptors[hetflag] = []
+                            count_atom_ligand[hetflag] = 0
 
-                        mol = pybel.readfile(
-                            "pdb", projectdir + 'results/' + pdbname + '/ligand/' + hetflag + '_' + pdbname + ".pdb").next()
-                        # print "LIGAND",hetflag
+                            mol = pybel.readfile(
+                                "pdb", projectdir + 'results/' + pdbname + '/ligand/' + hetflag + '_' + pdbname + ".pdb").next()
+                            # print "LIGAND",hetflag
 
-                        rings = getattr(mol, "OBMol").GetSSSR()
+                            rings = getattr(mol, "OBMol").GetSSSR()
 
-                        # http://python.zirael.org/e-openbabel4.html
-                        ringlist = []
-                        for ring in rings:
-                            center = Vector(0.0, 0.0, 0.0)
-                            members = ring.Size()
-                            if ring.IsAromatic():
-                                # print "Found an aromatic ring"
-                                atomlist = []
-                                atomnames = []
-                                vectorlist = []
-                                for atom in mol:
-                                    if ring.IsMember(atom.OBAtom):
-                                        # print atom.idx,getattr(atom,'type'),
-                                        # ring.IsMember( atom.OBAtom)
-                                        a_vector = Vector(
-                                            getattr(atom, 'coords'))
-                                        center += a_vector
-                                        atomlist.append(atom.idx)
-                                        vectorlist.append(a_vector)
-                                        atomnames.append(getattr(atom, 'type'))
-                                center = center / members
-                                normal = center - a_vector  # vector in plane
-                                #print center - vectorlist[0],center - vectorlist[2]
-                                normal1 = center - vectorlist[0]
-                                normal2 = center - vectorlist[2]
-                                normal = Vector(np.cross([normal1[0],normal1[1],normal1[2]],[normal2[0],normal2[1],normal2[2]]))
-                                ringlist.append(
-                                    [atomlist, center, normal, atomnames, vectorlist])
+                            # http://python.zirael.org/e-openbabel4.html
+                            ringlist = []
+                            for ring in rings:
+                                center = Vector(0.0, 0.0, 0.0)
+                                members = ring.Size()
+                                if ring.IsAromatic():
+                                    # print "Found an aromatic ring"
+                                    atomlist = []
+                                    atomnames = []
+                                    vectorlist = []
+                                    for atom in mol:
+                                        if ring.IsMember(atom.OBAtom):
+                                            # print atom.idx,getattr(atom,'type'),
+                                            # ring.IsMember( atom.OBAtom)
+                                            a_vector = Vector(
+                                                getattr(atom, 'coords'))
+                                            center += a_vector
+                                            atomlist.append(atom.idx)
+                                            vectorlist.append(a_vector)
+                                            atomnames.append(getattr(atom, 'type'))
+                                    center = center / members
+                                    normal = center - a_vector  # vector in plane
+                                    #print center - vectorlist[0],center - vectorlist[2]
+                                    normal1 = center - vectorlist[0]
+                                    normal2 = center - vectorlist[2]
+                                    normal = Vector(np.cross([normal1[0],normal1[1],normal1[2]],[normal2[0],normal2[1],normal2[2]]))
+                                    ringlist.append(
+                                        [atomlist, center, normal, atomnames, vectorlist])
 
-                        ligand_rings[hetflag] = ringlist
+                            ligand_rings[hetflag] = ringlist
 
-                        for atom in mol:
-                            # print
-                            # "Atom",getattr(atom,'type'),"Coords:",getattr(atom,'coords'),"FormalCharge:",getattr(atom,'formalcharge'),"PartialCharge",getattr(atom,'partialcharge')
-                            if getattr(atom, 'formalcharge') != 0:
-                                chargevector = Vector(getattr(atom, 'coords'))
-                                ligand_charged[hetflag].append(
-                                    [getattr(atom, 'type'), chargevector, getattr(atom, 'formalcharge')])
-                            if getattr(atom, 'OBAtom').IsCarboxylOxygen():
-                                chargevector = Vector(getattr(atom, 'coords'))
-                                # print getattr(atom,'type')," is
-                                # CarboxylOxygen",chargevector
-                                ligand_charged[hetflag].append(
-                                    [getattr(atom, 'type'), chargevector, -1])
-                            if getattr(atom, 'OBAtom').IsHbondDonor():
-                                chargevector = Vector(getattr(atom, 'coords'))
-                                # print getattr(atom,'type')," is
-                                # Donor",chargevector
-                                temphatoms = []
-                                for neighbor in pybel.ob.OBAtomAtomIter(atom.OBAtom):
-                                    neighbor = pybel.Atom(neighbor)
-                                    if getattr(neighbor, 'type') == "H":
-                                        # print "neighbor
-                                        # Atom",getattr(neighbor,'type'),"Coords:",getattr(neighbor,'coords')
-                                        temphatoms.append(
-                                            Vector(getattr(neighbor, 'coords')))
+                            for atom in mol:
+                                #print "Atom",getattr(atom,'type'),"Coords:",getattr(atom,'coords'),"FormalCharge:",getattr(atom,'formalcharge'),"PartialCharge",getattr(atom,'partialcharge')
+                                if getattr(atom, 'formalcharge') != 0:
+                                    chargevector = Vector(getattr(atom, 'coords'))
+                                    ligand_charged[hetflag].append(
+                                        [getattr(atom, 'type'), chargevector, getattr(atom, 'formalcharge')])
+                                if getattr(atom, 'OBAtom').IsCarboxylOxygen():
+                                    chargevector = Vector(getattr(atom, 'coords'))
+                                    # print getattr(atom,'type')," is
+                                    # CarboxylOxygen",chargevector
+                                    ligand_charged[hetflag].append(
+                                        [getattr(atom, 'type'), chargevector, -1])
+                                if getattr(atom, 'OBAtom').IsHbondDonor():
+                                    chargevector = Vector(getattr(atom, 'coords'))
+                                    # print getattr(atom,'type')," is
+                                    # Donor",chargevector
+                                    temphatoms = []
+                                    for neighbor in pybel.ob.OBAtomAtomIter(atom.OBAtom):
+                                        neighbor = pybel.Atom(neighbor)
+                                        if getattr(neighbor, 'type') == "H":
+                                            # print "neighbor
+                                            # Atom",getattr(neighbor,'type'),"Coords:",getattr(neighbor,'coords')
+                                            temphatoms.append(
+                                                Vector(getattr(neighbor, 'coords')))
 
-                                ligand_donors[hetflag].append(
-                                    [getattr(atom, 'type'), chargevector, temphatoms])
+                                    ligand_donors[hetflag].append(
+                                        [getattr(atom, 'type'), chargevector, temphatoms])
 
-                            if getattr(atom, 'OBAtom').IsHbondAcceptor():
-                                chargevector = Vector(getattr(atom, 'coords'))
-                               # print getattr(atom,'type')," is Acceptor",chargevector
-                                ligand_acceptors[hetflag].append([getattr(atom, 'type'), chargevector])
-                                # ligand_charged[hetflag].append([getattr(atom,'type'),chargevector,-1])
+                                if getattr(atom, 'OBAtom').IsHbondAcceptor():
+                                    chargevector = Vector(getattr(atom, 'coords'))
+                                   # print getattr(atom,'type')," is Acceptor",chargevector
+                                    ligand_acceptors[hetflag].append([getattr(atom, 'type'), chargevector])
+                                    # ligand_charged[hetflag].append([getattr(atom,'type'),chargevector,-1])
 
                         # Function to get ligand centers to maybe skip some
                         # residues
                         check = 0
                         center = Vector(0.0, 0.0, 0.0)
 
-                        for atom in residue:
-                            if check == 0 and hetflag in ligand_atoms:
-                                continue  # skip when there are many of same ligand
-                            het_atom = atom.name
+                        if peptideligand and chain.id==peptideligand:
 
-                            check = 1
+                            if hetflag in ligandcenter:
+                                center = ligandcenter[hetflag][2]
 
-                            atom_vector = atom.get_vector()
-                            center += atom_vector
-                            hetlist[hetflag].append(
-                                [hetresname, het_atom, atom_vector])
+                            for atom in residue:
+                                het_atom = atom.name
+                                atom_vector = atom.get_vector()
+                                center += atom_vector
+                                hetlist[hetflag].append(
+                                    [hetresname, het_atom, atom_vector])
 
-                            if not hetflag in ligand_atoms:
-                                # make the ligand_atoms ready
-                                ligand_atoms[hetflag] = []
-                            ligand_atoms[hetflag].append(
-                                [count_atom_ligand[hetflag], atom_vector, het_atom])
-                            count_atom_ligand[hetflag] += 1
-                        center = center / count_atom_ligand[hetflag]
+                                if not hetflag in ligand_atoms:
+                                    # make the ligand_atoms ready
+                                    ligand_atoms[hetflag] = []
+                                ligand_atoms[hetflag].append(
+                                    [count_atom_ligand[hetflag], atom_vector, het_atom])
+                                count_atom_ligand[hetflag] += 1
+                                ligandcenter[hetflag] = [center, count_atom_ligand[hetflag]]
+
+                        else:
+
+                            for atom in residue:
+                                if check == 0 and hetflag in ligand_atoms:
+                                    continue  # skip when there are many of same ligand
+                                het_atom = atom.name
+
+                                check = 1
+
+                                atom_vector = atom.get_vector()
+                                center += atom_vector
+                                hetlist[hetflag].append(
+                                    [hetresname, het_atom, atom_vector])
+
+                                if not hetflag in ligand_atoms:
+                                    # make the ligand_atoms ready
+                                    ligand_atoms[hetflag] = []
+                                ligand_atoms[hetflag].append(
+                                    [count_atom_ligand[hetflag], atom_vector, het_atom])
+                                count_atom_ligand[hetflag] += 1
+
+
+                        center2 = center / count_atom_ligand[hetflag]
                         ligandcenter[hetflag] = [
-                            center, count_atom_ligand[hetflag]]
+                            center2, count_atom_ligand[hetflag],center]
 
 def remove_hyd(aa,ligand):
     templist = []
@@ -701,6 +752,9 @@ def find_interactions():
     for model in s:
         for chain in model:
             chainid = chain.get_id()
+
+            if peptideligand and chainid==peptideligand:
+                continue
             for residue in chain:
                 aa_resname = residue.get_resname()
                 aa_seqid = str(residue.get_full_id()[3][1])
@@ -714,13 +768,12 @@ def find_interactions():
                     continue  # residue is a hetnam
                 if hetflagtest in hetlist:
                     continue  # residue is a hetnam
-                # print "Looking at ",aa_resname,aa_seqid
+                # print "Looking at ",aa_resname,aa_seqid,chainid
                 countresidue = count_atom
                 # print aaname
                 # could probably make a check here to see if this residue was
                 # anywhere near the ligand, otherwise skip the check per atom
                 for hetflag, atomlist in hetlist.iteritems():
-
                     if not 'CA' in residue:  # prevent errors
                         continue
 
@@ -741,6 +794,7 @@ def find_interactions():
                     tempdistance = radius
 
                     for atom in atomlist:
+                        #print(hetflag,atom)
                         hetresname = atom[0]
                         het_atom = atom[1]
                         het_vector = atom[2]
@@ -900,7 +954,7 @@ def find_interactions():
                                         [aaname, count, round(distance, 2), charged])
 
                                     #FIXME fragment file
-                                    new_results[hetflag]['interactions'].append([aaname,'','aro_ion_protein','aromatic (pi-cation)','aromatic','protein',{'Distance':round(distance, 2),'Angles':angle_degrees}])
+                                    new_results[hetflag]['interactions'].append([aaname,'','aro_ion_protein','aromatic (pi-cation)','aromatic','protein',{'Distance':round(distance, 2)}])
                                     remove_hyd(aaname,hetflag)
 
                     if sum > 2 and aa_resname in CHARGEDAA and ligand_rings[hetflag]:
@@ -1215,8 +1269,8 @@ def pretty_results():
         addresiduestoligand(ligand, pdbname, bindingresidues)
 
 
-def calculate_interactions(pdb, session=None):
-    global pdbname, hetlist, hetlist_display, ligand_atoms, ligand_charged, ligandcenter, ligand_rings, ligand_donors, ligand_acceptors, results, sortedresults, summary_results, inchikeys, smiles, projectdir, new_results
+def calculate_interactions(pdb, session=None, peptide=None):
+    global pdbname, hetlist, hetlist_display, ligand_atoms, ligand_charged, ligandcenter, ligand_rings, ligand_donors, ligand_acceptors, results, sortedresults, summary_results, inchikeys, smiles, projectdir, new_results, peptideligand
 
     hetlist = {}
     hetlist_display = {}
@@ -1232,7 +1286,7 @@ def calculate_interactions(pdb, session=None):
     new_results = {}
     inchikeys = {}
     smiles = {}
-
+    peptideligand = peptide
     if not session:
         pdbname = pdb
         # print "checking normal ",pdbname
@@ -1246,7 +1300,6 @@ def calculate_interactions(pdb, session=None):
         pretty_results()
     else:
         pdbname = pdb
-        # print "checking ",pdbname
         projectdir = '/tmp/interactions/' + session + "/"
         checkdirs()
         hetlist_display = find_ligand_full_names()
@@ -1261,27 +1314,30 @@ def main(argv):
     pdbname = ''
     try:
         # print 'ARGV      :', argv
-        opts, args = getopt.getopt(argv, "p:s:", ["pdb"])
+        opts, args = getopt.getopt(argv, "p:s:c:", ["pdb"])
     except getopt.GetoptError as err:
         print "Remember PDB name -p "
         print err
         sys.exit(2)
 
     session = None
+    peptide = None
     for opt, arg in opts:
         if opt in ("-p"):
             pdbname = arg
         elif opt in ("-s"):
             session = arg
+        elif opt in ("-c"):
+            peptide = arg
 
     if not pdbname:
         print "Remember PDB name -p "
         sys.exit(2)
 
     if session:
-        calculate_interactions(pdbname, session)
+        calculate_interactions(pdbname, session, peptide=peptide)
     else:
-        calculate_interactions(pdbname)
+        calculate_interactions(pdbname, peptide=peptide)
 
 
 if __name__ == "__main__":

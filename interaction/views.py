@@ -373,10 +373,10 @@ def updateall(request):
     # pdbname, 'structures': structures})
 
 
-def runcalculation(pdbname):
+def runcalculation(pdbname, peptide=""):
     calc_script = os.sep.join(
         [os.path.dirname(__file__), 'legacy_functions.py'])
-    call(["python", calc_script, "-p", pdbname],
+    call(["python", calc_script, "-p", pdbname, "-c", peptide],
          stdout=open(devnull, 'wb'), stderr=open(devnull, 'wb'))
     return None
 
@@ -422,7 +422,8 @@ def extract_fragment_rotamer(f, residue, structure, ligand):
         fragment, created = Fragment.objects.get_or_create(
             ligand=ligand, structure=structure, pdbdata=fragment_data, residue=residue)
     else:
-        quit("Could not find " + f)
+        #quit("Could not find " + residue)
+        return None, None
 
     return fragment, rotamer
 
@@ -437,6 +438,8 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
         slug='pdb', url='http://www.rcsb.org/pdb/explore/explore.do?structureId=$index')
     web_link, created = WebLink.objects.get_or_create(
         web_resource=web_resource, index=pdbname)
+
+    annotated_found = 0
 
     structure = Structure.objects.filter(pdb_code=web_link)
     if structure.exists():
@@ -457,6 +460,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
 
         for f in listdir(mypath):
             if os.path.isfile(os.path.join(mypath, f)):
+                annotated = 0
                 #print(mypath + "/" +f)
                 result = yaml.load(open(mypath + "/" + f, 'rb'))
                 output = result
@@ -465,6 +469,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                 temp.append(round(output['score']))
                 temp.append((output['inchikey']).strip())
                 temp.append((output['smiles']).strip())
+
                 results.append(temp)
 
                 if 'prettyname' not in output:
@@ -483,8 +488,10 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                     quit()
 
                 structureligandinteraction = StructureLigandInteraction.objects.filter(
-                    pdb_reference=temp[1], structure=structure, pdb_file=None, annotated=True)
+                    pdb_reference=temp[1], structure=structure, annotated=True) #, pdb_file=None 
                 if structureligandinteraction.exists():  # if the annotated exists
+                    annotated_found = 1
+                    annotated = 1
                     try:
                         structureligandinteraction = structureligandinteraction.get()
                         structureligandinteraction.pdb_file = pdbdata
@@ -548,12 +555,14 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                                     f, residue, structure, ligand)
 
                     #print(interaction[2],interaction[3],interaction[4],interaction[5])
-
-                    interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(
-                                    slug=interaction[2], name=interaction[3], type=interaction[4], direction=interaction[5])
-                    fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(
-                                    structure_ligand_pair=structureligandinteraction, interaction_type=interaction_type, fragment=fragment, rotamer=rotamer)
-
+                    if fragment!=None:
+                        interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(
+                                        slug=interaction[2], name=interaction[3], type=interaction[4], direction=interaction[5])
+                        fragment_interaction, created = ResidueFragmentInteraction.objects.get_or_create(
+                                        structure_ligand_pair=structureligandinteraction, interaction_type=interaction_type, fragment=fragment, rotamer=rotamer)
+                #print("Inserted",len(output['interactions']),"interactions","ligand",temp[1],"annotated",annotated)
+        # if not annotated_found:
+        #     print("No interactions for annotated ligand")
 
     else:
         if debug:
