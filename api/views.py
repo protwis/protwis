@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.conf import settings
 
 from protein.models import Protein, ProteinFamily, Species, ProteinSegment
-from residue.models import Residue
+from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 from structure.models import Structure
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
@@ -18,6 +18,7 @@ from common.alignment import Alignment
 import json, os
 from io import StringIO
 from Bio.PDB import PDBIO
+from collections import OrderedDict
 
 # FIXME add
 # similiarity search
@@ -154,7 +155,7 @@ class SpeciesDetail(generics.RetrieveAPIView):
     """
     Get a single species instance
     \n/species/{latin_name}/
-    \n{latin_name} is a species identifier from Uniprot, e.g. Homo Sapiens
+    \n{latin_name} is a species identifier from Uniprot, e.g. Homo sapiens
     """
 
     queryset = Species.objects.all()
@@ -278,20 +279,34 @@ class StructureDetail(StructureList):
 
 class FamilyAlignment(views.APIView):
     """
-    Get a full sequence alignment of a protein family
+    Get a full sequence alignment of a protein family including a consensus sequence
     \n/alignment/family/{slug}/
     \n{slug} is a protein family identifier, e.g. 001_001_001
     """
 
-    def get(self, request, slug=None, segments=None):
+    def get(self, request, slug=None, segments=None, latin_name=None):
+
         if slug is not None:
-            ps = Protein.objects.filter(sequence_type__slug='wt', source__id=1, family__slug__startswith=slug)
+            # Check for specific species
+            if latin_name is not None:
+                ps = Protein.objects.filter(sequence_type__slug='wt', source__id=1, family__slug__startswith=slug, species__latin_name=latin_name)
+            else:
+                ps = Protein.objects.filter(sequence_type__slug='wt', source__id=1, family__slug__startswith=slug)
             
             if segments is not None:
                 segment_list = segments.split(",")
-                ss = ProteinSegment.objects.filter(slug__in=segment_list, partial=False)
-            else:
-                ss = ProteinSegment.objects.filter(partial=False)
+                generic_list = []
+                TM_list = []
+                for s in segment_list:
+                    # get genric numbering object for numbers and segments for TMs
+                    if "x" in s:
+                        generic_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__slug='gpcrdba')
+                        generic_object.properties = {}
+                        generic_list.append(generic_object)
+                    else:
+                        TM_list.append(s)
+                
+                TMs = ProteinSegment.objects.filter(slug__in=TM_list, partial=False)
 
             # create an alignment object
             a = Alignment()
@@ -299,23 +314,36 @@ class FamilyAlignment(views.APIView):
 
             # load data from selection into the alignment
             a.load_proteins(ps)
-            a.load_segments(ss)
+
+            # load generic numbers and TMs seperately
+            a.load_segments(generic_list)
+            a.load_segments(TMs)
 
             # build the alignment data matrix
             a.build_alignment()
             
+            a.calculate_statistics()
+
+            residue_list = []
+            for aa in a.full_consensus:
+                residue_list.append(aa.amino_acid)
+
             # render the fasta template as string
             response = render_to_string('alignment/alignment_fasta.html', {'a': a}).split("\n")
+            
+            # print(a.full_consensus.items())
+            # for b in a.full_consensus:
+                # print(b)
 
             # convert the list to a dict
-            ali_dict = {}
+            ali_dict = OrderedDict({})
             for row in response:
                 if row.startswith(">"):
                     k = row[1:]
                 else:
                     ali_dict[k] = row
                     k = False
-
+            ali_dict['CONSENSUS'] = ''.join(residue_list)
             return Response(ali_dict)
 
 
@@ -324,9 +352,86 @@ class FamilyAlignmentPartial(FamilyAlignment):
     Get a partial sequence alignment of a protein family
     \n/alignment/family/{slug}/{segments}/
     \n{slug} is a protein family identifier, e.g. 001_001_001
-    \n{segments} is a comma separated list of protein segment identifiers, e.g. TM3,TM5,TM6
+    \n{segments} is a comma separated list of protein segment identifiers and/ or generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     """
 
+class FamilyAlignmentPartialSpecies(FamilyAlignment):
+    """
+    Get a partial sequence alignment of a protein family
+    \n/alignment/family/{slug}/{segments}/{species}
+    \n{slug} is a protein family identifier, e.g. 001_001_001
+    \n{segments} is a comma separated list of protein segment identifiers and/ or generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
+    \n{species} is a species identifier from Uniprot, e.g. Homo sapiens
+    """
+
+
+class ProteinSimilaritySearchAlignment(views.APIView):
+    """
+    Get a segment sequence alignment of two or more proteins ranked by similarity
+    \n/alignment/protein/{proteins}/
+    \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human,cxcr4_human where the first protein is the query protein and the following the proteins to compare it to
+    """
+
+    def get(self, request, proteins=None, segments=None):
+        if proteins is not None:
+            protein_list = proteins.split(",")
+            ps = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=protein_list)
+            
+            if segments is not None:
+                segment_list = segments.split(",")
+                generic_list = []
+                TM_list = []
+                for s in segment_list:
+                    # get genric numbering object for numbers and segments for TMs
+                    if "x" in s:
+                        generic_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__slug='gpcrdba')
+                        generic_object.properties = {}
+                        generic_list.append(generic_object)
+                    else:
+                        TM_list.append(s)
+                
+                TMs = ProteinSegment.objects.filter(slug__in=TM_list, partial=False)
+
+            # create an alignment object
+            a = Alignment()
+            a.show_padding = False
+
+            # load data from selection into the alignment
+            a.load_proteins(ps)
+
+            # load generic numbers and TMs seperately
+            a.load_segments(generic_list)
+            a.load_segments(TMs)
+
+            # build the alignment data matrix
+            a.build_alignment()
+
+            # calculate identity and similarity of each row compared to the reference
+            a.calculate_similarity()
+
+            # render the fasta template as string
+            response = render_to_string('alignment/alignment_fasta.html', {'a': a}).split("\n")
+
+            # convert the list to a dict
+            ali_dict = {}
+            k = False
+            num = 0
+            for i, row in enumerate(response):
+                if row.startswith(">"):
+                    k = row[1:]
+                elif k:
+                    # add the query as 100 identical/similar to the beginning (like on the website)
+                    if num == 0:
+                        a.proteins[num].identity = 100
+                        a.proteins[num].similarity = 100
+                    # order dict after custom list
+                    keyorder = ["similarity","identity","AA"]
+                    ali_dict[k] = {"AA": row, "identity": int(str(a.proteins[num].identity).replace(" ","")), "similarity": int(str(a.proteins[num].similarity).replace(" ",""))}
+                    ali_dict[k] = OrderedDict(sorted(ali_dict[k].items(), key=lambda t: keyorder.index(t[0])))
+                    num+=1
+                    k = False
+            ali_dict_ordered = OrderedDict(sorted(ali_dict.items(), key=lambda x: x[1]['similarity'], reverse=True))
+            return Response(ali_dict_ordered)
 
 class ProteinAlignment(views.APIView):
     """
@@ -342,9 +447,18 @@ class ProteinAlignment(views.APIView):
             
             if segments is not None:
                 segment_list = segments.split(",")
-                ss = ProteinSegment.objects.filter(slug__in=segment_list, partial=False)
-            else:
-                ss = ProteinSegment.objects.filter(partial=False)
+                generic_list = []
+                TM_list = []
+                for s in segment_list:
+                    # get genric numbering object for numbers and segments for TMs
+                    if "x" in s:
+                        generic_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__slug='gpcrdba')
+                        generic_object.properties = {}
+                        generic_list.append(generic_object)
+                    else:
+                        TM_list.append(s)
+                
+                TMs = ProteinSegment.objects.filter(slug__in=TM_list, partial=False)
 
             # create an alignment object
             a = Alignment()
@@ -352,7 +466,10 @@ class ProteinAlignment(views.APIView):
 
             # load data from selection into the alignment
             a.load_proteins(ps)
-            a.load_segments(ss)
+
+            # load generic numbers and TMs seperately
+            a.load_segments(generic_list)
+            a.load_segments(TMs)
 
             # build the alignment data matrix
             a.build_alignment()
@@ -377,7 +494,7 @@ class ProteinAlignmentPartial(ProteinAlignment):
     Get a partial sequence alignment of two or more proteins
     \n/alignment/protein/{proteins}/{segments}/
     \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human
-    \n{segments} is a comma separated list of protein segment identifiers, e.g. TM3,TM5,TM6
+    \n{segments} is a comma separated list of protein segment identifiers and/ or generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     """
 
 
