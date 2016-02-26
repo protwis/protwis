@@ -6,7 +6,7 @@ from django.template.loader import render_to_string
 from django.db.models import Q
 from django.conf import settings
 
-from protein.models import Protein, ProteinFamily, Species, ProteinSegment
+from protein.models import Protein, ProteinConformation, ProteinFamily, Species, ProteinSegment
 from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 from structure.models import Structure
 from structure.assign_generic_numbers_gpcr import GenericNumbering
@@ -21,7 +21,6 @@ from Bio.PDB import PDBIO
 from collections import OrderedDict
 
 # FIXME add
-# similiarity search
 # getMutations
 # numberPDBfile
 
@@ -113,7 +112,7 @@ class ProteinsInFamilyList(generics.ListAPIView):
     
     def get_queryset(self):
         queryset = Protein.objects.all()
-        return queryset.filter(sequence_type__slug='wt', family__slug__startswith=self.kwargs.get('slug'))
+        return queryset.filter(sequence_type__slug='wt', family__slug__startswith=self.kwargs.get('slug'), species__latin_name="Homo sapiens")
 
 
 class ResiduesList(generics.ListAPIView):
@@ -330,10 +329,6 @@ class FamilyAlignment(views.APIView):
 
             # render the fasta template as string
             response = render_to_string('alignment/alignment_fasta.html', {'a': a}).split("\n")
-            
-            # print(a.full_consensus.items())
-            # for b in a.full_consensus:
-                # print(b)
 
             # convert the list to a dict
             ali_dict = OrderedDict({})
@@ -368,15 +363,18 @@ class FamilyAlignmentPartialSpecies(FamilyAlignment):
 class ProteinSimilaritySearchAlignment(views.APIView):
     """
     Get a segment sequence alignment of two or more proteins ranked by similarity
-    \n/alignment/protein/{proteins}/
+    \n/alignment/similarity/{proteins}/
     \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human,cxcr4_human where the first protein is the query protein and the following the proteins to compare it to
+    \n{segments} is a comma separated list of protein segment identifiers and/ or generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     """
 
     def get(self, request, proteins=None, segments=None):
         if proteins is not None:
             protein_list = proteins.split(",")
-            ps = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=protein_list)
-            
+            # first in API should be reference
+            ps = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=protein_list[1:])
+            reference = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=[protein_list[0]])
+
             if segments is not None:
                 segment_list = segments.split(",")
                 generic_list = []
@@ -396,7 +394,8 @@ class ProteinSimilaritySearchAlignment(views.APIView):
             a = Alignment()
             a.show_padding = False
 
-            # load data from selection into the alignment
+            # load data from API into the alignment
+            a.load_reference_protein(reference)
             a.load_proteins(ps)
 
             # load generic numbers and TMs seperately
@@ -405,7 +404,7 @@ class ProteinSimilaritySearchAlignment(views.APIView):
 
             # build the alignment data matrix
             a.build_alignment()
-
+            
             # calculate identity and similarity of each row compared to the reference
             a.calculate_similarity()
 
