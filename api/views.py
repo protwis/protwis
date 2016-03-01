@@ -112,7 +112,8 @@ class ProteinsInFamilyList(generics.ListAPIView):
     
     def get_queryset(self):
         queryset = Protein.objects.all()
-        return queryset.filter(sequence_type__slug='wt', family__slug__startswith=self.kwargs.get('slug'), species__latin_name="Homo sapiens")
+        return queryset.filter(sequence_type__slug='wt', family__slug__startswith=self.kwargs.get('slug'), 
+            species__latin_name="Homo sapiens")
 
 
 class ResiduesList(generics.ListAPIView):
@@ -288,24 +289,33 @@ class FamilyAlignment(views.APIView):
         if slug is not None:
             # Check for specific species
             if latin_name is not None:
-                ps = Protein.objects.filter(sequence_type__slug='wt', source__id=1, family__slug__startswith=slug, species__latin_name=latin_name)
+                ps = Protein.objects.filter(sequence_type__slug='wt', source__id=1, family__slug__startswith=slug, 
+                    species__latin_name=latin_name)
             else:
                 ps = Protein.objects.filter(sequence_type__slug='wt', source__id=1, family__slug__startswith=slug)
             
+            # take the numbering scheme from the first protein
+            s_slug = Protein.objects.get(entry_name=ps[0]).residue_numbering_scheme_id
+
             if segments is not None:
-                segment_list = segments.split(",")
-                generic_list = []
-                TM_list = []
-                for s in segment_list:
-                    # get genric numbering object for numbers and segments for TMs
-                    if "x" in s:
-                        generic_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__slug='gpcrdba')
-                        generic_object.properties = {}
-                        generic_list.append(generic_object)
+                input_list = segments.split(",")
+                # fetch a list of all segments
+                protein_segments = ProteinSegment.objects.filter(partial=False).values_list('slug', flat=True) 
+                gen_list = []
+                segment_list = []
+                for s in input_list:
+                    # add to segment list
+                    if s in protein_segments:
+                        segment_list.append(s)
+                    # get generic numbering object for generic positions
                     else:
-                        TM_list.append(s)
+                        # make sure the query works for all positions
+                        gen_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__id=s_slug)
+                        gen_object.properties = {}
+                        gen_list.append(gen_object)                        
                 
-                TMs = ProteinSegment.objects.filter(slug__in=TM_list, partial=False)
+                # fetch all complete protein_segments
+                ss = ProteinSegment.objects.filter(slug__in=segment_list, partial=False)
 
             # create an alignment object
             a = Alignment()
@@ -315,8 +325,8 @@ class FamilyAlignment(views.APIView):
             a.load_proteins(ps)
 
             # load generic numbers and TMs seperately
-            a.load_segments(generic_list)
-            a.load_segments(TMs)
+            a.load_segments(gen_list)
+            a.load_segments(ss)
 
             # build the alignment data matrix
             a.build_alignment()
@@ -347,7 +357,8 @@ class FamilyAlignmentPartial(FamilyAlignment):
     Get a partial sequence alignment of a protein family
     \n/alignment/family/{slug}/{segments}/
     \n{slug} is a protein family identifier, e.g. 001_001_001
-    \n{segments} is a comma separated list of protein segment identifiers and/ or generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
+    \n{segments} is a comma separated list of protein segment identifiers and/ or 
+    generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     """
 
 class FamilyAlignmentPartialSpecies(FamilyAlignment):
@@ -355,7 +366,8 @@ class FamilyAlignmentPartialSpecies(FamilyAlignment):
     Get a partial sequence alignment of a protein family
     \n/alignment/family/{slug}/{segments}/{species}
     \n{slug} is a protein family identifier, e.g. 001_001_001
-    \n{segments} is a comma separated list of protein segment identifiers and/ or generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
+    \n{segments} is a comma separated list of protein segment identifiers and/ or 
+    generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     \n{species} is a species identifier from Uniprot, e.g. Homo sapiens
     """
 
@@ -364,8 +376,10 @@ class ProteinSimilaritySearchAlignment(views.APIView):
     """
     Get a segment sequence alignment of two or more proteins ranked by similarity
     \n/alignment/similarity/{proteins}/
-    \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human,cxcr4_human where the first protein is the query protein and the following the proteins to compare it to
-    \n{segments} is a comma separated list of protein segment identifiers and/ or generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
+    \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human,cxcr4_human,
+    where the first protein is the query protein and the following the proteins to compare it to
+    \n{segments} is a comma separated list of protein segment identifiers and/ or 
+    generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     """
 
     def get(self, request, proteins=None, segments=None):
@@ -375,20 +389,28 @@ class ProteinSimilaritySearchAlignment(views.APIView):
             ps = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=protein_list[1:])
             reference = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=[protein_list[0]])
 
+            # take the numbering scheme from the first protein
+            s_slug = Protein.objects.get(entry_name=protein_list[0]).residue_numbering_scheme_id
+
             if segments is not None:
-                segment_list = segments.split(",")
-                generic_list = []
-                TM_list = []
-                for s in segment_list:
-                    # get genric numbering object for numbers and segments for TMs
-                    if "x" in s:
-                        generic_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__slug='gpcrdba')
-                        generic_object.properties = {}
-                        generic_list.append(generic_object)
+                input_list = segments.split(",")
+                # fetch a list of all segments
+                protein_segments = ProteinSegment.objects.filter(partial=False).values_list('slug', flat=True) 
+                gen_list = []
+                segment_list = []
+                for s in input_list:
+                    # add to segment list
+                    if s in protein_segments:
+                        segment_list.append(s)
+                    # get generic numbering object for generic positions
                     else:
-                        TM_list.append(s)
+                        # make sure the query works for all positions
+                        gen_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__id=s_slug)
+                        gen_object.properties = {}
+                        gen_list.append(gen_object)                        
                 
-                TMs = ProteinSegment.objects.filter(slug__in=TM_list, partial=False)
+                # fetch all complete protein_segments
+                ss = ProteinSegment.objects.filter(slug__in=segment_list, partial=False)
 
             # create an alignment object
             a = Alignment()
@@ -399,8 +421,8 @@ class ProteinSimilaritySearchAlignment(views.APIView):
             a.load_proteins(ps)
 
             # load generic numbers and TMs seperately
-            a.load_segments(generic_list)
-            a.load_segments(TMs)
+            a.load_segments(gen_list)
+            a.load_segments(ss)
 
             # build the alignment data matrix
             a.build_alignment()
@@ -425,7 +447,8 @@ class ProteinSimilaritySearchAlignment(views.APIView):
                         a.proteins[num].similarity = 100
                     # order dict after custom list
                     keyorder = ["similarity","identity","AA"]
-                    ali_dict[k] = {"AA": row, "identity": int(str(a.proteins[num].identity).replace(" ","")), "similarity": int(str(a.proteins[num].similarity).replace(" ",""))}
+                    ali_dict[k] = {"AA": row, "identity": int(str(a.proteins[num].identity).replace(" ","")), 
+                    "similarity": int(str(a.proteins[num].similarity).replace(" ",""))}
                     ali_dict[k] = OrderedDict(sorted(ali_dict[k].items(), key=lambda t: keyorder.index(t[0])))
                     num+=1
                     k = False
@@ -443,21 +466,28 @@ class ProteinAlignment(views.APIView):
         if proteins is not None:
             protein_list = proteins.split(",")
             ps = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=protein_list)
-            
+
+            # take the numbering scheme from the first protein
+            s_slug = Protein.objects.get(entry_name=protein_list[0]).residue_numbering_scheme_id
+
             if segments is not None:
-                segment_list = segments.split(",")
-                generic_list = []
-                TM_list = []
-                for s in segment_list:
-                    # get genric numbering object for numbers and segments for TMs
-                    if "x" in s:
-                        generic_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__slug='gpcrdba')
-                        generic_object.properties = {}
-                        generic_list.append(generic_object)
+                input_list = segments.split(",")
+                # fetch a list of all segments
+                protein_segments = ProteinSegment.objects.filter(partial=False).values_list('slug', flat=True) 
+                gen_list = []
+                segment_list = []
+                for s in input_list:
+                    # add to segment list
+                    if s in protein_segments:
+                        segment_list.append(s)
+                    # get generic numbering object for generic positions
                     else:
-                        TM_list.append(s)
+                        gen_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__id=s_slug)
+                        gen_object.properties = {}
+                        gen_list.append(gen_object)                        
                 
-                TMs = ProteinSegment.objects.filter(slug__in=TM_list, partial=False)
+                # fetch all complete protein_segments
+                ss = ProteinSegment.objects.filter(slug__in=segment_list, partial=False)
 
             # create an alignment object
             a = Alignment()
@@ -467,8 +497,8 @@ class ProteinAlignment(views.APIView):
             a.load_proteins(ps)
 
             # load generic numbers and TMs seperately
-            a.load_segments(generic_list)
-            a.load_segments(TMs)
+            a.load_segments(gen_list)
+            a.load_segments(ss)
 
             # build the alignment data matrix
             a.build_alignment()
@@ -493,7 +523,8 @@ class ProteinAlignmentPartial(ProteinAlignment):
     Get a partial sequence alignment of two or more proteins
     \n/alignment/protein/{proteins}/{segments}/
     \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human
-    \n{segments} is a comma separated list of protein segment identifiers and/ or generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
+    \n{segments} is a comma separated list of protein segment identifiers and/ or 
+    generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     """
 
 
@@ -516,8 +547,8 @@ class StructureTemplate(views.APIView):
                 ps.append(structure.protein_conformation.protein.parent)
             
             if segments is not None:
-                segment_list = segments.split(",")
-                ss = ProteinSegment.objects.filter(slug__in=segment_list, partial=False)
+                input_list = segments.split(",")
+                ss = ProteinSegment.objects.filter(slug__in=input_list, partial=False)
             else:
                 ss = ProteinSegment.objects.filter(partial=False, category='helix')
 

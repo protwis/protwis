@@ -21,7 +21,7 @@ urlpatterns = [
     url(r'^residues/(?P<entry_name>[^/]+)/$', views.ResiduesList.as_view(), name='residues'),
     url(r'^residues/extended/(?P<entry_name>[^/]+)/$', views.ResiduesExtendedList.as_view(), name='residues-extended'),
     
-url(r'^alignment/family/(?P<slug>[^/]+)/$', views.FamilyAlignment.as_view(), name='familyalignment'),
+    url(r'^alignment/family/(?P<slug>[^/]+)/$', views.FamilyAlignment.as_view(), name='familyalignment'),
     url(r'^alignment/family/(?P<slug>[^/]+)/(?P<segments>[^/]+)/$', views.FamilyAlignmentPartial.as_view(),
         name='familyalignment-partial'),
     url(r'^alignment/family/(?P<slug>[^/]+)/(?P<segments>[^/]+)/(?P<latin_name>[^/]+)/$', views.FamilyAlignmentPartialSpecies.as_view(),
