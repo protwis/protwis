@@ -45,7 +45,7 @@ class ConstructInsertion(models.Model):
         return self.name
 
     class Meta():
-        db_table = 'construct_aux_protein'
+        db_table = 'construct_insertion'
 
 
 class ConstructInsertionType(models.Model):
@@ -56,7 +56,7 @@ class ConstructInsertionType(models.Model):
         return self.name
 
     class Meta():
-        db_table = 'construct_aux_protein_type'
+        db_table = 'construct_insertion_type'
 
 
 class Chemical(models.Model):
