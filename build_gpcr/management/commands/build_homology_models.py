@@ -260,20 +260,20 @@ class HomologyModeling(object):
         '''
         raw_helix_ends = self.fetch_struct_helix_ends_from_array(main_pdb_array)
         anno_helix_ends = self.fetch_struct_helix_ends_from_db(main_structure)
-
-#        self.write_homology_model_pdb('./structure/gpr139_test1.pdb', main_pdb_array, a)
         parser = GPCRDBParsingPDB()
         mods = OrderedDict()
         for raw_seg, anno_seg in zip(raw_helix_ends, anno_helix_ends):
             s_dif = parser.gn_comparer(raw_helix_ends[raw_seg][0],anno_helix_ends[anno_seg][0],main_structure.protein_conformation)
             e_dif = parser.gn_comparer(raw_helix_ends[raw_seg][1],anno_helix_ends[anno_seg][1],main_structure.protein_conformation)
             mods[raw_seg] = [s_dif,e_dif]
-        self.helix_ends = anno_helix_ends 
+        self.helix_ends = anno_helix_ends
+        
 ####### helix end annotation to be implemented        
         
         
-        modifications = {'added':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[['3x21'],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],'TM7':[[],[]]},
+        modifications = {'added':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],'TM7':[[],[]]},
                          'removed':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],'TM7':[[],[]]}}
+
         for ref_seg, temp_seg, align_seg in zip(a.reference_dict, a.template_dict, a.alignment_dict):
             mid = len(a.reference_dict[ref_seg])/2
             for ref_res, temp_res, align_res in zip(a.reference_dict[ref_seg],a.template_dict[temp_seg],a.alignment_dict[align_seg]):
@@ -301,13 +301,9 @@ class HomologyModeling(object):
                 if len(modifications['removed'][ref_seg][1])>0:
                     self.helix_ends[ref_seg][1] = parser.gn_indecer(modifications['removed'][ref_seg][1][0], 'x', -1)
                 if len(modifications['added'][ref_seg][0])>0:
-                    helix_sim_table = self.run_alignment(core_alignment=False,segments=[ref_seg]).similarity_table
-                    print(ref_seg)
                     pprint.pprint(modifications)
-                    print('REFERENCE:',self.helix_ends)
-                    for struct in helix_sim_table:
+                    for struct in self.similarity_table:
                         if struct!=main_structure:
-                            print(struct)
                             alt_helix_ends = self.fetch_struct_helix_ends_from_db(struct)
                             try:
                                 if parser.gn_comparer(alt_helix_ends[ref_seg][0],self.helix_ends[ref_seg][0],struct.protein_conformation)<=0:
@@ -318,14 +314,21 @@ class HomologyModeling(object):
                                     superpose = sp.OneSidedSuperpose(reference,template,4,0)
                                     sup_residues = superpose.run()
                                     new_residues = {gn:atoms for gn,atoms in sup_residues.items() if gn.replace('.','x') not in ref_keys}
-                                    new_seg_array = OrderedDict()
-                                    
+                                    for gn, atoms in main_pdb_array[ref_seg].items():
+                                        gn_ = gn.replace('.','x')
+                                        new_residues[gn] = atoms
+                                        a.template_dict[temp_seg][gn_] = PDB.Polypeptide.three_to_one(
+                                                                         atoms[0].get_parent().get_resname())
+                                        if a.template_dict[temp_seg][gn_]==a.reference_dict[ref_seg][gn_]:
+                                            a.alignment_dict[ref_seg][gn_] = a.reference_dict[ref_seg][gn_]
+                                        else:
+                                            a.alignment_dict[ref_seg][gn_] = '.'
+                                    main_pdb_array[ref_seg] = new_residues
                                     break
                             except:
                                 pass
                 if len(modifications['added'][ref_seg][1])>0:
-                    helix_sim_table = self.run_alignment(core_alignment=False,segments=[ref_seg]).similarity_table
-                    for struct in helix_sim_table:
+                    for struct in self.similarity_table:
                         if struct!=main_structure:
                             alt_helix_ends = self.fetch_struct_helix_ends_from_db(struct)
                             try:
@@ -350,16 +353,9 @@ class HomologyModeling(object):
                                     break
                             except:
                                 pass
-                
+        return main_pdb_array, a
         
-#        self.write_homology_model_pdb('./structure/gpr139_test2.pdb',main_pdb_array, a)
-#        pprint.pprint(modifications)
-#        pprint.pprint(a.reference_dict)
-#        pprint.pprint(a.template_dict)
-#        pprint.pprint(a.alignment_dict)
-#        pprint.pprint(main_pdb_array)
-
-
+        
     def run_alignment(self, core_alignment=True, query_states='default', 
                       segments=['TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','ECL2','TM5','TM6','TM7','H8'], 
                       order_by='similarity'):
