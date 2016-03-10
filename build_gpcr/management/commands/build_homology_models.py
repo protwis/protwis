@@ -236,13 +236,16 @@ class HomologyModeling(object):
         for j in annotated:
             if j.protein_segment.slug[0]=='T':
                 if j.start!=0:
+                    while Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=j.start).generic_number==None:
+                        j.start+=1
                     sa = Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=j.start)
                     ends[j.protein_segment.slug][0] = sa.generic_number.label
                 if j.end!=0:
+                    while Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=j.end).generic_number==None:
+                        j.end-=1
                     ea = Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=j.end)
                     ends[j.protein_segment.slug][1] = ea.generic_number.label
-        return ends
-        
+        return ends      
 
     def fetch_struct_helix_ends_from_array(self, array):
         '''
@@ -258,7 +261,7 @@ class HomologyModeling(object):
         raw_helix_ends = self.fetch_struct_helix_ends_from_array(main_pdb_array)
         anno_helix_ends = self.fetch_struct_helix_ends_from_db(main_structure)
 
-        
+#        self.write_homology_model_pdb('./structure/gpr139_test1.pdb', main_pdb_array, a)
         parser = GPCRDBParsingPDB()
         mods = OrderedDict()
         for raw_seg, anno_seg in zip(raw_helix_ends, anno_helix_ends):
@@ -269,7 +272,7 @@ class HomologyModeling(object):
 ####### helix end annotation to be implemented        
         
         
-        modifications = {'added':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],'TM7':[[],[]]},
+        modifications = {'added':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[['3x21'],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],'TM7':[[],[]]},
                          'removed':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],'TM7':[[],[]]}}
         for ref_seg, temp_seg, align_seg in zip(a.reference_dict, a.template_dict, a.alignment_dict):
             mid = len(a.reference_dict[ref_seg])/2
@@ -298,29 +301,63 @@ class HomologyModeling(object):
                 if len(modifications['removed'][ref_seg][1])>0:
                     self.helix_ends[ref_seg][1] = parser.gn_indecer(modifications['removed'][ref_seg][1][0], 'x', -1)
                 if len(modifications['added'][ref_seg][0])>0:
-                    pass
-                elif len(modifications['added'][ref_seg][1])>0:
-                    for struct in list(self.similarity_table.keys())[1:]:
-                        alt_helix_ends = self.fetch_struct_helix_ends_from_db(struct)
-                        print(self.helix_ends[ref_seg][1])
-                        print(alt_helix_ends[ref_seg][1])
-                        if parser.gn_comparer(alt_helix_ends[ref_seg][1],self.helix_ends[ref_seg][1],struct.protein_conformation)>=0:
-                            all_keys = list(a.reference_dict[ref_seg].keys())[-1*(len(modifications['added'][ref_seg][1])+4):]
-                            ref_keys = [i for i in all_keys if i not in modifications['added'][ref_seg][1]]
-                            reference = parser.fetch_residues_from_pdb(main_structure,ref_keys)
-                            template = parser.fetch_residues_from_pdb(struct,all_keys)
-                            superpose = sp.OneSidedSuperpose(reference,template,4,1)
-                            new_residues = superpose.run()
-                            print(new_residues)
-                            break
+                    helix_sim_table = self.run_alignment(core_alignment=False,segments=[ref_seg]).similarity_table
+                    print(ref_seg)
+                    pprint.pprint(modifications)
+                    print('REFERENCE:',self.helix_ends)
+                    for struct in helix_sim_table:
+                        if struct!=main_structure:
+                            print(struct)
+                            alt_helix_ends = self.fetch_struct_helix_ends_from_db(struct)
+                            try:
+                                if parser.gn_comparer(alt_helix_ends[ref_seg][0],self.helix_ends[ref_seg][0],struct.protein_conformation)<=0:
+                                    all_keys = ['3x21']+list(a.reference_dict[ref_seg].keys())[:len(modifications['added'][ref_seg][0])+3]
+                                    ref_keys = [i for i in all_keys if i not in modifications['added'][ref_seg][0]]
+                                    reference = parser.fetch_residues_from_pdb(main_structure,ref_keys)
+                                    template = parser.fetch_residues_from_pdb(struct,all_keys)
+                                    superpose = sp.OneSidedSuperpose(reference,template,4,0)
+                                    sup_residues = superpose.run()
+                                    new_residues = {gn:atoms for gn,atoms in sup_residues.items() if gn.replace('.','x') not in ref_keys}
+                                    new_seg_array = OrderedDict()
+                                    
+                                    break
+                            except:
+                                pass
+                if len(modifications['added'][ref_seg][1])>0:
+                    helix_sim_table = self.run_alignment(core_alignment=False,segments=[ref_seg]).similarity_table
+                    for struct in helix_sim_table:
+                        if struct!=main_structure:
+                            alt_helix_ends = self.fetch_struct_helix_ends_from_db(struct)
+                            try:
+                                if parser.gn_comparer(alt_helix_ends[ref_seg][1],self.helix_ends[ref_seg][1],struct.protein_conformation)>=0:
+                                    all_keys = list(a.reference_dict[ref_seg].keys())[-1*(len(modifications['added'][ref_seg][1])+4):]
+                                    ref_keys = [i for i in all_keys if i not in modifications['added'][ref_seg][1]]
+                                    reference = parser.fetch_residues_from_pdb(main_structure,ref_keys)
+                                    template = parser.fetch_residues_from_pdb(struct,all_keys)
+                                    superpose = sp.OneSidedSuperpose(reference,template,4,1)
+                                    sup_residues = superpose.run()
+                                    new_residues = {gn:atoms for gn,atoms in sup_residues.items() if gn.replace('.','x') not in ref_keys}
+                                    for gn, atoms in new_residues.items():
+                                        gn_ = gn.replace('.','x')
+                                        if gn_ in modifications['added'][ref_seg][1]:
+                                            main_pdb_array[ref_seg][gn] = atoms
+                                            a.template_dict[ref_seg][gn_] = PDB.Polypeptide.three_to_one(
+                                                                            atoms[0].get_parent().get_resname())
+                                            if a.template_dict[ref_seg][gn_]==a.reference_dict[ref_seg][gn_]:
+                                                a.alignment_dict[ref_seg][gn_] = a.reference_dict[ref_seg][gn_]
+                                            else:
+                                                a.alignment_dict[ref_seg][gn_] = '.'
+                                    break
+                            except:
+                                pass
                 
         
-
-        pprint.pprint(modifications)
-        pprint.pprint(a.reference_dict)
-        pprint.pprint(a.template_dict)
-        pprint.pprint(a.alignment_dict)
-        pprint.pprint(main_pdb_array)
+#        self.write_homology_model_pdb('./structure/gpr139_test2.pdb',main_pdb_array, a)
+#        pprint.pprint(modifications)
+#        pprint.pprint(a.reference_dict)
+#        pprint.pprint(a.template_dict)
+#        pprint.pprint(a.alignment_dict)
+#        pprint.pprint(main_pdb_array)
 
 
     def run_alignment(self, core_alignment=True, query_states='default', 
