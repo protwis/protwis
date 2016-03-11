@@ -6,12 +6,14 @@ from django.template.loader import render_to_string
 from django.db.models import Q
 from django.conf import settings
 
+from interaction.models import ResidueFragmentInteraction
 from protein.models import Protein, ProteinConformation, ProteinFamily, Species, ProteinSegment
 from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 from structure.models import Structure
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
-    ResidueExtendedSerializer, StructureSerializer)
+                             ResidueExtendedSerializer, StructureSerializer,
+                             StructureLigandInteractionSerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 
@@ -602,3 +604,19 @@ class StructureAssignGenericNumbers(views.APIView):
         print(len(out_stream.getvalue()))
         # filename="{}_GPCRdb.pdb".format(root)
         return Response(out_stream.getvalue())
+
+
+class StructureLigandInteractions(generics.ListAPIView):
+    """
+    Get a list of interactions between structure and ligand
+    \n/structure/{pdb_code}/interaction/{ligand_name
+    \n{pdb_code} is a structure identifier from the Protein Data Bank, e.g. 2RH1
+    \n{ligand_name} is a ligand name contained in the structure, e.g. Carazolol
+    """
+    serializer_class = StructureLigandInteractionSerializer
+
+    def get_queryset(self):
+        queryset = ResidueFragmentInteraction.objects.all()
+        return queryset.filter(structure_ligand_pair__structure__pdb_code__index=self.kwargs.get('pdb_code'),
+                               structure_ligand_pair__ligand__name=self.kwargs.get('ligand_name'),
+                               structure_ligand_pair__annotated=True)

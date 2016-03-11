@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from interaction.models import ResidueFragmentInteraction
 from protein.models import Protein, ProteinConformation, ProteinFamily, Species, ProteinSource, ProteinSegment
 from residue.models import Residue, ResidueNumberingScheme, ResidueGenericNumber
 from structure.models import Structure
@@ -79,3 +80,10 @@ class StructureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Structure
         fields = ('pdb_code', 'resolution', 'protein_conformation')
+
+
+class StructureLigandInteractionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ResidueFragmentInteraction
+        # TODO change fields to ('pdb_code', 'ligand_name', 'amino_acid', 'sequence_number', 'generic_number', 'segment', 'interaction_type_name')
+        fields = ('structure_ligand_pair', 'rotamer', 'fragment', 'interaction_type')
