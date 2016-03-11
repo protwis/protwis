@@ -856,7 +856,7 @@ class AlignedReferenceTemplate(Alignment):
         template is already known.
     '''
     def __init__(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
-                 provide_similarity_table=None):
+                 provide_similarity_table=None, main_pdb_array=None):
         super(AlignedReferenceTemplate, self).__init__()
         self.logger = logging.getLogger('homology_modeling')
         self.segment_labels = segments
@@ -883,6 +883,8 @@ class AlignedReferenceTemplate(Alignment):
             self.provide_similarity_table = None
         else:
             self.provide_similarity_table = provide_similarity_table
+        if main_pdb_array!=None:
+            self.main_pdb_array = main_pdb_array
         if 'TM' in segment_type: #and ('IC' not in segment_type or 'EC' not in segment_type):
             self.similarity_table = self.create_helix_similarity_table()
         elif 'IC' in segment_type or 'EC' in segment_type and 'TM' not in segment_type:
@@ -976,24 +978,35 @@ class AlignedReferenceTemplate(Alignment):
         self.main_template_protein = self.main_template_structure.protein_conformation.protein.parent        
         ref_seq = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
                                          protein_segment__slug=self.segment_labels[0])
-        segment = ProteinSegment.objects.get(slug=self.segment_labels[0])
-        orig_before_residues = Residue.objects.filter(
-                                    protein_conformation__protein=self.main_template_protein, 
-                                    protein_segment__id=segment.id-1)
-        orig_after_residues = Residue.objects.filter(
-                                    protein_conformation__protein=self.main_template_protein, 
-                                    protein_segment__id=segment.id+1)
-        orig_before_gns = []
-        orig_after_gns = []
-        for res in orig_before_residues.reverse():
-            if len(orig_before_gns)<4:
-                orig_before_gns.append(res.generic_number.label)
-        for res in orig_after_residues:
-            if len(orig_after_gns)<4:
-                orig_after_gns.append(res.generic_number.label)
-        orig_before_gns = list(reversed(orig_before_gns))
+#        segment = ProteinSegment.objects.get(slug=self.segment_labels[0])
+#        orig_before_residues = Residue.objects.filter(
+#                                    protein_conformation__protein=self.main_template_protein, 
+#                                    protein_segment__id=segment.id-1)
+#        orig_after_residues = Residue.objects.filter(
+#                                    protein_conformation__protein=self.main_template_protein, 
+#                                    protein_segment__id=segment.id+1)
+#        orig_before_gns = []
+#        orig_after_gns = []
+#        for res in orig_before_residues.reverse():
+#            if len(orig_before_gns)<4:
+#                orig_before_gns.append(res.generic_number.label)
+#        for res in orig_after_residues:
+#            if len(orig_after_gns)<4:
+#                orig_after_gns.append(res.generic_number.label)
+#        orig_before_gns = list(reversed(orig_before_gns))
+                                         
+        segment_order = ['TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','ECL2','TM5','ICL3','TM6','ECL3','TM7','H8']
+        prev_seg = segment_order[segment_order.index(self.segment_labels[0])-1]
+        next_seg = segment_order[segment_order.index(self.segment_labels[0])+1]
+        orig_before_gns = [i.replace('.','x') for i in list(self.main_pdb_array[prev_seg].keys())[-4:]]
+        orig_after_gns = [j.replace('.','x') for j in list(self.main_pdb_array[next_seg].keys())[:4]]                                         
+                                         
         last_before_gn = orig_before_gns[-1]
         first_after_gn = orig_after_gns[0]
+
+        print(self.segment_labels)
+        print(orig_before_gns)
+        print(orig_after_gns)
         if self.segment_labels[0]=='ECL2':
             try:
                 ref_ECL2 = self.ECL2_slicer(ref_seq)
