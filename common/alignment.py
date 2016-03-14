@@ -1004,9 +1004,6 @@ class AlignedReferenceTemplate(Alignment):
         last_before_gn = orig_before_gns[-1]
         first_after_gn = orig_after_gns[0]
 
-        print(self.segment_labels)
-        print(orig_before_gns)
-        print(orig_after_gns)
         if self.segment_labels[0]=='ECL2':
             try:
                 ref_ECL2 = self.ECL2_slicer(ref_seq)

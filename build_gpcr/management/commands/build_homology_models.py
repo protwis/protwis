@@ -39,7 +39,7 @@ def homology_model_multiprocessing(receptor):
         
 class Command(BaseCommand):    
     def handle(self, *args, **options):
-        Homology_model = HomologyModeling('gp139_human', 'Inactive', ['Inactive'])
+        Homology_model = HomologyModeling('gpr3_human', 'Inactive', ['Inactive'])
         alignment = Homology_model.run_alignment()
         Homology_model.build_homology_model(alignment)
 #        receptor_list = ['gp151_human', 
@@ -282,8 +282,8 @@ class HomologyModeling(object):
                     a.alignment_dict[raw_seg][gn]='x'
         self.helix_ends = raw_helix_ends
 
-        modifications = {'added':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],'TM7':[[],[]]},
-                         'removed':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],'TM7':[[],[]]}}
+        modifications = {'added':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],'TM7':[[],[]], 'H8':[[],[]]},
+                         'removed':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],'TM7':[[],[]], 'H8':[[],[]]}}
         for ref_seg, temp_seg, align_seg in zip(a.reference_dict, a.template_dict, a.alignment_dict):
             mid = len(a.reference_dict[ref_seg])/2
             for ref_res, temp_res, align_res in zip(a.reference_dict[ref_seg],a.template_dict[temp_seg],a.alignment_dict[align_seg]):
@@ -316,7 +316,6 @@ class HomologyModeling(object):
                             alt_helix_ends = self.fetch_struct_helix_ends_from_db(struct)
                             try:
                                 if parser.gn_comparer(alt_helix_ends[ref_seg][0],self.helix_ends[ref_seg][0],struct.protein_conformation)<=0:
-                                    pprint.pprint(modifications)
                                     all_keys = list(a.reference_dict[ref_seg].keys())[:len(modifications['added'][ref_seg][0])+4]
                                     ref_keys = [i for i in all_keys if i not in modifications['added'][ref_seg][0]]
                                     reference = parser.fetch_residues_from_pdb(main_structure,ref_keys)
@@ -369,6 +368,8 @@ class HomologyModeling(object):
                                     break
                             except:
                                 pass
+        pprint.pprint(modifications)
+        print(main_structure)
         return main_pdb_array, a
         
         
@@ -443,16 +444,12 @@ class HomologyModeling(object):
         a = ref_temp_alignment[0]
         main_pdb_array = ref_temp_alignment[1]
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
-        
-#        pprint.pprint(a.reference_dict)
-#        pprint.pprint(a.template_dict)
-#        pprint.pprint(a.alignment_dict)
-#        pprint.pprint(main_pdb_array)
+        parse = GPCRDBParsingPDB()
         
         # loops
         if loops==True:
             loop_stat = OrderedDict()
-            print(self.loop_template_table)
+#            print(self.loop_template_table)
             for label, structures in self.loop_template_table.items():
                 loop = Loops(self.reference_protein, label, structures, self.main_structure)
                 loop_template = loop.fetch_loop_residues(main_pdb_array)
@@ -472,6 +469,15 @@ class HomologyModeling(object):
                     loop_stat[label] = loop.loop_output_structure
             self.statistics.add_info('loops', loop_stat)
             self.loops = loop_stat
+        
+#        print(self.main_structure)
+        for i,j,k,l in zip(a.reference_dict,a.template_dict,a.alignment_dict,main_pdb_array):
+            for q,w,e,r in zip(a.reference_dict[i],a.template_dict[j],a.alignment_dict[k],main_pdb_array[l]):
+                print(q,a.reference_dict[i][q],w,a.template_dict[j][w],e,a.alignment_dict[k][e],r,main_pdb_array[l][r])   
+#        pprint.pprint(a.reference_dict)
+#        pprint.pprint(a.template_dict)
+#        pprint.pprint(a.alignment_dict)
+#        pprint.pprint(main_pdb_array)
         
         print('Integrate loops: ',datetime.now() - startTime)
 
@@ -1086,32 +1092,23 @@ class Loops(object):
         ''' Fetch list of Atom objects of the loop when there is an available template. Returns an OrderedDict().
         '''
         if self.loop_template_structures!=None:
-            parse = GPCRDBParsingPDB()
-            print(self.loop_label)
-            segment = ProteinSegment.objects.get(slug=self.loop_label)
-            orig_before_residues = Residue.objects.filter(
-                                        protein_conformation=self.main_structure.protein_conformation, 
-                                        protein_segment__id=segment.id-1)
-            print(list(self.segment_order.keys()).index(self.loop_label))                  
-            orig_after_residues = Residue.objects.filter(
-                                        protein_conformation=self.main_structure.protein_conformation, 
-                                        protein_segment__id=segment.id+1)
-            orig_before_gns = []
-            orig_after_gns = []
-            for res in orig_before_residues.reverse():
-                if len(orig_before_gns)<4:
-                    orig_before_gns.append(res.generic_number.label)
-            for res in orig_after_residues:
-                if len(orig_after_gns)<4:
-                    orig_after_gns.append(res.generic_number.label)
-            orig_before_gns = list(reversed(orig_before_gns))
+            parse = GPCRDBParsingPDB()            
+            seg_list = list(self.segment_order.keys())
+            prev_seg = seg_list[seg_list.index(self.loop_label)-1]
+            next_seg = seg_list[seg_list.index(self.loop_label)+1]
+            orig_before_gns = [i.replace('.','x') for i in list(main_pdb_array[prev_seg].keys())[-4:]]
+            orig_after_gns = [j.replace('.','x') for j in list(main_pdb_array[next_seg].keys())[:4]]
             last_before_gn = orig_before_gns[-1]
             first_after_gn = orig_after_gns[0]
-            ref_res = Residue.objects.filter(protein_conformation__protein=self.reference_protein,
-                                             protein_segment__slug='ECL2')
-            r_first = list(ref_res)[0].sequence_number
-            r_last = list(ref_res)[-1].sequence_number
-            r_x50 = ref_res.get(generic_number__label='45x50').sequence_number
+            if self.loop_label=='ECL2':
+                try:
+                    ref_res = Residue.objects.filter(protein_conformation__protein=self.reference_protein,
+                                                     protein_segment__slug='ECL2')
+                    r_first = list(ref_res)[0].sequence_number
+                    r_last = list(ref_res)[-1].sequence_number
+                    r_x50 = ref_res.get(generic_number__label='45x50').sequence_number
+                except:
+                    pass
             if (self.loop_label=='ECL2' and 'ECL2_1' not in self.loop_template_structures) or self.loop_label!='ECL2':
                 for template in self.loop_template_structures:
                     output = OrderedDict()
@@ -1169,79 +1166,80 @@ class Loops(object):
                         x50 = main_temp_seq.get(generic_number__label='45x50').sequence_number
                         break
                 orig_residues1 = parse.fetch_residues_from_pdb(self.main_structure,orig_before_gns+['45x50','45x51','45x52'])
-                for first_temp in self.loop_template_structures['ECL2_1']:
-                    if first_temp==self.main_structure:
-                        ECL2_1 = parse.fetch_residues_from_pdb(self.main_structure,list(range(list(main_temp_seq)[0].sequence_number,x50)))
-                        no_first_temp=False
-                        break
-                    else:
-                        try:
-                            b_num = Residue.objects.get(protein_conformation=first_temp.protein_conformation,
-                                                        generic_number__label=last_before_gn).sequence_number
-                            before4 = Residue.objects.filter(protein_conformation=first_temp.protein_conformation, 
-                                                             sequence_number__in=[b_num,b_num-1,b_num-2,b_num-3])
-                            alt_mid1 = Residue.objects.filter(protein_conformation=first_temp.protein_conformation,
-                                                              protein_segment__slug=self.loop_label, 
-                                                              generic_number__label__in=['45x50','45x51','45x52'])
-                            alt1_x50 = alt_mid1.get(generic_number__label='45x50').sequence_number
-                            loop_res1 = Residue.objects.filter(protein_conformation=first_temp.protein_conformation,
-                                                               protein_segment__slug=self.loop_label,
-                                                               sequence_number__in=list(range(b_num, alt1_x50)))
-                            before_gns = [x.sequence_number for x in before4]
-                            mid_gns1 = [x.sequence_number for x in loop_res1]
-                            alt_residues1 = parse.fetch_residues_from_pdb(first_temp,before_gns+mid_gns1+['45x50','45x51','45x52'])
-                            superpose = sp.LoopSuperpose(orig_residues1,alt_residues1,ECL2=True,part=1)
-                            new_residues = superpose.run()
-                            key_list = list(new_residues.keys())[4:-3]
-                            for key in key_list:
-                                ECL2_1["1_"+key] = new_residues[key]
+
+                if self.loop_template_structures['ECL2_1']==None:
+                    no_first_temp=True
+                else:
+                    for first_temp in self.loop_template_structures['ECL2_1']:
+                        if first_temp==self.main_structure:
+                            ECL2_1 = parse.fetch_residues_from_pdb(self.main_structure,list(range(list(main_temp_seq)[0].sequence_number,x50)))
                             no_first_temp=False
                             break
-                        except:
-                            no_first_temp=True
-#####insert
-#                no_first_temp=True
-#                ECL2_1=OrderedDict()
-###########
+                        else:
+                            try:
+                                b_num = Residue.objects.get(protein_conformation=first_temp.protein_conformation,
+                                                            generic_number__label=last_before_gn).sequence_number
+                                before4 = Residue.objects.filter(protein_conformation=first_temp.protein_conformation, 
+                                                                 sequence_number__in=[b_num,b_num-1,b_num-2,b_num-3])
+                                alt_mid1 = Residue.objects.filter(protein_conformation=first_temp.protein_conformation,
+                                                                  protein_segment__slug=self.loop_label, 
+                                                                  generic_number__label__in=['45x50','45x51','45x52'])
+                                alt1_x50 = alt_mid1.get(generic_number__label='45x50').sequence_number
+                                loop_res1 = Residue.objects.filter(protein_conformation=first_temp.protein_conformation,
+                                                                   protein_segment__slug=self.loop_label,
+                                                                   sequence_number__in=list(range(b_num, alt1_x50)))
+                                before_gns = [x.sequence_number for x in before4]
+                                mid_gns1 = [x.sequence_number for x in loop_res1]
+                                alt_residues1 = parse.fetch_residues_from_pdb(first_temp,before_gns+mid_gns1+['45x50','45x51','45x52'])
+                                superpose = sp.LoopSuperpose(orig_residues1,alt_residues1,ECL2=True,part=1)
+                                new_residues = superpose.run()
+                                key_list = list(new_residues.keys())[4:-3]
+                                for key in key_list:
+                                    ECL2_1["1_"+key] = new_residues[key]
+                                no_first_temp=False
+                                break
+                            except:
+                                no_first_temp=True
+
                 if no_first_temp==True:
                     for i in range(1,r_x50-r_first+1):
                         ECL2_1['1_'+str(i)]='x'
                         first_temp=None
                 orig_residues2 = parse.fetch_residues_from_pdb(self.main_structure,['45x50','45x51','45x52']+orig_after_gns)
-                for second_temp in self.loop_template_structures['ECL2_2']:
-                    if second_temp==self.main_structure:
-                        ECL2_2 = parse.fetch_residues_from_pdb(self.main_structure,list(range(x50+3,list(main_temp_seq)[-1].sequence_number+1)))
-                        no_second_temp=False
-                        break
-                    else:
-                        try:
-                            a_num = Residue.objects.get(protein_conformation=second_temp.protein_conformation,
-                                                        generic_number__label=first_after_gn).sequence_number
-                            after4 = Residue.objects.filter(protein_conformation=first_temp.protein_conformation, 
-                                                            sequence_number__in=[a_num,a_num+1,a_num+2,a_num+3])
-                            alt_mid2 = Residue.objects.filter(protein_conformation=second_temp.protein_conformation,
-                                                              protein_segment__slug=self.loop_label, 
-                                                              generic_number__label__in=['45x50','45x51','45x52'])
-                            alt2_x50 = alt_mid2.get(generic_number__label='45x50').sequence_number
-                            loop_res2 = Residue.objects.filter(protein_conformation=second_temp.protein_conformation,
-                                                               protein_segment__slug=self.loop_label,
-                                                               sequence_number__in=list(range(alt2_x50+3, a_num)))
-                            mid_gns2 = [x.sequence_number for x in loop_res2]
-                            after_gns = [x.sequence_number for x in after4]
-                            alt_residues2 = parse.fetch_residues_from_pdb(second_temp,['45x50','45x51','45x52']+mid_gns2+after_gns)
-                            superpose = sp.LoopSuperpose(orig_residues2,alt_residues2,ECL2=True,part=2)
-                            new_residues = superpose.run()
-                            key_list = list(new_residues.keys())[3:-4]
-                            for key in key_list:
-                                ECL2_2["2_"+key] = new_residues[key]
+                if self.loop_template_structures['ECL2_2']==None:
+                    no_second_temp=True
+                else:
+                    for second_temp in self.loop_template_structures['ECL2_2']:
+                        if second_temp==self.main_structure:
+                            ECL2_2 = parse.fetch_residues_from_pdb(self.main_structure,list(range(x50+3,list(main_temp_seq)[-1].sequence_number+1)))
                             no_second_temp=False
                             break
-                        except:
-                            no_second_temp=True
-#####insert
-#                no_second_temp=True
-#                ECL2_2=OrderedDict()
-###########
+                        else:
+                            try:
+                                a_num = Residue.objects.get(protein_conformation=second_temp.protein_conformation,
+                                                            generic_number__label=first_after_gn).sequence_number
+                                after4 = Residue.objects.filter(protein_conformation=first_temp.protein_conformation, 
+                                                                sequence_number__in=[a_num,a_num+1,a_num+2,a_num+3])
+                                alt_mid2 = Residue.objects.filter(protein_conformation=second_temp.protein_conformation,
+                                                                  protein_segment__slug=self.loop_label, 
+                                                                  generic_number__label__in=['45x50','45x51','45x52'])
+                                alt2_x50 = alt_mid2.get(generic_number__label='45x50').sequence_number
+                                loop_res2 = Residue.objects.filter(protein_conformation=second_temp.protein_conformation,
+                                                                   protein_segment__slug=self.loop_label,
+                                                                   sequence_number__in=list(range(alt2_x50+3, a_num)))
+                                mid_gns2 = [x.sequence_number for x in loop_res2]
+                                after_gns = [x.sequence_number for x in after4]
+                                alt_residues2 = parse.fetch_residues_from_pdb(second_temp,['45x50','45x51','45x52']+mid_gns2+after_gns)
+                                superpose = sp.LoopSuperpose(orig_residues2,alt_residues2,ECL2=True,part=2)
+                                new_residues = superpose.run()
+                                key_list = list(new_residues.keys())[3:-4]
+                                for key in key_list:
+                                    ECL2_2["2_"+key] = new_residues[key]
+                                no_second_temp=False
+                                break
+                            except:
+                                no_second_temp=True
+
                 if no_second_temp==True:
                     for j in range(1,r_last-r_x50-1):
                         ECL2_2['2_'+str(j)]='x'
