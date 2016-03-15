@@ -277,3 +277,14 @@ function SetGroupMinMatch(selection_type, group_id, min_match) {
         },
     });
 }
+function ReadSiteFromFile() {
+    var formData = new FormData($("#xls-form")[0]);
+    $.ajax({
+        'url': '/sitesearch/siteupload',
+        'type': 'POST',
+        'data': formData,
+        'success': function (data) {
+            $("#selection-segments").html(data);
+        },
+    });
+}

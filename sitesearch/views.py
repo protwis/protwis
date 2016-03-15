@@ -1,5 +1,9 @@
 from django.shortcuts import render
 from django.conf import settings
+from django.http import HttpResponse
+
+from common import definitions
+from common.selection import SimpleSelection, Selection, SelectionItem
 
 from common.views import AbsReferenceSelection
 from common.views import AbsSegmentSelection
@@ -7,8 +11,12 @@ from common.views import AbsTargetSelection
 # from common.alignment_SITE_NAME import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 from protein.models import ProteinSegment
+from residue.models import ResidueGenericNumberEquivalent
 
 from collections import OrderedDict
+from io import BytesIO
+import xlsxwriter
+from openpyxl import load_workbook
 
 
 class TargetSelection(AbsTargetSelection):
@@ -110,6 +118,85 @@ class SegmentSelectionPdb(SegmentSelection):
     ss = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS, partial=False).prefetch_related(
         'generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
+
+
+def site_download(request):
+
+    simple_selection = request.session.get('selection', False)
+
+    outstream = BytesIO()
+    wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
+    worksheet = wb.add_worksheet()
+    row_count = 0
+
+    for position in simple_selection.segments:
+        if position.type == 'site_residue' and position.properties['site_residue_group']:
+            group_id = position.properties['site_residue_group']
+            #Values saved into the file come in the following order:
+            # id    min_match   generic_number  numbering_scheme    feature     amino_acids
+            #List of amino acids is not necessary, it is just for easy visual identification
+            worksheet.write_row(row_count, 0, [group_id, simple_selection.site_residue_groups[group_id -1][0], position.item.label, position.item.scheme.slug, position.properties['feature'], ','.join(definitions.AMINO_ACID_GROUPS[position.properties['feature']])])
+            row_count += 1 
+    wb.close()
+    outstream.seek(0)
+    response = HttpResponse(outstream.read(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response['Content-Disposition'] = "attachment; filename=site_definition.xlsx"
+
+    return response
+
+
+def site_upload(request):
+    
+    file = request.FILES['site_file']
+    print("Uploaded file {}".format(file))
+    wb=load_workbook(filename=sys.argv[1])
+    ws=wb.active
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    selection_type = 'segments'
+    selection_subtype = 'site_residue'
+
+    #Overwriting the existing selection
+    selection.clear(selection_type)
+
+    for row in range(ws.max_column+1):
+        if len(row) < 5:
+            continue
+        group_id = int(row[0].value)
+        min_match = int(row[1].value)
+        try:
+            position = ResidueGenericNumberEquivalent.objects.get(label=row[2].value, scheme__slug=row[3].value)
+        except e:
+            print(e)
+            continue
+        feature = row[4].value
+
+        # update the selected group
+        selection.active_site_residue_group = group_id
+        if len(selection.site_residue_groups) < group_id:
+            for x in group_id - len(selection.site_residue_groups):
+                selection.site_residue_groups.append([])
+        selection.site_residue_groups[group_id - 1][0] = min_match
+        selection_object = SelectionItem(selection_subtype, position.id)
+        selection_object.properties['feature'] = feature
+        selection_object.properties['site_residue_group'] = self.active_site_residue_group
+        se;ection_object.properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS[feature])
+        selection.add(selection_type, selection_subtype, selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+    
+    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
 
 def render_alignment(request):
