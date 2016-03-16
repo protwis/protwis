@@ -1089,6 +1089,8 @@ class AlignedReferenceTemplate(Alignment):
             ECL2_mid = self.order_sim_table(temp_list_mid, ref_ECL2[1], OrderedDict())
             ECL2_2 = self.order_sim_table(temp_list2, ref_ECL2[2], OrderedDict())
             self.loop_table = OrderedDict([('ECL2_1',ECL2_1),('ECL2_mid',ECL2_mid),('ECL2_2',ECL2_2)])
+            if len(ECL2_mid)==0:
+                self.loop_table=None
             return self.loop_table
         else:
             return self.order_sim_table(temp_list, ref_seq, similarity_table)
@@ -1187,7 +1189,7 @@ class AlignedReferenceTemplate(Alignment):
                 else:
                     well_aligned = True
                     for r, t, a in zip(self.reference_dict[r_seglab],self.template_dict[t_seglab],self.alignment_dict[a_seglab]):
-                        if 'x' in r and 'x' in t and self.alignment_dict[a_seglab][a]=='-':
+                        if 'x' in r and 'x' in t and self.alignment_dict[a_seglab][a] in ['-','x']:
                             well_aligned = False
                         if self.reference_dict[r_seglab][r]=='-' and self.template_dict[t_seglab][t]!='-':
                             well_aligned = False

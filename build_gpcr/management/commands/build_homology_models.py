@@ -39,7 +39,7 @@ def homology_model_multiprocessing(receptor):
         
 class Command(BaseCommand):    
     def handle(self, *args, **options):
-        Homology_model = HomologyModeling('gpr3_human', 'Inactive', ['Inactive'])
+        Homology_model = HomologyModeling('gpr32_human', 'Inactive', ['Inactive'])
         alignment = Homology_model.run_alignment()
         Homology_model.build_homology_model(alignment)
 #        receptor_list = ['gp151_human', 
@@ -281,7 +281,9 @@ class HomologyModeling(object):
                     a.template_dict[raw_seg][gn]='x'
                     a.alignment_dict[raw_seg][gn]='x'
         self.helix_ends = raw_helix_ends
-
+#        print(main_structure)
+#        pprint.pprint(a.reference_dict)
+#        pprint.pprint(a.template_dict)
         modifications = {'added':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],'TM7':[[],[]], 'H8':[[],[]]},
                          'removed':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],'TM7':[[],[]], 'H8':[[],[]]}}
         for ref_seg, temp_seg, align_seg in zip(a.reference_dict, a.template_dict, a.alignment_dict):
@@ -449,7 +451,7 @@ class HomologyModeling(object):
         # loops
         if loops==True:
             loop_stat = OrderedDict()
-#            print(self.loop_template_table)
+            print(self.loop_template_table)
             for label, structures in self.loop_template_table.items():
                 loop = Loops(self.reference_protein, label, structures, self.main_structure)
                 loop_template = loop.fetch_loop_residues(main_pdb_array)
@@ -777,9 +779,9 @@ class HomologyModeling(object):
             os.mkdir(path)
         trimmed_res_nums = self.write_homology_model_pdb(path+self.uniprot_id+"_post.pdb", main_pdb_array, 
                                                          a, trimmed_residues=trimmed_residues)                                                         
-#        pprint.pprint(main_pdb_array)
-#        pprint.pprint(a.reference_dict)
-#        pprint.pprint(a.template_dict)
+        pprint.pprint(main_pdb_array)
+        pprint.pprint(a.reference_dict)
+        pprint.pprint(a.template_dict)
 #        raise AssertionError()
                                                          
         # Model with MODELLER
@@ -824,6 +826,10 @@ class HomologyModeling(object):
                 if reference_dict[ref_seg][ref_res]!='-':
                     ref_length+=1
                 if template_dict[temp_seg][temp_res]=='x':
+                    trimmed_residues.append(ref_res)
+                    trimmed_res_num+=1
+                    non_cons_count+=1
+                if '?' in temp_res:
                     trimmed_residues.append(ref_res)
                     trimmed_res_num+=1
                     non_cons_count+=1
@@ -965,7 +971,6 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
         ref_sequence, temp_sequence = '',''
         res_num = 0
         for ref_seg, temp_seg in zip(ref_temp_alignment.reference_dict, ref_temp_alignment.template_dict):
-#            if ref_seg!='H8':
             for ref_res, temp_res in zip(ref_temp_alignment.reference_dict[ref_seg], 
                                          ref_temp_alignment.template_dict[temp_seg]):
                 res_num+=1
@@ -1091,6 +1096,9 @@ class Loops(object):
     def fetch_loop_residues(self, main_pdb_array):
         ''' Fetch list of Atom objects of the loop when there is an available template. Returns an OrderedDict().
         '''
+        if (self.loop_label=='ECL2' and 'ECL2_mid' in self.loop_template_structures and 
+            self.loop_template_structures['ECL2_mid']==None):
+            return None
         if self.loop_template_structures!=None:
             parse = GPCRDBParsingPDB()            
             seg_list = list(self.segment_order.keys())
@@ -1204,7 +1212,7 @@ class Loops(object):
                 if no_first_temp==True:
                     for i in range(1,r_x50-r_first+1):
                         ECL2_1['1_'+str(i)]='x'
-                        first_temp=None
+                    first_temp=None
                 orig_residues2 = parse.fetch_residues_from_pdb(self.main_structure,['45x50','45x51','45x52']+orig_after_gns)
                 if self.loop_template_structures['ECL2_2']==None:
                     no_second_temp=True
@@ -1243,7 +1251,7 @@ class Loops(object):
                 if no_second_temp==True:
                     for j in range(1,r_last-r_x50-1):
                         ECL2_2['2_'+str(j)]='x'
-                        second_temp=None
+                    second_temp=None
                 output['ECL2_1'] = ECL2_1
                 output['ECL2_mid'] = ECL2_mid
                 output['ECL2_2'] = ECL2_2
@@ -1412,7 +1420,7 @@ class Loops(object):
                 temp_array = self.discont_loop_insert_to_pdb(main_pdb_array, loop_template['ECL2_1'], 
                                                              loop_output_structure, ECL2='')
         else:
-            temp_array = self.gap_ECL2(main_pdb_array,loop_template['ECL2_1'])
+            temp_array = self.gap_ECL2(main_pdb_array,loop_template['ECL2_1'],break_chain=True)
         # middle part
         for key, res in loop_template['ECL2_mid'].items():
             temp_array['ECL2'][key] = res
@@ -1471,7 +1479,7 @@ class Loops(object):
         self.alignment_dict = temp_aligned_dict       
         return self       
         
-    def gap_ECL2(self, main_pdb_array, loop_template):
+    def gap_ECL2(self, main_pdb_array, loop_template, break_chain=False):
         temp_array, temp_loop = OrderedDict(), OrderedDict()
         for seg_label, gns in main_pdb_array.items():
             if self.segment_order[self.loop_label]-self.segment_order[seg_label[:4]]==0.5:
