@@ -675,7 +675,7 @@ def calculate(request, redirect=None):
                 runusercalculation(pdbname, session_key)
 
             # MAPPING GPCRdb numbering onto pdb.
-            generic_numbering = GenericNumbering(temp_path,top_results=5)
+            generic_numbering = GenericNumbering(temp_path,top_results=1)
             out_struct = generic_numbering.assign_generic_numbers()
             structure_residues = generic_numbering.residues
             prot_id_list = generic_numbering.prot_id_list
