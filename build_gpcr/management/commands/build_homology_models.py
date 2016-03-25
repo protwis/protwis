@@ -45,7 +45,7 @@ class Command(BaseCommand):
         classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species=1, family__slug__istartswith='001')
         receptor_list = [i.entry_name for i in classA if i not in struct_parent]
         
-        for i in receptor_list[4:5]:
+        for i in receptor_list[11:12]:
 #            try:
             Homology_model = HomologyModeling(i, 'Inactive', ['Inactive'])
             alignment = Homology_model.run_alignment()
@@ -316,7 +316,7 @@ class HomologyModeling(object):
                     del a.template_dict[temp_seg][temp_res]
                     del a.alignment_dict[align_seg][align_res]
                     del main_pdb_array[ref_seg][ref_res.replace('x','.')]
-                elif a.template_dict[temp_seg][temp_res]=='x':
+                elif a.template_dict[temp_seg][temp_res]=='x' or (temp_seg[0]=='T' and temp_res.replace('x','.') not in list(main_pdb_array[temp_seg])):
                     if list(a.template_dict[temp_seg].keys()).index(temp_res)<mid:    
                         modifications['added'][temp_seg][0].append(temp_res)
                     else:
@@ -446,8 +446,8 @@ class HomologyModeling(object):
             end_correction = self.correct_helix_ends(self.main_structure, main_pdb_array, alignment)
             main_pdb_array = end_correction[0]
             alignment = end_correction[1]
-            
-            for loop in ['ICL1','ECL1','ICL2','ECL2','ICL3','ECL3']:
+            loops_in_ref = [i for i in list(self.template_source) if i[0] not in ['N','C','T','H']]
+            for loop in loops_in_ref:
                 loop_alignment = AlignedReferenceTemplate(self.reference_protein, [loop], ['Inactive','Active'], 
                                                           order_by='similarity', 
                                                           provide_main_template_structure=self.main_structure,
@@ -485,13 +485,14 @@ class HomologyModeling(object):
         main_pdb_array = ref_temp_alignment[1]
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
-        
+
         # loops
         if loops==True:
             loop_stat = OrderedDict()
             print(self.loop_template_table)
             for label, structures in self.loop_template_table.items():
-                loop = Loops(self.reference_protein, label, structures, self.main_structure, self.helix_end_mods)
+                loop = Loops(self.reference_protein, label, structures, self.main_structure, self.helix_end_mods,
+                             list(self.template_source))
                 loop_template = loop.fetch_loop_residues(main_pdb_array)
                 
                 if type(loop.loop_output_structure)!=type([]):
@@ -803,7 +804,7 @@ class HomologyModeling(object):
         for label, template in loop_stat.items():
             if template==None:
                 modeling_loops = Loops(self.reference_protein, label, self.similarity_table_all, self.main_structure, 
-                                       self.helix_end_mods)
+                                       self.helix_end_mods, list(self.template_source))
                 modeling_loops.insert_gaps_for_loops_to_arrays(main_pdb_array, a.reference_dict, a.template_dict,
                                                                a.alignment_dict)
                 main_pdb_array = modeling_loops.main_pdb_array
@@ -811,6 +812,27 @@ class HomologyModeling(object):
                 a.template_dict = modeling_loops.template_dict
                 a.alignment_dict = modeling_loops.alignment_dict
         print('Free loops: ',datetime.now() - startTime)
+        
+        # Move H8 if needed
+        if 'H8' in main_pdb_array and 'ICL4' not in main_pdb_array and len(self.helix_end_mods['removed']['TM7'][1])>0:
+            reference = OrderedDict()
+            ref_nums = list(main_pdb_array['TM7'])[-4:]
+            for i in ref_nums:
+                reference[i] = main_pdb_array['TM7'][i]
+            h8_temp = self.template_source['H8'][list(self.template_source['H8'])[0]][0]
+            tm7 = list(Residue.objects.filter(protein_conformation=h8_temp.protein_conformation,protein_segment__slug='TM7'))
+            temp_nums = [i.generic_number.label for i in tm7[-4:]] + [i.replace('.','x') for i in list(main_pdb_array['H8'])]
+            template = parse.fetch_residues_from_pdb(h8_temp,temp_nums)
+            superpose = sp.OneSidedSuperpose(reference,template,4,1)
+            sup_residues = superpose.run()
+            new_h8 = OrderedDict()
+            for gn, atoms in sup_residues.items():
+                if gn[0]=='8':
+                    new_h8[gn] = atoms
+            main_pdb_array['H8'] = new_h8
+            moved_h8 = True
+        else:
+            moved_h8 = False      
         
         # N- and C-termini
         if N_and_C_termini==True:
@@ -885,10 +907,9 @@ class HomologyModeling(object):
                                                  protein_segment__slug='C-term')
                                                  
             first_five = [i.sequence_number for i in list(C_term_temp)[:5]]
-            if self.main_structure==N_struct:
+            if self.main_structure==N_struct and moved_h8==False:
                 try:
                     temp_coo2 = list(parse.fetch_residues_from_pdb(C_struct,first_five).values())
-                    print(temp_coo2)
                 except:
                     temp_coo2 = None
             else:
@@ -929,6 +950,11 @@ class HomologyModeling(object):
                     a.template_dict['C-term'][str(c.sequence_number)] = '-'
                     main_pdb_array['C-term'][str(c.sequence_number)] = '-'
         
+#        for i,j,k,l in zip(a.reference_dict,a.template_dict,a.alignment_dict,main_pdb_array):
+#            for q,w,e,r in zip(a.reference_dict[i],a.template_dict[j],a.alignment_dict[k],main_pdb_array[l]):
+#                print(q,a.reference_dict[i][q],w,a.template_dict[j][w],e,a.alignment_dict[k][e],r,main_pdb_array[l][r])          
+#        pprint.pprint(a.reference_dict)        
+        
         # non-conserved residue switching
         if switch_rotamers==True:
             non_cons_switch = self.run_non_conserved_switcher(main_pdb_array,a.reference_dict,a.template_dict,
@@ -944,18 +970,13 @@ class HomologyModeling(object):
                 for key in seg:
                     if a.reference_dict[seg_id][str(key).replace('.','x')]!='-':
                         trimmed_residues.append(key)
-        print('Rotamer switching: ',datetime.now() - startTime)
-#        print(trimmed_residues)
-#        for i,j,k,l in zip(a.reference_dict,a.template_dict,a.alignment_dict,main_pdb_array):
-#            for q,w,e,r in zip(a.reference_dict[i],a.template_dict[j],a.alignment_dict[k],main_pdb_array[l]):
-#                print(q,a.reference_dict[i][q],w,a.template_dict[j][w],e,a.alignment_dict[k][e],r,main_pdb_array[l][r])   
-        print(self.statistics.info_dict)
-#        pprint.pprint(r_i)
-#        pprint.pprint(t_i)
-#        pprint.pprint(a_i)
-#        pprint.pprint(arr_i)
-#        raise AssertionError()
-
+        if moved_h8==True:
+            for i in list(main_pdb_array['H8']):
+                if i not in trimmed_residues:
+                    trimmed_residues.append(i)
+        
+        print('Rotamer switching: ',datetime.now() - startTime) 
+        
         # write to file
         path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
         if not os.path.exists(path):
@@ -1051,6 +1072,7 @@ class HomologyModeling(object):
         inconsistencies = []
         for incons in self.statistics.info_dict['pdb_db_inconsistencies']:
             inconsistencies.append(list(incons.keys())[0])
+#        pprint.pprint(self.template_source)
         for ref_seg, temp_seg, aligned_seg in zip(reference_dict, template_dict, alignment_dict):
             if len(ref_seg)>4:
                 segment = ref_seg[:4]
@@ -1080,11 +1102,19 @@ class HomologyModeling(object):
                     conserved_count+=1
                     if 'x' not in ref_res:
                         num_in_loop = parse.gn_num_extract(ref_res,'|')[1]
-                        seq_num = str(list(Residue.objects.filter(protein_conformation=self.prot_conf,
-                                                                  protein_segment__slug=segment))[num_in_loop-1].sequence_number)
-                        self.update_template_source([seq_num],self.template_source[segment][seq_num][0],segment,just_rot=True)
+                        this_res = list(Residue.objects.filter(protein_conformation=self.prot_conf,
+                                                               protein_segment__slug=segment))[num_in_loop-1]
+                        seq_num = str(this_res.sequence_number)
+                        try:
+                            self.update_template_source([seq_num],self.template_source[segment][seq_num][0],segment,
+                                                        just_rot=True)
+                        except:
+                            self.update_template_source([this_res.generic_number.label],
+                                                        self.template_source[segment][this_res.generic_number.label][0],
+                                                        segment,just_rot=True)
                     else:
-                        self.update_template_source([ref_res],self.template_source[segment][ref_res][0],segment,just_rot=True)
+                        self.update_template_source([ref_res],self.template_source[segment][ref_res][0],segment,
+                                                    just_rot=True)
                 gn = ref_res    
                 if (gn in inconsistencies or alignment_dict[aligned_seg][aligned_res]=='.' and 
                     reference_dict[ref_seg][gn]!=template_dict[temp_seg][gn]):
@@ -1108,7 +1138,7 @@ class HomologyModeling(object):
                                 alt_res = alt_temp[gn_]
                                 superpose = sp.RotamerSuperpose(orig_res, alt_res)
                                 new_atoms = superpose.run()
-                                if superpose.backbone_rmsd>0.3:
+                                if superpose.backbone_rmsd>0.2:
                                     continue
                                 main_pdb_array[ref_seg][str(ref_res).replace('x','.')] = new_atoms
                                 template_dict[temp_seg][temp_res] = reference_dict[ref_seg][ref_res]
@@ -1341,10 +1371,8 @@ class HomologyMODELLER(automodel):
 class Loops(object):
     ''' Class to handle loops in GPCR structures.
     '''
-    def __init__(self, reference_protein, loop_label, loop_template_structures, main_structure, helix_end_mods):
-        self.segment_order = OrderedDict([('TM1',1), ('ICL1',1.5), ('TM2',2), ('ECL1',2.5), ('TM3',3), ('ICL2',3.5), 
-                                          ('TM4',4), ('ECL2',4.5), ('TM5',5), ('ICL3',5.5), ('TM6',6), ('ECL3',6.5), 
-                                          ('TM7',7), ('H8',7.5)])
+    def __init__(self, reference_protein, loop_label, loop_template_structures, main_structure, helix_end_mods, segment_order):
+        self.segment_order = segment_order
         self.reference_protein = reference_protein
         self.loop_label = loop_label
         self.loop_template_structures = loop_template_structures
@@ -1362,7 +1390,7 @@ class Loops(object):
             return None
         if self.loop_template_structures!=None:
             parse = GPCRDBParsingPDB()            
-            seg_list = list(self.segment_order.keys())
+            seg_list = self.segment_order
             prev_seg = seg_list[seg_list.index(self.loop_label)-1]
             next_seg = seg_list[seg_list.index(self.loop_label)+1]
             orig_before_gns = [i.replace('.','x') for i in list(main_pdb_array[prev_seg].keys())[-4:]]
@@ -1403,6 +1431,9 @@ class Loops(object):
                             else:
                                 print('BUG: need to superpose aligned {}'.format(self.loop_label))
                         else:
+                            prot_conf = ProteinConformation.objects.get(protein=self.reference_protein)
+                            if self.loop_label=='ICL4' and len(list(Residue.objects.filter(protein_conformation=prot_conf,protein_segment__slug='ICL4')))<3:
+                                raise Exception()
                             b_num = Residue.objects.get(protein_conformation=template.protein_conformation,
                                                         generic_number__label=last_before_gn).sequence_number
                             a_num = Residue.objects.get(protein_conformation=template.protein_conformation,
@@ -1591,7 +1622,7 @@ class Loops(object):
                 ref_residues = list(Residue.objects.filter(protein_conformation__protein=self.reference_protein,
                                                            protein_segment__slug=self.loop_label))
             for ref_seg, temp_seg, aligned_seg in zip(reference_dict, template_dict, alignment_dict):
-                if ref_seg[0]=='T' and self.segment_order[self.loop_label]-self.segment_order[ref_seg[:4]]==0.5:
+                if ref_seg[0]=='T' and self.segment_order.index(self.loop_label)-self.segment_order.index(ref_seg[:4])==1:
                     temp_ref_dict[ref_seg] = reference_dict[ref_seg]
                     temp_temp_dict[temp_seg] = template_dict[temp_seg]
                     temp_aligned_dict[aligned_seg] = alignment_dict[aligned_seg]
@@ -1718,7 +1749,7 @@ class Loops(object):
         ref_residues = list(Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
                                                    protein_segment__slug='ECL2'))
         for ref_seg, temp_seg, aligned_seg in zip(reference_dict, template_dict, alignment_dict):
-            if ref_seg[0]=='T' and self.segment_order[self.loop_label]-self.segment_order[ref_seg[:4]]==0.5:
+            if ref_seg[0]=='T' and self.segment_order.index(self.loop_label)-self.segment_order.index(ref_seg[:4])==1:
                 temp_ref_dict[ref_seg] = reference_dict[ref_seg]
                 temp_temp_dict[temp_seg] = template_dict[temp_seg]
                 temp_aligned_dict[aligned_seg] = alignment_dict[aligned_seg]
@@ -1750,7 +1781,7 @@ class Loops(object):
     def gap_ECL2(self, main_pdb_array, loop_template, break_chain=False):
         temp_array, temp_loop = OrderedDict(), OrderedDict()
         for seg_label, gns in main_pdb_array.items():
-            if self.segment_order[self.loop_label]-self.segment_order[seg_label[:4]]==0.5:
+            if self.segment_order.index(self.loop_label)-self.segment_order.index(seg_label[:4])==1:
                 temp_array[seg_label] = gns
                 l_res = 0
                 for key in loop_template:
@@ -1764,7 +1795,7 @@ class Loops(object):
     def cont_loop_insert_to_pdb(self, main_pdb_array, loop_template, ECL2=None):
         temp_array, temp_loop = OrderedDict(), OrderedDict()
         for seg_label, gns in main_pdb_array.items():
-            if self.segment_order[self.loop_label]-self.segment_order[seg_label[:4]]==0.5:
+            if self.segment_order.index(self.loop_label)-self.segment_order.index(seg_label[:4])==1:
                 temp_array[seg_label] = gns
                 l_res = 0
                 for key in loop_template:
@@ -1787,7 +1818,7 @@ class Loops(object):
         temp_array, temp_loop = OrderedDict(), OrderedDict()
         loop_keys = list(loop_template.keys())[1:-1]
         for seg_label, gns in main_pdb_array.items():
-            if self.segment_order[self.loop_label]-self.segment_order[seg_label[:4]]==0.5:
+            if self.segment_order.index(self.loop_label)-self.segment_order.index(seg_label[:4])==1:
                 temp_array[seg_label] = gns
                 l_res = 1
                 temp_loop[self.loop_label+'?'+'1'] = 'x'
@@ -1822,7 +1853,7 @@ class Loops(object):
                                           protein_segment__slug=self.loop_label)
         temp_pdb_array = OrderedDict()
         for seg_id, seg in main_pdb_array.items():
-            if self.segment_order[self.loop_label]-self.segment_order[seg_id[:4]]==0.5:
+            if self.segment_order.index(self.loop_label)-self.segment_order.index(seg_id[:4])==1:
                 temp_loop = OrderedDict()
                 count=0
                 temp_pdb_array[seg_id] = seg
@@ -1836,7 +1867,7 @@ class Loops(object):
         self.main_pdb_array = temp_pdb_array
         temp_ref_dict, temp_temp_dict, temp_aligned_dict = OrderedDict(), OrderedDict(), OrderedDict()
         for ref_seg, temp_seg, aligned_seg in zip(reference_dict, template_dict, alignment_dict):
-            if self.segment_order[self.loop_label]-self.segment_order[ref_seg[:4]]==0.5:
+            if self.segment_order.index(self.loop_label)-self.segment_order.index(ref_seg[:4])==1:
                 temp_ref_loop, temp_temp_loop, temp_aligned_loop = OrderedDict(), OrderedDict(), OrderedDict()
                 temp_ref_dict[ref_seg] = reference_dict[ref_seg]
                 temp_temp_dict[temp_seg] = template_dict[temp_seg]

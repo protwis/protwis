@@ -995,7 +995,11 @@ class AlignedReferenceTemplate(Alignment):
 #                orig_after_gns.append(res.generic_number.label)
 #        orig_before_gns = list(reversed(orig_before_gns))
                                          
-        segment_order = ['TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','ECL2','TM5','ICL3','TM6','ECL3','TM7','H8']
+        prot_conf = ProteinConformation.objects.get(protein=self.reference_protein)
+        segment_order = []
+        for i in list(Residue.objects.filter(protein_conformation=prot_conf)):
+            if i.protein_segment.slug not in segment_order:
+                segment_order.append(i.protein_segment.slug)
         prev_seg = segment_order[segment_order.index(self.segment_labels[0])-1]
         next_seg = segment_order[segment_order.index(self.segment_labels[0])+1]
         orig_before_gns = [i.replace('.','x') for i in list(self.main_pdb_array[prev_seg].keys())[-4:]]
