@@ -617,6 +617,11 @@ class StructureLigandInteractions(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = ResidueFragmentInteraction.objects.all()
+        queryset = queryset.prefetch_related('structure_ligand_pair__structure__pdb_code',
+                                             'interaction_type',
+                                             'fragment__residue__generic_number',
+                                             'fragment__residue__display_generic_number',
+                                             )
         return queryset.filter(structure_ligand_pair__structure__pdb_code__index=self.kwargs.get('pdb_code'),
                                structure_ligand_pair__ligand__name=self.kwargs.get('ligand_name'),
                                structure_ligand_pair__annotated=True)

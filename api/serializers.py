@@ -83,7 +83,13 @@ class StructureSerializer(serializers.ModelSerializer):
 
 
 class StructureLigandInteractionSerializer(serializers.ModelSerializer):
+    pdb_code = serializers.ReadOnlyField(source='structure_ligand_pair.structure.pdb_code.index')
+    ligand_name = serializers.ReadOnlyField(source='structure_ligand_pair.ligand.name')
+    amino_acid = serializers.ReadOnlyField(source='fragment.residue.amino_acid')
+    sequence_number = serializers.ReadOnlyField(source='fragment.residue.sequence_number')
+    display_generic_number = serializers.ReadOnlyField(source='fragment.residue.display_generic_number.label')
+    interaction_type = serializers.ReadOnlyField(source='interaction_type.name')
     class Meta:
         model = ResidueFragmentInteraction
-        # TODO change fields to ('pdb_code', 'ligand_name', 'amino_acid', 'sequence_number', 'generic_number', 'segment', 'interaction_type_name')
-        fields = ('structure_ligand_pair', 'rotamer', 'fragment', 'interaction_type')
+        fields = ('pdb_code', 'ligand_name', 'amino_acid', 'sequence_number',
+                  'display_generic_number', 'interaction_type')
