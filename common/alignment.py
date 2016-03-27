@@ -1187,7 +1187,7 @@ class AlignedReferenceTemplate(Alignment):
                 self.alignment_dict[ref_seglab] = align_segment_dict
 
         for r_seglab, t_seglab, a_seglab in zip(self.reference_dict,self.template_dict,self.alignment_dict):
-            if r_seglab in ['ICL1','ECL1','ICL2','H8']:
+            if r_seglab in ['ICL1','ECL1','ICL2']:
                 if len(list(self.reference_dict[r_seglab].keys()))==0:
                     well_aligned = False
                 else:
