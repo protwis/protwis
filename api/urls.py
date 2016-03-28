@@ -50,4 +50,6 @@ urlpatterns = [
 
     url(r'^species/$', views.SpeciesList.as_view(), name='species-list'),
     url(r'^species/(?P<latin_name>[^/]+)/$', views.SpeciesDetail.as_view(), name='species-detail'),
+
+    url(r'^mutants/(?P<entry_name>[^/].+)/$', views.MutantList.as_view(), name='mutants')
 ]

@@ -6,12 +6,13 @@ from django.template.loader import render_to_string
 from django.db.models import Q
 from django.conf import settings
 
+from mutation.models import MutationRaw
 from protein.models import Protein, ProteinConformation, ProteinFamily, Species, ProteinSegment
 from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 from structure.models import Structure
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
-    ResidueExtendedSerializer, StructureSerializer)
+                             ResidueExtendedSerializer, StructureSerializer, MutationSerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 
@@ -602,3 +603,16 @@ class StructureAssignGenericNumbers(views.APIView):
         print(len(out_stream.getvalue()))
         # filename="{}_GPCRdb.pdb".format(root)
         return Response(out_stream.getvalue())
+
+
+class MutantList(generics.ListAPIView):
+    """
+    Get a list of mutants of single protein instance by entry name
+    \n/mutant/{entry_name}/
+    \n{entry_name} is a protein identifier from Uniprot, e.g. adrb2_human
+    """
+    serializer_class = MutationSerializer
+
+    def get_queryset(self):
+        queryset = MutationRaw.objects.all()
+        return queryset.filter(protein=self.kwargs.get('entry_name'))
