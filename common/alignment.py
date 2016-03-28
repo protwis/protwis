@@ -977,24 +977,7 @@ class AlignedReferenceTemplate(Alignment):
         similarity_table = OrderedDict()
         self.main_template_protein = self.main_template_structure.protein_conformation.protein.parent        
         ref_seq = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
-                                         protein_segment__slug=self.segment_labels[0])
-#        segment = ProteinSegment.objects.get(slug=self.segment_labels[0])
-#        orig_before_residues = Residue.objects.filter(
-#                                    protein_conformation__protein=self.main_template_protein, 
-#                                    protein_segment__id=segment.id-1)
-#        orig_after_residues = Residue.objects.filter(
-#                                    protein_conformation__protein=self.main_template_protein, 
-#                                    protein_segment__id=segment.id+1)
-#        orig_before_gns = []
-#        orig_after_gns = []
-#        for res in orig_before_residues.reverse():
-#            if len(orig_before_gns)<4:
-#                orig_before_gns.append(res.generic_number.label)
-#        for res in orig_after_residues:
-#            if len(orig_after_gns)<4:
-#                orig_after_gns.append(res.generic_number.label)
-#        orig_before_gns = list(reversed(orig_before_gns))
-                                         
+                                         protein_segment__slug=self.segment_labels[0])                                        
         prot_conf = ProteinConformation.objects.get(protein=self.reference_protein)
         segment_order = []
         for i in list(Residue.objects.filter(protein_conformation=prot_conf)):
@@ -1081,7 +1064,7 @@ class AlignedReferenceTemplate(Alignment):
                     if orig_before_gns==alt_before_gns and orig_after_gns==alt_after_gns:
                         pass
                     else:
-                        raise Exception
+                        raise Exception()
                 except:
                     temp_length, temp_length1, temp_length2 = -1,-1,-1
                 temp_list.append((struct, temp_length, similarity, float(struct.resolution), protein))
