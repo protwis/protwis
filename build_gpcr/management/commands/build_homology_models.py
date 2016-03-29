@@ -45,15 +45,15 @@ class Command(BaseCommand):
         classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species=1, family__slug__istartswith='001')
         receptor_list = [i.entry_name for i in classA if i not in struct_parent]
 
-        for i in receptor_list[39:40]:
-#            try:
-            Homology_model = HomologyModeling(i, 'Inactive', ['Inactive'])
-            alignment = Homology_model.run_alignment()
-            Homology_model.build_homology_model(alignment)
-#            except:
-#                print('XXXXXXXXXXXXXXXXXXXXXXXXX')
-#                print('Errors with {}'.format(i))
-#                print('XXXXXXXXXXXXXXXXXXXXXXXXX')
+        for i in receptor_list[55:60]:
+            try:
+                Homology_model = HomologyModeling(i, 'Inactive', ['Inactive'])
+                alignment = Homology_model.run_alignment()
+                Homology_model.build_homology_model(alignment)
+            except:
+                print('XXXXXXXXXXXXXXXXXXXXXXXXX')
+                print('Errors with {}'.format(i))
+                print('XXXXXXXXXXXXXXXXXXXXXXXXX')
         
 #        receptor_list = ['gp151_human', 
 #                         'gpr37_human', 'gp176_human', 'gpr19_human', 'p2ry8_human', 
@@ -372,7 +372,6 @@ class HomologyModeling(object):
                                             else:
                                                 a.alignment_dict[ref_seg][gn_] = '.'
                                     main_pdb_array[ref_seg] = new_residues
-                                    self.write_homology_model_pdb('./structure/homology_models/{}_Inactive/{}.tm1.pdb'.format(self.uniprot_id,self.uniprot_id),OrderedDict([('TM1',new_residues)]),a.reference_dict)
                                     self.update_template_source(modifications['added'][ref_seg][0],struct,ref_seg)
                                     break
                             except:
@@ -457,6 +456,14 @@ class HomologyModeling(object):
             
             parse = GPCRDBParsingPDB()
             main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
+            try:
+                if len(alignment.reference_dict['H8'])==0:
+                    del alignment.reference_dict['H8']
+                    del alignment.template_dict['H8']
+                    del alignment.alignment_dict['H8']
+                    del main_pdb_array['H8']
+            except:
+                pass                
             for seg_l, seg in main_pdb_array.items():
                 for gn, res in seg.items():
                     self.update_template_source([gn.replace('.','x')],self.main_structure,seg_l)
@@ -825,9 +832,9 @@ class HomologyModeling(object):
         path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
         if not os.path.exists(path):
             os.mkdir(path)
-        self.write_homology_model_pdb(
-                                "./structure/homology_models/{}_{}/pre_switch.pdb".format(self.uniprot_id, self.state), 
-                                main_pdb_array, a)        
+#        self.write_homology_model_pdb(
+#                                "./structure/homology_models/{}_{}/pre_switch.pdb".format(self.uniprot_id, self.state), 
+#                                main_pdb_array, a)        
         print('Check inconsistencies: ',datetime.now() - startTime)
         # inserting loops for free modeling
         for label, template in loop_stat.items():
@@ -1046,8 +1053,8 @@ class HomologyModeling(object):
         # Model with MODELLER
         self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
-                          self.uniprot_id, 1, "modeller_test.pdb", atom_dict=trimmed_res_nums)
-        
+                          self.uniprot_id, 1, "{}_{}_model.pdb".format(self.reference_entry_name,self.state), atom_dict=trimmed_res_nums)
+#        os.remove(path+self.uniprot_id+"_post.pdb")
         with open('./structure/homology_models/{}_Inactive/{}.stat.txt'.format(self.uniprot_id, self.uniprot_id), 'w') as stat_file:
             for label, info in self.statistics.items():
                 stat_file.write('{} : {}\n'.format(label, info))
@@ -1114,7 +1121,7 @@ class HomologyModeling(object):
                 for rot in rot_table:
                     if int(sec[1])<=int(rot[1])<=int(sec[2]):
                         s_file.write(str(rot)+"\n")
-            
+
         print('MODELLER build: ',datetime.now() - startTime)
         pprint.pprint(self.statistics)
         print('################################')
@@ -1556,7 +1563,6 @@ class Loops(object):
                                                                   generic_number__label__in=['45x50','45x51','45x52'])
                                 alt1_x50 = alt_mid1.get(generic_number__label='45x50').sequence_number
                                 loop_res1 = Residue.objects.filter(protein_conformation=first_temp.protein_conformation,
-                                                                   protein_segment__slug=self.loop_label,
                                                                    sequence_number__in=list(range(b_num, alt1_x50)))
                                 before_gns = [x.sequence_number for x in before4]
                                 mid_gns1 = [x.sequence_number for x in loop_res1]
@@ -1595,7 +1601,6 @@ class Loops(object):
                                                                   generic_number__label__in=['45x50','45x51','45x52'])
                                 alt2_x50 = alt_mid2.get(generic_number__label='45x50').sequence_number
                                 loop_res2 = Residue.objects.filter(protein_conformation=second_temp.protein_conformation,
-                                                                   protein_segment__slug=self.loop_label,
                                                                    sequence_number__in=list(range(alt2_x50+3, a_num)))
                                 mid_gns2 = [x.sequence_number for x in loop_res2]
                                 after_gns = [x.sequence_number for x in after4]
