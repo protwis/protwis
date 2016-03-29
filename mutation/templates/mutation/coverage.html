@@ -35,6 +35,48 @@
   stroke-opacity: .25;
 }
 
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: 0;
+}
+
+/*#show-length {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}*/
+
+.links {
+  fill: none;
+  stroke: #000;
+}
+
+.link-extensions {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: .25;
+}
+
+.labels {
+  font: 14px Palatino;
+  font-weight: bold;
+}
+
+.link--active {
+  stroke: #000 !important;
+  stroke-width: 3.5px;
+}
+
+.link-extension--active {
+  stroke-opacity: .6;
+}
+
+.label--active {
+  font-weight: bold;
+}
+
+
 </style>
 {% endblock %}
 {% block addon_js %}
@@ -46,6 +88,7 @@
 interactions =  {"name":"GPCRs", "children":[ {"children": [{"name": "Aminergic receptors"}, {"name": "Peptide receptors"}, {"name": "Protein receptors"}, {"name": "Lipid receptors"}, {"name": "Melatonin receptors"}, {"name": "Nucleotide receptors"}, {"name": "Steroid receptors"}, {"name": "Alicarboxylic acid receptors"}, {"name": "Sensory receptors"}, {"name": "Orphan receptors"}, {"name": "Other"}], "name": "Class A (Rhodopsin)"}, {"children": [{"name": "Peptide receptors"}], "name": "Class B1 (Secretin)"}, {"children": [{"name": "Orphan receptors"}], "name": "Class B2 (Adhesion)"}, {"children": [{"name": "Ion receptors"}, {"name": "Amino acid receptors"}, {"name": "Sensory receptors"}, {"name": "Orphan receptors"}], "name": "Class C (Glutamate)"}, {"children": [{"name": "Protein receptors"}], "name": "Class F (Frizzled)"}, {"children": [{"name": "Orphan receptors"}], "name": "Other GPCRs"} ] };
 
 interactions = {{ tree|safe }};
+interactions2 = {{ tree2|safe }};
 
 // Like d3.svg.diagonal.radial, but with square corners.
 function step(startAngle, startRadius, endAngle, endRadius) {
@@ -60,7 +103,7 @@ function step(startAngle, startRadius, endAngle, endRadius) {
 
 var color = d3.scale.category20();
 
-var diameter = 1300;
+var diameter = 1350;
 
 var tree = d3.layout.tree()
     .size([360, diameter / 2 - 120])
@@ -84,13 +127,13 @@ var nodes = tree.nodes(interactions)
     if (d.depth == 0) {
         d.y =  0
       } else if (d.depth == 1) {
-        d.y =  180
+        d.y =  130
       } else if (d.depth == 2  ) {
-        d.y =  350
+        d.y =  300
       } else if (d.depth == 3  ) {
-        d.y =  500
+        d.y =  550
       } else if (d.depth == 4  ) {
-        d.y =  535
+        d.y =  600
       }  else {
         d.y =  d.depth*150
       }
@@ -137,24 +180,27 @@ var link = svg.append("g")
   node.filter(function(d) {return (d.depth==4)}).append("circle")
       .attr("r", function(d) { if (d.name=='GPCRs' ) {return "0"} else { return "4.5" } })
       .style("fill", function(d) {
-          if (d.color && d.depth<5) {return d.color } 
-          else if (d.interactions > 0 && d.mutations_an > 0) {return "FireBrick" }
-          else if (d.interactions > 0) {return "Olive" }
-          else if (d.mutations_an > 0) {return "Chocolate" }
-          else {return "#ddd"}; })
-      .style("opacity",0.6);
+          if (d.color && d.depth<4) {return d.color } 
+          // else if (d.interactions > 0 && d.mutations_an > 0) {return "Olive" }
+          else if (d.interactions > 0) {return "FireBrick" }
+          // else if (d.mutations_an > 0) {return "Chocolate" }
+          else {return "#eee"}; })
+      .style("opacity",.99);
 
   node.append("text")
       .attr("dy", ".31em")
       .attr("text-anchor", function(d) { return d.x < 180 ? "end" : "start"; })
       .attr("transform", function(d) { if (d.depth==4) {
-            return d.x < 180 ? "translate(30)" : "rotate(180)translate(-30)";
+            return d.x < 180 ? "translate(50)" : "rotate(180)translate(-50)";
         } else {
             return d.x < 180 ? "translate(-12)" : "rotate(180)translate(12)";
         }
          })
-      .text(function(d) { if (d.depth>0) { return d.name;} else { return ""; } })
-      .style("font-size", function(d) { if (d.depth<3) {return "12px"} else { return "8px" } })
+      .text(function(d) { if (d.depth==4) { return d.name.toUpperCase() ; } else if (d.depth>0) { return d.name;} else { return ""; } })
+      // .style("font-size", function(d) { if (d.depth<3) {return "12px"} else { return "9px" } })
+
+      .style("font-size", function(d) { if (d.depth<3) {return "16px"} else if (d.depth==3) {return "14px"} else { return "12px" } })
+      .style("font-family", "Palatino")
       .style("fill", function(d) {
           if (d.color) {return "#111" } 
           else if (d.interactions > 0 && d.mutations_an > 0 && 1==2) {return "green" }
@@ -172,7 +218,6 @@ function getBB(selection) {
     selection.each(function(d){d.bbox = this.getBBox();})
 }
  
-
 
 function getAngle(d) {
     // Offset the angle by 90 deg since the '0' degree axis for arc is Y axis, while
@@ -202,13 +247,312 @@ function arcTween(a) {
   };
 }
 
+/////////////////
+
+var margin = {top: 20, right: 120, bottom: 20, left: 120},
+    width = 960 - margin.right - margin.left,
+    height = 800 - margin.top - margin.bottom;
+
+var i = 0,
+    duration2 = 750,
+    root;
+
+var diameter = 1350;
+
+var tree2 = d3.layout.tree()
+    .size([360, diameter / 2 - 120])
+    .sort(function(a,b) { return b.sort - a.sort; })
+    .separation(function(a, b) { return (a.parent == b.parent ? 20 : 40) / a.depth / a.depth; });
+    // .separation(function(a, b) { return ((a.parent == root) && (b.parent == root)) ? 3 : 1; });
+
+var diagonal = d3.svg.diagonal.radial()
+    .projection(function(d) { return [d.y, d.x / 180 * Math.PI]; });
+
+var force2 = d3.layout.force()
+    .size([width, height])
+    .on("tick", tick2);
+
+var svg2 = d3.select("#svg2").append("svg")
+    .attr("width", diameter)
+    .attr("height", diameter)
+    .append("g")
+    .attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
+
+  root = interactions;
+  root.x0 = height / 2;
+  root.y0 = 0;
+
+  function collapse(d) {
+    if (d.children) {
+      d._children = d.children;
+      d._children.forEach(collapse);
+      d.children = null;
+    }
+  }
+
+  //root.children.forEach(collapse); // start collapsed
+  update2(root);
+
+
+
+function update2(source) {
+
+
+
+  // Compute the new tree layout.
+  var nodes = tree2.nodes(interactions);
+
+  // Normalize for fixed-depth.
+  // nodes.forEach(function(d) { d.y = d.depth * 90; });
+  nodes.forEach(function(d) { 
+    if (d.depth == 1) {
+        d.y =  70
+      } else if (d.depth == 2  ) {
+        d.y =  200
+      } else if (d.depth == 3  ) {
+        d.y =  360
+      } else {
+        d.y =  d.depth*150
+      }
+    });
+
+  var links = tree2.links(nodes);
+
+
+  // Update the nodes…
+  var node = svg2.selectAll("g.node")
+      .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+
+
+
+  var rect = svg2.selectAll("rect")
+      .remove();
+  // Remove all to ensure nice rendering
+  var texts = svg2.selectAll("text").filter(function(d) {return (d.depth<4)})
+      .remove();
+
+
+  node.filter(function(d) {return (d.depth>0 )}).selectAll("*").remove();
+
+    // Enter any new nodes at the parent's previous position.
+  var nodeEnter = node.enter().append("g")
+      .attr("class", "node")
+      // .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+      .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
+
+      .attr("cursor", "pointer")
+      .on("click", click2) ;
+
+  node.filter(function(d) {return (d.depth==4)}).filter(function(d) {return (d.parent.hidden!=1 )}).append("circle")
+      .attr("r", 1e-6)
+      .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+
+  node.filter(function(d) {return (d.depth==1 && d.parent.children.length==1)}).filter(function(d) {return (d.parent.hidden!=1 )}).append("circle")
+      .attr("r", 1e-6)
+      .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+  node.filter(function(d) {return (d.depth>0 )})
+      .filter(function(d) {return (!(d.depth==1 && d.parent.children.length==1)) })
+      .filter(function(d) {return (d.parent.hidden!=1 )})
+      .append("text")
+      // .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
+      .attr("dy", ".31em")
+      .attr("text-anchor", function(d) {return d.depth==4 ? d.x < 180 ? "end" : "start" : d.x < 180 ? "end" : "start"; })
+      .attr("transform", function(d) { 
+
+        if (d.depth==1) { indent = 30 }
+        else if (d.depth==2) { indent = 50 }
+        else if (d.depth==3) { indent = 180 }
+        else if (d.depth==4) { indent = 0 }
+
+        return d.depth==4 ? d.x < 180 ? "translate(47)" : "rotate(180)translate(-47)" : d.x < 180 ? "translate("+indent+")" : "rotate(180)translate(-"+indent+")"; 
+
+      })
+      .text(function(d) { if (d.depth==4) { return d.name.toUpperCase() ; } else {return (d.hidden ? d.name + " " + d.receptor_t : d.name);} })
+      .style("font-family", "Palatino")
+      // .style("font-weight", function(d) { return d.interactions && d.depth==4 ? "bold" : "";  })
+      .style("font-size", function(d) { if (d.depth<3) {return "16px"} else if (d.depth==3) {return "14px"} else { return "12px" } })
+      .style("fill", function(d) { return d.interactions ? "lightsteelblue" : "#ccc";  })
+      .style("fill", function(d) {
+          if (d.color && d.depth<5) {return "#000" } 
+          else if (d.interactions > 0 && d.mutations_an > 0 && 1==2) {return "green" }
+          else if (d.interactions > 0 && 1==1) {return "000" }
+          else if (d.mutations_an > 0 && 1==2) {return "palegreen" }
+          else {return "#ccc"}; })
+      .style("fill-opacity", 1e-6).call(getBB);
+
+  node.filter(function(d) {return (d.depth!=4 && d.depth>0)})
+      .filter(function(d) {return (!(d.depth==1 && d.parent.children.length==1)) })
+      .filter(function(d) {return (d.parent.hidden!=1 )}).insert("rect","text")
+    .attr("x", function(d){ 
+
+
+        if (d.depth==1) { indent = 30 }
+        else if (d.depth==2) { indent = 50 }
+        else if (d.depth==3) { indent = 180 }
+        else if (d.depth==4) { indent = 0 }
+
+      return d.x < 180 ? d.bbox.x+indent : d.bbox.x-d.bbox.width+indent; })
+    // .attr("x", function(d){return d.bbox.x})
+    .attr("y", function(d){return d.bbox.y})
+    .attr("width", function(d){return d.bbox.width})
+    .attr("height", function(d){return d.bbox.height})
+    .style("fill-opacity", 0)
+    .style("fill", "#FFF");
+
+
+  // Transition nodes to their new position.
+  var nodeUpdate = node.transition()
+      .duration(duration2)
+      // .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+      .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; });
+
+  nodeUpdate.select("circle")
+      .attr("r", 4.5)
+      .style("fill-opacity", .7)
+      .style("fill", function(d) {
+          if (d.color && d.depth<5) {return d.color } 
+          else if (d.interactions > 0 && d.mutations_an > 0) {return "FireBrick" }
+          else if (d.interactions > 0) {return "Olive" }
+          else if (d.mutations_an > 0) {return "Chocolate" }
+          else {return "#ddd"}; });
+      // .style("fill", function(d) { return d.interactions && d.depth!=1 && 1==2 ? "IndianRed" : d.color; });
+
+  nodeUpdate.select("text")
+      .style("fill-opacity", 1)
+      ;
+  nodeUpdate.select("rect")
+      .style("fill-opacity", 1)
+      ;
+
+  // Transition exiting nodes to the parent's new position.
+  var nodeExit = node.exit().transition()
+      .duration(duration2)
+      // .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+      .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
+      .remove();
+
+  nodeExit.select("circle")
+      .attr("r", 1e-6);
+
+  nodeExit.select("text")
+      .style("fill-opacity", 1e-6);
+
+  // Update the links…
+  var link = svg2.selectAll("path.link")
+      .data(links, function(d) { return d.target.id; });
+
+  link.filter(function(d) {return (d.depth>2)})
+      .remove();
+
+  // Enter any new links at the parent's previous position.
+  link.enter().insert("path", "g").filter(function(d) {return (d.depth!=0)})
+      .attr("class", "link")
+      // .style("stroke", function(d) { return d.target.color; })
+      .style("stroke", function(d) { return (d.target.interactions > 0 || 1==1 ? d.target.color : "#CCC"); }) //"SteelBlue"
+      .style("stroke-width", function(d) { return (d.target.depth!=0 && d.target.hidden!=1 && !(d.target.depth==1 && d.source.children.length==1) ? 5-(d.target.depth) : 0); })
+      .style("opacity", function(d) {
+          if ((d.target.interactions > 0 && d.target.mutations_an > 0) || 1==1) {return 0.7 } //|| 1==1
+          else if (d.target.interactions > 0) {return 0.5 }
+          else if (d.target.mutations_an > 0) {return 0.5 }
+          else {return 0.1}; })
+      .attr("d", function(d) {
+        var o = {x: source.x0, y: source.y0};
+        return diagonal({source: o, target: o});
+      });
+
+
+
+  // Transition links to their new position.
+  link.transition()
+      .duration(duration2)
+      .attr("d", diagonal);
+
+  link.filter(function(d) { return (d.source.hidden)})
+    .remove();
+
+  // Transition exiting nodes to the parent's new position.
+  link.exit().transition()
+      .duration(duration2)
+      .attr("d", function(d) {
+        var o = {x: source.x, y: source.y};
+        return diagonal({source: o, target: o});
+      })
+      .remove();
+
+
+  // svg2.selectAll("path.link").filter(function(d) {console.log(d.target.name + " " + d.target.hidden); return (d.hidden ==1 )})
+  //   .remove()
+
+  // Stash the old positions for transition.
+  nodes.forEach(function(d) {
+    d.x0 = d.x;
+    d.y0 = d.y;
+  });
+}
+function recurse_splice(node) {
+    if (!node._children && node.children) {
+      node._children = node.children;
+    }
+
+    if (node.children) node.children.filter(function(d, i) { return i == 0; }).forEach(recurse_splice);
+    if (node.children) {
+      // d.children = null;
+      node.children = node._children.filter(function(d, i) { return i == 0; })
+    }
+     node.hidden = 1;
+  }
+
+  function recurse_show(node) {
+    if (!node._children && node.children) {
+      node._children = node.children;
+    }
+    if (node.children) {
+      node.children = node._children;
+      node.children.forEach(recurse_show);
+    }
+    node.hidden = 0;
+  }
+
+// Toggle children on click.
+function click2(d) {
+  // if (!d._children) {
+  //   d._children = d.children;
+  // }
+  if (d.hidden != 1) {
+    // d.children = null;
+    //d.children = d._children.splice(0,1);
+    recurse_splice(d);
+  } else {
+    recurse_show(d);
+  }
+  update2(d);
+}
+
+function tick2() {
+
+var link = svg2.selectAll(".link"),
+    node = svg2.selectAll(".node");
+
+  link.attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; });
+
+  node.attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; });
+}
 //////////////////////////////
 
 var color = d3.scale.category20c();
 
-var width = 1100,
-      height = 1100,
-      radius = Math.min(width, height) / 2 - 10;
+var only_data = 0;
+
+var width = 1350,
+      height = 1350,
+      radius = Math.min(width, height) / 2 - 50;
 
     var x = d3.scale.linear()
       .range([0, 2 * Math.PI]);
@@ -217,7 +561,7 @@ var width = 1100,
       .range([0, radius]);
       // console.log(y(0),y(1),y(radius))
 
-    var svg = d3.select("#svg3")
+    var svg3 = d3.select("#svg3")
       .append("svg")
       .attr("width", width)
       .attr("height", height)
@@ -227,8 +571,13 @@ var width = 1100,
 
     var partition = d3.layout.partition()
       .sort(function(a,b) { return b.sort - a.sort; })
-      // .value(function(d) { if (d.depth!=4) {return d.receptor_i+d.receptor_m_an;} else { return Math.min(1,d.receptor_i+d.receptor_m_an); } });
-      .value(function(d) { return d.receptor_t });
+      .value(function(d) { if (only_data) { 
+        if (d.depth!=4) {return d.receptor_i+d.receptor_m_an;} else { return Math.min(1,d.receptor_i+d.receptor_m_an); }
+        } else {
+          return d.receptor_t;
+        } 
+      });
+      // .value(function(d) { return d.receptor_t });
 
     var arc = d3.svg.arc()
       .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x))); })
@@ -237,9 +586,9 @@ var width = 1100,
 
         // console.log("inner" + d.y+" "+Math.max(0, y(d.y))); return Math.max(0, y(d.y)); 
         if (d.y<0.3) {
-            return 30;
+            return 2;
         } else if (d.y<0.5) {
-            return 150;
+            return 180;
         } else if (d.y<0.7) {
             return 150+(radius-45-150)*0.4;
         } else if (d.y<0.9) {
@@ -251,7 +600,7 @@ var width = 1100,
         
         // console.log("outer" + d.y+" "+Math.max(0, y(d.y + d.dy))); return Math.max(0, y(d.y + d.dy));
         if (d.y<0.3) {
-            return 150;
+            return 180;
         } else if (d.y<0.5) {
             return 150+(radius-45-150)*0.4;
         } else if (d.y<0.7) {
@@ -261,28 +610,64 @@ var width = 1100,
         }
          });
 
-var path = svg.datum(interactions).selectAll("path")
+var lineFunction = d3.svg.line()
+      .x(function(d) { return d.x; })
+      .y(function(d) { return d.y; })
+      .interpolate("linear");
+
+var path = svg3.datum(interactions).selectAll("path")
       .data(partition.nodes)
       .enter().append("g")
         
   path.append("path")
       .attr("display", function(d) { return d.depth ? null : "none"; }) // hide inner ring
       .attr("d", arc)
-      .style("stroke", "#fff")
-      .style("fill", function(d) {
-          if (d.color && d.depth<4 ){ return d.color } //&& d.depth<4 && 1==2
+      .style("fill", function(d) { 
+          if (d.color && d.depth<4 && 1==1 ){ return "#FFF" } //&& d.depth<4 && 1==2
+          // else if (d.interactions > 0 && d.mutations_an > 0) {return "#31a354" }
+          // else if (d.interactions > 0) {return "#3182bd" }
+          // else if (d.mutations_an > 0) {return "#fdae6b" }
+          // else {return "#969696"}; })
           else if (d.interactions > 0 && d.mutations_an > 0) {return "FireBrick" }
           else if (d.interactions > 0) {return "Olive" }
           else if (d.mutations_an > 0) {return "Chocolate" }
-          else {return "#ddd"}; })
+          else {return "#ddd" }
+          })
+      .style("stroke-width", function(d) { return (d.depth<4? "2px" : "1px" ) })
+      .style("stroke", function(d) {
+          if (d.color && d.depth<4 && 1==1 ){ return d.color } //&& d.depth<4 && 1==2
+          // else if (d.interactions > 0 && d.mutations_an > 0) {return "#31a354" }
+          // else if (d.interactions > 0) {return "#3182bd" }
+          // else if (d.mutations_an > 0) {return "#fdae6b" }
+          // else {return "#969696"}; })
+          else if (1==1) {return "#000"}
+          else if (d.interactions > 0 && d.mutations_an > 0) {return "FireBrick" }
+          else if (d.interactions > 0) {return "Olive" }
+          else if (d.mutations_an > 0) {return "Chocolate" }
+          else {return "#ddd" }
+        })
       // .style("fill", function(d) { return color((d.children ? d : d.parent).name); })
       .style("opacity", function(d) {
-          if ((d.interactions > 0 && d.mutations_an > 0) ) {return 0.9 } // || 1==1
-          else if (d.interactions > 0) {return 0.6 }
-          else if (d.mutations_an > 0) {return 0.6 }
-          else {return 0.2}; })
-      .style("fill-rule", "evenodd")
+          if ((d.interactions > 0 && d.mutations_an > 0) || 1==1 ) {return 0.6 } // || 1==1
+          else if (d.interactions > 0) {return 0.9 }
+          else if (d.mutations_an > 0) {return 0.9 }
+          else {return 1}; })
+      // .style("fill-rule", "evenodd")
       .each(stash);
+
+      path.filter(function(d) {return (d.depth==1 || d.name=='Other GPCRs')}).each(function(d,i) {
+                         console.log(d.name+ " "+i);
+                         svg3.append("line")
+                         .attr("x1",  function() { console.log(d.name + " " + d.x + " " + d.y +" " + x(d.x)*180/Math.PI + " " + x(d.x + d.dx)*180/Math.PI); 
+                          return 2 * Math.cos(x(d.x)-Math.PI/2); })
+                         .attr("y1", function() { return 2* Math.sin(x(d.x)-Math.PI/2); })
+                         .attr("x2", function() { return (radius-36) * Math.cos(x(d.x)-Math.PI/2); })
+                         .attr("y2", function() { return (radius-36) * Math.sin(x(d.x)-Math.PI/2); })
+                         .attr("stroke-width", 3)
+                         .style("opacity", 0.0)
+                         .attr("stroke", "#FFF");
+                       });
+
 
   function a(t) {
         return .299 * t.r + .587 * t.g + .114 * t.b
@@ -306,18 +691,21 @@ var path = svg.datum(interactions).selectAll("path")
         s = 1e3
 
 
-  path.append("text")
-        .text(function(d) { 
-            if ( d.receptor_i+d.receptor_m_an>0) {
-                return d.name 
-            } else if (1==1) { //if showing all
-                return d.name
-            }
+  path.each(function(d,i) {
+
+        svg3.append("text")
+        .text(function() { 
+            // if ( d.receptor_i+d.receptor_m_an>0) {
+            //     return d.name 
+            // } else if (1==1) { //if showing all
+            //     return d.name
+            // }
+            return ( ((d.depth==3 && d.value==1 && only_data!=1) || d.value==0 || d.depth==0) ? "": (d.depth==4 ? d.name.toUpperCase() : d.name) );
         })
-        .classed("label", true)
-        .attr("x", function(d) { if (d.depth==4) { return d.x;} else {return d.x; } })
+        .classed("label2", true)
+        .attr("x", function() { if (d.depth==4) { return d.x;} else {return d.x; } })
         // .attr("text-anchor", "end")
-        .attr("text-anchor", function(d) { 
+        .attr("text-anchor", function() { 
             // console.log(d.name+ " "+arc.centroid(d));
             if (d.depth==4) { 
                 return arc.centroid(d)[0] < 0 ? "start" : "end"; 
@@ -328,7 +716,7 @@ var path = svg.datum(interactions).selectAll("path")
             }
             })
         // translate to the desired point and set the rotation
-        .attr("transform", function(d) {
+        .attr("transform", function() {
             if (d.depth > 0 && d.depth<4) {
                 return "translate(" + arc.centroid(d) + ")" +
                        "rotate(" + getAngle(d) + ")";
@@ -341,23 +729,30 @@ var path = svg.datum(interactions).selectAll("path")
             }
         })
         // .attr("dx", "1") // margin
-         .attr("dx", function(d) {if (d.depth==4) { return arc.centroid(d)[0] < 0 ? "-35px" : "35px";
-                                    } else if (d.depth==1) { return arc.centroid(d)[0] < 0 ? "-55px" : "55px";
+         .attr("dx", function() {if (d.depth==4) { return arc.centroid(d)[0] < 0 ? "-53px" : "53px";
+                                    } else if (d.depth==1) { return arc.centroid(d)[0] < 0 ? "-65px" : "65px";
                                     } else if (d.depth==2) { return arc.centroid(d)[0] < 0 ? "-65px" : "65px";
                                     } else if (d.depth==3) { return arc.centroid(d)[0] < 0 ? "-80px" : "80px";
                                     } else { return "0px"; } } ) // vertical-align
          .attr("dy", ".35em") // vertical-align
         .attr("pointer-events", "none")
-        .style("font","10px sans-serif")
+        // .style("font", function () { return (d.depth==1 ? "14px" : d.depth!=4 ? "12px" : "10px") + " Palatino" ;})
+
+        // .style("font", "Palatino")
+        .style("font", function() { if (d.depth<3) {return "16px"+ " Palatino"} else if (d.depth==3) {return "14px"+ " Palatino"} else { return "12px"+ " Palatino" } })
+       
+        // .style("fill", function() { return (d.depth==4 && (d.interactions == 0 && d.mutations_an == 0) ? "#AAA" : "#000") })
+       
         // .style("fill", function(d) {
         //   if (d.interactions > 0 && d.mutations_an > 0) {return "green" }
         //   else if (d.interactions > 0) {return "Olive" }
         //   else if (d.mutations_an > 0) {return "palegreen" }
         //   else {return "#ddd"}; });
+})
 
 
-/////////////////
 
+//////////////////////////////////
 var margin = {top: 20, right: 120, bottom: 20, left: 120},
     width = 960 - margin.right - margin.left,
     height = 800 - margin.top - margin.bottom;
@@ -368,7 +763,7 @@ var i = 0,
 
 var diameter = 1300;
 
-var tree = d3.layout.tree()
+var tree6 = d3.layout.tree()
     .size([360, diameter / 2 - 120])
     .sort(function(a,b) { return b.sort - a.sort; })
     .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
@@ -378,13 +773,13 @@ var diagonal = d3.svg.diagonal.radial()
     .projection(function(d) { return [d.y, d.x / 180 * Math.PI]; });
 
 
-var svg = d3.select("#svg2").append("svg")
+var svg6 = d3.select("#svg6").append("svg")
     .attr("width", diameter)
     .attr("height", diameter)
     .append("g")
     .attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
 
-  root = interactions;
+  root = interactions2;
   root.x0 = height / 2;
   root.y0 = 0;
 
@@ -397,33 +792,43 @@ var svg = d3.select("#svg2").append("svg")
   }
 
   //root.children.forEach(collapse); // start collapsed
-  update(root);
+  update6(root);
 
 
 
-function update(source) {
+function update6(source) {
 
   // Compute the new tree layout.
-  var nodes = tree.nodes(interactions);
+  var nodes = tree6.nodes(interactions2);
 
   // Normalize for fixed-depth.
   // nodes.forEach(function(d) { d.y = d.depth * 90; });
   nodes.forEach(function(d) { 
-    if (d.depth == 1) {
-        d.y =  90
+    if (d.depth == 0) {
+        d.y =  0
+      } else if (d.depth == 1) {
+        d.y =  0
       } else if (d.depth == 2  ) {
-        d.y =  250
+        d.y =  180
       } else if (d.depth == 3  ) {
-        d.y =  400
-      } else {
+        d.y =  250
+      } else if (d.depth == 4  ) {
+        d.y =  300
+      } else if (d.depth == 5  ) {
+        d.y =  380
+      } else if (d.depth == 6  ) {
+        d.y =  490
+      } else if (d.depth == 7  ) {
+        d.y =  535
+      }  else {
         d.y =  d.depth*150
       }
     });
 
-  var links = tree.links(nodes);
+  var links = tree6.links(nodes);
 
   // Update the nodes…
-  var node = svg.selectAll("g.node")
+  var node = svg6.selectAll("g.node")
       .data(nodes, function(d) { return d.id || (d.id = ++i); });
 
   // Enter any new nodes at the parent's previous position.
@@ -431,26 +836,46 @@ function update(source) {
       .attr("class", "node")
       // .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
       .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
-      .on("click", click);
+      .on("click", click6);
 
-  nodeEnter.append("circle")
+  nodeEnter.filter(function(d) {return (d.depth==7 || d.depth==0)}).append("circle")
       .attr("r", 1e-6)
       .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
 
   nodeEnter.append("text")
       // .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
       .attr("dy", ".31em")
-      .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
-      .attr("transform", function(d) { return d.x < 180 ? "translate(8)" : "rotate(180)translate(-8)"; })
-      .text(function(d) { return d.name; })
-      .style("font-size", function(d) { if (d.depth<3) {return "12px"} else { return "8px" } })
+      .attr("text-anchor", function(d) { return d.x < 180 ? "end" : "start"; })
+      .attr("transform", function(d) {  if (d.depth==7) {
+            return d.x < 180 ? "translate(30)" : "rotate(180)translate(-30)";
+        } else if (d.children) {
+          // console.log(d.name+" "+d.y+" "+d.children[0].y);
+            d.addlength = (d.children[0].y-d.y)
+            return d.x < 180 ? "translate("+ (d.children[0].y-d.y) +")": "rotate(180)translate(-"+ (d.children[0].y-d.y) +")";
+        } else {
+            return d.x < 180 ? "translate(12)" : "rotate(180)translate(-12)";
+         }
+       })
+      .text(function(d) { if (d.depth>0) {return d.name} else { return "" } })
+      .style("font-size", function(d) { if (d.depth<5) {return "12px"} else { return "8px" } })
       .style("fill", function(d) {
           if (d.color) {return "#111" } 
           else if (d.interactions > 0 && d.mutations_an > 0 && 1==2) {return "green" }
           else if (d.interactions > 0 && 1==2) {return "Olive" }
           else if (d.mutations_an > 0 && 1==2) {return "palegreen" }
           else {return "#222"}; })
-      .style("fill-opacity", 1e-6);;
+      .style("fill-opacity", 1e-6).call(getBB);
+  nodeEnter.filter(function(d) {return (d.depth!=7)}).insert("rect","text")
+    .attr("x", function(d){ if (d.children) {
+                                d.addlength = (d.children[0].y-d.y)
+                                return d.x < 180 ? d.bbox.x+d.addlength : d.bbox.x+d.addlength-d.bbox.width;
+                            } else {return d.x < 180 ? d.bbox.x+12 : d.bbox.x+12; }
+                          }
+      )
+    .attr("y", function(d){return d.bbox.y})
+    .attr("width", function(d){return d.bbox.width})
+    .attr("height", function(d){return d.bbox.height})
+    .style("fill", "#FFF");;
 
   // Transition nodes to their new position.
   var nodeUpdate = node.transition()
@@ -479,28 +904,31 @@ function update(source) {
       .style("fill-opacity", 1e-6);
 
   // Update the links…
-  var link = svg.selectAll("path.link")
+  var link = svg6.selectAll("path.link")
       .data(links, function(d) { return d.target.id; });
 
   // Enter any new links at the parent's previous position.
   link.enter().insert("path", "g")
       .attr("class", "link")
       .style("stroke", function(d) { return d.target.color; })
-      .style("stroke-width", function(d) { return 17-d.target.depth*d.target.depth; })
+      .style("stroke-width", function(d) { return 10-(d.target.depth); })
       .style("opacity", function(d) {
           if ((d.target.interactions > 0 && d.target.mutations_an > 0) || 1==1) {return 0.8 } //|| 1==1
           else if (d.target.interactions > 0) {return 0.5 }
           else if (d.target.mutations_an > 0) {return 0.5 }
           else {return 0.1}; })
-      .attr("d", function(d) {
-        var o = {x: source.x0, y: source.y0};
-        return diagonal({source: o, target: o});
-      });
+      .attr("d", function(d) { return step(d.source.x, d.source.y, d.target.x, d.target.y) })
+      // .attr("d", function(d) {
+      //   var o = {x: source.x0, y: source.y0};
+      //   return diagonal({source: o, target: o});
+      // })
+      ;
 
   // Transition links to their new position.
   link.transition()
       .duration(duration)
       .attr("d", diagonal);
+      // .attr("d", function(d) { return step(d.source.x, d.source.y, d.target.x, d.target.y) });
 
   // Transition exiting nodes to the parent's new position.
   link.exit().transition()
@@ -519,7 +947,7 @@ function update(source) {
 }
 
 // Toggle children on click.
-function click(d) {
+function click6(d) {
   if (d.children) {
     d._children = d.children;
     d.children = null;
@@ -527,9 +955,382 @@ function click(d) {
     d.children = d._children;
     d._children = null;
   }
-  update(d);
+  update6(d);
 }
+//////////////////
+var width = 960,
+    height = 1000,
+    root;
+
+var force = d3.layout.force()
+    .size([width, height])
+    .on("tick", tick);
+
+var svg5 = d3.select("#svg5").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var link = svg5.selectAll(".link"),
+    node = svg5.selectAll(".node");
+
+
+  root = interactions;
+  update5();
+
+
+function update5() {
+  var nodes = flatten(root),
+      links = d3.layout.tree().links(nodes);
+
+  // Restart the force layout.
+  force
+      .nodes(nodes)
+      .links(links)
+      .start();
+
+  // Update the links…
+  link = link.data(links, function(d) { return d.target.id; });
+
+  // Exit any old links.
+  link.exit().remove();
+
+  // Enter any new links.
+  link.enter().insert("line", ".node")
+      .attr("class", "link")
+      .attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; })
+      .style("stroke", function(d) { return d.target.color; })
+      .style("stroke-width", function(d) { return 5-d.target.depth + "px"; });;
+
+  // Update the nodes…
+  node = node.data(nodes, function(d) { return d.id; }).style("fill", color);
+
+  // Exit any old nodes.
+  node.exit().remove();
+
+  // Enter any new nodes.
+  node.enter().append("circle")
+      .attr("class", "node")
+      .attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; })
+      .attr("r", function(d) { return Math.sqrt(d.receptor_t)  || 4.5; })
+      .style("fill", function(d) { return d.color; })
+      .on("click", click5)
+      .call(force.drag);
+}
+
+function tick() {
+
+var link = svg5.selectAll(".link"),
+    node = svg5.selectAll(".node");
+
+  link.attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; });
+
+  node.attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; });
+}
+
+// Color leaf nodes orange, and packages white or blue.
+function color2(d) {
+  return d._children ? "#3182bd" : d.children ? "#c6dbef" : "#fd8d3c";
+}
+
+// Toggle children on click.
+function click5(d) {
+  if (!d3.event.defaultPrevented) {
+    if (d.children) {
+      d._children = d.children;
+      d.children = null;
+    } else {
+      d.children = d._children;
+      d._children = null;
+    }
+    update5();
+  }
+}
+
+// Returns a list of all nodes under the root.
+function flatten(root) {
+  var nodes = [], i = 0;
+
+  function recurse(node) {
+    if (node.children) node.children.forEach(recurse);
+    if (!node.id) node.id = ++i;
+    nodes.push(node);
+  }
+
+  recurse(root);
+  return nodes;
+}
+
+
+////////////////
+
+function parseNewick(a){for(var e=[],r={},s=a.split(/\s*(;|\(|\)|,|:)\s*/),t=0;t<s.length;t++){var n=s[t];switch(n){case"(":var c={};r.branchset=[c],e.push(r),r=c;break;case",":var c={};e[e.length-1].branchset.push(c),r=c;break;case")":r=e.pop();break;case":":break;default:var h=s[t-1];")"==h||"("==h||","==h?r.name=n:":"==h&&(r.length=parseFloat(n))}}return r}
+
+phylo = "(((((((((((((((((((Escherichia_coli_EDL933:0.00000,Escherichia_coli_O157_H7:0.00000)Escherichia_subclade:0.00044[96],((Escherichia_coli_O6:0.00000,Escherichia_coli_K12:0.00022)Escherichia_subclade:0.00022[76],(Shigella_flexneri_2a_2457T:0.00000,Shigella_flexneri_2a_301:0.00000)Shigella:0.00266[100])Enterobacteriaceae_subclade:0.00000[75])Enterobacteriaceae_subclade:0.00813[100],((Salmonella_enterica:0.00000,Salmonella_typhi:0.00000)Salmonella_subclade:0.00146[100],Salmonella_typhimurium:0.00075)Salmonella:0.00702[100])Enterobacteriaceae_subclade:0.03131[100],((Yersinia_pestis_Medievalis:0.00000,(Yersinia_pestis_KIM:0.00000,Yersinia_pestis_CO92:0.00000)Yersinia_subclade:0.00000[31])Yersinia:0.03398[100],Photorhabdus_luminescens:0.05076)Enterobacteriaceae_subclade:0.01182[61])Enterobacteriaceae_subclade:0.02183[98],((Blochmannia_floridanus:0.32481,Wigglesworthia_brevipalpis:0.35452)Enterobacteriaceae_subclade:0.08332[100],(Buchnera_aphidicola_Bp:0.27492,(Buchnera_aphidicola_APS:0.09535,Buchnera_aphidicola_Sg:0.10235)Buchnera_subclade:0.10140[100])Buchnera:0.06497[100])Enterobacteriaceae_subclade:0.15030[100])Enterobacteriaceae:0.02808[100],((Pasteurella_multocida:0.03441,Haemophilus_influenzae:0.03754)Pasteurellaceae_subclade:0.01571[94],Haemophilus_ducreyi:0.05333)Pasteurellaceae:0.07365[100])Gammaproteobacteria_subclade:0.03759[100],((((Vibrio_vulnificus_YJ016:0.00021,Vibrio_vulnificus_CMCP6:0.00291)Vibrio_subclade:0.01212[100],Vibrio_parahaemolyticus:0.01985)Vibrio_subclade:0.01536[100],Vibrio_cholerae:0.02995)Vibrio:0.02661[100],Photobacterium_profundum:0.06131)Vibrionaceae:0.05597[100])Gammaproteobacteria_subclade:0.03492[81],Shewanella_oneidensis:0.10577)Gammaproteobacteria_subclade:0.12234[100],((Pseudomonas_putida:0.02741,Pseudomonas_syringae:0.03162)Pseudomonas_subclade:0.02904[100],Pseudomonas_aeruginosa:0.03202)Pseudomonas:0.14456[100])Gammaproteobacteria_subclade:0.04492[98],((Xylella_fastidiosa_700964:0.01324,Xylella_fastidiosa_9a5c:0.00802)Xylella:0.10192[100],(Xanthomonas_axonopodis:0.01069,Xanthomonas_campestris:0.00934)Xanthomonas:0.05037[100])Xanthomonadaceae:0.24151[100])Gammaproteobacteria_subclade:0.02475[49],Coxiella_burnetii:0.33185)Gammaproteobacteria:0.03328[54],((((Neisseria_meningitidis_A:0.00400,Neisseria_meningitidis_B:0.00134)Neisseria:0.12615[100],Chromobacterium_violaceum:0.09623)Neisseriaceae:0.07131[100],((Bordetella_pertussis:0.00127,(Bordetella_parapertussis:0.00199,Bordetella_bronchiseptica:0.00022)Bordetella_subclade:0.00006[67])Bordetella:0.14218[100],Ralstonia_solanacearum:0.11464)Burkholderiales:0.08478[100])Betaproteobacteria_subclade:0.03840[75],Nitrosomonas_europaea:0.22059)Betaproteobacteria:0.08761[100])Proteobacteria_subclade:0.16913[100],((((((Agrobacterium_tumefaciens_Cereon:0.00000,Agrobacterium_tumefaciens_WashU:0.00000):0.05735[100],Rhizobium_meliloti:0.05114)Sinorhizobium:0.05575[100],((Brucella_suis:0.00102,Brucella_melitensis:0.00184)Brucella:0.08660[100],Rhizobium_loti:0.09308)Rhizobiales_subclade:0.02384[51])Rhizobiales_subclade:0.08637[100],(Rhodopseudomonas_palustris:0.04182,Bradyrhizobium_japonicum:0.06346)Bradyrhizobiaceae:0.14122[100])Rhizobiales:0.05767[100],Caulobacter_crescentus:0.23943)Alphaproteobacteria_subclade:0.11257[100],(Wolbachia_sp._wMel:0.51596,(Rickettsia_prowazekii:0.04245,Rickettsia_conorii:0.02487)Rickettsia:0.38019[100])Rickettsiaceae:0.12058[100])Alphaproteobacteria:0.12365[100])Proteobacteria_subclade:0.06301[100],((((Helicobacter_pylori_J99:0.00897,Helicobacter_pylori_26695:0.00637)Helicobacter_subclade:0.19055[100],Helicobacter_hepaticus:0.12643)Helicobacter:0.05330[100],Wolinella_succinogenes:0.11644)Helicobacteraceae:0.09105[100],Campylobacter_jejuni:0.20399)Campylobacterales:0.41390[100])Proteobacteria_subclade:0.04428[82],((Desulfovibrio_vulgaris:0.38320,(Geobacter_sulfurreducens:0.22491,Bdellovibrio_bacteriovorus:0.45934)Deltaproteobacteria_subclade:0.04870[43])Deltaproteobacteria:0.04100[69],(Acidobacterium_capsulatum:0.24572,Solibacter_usitatus:0.29086)Acidobacteria:0.20514[100])Bacteria_subclade:0.04214[64])Bacteria_subclade:0.05551[98],((Fusobacterium_nucleatum:0.45615,(Aquifex_aeolicus:0.40986,Thermotoga_maritima:0.34182)Bacteria_subclade:0.07696[100])Bacteria_subclade:0.03606[35],(((Thermus_thermophilus:0.26583,Deinococcus_radiodurans:0.29763)Deinococci:0.24776[100],Dehalococcoides_ethenogenes:0.53988)Bacteria_subclade:0.04370[35],((((Nostoc_sp._PCC_7120:0.12014,Synechocystis_sp._PCC6803:0.15652)Cyanobacteria_subclade:0.04331[98],Synechococcus_elongatus:0.13147)Cyanobacteria_subclade:0.05040[100],(((Synechococcus_sp._WH8102:0.06780,Prochlorococcus_marinus_MIT9313:0.05434)Cyanobacteria_subclade:0.04879[100],Prochlorococcus_marinus_SS120:0.10211)Cyanobacteria_subclade:0.04238[74],Prochlorococcus_marinus_CCMP1378:0.16170)Cyanobacteria_subclade:0.20442[100])Cyanobacteria_subclade:0.07646[100],Gloeobacter_violaceus:0.23764)Cyanobacteria:0.24501[100])Bacteria_subclade:0.04332[39])Bacteria_subclade:0.02720[51])Bacteria_subclade:0.03471[74],((((Gemmata_obscuriglobus:0.36751,Rhodopirellula_baltica:0.38017)Planctomycetaceae:0.24062[100],((Leptospira_interrogans_L1-130:0.00000,Leptospira_interrogans_56601:0.00027)Leptospira:0.47573[100],((Treponema_pallidum:0.25544,Treponema_denticola:0.16072)Treponema:0.19057[100],Borrelia_burgdorferi:0.42323)Spirochaetaceae:0.20278[100])Spirochaetales:0.07248[95])Bacteria_subclade:0.04615[42],(((Tropheryma_whipplei_TW08/27:0.00009,Tropheryma_whipplei_Twist:0.00081)Tropheryma:0.44723[100],Bifidobacterium_longum:0.29283)Actinobacteridae_subclade:0.14429[100],(((((Corynebacterium_glutamicum_13032:0.00022,Corynebacterium_glutamicum:0.00000)Corynebacterium_subclade:0.03415[100],Corynebacterium_efficiens:0.02559)Corynebacterium_subclade:0.03682[100],Corynebacterium_diphtheriae:0.06479)Corynebacterium:0.13907[100],(((Mycobacterium_bovis:0.00067,(Mycobacterium_tuberculosis_CDC1551:0.00000,Mycobacterium_tuberculosis_H37Rv:0.00000)Mycobacterium_subclade:0.00022[98])Mycobacterium_subclade:0.03027[100],Mycobacterium_leprae:0.05135)Mycobacterium_subclade:0.01514[97],Mycobacterium_paratuberculosis:0.02091)Mycobacterium:0.11523[100])Corynebacterineae:0.09883[100],(Streptomyces_avermitilis:0.02680,Streptomyces_coelicolor:0.02678)Streptomyces:0.16707[100])Actinomycetales_subclade:0.06110[91])Actinobacteridae:0.26800[100])Bacteria_subclade:0.03480[23],((Fibrobacter_succinogenes:0.51984,(Chlorobium_tepidum:0.37204,(Porphyromonas_gingivalis:0.11304,Bacteroides_thetaiotaomicron:0.13145)Bacteroidales:0.34694[100])Bacteroidetes/Chlorobi_group:0.09237[100])Bacteria_subclade:0.04841[62],(((Chlamydophila_pneumoniae_TW183:0.00000,(Chlamydia_pneumoniae_J138:0.00000,(Chlamydia_pneumoniae_CWL029:0.00000,Chlamydia_pneumoniae_AR39:0.00000)Chlamydophila_subclade:0.00000[37])Chlamydophila_subclade:0.00000[44])Chlamydophila_subclade:0.10482[100],Chlamydophila_caviae:0.05903)Chlamydophila:0.04170[98],(Chlamydia_muridarum:0.01938,Chlamydia_trachomatis:0.02643)Chlamydia:0.06809[100])Chlamydiaceae:0.60169[100])Bacteria_subclade:0.04443[32])Bacteria_subclade:0.04284[67])Bacteria_subclade:0.02646[66],((Thermoanaerobacter_tengcongensis:0.17512,((Clostridium_tetani:0.10918,Clostridium_perfringens:0.11535)Clostridium_subclade:0.03238[78],Clostridium_acetobutylicum:0.11396)Clostridium:0.15056[100])Clostridia:0.11788[100],(((((Mycoplasma_mobile:0.27702,Mycoplasma_pulmonis:0.28761)Mycoplasma_subclade:0.28466[100],((((Mycoplasma_pneumoniae:0.10966,Mycoplasma_genitalium:0.11268)Mycoplasma_subclade:0.31768[100],Mycoplasma_gallisepticum:0.24373)Mycoplasma_subclade:0.14180[100],Mycoplasma_penetrans:0.34890)Mycoplasma_subclade:0.06674[94],Ureaplasma_parvum:0.33874)Mycoplasmataceae_subclade:0.19177[100])Mycoplasmataceae_subclade:0.07341[100],Mycoplasma_mycoides:0.37680)Mycoplasmataceae:0.12541[100],Phytoplasma_Onion_yellows:0.47843)Mollicutes:0.09099[100],(((((Listeria_monocytogenes_F2365:0.00063,Listeria_monocytogenes_EGD:0.00144)Listeria_subclade:0.00235[90],Listeria_innocua:0.00248)Listeria:0.13517[100],((Oceanobacillus_iheyensis:0.13838,Bacillus_halodurans:0.09280)Bacillaceae_subclade:0.02676[91],(((Bacillus_cereus_ATCC_14579:0.00342,Bacillus_cereus_ATCC_10987:0.00123)Bacillus_subclade:0.00573[100],Bacillus_anthracis:0.00331)Bacillus_subclade:0.08924[100],Bacillus_subtilis:0.07876)Bacillus:0.01984[96])Bacillaceae:0.03907[100])Bacillales_subclade:0.02816[69],((Staphylococcus_aureus_MW2:0.00000,(Staphylococcus_aureus_N315:0.00022,Staphylococcus_aureus_Mu50:0.00022)Staphylococcus_subclade:0.00022[61])Staphylococcus_subclade:0.02479[100],Staphylococcus_epidermidis:0.03246)Staphylococcus:0.17366[100])Bacillales:0.02828[64],(((((((Streptococcus_agalactiae_III:0.00110,Streptococcus_agalactiae_V:0.00155)Streptococcus_subclade:0.01637[100],(Streptococcus_pyogenes_M1:0.00134,(Streptococcus_pyogenes_MGAS8232:0.00045,(Streptococcus_pyogenes_MGAS315:0.00000,Streptococcus_pyogenes_SSI-1:0.00022)Streptococcus_subclade:0.00110[100])Streptococcus_subclade:0.00066[87])Streptococcus_subclade:0.02250[100])Streptococcus_subclade:0.01360[100],Streptococcus_mutans:0.04319)Streptococcus_subclade:0.01920[99],(Streptococcus_pneumoniae_R6:0.00119,Streptococcus_pneumoniae_TIGR4:0.00124)Streptococcus_subclade:0.03607[100])Streptococcus:0.04983[100],Lactococcus_lactis:0.11214)Streptococcaceae:0.08901[100],Enterococcus_faecalis:0.07946)Lactobacillales_subclade:0.03958[100],(Lactobacillus_johnsonii:0.20999,Lactobacillus_plantarum:0.14371)Lactobacillus:0.06763[100])Lactobacillales:0.08989[100])Bacilli:0.08905[100])Firmicutes_subclade:0.09540[92])Firmicutes:0.04315[54])Bacteria:1.34959,(((((Thalassiosira_pseudonana:0.33483,(Cryptosporidium_hominis:0.25048,Plasmodium_falciparum:0.28267)Apicomplexa:0.14359[100])Eukaryota_subclade:0.03495[42],(((Oryza_sativa:0.07623,Arabidopsis_thaliana:0.09366)Streptophyta:0.15770[100],Cyanidioschyzon_merolae:0.38319)Eukaryota_subclade:0.08133[96],(Dictyostelium_discoideum:0.34685,(((Eremothecium_gossypii:0.07298,Saccharomyces_cerevisiae:0.07619)Saccharomycetaceae:0.21170[100],Schizosaccharomyces_pombe:0.24665)Ascomycota:0.15370[100],(((Anopheles_gambiae:0.10724,Drosophila_melanogaster:0.10233)Diptera:0.09870[100],((Takifugu_rubripes:0.03142,Danio_rerio:0.05230)Actinopterygii:0.04335[100],(((Rattus_norvegicus:0.03107,Mus_musculus:0.01651)Murinae:0.00398[91],(Homo_sapiens:0.00957,Pan_troglodytes:0.03864)Hominidae:0.01549[100])Euarchontoglires:0.01629[99],Gallus_gallus:0.04596)Gnathostomata_subclade:0.01859[100])Gnathostomata:0.09688[100])Metazoa_subclade:0.03693[95],(Caenorhabditis_elegans:0.01843,Caenorhabditis_briggsae:0.01896)Caenorhabditis:0.24324[100])Metazoa:0.09911[100])Eukaryota_subclade:0.04004[85])Eukaryota_subclade:0.02708[41])Eukaryota_subclade:0.02636[44])Eukaryota_subclade:0.06455[87],Leishmania_major:0.45664)Eukaryota_subclade:0.10129[100],Giardia_lamblia:0.55482)Eukaryota:0.57543[100],((Nanoarchaeum_equitans:0.81078,(((Sulfolobus_tokodaii:0.17389,Sulfolobus_solfataricus:0.18962)Sulfolobus:0.33720[100],Aeropyrum_pernix:0.43380)Thermoprotei_subclade:0.09462[94],Pyrobaculum_aerophilum:0.55514)Thermoprotei:0.12018[100])Archaea_subclade:0.15444[100],((Thermoplasma_volcanium:0.10412,Thermoplasma_acidophilum:0.09785)Thermoplasma:0.66151[100],((((Methanobacterium_thermautotrophicum:0.36583,Methanopyrus_kandleri:0.35331)Euryarchaeota_subclade:0.07446[99],(Methanococcus_maripaludis:0.28592,Methanococcus_jannaschii:0.13226)Methanococcales:0.23828[100])Euryarchaeota_subclade:0.06284[100],((Pyrococcus_horikoshii:0.02786,Pyrococcus_abyssi:0.02179)Pyrococcus_subclade:0.02239[100],Pyrococcus_furiosus:0.02366)Pyrococcus:0.36220[100])Euryarchaeota_subclade:0.04469[51],(Archaeoglobus_fulgidus:0.34660,(Halobacterium_sp._NRC-1:0.61597,(Methanosarcina_acetivorans:0.02602,Methanosarcina_mazei:0.03087)Methanosarcina:0.30588[100])Euryarchaeota_subclade:0.12801[100])Euryarchaeota_subclade:0.10395[100])Euryarchaeota_subclade:0.06815[62])Euryarchaeota:0.11833[99])Archaea:0.43325[100]):0.88776)";
+
+phylo = "((((((CaS:0.43824,GPRC6:0.43824):0.37100,((mGlu1:0.14573,mGlu5:0.14573):0.24939,((mGlu2:0.15646,mGlu3:0.15646):0.17768,((mGlu4:0.09708,(mGlu7:0.06988,mGlu8:0.06988):0.02720):0.05367,mGlu6:0.15075):0.18339):0.06097):0.41412):0.31847,((GPRC5A:0.32119,GPRC5D:0.32119):0.17905,(GPCR5B:0.39557,GPRC5C:0.39557):0.10467):0.62747):0.11226,((TAS1R1:0.76860,TAS1R2:0.76860):0.21733,TAS1R3:0.98593):0.25403):0.14053,((GABAb1:0.51385,GABAb2:0.51385):0.32368,GPR156:0.83753):0.54296):0.38913,((GPR158:0.30767,GPR179:0.30767)Archaea:0.30767):1.46196);";
+
+phylo = "((((((CaS:0.43824,GPRC6:0.43824):0.37100,((mGlu1:0.14573,mGlu5:0.14573):0.24939,((mGlu2:0.15646,mGlu3:0.15646):0.17768,((mGlu4:0.09708,(mGlu7:0.06988,mGlu8:0.06988):0.02720):0.05367,mGlu6:0.15075):0.18339):0.06097)Bacteria:0.41412):0.31847,((GPRC5A:0.32119,GPRC5D:0.32119):0.17905,(GPCR5B:0.39557,GPRC5C:0.39557):0.10467):0.62747):0.11226,((TAS1R1:0.76860,TAS1R2:0.76860):0.21733,TAS1R3:0.98593)Nexttest:0.25403):0.14053,((GABAb1:0.51385,GABAb2:0.51385):0.32368,GPR156:0.83753)Eukaryota:0.54296):0.38913,(GPR158:0.30767,GPR179:0.30767)Archaea:1.46196);";
+
+phylo_site = "(((((((CaS:0.25080,GPRC6:0.25080)blah2:0.31151,TAS1R1:0.56231):0.22053,TAS1R3:0.78284):0.14066,TAS1R2:0.92350)Nexttest:0.37927,(((mGlu1:0.09624,mGlu5:0.09624):0.32541,((mGlu2:0.07748,mGlu3:0.07748):0.16413,((mGlu4:0.07584,(mGlu7:0.03518,mGlu8:0.03518):0.04066):0.02865,mGlu6:0.10449):0.13712):0.18005)mGlu:0.38960,(((GPRC5A:0.11297,GPRC5D:0.11297):0.15178,GPRC5C:0.26475):0.07938,GPCR5B:0.34413)blah:0.46713):0.49151):0.27968,((GABAb1:0.48819,GABAb2:0.48819):0.19314,GPR156:0.68133)Eukaryota:0.90111):1.08840,(GPR158:0.24684,GPR179:0.24684)Archaea:2.42400);";
+
+phylo_tm = "((((((CaS:0.43546,GPRC6:0.43546)blah2:0.36894,((mGlu1:0.13746,mGlu5:0.13746):0.26302,((mGlu2:0.16096,mGlu3:0.16096):0.17358,((mGlu4:0.09402,(mGlu7:0.06962,mGlu8:0.06962):0.02440):0.05175,mGlu6:0.14577):0.18877):0.06594)mGlu:0.40392):0.31168,((TAS1R1:0.77719,TAS1R2:0.77719):0.22828,TAS1R3:1.00548):0.11060)Nexttest:0.14325,((GPRC5A:0.34164,GPRC5D:0.34164):0.17194,(GPCR5B:0.40816,GPRC5C:0.40816):0.10542)blah:0.74575):0.10652,((GABAb1:0.50615,GABAb2:0.50615):0.32881,GPR156:0.83496)Eukaryota:0.53089):0.39150,(GPR158:0.33108,GPR179:0.33108)Archaea:1.42627);";
+
+
+var outerRadius = 760 / 2,
+    innerRadius = outerRadius - 100;
+
+var color = d3.scale.category10()
+    .domain(["Bacteria", "Eukaryota", "Archaea","Nexttest","mGlu","blah","blah2"]);
+
+var cluster = d3.layout.cluster()
+    .size([360, innerRadius])
+    .children(function(d) { return d.branchset; })
+    .value(function(d) { return 1; })
+    .sort(function(a, b) { return (a.value - b.value) || d3.ascending(a.length, b.length); })
+    .separation(function(a, b) { return 1; });
+
+
+var diagonal2 = d3.svg.diagonal.radial()
+    .projection(function(d) { return [d.y, d.x / 180 * Math.PI]; });
+
+var diagonal3 = d3.svg.diagonal()
+    .source(function(d) { return {"x":d.target.x, "y":d.target.y}; })            
+    .target(function(d) { return {"x":d.target.x, "y":d.source.y}; })
+    .projection(function(d) { return [d.y, d.x / 180 * Math.PI]; });
+
+
+var diagonal4 = d3.svg.diagonal.radial()
+    .projection(function(d) { var r = d.y, a = (d.x - 90) / 180 * Math.PI;
+                              return [r * Math.cos(a), r * Math.sin(a)]; });    
+
+var svg = d3.select("#svg7").append("svg")
+    .attr("width", outerRadius * 2)
+    .attr("height", outerRadius * 2);
+
+// var legend = svg.append("g")
+//     .attr("class", "legend")
+//   .selectAll("g")
+//     .data(color.domain())
+//   .enter().append("g")
+//     .attr("transform", function(d, i) { return "translate(" + (outerRadius * 2 - 10) + "," + (i * 20 + 10) + ")"; });
+
+// legend.append("rect")
+//     .attr("x", -18)
+//     .attr("width", 18)
+//     .attr("height", 18)
+//     .style("fill", color);
+
+// legend.append("text")
+//     .attr("x", -24)
+//     .attr("y", 9)
+//     .attr("dy", ".35em")
+//     .style("text-anchor", "end")
+//     .text(function(d) { return d; });
+
+var chart = svg.append("g")
+    .attr("transform", "translate(" + outerRadius + "," + outerRadius + ")");
+
+
+  var root = parseNewick(phylo_tm),
+      nodes = cluster.nodes(root),
+      links = cluster.links(nodes),
+      input = d3.select("#show-length input").on("change", changed),
+      timeout = setTimeout(function() { input.property("checked", true).each(changed); }, 2000);
+
+  setRadius(root, root.length = 0, innerRadius / maxLength(root));
+  var total = totalFinalChildren(root);
+  var arc_size = 360/total;
+  setColor(root);
+
+  var linkExtension = chart.append("g")
+      .attr("class", "link-extensions")
+    .selectAll("path")
+      .data(links.filter(function(d) { return !d.target.children; }))
+    .enter().append("path")
+      .each(function(d) { d.target.linkExtensionNode = this; })
+      .attr("d", function(d) { return step(d.target.x, d.target.y, d.target.x, innerRadius); });
+      // .attr("d", diagonal4); 
+
+  var link = chart.append("g")
+      .attr("class", "links")
+    .selectAll("path")
+      .data(links)
+    .enter().append("path")
+      .each(function(d) { d.target.linkNode = this; })
+      .attr("d", function(d) { return step(d.source.x, d.source.y, d.target.x, d.target.y) })
+      // .attr("d", diagonal4)
+      .style("stroke", function(d) { return d.target.color; })
+      .style("stroke-width", "2px");
+
+  chart.append("g")
+      .attr("class", "labels")
+    .selectAll("text")
+      .data(nodes.filter(function(d) { return !d.children; }))
+    .enter().append("text")
+      .attr("dy", ".31em")
+      .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (innerRadius + 4) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+      .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+      // .text(function(d) { return d.name.replace(/_/g, " "); })
+      .on("mouseover", mouseovered(true))
+      .on("mouseout", mouseovered(false));
+
+  var arc = d3.svg.arc()
+    .innerRadius(function(d) {return innerRadius; })
+    .outerRadius(innerRadius+20)
+    .startAngle(function(d) { return Math.round(d.x-arc_size/2+1) * (Math.PI/180);}) //converting from degs to radians
+    .endAngle(function(d) { return  Math.round(d.x+arc_size/2-1)* (Math.PI/180);}) //just radians
+    //   .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x))); })
+    //   .endAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x + d.dx))); })
+
+  chart.append("g")
+      .attr("class", "labels")
+    .selectAll("text")
+      .data(nodes.filter(function(d) { return !d.children; }))
+    .enter().append("path")
+    .attr("class", "donutArcs")
+    .attr("d", arc)
+    .attr("fill",function(d) { return d.color; })
+    .attr("opacity",function(d){  return (d.name=="mGlu1" || d.name=="mGlu5" ? "0.9" : "0.9") ;}).each(function(d,i) {
+      //Search pattern for everything between the start and the first capital L
+      var firstArcSection = /(^.+?)L/;  
+
+      //Grab everything up to the first Line statement
+      var newArc = firstArcSection.exec( d3.select(this).attr("d") )[1];
+      //Replace all the comma's so that IE can handle it
+      newArc = newArc.replace(/,/g , " ");
+      
+      //If the end angle lies beyond a quarter of a circle (90 degrees or pi/2) 
+      //flip the end and start position
+      if (d.x > 90 && d.x<270) {
+        var startLoc  = /M(.*?)A/,    //Everything between the first capital M and first capital A
+          middleLoc   = /A(.*?)0 0 1/,  //Everything between the first capital A and 0 0 1
+          endLoc    = /0 0 1 (.*?)$/; //Everything between the first 0 0 1 and the end of the string (denoted by $)
+        //Flip the direction of the arc by switching the start en end point (and sweep flag)
+        //of those elements that are below the horizontal line
+        var newStart = endLoc.exec( newArc )[1];
+        var newEnd = startLoc.exec( newArc )[1];
+        var middleSec = middleLoc.exec( newArc )[1];
+        
+        //Build up the new arc notation, set the sweep-flag to 0
+        newArc = "M" + newStart + "A" + middleSec + "0 0 0 " + newEnd;
+      }//if
+      
+      //Create a new invisible arc that the text can flow along
+      chart.append("path")
+        .attr("class", "hiddenDonutArcs")
+        .attr("id", "donutArc"+i)
+        .attr("d", newArc)
+        .style("fill", "none");
+    });
+
+    chart.append("g")
+    .attr("class", "labels")
+    .selectAll("text")
+    .data(nodes.filter(function(d) { return !d.children; }))
+    .enter().append("text")
+      // .attr("class", "donutText")
+      .attr("class", "labels")
+      // .attr("x", Math.round(arc_size) * (Math.PI/180)*innerRadius*0.5) //Move the text from the start angle of the arc
+      // .attr("dy", 15) //Move the text down
+      .attr("dy", function(d) { return (d.x > 90 && d.x<270 ? -5 : +15); })
+      // .attr("transform", function(d) { console.log(d.x +" " + d.name); return (d.x < 270 && d.x>90 ? "translate(180,180)" : ""); })
+
+      .append("textPath")
+      .attr("fill", function(d){  return (d.name=="mGlu1123" ? "#000" : "#FFF") ;})
+
+      .attr("text-decoration", function(d){  return (d.name=="mGlu1" ? "" : "") ;})
+      .attr("startOffset","50%")  
+      .style("text-anchor", "middle")
+      .attr("xlink:href",function(d,i){return "#donutArc"+i;})
+      .text(function(d){  return d.name;})
+      .on("mouseover", mouseovered(true))
+      .on("mouseout", mouseovered(false));
+
+    //   .append("text")
+    // .attr("class", "donutText")
+    // //Move the labels below the arcs for those slices with an end angle greater than 90 degrees
+    // .attr("dy", function(d,i) { return (d.endAngle > 90 * Math.PI/180 ? 18 : -11); })
+    //  .append("textPath")
+    // .attr("startOffset","50%")
+    // .style("text-anchor","middle")
+    // .attr("xlink:href",function(d,i){return "#"+d.name;})
+    // .text(function(d){return d.name;});
+
+
+  function changed() {
+    clearTimeout(timeout);
+    var checked = this.checked;
+    d3.transition().duration(750).each(function() {
+      linkExtension.transition().attr("d", function(d) { return step(d.target.x, checked ? d.target.radius : d.target.y, d.target.x, innerRadius); });
+      link.transition().attr("d", function(d) { return step(d.source.x, checked ? d.source.radius : d.source.y, d.target.x, checked ? d.target.radius : d.target.y) });
+      // link.transition().attr("d", diagonal4)
+    });
+  }
+
+  function mouseovered(active) {
+    return function(d) {
+      d3.select(this).classed("label--active", active);
+      d3.select(d.linkExtensionNode).classed("link-extension--active", active).each(moveToFront);
+      do d3.select(d.linkNode).classed("link--active", active).each(moveToFront); while (d = d.parent);
+    };
+  }
+
+  function moveToFront() {
+    this.parentNode.appendChild(this);
+  }
+
+
+// Compute the maximum cumulative length of any node in the tree.
+function maxLength(d) {
+  return d.length + (d.children ? d3.max(d.children, maxLength) : 0);
+}
+
+// Compute the maximum cumulative length of any node in the tree.
+function totalFinalChildren(d) {
+  if (d.children){
+    var count = 0
+    d.children.forEach(function(d) { count += totalFinalChildren(d); }); 
+    return count;
+  } else {
+    return 1;
+  }
+}
+
+// Set the radius of each node by recursively summing and scaling the distance from the root.
+function setRadius(d, y0, k) {
+  d.radius = (y0 += d.length) * k;
+  if (d.children) d.children.forEach(function(d) { setRadius(d, y0, k); });
+}
+
+// Set the color of each node by recursively inheriting.
+function setColor(d) {
+  d.color = color.domain().indexOf(d.name) >= 0 ? color(d.name) : d.parent ? d.parent.color : null;
+  if (d.children) d.children.forEach(setColor);
+}
+
+// Like d3.svg.diagonal.radial, but with square corners.
+function step(startAngle, startRadius, endAngle, endRadius) {
+  var c0 = Math.cos(startAngle = (startAngle - 90) / 180 * Math.PI),
+      s0 = Math.sin(startAngle),
+      c1 = Math.cos(endAngle = (endAngle - 90) / 180 * Math.PI),
+      s1 = Math.sin(endAngle);
+  return "M" + startRadius * c0 + "," + startRadius * s0
+      + (endAngle === startAngle ? "" : "A" + startRadius + "," + startRadius + " 0 0 " + (endAngle > startAngle ? 1 : 0) + " " + startRadius * c1 + "," + startRadius * s1)
+      + "L" + endRadius * c1 + "," + endRadius * s1;
+}
+
+
+
 </script>
+
 {% endblock %}
 
 {% block content %}
@@ -538,126 +1339,15 @@ Coverage for class X
 <div id=svg></div>
 <div id=svg2></div>
 <div id=svg3></div>
+<div id=svg6></div>
 <div id=svg4></div>
+<div id=svg5></div>
+<label id="show-length">
+  <input type="checkbox"> Show branch length
+</label>
+<div id=svg7></div>
 
-<table width=1600>
-<!-- {% for c,v in coverage.items %}
-    <tr><td>{{c}}</td><td>I: {{v.interactions}} {{v.receptor_i}}</td><td>M: {{v.mutations}} {{v.receptor_m}}</td></tr>
-        {% for lt,v in v.list.items %}
-            <tr><td></td><td>{{lt}}</td><td>I: {{v.interactions}} {{v.receptor_i}}</td><td>M: {{v.mutations}} {{v.receptor_m}}</td></tr>
-             {% for rf,v in v.list.items %} 
-                <tr><td></td><td></td><td>{{rf}}</td><td>I: {{v.interactions}} {{v.receptor_i}}</td><td>M: {{v.mutations}} {{v.receptor_m}}</td></tr>  
-                 {% for r,v in v.list.items %} 
-                    <tr><td></td><td></td><td></td><td>{{r}}</td><td>I: {{v.interactions}}</td><td>M: {{v.mutations}}</td></tr>  
-                 {% endfor %}
-             {% endfor %}
-        {% endfor %}
-{% endfor %} -->
-<tr>
-    <th>ID</th>
-    <th>Name</th>
-    <th># receptors</th>
-    <th>Interactions</th>
-    <th>Rec. with int</th>
-    <th>Fraction I</th>
-    <th>Mutations</th>
-    <th>Rec. with Mut</th>
-    <th>Fraction M</th>
-    <th>Mutations (an)</th>
-    <th>Rec. with Mut (an)</th>
-    <th>Fraction M (an)</th>
-</tr>
-<tr>
-<th colspan="3"> Classes</th>
-<tr>
-{% for c,v in coverage.items %}
-    <tr>
-        <td>{{c}}</td>
-        <td>{{v.name|safe}}</td>
-        <td>{{v.receptor_t}}</td>
-        <td>{{v.interactions}}</td>
-        <td>{{v.receptor_i}}</td>
-        <td>{{v.fraction_i|floatformat:"2"}}</td>
-        <td>{{v.mutations}}</td>
-        <td>{{v.receptor_m}}</td>
-        <td>{{v.fraction_m|floatformat:"2"}}</td>
-        <td>{{v.mutations_an}}</td>
-        <td>{{v.receptor_m_an}}</td>
-        <td>{{v.fraction_m_an|floatformat:"2"}}</td>
-    </tr>
-{% endfor %}
 
-<tr>
-<th colspan="3"> Ligand Type</th>
-<tr>
-{% for c,v in coverage.items %}
-    {% for v in v.children %}
-        <tr>
-            <td>{{c}}_{{lt}}</td>
-            <td>{{v.name|safe}}</td>
-            <td>{{v.receptor_t}}</td>
-            <td>{{v.interactions}}</td>
-            <td>{{v.receptor_i}}</td>
-            <td>{{v.fraction_i|floatformat:"2"}}</td>
-            <td>{{v.mutations}}</td>
-            <td>{{v.receptor_m}}</td>
-            <td>{{v.fraction_m|floatformat:"2"}}</td>
-            <td>{{v.mutations_an}}</td>
-            <td>{{v.receptor_m_an}}</td>
-            <td>{{v.fraction_m_an|floatformat:"2"}}</td>
-        </tr>
-    {% endfor %}
-{% endfor %}
-
-<tr>
-<th colspan="3"> Receptor Family</th>
-<tr>
-{% for c,v in coverage.items %}
-    {% for v in v.children %}
-        {% for v in v.children %} 
-                    <tr>
-            <td>{{c}}_{{lt}}_{{rf}}</td>
-            <td>{{v.name|safe}}</td>
-            <td>{{v.receptor_t}}</td>
-            <td>{{v.interactions}}</td>
-            <td>{{v.receptor_i}}</td>
-            <td>{{v.fraction_i|floatformat:"2"}}</td>
-            <td>{{v.mutations}}</td>
-            <td>{{v.receptor_m}}</td>
-            <td>{{v.fraction_m|floatformat:"2"}}</td>
-            <td>{{v.mutations_an}}</td>
-            <td>{{v.receptor_m_an}}</td>
-            <td>{{v.fraction_m_an|floatformat:"2"}}</td>
-        </tr>
-        {% endfor %}
-    {% endfor %}
-{% endfor %}
-
-<tr>
-<th colspan="3"> Receptor</th>
-<tr>
-{% for c,v in coverage.items %}
-    {% for v in v.children %}
-        {% for v in v.children %} 
-            {% for v in v.children %} 
-                    <tr>
-            <td>{{c}}_{{lt}}_{{rf}}_{{r}}</td>
-            <td>{{v.name|safe}}</td>
-            <td>{{v.receptor_t}}</td>
-            <td>{{v.interactions}}</td>
-            <td>{{v.receptor_i}}</td>
-            <td>{{v.fraction_i|floatformat:"2"}}</td>
-            <td>{{v.mutations}}</td>
-            <td>{{v.receptor_m}}</td>
-            <td>{{v.fraction_m|floatformat:"2"}}</td>
-            <td>{{v.mutations_an}}</td>
-            <td>{{v.receptor_m_an}}</td>
-            <td>{{v.fraction_m_an|floatformat:"2"}}</td>
-        </tr>
-        {% endfor %}
-        {% endfor %}
-    {% endfor %}
-{% endfor %}
 
 </table>
 {% endblock %}

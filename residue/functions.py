@@ -83,8 +83,9 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, a
 
         # generic numbers
         numbers = None
-        rvalues['generic_number'] = None
-        rvalues['display_generic_number'] = None
+        if aligned_start and aligned_end:
+            rvalues['generic_number'] = None
+            rvalues['display_generic_number'] = None
 
         if (segment.slug in settings.REFERENCE_POSITIONS
             and settings.REFERENCE_POSITIONS[segment.slug] in ref_positions

@@ -7,13 +7,15 @@ from django.db.models import Q
 from django.conf import settings
 
 from interaction.models import ResidueFragmentInteraction
+from mutation.models import MutationRaw
 from protein.models import Protein, ProteinConformation, ProteinFamily, Species, ProteinSegment
 from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 from structure.models import Structure
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
                              ResidueExtendedSerializer, StructureSerializer,
-                             StructureLigandInteractionSerializer)
+                             StructureLigandInteractionSerializer,
+                             MutationSerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 
@@ -625,3 +627,16 @@ class StructureLigandInteractions(generics.ListAPIView):
         return queryset.filter(structure_ligand_pair__structure__pdb_code__index=self.kwargs.get('pdb_code'),
                                structure_ligand_pair__ligand__name=self.kwargs.get('ligand_name'),
                                structure_ligand_pair__annotated=True)
+
+
+class MutantList(generics.ListAPIView):
+    """
+    Get a list of mutants of single protein instance by entry name
+    \n/mutant/{entry_name}/
+    \n{entry_name} is a protein identifier from Uniprot, e.g. adrb2_human
+    """
+    serializer_class = MutationSerializer
+
+    def get_queryset(self):
+        queryset = MutationRaw.objects.all()
+        return queryset.filter(protein=self.kwargs.get('entry_name'))
