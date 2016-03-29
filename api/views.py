@@ -611,9 +611,8 @@ class StructureAssignGenericNumbers(views.APIView):
 class StructureLigandInteractions(generics.ListAPIView):
     """
     Get a list of interactions between structure and ligand
-    \n/structure/{pdb_code}/interaction/{ligand_name
+    \n/structure/{pdb_code}/interaction/
     \n{pdb_code} is a structure identifier from the Protein Data Bank, e.g. 2RH1
-    \n{ligand_name} is a ligand name contained in the structure, e.g. Carazolol
     """
     serializer_class = StructureLigandInteractionSerializer
 
@@ -625,7 +624,6 @@ class StructureLigandInteractions(generics.ListAPIView):
                                              'fragment__residue__display_generic_number',
                                              )
         return queryset.filter(structure_ligand_pair__structure__pdb_code__index=self.kwargs.get('pdb_code'),
-                               structure_ligand_pair__ligand__name=self.kwargs.get('ligand_name'),
                                structure_ligand_pair__annotated=True)
 
 

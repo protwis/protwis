@@ -41,7 +41,7 @@ urlpatterns = [
         views.RepresentativeStructureListProtein.as_view(), {'representative': True},
         name='representative-structure-list-protein'),
     url(r'^structure/(?P<pdb_code>[^/]+)/$', views.StructureDetail.as_view(), name='structure-detail'),
-    url(r'^structure/(?P<pdb_code>[^/]+)/interaction/(?P<ligand_name>[^/]+)$', views.StructureLigandInteractions.as_view(), name='interaction'),
+    url(r'^structure/(?P<pdb_code>[^/]+)/interaction/$', views.StructureLigandInteractions.as_view(), name='interaction'),
     url(r'^structure/template/(?P<entry_name>[^/]+)/$', views.StructureTemplate.as_view(),
         name='structuretemplate'),
     url(r'^structure/template/(?P<entry_name>[^/]+)/(?P<segments>[^/]+)/$', views.StructureTemplatePartial.as_view(),
