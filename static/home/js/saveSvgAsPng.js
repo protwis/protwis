@@ -82,7 +82,7 @@
 
   out$.svgAsDataUri = function(el, options, cb) {
     options = options || {};
-    options.scale = options.scale || 1;
+    options.scale = options.scale || 1.6;
     var xmlns = "http://www.w3.org/2000/xmlns/";
 
     inlineImages(el, function() {
