@@ -102,5 +102,6 @@ class MutationSerializer(serializers.ModelSerializer):
         fields = ('reference', 'protein', 'mutation_pos', 'mutation_from', 'mutation_to',
             'ligand_name', 'ligand_idtype', 'ligand_id', 'ligand_class',
             'exp_type', 'exp_func',  'exp_wt_value',  'exp_wt_unit','exp_mu_effect_sign', 'exp_mu_effect_type', 'exp_mu_effect_value',
+            'exp_fold_change',
             'exp_mu_effect_qual', 'exp_mu_effect_ligand_prop',  'exp_mu_ligand_ref', 'opt_type', 'opt_wt',
-            'opt_mu', 'opt_sign', 'opt_percentage', 'opt_qual','opt_agonist', 'added_date')
+            'opt_mu', 'opt_sign', 'opt_percentage', 'opt_qual','opt_agonist')
