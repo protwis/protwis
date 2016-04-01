@@ -23,12 +23,14 @@
                             Select a file to upload.
                         </div>
                         <div class="modal-body">
-                            <form id="xls-form" enctype="multipart/form-data">
-                                <input name="file" type="file" />{% csrf_token %}
+                            <form id="xls-form" enctype="multipart/form-data" method="post" onsubmit="return ReadSiteFromFile(document.getElementById('xls-file').files[0])" >
+                                <input id="xls-file" type="file" /> {% csrf_token %}
                             </form>                
                         </div>
                         <div class="modal-footer">
-                            <button onclick='ReadSiteFromFile' type="button" class="btn btn-success" data-dismiss="modal">Save & close</button>
+                            <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
+                            <!--<button onclick='ReadSiteFromFile($("#xls-file")[0].value)' type="button" class="btn btn-success" data-dismiss="modal">Save & close</button>-->
+                            <button onclick='$("#xls-form").submit()' type="button" class="btn btn-success" data-dismiss="modal">Save & close</button>
                         </div>
                     </div>
                 </div>

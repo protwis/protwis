@@ -277,14 +277,37 @@ function SetGroupMinMatch(selection_type, group_id, min_match) {
         },
     });
 }
-function ReadSiteFromFile() {
-    var formData = new FormData($("#xls-form")[0]);
+function ReadSiteFromFile(file) {
+    //Dealing with csrf token
+    function getCookie(c_name) {
+        if (document.cookie.length > 0) {
+            c_start = document.cookie.indexOf(c_name + "=");
+            if (c_start != -1) {
+                c_start = c_start + c_name.length + 1;
+                c_end = document.cookie.indexOf(";", c_start);
+                if (c_end == -1) c_end = document.cookie.length;
+                return unescape(document.cookie.substring(c_start, c_end));
+            }
+        }
+        return "";
+    }
+    $.ajaxSetup({
+        headers: { "X-CSRFToken": getCookie("csrftoken") }
+    });
+    //Actual post
     $.ajax({
         'url': '/sitesearch/siteupload',
+        'data': { 'xml_file': file.value },
         'type': 'POST',
-        'data': formData,
+        'cache': 'false',
+        'async': 'false',
+        'processData': 'false',
+        'contentType': "false",
         'success': function (data) {
             $("#selection-segments").html(data);
         },
+    }).fail(function (jqXHR, textStatus) {
+        alert("Request failed: " + textStatus);
     });
+    return false;
 }

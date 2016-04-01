@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.conf import settings
 from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 
 from common import definitions
 from common.selection import SimpleSelection, Selection, SelectionItem
@@ -13,6 +14,7 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 from protein.models import ProteinSegment
 from residue.models import ResidueGenericNumberEquivalent
 
+import os
 from collections import OrderedDict
 from io import BytesIO
 import xlsxwriter
@@ -147,9 +149,7 @@ def site_download(request):
 
 def site_upload(request):
     
-    file = request.FILES['site_file']
-    print("Uploaded file {}".format(file))
-    wb=load_workbook(filename=sys.argv[1])
+    wb=load_workbook(filename=BytesIO(request.FILES['xml_file'].file.read().decode('UTF-8',"ignore")))
     ws=wb.active
 
     # get simple selection from session
@@ -166,7 +166,7 @@ def site_upload(request):
     #Overwriting the existing selection
     selection.clear(selection_type)
 
-    for row in range(ws.max_column+1):
+    for row in ws.rows:
         if len(row) < 5:
             continue
         group_id = int(row[0].value)
@@ -180,14 +180,18 @@ def site_upload(request):
 
         # update the selected group
         selection.active_site_residue_group = group_id
+        print(selection.site_residue_groups)
+        if not selection.site_residue_groups:
+            selection.site_residue_groups = [[]]
+        selection.site_residue_groups[selection.active_site_residue_group - 1].append(1)
         if len(selection.site_residue_groups) < group_id:
             for x in group_id - len(selection.site_residue_groups):
                 selection.site_residue_groups.append([])
         selection.site_residue_groups[group_id - 1][0] = min_match
-        selection_object = SelectionItem(selection_subtype, position.id)
+        selection_object = SelectionItem(selection_subtype, position)
         selection_object.properties['feature'] = feature
-        selection_object.properties['site_residue_group'] = self.active_site_residue_group
-        se;ection_object.properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS[feature])
+        selection_object.properties['site_residue_group'] = selection.active_site_residue_group
+        selection_object.properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS[feature])
         selection.add(selection_type, selection_subtype, selection_object)
 
     # export simple selection that can be serialized
