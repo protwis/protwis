@@ -135,7 +135,7 @@ class Command(BaseBuild):
                     template_structure))
 
                 # segment template structure (only differs from the main template if segment is missing in main
-                # structure)
+                # structure, and segment is not fully aligned)
                 segment_template_structure = template_structure
 
                 # should this segment be aligned? This value is updated below
@@ -158,15 +158,19 @@ class Command(BaseBuild):
                     except StructureSegment.DoesNotExist:
                         self.logger.info('Segment records not found for {} in template structure {}, looking for alternatives'.format(
                             segment, segment_template_structure))
-                        segment_tpl = ProteinConformationTemplateStructure.objects.get(protein_conformation=pconf,
-                            protein_segment=segment)
-                        try:
-                            main_tpl_ss = StructureSegment.objects.get(structure=segment_tpl.structure,
+                        if not segment.fully_aligned:
+                            segment_tpl = ProteinConformationTemplateStructure.objects.get(protein_conformation=pconf,
                                 protein_segment=segment)
-                            segment_template_structure = segment_tpl.structure
-                            self.logger.info('Using structure {} for {} in {}'.format(segment_tpl.structure, segment,
-                                pconf))
-                        except:
+                            try:
+                                main_tpl_ss = StructureSegment.objects.get(structure=segment_tpl.structure,
+                                    protein_segment=segment)
+                                segment_template_structure = segment_tpl.structure
+                                self.logger.info('Using structure {} for {} in {}'.format(segment_tpl.structure,
+                                    segment, pconf))
+                            except:
+                                templates_found = False
+                                self.logger.warning('No template found for {} in {}, skipping'.format(segment, pconf))
+                        else:
                             templates_found = False
                             self.logger.warning('No template found for {} in {}, skipping'.format(segment, pconf))
 
@@ -186,17 +190,22 @@ class Command(BaseBuild):
                     except Residue.DoesNotExist:
                         self.logger.info("Template residues for {} in {} not found, looking for alternatives!".format(
                             segment, pconf))
-                        segment_tpl = ProteinConformationTemplateStructure.objects.get(protein_conformation=pconf,
-                            protein_segment=segment)
-                        try:
-                            tsrrn = Residue.objects.get(
-                                protein_conformation=segment_tpl.structure.protein_conformation,
-                                generic_number__label=segment_ref_position)
-                            main_tpl_ss = StructureSegment.objects.get(structure=segment_tpl.structure,
+                        if not segment.fully_aligned:
+                            segment_tpl = ProteinConformationTemplateStructure.objects.get(protein_conformation=pconf,
                                 protein_segment=segment)
-                            self.logger.info('Using residues from {} for {} in {}'.format(segment_tpl.structure,
-                                segment, pconf))
-                        except:
+                            try:
+                                tsrrn = Residue.objects.get(
+                                    protein_conformation=segment_tpl.structure.protein_conformation,
+                                    generic_number__label=segment_ref_position)
+                                main_tpl_ss = StructureSegment.objects.get(structure=segment_tpl.structure,
+                                    protein_segment=segment)
+                                self.logger.info('Using residues from {} for {} in {}'.format(segment_tpl.structure,
+                                    segment, pconf))
+                            except:
+                                self.logger.warning("No template residues for {} in {} not found, skipping!".format(
+                                    segment, pconf))
+                                templates_found = False
+                        else:
                             self.logger.warning("No template residues for {} in {} not found, skipping!".format(
                                 segment, pconf))
                             templates_found = False
