@@ -21,7 +21,6 @@ import multiprocessing
 import pprint
 import re
 from datetime import datetime
-from Bio import pairwise2
 
 
 startTime = datetime.now()
@@ -45,7 +44,7 @@ class Command(BaseCommand):
         classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species=1, family__slug__istartswith='001')
         receptor_list = [i.entry_name for i in classA if i not in struct_parent]
 
-        for i in receptor_list[55:60]:
+        for i in receptor_list[100:150]:
             try:
                 Homology_model = HomologyModeling(i, 'Inactive', ['Inactive'])
                 alignment = Homology_model.run_alignment()
@@ -361,16 +360,16 @@ class HomologyModeling(object):
                                     for gn, atoms in sup_residues.items():
                                         if gn.replace('.','x') not in ref_keys:
                                             new_residues[gn] = atoms
-                                    for gn, atoms in main_pdb_array[ref_seg].items():
-                                        gn_ = gn.replace('.','x')
-                                        if gn not in new_residues:
-                                            new_residues[gn] = atoms
+                                            gn_ = gn.replace('.','x')
                                             a.template_dict[temp_seg][gn_] = PDB.Polypeptide.three_to_one(
                                                                              atoms[0].get_parent().get_resname())
                                             if a.template_dict[temp_seg][gn_]==a.reference_dict[ref_seg][gn_]:
                                                 a.alignment_dict[ref_seg][gn_] = a.reference_dict[ref_seg][gn_]
                                             else:
                                                 a.alignment_dict[ref_seg][gn_] = '.'
+                                    for gn, atoms in main_pdb_array[ref_seg].items():
+                                        if gn not in new_residues:
+                                            new_residues[gn] = atoms
                                     main_pdb_array[ref_seg] = new_residues
                                     self.update_template_source(modifications['added'][ref_seg][0],struct,ref_seg)
                                     break
@@ -858,7 +857,6 @@ class HomologyModeling(object):
             h8_temp = self.template_source['H8'][list(self.template_source['H8'])[0]][0]
             tm7 = list(Residue.objects.filter(protein_conformation=h8_temp.protein_conformation,protein_segment__slug='TM7'))
             temp_nums = [i.generic_number.label for i in tm7[-4:]] 
-#            h8_nums = [i.replace('.','x') for i in list(main_pdb_array['H8'])]
             tm7_template = parse.fetch_residues_from_pdb(h8_temp,temp_nums)
             template = parse.add_two_ordereddict(tm7_template,main_pdb_array['H8'])
             superpose = sp.OneSidedSuperpose(reference,template,4,1)
@@ -1005,11 +1003,12 @@ class HomologyModeling(object):
                     temp_source_seg[s] = self.template_source[s_seg][s]
             temp_source[s_seg] = temp_source_seg      
         self.template_source = temp_source
-        
+
 #        for i,j,k,l in zip(a.reference_dict,a.template_dict,a.alignment_dict,main_pdb_array):
 #            for q,w,e,r in zip(a.reference_dict[i],a.template_dict[j],a.alignment_dict[k],main_pdb_array[l]):
 #                print(q,a.reference_dict[i][q],w,a.template_dict[j][w],e,a.alignment_dict[k][e],r,main_pdb_array[l][r])      
 #        raise AssertionError()
+        
         # non-conserved residue switching
         if switch_rotamers==True:
             non_cons_switch = self.run_non_conserved_switcher(main_pdb_array,a.reference_dict,a.template_dict,
@@ -1025,6 +1024,8 @@ class HomologyModeling(object):
                 for key in seg:
                     if a.reference_dict[seg_id][str(key).replace('.','x')]!='-':
                         trimmed_residues.append(key)
+        if 'ICL4_free' in main_pdb_array:
+            moved_h8=True
         if moved_h8==True:
             for i in list(main_pdb_array['H8']):
                 if i not in trimmed_residues:
@@ -1054,7 +1055,7 @@ class HomologyModeling(object):
         self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
                           self.uniprot_id, 1, "{}_{}_model.pdb".format(self.reference_entry_name,self.state), atom_dict=trimmed_res_nums)
-#        os.remove(path+self.uniprot_id+"_post.pdb")
+        os.remove(path+self.uniprot_id+"_post.pdb")
         with open('./structure/homology_models/{}_Inactive/{}.stat.txt'.format(self.uniprot_id, self.uniprot_id), 'w') as stat_file:
             for label, info in self.statistics.items():
                 stat_file.write('{} : {}\n'.format(label, info))
@@ -1587,9 +1588,12 @@ class Loops(object):
                 else:
                     for second_temp in self.loop_template_structures['ECL2_2']:
                         if second_temp==self.main_structure:
-                            ECL2_2 = parse.fetch_residues_from_pdb(self.main_structure,list(range(x50+3,list(main_temp_seq)[-1].sequence_number+1)))
-                            no_second_temp=False
-                            break
+                            try:
+                                ECL2_2 = parse.fetch_residues_from_pdb(self.main_structure,list(range(x50+3,list(main_temp_seq)[-1].sequence_number+1)))
+                                no_second_temp=False
+                                break
+                            except:
+                                continue
                         else:
                             try:                                
                                 a_num = Residue.objects.get(protein_conformation=second_temp.protein_conformation,
@@ -2180,7 +2184,8 @@ class GPCRDBParsingPDB(object):
             io = StringIO(structure.pdb_data.pdb)
         else:
             io = filename
-        residue_array = OrderedDict()
+        gn_array = []
+        residue_array = []
         pdb_struct = PDB.PDBParser(PERMISSIVE=True).get_structure('structure', io)[0]
 
         assign_gn = as_gn.GenericNumbering(structure=pdb_struct)
@@ -2195,16 +2200,20 @@ class GPCRDBParsingPDB(object):
                         gn = gn[1:]+'1'
                     elif len(gn.split('.')[1])==1:
                         gn = gn+'0'
-                    residue_array[gn] = residue.get_list()
+                    gn_array.append(gn)
+                    residue_array.append(residue.get_list())
                 else:
-                    residue_array[str(residue.get_id()[1])] = residue.get_list()
+                    gn_array.append(str(residue.get_id()[1]))
+                    residue_array.append(residue.get_list())
             except:
                 logging.warning("Unable to parse {} in {}".format(residue, structure))
         output = OrderedDict()
         for num, label in self.segment_coding.items():
             output[label] = OrderedDict()
         counter=0
-        for gn, res in residue_array.items():
+        if len(gn_array)!=len(residue_array):
+            raise AssertionError()
+        for gn, res in zip(gn_array,residue_array):
             if '.' in gn:
                 seg_num = int(gn.split('.')[0])
                 seg_label = self.segment_coding[seg_num]
