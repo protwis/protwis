@@ -14,6 +14,7 @@ from api.serializers import (ProteinSerializer, ProteinFamilySerializer, Species
     ResidueExtendedSerializer, StructureSerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
+from common.definitions import *
 
 import json, os
 from io import StringIO
@@ -284,8 +285,8 @@ class FamilyAlignment(views.APIView):
     \n{slug} is a protein family identifier, e.g. 001_001_001
     """
 
-    def get(self, request, slug=None, segments=None, latin_name=None):
-
+    def get(self, request, slug=None, segments=None, latin_name=None, statistics=False):
+        print(statistics)
         if slug is not None:
             # Check for specific species
             if latin_name is not None:
@@ -297,12 +298,12 @@ class FamilyAlignment(views.APIView):
             # take the numbering scheme from the first protein
             s_slug = Protein.objects.get(entry_name=ps[0]).residue_numbering_scheme_id
 
+            gen_list = []
+            segment_list = []
             if segments is not None:
                 input_list = segments.split(",")
                 # fetch a list of all segments
                 protein_segments = ProteinSegment.objects.filter(partial=False).values_list('slug', flat=True) 
-                gen_list = []
-                segment_list = []
                 for s in input_list:
                     # add to segment list
                     if s in protein_segments:
@@ -316,7 +317,8 @@ class FamilyAlignment(views.APIView):
                 
                 # fetch all complete protein_segments
                 ss = ProteinSegment.objects.filter(slug__in=segment_list, partial=False)
-
+            else:
+                ss = ProteinSegment.objects.filter(partial=False)
             # create an alignment object
             a = Alignment()
             a.show_padding = False
@@ -325,7 +327,8 @@ class FamilyAlignment(views.APIView):
             a.load_proteins(ps)
 
             # load generic numbers and TMs seperately
-            a.load_segments(gen_list)
+            if gen_list:
+                a.load_segments(gen_list)
             a.load_segments(ss)
 
             # build the alignment data matrix
@@ -349,8 +352,22 @@ class FamilyAlignment(views.APIView):
                     ali_dict[k] = row
                     k = False
             ali_dict['CONSENSUS'] = ''.join(residue_list)
-            return Response(ali_dict)
 
+            # render statistics for output
+            if statistics == True:
+                feat = {}
+                for i, feature in enumerate(AMINO_ACID_GROUPS):
+                    feature_stats = a.feature_stats[i]
+                    feature_stats_clean = []
+                    for d in feature_stats:
+                        sub_list = [x[0] for x in d]
+                        feature_stats_clean.append(sub_list) # remove feature frequencies
+                    # print(feature_stats_clean)
+                    feat[feature] = [item for sublist in feature_stats_clean for item in sublist]
+
+                ali_dict["statistics"] = feat
+
+            return Response(ali_dict)
 
 class FamilyAlignmentPartial(FamilyAlignment):
     """
@@ -462,7 +479,7 @@ class ProteinAlignment(views.APIView):
     \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human
     """
 
-    def get(self, request, proteins=None, segments=None):
+    def get(self, request, proteins=None, segments=None, statistics=False):
         if proteins is not None:
             protein_list = proteins.split(",")
             ps = Protein.objects.filter(sequence_type__slug='wt', entry_name__in=protein_list)
@@ -470,12 +487,12 @@ class ProteinAlignment(views.APIView):
             # take the numbering scheme from the first protein
             s_slug = Protein.objects.get(entry_name=protein_list[0]).residue_numbering_scheme_id
 
+            gen_list = []
+            segment_list = []
             if segments is not None:
                 input_list = segments.split(",")
                 # fetch a list of all segments
                 protein_segments = ProteinSegment.objects.filter(partial=False).values_list('slug', flat=True) 
-                gen_list = []
-                segment_list = []
                 for s in input_list:
                     # add to segment list
                     if s in protein_segments:
@@ -488,6 +505,8 @@ class ProteinAlignment(views.APIView):
                 
                 # fetch all complete protein_segments
                 ss = ProteinSegment.objects.filter(slug__in=segment_list, partial=False)
+            else:
+                ss = ProteinSegment.objects.filter(partial=False)
 
             # create an alignment object
             a = Alignment()
@@ -497,11 +516,16 @@ class ProteinAlignment(views.APIView):
             a.load_proteins(ps)
 
             # load generic numbers and TMs seperately
-            a.load_segments(gen_list)
+            if gen_list:
+                a.load_segments(gen_list)
             a.load_segments(ss)
 
             # build the alignment data matrix
             a.build_alignment()
+
+            # calculate statistics
+            if statistics == True:
+                a.calculate_statistics()
             
             # render the fasta template as string
             response = render_to_string('alignment/alignment_fasta.html', {'a': a}).split("\n")
@@ -515,8 +539,32 @@ class ProteinAlignment(views.APIView):
                 elif k:
                     ali_dict[k] = row
                     k = False
+            
+            # render statistics for output
+            if statistics == True:
+                feat = {}
+                for i, feature in enumerate(AMINO_ACID_GROUPS):
+                    feature_stats = a.feature_stats[i]
+                    feature_stats_clean = []
+                    for d in feature_stats:
+                        sub_list = [x[0] for x in d]
+                        feature_stats_clean.append(sub_list) # remove feature frequencies
+                    # print(feature_stats_clean)
+                    feat[feature] = [item for sublist in feature_stats_clean for item in sublist]
+
+                ali_dict["statistics"] = feat
 
             return Response(ali_dict)
+
+class ProteinAlignmentStatistics(ProteinAlignment):
+    """
+    Add a /statics at the end of an alignment in order to 
+    receive an additional residue property statistics output e.g.:
+    \n/alignment/protein/{proteins}/{segments}/statistics
+    \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human
+    \n{segments} is a comma separated list of protein segment identifiers and/ or 
+    generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
+    """
 
 class ProteinAlignmentPartial(ProteinAlignment):
     """
