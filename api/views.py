@@ -6,13 +6,16 @@ from django.template.loader import render_to_string
 from django.db.models import Q
 from django.conf import settings
 
+from interaction.models import ResidueFragmentInteraction
 from mutation.models import MutationRaw
 from protein.models import Protein, ProteinConformation, ProteinFamily, Species, ProteinSegment
 from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 from structure.models import Structure
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from api.serializers import (ProteinSerializer, ProteinFamilySerializer, SpeciesSerializer, ResidueSerializer,
-                             ResidueExtendedSerializer, StructureSerializer, MutationSerializer)
+                             ResidueExtendedSerializer, StructureSerializer,
+                             StructureLigandInteractionSerializer,
+                             MutationSerializer)
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 
@@ -603,6 +606,27 @@ class StructureAssignGenericNumbers(views.APIView):
         print(len(out_stream.getvalue()))
         # filename="{}_GPCRdb.pdb".format(root)
         return Response(out_stream.getvalue())
+
+
+class StructureLigandInteractions(generics.ListAPIView):
+    """
+    Get a list of interactions between structure and ligand
+    \n/structure/{pdb_code}/interaction/
+    \n{pdb_code} is a structure identifier from the Protein Data Bank, e.g. 2RH1
+    """
+    serializer_class = StructureLigandInteractionSerializer
+
+    def get_queryset(self):
+        queryset = ResidueFragmentInteraction.objects.all()
+        queryset = queryset.prefetch_related('structure_ligand_pair__structure__pdb_code',
+                                             'interaction_type',
+                                             'fragment__residue__generic_number',
+                                             'fragment__residue__display_generic_number',
+                                             )
+        queryset = queryset.exclude(interaction_type__type='hidden').order_by('fragment__residue__sequence_number')
+        slug = self.kwargs.get('pdb_code')
+        return queryset.filter(structure_ligand_pair__structure__pdb_code__index=slug,
+                               structure_ligand_pair__annotated=True)
 
 
 class MutantList(generics.ListAPIView):
