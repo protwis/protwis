@@ -7,7 +7,6 @@ from structure.models import *
 from common.alignment import Alignment, AlignedReferenceTemplate
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
-#from structure.calculate_RMSD import Validation
 
 import Bio.PDB as PDB
 from modeller import *
@@ -15,13 +14,11 @@ from modeller.automodel import *
 from collections import OrderedDict
 import os
 import logging
-import numpy as np
 from io import StringIO
 import sys
 import multiprocessing
 import pprint
 import re
-import time
 from datetime import datetime
 
 
@@ -34,9 +31,7 @@ def homology_model_multiprocessing(receptor):
     print('Building model for {}'.format(receptor))
     Homology_model = HomologyModeling(receptor, 'Inactive', ['Inactive'])
     alignment = Homology_model.run_alignment()
-#    if alignment!=None:
-    Homology_model.build_homology_model(alignment)#, switch_bulges=False, switch_constrictions=False, switch_rotamers=False)    
-#        Homology_model.upload_to_db()
+    Homology_model.build_homology_model(alignment)
     Homology_model.format_final_model()
     logger = logging.getLogger('homology_modeling')
     l.acquire()
@@ -50,23 +45,7 @@ class Command(BaseCommand):
         struct_parent = [i.protein_conformation.protein.parent for i in structures]
         classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species=1, family__slug__istartswith='001')
         receptor_list = [i.entry_name for i in classA if i not in struct_parent]
-
-#        for i in receptor_list[:153]:
-#            try:
-#                Homology_model = HomologyModeling(i, 'Inactive', ['Inactive'])
-#                alignment = Homology_model.run_alignment()
-#                Homology_model.build_homology_model(alignment)
-#                Homology_model.format_final_model()
-#            except:
-#                print('XXXXXXXXXXXXXXXXXXXXXXXXX')
-#                print('Errors with {}'.format(i))
-#                print('XXXXXXXXXXXXXXXXXXXXXXXXX')
         
-#        receptor_list = ['gp151_human', 
-#                         'gpr37_human', 'gp176_human', 'gpr19_human', 'p2ry8_human', 
-#                         'p2y10_human']
-        
-        receptor_list = receptor_list[:4]
         if os.path.isfile('./logs/homology_modeling.log'):
             os.remove('./logs/homology_modeling.log')
         logger = logging.getLogger('homology_modeling')
@@ -580,13 +559,6 @@ class HomologyModeling(object):
             self.statistics.add_info('loops', loop_stat)
             self.loops = loop_stat
         
-#        print(self.main_structure)
-#        pprint.pprint(a.reference_dict)
-#        pprint.pprint(a.template_dict)
-#        pprint.pprint(a.alignment_dict)
-#        pprint.pprint(main_pdb_array)
-#        raise AssertionError()
-        
 #        print('Integrate loops: ',datetime.now() - startTime)
 
         # bulges and constrictions
@@ -802,6 +774,7 @@ class HomologyModeling(object):
                     out_pdb_array[seg_id] = seg
                 main_pdb_array = out_pdb_array
 #        print('Integrate bulges/constrictions: ',datetime.now() - startTime)
+                
         # check for inconsitencies with db
         pdb_db_inconsistencies = []
         for seg_label, segment in a.template_dict.items():
@@ -1132,8 +1105,8 @@ class HomologyModeling(object):
 #        with open('./structure/homology_models/{}_Inactive/{}.stat.txt'.format(self.uniprot_id, self.uniprot_id), 'w') as stat_file:
 #            for label, info in self.statistics.items():
 #                stat_file.write('{} : {}\n'.format(label, info))
-                
-        with open('./structure/homology_models/{}_Inactive/{}.stattable.txt'.format(self.uniprot_id,self.uniprot_id),'w') as s_file:
+
+        with open(path+'{}_{}.stats.txt'.format(self.reference_entry_name,self.state),'w') as s_file:
             rot_table = []
             sections = []
                 
