@@ -920,38 +920,6 @@ class AlignedReferenceTemplate(Alignment):
                     return st
         except:
             pass
-#        try:
-#            for protein in self.ordered_proteins:
-#                if protein.protein==self.reference_protein.protein:
-#                    ref_positions = []
-#                    for seg_label, segment in protein.alignment.items():
-#                        if 'TM' in seg_label:
-#                            all_ref_positions = []
-#                            for res in segment:
-#                                if res[1]!=False and res[1]!='':
-#                                   all_ref_positions.append(res[0])
-#                            ref_positions.append([all_ref_positions[0],all_ref_positions[-1]])
-#                else:
-#                    temp_positions = []
-#                    for seg_label, segment in protein.alignment.items():
-#                        if 'TM' in seg_label:
-#                            all_temp_positions = []
-#                            for res in segment:
-#                                if res[1]!=False and res[1]!='':
-#                                   all_temp_positions.append(res[0])
-#                            temp_positions.append([all_temp_positions[0],all_temp_positions[-1]])
-#                    print(protein)
-#                    print(ref_positions)
-#                    print(temp_positions)
-#                    for st in self.similarity_table:
-#                        print(st)
-#                    if ref_positions==temp_positions:
-#                        for struct in self.similarity_table:
-#                            if protein.protein==struct.protein_conformation.protein.parent:
-#                                self.main_template_protein = protein
-#                                return struct
-#        except:
-#            return None
 
     def create_helix_similarity_table(self):
         ''' Creates an ordered dictionary of structure objects, where templates are sorted by similarity and resolution.
