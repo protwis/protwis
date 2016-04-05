@@ -11,7 +11,7 @@ from structure.functions import CASelector, SelectionParser, GenericNumbersSelec
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
-from protein.models import Protein
+from protein.models import Protein, ProteinFamily
 from common.views import AbsSegmentSelection,AbsReferenceSelection
 from common.selection import Selection, SelectionItem
 from common.extensions import MultiFileField
@@ -102,13 +102,31 @@ class StructureStatistics(TemplateView):
     def get_context_data (self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+
+        families = ProteinFamily.objects.all()
+        lookup = {}
+        for f in families:
+            lookup[f.slug] = f.name
+
         #Prepare chart with unique crystallized receptors by year
-        all_structs = list(Structure.objects.all().prefetch_related('protein_conformation__protein'))
+        all_structs = list(Structure.objects.all().prefetch_related('protein_conformation__protein__family'))
         years = self.get_years_range(list(set([x.publication_date.year for x in all_structs])))
         unique_structs = list(Structure.objects.order_by('protein_conformation__protein__parent', 'state',
-            'publication_date', 'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein'))
-        families = list(set([x.protein_conformation.protein.get_protein_family() for x in unique_structs]))
-        classes = [x.protein_conformation.protein.get_protein_class() for x in unique_structs]
+            'publication_date', 'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__family'))
+        # families = list(set([x.protein_conformation.protein.get_protein_family() for x in unique_structs]))
+
+        families = []
+        classes = []
+        for s in unique_structs:
+            fid = s.protein_conformation.protein.family.slug.split("_")
+            fname = lookup[fid[0]+"_"+fid[1]]
+            cname = lookup[fid[0]]
+            if fname not in families:
+                families.append(fname)
+            if cname not in classes:
+                classes.append(cname)
+
+        # classes = [x.protein_conformation.protein.get_protein_class() for x in unique_structs]
         
         tmp = OrderedDict()
         for x in sorted(list(set(classes))):
@@ -119,10 +137,11 @@ class StructureStatistics(TemplateView):
         context['unique_by_class'] = tmp
         context['unique_complexes'] = len(StructureLigandInteraction.objects.filter(annotated=True).distinct('structure__protein_conformation__protein__family__name', 'ligand__name'))
 
-        context['chartdata'] = self.get_per_family_cumulative_data_series(years, families, unique_structs)
-        context['chartdata_y'] = self.get_per_family_data_series(years, families, unique_structs)
-        context['chartdata_all'] = self.get_per_family_cumulative_data_series(years, families, all_structs)
+        context['chartdata'] = self.get_per_family_cumulative_data_series(years, families, unique_structs,lookup)
+        context['chartdata_y'] = self.get_per_family_data_series(years, families, unique_structs,lookup)
+        context['chartdata_all'] = self.get_per_family_cumulative_data_series(years, families, all_structs,lookup)
         context['chartdata_reso'] = self.get_resolution_coverage_data_series(all_structs)
+        context['coverage'] = self.get_diagram_coverage()
 
         return context
 
@@ -134,7 +153,7 @@ class StructureStatistics(TemplateView):
         return range(min_y, max_y+1)
 
 
-    def get_per_family_data_series(self, years, families, structures):
+    def get_per_family_data_series(self, years, families, structures,lookup):
         """
         Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
         """
@@ -146,7 +165,9 @@ class StructureStatistics(TemplateView):
                     data[family] = []
                 count = 0
                 for structure in structures:
-                    if structure.protein_conformation.protein.get_protein_family() == family and structure.publication_date.year == year:
+                    fid = structure.protein_conformation.protein.family.slug.split("_")
+                    # if structure.protein_conformation.protein.get_protein_family() == family and structure.publication_date.year == year:
+                    if lookup[fid[0]+"_"+fid[1]] == family and structure.publication_date.year == year:
                         count += 1
                 data[family].append(count)
         for family in families:
@@ -160,7 +181,7 @@ class StructureStatistics(TemplateView):
         return json.dumps(series)
 
 
-    def get_per_family_cumulative_data_series(self, years, families, structures):
+    def get_per_family_cumulative_data_series(self, years, families, structures,lookup):
         """
         Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
         """
@@ -172,7 +193,9 @@ class StructureStatistics(TemplateView):
                     data[family] = []
                 count = 0
                 for structure in structures:
-                    if structure.protein_conformation.protein.get_protein_family() == family and structure.publication_date.year == year:
+                    fid = structure.protein_conformation.protein.family.slug.split("_")
+                    # if structure.protein_conformation.protein.get_protein_family() == family and structure.publication_date.year == year:
+                    if lookup[fid[0]+"_"+fid[1]] == family and structure.publication_date.year == year:
                         count += 1
                 if len(data[family]) > 0:
                     data[family].append(count + data[family][-1])
@@ -217,6 +240,138 @@ class StructureStatistics(TemplateView):
                 "key": 'Resolution coverage',
                 "yAxis": "1"}])
          
+    def get_diagram_coverage(self):
+        """
+        Prepare data for coverage diagram.
+        """
+
+        families = ProteinFamily.objects.all()
+        lookup = {}
+        for f in families:
+            lookup[f.slug] = f.name.replace("receptors","")
+
+        class_proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('family').order_by('family__slug')
+
+        coverage = OrderedDict()
+
+        temp = OrderedDict([
+                            ('name',''), 
+                            ('interactions', 0),
+                            ('receptor_i', 0) , 
+                            ('mutations' , 0),
+                            ('receptor_m', 0), 
+                            ('mutations_an' , 0),
+                            ('receptor_m_an', 0), 
+                            ('receptor_t',0), 
+                            ('children', OrderedDict()) , 
+                            ('fraction_i',0), 
+                            ('fraction_m',0), 
+                            ('fraction_m_an',0)  
+                            ])
+
+        for p in class_proteins:
+            #print(p,p.family.slug)
+            fid = p.family.slug.split("_")
+            if fid[0] not in coverage:
+                coverage[fid[0]] = deepcopy(temp)
+                coverage[fid[0]]['name'] = lookup[fid[0]]
+            if fid[1] not in coverage[fid[0]]['children']:
+                coverage[fid[0]]['children'][fid[1]] = deepcopy(temp)
+                coverage[fid[0]]['children'][fid[1]]['name'] = lookup[fid[0]+"_"+fid[1]]
+            if fid[2] not in coverage[fid[0]]['children'][fid[1]]['children']:
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]] = deepcopy(temp)
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['name'] = lookup[fid[0]+"_"+fid[1]+"_"+fid[2]][:28]
+            if fid[3] not in coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children']:
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]] = deepcopy(temp)
+                coverage[fid[0]]['receptor_t'] += 1
+                coverage[fid[0]]['children'][fid[1]]['receptor_t'] += 1
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t'] += 1
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['name'] = p.entry_name.split("_")[0] #[:10]
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_t'] = 1
+
+
+        class_interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__annotated=True).prefetch_related(
+            'rotamer__residue__display_generic_number','interaction_type',
+            'structure_ligand_pair__structure__protein_conformation__protein__parent__family',
+            'structure_ligand_pair__ligand__properities',
+            )
+
+
+        score_copy = {'score': {'a':0,'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0} , 'interaction' : {},'mutation': {}}
+
+        for i in class_interactions:
+            fid = i.structure_ligand_pair.structure.protein_conformation.protein.parent.family.slug.split("_")
+            interaction_type = i.interaction_type.slug
+            interaction_type_class = i.interaction_type.type
+            if i.rotamer.residue.display_generic_number:
+                dgn = i.rotamer.residue.display_generic_number.label
+            else:
+                dgn = 'N/A'
+            if interaction_type=='polar_backbone':
+                continue
+            if interaction_type=='acc':
+                continue
+            coverage[fid[0]]['interactions'] += 1
+            coverage[fid[0]]['children'][fid[1]]['interactions'] += 1
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['interactions'] += 1
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['interactions'] += 1
+
+            if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['interactions']==1: #if first time receptor gets a point
+                coverage[fid[0]]['receptor_i'] += 1
+                coverage[fid[0]]['children'][fid[1]]['receptor_i'] += 1
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_i'] += 1
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_i'] = 1
+
+                coverage[fid[0]]['fraction_i'] = coverage[fid[0]]['receptor_i']/coverage[fid[0]]['receptor_t']
+                coverage[fid[0]]['children'][fid[1]]['fraction_i'] = coverage[fid[0]]['children'][fid[1]]['receptor_i']/coverage[fid[0]]['children'][fid[1]]['receptor_t']
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['fraction_i'] = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_i']/coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t']
+
+
+        CSS_COLOR_NAMES = ["SteelBlue","SlateBlue","LightCoral","Orange","LightGreen","LightGray","PeachPuff","PaleGoldenRod"]
+
+        tree = OrderedDict({'name':'GPCRs','children':[]})
+        i = 0
+        n = 0
+        for c,c_v in coverage.items():
+            c_v['name'] = c_v['name'].split("(")[0]
+            if c_v['name'].strip() == 'Other GPCRs':
+                # i += 1
+                continue
+                # pass
+            children = []
+            for lt,lt_v in c_v['children'].items():
+                if lt_v['name'].strip() == 'Orphan' and c_v['name'].strip()=="Class A":
+                    # $pass
+                    continue
+                children_rf = []
+                for rf,rf_v in lt_v['children'].items():
+                    rf_v['name'] = rf_v['name'].split("<")[0]
+                    if rf_v['name'].strip() == 'Taste 2':
+                        continue
+                    children_r = []
+                    for r,r_v in rf_v['children'].items():
+                        r_v['color'] = CSS_COLOR_NAMES[i]
+                        r_v['sort'] = n
+                        children_r.append(r_v)
+                        n += 1
+                    rf_v['children'] = children_r
+                    rf_v['sort'] = n
+                    rf_v['color'] = CSS_COLOR_NAMES[i]
+                    children_rf.append(rf_v)
+                lt_v['children'] = children_rf
+                lt_v['sort'] = n
+                lt_v['color'] = CSS_COLOR_NAMES[i]
+                children.append(lt_v)
+            c_v['children'] = children
+            c_v['sort'] = n
+            c_v['color'] = CSS_COLOR_NAMES[i]
+            tree['children'].append(c_v)
+            #tree = c_v
+            #break
+            i += 1
+
+        return json.dumps(tree)
+
             
 
 

@@ -28,7 +28,7 @@ class Command(BaseBuild):
             help='Profile the script with cProfile')
 
     # segments
-    segments = ProteinSegment.objects.filter(fully_aligned=True)
+    segments = ProteinSegment.objects.filter(slug__in=settings.REFERENCE_POSITIONS)
 
     # fetch representative (inactive) structures FIXME add active structure??
     structures = Structure.objects.filter(representative=True,
@@ -71,12 +71,15 @@ class Command(BaseBuild):
             class_sps = self.structures.filter(
                 protein_conformation__protein__parent__family__slug__startswith=pconf_class)
             sps = []
+            sps_str = []
             if class_sps.exists():
                 for structure in class_sps:
-                    sps.append(structure.protein_conformation.protein.parent) # use the wild-type sequence
+                    sps.append(structure.protein_conformation.protein.parent) # use the wild-type sequence for main tpl
+                    sps_str.append(structure.protein_conformation.protein) # use the structure sequence for segment tpl
             else:
                 for structure in self.structures:
-                    sps.append(structure.protein_conformation.protein.parent) # use the wild-type sequence
+                    sps.append(structure.protein_conformation.protein.parent)
+                    sps_str.append(structure.protein_conformation.protein)
 
             # overall
             template = self.find_segment_template(pconf, sps, self.segments)
@@ -87,8 +90,8 @@ class Command(BaseBuild):
 
             # for each segment
             for segment in self.segments:
-                template = self.find_segment_template(pconf, sps, [segment])
-                template_structure = self.fetch_template_structure(self.structures, template.protein.entry_name)
+                template = self.find_segment_template(pconf, sps_str, [segment])
+                template_structure = self.fetch_template_structure(self.structures, template.protein.parent.entry_name)
                 pcts, created = ProteinConformationTemplateStructure.objects.get_or_create(protein_conformation=pconf,
                     protein_segment=segment, defaults={'structure': template_structure})
                 if pcts.structure != template_structure:

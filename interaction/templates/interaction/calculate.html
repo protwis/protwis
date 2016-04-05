@@ -1,7 +1,11 @@
 {% extends "home/base.html" %}
 
 {% block content %}
-
+<style>
+canvas {
+    border:2px solid #888888;
+}
+</style>
  <script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script> 
 
 <h1> "Simple" results </h1>
@@ -11,10 +15,10 @@
     {% for r in outputs %}
         <h2>{{ r.0 }} with {{ r.1 }} Score:{{ r.3 }} <br>Inchikey: <a href="http://www.chemspider.com/inchi-resolver/Resolver.aspx?q={{ r.4 }}">{{ r.4 }}</a><br> Smiles: {{ r.5 }}</h2>
         <table width=95%><tr><td>
-        <div style="height: 300px; width: 300px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xf6f6f6' data-href='pdb?session=1&pdb={{ r.0 }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='resn:{{ r.1 }}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
+        <div style="height: 300px; width: 300px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='pdb?session=1&pdb={{ r.0 }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='resn:{{ r.1 }}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
          <a href="pdb?session=1&pdb={{ r.0 }}">Download PDB file</a>
         </td><td>
-         <div style="height: 300px; width: 300px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xf6f6f6' data-href='download?session=1&ligand={{ r.1 }}&pdb={{ r.0 }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres1='fontSize:10;opacity:1;color:white;backgroundOpacity:0.8' data-select1='{"hetflag":false}' data-style1='stick' data-select2='{"hetflag":true}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
+         <div style="height: 300px; width: 300px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='download?session=1&ligand={{ r.1 }}&pdb={{ r.0 }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres1='fontSize:10;opacity:1;color:white;backgroundOpacity:0.8' data-select1='{"hetflag":false}' data-style1='stick' data-select2='{"hetflag":true}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
          <a href="download?session=1&ligand={{ r.1 }}&pdb={{ r.0 }}">Download interactions PDB file</a>
          </td>
          <td>
