@@ -17,7 +17,6 @@ import logging
 from io import StringIO
 import sys
 import multiprocessing
-import pprint
 import re
 from datetime import datetime
 
