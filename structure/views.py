@@ -53,6 +53,9 @@ class StructureBrowser(TemplateView):
 
         return context
 
+def ServeHomologyModels(request):
+    return render(request,"homology_models.html")
+
 def StructureDetails(request, pdbname):
     """
     Show structure details

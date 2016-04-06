@@ -1,4 +1,4 @@
-﻿import os,sys,math,logging
+import os,sys,math,logging
 from io import StringIO
 from collections import OrderedDict
 import numpy as np
@@ -234,11 +234,25 @@ class BulgeConstrictionSuperpose(object):
             gn_count+=1
             self.template_dict[gn] = temp_dict[gn_count]
         return self.template_dict
+        
+    def calc_backbone_RMSD(self, ref_backbone_atoms, temp_backbone_atoms):
+        ''' Calculate backbone RMSD.
+        '''
+        array1, array2 = np.array([0,0,0]), np.array([0,0,0])
+        for atom1, atom2 in zip(ref_backbone_atoms, temp_backbone_atoms):
+            array1 = np.vstack((array1, list(atom1.get_coord())))
+            array2 = np.vstack((array2, list(atom2.get_coord())))
+        return np.sqrt(((array1[1:]-array2[1:])**2).mean())
 
 #==============================================================================  
 class LoopSuperpose(BulgeConstrictionSuperpose):
     ''' Class to superpose loop regions on helix endings.
-    '''
+    '''    
+    def __init__(self, reference_dict, template_dict, ECL2=False, part=None):
+        super(LoopSuperpose, self).__init__(reference_dict=reference_dict, template_dict=template_dict)
+        self.ECL2 = ECL2
+        self.part = part
+        
     def run(self):
         ''' Run the superpositioning.
         '''
@@ -250,22 +264,58 @@ class LoopSuperpose(BulgeConstrictionSuperpose):
                     ref_backbone_atoms.append(atom)
         res_count=0
         array_length = len(self.template_dict.keys())
+        edge1 = 4
+        edge2 = 4
+        if self.ECL2==True:
+            if self.part==1:
+                edge2 = 3
+            elif self.part==2:
+                edge1 = 3
         for gn, atoms in self.template_dict.items():
             res_count+=1
             for atom in atoms:
-                if (res_count<=4 or array_length-4<res_count) and atom.get_name() in ['N','CA','C','O']:
+                if (res_count<=edge1 or array_length-edge2<res_count) and atom.get_name() in ['N','CA','C','O']:
                     temp_backbone_atoms.append(atom)
                 all_template_atoms.append(atom)
+        self.backbone_rmsd = self.calc_backbone_RMSD(ref_backbone_atoms, temp_backbone_atoms)
+        super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
+        super_imposer.apply(all_template_atoms)        
+        return self.rebuild_dictionary(all_template_atoms)
+        
+#============================================================================== 
+class OneSidedSuperpose(BulgeConstrictionSuperpose):
+    ''' Class for one sided superposition. Used for helix ends and N- and C-terminus.
+    '''
+    def __init__(self, reference_dict, template_dict, num_frame, which_end):
+        super(OneSidedSuperpose, self).__init__(reference_dict=reference_dict, template_dict=template_dict)
+        self.num_frame = num_frame
+        self.which_end = which_end
+        
+    def run(self):
+        ''' Run the superpositioning.
+        '''
+        super_imposer = Superimposer()
+        ref_backbone_atoms, temp_backbone_atoms, all_template_atoms = [], [], []
+        for gn, atoms in self.reference_dict.items():
+            for atom in atoms:
+                if atom.get_name() in ['N','CA','C','O']:
+                    ref_backbone_atoms.append(atom)
+        res_count = 0
+        if self.which_end==0:
+            start = len(self.template_dict.keys())-self.num_frame
+            end = start+self.num_frame
+        elif self.which_end==1:
+            start = 0
+            end = self.num_frame-1        
+        for gn, atoms in self.template_dict.items():
+            for atom in atoms:
+                if start<=res_count<=end and atom.get_name() in ['N','CA','C','O']:
+                    temp_backbone_atoms.append(atom)
+                all_template_atoms.append(atom)
+            res_count+=1
         super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
         super_imposer.apply(all_template_atoms)
-        array1, array2 = np.array([0,0,0]), np.array([0,0,0])
-        for atom1, atom2 in zip(ref_backbone_atoms, temp_backbone_atoms):
-            array1 = np.vstack((array1, list(atom1.get_coord())))
-            array2 = np.vstack((array2, list(atom2.get_coord())))
-        self.backbone_rmsd = np.sqrt(((array1[1:]-array2[1:])**2).mean())
+        self.backbone_rmsd = self.calc_backbone_RMSD(ref_backbone_atoms, temp_backbone_atoms)
         return self.rebuild_dictionary(all_template_atoms)
-
-
-
-
-
+        
+                    
