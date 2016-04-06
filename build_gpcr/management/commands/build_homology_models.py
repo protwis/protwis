@@ -14,6 +14,7 @@ from modeller.automodel import *
 from collections import OrderedDict
 import os
 import logging
+import pprint
 from io import StringIO
 import sys
 import multiprocessing
@@ -45,20 +46,26 @@ class Command(BaseCommand):
         classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species=1, family__slug__istartswith='001')
         receptor_list = [i.entry_name for i in classA if i not in struct_parent]
         
-        if os.path.isfile('./logs/homology_modeling.log'):
-            os.remove('./logs/homology_modeling.log')
-        logger = logging.getLogger('homology_modeling')
-        hdlr = logging.FileHandler('./logs/homology_modeling.log')
-        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-        hdlr.setFormatter(formatter)
-        logger.addHandler(hdlr) 
-        logger.setLevel(logging.INFO)        
+#        for i in receptor_list[:2]:
+        Homology_model = HomologyModeling('gper1_human','Inactive',['Inactive'])
+        alignment = Homology_model.run_alignment()
+        Homology_model.build_homology_model(alignment)
+        Homology_model.format_final_model()
         
-        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-        for i in receptor_list:
-            pool.apply_async(homology_model_multiprocessing, args=(i,))
-        pool.close()
-        pool.join()
+#        if os.path.isfile('./logs/homology_modeling.log'):
+#            os.remove('./logs/homology_modeling.log')
+#        logger = logging.getLogger('homology_modeling')
+#        hdlr = logging.FileHandler('./logs/homology_modeling.log')
+#        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+#        hdlr.setFormatter(formatter)
+#        logger.addHandler(hdlr) 
+#        logger.setLevel(logging.INFO)        
+#        
+#        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+#        for i in receptor_list[151:]:
+#            pool.apply_async(homology_model_multiprocessing, args=(i,))
+#        pool.close()
+#        pool.join()
 
         print('\n###############################')
         print('Total runtime: ',datetime.now() - startTime)
@@ -457,6 +464,7 @@ class HomologyModeling(object):
             
             parse = GPCRDBParsingPDB()
             main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
+            
             try:
                 if len(alignment.reference_dict['H8'])==0:
                     del alignment.reference_dict['H8']
@@ -1492,6 +1500,7 @@ class Loops(object):
     def __init__(self, reference_protein, loop_label, loop_template_structures, main_structure, helix_end_mods, segment_order):
         self.segment_order = segment_order
         self.reference_protein = reference_protein
+        self.prot_conf = ProteinConformation.objects.get(protein=self.reference_protein)
         self.loop_label = loop_label
         self.loop_template_structures = loop_template_structures
         self.main_structure = main_structure
@@ -1539,7 +1548,20 @@ class Loops(object):
                                     loop_res = [r.sequence_number for r in list(Residue.objects.filter(
                                                                                 protein_conformation=self.main_structure.protein_conformation,
                                                                                 protein_segment__slug=self.loop_label))]
-                                    inter_array = parse.fetch_residues_from_pdb(self.main_structure,loop_res)
+                                    ref_loop_res = list(Residue.objects.filter(protein_conformation=self.prot_conf,
+                                                                               protein_segment__slug=self.loop_label))
+                                    at_least_one_gn = False
+                                    try:
+                                        for i in ref_loop_res:
+                                            i.generic_number__label
+                                            at_least_one_gn = True
+                                    except:
+                                        pass
+                                    if at_least_one_gn==True:
+                                        inter_array = parse.fetch_residues_from_pdb(self.main_structure,loop_res)
+                                    else:
+                                        inter_array = parse.fetch_residues_from_pdb(self.main_structure,loop_res,
+                                                                                    just_nums=True)
                                     self.loop_output_structure = self.main_structure
                                     for id_, atoms in inter_array.items():
                                         output[str(id_)] = atoms
@@ -1697,7 +1719,7 @@ class Loops(object):
             @param template_dict: template dictionary of AlignedReferenceTemplate.
             @param alignment_dict: alignment dictionary of AlignedReferenceTemplate.
         '''
-        shorter_ref, shorter_temp = False, False
+        shorter_ref, shorter_temp = False, False        
         try:
             for r,t in zip(reference_dict[self.loop_label],template_dict[self.loop_label]):
                 if reference_dict[self.loop_label][r]=='-':
@@ -2167,7 +2189,7 @@ class GPCRDBParsingPDB(object):
                 return str(split[0])+delimiter+str(int(str(split[1])[:2])+direction)
         return '/'
 
-    def fetch_residues_from_pdb(self, structure, generic_numbers, modify_bulges=False):
+    def fetch_residues_from_pdb(self, structure, generic_numbers, modify_bulges=False, just_nums=False):
         ''' Fetches specific lines from pdb file by generic number (if generic number is
             not available then by residue number). Returns nested OrderedDict()
             with generic numbers as keys in the outer dictionary, and atom names as keys
@@ -2188,10 +2210,12 @@ class GPCRDBParsingPDB(object):
             else:
                 rotamer = list(Rotamer.objects.filter(structure__protein_conformation=structure.protein_conformation, 
                         residue__sequence_number=gn, structure__preferred_chain=structure.preferred_chain))
-                try:
-                    gn = Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=gn).generic_number.label
-                except:
-                    pass
+                if just_nums==False:
+                    try:
+                        gn = Residue.objects.get(protein_conformation=structure.protein_conformation,
+                                                 sequence_number=gn).generic_number.label
+                    except:
+                        pass
             if len(rotamer)>1:
                 for i in rotamer:
                     if i.pdbdata.pdb.startswith('COMPND')==False:

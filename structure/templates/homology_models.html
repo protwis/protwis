@@ -1,0 +1,68 @@
+﻿{% extends "home/base.html" %}
+{% load staticfiles %}
+{% load structure_extras %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+<h2>Homology models</h2>
+<br>
+<div>
+    <ul>
+        <li>By clicking the download button you can get a .zip file of all class A inactive GPCR homology models that were possible to build with our automated homology model building pipeline.</li>
+        <li>Each model folder contains a .stattable.txt file which contains information about the models.</li>
+            <ul>            
+                <li>Lines showing backbone templates - Sections</li>
+                <style>
+                    table { border-collapse: collapse; border: solid; }
+                    colgroup, tbody { border: solid medium; }
+                    td { border: solid thin; height: 1.4em; width: 10em; text-align: center; padding: 5; }
+                </style>
+                <table border="1">
+                    <tr align="center">
+                        <td> Segment</td>
+                        <td> Start num</td>
+                        <td> End num</td>
+                        <td> Start generic num</td>
+                        <td> End generic num</td>
+                        <td> Receptor target</td>
+                        <td> Backbone template</td>
+                    </tr>
+                    <tr align="center">
+                        <td>'TM1'</td>
+                        <td>42</td>
+                        <td>72</td>
+                        <td>'1x30'</td>
+                        <td>'1x60'</td>
+                        <td>'ssr3_human'</td>
+                        <td>&#60;Structure: 4DJH&#62;</td>
+                    </tr>
+                </table>
+                <br>
+                <li>Lines showing rotamer templates - Residues</li>
+                <table border="1">
+                    <tr align="center">
+                        <td> Segment</td>
+                        <td> Sequence num</td>
+                        <td> Generic num</td>
+                        <td> Receptor target</td>
+                        <td> Rotamer template</td>
+                    </tr>
+                    <tr align="center">
+                        <td>'TM1'</td>
+                        <td>42</td>
+                        <td>'1x30'</td>
+                        <td>'ssr3_human'</td>
+                        <td>&#60;Structure: 4DKL&#62;</td>
+                    </tr>
+                </table>
+            </ul><br>
+        <li>Find more information about the pipeline <a href="homology_models_poster.pdf" target="_blank">here</a>.</li>
+</div>
+<br>
+<div align="center">
+    <div style="width:20%"> <a href="homology_models.zip" class="btn btn-success btn-lg btn-block"> Download </a> </div>
+</div>
+{% endblock %}
