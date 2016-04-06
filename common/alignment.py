@@ -1073,6 +1073,8 @@ class AlignedReferenceTemplate(Alignment):
         ECL2_1 = queryset_l[:x50_i]
         ECL2_mid = queryset_l[x50_i:x50_i+3]
         ECL2_2 = queryset_l[x50_i+3:]
+        if len(ECL2_mid)<3:
+            raise AssertionError()
         return[ECL2_1,ECL2_mid,ECL2_2]
                 
     def enhance_best_alignment(self):
