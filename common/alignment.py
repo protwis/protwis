@@ -547,7 +547,7 @@ class Alignment:
                     del self.generic_numbers[ns][segment]
                 else:
                     ordered_generic_numbers = OrderedDict()
-                    for gn in sorted(self.generic_numbers[ns][segment]):
+                    for gn in sorted(self.generic_numbers[ns][segment], key=lambda x: x.split('x')):
                         ordered_generic_numbers[gn] = self.generic_numbers[ns][segment][gn]
                     self.generic_numbers[ns][segment] = ordered_generic_numbers 
 
