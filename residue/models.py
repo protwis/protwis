@@ -19,7 +19,10 @@ class Residue(models.Model):
         ordering = ['sequence_number']
 
     def three_letter(self):
-        return definitions.AMINO_ACIDS[self.amino_acid]
+        if self.amino_acid in definitions.AMINO_ACIDS:
+            return definitions.AMINO_ACIDS[self.amino_acid]
+        else:
+            return False
 
 
 class ResidueSet(models.Model):
@@ -31,8 +34,8 @@ class ResidueSet(models.Model):
 
     class Meta():
         db_table = 'residue_set'
-    
-    
+
+
 class ResidueGenericNumber(models.Model):
     scheme = models.ForeignKey('ResidueNumberingScheme')
     protein_segment = models.ForeignKey('protein.ProteinSegment', related_name='generic_numbers', null=True)
@@ -40,7 +43,7 @@ class ResidueGenericNumber(models.Model):
 
     def __str__(self):
         return self.label
-    
+
     class Meta():
         db_table = 'residue_generic_number'
         unique_together = ('scheme', 'label')
@@ -66,7 +69,7 @@ class ResidueGenericNumberEquivalent(models.Model):
 
     def __str__(self):
         return self.label
-    
+
     class Meta():
         db_table = 'residue_generic_number_equivalent'
         unique_together = ('scheme', 'label')

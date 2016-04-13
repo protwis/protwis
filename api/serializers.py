@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from interaction.models import ResidueFragmentInteraction
+from mutation.models import MutationRaw
 from protein.models import Protein, ProteinConformation, ProteinFamily, Species, ProteinSource, ProteinSegment
 from residue.models import Residue, ResidueNumberingScheme, ResidueGenericNumber
 from structure.models import Structure
@@ -79,3 +81,27 @@ class StructureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Structure
         fields = ('pdb_code', 'resolution', 'protein_conformation')
+
+
+class StructureLigandInteractionSerializer(serializers.ModelSerializer):
+    pdb_code = serializers.ReadOnlyField(source='structure_ligand_pair.structure.pdb_code.index')
+    ligand_name = serializers.ReadOnlyField(source='structure_ligand_pair.ligand.name')
+    amino_acid = serializers.ReadOnlyField(source='fragment.residue.amino_acid')
+    sequence_number = serializers.IntegerField(read_only=True, source='fragment.residue.sequence_number')
+    display_generic_number = serializers.ReadOnlyField(source='fragment.residue.display_generic_number.label')
+    interaction_type = serializers.ReadOnlyField(source='interaction_type.name')
+    class Meta:
+        model = ResidueFragmentInteraction
+        fields = ('pdb_code', 'ligand_name', 'amino_acid', 'sequence_number',
+                  'display_generic_number', 'interaction_type')
+
+
+class MutationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MutationRaw
+        fields = ('reference', 'protein', 'mutation_pos', 'mutation_from', 'mutation_to',
+            'ligand_name', 'ligand_idtype', 'ligand_id', 'ligand_class',
+            'exp_type', 'exp_func',  'exp_wt_value',  'exp_wt_unit','exp_mu_effect_sign', 'exp_mu_effect_type', 'exp_mu_effect_value',
+            'exp_fold_change',
+            'exp_mu_effect_qual', 'exp_mu_effect_ligand_prop',  'exp_mu_ligand_ref', 'opt_type', 'opt_wt',
+            'opt_mu', 'opt_sign', 'opt_percentage', 'opt_qual','opt_agonist')

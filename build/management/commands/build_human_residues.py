@@ -10,6 +10,7 @@ from residue.functions import *
 import os
 import yaml
 from collections import OrderedDict
+import copy
 
 class Command(BaseBuild):
     help = 'Creates residue records for human receptors'
@@ -124,6 +125,12 @@ class Command(BaseBuild):
                 # proteins with ref positions have already been processed in the first iteration
                 continue
 
+            # remote empty ref positions
+            ref_positions_copy = copy.deepcopy(ref_positions)
+            for position, position_value in ref_positions_copy.items():
+                if position_value == '-':
+                    del ref_positions[position]
+
             # determine segment ranges, and create residues
             nseg = self.segments.count()
             sequence_number_counter = 0
@@ -140,8 +147,7 @@ class Command(BaseBuild):
                 # is this an alignable segment?
                 if segment.slug in settings.REFERENCE_POSITIONS:
                     # is there a reference position available?
-                    if (ref_positions and settings.REFERENCE_POSITIONS[segment.slug] in ref_positions
-                        and ref_positions[settings.REFERENCE_POSITIONS[segment.slug]] != '-'):
+                    if ref_positions and settings.REFERENCE_POSITIONS[segment.slug] in ref_positions:
                         # mark segment as aligned
                         unaligned_segment = False
 
