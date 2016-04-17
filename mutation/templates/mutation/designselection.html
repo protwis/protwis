@@ -33,15 +33,16 @@
 
         function submitupload() {
             $("#errormsg").remove();
-            var pdbid = $('#form').find('input#id_pdbname').val() ;
-            var filename = $('input[type=file]').val().split('\\').pop();
-              if (pdbid) {
-                $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>PDB code: "+pdbid);
-                document.getElementById("form").submit();
-              } else if (filename) {
-                $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>File: "+filename);
-                document.getElementById("form").submit();
-              } else if ($(".target-selection").length) {
+            // var pdbid = $('#form').find('input#id_pdbname').val() ;
+            // var filename = $('input[type=file]').val().split('\\').pop();
+              // if (pdbid) {
+              //   $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>PDB code: "+pdbid);
+              //   document.getElementById("form").submit();
+              // } else if (filename) {
+              //   $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>File: "+filename);
+              //   document.getElementById("form").submit();
+              // } else 
+              if ($(".target-selection").length) {
                 var url = window.location.href;
 
                 if (url.substr(-1) == '/') url = url.substr(0, url.length - 2);
@@ -112,7 +113,7 @@
                 </div>
             </div>
  -->
-            <div class="col-md-12 panel panel-primary">
+<!--             <div class="col-md-12 panel panel-primary">
                 <div class="panel-body">
                     <h4>Run a new calculation</h4>
                     <div>
@@ -125,5 +126,5 @@
                         </form>
                     </div>
                 </div>
-            </div>
+            </div> -->
 {% endblock %}

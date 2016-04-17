@@ -11,6 +11,7 @@ urlpatterns = [
     url(r'^template_selection', TemplateTargetSelection.as_view(), name='structure_browser'),
     url(r'^template_segment_selection', TemplateSegmentSelection.as_view(), name='structure_browser'),
     url(r'^statistics$', StructureStatistics.as_view(), name='structure_statistics'),
+    url(r'homology_models', ServeHomologyModels, name='homology_models'),
     url(r'^pdb_download_index$', PDBClean.as_view(), name='pdb_download'),
     url(r'pdb_segment_selection', PDBSegmentSelection.as_view(), name='pdb_download'),
     url(r'^pdb_download$', PDBClean.as_view(), name='pdb_download'),

@@ -11,6 +11,7 @@ from common.alignment import Alignment
 
 import os
 from collections import OrderedDict
+import copy
 
 
 class Command(BaseBuild):
@@ -31,7 +32,7 @@ class Command(BaseBuild):
 
     # default segment length
     with open(default_segment_length_file_path, 'r') as default_segment_length_file:
-        segment_length = yaml.load(default_segment_length_file)  
+        segment_length = yaml.load(default_segment_length_file)
 
     pconfs = ProteinConformation.objects.order_by('protein__parent', 'id').prefetch_related(
             'protein__residue_numbering_scheme__parent', 'protein__genes', 'template_structure')
@@ -72,7 +73,7 @@ class Command(BaseBuild):
 
         # pre-fetch protein conformations
         segments = ProteinSegment.objects.filter(partial=False)
-        
+
         for pconf in pconfs:
             # skip protein conformations without a template (consensus sequences)
             if not pconf.template_structure:
@@ -86,7 +87,7 @@ class Command(BaseBuild):
                 sequence_number_counter = pconf_residues[0].sequence_number - 1
             else:
                 sequence_number_counter = 0
-            
+
             # read reference positions for this protein
             ref_position_file_paths = [
                 # canonical ref positions
@@ -112,6 +113,12 @@ class Command(BaseBuild):
                 self.logger.error("No reference positions found for {}, skipping".format(pconf.protein))
                 continue
 
+            # remove empty values from reference positions
+            ref_positions_copy = copy.deepcopy(ref_positions)
+            for position, position_value in ref_positions_copy.items():
+                if position_value == '-':
+                    del ref_positions[position]
+
             # protein anomalies in main template
             main_tpl_pas = template_structure.protein_anomalies.all()
             main_tpl_pa_labels = []
@@ -126,6 +133,10 @@ class Command(BaseBuild):
             for i, segment in enumerate(segments):
                 self.logger.info("Updating segment borders for {} of {}, using template {}".format(segment.slug, pconf,
                     template_structure))
+
+                # segment template structure (only differs from the main template if segment is missing in main
+                # structure, and segment is not fully aligned)
+                segment_template_structure = template_structure
 
                 # should this segment be aligned? This value is updated below
                 unaligned_segment = True
@@ -142,12 +153,26 @@ class Command(BaseBuild):
 
                     # find template segment (for segments borders)
                     try:
-                        main_tpl_ss = StructureSegment.objects.get(structure=template_structure,
+                        main_tpl_ss = StructureSegment.objects.get(structure=segment_template_structure,
                             protein_segment=segment)
                     except StructureSegment.DoesNotExist:
-                        self.logger.warning('Segment records not found for {} in template structure {}, skipping!'.format(
-                            segment, template_structure))
-                        templates_found = False
+                        self.logger.info('Segment records not found for {} in template structure {}, looking for alternatives'.format(
+                            segment, segment_template_structure))
+                        if not segment.fully_aligned:
+                            segment_tpl = ProteinConformationTemplateStructure.objects.get(protein_conformation=pconf,
+                                protein_segment=segment)
+                            try:
+                                main_tpl_ss = StructureSegment.objects.get(structure=segment_tpl.structure,
+                                    protein_segment=segment)
+                                segment_template_structure = segment_tpl.structure
+                                self.logger.info('Using structure {} for {} in {}'.format(segment_tpl.structure,
+                                    segment, pconf))
+                            except:
+                                templates_found = False
+                                self.logger.warning('No template found for {} in {}, skipping'.format(segment, pconf))
+                        else:
+                            templates_found = False
+                            self.logger.warning('No template found for {} in {}, skipping'.format(segment, pconf))
 
                     # get reference positions of this segment (e.g. 1x50)
                     segment_ref_position = settings.REFERENCE_POSITIONS[segment.slug]
@@ -160,12 +185,30 @@ class Command(BaseBuild):
                     # template segment reference residue number
                     try:
                         tsrrn = Residue.objects.get(
-                            protein_conformation=template_structure.protein_conformation,
+                            protein_conformation=segment_template_structure.protein_conformation,
                             generic_number__label=segment_ref_position)
                     except Residue.DoesNotExist:
-                        self.logger.warning("Template residues for {} in {} not found, skipping!".format(segment,
-                            pconf))
-                        templates_found = False
+                        self.logger.info("Template residues for {} in {} not found, looking for alternatives!".format(
+                            segment, pconf))
+                        if not segment.fully_aligned:
+                            segment_tpl = ProteinConformationTemplateStructure.objects.get(protein_conformation=pconf,
+                                protein_segment=segment)
+                            try:
+                                tsrrn = Residue.objects.get(
+                                    protein_conformation=segment_tpl.structure.protein_conformation,
+                                    generic_number__label=segment_ref_position)
+                                main_tpl_ss = StructureSegment.objects.get(structure=segment_tpl.structure,
+                                    protein_segment=segment)
+                                self.logger.info('Using residues from {} for {} in {}'.format(segment_tpl.structure,
+                                    segment, pconf))
+                            except:
+                                self.logger.warning("No template residues for {} in {} not found, skipping!".format(
+                                    segment, pconf))
+                                templates_found = False
+                        else:
+                            self.logger.warning("No template residues for {} in {} not found, skipping!".format(
+                                segment, pconf))
+                            templates_found = False
 
                     # if template requirements are fulfilled, treat as an aligned segment
                     if templates_found:
@@ -195,7 +238,7 @@ class Command(BaseBuild):
                         current_protein_genes = current_protein.genes.order_by('position')
                         if current_protein_genes.count():
                             current_gene = current_protein_genes[0]
-                            template_structure_protein = template_structure.protein_conformation.protein.parent
+                            template_structure_protein = segment_template_structure.protein_conformation.protein.parent
                             template_structure_gene = template_structure_protein.genes.order_by('position')[0]
                             if current_gene.name.lower() == template_structure_gene.name.lower():
                                 ignore_rules = True
@@ -204,14 +247,14 @@ class Command(BaseBuild):
 
                         # get a list of generic numbers in main template
                         main_tpl_gn_labels = Residue.objects.filter(
-                            protein_conformation=template_structure.protein_conformation, generic_number__isnull=False,
+                            protein_conformation=segment_template_structure.protein_conformation, generic_number__isnull=False,
                             protein_segment=segment).values_list('generic_number__label', flat=True)
 
                         for pa, parss in anomaly_rule_sets[segment.slug].items():
                             # check whether this anomaly is inside the segment borders
                             numbers_within_segment = generic_number_within_segment_borders(pa, main_tpl_gn_labels)
                             if not numbers_within_segment:
-                                self.logger.info("Anomaly {} excluded for {} (outside segment borders)".format(pa, 
+                                self.logger.info("Anomaly {} excluded for {} (outside segment borders)".format(pa,
                                     pconf))
                                 continue
 
@@ -232,7 +275,7 @@ class Command(BaseBuild):
                                             self.logger.warning('Residue {} in {} not found, skipping'.format(
                                                 rule.generic_number.label, pconf.protein.entry_name))
                                             continue
-                                        
+
                                         # does the rule break the set? Then go to next set..
                                         if ((r.amino_acid == rule.amino_acid and rule.negative) or
                                             (r.amino_acid != rule.amino_acid and not rule.negative)):
@@ -241,34 +284,34 @@ class Command(BaseBuild):
                                     else:
                                         # do not use similarity, since a rule matched
                                         use_similarity = False
-                                        
-                                        # add the anomaly to the list for this segment (if the rule set is not 
+
+                                        # add the anomaly to the list for this segment (if the rule set is not
                                         # exclusive)
                                         if not pars.exclusive:
                                             protein_anomalies.append(anomalies[pa])
-                                        
+
                                         # break the set loop, because one set match is enough for a decision
                                         break
 
                             # use similarity?
                             if use_similarity:
                                 # does the template have the anomaly in question?
-                                if pa in template_structure.protein_anomalies.all().values_list(
+                                if pa in segment_template_structure.protein_anomalies.all().values_list(
                                     'generic_number__label', flat=True):
-                                    
+
                                     # add it to the list of anomalies for this segment
                                     protein_anomalies.append(anomalies[pa])
                                     self.logger.info("Anomaly {} included for {} (similarity to {})".format(pa,
-                                        pconf, template_structure))
+                                        pconf, segment_template_structure))
                                 else:
                                     self.logger.info("Anomaly {} excluded for {} (similarity to {})".format(pa,
-                                        pconf, template_structure))
+                                        pconf, segment_template_structure))
                             else:
                                 if anomalies[pa] in protein_anomalies:
                                     self.logger.info("Anomaly {} included for {} (rule)".format(pa, pconf))
                                 else:
                                     self.logger.info("Anomaly {} excluded for {} (rule)".format(pa, pconf))
-                    
+
                     # update start and end positions based on anomalies in this protein
                     pa_labels = []
                     ref_generic_index = int(segment_ref_position.split("x")[1])
@@ -286,7 +329,7 @@ class Command(BaseBuild):
                         # do change segment borders if this anomaly is in the main template
                         if pa.generic_number.label in main_tpl_pa_labels:
                             continue
-                        
+
                         # generic number without the prime for bulges
                         pa_generic_index = int(pa.generic_number.label.split("x")[1][:2])
                         if (pa_generic_index > ref_generic_index and pa.anomaly_type.slug == 'bulge'):
@@ -306,7 +349,7 @@ class Command(BaseBuild):
                         # do change segment borders if this anomaly is in the current protein
                         if pa.generic_number.label in pa_labels:
                             continue
-                        
+
                         # generic number without the prime for bulges
                         pa_generic_index = int(pa.generic_number.label.split("x")[1][:2])
                         if (pa_generic_index > ref_generic_index and pa.anomaly_type.slug == 'bulge'):
@@ -319,7 +362,7 @@ class Command(BaseBuild):
                             aligned_segment_start -= 1
 
                     # set start and end positions (not just the aligned)
-                    if segment.fully_aligned:                        
+                    if segment.fully_aligned:
                         segment_start = aligned_segment_start
                         segment_end = aligned_segment_end
                     else:
@@ -334,7 +377,7 @@ class Command(BaseBuild):
 
                     aligned_segment_start = None
                     aligned_segment_end = None
-                
+
                 update_segments[i]['start'] = segment_start
                 update_segments[i]['aligned_start'] = aligned_segment_start
                 update_segments[i]['end'] = segment_end
@@ -342,12 +385,12 @@ class Command(BaseBuild):
                 update_segments[i]['protein_anomalies'] = protein_anomalies
                 if segment_end:
                     sequence_number_counter = segment_end
-                
+
                 # update previous segment end if needed
                 if (i and 'end' in update_segments[i-1] and (not update_segments[i-1]['end']
-                    or update_segments[i-1]['end'] != update_segments[i-1]['aligned_end'])):    
+                    or update_segments[i-1]['end'] != update_segments[i-1]['aligned_end'])):
                     update_segments[i-1]['end'] = segment_start - 1
-                
+
                 # check whether minimum length is fulfilled for last segment
                 if (i and update_segments[i-1]['segment'].slug in self.segment_length
                     and 'min' in self.segment_length[update_segments[i-1]['segment'].slug]
@@ -366,7 +409,7 @@ class Command(BaseBuild):
                         add_residues_after = round(missing_residues / 2)
                         update_segments[i-1]['start'] -= add_residues_before
                         update_segments[i-1]['end'] = update_segments[i-1]['start'] + last_min_segment_length - 1
-                        
+
                         # update aligned start and end if they exceed the updated start and stop values
                         if (update_segments[i-1]['aligned_start']
                             and update_segments[i-1]['aligned_start'] < update_segments[i-1]['start']):

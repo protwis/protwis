@@ -65,40 +65,56 @@ AMINO_ACID_GROUP_NAMES = OrderedDict([
 
 DESIGN_SUBSTITUTION_MATRIX = OrderedDict([
         ('hydrophobic', {
-            'A':[[['L','V','I']],['Increase size to "block" binding']],
-            'C':[[['L','V','I']],['Increase size to "block" binding']],
-            'F':[['A'],['Remove vdW interactions / change the shape of the site']],
-            'I':[['A'],['Remove vdW interactions / change the shape of the site']],
-            'L':[['A'],['Remove vdW interactions / change the shape of the site']],
-            'M':[['A'],['Remove vdW interactions / change the shape of the site']],
-            'P':[['A'],['Remove vdW interactions / change the shape of the site Normaly Prolines have a structural role and are dangerous to tamper with']],
-            'V':[['A'],['Remove vdW interactions / change the shape of the site']],
-            'W':[['A'],['Remove vdW interactions / change the shape of the site']],
-            'Y':[['A'],['Remove vdW interactions / change the shape of the site']]
+            #'A':[[['L','V','I']],['Increase size to "block" binding']],
+            'C':[['A'],['Remove vdW interactions (and polar)']],
+            'F':[['A'],['Remove vdW interaction possibility']],
+            'I':[['A'],['Remove vdW interaction possibilities']],
+            'L':[['A'],['Remove vdW interaction possibilities']],
+            'M':[['A'],['Remove vdW interaction possibilities']],
+            #'P':[['A'],['Remove vdW interactions / change the shape of the site Normaly Prolines have a structural role and are dangerous to tamper with']],
+            'V':[['A'],['Remove vdW interaction possibility']],
+            'R':[['A'],['Remove vdW interaction possibility']],
+            'N':[['A'],['Remove vdW interaction possibility']],
+            'D':[['A'],['Remove vdW interaction possibility']],
+            'Q':[['A'],['Remove vdW interaction possibility']],
+            'E':[['A'],['Remove vdW interaction possibility']],
+            'H':[['A'],['Remove vdW interaction possibility']],
+            'K':[['A'],['Remove vdW interaction possibility']],
+            'T':[['A'],['Remove vdW interaction possibility']],
+            'W':[['A'],['Remove vdW interaction possibility']],
+            'Y':[['A'],['Remove vdW interaction possibility']],
             }
         ),
         ('aromatic', { #same for all types of aromatic interactions #fixme check aro_ion 
-            'Y':[[['L','M'],'A'],['L,M - Remove aromaticity - keep the size','A - remove the side chain and all interactions']],
-            'W':[[['L','M'],'A'],['L,M - Remove aromaticity - keep the size','A - remove the side chain and all interactions']],
-            'F':[[['L','M'],'A','Y'],['L,M - Remove aromaticity - keep the size','A - remove the side chain and all interactions','Y - OH may prevent the aromatic interaction']],
-            'H':[[['L','M'],'A','F'],['L,M - Remove aromaticity - keep the size','A - remove the side chain and all interactions','F - Make it more aromatic (stronger interaction)']],
+            'Y':[[['L','M'],'A'],['Remove aromatic and polar interaction possibilities while retaining vdW interaction possibilities','Remove polar, aromatic and vdW interaction possibilities']],
+            'W':[[['L','M'],'A','H'],['Remove aromatic and polar interaction possibilities while retaining vdW interaction possibilities','Remove polar, aromatic and vdW interaction possibilities','Weaken aromatic interaction possibilities while retaining polar interaction possibilities']],
+            'F':[[['L','M'],'A','Y'],['Remove aromatic interaction possibilities while retaining vdW interaction possibilities','Remove aromatic and vdW interaction possibilities','Prevent Phe-edge to ligand-face aromatic interaction (Should only be attempted when based on a detailed binding mode hypothesis showing the aromatic interaction in question.)']],
+            'H':[['A','N',['L','M']],['Remove polar, aromatic and vdW interaction possibilities','Remove aromatic interaction possibilities while retaining polar interaction possibilities','Remove aromatic and polar interaction possibilities while retaining vdW interaction possibilities']],
             }
         ),
         ('polar', { #same for all types of polar interactions
-            'D':[[['L','M'],'A'],['L,M - Remove interaction - keep some size - M more flexible','A - remove the side chain and all interactions']],
-            'E':[[['L','M'],'A'],['L,M - Remove interaction - keep some size - M more flexible','A - remove the side chain and all interactions']],
-            'H':[[['L','M'],'A','F'],['L,M - Remove interaction - keep some size - M more flexible','A - remove the side chain and all interactions','F - remove h-bond and keep aromatic']],
-            'K':[[['L','M'],'A'],['L,M - Remove interaction - keep some size - M more flexible','A - remove the side chain and all interactions']],
-            'N':[[['L','M'],'A'],['L,M - Remove interaction - keep some size - M more flexible','A - remove the side chain and all interactions']],
-            'Q':[[['L','M'],'A'],['L,M - Remove interaction - keep some size - M more flexible','A - remove the side chain and all interactions']],
-            'R':[[['L','M'],'A'],['L,M - Remove interaction - keep some size - M more flexible','A - remove the side chain and all interactions']],
-            'S':[['A','L'],['A - remove the side chain and all interactions','L - introduce bulk and block the site']],
-            'T':[['A','V','L'],['A - remove the side chain and all interactions','V - remove the h-bond and keep the size','L - introduce bulk and block the site']],
-            'W':[['F','A'],['F - remove h-bond and keep aromaticity and size','A - remove the side chain and all interactions']],
-            'Y':[['F','A'],['F - remove h-bond and keep aromaticity and size','A - remove the side chain and all interactions']],
+            'D':[['L','A'],['Remove polar interaction possibility, while retaining vdW interaction possibilities','Remove polar interaction possibility']],
+            'E':[[['L','M'],'A'],['Remove polar interaction possibility, while retaining vdW interaction possibilities','Remove polar and vdW interaction possibility']],
+            'H':[[['L','M'],'A','F'],['Remove aromatic and polar interaction possibilities while retaining vdW interaction possibilities','Remove polar, aromatic and vdW interaction possibilities','Remove polar interaction possibility, while retaining aromatic interaction possibilities']],
+            'K':[['M','A'],['Remove polar interaction possibility, while retaining vdW interaction possibilities','Remove polar and vdW interaction possibility']],
+            'N':[['L','A'],['Remove polar interaction possibility, while retaining vdW interaction possibilities','Remove polar and vdW interaction possibility']],
+            'Q':[[['L','M'],'A'],['Remove polar interaction possibility, while retaining vdW interaction possibilities','A - remove the side chain and all interactions']],
+            'R':[[['L','M'],'A'],['Remove polar interaction possibility, while retaining vdW interaction possibilities','Remove polar and vdW interaction possibility']],
+            'S':[['A'],['Remove polar interaction possibility']],
+            'T':[['A','V'],['Remove polar and vdW interaction possibility','Remove polar interaction possibility, while retaining vdW interaction possibilities']],
+            'W':[['F','A',['L','M']],['Remove polar interaction possibility, while retaining aromatic interaction possibilities','Remove polar, aromatic and vdW interaction possibilities','Remove aromatic and polar interaction possibilities while retaining vdW interaction possibilities']],
+            'Y':[['F','A',['L','M']],['Remove polar interaction possibility, while retaining aromatic interaction possibilities (Aromatic interaction cannot be investigated independently from h-bond as none of the polar residues can confromationally match the Tyr OH)','Remove polar, aromatic and vdW interaction possibilities','Remove aromatic and polar interaction possibilities while retaining vdW interaction possibilities']],
             }
         ),
         ('unknown', { #empty
             }
-        )
+        ),
+        ('steric', {
+            'A':[[['L','V']],['Increase size to block the binding site']],
+            'C':[[['L','I']],['Increase size to block the binding site']],
+            'G':[[['A','V','M']],['Add side chain to block the binding site (Glycines are often structurally important and should be mutated with causion - unless closely related receptors show different residues in equivalent position.)']],
+            'S':[['L','M'],['Increase size to block the binding site']],
+            'T':[['L','M'],['Increase size to block the binding site']], 
+            'P':[['L','M'],['Increase size to block the binding site (Prolines are often structurally important and should be mutated with causion - unless closely related receptors show different residues in equivalent position.)']],     
+        })
     ])

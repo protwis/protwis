@@ -116,34 +116,39 @@ class Command(BaseCommand):
         temp = []
         for r in rows:
             d = {}
+            if r[6]!='':
+                # if multi mutant group skip it
+                self.logger.info('Skipped row due to being a multi group')
+                continue
+
             d['reference'] = r[0]
-            d['protein'] = r[1].replace("__","_").lower()
-            d['mutation_pos'] = r[2]
-            d['mutation_from'] = r[3]
-            d['mutation_to'] = r[4]
-            #r[5] is new double multi mutant group #FIXME FOR LATER
-            d['ligand_name'] = r[6]
-            d['ligand_type'] = r[7]
-            d['ligand_id'] = r[8]
-            d['ligand_class'] = r[9]
+            d['protein'] = r[2].replace("__","_").lower()
+            d['mutation_pos'] = r[3]
+            d['mutation_from'] = r[4]
+            d['mutation_to'] = r[5]
+            #r[6] is new double multi mutant group #FIXME FOR LATER
+            d['ligand_name'] = r[7]
+            d['ligand_type'] = r[8]
+            d['ligand_id'] = r[9]
+            d['ligand_class'] = r[10]
             #r[10] is new reference ligand #FIXME FOR LATER
-            d['exp_type'] = r[11]
-            d['exp_func'] = r[12]
-            d['exp_wt_value'] = float(r[13]) if r[13] else 0
-            d['exp_wt_unit'] = r[14]
-            d['exp_mu_effect_sign'] = r[15]
-            d['exp_mu_value_raw'] = float(r[16]) if r[16] else 0
-            d['fold_effect'] = float(r[17]) if r[17] else 0
-            d['exp_mu_effect_qual'] = r[18]
+            d['exp_type'] = r[12]
+            d['exp_func'] = r[13]
+            d['exp_wt_value'] = float(r[14]) if r[14] else 0
+            d['exp_wt_unit'] = r[15]
+            d['exp_mu_effect_sign'] = r[16]
+            d['exp_mu_value_raw'] = float(r[17]) if r[17] else 0
+            d['fold_effect'] = float(r[18]) if r[18] else 0
+            d['exp_mu_effect_qual'] = r[19]
             d['exp_mu_effect_ligand_prop'] = '' #removed
-            d['exp_mu_ligand_ref'] = r[10] #check if correct?
-            d['opt_type'] = r[19]
-            d['opt_wt'] = float(r[20]) if r[20] else 0
-            d['opt_mu'] = float(r[22]) if r[22] else 0
-            d['opt_sign'] = r[21]
-            d['opt_percentage'] = float(r[23]) if r[23] else 0
-            d['opt_qual'] = r[24]
-            d['opt_agonist'] = r[25]
+            d['exp_mu_ligand_ref'] = r[11] #check if correct?
+            d['opt_type'] = r[20]
+            d['opt_wt'] = float(r[21]) if r[21] else 0
+            d['opt_mu'] = float(r[23]) if r[23] else 0
+            d['opt_sign'] = r[22]
+            d['opt_percentage'] = float(r[24]) if r[24] else 0
+            d['opt_qual'] = r[25]
+            d['opt_agonist'] = r[26]
 
 
 
@@ -334,6 +339,22 @@ class Command(BaseCommand):
                                     defaults={'name': default_ligand_type})
                                 l = Ligand()
                                 l = l.load_from_pubchem(pubchem_lookup_value, r['ligand_id'], lt, ligand_name)
+                                if l == None and r['ligand_type']=='SMILES': #insert manually if smiles and unfound in pubchem
+                                    try:
+                                        l = Ligand.objects.get(name=ligand_name, canonical=True,
+                                                                properities__smiles=r['ligand_id'])
+                                    except Ligand.DoesNotExist:
+                                        l = Ligand()
+                                        l.name = ligand_name
+                                        lp = LigandProperities()
+                                        lp.smiles = r['ligand_id']
+                                        lp.ligand_type = lt
+                                        lp.save()
+                                        l.properities = lp
+                                        l.canonical = True #maybe false, but that would break stuff.
+                                        l.ambigious_alias = False
+                                        l.save()
+                                        self.logger.info('Created Ligand {} manually'.format(l.name))
                         
                     elif r['ligand_name']:
                         
@@ -424,11 +445,11 @@ class Command(BaseCommand):
                             self.logger.error('Skipped due to no protein '+ r['protein'])
                         continue
 
-                    res=Residue.objects.filter(protein_conformation__protein=protein,sequence_number=r['mutation_pos'])
+                    res=Residue.objects.filter(protein_conformation__protein=protein,amino_acid=r['mutation_from'],sequence_number=r['mutation_pos']) #FIXME MAKE AA CHECK
                     if res.exists():
                         res=res.get()
                     else:
-                        self.logger.error('Skipped due to no residue ' + r['protein'] + ' pos:'+str(r['mutation_pos']))
+                        self.logger.error('Skipped due to no residue or mismatch AA ' + r['protein'] + ' pos:'+str(r['mutation_pos']) + ' AA:'+r['mutation_from'])
                         skipped += 1
                         continue
 

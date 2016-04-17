@@ -10,6 +10,7 @@ from residue.functions import *
 import os
 import yaml
 from collections import OrderedDict
+import copy
 
 class Command(BaseBuild):
     help = 'Creates residue records for human receptors'
@@ -21,7 +22,7 @@ class Command(BaseBuild):
 
     segments = ProteinSegment.objects.filter(partial=False)
     all_segments = {ps.slug: ps for ps in ProteinSegment.objects.all()}  # all segments dict for faster lookups
-    
+
     pconfs = ProteinConformation.objects.filter(protein__species__id=1).prefetch_related(
         'protein__residue_numbering_scheme__parent')
 
@@ -29,7 +30,7 @@ class Command(BaseBuild):
 
     # default segment length
     with open(default_segment_length_file_path, 'r') as default_segment_length_file:
-        segment_length = yaml.load(default_segment_length_file)  
+        segment_length = yaml.load(default_segment_length_file)
 
     def handle(self, *args, **options):
         try:
@@ -51,7 +52,7 @@ class Command(BaseBuild):
             pconfs = self.pconfs[positions[0]:]
         else:
             pconfs = self.pconfs[positions[0]:positions[1]]
-        
+
         for pconf in pconfs:
             # read reference positions for this protein
             ref_position_file_path = os.sep.join([self.ref_position_source_dir, pconf.protein.entry_name + '.yaml'])
@@ -70,7 +71,7 @@ class Command(BaseBuild):
                 if iteration == 2:
                     self.logger.info("Reference positions for {} not annotated, looking for a template".format(
                         pconf.protein))
-                    
+
                     # required information about this protein
                     up = {}
                     up['entry_name'] = pconf.protein.entry_name
@@ -90,10 +91,10 @@ class Command(BaseBuild):
                     for parent_family in parent_family_levels:
                         if template_found:
                             break
-                        
+
                         # find sub families
                         related_families = ProteinFamily.objects.filter(parent=parent_family)
-                        
+
                         # loop through families and search for proteins to use as template
                         for family in related_families:
                             if template_found:
@@ -124,6 +125,12 @@ class Command(BaseBuild):
                 # proteins with ref positions have already been processed in the first iteration
                 continue
 
+            # remote empty ref positions
+            ref_positions_copy = copy.deepcopy(ref_positions)
+            for position, position_value in ref_positions_copy.items():
+                if position_value == '-':
+                    del ref_positions[position]
+
             # determine segment ranges, and create residues
             nseg = self.segments.count()
             sequence_number_counter = 0
@@ -150,7 +157,7 @@ class Command(BaseBuild):
                         segment_end = (ref_positions[settings.REFERENCE_POSITIONS[segment.slug]]
                             + self.segment_length[segment.slug]['after'])
                         aligned_segment_end = segment_end
-                        
+
                         # is this segment is not fully aligned, find the start and stop (not just the aligned start
                         # and stop)
                         if not segment.fully_aligned:
@@ -179,7 +186,7 @@ class Command(BaseBuild):
                                     segment_end = (ref_positions[settings.REFERENCE_POSITIONS[next_segment.slug]]
                                     - self.segment_length[next_segment.slug]['before'] - 1)
                                     next_ref_found = True
-                                else: 
+                                else:
                                     continue
                             else:
                                 # for the last segment, the end is the last residue of the sequence
@@ -198,14 +205,14 @@ class Command(BaseBuild):
 
                 if unaligned_segment:
                     segment_start = sequence_number_counter + 1
-                    
+
                     # if this is not the last segment, find next segments reference position
                     if next_segment:
                         if (next_segment.slug in settings.REFERENCE_POSITIONS and ref_positions and
                             settings.REFERENCE_POSITIONS[next_segment.slug] in ref_positions):
                             segment_end = (ref_positions[settings.REFERENCE_POSITIONS[next_segment.slug]]
                             - self.segment_length[next_segment.slug]['before'] - 1)
-                        else: 
+                        else:
                             continue
                     else:
                         # for the last segment, the end is the last residue of the sequence
