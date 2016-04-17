@@ -1,0 +1,794 @@
+
+
+{% extends "home/base.html" %}
+
+
+{% load staticfiles %}
+
+
+{% block addon_css %}
+
+<style type="text/css">
+
+
+
+
+th{
+	padding-right: 30px;
+	white-space: nowrap;
+	vertical-align: top;
+	text-align: right;
+
+}
+
+
+
+td{
+	
+	white-space: nowrap;
+	vertical-align: top;
+}
+
+
+
+
+select, option {
+        width:180px;
+        height:22px;
+
+    }
+
+textarea {
+	width: 180px;
+    height: 100px;
+    overflow: scroll;
+}
+
+.modremark{
+	 width: 180px;
+     height:30px;
+     overflow: scroll;
+}
+
+input{
+	width:180px;
+	height:22px;
+}
+
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+
+}
+
+
+#expr_system , #solubil_purif, #crystallization, #chem_comp {
+	font-size:10pt;
+}
+
+
+
+#expr_system th, #solubil_purif th, #crystallization th {
+	padding-right: 5px;
+	text-align: right;
+	white-space: nowrap;
+
+
+}
+
+#expr_system input, #solubil_purif input, #crystallization input{
+	width:110px;
+	height:22px;
+
+}
+
+#expr_system select, #solubil_purif select, #crystallization select{
+	width:110px;
+	height:22px;
+
+}
+
+#expr_system textarea, #solubil_purif textarea, #crystallization textarea{
+	width:110px;	
+}
+
+
+
+#solubil_purif input.half, #crystallization input.half {
+	width:40px;	
+	font-size: 8pt;
+}
+
+#solubil_purif input.unit, #crystallization input.unit {
+	width:70px;	
+	font-size: 7pt;
+}
+
+
+
+#crystallization select.ph {
+	width:60px;	
+	font-size: 8pt;
+}
+
+#crystallization input.single_ph {
+	width:46px;	
+	
+}
+
+
+#crystallization input.range_ph {
+	width:23px;	
+	font-size: 7pt;
+}
+
+
+#id_date_month { 
+    width:85px;
+    font-size: 9pt;
+}
+
+#id_date_day {
+	width:37px;
+	font-size: 9pt;
+}
+
+#id_date_year{
+	width:51px;
+	font-size: 9pt;
+}
+
+
+.mut{
+	height:22px;
+	width:70px;
+}
+
+
+.hidetext{
+	display:none;
+}
+
+.custom_single{
+	width:84px;
+}
+
+.custom_pair{
+	width:37px;
+}
+
+.custom_range{
+	width:37px;
+}
+
+.delet_range{
+	width:84px;
+}
+
+
+input.checked{ font-size: 6pt;}
+
+input.custom_pair::-webkit-input-placeholder { font-size: 8pt;}
+input.custom_range::-webkit-input-placeholder { font-size: 8pt;}
+input.custom_single::-webkit-input-placeholder { font-size: 8pt;}
+
+.unit{
+	width:90px;
+}
+
+.half{
+
+	width:90px;
+}
+
+
+.button{
+	width:70px;
+	font-size: 7pt;
+}
+
+
+.delrow{
+	width:30px;
+	font-size: 11pt;
+}
+
+.delcol{
+	width:30px;
+	font-size: 11pt;
+
+}
+
+
+.del_table_td{
+ padding-right: 8px;
+
+}
+
+
+
+.del_checkbox{
+	width:15px;
+	height:22px;
+}
+
+
+
+
+.left_border_contact{ 
+	padding-left: 40px;
+}
+
+.left_border{ 
+	padding-left: 10px;
+}
+
+.left_border_sol{
+	padding-left: 3px;
+}
+
+
+
+.right_border{
+	
+	padding-right: 25px;
+}
+
+input.second_table{
+
+	width: 60px;
+	height:22px;
+
+}
+
+
+
+input.widen{
+
+	width: 120px;
+	height:22px;
+
+}
+
+ #mutations, #modifications{
+	border:1px solid grey;
+	   
+
+}
+
+
+
+.glyphicon:hover{
+    cursor: pointer;
+    font-size: 20px;
+    color:blue;
+}
+
+
+
+
+</style>
+
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/addcol_jquery.js' %}"></script>
+<script src="{% static 'home/js/addcol.js' %}"></script>
+{% endblock %}
+
+
+{% block content %}
+
+
+
+	
+	<form method="post"  target="_blank" action='webformdata'>
+		{% csrf_token %}
+		<table class="table_1"  id="table_1">
+				<td>
+		<div class="contr_contact">
+			
+		<h1>Contributor Contact information</h1>
+		<br>
+		<table style="table-layout: fixed" style="width:100%" id="contact_information" >
+			
+			
+			  <tr>
+			    <th>Date</th>
+			    <td>{{ form.date }}</td> 
+			  </tr>
+
+			  <tr>
+			    <th>Name</th>
+			    <td>{{ form.name_cont }}</td> 
+			  </tr>
+
+	     	  <tr>
+			    <th>Name of PI (group leader)</th>
+			    <td>{{ form.pi_name }}</td> 
+			  </tr>
+
+			  <tr>
+			    <th>PI contact e-mail address</th>
+			    <td>{{form.pi_email}}</td> 
+			  </tr>
+
+
+		     <tr>
+			    <th>Affiliation address</th>
+			    <td> {{form.address}}</textarea></td>
+		     </tr>
+
+		     <tr>
+			    <th>Database group/URL</th>
+			    <td>{{form.url}} <span id="addurl" class="glyphicon glyphicon-plus row_id"></span></td> 
+			  </tr>
+
+             
+		</table>
+
+		<br>
+    
+    <input class="button"type="button" id="deleteurl" value="Delete URL"/>
+		<br><br>
+
+ 
+</div>
+  </td> 
+
+
+<td  style="vertical-align: top" class="left_border_contact">
+<div class="construct_crystal">
+     
+	<h1>Construct Crystal Information</h1>
+	<br>
+		
+			<table style="table-layout: fixed" style="width:100%"  id="construct">
+
+				  <tr>
+				    <th>PDB code</th>
+				    <td>{{form.pdb}}</td> 
+				  </tr>
+	           
+	              <tr>
+				    <th>Name</th>
+				    <td>{{form.pdb_name}}</td> 
+				  </tr>
+                 
+                  <tr>
+				    <th ><a href="http://www.uniprot.org/">Protein name or ID (Uniprot)</a></th>
+				    <td>{{form.uniprot}}</td>
+				  </tr>
+
+				   <tr>
+				    <th>Ligand Name</th>
+				    <td>{{form.ligand_name}}</td> 
+				 </tr>
+
+
+				 <tr>
+				    <th>Ligand activity type</th>
+				    <td>{{form.ligand_activity}}</td> 
+				 </tr>
+
+				 <tr>
+				    <th>Ligand ID Type</th>
+				    <td>{{form.ligand_id_type}}</td> 
+				 </tr>
+
+				 <tr>
+				    <th>Ligand ID</th>
+				    <td>{{form.ligand_id}}</td> 
+				 </tr>
+
+				 <tr>
+				    <th>Ligand Concentration</th>
+				    <td>{{form.ligand_conc}}{{form.ligand_conc_unit}}</td> 
+				 </tr>
+                  
+                  </table>    
+
+</div>
+</td>
+</table>
+
+			
+			<br><br>
+
+           
+            <br>    
+
+<table class="table_2" id="table_2">
+	<tr>
+	<td  colspan="3">
+
+<div class="auxiliary_proteins">
+
+             <h3>Auxiliary proteins</h3>
+     
+				   <br>
+			    <input class="button" type="button" value="Add Column" id="add_aux" onclick="addaux('aux_proteins')"  />
+			    <input class="button" type="button" value="Delete last" onclick="deleteColumn('aux_proteins')"/>
+				   <br><br>
+				<table  style="table-layout: fixed" style="width:100%"  id="aux_proteins">
+					
+					   <tr>
+					    <th>Position in construct</th>
+					    <td> {{form.position}}</td> 
+					  </tr>
+
+
+					  <tr> 
+					    <th>Protein Type</th>	    		 
+					    <td>{{form.protein_type}}</td> 
+					  </tr>
+
+
+		              <tr> 
+					    <th class="sub_type hidetext">Subprotein Type</th>
+					    <td>{{form.fusion_prot}} {{form.signal}} {{form.tag}} 
+					    	 {{form.linker_seq}} {{form.prot_cleavage}}<br class="hidetext prot_type other_signal col_id">{{form.other_signal}} <br class="hidetext prot_type other_tag col_id"> {{form.other_tag}} <br class="hidetext prot_type other_prot col_id"> {{form.other_prot_cleavage}} 
+					    </td> 
+					  </tr>
+	                
+					  <tr>
+					     <th class="hidetext within_receptor_th"> Position of insert in receptor</th>
+					   
+					     <td><span name="span" id="span" class="stable hidetext col_id"></span>{{form.insert_pos_type}} {{form.insert_pos_single}} {{form.ins_start}} <label class="with_rec_val ins_pos_type ins_range hidetext col_id">-</label> {{form.ins_end}}</td> 
+					  </tr>
+				
+
+				      <tr> 
+					    <th>Presence in Crystal</th> 
+			 		    <td>{{form.presence}}</td>
+					  </tr>
+			 
+
+			 		<tr> 
+					    <th></th> 
+			 		    <td align="center"><span id="remove_button" class="hidetext delcol glyphicon glyphicon glyphicon-trash col_id"></span></td>
+					  </tr>
+
+
+				</table>
+
+		       
+
+</div>
+
+<br><br><br>
+</td>
+
+
+</tr>
+			
+<tr>
+
+<td class='del_1 del_table_td'>
+
+<div class="deletions">
+                 
+                  <h3>Deletions</h3>
+                  
+                  <input class='button' type="button" value="Add row" id="addmut" onclick="addRow('deletions', '0')"/>
+				<input class="button" type="button" value="Delete last" onclick="deleteRow('deletions')"/>
+                  <br><br>
+                  <table id="deletions">
+
+                  <tr>
+                  	<th style="text-align:center">Deletion</th>
+				    <th style="text-align:center">Deletion position</th>   
+				  
+				  </tr>
+ 
+				   <tr>
+				   	<td> {{form.deletion}}</td>
+				    <td>{{form.deletion_single}}{{form.delet_start}} <label class="del_type hidetext del_range row_id">-</label> {{form.delet_end}} <span id="del_deletions" class="hidetext del_delrow delrow glyphicon glyphicon-minus row_id"></span>
+				    </td> 
+				  </tr>
+
+				</table>
+
+</div>
+
+</td>
+
+<td class="mut_2 left_border">
+
+<div class="mutations">
+				<h3>Mutations</h3>
+			
+				<input class='button' type="button" value="Add row" id="addmut" onclick="addRow('mutations', '0')"/>
+				<input class="button" type="button" value="Delete last" onclick="deleteRow('mutations')"/>
+				<input  class="checked button" type="button" value="Delete selected" />
+				<br><br>
+				
+				<table style="table-layout: fixed" style="width:100%"  id="mutations">
+                  <tr>
+				    <th>Res No.</th>
+				    <th>WT AA</th>
+				    <th>Mutant AA</th> 
+				    <th></th> 
+
+				  </tr>
+
+				        
+
+                  <tr>
+				    <td>{{form.aa_no}}</td> 
+				    <td>{{form.wt_aa}}</td>
+		           <td>{{form.mut_aa}}</td>
+		           <td>	<input id='del_mut' type='checkbox'  class='hidetext del_checkbox checkrow row' />
+		           </td> 
+		          
+		          
+			      </tr>
+				                  
+         		
+			</table>
+	    
+</div>
+
+</td>
+
+
+<td class="mod_3 left_border">
+<div class="modifications">
+	
+
+<h3>Modifications</h3>
+
+  		
+	      <input class="button" type="button" value="Add row" id="addmod" onclick="addRow('modifications')"  />
+	      <input class="button" type="button" value="Delete last" onclick="deleteRow('modifications')"/>
+			<br><br>
+			<table style="table-layout: fixed" style="width:100%"  id="modifications">
+				
+				  <tr>
+				    <th>AminoAcid modifications</th>
+				    <th>aamod position</th>
+				    <th>Remark</th>
+				     
+				  </tr>
+	           
+	              <tr>
+				    <td>{{form.aamod}}</td>
+				    <td>{{form.aamod_position}}  
+				    	{{form.aamod_single}}{{form.aamod_pair_one}} <label id="mod_comma" class="aa_type hidetext pair row_id">,</label> {{form.aamod_pair_two}}{{form.aamod_start}}<label id="mod_minus"  class="aa_type hidetext range row_id">-</label> {{form.aamod_end}}</td> 
+				    	
+				    	<td>{{form.mod_remark}}</td>
+				    	<td><span id='del_mod'  class='glyphicon glyphicon-minus hidetext mod_delrow delrow row_id'/></td>
+				  </tr>
+                
+                  
+			</table>
+	  
+
+</div>
+
+
+</td>
+
+</tr>
+
+</table>
+
+
+
+
+<br><br><br><br>
+
+
+
+
+	<br>
+<table id="table_3">
+
+	<tr>
+		<td class="exp1">
+	
+<div class="expression_system right_border">
+<h2>Expression System</h2>
+<br>
+			
+			<table  style="table-layout: fixed"  id="expr_system">
+                
+                  <tr>
+				    <th >Expression Method</th>
+				    <td>{{form.expr_method}}</td>        
+			     </tr>
+                  
+                  <tr>
+				    <th>Host cell type</th>
+				     <td>{{form.host_cell_type}}</td>
+			     </tr>
+
+                  <tr>
+				    <th>Host cell</th>
+				    <td>{{form.host_cell}}</td>
+			      </tr>
+                 
+                 <tr>
+			        <th>Remark</th>
+			        <td>{{form.expr_remark}}</td>
+		         </tr>
+			</table>
+	  
+   
+</div>
+
+</td>
+
+
+
+<td class="sol2 left_border_contact">
+
+<div class="solubilization">
+
+<h2>Solubilization and Purification</h2> 
+			<br>
+	
+			<table  style="table-layout: fixed"  id="solubil_purif">
+                
+                 <tr>
+				    <th>Solubilization detergent type</th>
+				    <td>{{form.deterg_type}}<br>{{form.other_deterg_type}}</td>
+			     </tr>
+                  
+                 <tr>
+				    <th>Detergent concentration</th>
+				    <td>{{form.deterg_concentr}}{{form.deterg_concentr_unit}} </td> 
+				 </tr>
+                 
+                 <tr>
+				    <th>Solubilization additive</th>
+				    <td>{{form.solub_additive}}</td> 
+				 </tr>
+
+                 <tr>
+				    <th>Additive concentration</th>
+				    <td>{{form.additive_concentr}}{{form.addit_concentr_unit}}</td> 
+				 </tr>
+
+                 <tr class="last">
+				    <th>Chemical/Enzymatic treatment</th>
+				    <td></span>{{form.chem_enz_treatment}}  <span id="add_treatment" class="glyphicon glyphicon-plus row_id"></span> &nbsp;<span id='del_chem_enz'  class='glyphicon glyphicon-minus hidetext chem_enz_delrow delrow row_id'/> </span><br>{{form.sol_remark}}</td>
+			     </tr>
+
+                  
+                 
+			</table>
+	  
+
+</div>
+
+</td>
+
+
+<td class="cryst3 left_border_sol">
+
+
+<div class="crystallization">
+
+<h2 style="text-align:center">Crystallization</h2> 
+
+<br>
+
+			<table style="width:100%" id="crystallization">
+                
+                  <tr>
+				    <th>Type</th>
+				    <td>{{form.crystal_type}}<br>{{form.other_crystal_type}}</td>
+			     </tr>
+                  
+                  <tr>
+				    <th>Method</th>
+				    <td>{{form.crystal_method}}<br>{{form.other_method}}</td>
+			     </tr>
+
+
+                  <tr>
+				    <th >Protein concentration</th>
+				    <td>{{form.protein_concentr}}{{form.protein_conc_unit}}</td> 
+				    
+				 </tr>
+
+                 
+
+                  <tr>
+				    <th>Temperature °C</th>
+				    <td>{{form.temperature}}</td> 
+				 </tr>
+
+                 <tr>
+				    <th>pH</th>
+				    <td>{{form.ph}} {{form.ph_single}}{{form.ph_range_one}} <label class="ph_type hidetext range_ph ">-</label> {{form.ph_range_two}}</td> 
+				 </tr>
+   
+
+                 <tr>
+			        <th>Remark</th>
+			        <td> {{form.crystal_remark}}</textarea>
+		          </tr>
+
+                 <tr>
+				    <th>LCP Lipid</th>
+				    <td>{{form.lcp_lipid}}<br>{{form.other_lcp_lipid}}</td>
+			     </tr>
+
+                 <tr>
+				    <th>LCP Lipid additive</th>
+				    <td>{{form.lcp_add}}</td> 
+				 </tr>
+
+                 <tr>
+				    <th>LCP Lipid additive conentration</th>
+				    <td>{{form.lcp_conc}}{{form.lcp_conc_unit}}</td> 
+				 </tr>
+
+				 <tr>
+				    <th>Detergent</th>
+				    <td>{{form.detergent}}<br>{{form.other_deterg}}</td> 
+				 </tr>
+
+				 <tr>
+				    <th>Detergent Concentration</th>
+				    <td>{{form.deterg_conc}}{{form.deterg_conc_unit}}</td> 
+				 </tr>
+                 
+
+                 <tr>
+				    <th>Lipid</th>
+				    <td>{{form.lipid}}<br>{{form.other_lipid}}</td> 
+				 </tr>
+
+				 <tr>
+				    <th>Lipid Concentration</th>
+				    <td>{{form.lipid_concentr}}{{form.lipid_concentr_unit}}</td> 
+				 </tr>
+
+		
+
+	</table>
+     <br>
+	<input  type="button" value="Add row" id="add_chem" onclick="addRow('chem_comp')"  class="button"/>
+	<input class="button" type="button" value="Delete last" onclick="deleteRow('chem_comp')"/>
+	<br><br>
+
+				<table  style="table-layout: fixed" id="chem_comp">
+
+				 <tr>
+				    <th>Chemical Component</th>
+				    <th>Concentration</th>
+				    
+				 </tr>
+
+				 <tr>
+				    <td>{{form.chemical_comp}}</td>
+				    <td>{{form.concentr}}{{form.concentr_unit}}</td> 
+				    <td><input id='chem_delrow' type="button" class=' hidetext chem_delrow delrow row_id'/>
+				    </td> 
+				 </tr>
+    
+			</table>
+
+<br><br>
+		
+</td>
+</tr>
+
+</table>
+
+<input type="submit" value="Save"  id="btn_s">
+
+</div>
+
+
+
+</form>
+<br><br>
+{% endblock %}
+
+
+
