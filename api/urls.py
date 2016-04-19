@@ -17,6 +17,8 @@ urlpatterns = [
         name='proteinfamily-descendants'),
     url(r'^proteinfamily/proteins/(?P<slug>[^/]+)/$', views.ProteinsInFamilyList.as_view(),
         name='proteinfamily-proteins'),
+    url(r'^proteinfamily/proteins/(?P<slug>[^/]+)/(?P<latin_name>[^/]+)/$', views.ProteinsInFamilySpeciesList.as_view(),
+        name='proteinfamily-proteins'),
 
     url(r'^residues/(?P<entry_name>[^/]+)/$', views.ResiduesList.as_view(), name='residues'),
     url(r'^residues/extended/(?P<entry_name>[^/]+)/$', views.ResiduesExtendedList.as_view(), name='residues-extended'),
