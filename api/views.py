@@ -117,8 +117,26 @@ class ProteinsInFamilyList(generics.ListAPIView):
     
     def get_queryset(self):
         queryset = Protein.objects.all()
-        return queryset.filter(sequence_type__slug='wt', family__slug__startswith=self.kwargs.get('slug'), 
-            species__latin_name="Homo sapiens")
+        family = self.kwargs.get('slug')
+        return queryset.filter(sequence_type__slug='wt', family__slug__startswith=family)
+
+
+class ProteinsInFamilySpeciesList(generics.ListAPIView):
+    """
+    Get a list of proteins in a protein family
+    \n/proteinfamily/proteins/{slug}/{species}
+    \n{slug} is a protein family identifier, e.g. 001_001_001
+    \n{latin_name} is a species identifier from Uniprot, e.g. Homo sapiens
+    """
+
+    serializer_class = ProteinSerializer
+
+    def get_queryset(self):
+        queryset = Protein.objects.all()
+        family = self.kwargs.get('slug')
+        species = self.kwargs.get('latin_name')
+        return queryset.filter(sequence_type__slug='wt', family__slug__startswith=family,
+                               species__latin_name=species)
 
 
 class ResiduesList(generics.ListAPIView):
