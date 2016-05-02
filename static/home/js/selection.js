@@ -151,6 +151,19 @@ function SelectionSpeciesToggle(species_id) {
     });
 }
 
+function SelectionGproteinPredefined(g_protein) {
+    $.ajax({
+        'url': '/common/selectiongproteinspredefined',
+        'data': {
+            g_protein: g_protein
+        },
+        'type': 'GET',
+        'success': function (data) {
+            $("#filters-species").html(data);
+        }
+    });
+}
+
 function ExpandSegment(segment_id, position_type, scheme) {
     $.ajax({
         'url': '/common/expandsegment',
@@ -277,7 +290,9 @@ function SetGroupMinMatch(selection_type, group_id, min_match) {
         },
     });
 }
-function ReadSiteFromFile(file) {
+
+function ReadSiteFromFile(form) {
+    //event.preventDefault();
     //Dealing with csrf token
     function getCookie(c_name) {
         if (document.cookie.length > 0) {
@@ -295,19 +310,22 @@ function ReadSiteFromFile(file) {
         headers: { "X-CSRFToken": getCookie("csrftoken") }
     });
     //Actual post
+    var fd = new FormData();
+    fd.append('xml_file', form, form.name)
     $.ajax({
-        'url': '/sitesearch/siteupload',
-        'data': { 'xml_file': file.value },
-        'type': 'POST',
-        'cache': 'false',
-        'async': 'false',
-        'processData': 'false',
-        'contentType': "false",
+        type: 'POST',
+        url: '/sitesearch/siteupload',
+        //enctype: 'multipart/form-data',
+        //data: { 'xml_file': 'dupa' },
+        data: fd,
+        cache: false,
+        processData: false,
+        contentType: false,
         'success': function (data) {
             $("#selection-segments").html(data);
         },
-    }).fail(function (jqXHR, textStatus) {
-        alert("Request failed: " + textStatus);
+    }).fail(function (jqXHR, textStatus, error) {
+        alert("Request failed: " + textStatus + error);
     });
     return false;
 }

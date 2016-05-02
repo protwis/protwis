@@ -11,12 +11,12 @@
         {% if selection_type == 'segments' %}
             <!-- Read from file -->
             <p>
-                <a data-toggle="modal" data-target="#SpeciesSelector"
+                <a data-toggle="modal" data-target="#SiteFileSelector"
                    class="btn btn-primary btn-xs">
                     <span class="glyphicon glyphicon-plus"></span> Read site from file
                 </a>
             </p>
-            <div class="modal fade" id="SpeciesSelector" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+            <div class="modal fade" id="SiteFileSelector" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -29,7 +29,6 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
-                            <!--<button onclick='ReadSiteFromFile($("#xls-file")[0].value)' type="button" class="btn btn-success" data-dismiss="modal">Save & close</button>-->
                             <button onclick='$("#xls-form").submit()' type="button" class="btn btn-success" data-dismiss="modal">Save & close</button>
                         </div>
                     </div>

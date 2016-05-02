@@ -149,8 +149,7 @@ def site_download(request):
 
 def site_upload(request):
     
-    wb=load_workbook(filename=BytesIO(request.FILES['xml_file'].file.read().decode('UTF-8',"ignore")))
-    ws=wb.active
+    print(request.FILES)
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
@@ -163,8 +162,17 @@ def site_upload(request):
     selection_type = 'segments'
     selection_subtype = 'site_residue'
 
+    if request.FILES == {}:
+        return render(request, 'common/selection_lists.html', '')
+
     #Overwriting the existing selection
     selection.clear(selection_type)
+
+    print(type(request.FILES['xml_file'].file))
+
+    wb=load_workbook(filename=request.FILES['xml_file'].file)
+    ws=wb.active
+
 
     for row in ws.rows:
         if len(row) < 5:
@@ -200,7 +208,7 @@ def site_upload(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
     
-    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+    return render(request, 'common/selection_lists_sitesearch.html', selection.dict(selection_type))
 
 
 def render_alignment(request):

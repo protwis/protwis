@@ -10,6 +10,30 @@ import Bio.PDB.Polypeptide as polypeptide
 
 import enum, os, xlsxwriter
 
+#Number of heavy atoms in each residue
+atom_count = {
+    "ALA": 5,
+    "ARG": 11, 
+    "ASN": 8,
+    "ASP": 8, 
+    "CYS": 6,
+    "GLN": 9,
+    "GLU": 9, 
+    "GLY": 4,
+    "HIS": 10,
+    "ILE": 8,
+    "LEU": 8,
+    "LYS": 9,
+    "MET": 8,
+    "PHE": 11,
+    "PRO": 7,
+    "SER": 6,
+    "THR": 7,
+    "TRP": 14,
+    "TYR": 12,
+    "VAL": 7,
+    }
+
 class ParsedResidue(object):
 
     def __init__(self, res_name, res_num, gpcrdb=None):
