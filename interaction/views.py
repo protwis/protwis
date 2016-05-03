@@ -4,6 +4,7 @@ from django.conf import settings
 from django import forms
 from django.db.models import Count, Min, Sum, Avg, Q
 from django.utils.text import slugify
+from django.views.generic import TemplateView, View
 
 
 from interaction.models import *
@@ -22,6 +23,7 @@ from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
 from common.views import AbsTargetSelection
+from protein.models import Protein, ProteinFamily, ProteinGProtein
 
 import os
 from os import listdir, devnull, makedirs
@@ -1188,3 +1190,25 @@ def pdb(request):
         response = HttpResponse(structure.pdb_data.pdb,
                                 content_type='text/plain')
     return response
+
+def GProtein(request):
+
+    context = OrderedDict()
+
+    # proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('proteingproteinpair_set')
+    gproteins = ProteinGProtein.objects.all().prefetch_related('proteingproteinpair_set')
+    jsondata = {}
+    for gp in gproteins:
+        ps = gp.proteingproteinpair_set.all()
+        if ps:
+            jsondata[str(gp)] = []
+            for p in ps:
+                jsondata[str(gp)].append(str(p.protein.entry_name)+'\n')
+            jsondata[str(gp)] = ''.join(jsondata[str(gp)])
+
+    context["gdata"] = jsondata
+
+    return render(request, 'gprotein.html', context)
+
+
+
