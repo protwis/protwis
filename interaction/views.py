@@ -4,8 +4,6 @@ from django.conf import settings
 from django import forms
 from django.db.models import Count, Min, Sum, Avg, Q
 from django.utils.text import slugify
-from django.views.generic import TemplateView, View
-
 
 from interaction.models import *
 from interaction.forms import PDBform
@@ -1208,7 +1206,7 @@ def GProtein(request):
 
     context["gdata"] = jsondata
 
-    return render(request, 'gprotein.html', context)
+    return render(request, 'interaction/gprotein.html', context)
 
 
 
