@@ -1,0 +1,228 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+<link href="{% static 'home/css/residue_table.css' %}" rel="stylesheet">
+<style>
+canvas {
+    border:2px solid #888888;
+}
+</style>
+
+{% endblock %}
+{% block content %}
+<h2>Structure information</h2>
+ <script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script> 
+ <div class="row">
+    <table width="100%">
+      <tr>
+        <td width="50%" style="border:0px;">
+        <div class="row text-success">
+        <div class="text-center">
+                <h2>{{ crystal.protein_conformation.protein.family.name|safe }}</h2>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>PROTEIN CLASS</h4>
+            </div>
+            <div class="col-md-6">
+            {{ crystal.protein_conformation.protein.get_protein_class }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>PDB CODE</h4>
+            </div>
+            <div class="col-md-6">
+            {{ crystal.pdb_code.index }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>SPECIES</h4>
+            </div>
+            <div class="col-md-6">
+            {{ crystal.protein_conformation.protein.species.latin_name }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>RESOLUTION</h4>
+            </div>
+            <div class="col-md-6">
+            {{ crystal.resolution}}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>PREFERRED CHAIN</h4>
+            </div>
+            <div class="col-md-6">
+            {{ crystal.preferred_chain }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>REFERENCE</h4>
+            </div>
+            <div class="col-md-6">
+            <a href="{{ crystal.publication.web_link }}">{{ crystal.publication.web_link.index }}</a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 text-right text-info">
+                <h4>PUBLICATION DATE</h4>
+            </div>
+            <div class="col-md-6">
+            {{ crystal.publication_date }}
+            </div>
+        </div>
+
+    </td>
+    <td style="border:0px;">
+
+            <div style="height: 300px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='pdb?pdb={{ pdbname }}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test","{{ mainligand}}"]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
+                 <a href="pdb?pdb={{ pdbname }}">Download PDB file</a>
+                
+    </td>
+    </tr>
+    </table>
+</div>
+<!-- 
+<h2>Ligand Interaction Browser</h2>
+<a href="excel/{{pdbname}}">Download list in excel</a>
+<div class="row">
+    <div class="col-md-11 text-center">
+        {% if residues %}              
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+            <table width="100%" class="display" id="residues">
+
+                <thead>
+                    <tr>
+                        <th>Ligand</th>
+                        <th>Amino Acid</th>
+                        <th>Generic Number</th>
+                        <th>Segment</th>
+                        <th>Interaction Type</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th>Ligand</th>
+                        <th>Amino Acid</th>
+                        <th>Generic Number</th>
+                        <th>Segment</th>
+                        <th>Interaction Type</th>
+                    </tr>
+                </tfoot>
+                {% for residue in residues %}
+                <tr>
+                <td>{{residue.ligand}}</td>
+                <td>{{residue.aa}}{{residue.pos}}</td>
+                <td>{{residue.gpcrdb}}</td>
+                <td>{{residue.segment}}</td>
+                <td>{{residue.type}}</td>
+                {% endfor %}
+            </table>
+        </div>
+    {% else %}
+        <p> Ooops! There is no data to show here yet. </p>
+    {% endif %}
+
+    </div>
+</div> -->
+
+<h2>Residue Diagrams</h2>
+
+<div class="row">
+<div class="col-md-10 text-center">
+    {{ snakeplot }}
+    <br>
+    Download: 
+    <a href="javascript:saveSvgAsPng(document.getElementById('snakeplot'), 'snake_{{ pdbname }}.png', {scale: 3});">PNG</a> | 
+    <a id=snake_svg_link href-lang="image/svg+xml" href="" download="snake_{{ p.pdbname }}">SVG</a>
+    </div>
+</div>
+
+
+
+<!-- <h2>Residue Table</h2>
+<div class="col-md-10">
+{% include "residue/residue_table_only.html" with header=header segments=segments data=data onlymutants=1 %}
+</div>
+ -->
+
+
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/diagrams.js' %}"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+
+            function gprotein_sets() {
+                plotid = 'snakeplot'
+                interacting = {{ interacting|safe }};
+                accessible = {{ accessible|safe }};
+
+                   $.each( accessible, function( index, val ) {
+                      key = val;
+                      extra = "\n GPROTEIN STUFF" ;
+                      $('#'+plotid).find("#"+key).css("fill", "#060FFF");
+                      $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+                      original_title = $('#'+plotid).find("#"+key).attr('original_title')
+                      $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                      $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+                  });
+
+                  $.each( interacting, function( index, val ) {
+                      key = val;
+                      extra = "\n GPROTEIN STUFF" ;
+                      $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
+                      $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+                      original_title = $('#'+plotid).find("#"+key).attr('original_title')
+                      $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                      $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+                  });
+
+                $("circle").tooltip('fixTitle');
+                $("text").tooltip('fixTitle');
+            }
+
+            gprotein_sets()
+
+            // $('#snakeplot').find("#143").css("stroke-width", "5px");
+
+            // Force shown loops
+            $(".short").hide();
+            $(".long").show();
+            maxmin();
+
+            });
+    </script> 
+{% endblock %}
