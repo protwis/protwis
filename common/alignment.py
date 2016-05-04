@@ -6,7 +6,7 @@ from protein.models import Protein, ProteinConformation, ProteinState, ProteinSe
 from residue.models import Residue
 from residue.models import ResidueGenericNumber, ResidueGenericNumberEquivalent
 from residue.models import ResidueNumberingScheme
-from structure.models import Structure, Rotamer, StructureSegment, StructureSegmentModeling
+from structure.models import Structure, Rotamer, StructureSegment, StructureSegmentModeling, StructureCoordinates
 
 from collections import OrderedDict
 from copy import deepcopy
@@ -965,6 +965,12 @@ class AlignedReferenceTemplate(Alignment):
             except:
                 ref_ECL2 = None
         for struct, similarity in self.provide_similarity_table.items():
+            if (self.segment_labels[0]=='ECL2' and ref_ECL2==None and StructureCoordinates.objects.get(structure=struct,
+                                                        protein_segment__slug=self.segment_labels[0]).description.text!='Full'):
+                continue
+            elif (self.segment_labels[0]!='ECL2' and StructureCoordinates.objects.get(structure=struct,
+                                                          protein_segment__slug=self.segment_labels[0]).description.text!='Full'):
+                continue
             protein = struct.protein_conformation.protein.parent
             if protein==self.main_template_protein:
                 main_template_mid_failed = False

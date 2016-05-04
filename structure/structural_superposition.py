@@ -178,7 +178,8 @@ class RotamerSuperpose(object):
             for atom1, atom2 in zip(ref_backbone_atoms, temp_backbone_atoms):
                 array1 = np.vstack((array1, list(atom1.get_coord())))
                 array2 = np.vstack((array2, list(atom2.get_coord())))
-            self.backbone_rmsd = np.sqrt(((array1[1:]-array2[1:])**2).mean())
+            diff = array1[1:]-array2[1:]
+            self.backbone_rmsd = np.sqrt(sum(sum(diff**2))/array1[1:].shape[0])
             return self.template_atoms
         except Exception as msg:
             print("Failed to superpose atoms {} and {}".format(self.reference_atoms, self.template_atoms))
@@ -242,7 +243,8 @@ class BulgeConstrictionSuperpose(object):
         for atom1, atom2 in zip(ref_backbone_atoms, temp_backbone_atoms):
             array1 = np.vstack((array1, list(atom1.get_coord())))
             array2 = np.vstack((array2, list(atom2.get_coord())))
-        return np.sqrt(((array1[1:]-array2[1:])**2).mean())
+        diff = array1[1:]-array2[1:]
+        return np.sqrt(sum(sum(diff**2))/array1[1:].shape[0])
 
 #==============================================================================  
 class LoopSuperpose(BulgeConstrictionSuperpose):
