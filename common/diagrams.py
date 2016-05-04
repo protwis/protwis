@@ -74,13 +74,24 @@ class Diagram:
             if value not in fillcolors:
                 fillcolors.append(value)
 
-        colors = ""
+        colors = "<div id=\"cp2_"+self.type+"\" class=\"\">"
         for color in fillcolors:
             colors += "<div class='pick-color "+self.type+" selected' id='pick-"+color[0]+"-"+color[1]+"' style='background-color: "+color[0]+";'>&nbsp;</div>"
 
+        colors += ""
+        colors += "<div class=\"input-group-addon\" style='width:0;padding:0;border:0;background-color:0;display:inline;position:relative;top:-6px'><i class='pick-color "+self.type+" selected'></i></div>"
+        colors += "<input type=\"text\" id='custom_color_"+self.type+"' value=\"#00AABB\" class=\"\" size=8 />"
+        colors += ""
+
+        # colors += "<span id=\"cp2_"+self.type+"\" class=\"\">"
+        # colors += "<span class=\"pick-color\" "+self.type+" id='pick-"+fillcolors[0][0]+"-"+fillcolors[0][1]+"' style='background-color: "+fillcolors[0][0]+";'><i></i></span>"
+        # colors += "<input type=\"text\" value=\"#00AABB\" class=\"\" size=8 />"
+        # colors += "</span>"
+
             
         output = ("<br>Pick color:" +
-            colors )
+            colors +
+            "</div>")
 
         #print(str(self.receptorId))
 

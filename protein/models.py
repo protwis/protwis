@@ -262,3 +262,25 @@ class ProteinConformationTemplateStructure(models.Model):
 
     class Meta():
         db_table = 'protein_conformation_template_structure'
+
+class ProteinGProtein(models.Model):
+    proteins = models.ManyToManyField('Protein', through='ProteinGProteinPair')
+    name = models.CharField(max_length=100, unique=True)
+    sequence = models.TextField(null=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'protein_gprotein'
+
+class ProteinGProteinPair(models.Model):
+    protein = models.ForeignKey('Protein')
+    g_protein = models.ForeignKey('ProteinGProtein')
+    transduction = models.TextField(null=True)
+
+    def __str__(self):
+        return self.protein.entry_name + ", " + self.g_protein.name + ", " + self.transduction
+
+    class Meta():
+        db_table = 'protein_gprotein_pair'

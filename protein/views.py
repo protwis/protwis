@@ -3,7 +3,7 @@ from django.views import generic
 from django.http import HttpResponse
 from django.db.models import Q
 
-from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene
+from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene,ProteinGProteinPair
 from residue.models import Residue
 from structure.models import Structure
 from mutation.models import MutationExperiment
@@ -162,3 +162,18 @@ def SelectionAutocomplete(request):
         data = 'fail'
     mimetype = 'application/json'
     return HttpResponse(data, mimetype)
+
+
+def g_proteins(request, **response_kwargs):
+    ''' Example of g_proteins '''
+    proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('proteingproteinpair_set')
+    jsondata = {}
+    for p in proteins:
+        gps = p.proteingproteinpair_set.all()
+        if gps:
+            jsondata[str(p)] = []
+            for gp in gps:
+                jsondata[str(p)].append(str(gp))
+    jsondata = json.dumps(jsondata)
+    response_kwargs['content_type'] = 'application/json'
+    return HttpResponse(jsondata, **response_kwargs)
