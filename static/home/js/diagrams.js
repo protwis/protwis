@@ -238,7 +238,14 @@
                     $(".rtext").click(function() {
                         parentid = $(this).closest('svg').attr('id');
                         newcolor = $(".pick-color."+parentid+".selected").attr('id');
-                        newcolor = newcolor.split('-');
+                        if (newcolor) {
+                          newcolor = newcolor.split('-');
+                        } else {
+                          custom =  $("#custom_color_"+parentid).val();
+                          custom_text = getContrast50(custom);
+                          newcolor = ["pick",custom,custom_text];
+                        }
+                      console.log(newcolor);
 
                       $(this).css("fill", newcolor[2]);
                       $(this).prev().css("fill", newcolor[1]);
@@ -247,8 +254,15 @@
                     $(".rcircle").click(function() {
                         parentid = $(this).closest('svg').attr('id');
                         newcolor = $(".pick-color."+parentid+".selected").attr('id');
-                        newcolor = newcolor.split('-');
 
+                        if (newcolor) {
+                          newcolor = newcolor.split('-');
+                        } else {
+                          custom =  $("#custom_color_"+parentid).val();
+                          custom_text = getContrast50(custom);
+                          newcolor = ["pick",custom,custom_text];
+                        }
+                      console.log(newcolor);
                       $(this).css("fill", newcolor[1]);
                       $(this).next().css("fill", newcolor[2]);
                    });
@@ -531,3 +545,15 @@
                         $(this).addClass('selected');
                         
                     });
+
+                    $( document ).ready(function() {
+                      if ( $( "#cp2_helixbox" ).length ) {
+                        $('#cp2_helixbox').colorpicker();
+                        $('#cp2_snakeplot').colorpicker();
+                      }
+                    });
+
+                    function getContrast50(hexcolor){
+                         return (parseInt(hexcolor.replace('#', ''), 16) > 0xffffff/2) ? 'black':'white';
+                    }
+                        
