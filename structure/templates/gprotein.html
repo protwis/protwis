@@ -68,10 +68,10 @@
         }
         for(var i=1; i<=num; i++) {
           seriesTable.push({
-            // name: $("#name"+i).val(),
-            // data: getArrayFromArea("area"+i)
-            name: gprotein_ID[i-1],
-            data: getArrayFromData(gprotein_ID[i-1])
+            name: $("#name"+i).val(),
+            data: getArrayFromArea("area"+i)
+            // name: gprotein_ID[i-1],
+            // data: getArrayFromData(gprotein_ID[i-1])
           });
         }
            
@@ -224,6 +224,7 @@
     .control-group.color1 input,
     .control-group.color1 textarea {
       color: #5a9bd4;
+      border-style: solid;
       border-color: #5a9bd4;
     }
     .control-group.color1 input:focus,
@@ -237,6 +238,7 @@
     .control-group.color2 input,
     .control-group.color2 textarea {
       color: #f15a60;
+      border-style: solid;
       border-color: #f15a60;
     }
     .control-group.color2 input:focus,
@@ -250,6 +252,7 @@
     .control-group.color3 input,
     .control-group.color3 textarea {
       color: #808080;
+      border-style: solid;
       border-color: #808080;
     }
     .control-group.color3 input:focus,
@@ -263,6 +266,7 @@
     .control-group.color4 input,
     .control-group.color4 textarea {
       color: #006600;
+      border-style: solid;
       border-color: #006600;
     }
     .control-group.color4 input:focus,
@@ -298,7 +302,7 @@
             </div>
             <div class="row-fluid">
               <div>
-                <p> Click on a part of the venn diagram to display the receptor sets: </p>
+                <p> Click on an area of the venn diagram to display the receptor sets: </p>
                 <textarea readonly id="names" style="width: 87%;" wrap="off" rows="10"></textarea>
               </div>
             </div>
@@ -418,7 +422,6 @@
               Southan C, Sharman JL, Benson HE, Faccenda E, Pawson AJ, Alexander SPH, Buneman OP, Davenport AP, McGrath JC, Peters JA, Spedding M, Catterall WA, Fabbro D, Davies JA; NC-IUPHAR. (2016) <b>The IUPHAR/BPS Guide to PHARMACOLOGY in 2016: towards curated quantitative interactions between 1300 protein targets and 6000 ligands</b>. <a href="http://nar.oxfordjournals.org/content/early/2015/10/11/nar.gkv1037.full" target="_blank"><i>Nucl. Acids Res.</i> <b>44</b> (Database Issue): D1054-68.</a> [PMID:<a href="http://www.ncbi.nlm.nih.gov/pubmed/26464438" target="_blank">26464438</a>]
           </p>
 </div>
-
 
 {% endblock %}
 {% block addon_js %}
