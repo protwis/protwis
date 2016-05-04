@@ -23,4 +23,6 @@ urlpatterns = [
     url(r'selectresiduegroup', views.SelectResidueGroup, name='selectresiduegroup'),
     url(r'removeresiduegroup', views.RemoveResidueGroup, name='removeresiduegroup'),
     url(r'setgroupminmatch', views.SetGroupMinMatch, name='setgroupminmatch'),
+    url(r'residuesdownload', views.ResiduesDownload, name='residuesupload'),
+    url(r'residuesupload', views.ResiduesUpload, name='residuesupload'),
 ]

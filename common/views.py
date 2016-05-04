@@ -7,11 +7,14 @@ from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
 from structure.models import Structure
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet
-from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
+from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet
 from interaction.forms import PDBform
 
 import inspect
 from collections import OrderedDict
+from io import BytesIO
+import xlsxwriter
+from openpyxl import load_workbook
 
 
 class AbsTargetSelection(TemplateView):
@@ -165,6 +168,10 @@ class AbsSegmentSelection(TemplateView):
         ('segments', True),
     ])
 
+    try:
+        rsets = ResiduePositionSet.objects.all().prefetch_related('residue_position')
+    except Exception as e:
+        pass    
     ss = ProteinSegment.objects.filter(partial=False).prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
     action = 'expand'
@@ -288,7 +295,11 @@ def AddToSelection(request):
     elif selection_type == 'segments':
         if selection_subtype == 'residue':
             o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
-        
+        elif selection_subtype == 'residue_position_set':
+            selection_subtype = 'residue'
+            rset = ResiduePositionSet.objects.get(pk=selection_id)
+            for residue in rset.residue_position.all():
+                o.append(residue)
         elif selection_subtype == 'site_residue': # used in site search
             o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
         
@@ -993,3 +1004,81 @@ def SetGroupMinMatch(request):
     template = 'common/selection_lists_sitesearch.html'
 
     return render(request, template, context)
+
+
+def ResiduesDownload(request):
+
+    simple_selection = request.session.get('selection', False)
+
+    outstream = BytesIO()
+    wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
+    worksheet = wb.add_worksheet()
+    row_count = 0
+
+    for position in simple_selection.segments:
+        if position.type == 'residue':
+            worksheet.write_row(row_count, 0, ['residue', position.item.scheme.slug, position.item.label])
+            row_count += 1
+        elif position.type == 'helix':
+            worksheet.write_row(row_count, 0, ['helix', '', position.item.slug])
+            row_count += 1
+    wb.close()
+    outstream.seek(0)
+    response = HttpResponse(outstream.read(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response['Content-Disposition'] = "attachment; filename=segment_selection.xlsx"
+
+    return response
+
+
+def ResiduesUpload(request):
+    """Receives a file containing generic residue positions along with numbering scheme and adds those to the selection."""
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    selection_type = 'segments'
+    print(request.FILES)
+    if request.FILES == {}:
+        return render(request, 'common/selection_lists.html', '')
+
+    #Overwriting the existing selection
+    selection.clear(selection_type)
+
+    #The excel file
+    wb=load_workbook(filename=request.FILES['xml_file'].file)
+    ws=wb.active
+
+    o = []
+    for row in ws.rows:
+        if len(row) < 2:
+            continue
+        try:
+            if row[0].value == 'residue':
+                position = ResidueGenericNumberEquivalent.objects.get(label=row[2].value, scheme__slug=row[1].value)
+                o.append(position)
+            elif row[0].value == 'helix':
+                o.append(ProteinSegment.objects.get(slug=row[2].value))
+        except Exception as msg:
+            print(msg)
+            continue
+    for obj in o:
+        # add the selected item to the selection
+        if obj.__class__.__name__ == 'ResidueGenericNumberEquivalent':
+            selection_subtype = 'residue'
+        else: 
+            selection_subtype = 'helix'
+        selection_object = SelectionItem(selection_subtype, obj)
+        selection.add(selection_type, selection_subtype, selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    return render(request, 'common/selection_lists.html', selection.dict(selection_type))

@@ -7,7 +7,33 @@
             <span class="glyphicon glyphicon-remove"></span> Clear
         </a>
         {% endif %}
-    </p>
+    </p>    
+    {% if type == 'segments' %}
+        <p>
+            <a data-toggle="modal" data-target="#PositionsFileSelector"
+               class="btn btn-primary btn-xs">
+                <span class="glyphicon glyphicon-plus"></span> Read residue positions from file
+            </a>
+        </p>
+        <div class="modal fade" id="PositionsFileSelector" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        Select a file to upload.
+                    </div>
+                    <div class="modal-body">
+                        <form id="xls-form" enctype="multipart/form-data" method="post" onsubmit="return ReadDefinitionFromFile(document.getElementById('xls-file').files[0], '/common/residuesupload')">
+                            <input id="xls-file" type="file" /> {% csrf_token %}
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
+                        <button onclick='$("#xls-form").submit()' type="button" class="btn btn-success" data-dismiss="modal">Save & close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
         {% for selected_item in selected_items %}
         <div class="target-selection">
             {% if selection_type == 'segments' %}
@@ -35,5 +61,14 @@
         {% empty %}
         None
         {% endfor %}
+        {% if selection_type == 'segments' and selected_items|length > 0 %}
+            <p>
+                <a href="/common/residuesdownload"
+                   class="btn btn-primary btn-xs">
+                    <span class="glyphicon glyphicon-plus"></span> Save residue positions
+                </a>
+            </p>
+        {% endif %}
+
     {% endif %}
 {% endfor %}

@@ -291,8 +291,7 @@ function SetGroupMinMatch(selection_type, group_id, min_match) {
     });
 }
 
-function ReadSiteFromFile(form) {
-    //event.preventDefault();
+function ReadDefinitionFromFile(form, url) {
     //Dealing with csrf token
     function getCookie(c_name) {
         if (document.cookie.length > 0) {
@@ -314,9 +313,7 @@ function ReadSiteFromFile(form) {
     fd.append('xml_file', form, form.name)
     $.ajax({
         type: 'POST',
-        url: '/sitesearch/siteupload',
-        //enctype: 'multipart/form-data',
-        //data: { 'xml_file': 'dupa' },
+        'url': url,
         data: fd,
         cache: false,
         processData: false,

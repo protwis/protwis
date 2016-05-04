@@ -23,7 +23,7 @@
                             Select a file to upload.
                         </div>
                         <div class="modal-body">
-                            <form id="xls-form" enctype="multipart/form-data" method="post" onsubmit="return ReadSiteFromFile(document.getElementById('xls-file').files[0])" >
+                            <form id="xls-form" enctype="multipart/form-data" method="post" onsubmit="return ReadDefinitionFromFile(document.getElementById('xls-file').files[0], '/sitesearch/siteupload')" >
                                 <input id="xls-file" type="file" /> {% csrf_token %}
                             </form>                
                         </div>

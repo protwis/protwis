@@ -149,8 +149,6 @@ def site_download(request):
 
 def site_upload(request):
     
-    print(request.FILES)
-
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
     
@@ -163,7 +161,7 @@ def site_upload(request):
     selection_subtype = 'site_residue'
 
     if request.FILES == {}:
-        return render(request, 'common/selection_lists.html', '')
+        return render(request, 'common/selection_lists_sitesearch.html', '')
 
     #Overwriting the existing selection
     selection.clear(selection_type)

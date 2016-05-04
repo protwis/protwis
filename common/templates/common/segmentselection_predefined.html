@@ -1,0 +1,6 @@
+{% for rset in rsets %}
+    <a href="javascript:void(0)" onclick="AddToSelection('segments', 'residue_position_set', '{{ rset.id }}')"
+        class="btn btn-primary btn-sm">
+        {{ rset.name }}
+    </a>
+{% endfor %}
