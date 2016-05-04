@@ -18,6 +18,7 @@ urlpatterns = [
     url(r'^ligand', views.ligand, name='ligand'),
     url(r'^fragment', views.fragment, name='fragment'),
     url(r'^gprotein',  views.GProtein, name='gprotein'),
+    url(r'^gsinterface',  views.GSinterface, name='gsinterface'),
     url(r'^excel/(?P<session>session)/(?P<slug>[-\w]+)/$', views.excel, name='excel'),
     url(r'^excel/(?P<slug>[-\w]+)/$', views.excel, name='excel'),
     url(r'^ajax/(?P<slug>[-\w]+)/$', views.ajax, name='ajax'),

@@ -1211,4 +1211,25 @@ def GProtein(request):
     return render(request, 'gprotein.html', context)
 
 
+def GSinterface(request):
+
+    context = OrderedDict()
+
+    residuelist = Residue.objects.filter(protein_conformation__protein__entry_name="adrb2_human").prefetch_related('protein_segment','display_generic_number','generic_number')
+    SnakePlot = DrawSnakePlot(
+                residuelist, "Class A (Rhodopsin)", "adrb2_human", nobuttons=1)
+
+    crystal = Structure.objects.get(pdb_code__index="3SN6")
+
+    # return render(request, 'interaction/structure.html', {'pdbname': pdbname, 'structures': structures,
+    #                                                       'crystal': crystal, 'protein': p, 'helixbox' : HelixBox, 'snakeplot': SnakePlot, 'residues': residues_browser, 'annotated_resn':
+    #                                                       resn_list, 'ligands': ligands, 'data': context['data'],
+    #                                                       'header': context['header'], 'segments': context['segments'],
+    #                                                       'number_of_schemes': len(numbering_schemes)})
+
+    interacting = [135, 136, 139, 141, 225, 229, 232, 235, 239, 274, 328]
+    accessible = [1,100,110, 135, 136, 139, 141, 225, 229, 232, 235, 239, 274, 328]
+
+    return render(request, 'interaction/gsinterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting': interacting, 'accessible': accessible} )
+
 
