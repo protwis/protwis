@@ -5,7 +5,6 @@ from django import forms
 from django.db.models import Count, Min, Sum, Avg, Q
 from django.utils.text import slugify
 
-
 from interaction.models import *
 from interaction.forms import PDBform
 from ligand.models import Ligand
@@ -22,6 +21,7 @@ from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
 from common.views import AbsTargetSelection
+from protein.models import Protein, ProteinFamily, ProteinGProtein
 
 import os
 from os import listdir, devnull, makedirs
@@ -1188,3 +1188,46 @@ def pdb(request):
         response = HttpResponse(structure.pdb_data.pdb,
                                 content_type='text/plain')
     return response
+
+def GProtein(request):
+
+    context = OrderedDict()
+
+    # proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('proteingproteinpair_set')
+    gproteins = ProteinGProtein.objects.all().prefetch_related('proteingproteinpair_set')
+    jsondata = {}
+    for gp in gproteins:
+        ps = gp.proteingproteinpair_set.all()
+        if ps:
+            jsondata[str(gp)] = []
+            for p in ps:
+                jsondata[str(gp)].append(str(p.protein.entry_name)+'\n')
+            jsondata[str(gp)] = ''.join(jsondata[str(gp)])
+
+    context["gdata"] = jsondata
+
+    return render(request, 'interaction/gprotein.html', context)
+
+
+def GSinterface(request):
+
+    context = OrderedDict()
+
+    residuelist = Residue.objects.filter(protein_conformation__protein__entry_name="adrb2_human").prefetch_related('protein_segment','display_generic_number','generic_number')
+    SnakePlot = DrawSnakePlot(
+                residuelist, "Class A (Rhodopsin)", "adrb2_human", nobuttons=1)
+
+    crystal = Structure.objects.get(pdb_code__index="3SN6")
+
+    # return render(request, 'interaction/structure.html', {'pdbname': pdbname, 'structures': structures,
+    #                                                       'crystal': crystal, 'protein': p, 'helixbox' : HelixBox, 'snakeplot': SnakePlot, 'residues': residues_browser, 'annotated_resn':
+    #                                                       resn_list, 'ligands': ligands, 'data': context['data'],
+    #                                                       'header': context['header'], 'segments': context['segments'],
+    #                                                       'number_of_schemes': len(numbering_schemes)})
+
+    interacting = [135, 136, 139, 141, 225, 229, 232, 235, 239, 274, 328]
+    accessible = [1,100,110, 135, 136, 139, 141, 225, 229, 232, 235, 239, 274, 328]
+
+    return render(request, 'interaction/gsinterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting': interacting, 'accessible': accessible} )
+
+

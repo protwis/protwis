@@ -117,8 +117,26 @@ class ProteinsInFamilyList(generics.ListAPIView):
     
     def get_queryset(self):
         queryset = Protein.objects.all()
-        return queryset.filter(sequence_type__slug='wt', family__slug__startswith=self.kwargs.get('slug'), 
-            species__latin_name="Homo sapiens")
+        family = self.kwargs.get('slug')
+        return queryset.filter(sequence_type__slug='wt', family__slug__startswith=family)
+
+
+class ProteinsInFamilySpeciesList(generics.ListAPIView):
+    """
+    Get a list of proteins in a protein family
+    \n/proteinfamily/proteins/{slug}/{species}
+    \n{slug} is a protein family identifier, e.g. 001_001_001
+    \n{latin_name} is a species identifier from Uniprot, e.g. Homo sapiens
+    """
+
+    serializer_class = ProteinSerializer
+
+    def get_queryset(self):
+        queryset = Protein.objects.all()
+        family = self.kwargs.get('slug')
+        species = self.kwargs.get('latin_name')
+        return queryset.filter(sequence_type__slug='wt', family__slug__startswith=family,
+                               species__latin_name=species)
 
 
 class ResiduesList(generics.ListAPIView):
@@ -369,6 +387,15 @@ class FamilyAlignment(views.APIView):
                     # print(feature_stats_clean)
                     feat[feature] = [item for sublist in feature_stats_clean for item in sublist]
 
+                for i, AA in enumerate(AMINO_ACIDS):
+                    feature_stats = a.amino_acid_stats[i]
+                    feature_stats_clean = []
+                    for d in feature_stats:
+                        sub_list = [x[0] for x in d]
+                        feature_stats_clean.append(sub_list) # remove feature frequencies
+                    # print(feature_stats_clean)
+                    feat[AA] = [item for sublist in feature_stats_clean for item in sublist]
+
                 ali_dict["statistics"] = feat
 
             return Response(ali_dict)
@@ -509,6 +536,7 @@ class ProteinAlignment(views.APIView):
                 
                 # fetch all complete protein_segments
                 ss = ProteinSegment.objects.filter(slug__in=segment_list, partial=False)
+
             else:
                 ss = ProteinSegment.objects.filter(partial=False)
 
@@ -555,6 +583,15 @@ class ProteinAlignment(views.APIView):
                         feature_stats_clean.append(sub_list) # remove feature frequencies
                     # print(feature_stats_clean)
                     feat[feature] = [item for sublist in feature_stats_clean for item in sublist]
+
+                for i, AA in enumerate(AMINO_ACIDS):
+                    feature_stats = a.amino_acid_stats[i]
+                    feature_stats_clean = []
+                    for d in feature_stats:
+                        sub_list = [x[0] for x in d]
+                        feature_stats_clean.append(sub_list) # remove feature frequencies
+                    # print(feature_stats_clean)
+                    feat[AA] = [item for sublist in feature_stats_clean for item in sublist]
 
                 ali_dict["statistics"] = feat
 
