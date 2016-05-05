@@ -1,20 +1,20 @@
 ﻿<b>Preferred G protein</b>
 <div class="btn-group btn-group-sm" role="group">
-    <a href="javascript:void(0)" onclick="SelectionGproteinPredefined('Gi')"
-       class="btn btn-primary{% if selection.g_proteins|length == 1 and selection.g_proteins.0.item.common_name == 'Gi' %} active{% endif %}">
-        Human
+    <a href="javascript:void(0)" onclick="SelectionGproteinPredefined('Gi/Go family')"
+       class="btn btn-primary{% if selection.g_proteins|length == 1 and selection.g_proteins.0.item.name == 'Gi/Go family' %} active{% endif %}">
+        Gi/Go family
     </a>
     <a href="javascript:void(0)" onclick="SelectionGproteinPredefined('All')"
-       class="btn btn-primary{% if selection.g_proteins|length == 0 or selection.g_proteins|length == gpt|length %} active{% endif %}">
+       class="btn btn-primary{% if selection.g_proteins|length == 0 or selection.g_proteins|length == gprots|length %} active{% endif %}">
         All
     </a>
-    <a data-toggle="modal" data-target="#SpeciesSelector"
-       class="btn btn-primary{% if selection.g_proteins|length == 1 and selection.g_proteins.0.item.common_name != 'Human' or selection.g_proteins|length > 1 and selection.g_proteins|length < gpt|length %} active{% endif %}">
+    <a data-toggle="modal" data-target="#GProteinsSelector"
+       class="btn btn-primary{% if selection.g_proteins|length == 1 and selection.g_proteins.0.item.name != 'Gi/Go family' or selection.g_proteins|length > 1 and selection.g_proteins|length < gprots|length %} active{% endif %}">
         Other..
     </a>
 </div>
    <!-- Modal -->
-<div class="modal fade" id="GproteinsSelector" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+<div class="modal fade" id="GProteinsSelector" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">

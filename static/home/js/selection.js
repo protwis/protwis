@@ -153,13 +153,26 @@ function SelectionSpeciesToggle(species_id) {
 
 function SelectionGproteinPredefined(g_protein) {
     $.ajax({
-        'url': '/common/selectiongproteinspredefined',
+        'url': '/common/selectiongproteinpredefined',
         'data': {
             g_protein: g_protein
         },
         'type': 'GET',
         'success': function (data) {
-            $("#filters-species").html(data);
+            $("#filters-gproteins").html(data);
+        }
+    });
+}
+
+function SelectionGproteinToggle(g_protein_id) {
+    $.ajax({
+        'url': '/common/selectiongproteintoggle',
+        'data': {
+            g_protein_id: g_protein_id
+        },
+        'type': 'GET',
+        'success': function (data) {
+            $("#filters-gproteins-selector").html(data);
         }
     });
 }
