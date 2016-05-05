@@ -7,8 +7,7 @@
 
 <!-- styles needed? -->
 <!-- <link href="{% static 'home/css/prettify.css' %}" rel="stylesheet" media="screen"> -->
-<!-- <link href="{% static 'home/css/bootstrap.css' %}" rel="stylesheet" media="screen"> -->
-<link href="{% static 'home/css/bootstrap-colorpicker.min.css' %}" rel="stylesheet" media="screen">
+<link href="{% static 'home/css/color_picker.css' %}" rel="stylesheet" media="screen">
 <link href="{% static 'home/css/bootstrap-responsive.css' %}"  rel="stylesheet" media="screen">
 
 <script src="{% static 'home/js/jquery.min.js' %}"></script>
@@ -278,12 +277,19 @@
     }
     
     .add-on {
-      margin-left: -7px !important;
+      margin-left: -10px !important;
     }
     
     .colorpicker {
       min-width:100px;
     }
+
+    .colorpicker-element .add-on i,
+    .colorpicker-element .input-group-addon i {
+    height: 20px;
+    vertical-align: text-top;
+    width: 20px
+}
 
   </style>
 
@@ -316,14 +322,14 @@
             <div class="row-fluid">
               <div class="span6">
                 <div class="control-group color1">
-                  <input class="span6" id="name1" type="text" style="font-weight: bold; margin-top:10px" value="List 1" maxlength="11"/>
+                  <input class="span6" id="name1" type="text" style="font-weight: bold; margin-top:10px" value="List 1" maxlength="15"/>
                   <div id="colorp_1" class="input-append colorpicker-component colorpicker-element">
                       <input type="text" value="#006600" class="form-control" style="display:none"/>
                                   <span class="add-on"><i></i></span>
                               </div>
                               <div class="btn-group" style="margin-left:15px">
                                 <!-- <button id="colord_1" style="margin-bottom:10px" class="btn btn-mini"><i class="icon-refresh"></i></button> -->
-                                <button id="clear_1"  style="margin-bottom:10px;margin-top:-10px" class="btn btn-mini"><i class="icon-trash"></i></button>
+                                <button id="clear_1"  style="margin-left:10px;margin-bottom:10px;margin-top:-12px;padding: 4px 8px" class="btn btn-mini"><i class="icon-trash"></i></button>
                               </div>
                   <div class="controls controls-row">
                     <textarea class="span11" id="area1" wrap="off" rows="4" style="resize:none"></textarea>
@@ -332,14 +338,14 @@
               </div>
               <div class="span6">
                 <div class="control-group color2">
-                  <input class="span6" id="name2" type="text" style="font-weight: bold; margin-top:10px" value="List 2" maxlength="11"/>
+                  <input class="span6" id="name2" type="text" style="font-weight: bold; margin-top:10px" value="List 2" maxlength="15"/>
                   <div id="colorp_2" class="input-append colorpicker-component colorpicker-element">
                       <input type="text" value="#5a9bd4" class="form-control" style="display:none"/>
                                   <span class="add-on"><i></i></span>
                               </div>  
                               <div class="btn-group" style="margin-left:15px">
                                <!--  <button id="colord_2" style="margin-bottom:10px" class="btn btn-mini"><i class="icon-refresh"></i></button> -->
-                                <button id="clear_2"  style="margin-bottom:10px;margin-top:-10px" class="btn btn-mini"><i class="icon-trash"></i></button>
+                                <button id="clear_2"  style="margin-left:10px;margin-bottom:10px;margin-top:-12px;padding: 4px 8px" class="btn btn-mini"><i class="icon-trash"></i></button>
                               </div>
                   <div class="controls controls-row">
                     <textarea class="span11" id="area2" wrap="off" rows="4" style="resize:none"></textarea>
@@ -351,14 +357,14 @@
             <div class="row-fluid">
               <div class="span6">
                  <div class="control-group color3">
-                  <input class="span6" id="name3" type="text" style="font-weight: bold; margin-top:10px" value="List 3" maxlength="11"/>
+                  <input class="span6" id="name3" type="text" style="font-weight: bold; margin-top:10px" value="List 3" maxlength="15"/>
                   <div id="colorp_3" class="input-append colorpicker-component colorpicker-element">
                       <input type="text" value="#f15a60" class="form-control" style="display:none"/>
                                   <span class="add-on"><i></i></span>
                               </div>
                               <div class="btn-group" style="margin-left:15px">
                                <!--  <button id="colord_3" style="margin-bottom:10px" class="btn btn-mini"><i class="icon-refresh"></i></button> -->
-                                <button id="clear_3"  style="margin-bottom:10px;margin-top:-10px" class="btn btn-mini"><i class="icon-trash"></i></button>
+                                <button id="clear_3"  style="margin-left:10px;margin-bottom:10px;margin-top:-12px;padding: 4px 8px" class="btn btn-mini"><i class="icon-trash"></i></button>
                               </div>
                   <div class="controls controls-row">
                     <textarea class="span11" id="area3" wrap="off" rows="4" style="resize:none"></textarea>
@@ -367,14 +373,14 @@
               </div>
               <div class="span6">
                 <div class="control-group color4">
-                  <input class="span6" id="name4" type="text" style="font-weight: bold; margin-top:10px" value="List 4" maxlength="11"/>
+                  <input class="span6" id="name4" type="text" style="font-weight: bold; margin-top:10px" value="List 4" maxlength="15"/>
                   <div id="colorp_4" class="input-append colorpicker-component colorpicker-element">
                                   <input type="text" value="#cfcf1b" class="form-control" style="display:none"/>
                                   <span class="add-on"><i></i></span>
                               </div>
                               <div class="btn-group" style="margin-left:15px">
                                 <!-- <button id="colord_4" style="margin-bottom:10px" class="btn btn-mini"><i class="icon-refresh"></i></button> -->
-                                <button id="clear_4"  style="margin-bottom:10px;margin-top:-10px" class="btn btn-mini"><i class="icon-trash"></i></button>
+                                <button id="clear_4"  style="margin-left:10px;margin-bottom:10px;margin-top:-12px;padding: 4px 8px" class="btn btn-mini"><i class="icon-trash"></i></button>
                               </div>              
                   <div class="controls controls-row">
                     <textarea class="span11" id="area4" wrap="off" rows="4" style="resize:none"></textarea>

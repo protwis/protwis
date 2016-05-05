@@ -47,7 +47,8 @@ class Command(BaseCommand):
         receptor_list = [i.entry_name for i in classA if i not in struct_parent]
         
 #        for i in receptor_list[:2]:
-        Homology_model = HomologyModeling('gper1_human','Inactive',['Inactive'])
+        
+        Homology_model = HomologyModeling('ox1r_human','Inactive',['Inactive'])
         alignment = Homology_model.run_alignment()
         Homology_model.build_homology_model(alignment)
         Homology_model.format_final_model()
@@ -113,7 +114,7 @@ class HomologyModeling(object):
         l.release()        
         
     def __repr__(self):
-        return "<{}, {}>".format(self.reference_entry_name, self.state)
+        return "<Hommod: {}, {}>".format(self.reference_entry_name, self.state)
 
     def upload_to_db(self):
         # upload StructureModel        
@@ -209,7 +210,9 @@ class HomologyModeling(object):
                     pass
                 pos_list.append(num)
         i = 0
-        with open ('./structure/homology_models/{}_{}/{}_{}_model.pdb'.format(self.uniprot_id, self.state,self.reference_entry_name,self.state), 'r+') as f:
+        with open ('./structure/homology_models/{}_{}/{}_{}_model.pdb'.format(self.reference_entry_name, self.state,
+                                                                              self.reference_entry_name, self.state), 
+                                                                              'r+') as f:
             pdblines = f.readlines()
             out_list = []
             prev_num = 1
@@ -227,17 +230,7 @@ class HomologyModeling(object):
                     out_list.append(out_line)
                 except:
                     out_list.append(line)
-#            io = StringIO(''.join(out_list))
-#            pdb_struct = PDB.PDBParser(PERMISSIVE=True).get_structure('structure', io)[0]
-#            assign_gn = as_gn.GenericNumbering(structure=pdb_struct)
-#            pdb_struct = assign_gn.assign_generic_numbers()
-#            assign_gn.save_gn_to_pdb()
-#            outio = PDB.PDBIO()
-#            outio.set_structure(pdb_struct)
-#            outio.save('./structure/homology_models/{}_{}/modeller_test_ready.pdb'.format(self.uniprot_id, self.state))
-#        with open('./structure/homology_models/{}_{}/modeller_test_GPCRDB.pdb'.format(self.uniprot_id, self.state),'r+') as f:
-#            pdbdata = f.read()
-        with open ('./structure/homology_models/{}_{}/{}_{}_model.pdb'.format(self.uniprot_id, self.state,self.reference_entry_name,self.state), 'w') as f:
+        with open ('./structure/homology_models/{}_{}/{}_{}_model.pdb'.format(self.reference_entry_name, self.state,self.reference_entry_name,self.state), 'w') as f:
             f.write(''.join(out_list))
         return ''.join(out_list)
 
@@ -296,8 +289,7 @@ class HomologyModeling(object):
                             if len(Rotamer.objects.filter(structure=main_structure,residue=r))<1:
                                 raise Exception()
                 except:
-                    a.template_dict[lab][gn] = 'x'
-        
+                    a.template_dict[lab][gn] = 'x'       
         parser = GPCRDBParsingPDB()
         for raw_seg, anno_seg in zip(raw_helix_ends, anno_helix_ends):
             s_dif = parser.gn_comparer(raw_helix_ends[raw_seg][0],anno_helix_ends[anno_seg][0],main_structure.protein_conformation)
@@ -361,7 +353,7 @@ class HomologyModeling(object):
                                 if parser.gn_comparer(alt_helix_ends[ref_seg][0],self.helix_ends[ref_seg][0],struct.protein_conformation)<=0:
                                     all_keys = list(a.reference_dict[ref_seg].keys())[:len(modifications['added'][ref_seg][0])+4]
                                     ref_keys = [i for i in all_keys if i not in modifications['added'][ref_seg][0]]
-                                    reference = parser.fetch_residues_from_pdb(main_structure,ref_keys)
+                                    reference = parser.fetch_residues_from_array(main_pdb_array[ref_seg],ref_keys)
                                     template = parser.fetch_residues_from_pdb(struct,all_keys)
                                     superpose = sp.OneSidedSuperpose(reference,template,4,0)
                                     sup_residues = superpose.run()
@@ -392,7 +384,7 @@ class HomologyModeling(object):
                                 if parser.gn_comparer(alt_helix_ends[ref_seg][1],self.helix_ends[ref_seg][1],struct.protein_conformation)>=0:
                                     all_keys = list(a.reference_dict[ref_seg].keys())[-1*(len(modifications['added'][ref_seg][1])+4):]
                                     ref_keys = [i for i in all_keys if i not in modifications['added'][ref_seg][1]]
-                                    reference = parser.fetch_residues_from_pdb(main_structure,ref_keys)
+                                    reference = parser.fetch_residues_from_array(main_pdb_array[ref_seg],ref_keys)
                                     template = parser.fetch_residues_from_pdb(struct,all_keys)
                                     superpose = sp.OneSidedSuperpose(reference,template,4,1)
                                     sup_residues = superpose.run()
@@ -533,7 +525,8 @@ class HomologyModeling(object):
         # loops
         if loops==True:
             loop_stat = OrderedDict()
-#            print(self.loop_template_table)
+            print(self.loop_template_table)
+            print(self.helix_end_mods)
             for label, structures in self.loop_template_table.items():
                 loop = Loops(self.reference_protein, label, structures, self.main_structure, self.helix_end_mods,
                              list(self.template_source))
@@ -828,12 +821,12 @@ class HomologyModeling(object):
                     a.alignment_dict[seg][list(incons.keys())[0]] = a.reference_dict[seg][list(incons.keys())[0]]
         
         self.statistics.add_info('pdb_db_inconsistencies', pdb_db_inconsistencies)
-        path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
+        path = "./structure/homology_models/{}_{}/".format(self.reference_entry_name,self.state)
         if not os.path.exists(path):
             os.mkdir(path)
 #        self.write_homology_model_pdb(
-#                                "./structure/homology_models/{}_{}/pre_switch.pdb".format(self.uniprot_id, self.state), 
-#                                main_pdb_array, a)        
+#                                "./structure/homology_models/{}_{}/pre_switch.pdb".format(self.reference_entry_name, self.state), 
+#                                main_pdb_array)        
 #        print('Check inconsistencies: ',datetime.now() - startTime)
         # inserting loops for free modeling
         for label, template in loop_stat.items():
@@ -1015,17 +1008,25 @@ class HomologyModeling(object):
                     del main_pdb_array['C-term'][num]
                     del self.template_source['C-term'][num]
                 c_count+=1
-                
+        
+        # Shorten ICL3
         try:
-            if len(a.reference_dict['ICL3_free'])>25:
-                del a.reference_dict['ICL3_free']
-                del a.template_dict['ICL3_free']
-                del a.alignment_dict['ICL3_free']
-                del main_pdb_array['ICL3_free']
-                del self.template_source['ICL3']
+            if len(a.reference_dict['ICL3_free'])>20:
+                icl3_c = 0
+                keys = list(self.template_source['ICL3'].keys())
+                length = len(a.template_dict['ICL3_free'])
+                for r_s,t_s,a_s,ar_s in zip(a.reference_dict['ICL3_free'],a.template_dict['ICL3_free'],
+                                            a.alignment_dict['ICL3_free'],main_pdb_array['ICL3_free']):
+                    icl3_c+=1
+                    if 10<icl3_c<length-9:
+                        del a.reference_dict['ICL3_free'][r_s]
+                        del a.template_dict['ICL3_free'][t_s]
+                        del a.alignment_dict['ICL3_free'][a_s]
+                        del main_pdb_array['ICL3_free'][ar_s]
+                        del self.template_source['ICL3'][keys[icl3_c-1]]
         except:
             pass
-        
+
         if len(a.reference_dict['N-term'])==0:
             del a.reference_dict['N-term']
             del a.template_dict['N-term']
@@ -1072,11 +1073,13 @@ class HomologyModeling(object):
                     trimmed_residues.append(i)
         for i,j in self.helix_end_mods['added'].items():
             try:
-                trimmed_residues.append(j[0][-1].replace('x','.'))
+                if j[0][-1].replace('x','.') not in trimmed_residues:
+                    trimmed_residues.append(j[0][-1].replace('x','.'))
             except:
                 pass
             try:
-                trimmed_residues.append(j[1][0].replace('x','.'))
+                if j[1][0].replace('x','.') not in trimmed_residues:
+                    trimmed_residues.append(j[1][0].replace('x','.'))
             except:
                 pass
         
@@ -1094,11 +1097,11 @@ class HomologyModeling(object):
 #        print('Rotamer switching: ',datetime.now() - startTime) 
         
         # write to file
-        path = "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)
+        path = "./structure/homology_models/{}_{}/".format(self.reference_entry_name,self.state)
         if not os.path.exists(path):
             os.mkdir(path)
         trimmed_res_nums = self.write_homology_model_pdb(path+self.uniprot_id+"_post.pdb", main_pdb_array, 
-                                                         a, trimmed_residues=trimmed_residues)
+                                                         trimmed_residues=trimmed_residues)
         
         self.statistics.add_info('template_source',self.template_source)
         
@@ -1109,7 +1112,8 @@ class HomologyModeling(object):
         os.remove(path+self.uniprot_id+"_post.pdb")
         
         # stat file
-#        with open('./structure/homology_models/{}_Inactive/{}.stat.txt'.format(self.uniprot_id, self.uniprot_id), 'w') as stat_file:
+#        with open('./structure/homology_models/{}_{}/{}.stat.txt'.format(self.reference_entry_name, self.state, 
+#                                                                         self.reference_entry_name), 'w') as stat_file:
 #            for label, info in self.statistics.items():
 #                stat_file.write('{} : {}\n'.format(label, info))
 
@@ -1176,7 +1180,7 @@ class HomologyModeling(object):
                         s_file.write(str(rot)+"\n")
 
         print('MODELLER build: ',datetime.now() - startTime)
-#        pprint.pprint(self.statistics)
+        pprint.pprint(self.statistics)
         print('################################')
         return self
     
@@ -1237,13 +1241,19 @@ class HomologyModeling(object):
                         try:
                             self.update_template_source([seq_num],self.template_source[segment][seq_num][0],segment,
                                                         just_rot=True)
+                            key_in_template_source = seq_num
                         except:
                             self.update_template_source([this_res.generic_number.label],
                                                         self.template_source[segment][this_res.generic_number.label][0],
                                                         segment,just_rot=True)
+                            key_in_template_source = this_res.generic_number.label
                     else:
                         self.update_template_source([ref_res],self.template_source[segment][ref_res][0],segment,
                                                     just_rot=True)
+                        key_in_template_source = ref_res
+                    if '_dis' in ref_seg or (ref_seg=='ECL2' and self.template_source['ECL2'][key_in_template_source][0]!=self.main_structure 
+                                             and '|' in ref_res):
+                        trimmed_residues.append(ref_res)
                 gn = ref_res    
                 if (gn in inconsistencies or alignment_dict[aligned_seg][aligned_res]=='.' and 
                     reference_dict[ref_seg][gn]!=template_dict[temp_seg][gn]):
@@ -1267,7 +1277,7 @@ class HomologyModeling(object):
                                 alt_res = alt_temp[gn_]
                                 superpose = sp.RotamerSuperpose(orig_res, alt_res)
                                 new_atoms = superpose.run()
-                                if superpose.backbone_rmsd>0.2:
+                                if superpose.backbone_rmsd>0.5:
                                     continue
                                 main_pdb_array[ref_seg][str(ref_res).replace('x','.')] = new_atoms
                                 template_dict[temp_seg][temp_res] = reference_dict[ref_seg][ref_res]
@@ -1308,13 +1318,12 @@ class HomologyModeling(object):
 
         return [main_pdb_array, reference_dict, template_dict, alignment_dict, trimmed_residues]
     
-    def write_homology_model_pdb(self, filename, main_pdb_array, ref_temp_alignment, trimmed_residues=[]):
+    def write_homology_model_pdb(self, filename, main_pdb_array, trimmed_residues=[]):
         ''' Write PDB file from pdb array to file.
         
             @param filename: str, filename of output file \n
             @param main_pdb_array: OrderedDict(), of atoms of pdb, where keys are generic numbers/residue numbers and
             values are list of atoms. Output of GPCRDBParsingPDB.pdb_array_creator().
-            @param ref_temp_alignment: AlignedReferenceAndTemplate, only writes residues that are in ref_temp_alignment.
         '''
         key = ''
         res_num = 0
@@ -1438,7 +1447,7 @@ sequence:{uniprot}::::::::
         a.starting_model = 1
         a.ending_model = number_of_models
         a.md_level = refine.slow
-        path = "./structure/homology_models/{}".format(reference+"_"+self.state)
+        path = "./structure/homology_models/{}_{}".format(self.reference_entry_name,self.state)
         if not os.path.exists(path):
             os.mkdir(path)
         a.make()
@@ -1460,7 +1469,7 @@ sequence:{uniprot}::::::::
         
         for file in os.listdir("./"):
             if file==m['name']:
-                os.rename("./"+file, "./structure/homology_models/{}_{}/".format(self.uniprot_id,
+                os.rename("./"+file, "./structure/homology_models/{}_{}/".format(self.reference_entry_name,
                                                                                  self.state)+output_file_name)
             elif file.startswith(self.uniprot_id):
                 os.remove("./"+file)#, "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)+file)
@@ -1569,9 +1578,8 @@ class Loops(object):
                                 except:
                                     continue
                             else:
-#                                print('BUG: need to superpose aligned {}'.format(self.loop_label))
-#                                return self.fetch_loop_residues(main_pdb_array,superpose_modded_loop=True)
-                                return None
+                                print('BUG: need to superpose aligned {}'.format(self.loop_label))
+                                return self.fetch_loop_residues(main_pdb_array,superpose_modded_loop=True)
                         else:
                             prot_conf = ProteinConformation.objects.get(protein=self.reference_protein)
                             if self.loop_label=='ICL4' and len(list(Residue.objects.filter(protein_conformation=prot_conf,protein_segment__slug='ICL4')))<3:
@@ -1586,14 +1594,18 @@ class Loops(object):
                                                              sequence_number__in=[a_num,a_num+1,a_num+2,a_num+3])
                             loop_residues = Residue.objects.filter(protein_conformation=template.protein_conformation,
                                                                    sequence_number__in=list(range(b_num+1,a_num)))
+                            if len(loop_residues)!=len(Residue.objects.filter(protein_conformation=self.prot_conf,protein_segment__slug=self.loop_label)):
+                                raise Exception()
                             before_gns = [x.sequence_number for x in before4]
                             mid_nums = [x.sequence_number for x in loop_residues]
                             after_gns = [x.sequence_number for x in after4]
+                            print(template,loop_residues)
                             alt_residues = parse.fetch_residues_from_pdb(template, before_gns+mid_nums+after_gns)
                             orig_residues = parse.fetch_residues_from_pdb(self.main_structure, 
                                                                           orig_before_gns+orig_after_gns)
                             superpose = sp.LoopSuperpose(orig_residues, alt_residues)
                             new_residues = superpose.run()
+                            print(self.loop_label,'RMSD: ',superpose.backbone_rmsd)
                             key_list = list(new_residues.keys())[4:-4]
                             for key in key_list:
                                 output[key] = new_residues[key]
@@ -1643,6 +1655,7 @@ class Loops(object):
                                 alt_residues1 = parse.fetch_residues_from_pdb(first_temp,before_gns+mid_gns1+['45x50','45x51','45x52'])
                                 superpose = sp.LoopSuperpose(orig_residues1,alt_residues1,ECL2=True,part=1)
                                 new_residues = superpose.run()
+                                print("ECL2_1 RMSD: ",superpose.backbone_rmsd)
                                 key_list = list(new_residues.keys())[4:-3]
                                 for key in key_list:
                                     ECL2_1["1_"+key] = new_residues[key]
@@ -1686,6 +1699,7 @@ class Loops(object):
                                 alt_residues2 = parse.fetch_residues_from_pdb(second_temp,['45x50','45x51','45x52']+mid_gns2+after_gns)
                                 superpose = sp.LoopSuperpose(orig_residues2,alt_residues2,ECL2=True,part=2)
                                 new_residues = superpose.run()
+                                print("ECL2_2 RMSD: ",superpose.backbone_rmsd)
                                 key_list = list(new_residues.keys())[3:-4]
                                 for key in key_list:
                                     ECL2_2["2_"+key] = new_residues[key]
@@ -2224,7 +2238,7 @@ class GPCRDBParsingPDB(object):
             else:
                 rotamer = rotamer[0]
             io = StringIO(rotamer.pdbdata.pdb)
-            rota_struct = PDB.PDBParser().get_structure('structure', io)[0]
+            rota_struct = PDB.PDBParser(QUIET=True).get_structure('structure', io)[0]
             for chain in rota_struct:
                 for residue in chain:
                     for atom in residue:
@@ -2263,7 +2277,7 @@ class GPCRDBParsingPDB(object):
             io = filename
         gn_array = []
         residue_array = []
-        pdb_struct = PDB.PDBParser(PERMISSIVE=True).get_structure('structure', io)[0]
+        pdb_struct = PDB.PDBParser(QUIET=True).get_structure('structure', io)[0]
 
         assign_gn = as_gn.GenericNumbering(structure=pdb_struct)
         pdb_struct = assign_gn.assign_generic_numbers()
