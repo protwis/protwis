@@ -47,10 +47,11 @@ class Command(BaseCommand):
         receptor_list = [i.entry_name for i in classA if i not in struct_parent]
         
 #        for i in receptor_list[:2]:
-        Homology_model = HomologyModeling('gper1_human','Inactive',['Inactive'])
+        Homology_model = HomologyModeling('ox1r_human','Inactive',['Inactive'])
         alignment = Homology_model.run_alignment()
         Homology_model.build_homology_model(alignment)
         Homology_model.format_final_model()
+
         
 #        if os.path.isfile('./logs/homology_modeling.log'):
 #            os.remove('./logs/homology_modeling.log')
@@ -122,72 +123,72 @@ class HomologyModeling(object):
                                                                   main_template=self.main_structure, 
                                                                   pdb=self.format_final_model())
                                                                   
-        # upload StructureModelLoopTemplates
-        for loop,template in self.statistics.info_dict['loops'].items():
-            seg = ProteinSegment.objects.get(slug=loop[:4])
-            try:
-                StructureModelLoopTemplates.objects.update_or_create(homology_model=hommod,template=template,segment=seg)
-            except:
-                pass
-            
-        # upload StructureModelAnomalies
-        ref_bulges = self.statistics.info_dict['reference_bulges']
-        temp_bulges = self.statistics.info_dict['template_bulges']
-        ref_const = self.statistics.info_dict['reference_constrictions']
-        temp_const = self.statistics.info_dict['template_constrictions']
-                
-        # upload StructureModelResidues
-        
-        for gn, res in self.statistics.info_dict['conserved_residues'].items():
-            if gn[0] not in ['E','I']:
-                res = Residue.objects.get(protein_conformation__protein=self.reference_protein, 
-                                          generic_number__label=gn)
-                res_temp = Residue.objects.get(protein_conformation=self.main_structure.protein_conformation, 
-                                               generic_number__label=gn)
-                rotamer = Rotamer.objects.filter(structure=self.main_structure, residue=res_temp)
-            else:
-                res = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
-                                             protein_segment__slug=gn.split('|')[0])[int(gn.split('|')[1])-1]
-                if gn[0] in ['E','I'] and gn[:4]+"_dis" in self.statistics.info_dict['loops'].keys():
-                    alt_temp = self.statistics.info_dict['loops'][gn[:4]+"_dis"]
-                    res_temp = Residue.objects.filter(protein_conformation=alt_temp.protein_conformation, 
-                                                  protein_segment__slug=gn.split('|')[0])[int(gn.split('|')[1])-1]
-                    rotamer = Rotamer.objects.filter(structure=alt_temp, residue=res_temp)
-                else:
-                    res_temp = Residue.objects.filter(protein_conformation=self.main_structure.protein_conformation, 
-                                                  protein_segment__slug=gn.split('|')[0])[int(gn.split('|')[1])-1]
-                    rotamer = Rotamer.objects.filter(structure=self.main_structure, residue=res_temp)                          
-            rotamer = self.right_rotamer_select(rotamer)
-            if gn[0] in ['E','I'] and gn[:4]+"_dis" in self.statistics.info_dict['loops'].keys():
-                alt_temp = self.statistics.info_dict['loops'][gn[:4]+"_dis"]
-                StructureModelResidues.objects.update_or_create(homology_model=hommod, sequence_number=res.sequence_number,
-                                                                residue=res, rotamer=rotamer, template=alt_temp,
-                                                                origin='conserved', segment=res.protein_segment)
-            else:
-                StructureModelResidues.objects.update_or_create(homology_model=hommod, sequence_number=res.sequence_number,
-                                                                residue=res, rotamer=rotamer, template=self.main_structure,
-                                                                origin='conserved', segment=res.protein_segment)
-        for gn, temp in self.statistics.info_dict['non_conserved_residue_templates'].items():
-            res = Residue.objects.get(protein_conformation__protein=self.reference_protein, generic_number__label=gn)
-            res_temp = Residue.objects.get(protein_conformation=temp.protein_conformation,
-                                           generic_number__label=gn)
-            rotamer = Rotamer.objects.filter(structure=temp, residue=res_temp)
-            rotamer = self.right_rotamer_select(rotamer)
-            StructureModelResidues.objects.update_or_create(homology_model=hommod, sequence_number=res.sequence_number, 
-                                                            residue=res, rotamer=rotamer, template=temp, 
-                                                            origin='switched', segment=res.protein_segment)
-        for gn in self.statistics.info_dict['trimmed_residues']:
-            if gn[0] not in ['E','I']:
-                gn = gn.replace('.','x')
-                res = Residue.objects.get(protein_conformation__protein=self.reference_protein, 
-                                          generic_number__label=gn)
-            else:
-                gn = gn.replace('?','|')
-                res = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
-                                             protein_segment__slug=gn.split('|')[0])[int(gn.split('|')[1])-1]
-            StructureModelResidues.objects.update_or_create(homology_model=hommod, sequence_number=res.sequence_number,
-                                                            residue=res, rotamer__isnull=True, template__isnull=True,
-                                                            origin='free', segment=res.protein_segment)
+#        # upload StructureModelLoopTemplates
+#        for loop,template in self.statistics.info_dict['loops'].items():
+#            seg = ProteinSegment.objects.get(slug=loop[:4])
+#            try:
+#                StructureModelLoopTemplates.objects.update_or_create(homology_model=hommod,template=template,segment=seg)
+#            except:
+#                pass
+#            
+#        # upload StructureModelAnomalies
+#        ref_bulges = self.statistics.info_dict['reference_bulges']
+#        temp_bulges = self.statistics.info_dict['template_bulges']
+#        ref_const = self.statistics.info_dict['reference_constrictions']
+#        temp_const = self.statistics.info_dict['template_constrictions']
+#                
+#        # upload StructureModelResidues
+#        
+#        for gn, res in self.statistics.info_dict['conserved_residues'].items():
+#            if gn[0] not in ['E','I']:
+#                res = Residue.objects.get(protein_conformation__protein=self.reference_protein, 
+#                                          generic_number__label=gn)
+#                res_temp = Residue.objects.get(protein_conformation=self.main_structure.protein_conformation, 
+#                                               generic_number__label=gn)
+#                rotamer = Rotamer.objects.filter(structure=self.main_structure, residue=res_temp)
+#            else:
+#                res = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
+#                                             protein_segment__slug=gn.split('|')[0])[int(gn.split('|')[1])-1]
+#                if gn[0] in ['E','I'] and gn[:4]+"_dis" in self.statistics.info_dict['loops'].keys():
+#                    alt_temp = self.statistics.info_dict['loops'][gn[:4]+"_dis"]
+#                    res_temp = Residue.objects.filter(protein_conformation=alt_temp.protein_conformation, 
+#                                                  protein_segment__slug=gn.split('|')[0])[int(gn.split('|')[1])-1]
+#                    rotamer = Rotamer.objects.filter(structure=alt_temp, residue=res_temp)
+#                else:
+#                    res_temp = Residue.objects.filter(protein_conformation=self.main_structure.protein_conformation, 
+#                                                  protein_segment__slug=gn.split('|')[0])[int(gn.split('|')[1])-1]
+#                    rotamer = Rotamer.objects.filter(structure=self.main_structure, residue=res_temp)                          
+#            rotamer = self.right_rotamer_select(rotamer)
+#            if gn[0] in ['E','I'] and gn[:4]+"_dis" in self.statistics.info_dict['loops'].keys():
+#                alt_temp = self.statistics.info_dict['loops'][gn[:4]+"_dis"]
+#                StructureModelResidues.objects.update_or_create(homology_model=hommod, sequence_number=res.sequence_number,
+#                                                                residue=res, rotamer=rotamer, template=alt_temp,
+#                                                                origin='conserved', segment=res.protein_segment)
+#            else:
+#                StructureModelResidues.objects.update_or_create(homology_model=hommod, sequence_number=res.sequence_number,
+#                                                                residue=res, rotamer=rotamer, template=self.main_structure,
+#                                                                origin='conserved', segment=res.protein_segment)
+#        for gn, temp in self.statistics.info_dict['non_conserved_residue_templates'].items():
+#            res = Residue.objects.get(protein_conformation__protein=self.reference_protein, generic_number__label=gn)
+#            res_temp = Residue.objects.get(protein_conformation=temp.protein_conformation,
+#                                           generic_number__label=gn)
+#            rotamer = Rotamer.objects.filter(structure=temp, residue=res_temp)
+#            rotamer = self.right_rotamer_select(rotamer)
+#            StructureModelResidues.objects.update_or_create(homology_model=hommod, sequence_number=res.sequence_number, 
+#                                                            residue=res, rotamer=rotamer, template=temp, 
+#                                                            origin='switched', segment=res.protein_segment)
+#        for gn in self.statistics.info_dict['trimmed_residues']:
+#            if gn[0] not in ['E','I']:
+#                gn = gn.replace('.','x')
+#                res = Residue.objects.get(protein_conformation__protein=self.reference_protein, 
+#                                          generic_number__label=gn)
+#            else:
+#                gn = gn.replace('?','|')
+#                res = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
+#                                             protein_segment__slug=gn.split('|')[0])[int(gn.split('|')[1])-1]
+#            StructureModelResidues.objects.update_or_create(homology_model=hommod, sequence_number=res.sequence_number,
+#                                                            residue=res, rotamer__isnull=True, template__isnull=True,
+#                                                            origin='free', segment=res.protein_segment)
                                    
     def right_rotamer_select(self, rotamer):
         if len(rotamer)>1:
