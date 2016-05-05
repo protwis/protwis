@@ -27,4 +27,5 @@ urlpatterns = [
     url(r'residuesupload', views.ResiduesUpload, name='residuesupload'),
     url(r'^selectiongproteinpredefined', views.SelectionGproteinPredefined, name='selectiongproteinpredefined'),
     url(r'^selectiongproteintoggle', views.SelectionGproteinToggle, name='selectiongproteintoggle'),
+    url(r'^targetformread', views.ReadTargetInput, name='targetformread'),
 ]

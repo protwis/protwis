@@ -218,6 +218,41 @@ function SelectionSchemesToggle(numbering_scheme_id) {
     });
 }
 
+function ReadTargetsForm(form) {
+    //Dealing with csrf token
+    function getCookie(c_name) {
+        if (document.cookie.length > 0) {
+            c_start = document.cookie.indexOf(c_name + "=");
+            if (c_start != -1) {
+                c_start = c_start + c_name.length + 1;
+                c_end = document.cookie.indexOf(";", c_start);
+                if (c_end == -1) c_end = document.cookie.length;
+                return unescape(document.cookie.substring(c_start, c_end));
+            }
+        }
+        return "";
+    }
+    $.ajaxSetup({
+        headers: { "X-CSRFToken": getCookie("csrftoken") }
+    });
+    //Actual post
+    var fd = new FormData(form);
+    $.ajax({
+        type: 'POST',
+        url: '/common/targetformread',
+        data: fd,
+        cache: false,
+        processData: false,
+        contentType: false,
+        'success': function (data) {
+            $("#selection-targets").html(data);
+        },
+    }).fail(function (jqXHR, textStatus, error) {
+        alert("Request failed: " + textStatus + error);
+    });
+    return false;
+}
+
 function SetTreeSelection(option_no, option_id) {
     $.ajax({
         'url': '/common/settreeselection',

@@ -27,11 +27,12 @@ class AbsTargetSelection(TemplateView):
     number_of_steps = 2
     title = 'SELECT TARGETS'
     description = 'Select targets by searching or browsing in the middle column. You can select entire target' \
-        + ' families or individual targets.\n\nSelected targets will appear in the right column, where you can edit' \
+        + ' families or individual targets.\n\nYou can also enter the list of UNIPROT names of the targets (one per line) and click "Add targets" button to add those.\n\nSelected targets will appear in the right column, where you can edit' \
         + ' the list.\n\nOnce you have selected all your targets, click the green button.'
     documentation_url = settings.DOCUMENTATION_URL
     docs = False
     filters = True
+    target_input = True
     default_species = 'Human'
     numbering_schemes = False
     search = True
@@ -1130,7 +1131,6 @@ def ResiduesUpload(request):
         selection.importer(simple_selection)
 
     selection_type = 'segments'
-    print(request.FILES)
     if request.FILES == {}:
         return render(request, 'common/selection_lists.html', '')
 
@@ -1170,3 +1170,44 @@ def ResiduesUpload(request):
     request.session['selection'] = simple_selection
 
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+
+def ReadTargetInput(request):
+    """Receives the data from the input form nd adds the listed targets to the selection"""
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    selection_type = 'targets'
+    selection_subtype = 'protein'
+
+    if request.POST == {}:
+        return render(request, 'common/selection_lists.html', '')
+
+    o = []
+    up_names = request.POST['input-targets'].split('\r')
+    for up_name in up_names:
+        try:
+            o.append(Protein.objects.get(entry_name=up_name.strip()))
+        except:
+            continue
+
+    for obj in o:
+        # add the selected item to the selection
+        selection_object = SelectionItem(selection_subtype, obj)
+        selection.add(selection_type, selection_subtype, selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # context 
+    context = selection.dict(selection_type)
+
+    return render(request, 'common/selection_lists.html', context)

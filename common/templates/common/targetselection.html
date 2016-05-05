@@ -45,6 +45,18 @@
             </div>
             {% endif %}
 
+            <!-- target input form -->
+            {% if target_input %}
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Input target list</h4>
+                    <div id="target-input">
+                        {% include 'common/targetselection_input_form.html' %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- target search -->
             {% if search %}
             <div class="col-md-12 panel panel-primary">
