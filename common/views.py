@@ -535,12 +535,14 @@ def ToggleFamilyTreeNode(request):
             ps = Protein.objects.order_by('id').filter(family=ppf,
                 species__in=(species_list),
                 source__in=(protein_source_list)).order_by('source_id', 'id')
-        elif g_proteins_list:
-            proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list)]
-            gprots = Protein.objects.filter(pk__in=proteins)
         else:
             ps = Protein.objects.order_by('id').filter(family=ppf,
                 source__in=(protein_source_list)).order_by('source_id', 'id')
+        if g_proteins_list:
+            proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list)]
+
+            gprots = Protein.objects.order_by('id').filter(pk__in=proteins).filter(pk__in=ps)
+            ps = gprots
         action = 'collapse'
     else:
         pfs = ps = {}
