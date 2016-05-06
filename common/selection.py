@@ -15,6 +15,9 @@ class SimpleSelection:
         # species
         self.species = []
 
+        # G proteins
+        self.g_proteins = []
+
         # annotation
         ps = ProteinSource.objects.get(name='SWISSPROT') # Default protein source is SWISSPROT
         o = SelectionItem('protein_source', ps)
@@ -45,6 +48,7 @@ class Selection(SimpleSelection):
         self.targets = simple_selection.targets
         self.segments = simple_selection.segments
         self.species = simple_selection.species
+        self.g_proteins = simple_selection.g_proteins
         self.annotation = simple_selection.annotation
         self.numbering_schemes = simple_selection.numbering_schemes
         self.tree_settings=simple_selection.tree_settings
@@ -58,6 +62,7 @@ class Selection(SimpleSelection):
         ss.targets = self.targets
         ss.segments = self.segments
         ss.species = self.species
+        ss.g_proteins = self.g_proteins
         ss.annotation = self.annotation
         ss.numbering_schemes = self.numbering_schemes
         ss.tree_settings=self.tree_settings

@@ -48,6 +48,7 @@ INSTALLED_APPS = (
     'sitesearch',
     'build_' + SITE_NAME,
     'construct',
+    'tools',
 )
 
 MIDDLEWARE_CLASSES = (

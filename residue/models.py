@@ -73,3 +73,14 @@ class ResidueGenericNumberEquivalent(models.Model):
     class Meta():
         db_table = 'residue_generic_number_equivalent'
         unique_together = ('scheme', 'label')
+
+
+class ResiduePositionSet(models.Model):
+    residue_position = models.ManyToManyField('ResidueGenericNumberEquivalent')
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+    class Meta():
+        db_table = 'residue_position_set'

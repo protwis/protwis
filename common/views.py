@@ -6,12 +6,15 @@ from django.conf import settings
 from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
 from structure.models import Structure
-from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet
-from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent
+from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet, ProteinGProtein, ProteinGProteinPair
+from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet
 from interaction.forms import PDBform
 
 import inspect
 from collections import OrderedDict
+from io import BytesIO
+import xlsxwriter
+from openpyxl import load_workbook
 
 
 class AbsTargetSelection(TemplateView):
@@ -24,11 +27,12 @@ class AbsTargetSelection(TemplateView):
     number_of_steps = 2
     title = 'SELECT TARGETS'
     description = 'Select targets by searching or browsing in the middle column. You can select entire target' \
-        + ' families or individual targets.\n\nSelected targets will appear in the right column, where you can edit' \
+        + ' families or individual targets.\n\nYou can also enter the list of UNIPROT names of the targets (one per line) and click "Add targets" button to add those.\n\nSelected targets will appear in the right column, where you can edit' \
         + ' the list.\n\nOnce you have selected all your targets, click the green button.'
     documentation_url = settings.DOCUMENTATION_URL
     docs = False
     filters = True
+    target_input = True
     default_species = 'Human'
     numbering_schemes = False
     search = True
@@ -64,6 +68,9 @@ class AbsTargetSelection(TemplateView):
 
     # species
     sps = Species.objects.all()
+
+    # g proteins
+    gprots = ProteinGProtein.objects.all()
 
     # numbering schemes
     gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME)
@@ -103,6 +110,7 @@ class AbsTargetSelection(TemplateView):
         if self.filters:
             context['selection']['species'] = selection.species
             context['selection']['annotation'] = selection.annotation
+            context['selection']['g_proteins'] = selection.g_proteins
 
         # get attributes of this class and add them to the context
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
@@ -165,6 +173,10 @@ class AbsSegmentSelection(TemplateView):
         ('segments', True),
     ])
 
+    try:
+        rsets = ResiduePositionSet.objects.all().prefetch_related('residue_position')
+    except Exception as e:
+        pass    
     ss = ProteinSegment.objects.filter(partial=False).prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
     action = 'expand'
@@ -288,7 +300,11 @@ def AddToSelection(request):
     elif selection_type == 'segments':
         if selection_subtype == 'residue':
             o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
-        
+        elif selection_subtype == 'residue_position_set':
+            selection_subtype = 'residue'
+            rset = ResiduePositionSet.objects.get(pk=selection_id)
+            for residue in rset.residue_position.all():
+                o.append(residue)
         elif selection_subtype == 'site_residue': # used in site search
             o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
         
@@ -511,6 +527,11 @@ def ToggleFamilyTreeNode(request):
         for protein_source in selection.annotation:
             protein_source_list.append(protein_source.item)
 
+        # g proteins filter
+        g_proteins_list = []
+        for g_protein in selection.g_proteins:
+            g_proteins_list.append(g_protein.item)
+
         if species_list:
             ps = Protein.objects.order_by('id').filter(family=ppf,
                 species__in=(species_list),
@@ -518,6 +539,11 @@ def ToggleFamilyTreeNode(request):
         else:
             ps = Protein.objects.order_by('id').filter(family=ppf,
                 source__in=(protein_source_list)).order_by('source_id', 'id')
+        if g_proteins_list:
+            proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list)]
+
+            gprots = Protein.objects.order_by('id').filter(pk__in=proteins).filter(pk__in=ps)
+            ps = gprots
         action = 'collapse'
     else:
         pfs = ps = {}
@@ -638,6 +664,80 @@ def SelectionSpeciesToggle(request):
     context['sps'] = Species.objects.all()
     
     return render(request, 'common/selection_filters_species_selector.html', context)
+
+def SelectionGproteinPredefined(request):
+    """Updates the selected species to predefined sets (Human and all)"""
+    g_protein = request.GET['g_protein']
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+    
+    all_gprots = ProteinGProtein.objects.all()
+    gprots = False
+    if g_protein == 'All':
+        gprots = []
+    if g_protein != 'All' and g_protein:
+        gprots = ProteinGProtein.objects.filter(name=g_protein)
+
+    if gprots != False:
+        # reset the species selection
+        selection.clear('g_proteins')
+
+        # add the selected items to the selection
+        for gprot in gprots:
+            selection_object = SelectionItem('g_protein', gprot)
+            selection.add('g_proteins', 'g_proteins', selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # add all species objects to context (for comparison to selected species)
+    context = selection.dict('g_proteins')
+    context['gprots'] = all_gprots
+    
+    return render(request, 'common/selection_filters_gproteins.html', context)
+
+def SelectionGproteinToggle(request):
+    """Updates the selected species arbitrary selections"""
+    g_protein_id = request.GET['g_protein_id']
+
+    all_gprots = ProteinGProtein.objects.all()
+    gprots = ProteinGProtein.objects.filter(pk=g_protein_id)
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    # add the selected items to the selection
+    for gprot in gprots:
+        exists = selection.remove('g_proteins', 'g_proteins', g_protein_id)
+        if not exists:
+            selection_object = SelectionItem('g_protein', gprot)
+            selection.add('g_proteins', 'g_proteins', selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # add all species objects to context (for comparison to selected species)
+    context = selection.dict('g_proteins')
+    context['gprots'] = ProteinGProtein.objects.all()
+    
+    return render(request, 'common/selection_filters_gproteins_selector.html', context)
 
 def ExpandSegment(request):
     """Expands a segment to show it's generic numbers"""
@@ -993,3 +1093,121 @@ def SetGroupMinMatch(request):
     template = 'common/selection_lists_sitesearch.html'
 
     return render(request, template, context)
+
+
+def ResiduesDownload(request):
+
+    simple_selection = request.session.get('selection', False)
+
+    outstream = BytesIO()
+    wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
+    worksheet = wb.add_worksheet()
+    row_count = 0
+
+    for position in simple_selection.segments:
+        if position.type == 'residue':
+            worksheet.write_row(row_count, 0, ['residue', position.item.scheme.slug, position.item.label])
+            row_count += 1
+        elif position.type == 'helix':
+            worksheet.write_row(row_count, 0, ['helix', '', position.item.slug])
+            row_count += 1
+    wb.close()
+    outstream.seek(0)
+    response = HttpResponse(outstream.read(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response['Content-Disposition'] = "attachment; filename=segment_selection.xlsx"
+
+    return response
+
+
+def ResiduesUpload(request):
+    """Receives a file containing generic residue positions along with numbering scheme and adds those to the selection."""
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    selection_type = 'segments'
+    if request.FILES == {}:
+        return render(request, 'common/selection_lists.html', '')
+
+    #Overwriting the existing selection
+    selection.clear(selection_type)
+
+    #The excel file
+    wb=load_workbook(filename=request.FILES['xml_file'].file)
+    ws=wb.active
+
+    o = []
+    for row in ws.rows:
+        if len(row) < 2:
+            continue
+        try:
+            if row[0].value == 'residue':
+                position = ResidueGenericNumberEquivalent.objects.get(label=row[2].value, scheme__slug=row[1].value)
+                o.append(position)
+            elif row[0].value == 'helix':
+                o.append(ProteinSegment.objects.get(slug=row[2].value))
+        except Exception as msg:
+            print(msg)
+            continue
+    for obj in o:
+        # add the selected item to the selection
+        if obj.__class__.__name__ == 'ResidueGenericNumberEquivalent':
+            selection_subtype = 'residue'
+        else: 
+            selection_subtype = 'helix'
+        selection_object = SelectionItem(selection_subtype, obj)
+        selection.add(selection_type, selection_subtype, selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    return render(request, 'common/selection_lists.html', selection.dict(selection_type))
+
+def ReadTargetInput(request):
+    """Receives the data from the input form nd adds the listed targets to the selection"""
+
+    # get simple selection from session
+    simple_selection = request.session.get('selection', False)
+    
+    # create full selection and import simple selection (if it exists)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+
+    selection_type = 'targets'
+    selection_subtype = 'protein'
+
+    if request.POST == {}:
+        return render(request, 'common/selection_lists.html', '')
+
+    o = []
+    up_names = request.POST['input-targets'].split('\r')
+    for up_name in up_names:
+        try:
+            o.append(Protein.objects.get(entry_name=up_name.strip()))
+        except:
+            continue
+
+    for obj in o:
+        # add the selected item to the selection
+        selection_object = SelectionItem(selection_subtype, obj)
+        selection.add(selection_type, selection_subtype, selection_object)
+
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    # context 
+    context = selection.dict(selection_type)
+
+    return render(request, 'common/selection_lists.html', context)

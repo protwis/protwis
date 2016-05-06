@@ -8,7 +8,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 from Bio.Seq import Seq
 
-import logging, sys, os
+import logging, sys, os, tempfile
 from subprocess import Popen, PIPE
 
 class Command(BaseCommand):
@@ -21,7 +21,7 @@ class Command(BaseCommand):
     blast_database_dir = os.sep.join([settings.STATICFILES_DIRS[0], 'blast'])
     db_file_path = os.sep.join([blast_database_dir, 'protwis_blastdb'])
     human_db_file_path = os.sep.join([blast_database_dir, 'protwis_human_blastdb'])
-    tmp_file_path = os.sep.join(['/tmp', 'temp.fa'])
+    tmp_file_path = os.sep.join([tempfile.gettempdir(), 'temp.fa'])
 
     def handle(self, *args, **options):
         # All sequences
