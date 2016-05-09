@@ -71,6 +71,52 @@ class StructureModel(models.Model):
         db_table = 'structure_model'      
 
 
+class StructureModelStatsRotamer(models.Model):
+    homology_model = models.ForeignKey('structure.StructureModel')
+    segment = models.CharField(max_length=6)
+    sequence_number = models.IntegerField()
+    generic_number = models.CharField(max_length=5, null=True)
+    rotamer_template = models.ForeignKey('structure.Structure', null=True)
+    model_segment = models.ForeignKey('structure.StructureModelStatsSegment')
+
+    def __repr__(self):
+        return '<StructureModelStatsRotamer: seqnum '+str(sequence_number)+' hommod '+str(homology_model.protein)+'>'
+
+    class Meta():
+        db_table = 'structure_model_stats_rotamer'
+
+
+class StructureModelStatsSegment(models.Model):
+    homology_model = models.ForeignKey('structure.StructureModel')
+    segment = models.CharField(max_length=6)
+    start = models.IntegerField()
+    end = models.IntegerField()
+    start_gn = models.CharField(max_length=5, null=True)
+    end_gn = models.CharField(max_length=5, null=True)
+    backbone_template = models.ForeignKey('structure.Structure', null=True)
+
+    def __repr__(self):
+        return '<StructureModelStatsSegment: '+str(start)+'-'+str(end)+' hommod '+str(homology_model.protein)+'>'
+
+    class Meta():
+        db_table = 'structure_model_stats_segment'
+
+
+class StructureModelRMSD(models.Model):
+    homology_model = models.ForeignKey('structure.StructureModel')
+    service = models.CharField(max_length=10)
+    overall_all = models.DecimalField(null=True, max_digits=5, decimal_places=3)
+    overall_backbone = models.DecimalField(null=True, max_digits=5, decimal_places=3)
+    TM_all = models.DecimalField(null=True, max_digits=5, decimal_places=3)
+    TM_backbone = models.DecimalField(null=True, max_digits=5, decimal_places=3)
+
+    def __repr__(self):
+        return '<StructureModelRMSD: '+service+' hommod '+str(homology_model.protein)+'>'
+
+    class Meta():
+        db_table = 'structure_model_rmsd'
+
+
 class StructureModelLoopTemplates(models.Model):
     homology_model = models.ForeignKey('structure.StructureModel')
     template = models.ForeignKey('structure.Structure')

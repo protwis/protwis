@@ -27,9 +27,9 @@ l = multiprocessing.Lock()
 
 
 @transaction.atomic
-def homology_model_multiprocessing(receptor):
+def homology_model_multiprocessing(receptor, update):
     print('Building model for {}'.format(receptor))
-    Homology_model = HomologyModeling(receptor, 'Inactive', ['Inactive'])
+    Homology_model = HomologyModeling(receptor, 'Inactive', ['Inactive'], update=update)
     alignment = Homology_model.run_alignment()
     Homology_model.build_homology_model(alignment)
     Homology_model.format_final_model()
@@ -40,6 +40,13 @@ def homology_model_multiprocessing(receptor):
     l.release()
         
 class Command(BaseCommand):  
+    help = 'Build automated chimeric GPCR homology model'    
+    
+    def add_arguments(self, parser):
+        parser.add_argument('--update', help='Upload model to GPCRdb', default=False, action='store_true')
+        parser.add_argument('-r', help='Run program for specific receptor(s) by giving UniProt common name as argument', 
+                            default=False, type=str, nargs='+')
+        
     def handle(self, *args, **options):
         structures = Structure.objects.all()
         struct_parent = [i.protein_conformation.protein.parent for i in structures]
@@ -47,7 +54,11 @@ class Command(BaseCommand):
         receptor_list = [i.entry_name for i in classA if i not in struct_parent]
         
 #        for i in receptor_list[:2]:
-        Homology_model = HomologyModeling('ox1r_human','Inactive',['Inactive'])
+        if options['update']==True:
+            update = True
+        else:
+            update = False
+        Homology_model = HomologyModeling('ox1r_human','Inactive',['Inactive'], update=update)
         alignment = Homology_model.run_alignment()
         Homology_model.build_homology_model(alignment)
         Homology_model.format_final_model()
@@ -64,7 +75,7 @@ class Command(BaseCommand):
 #        
 #        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
 #        for i in receptor_list[151:]:
-#            pool.apply_async(homology_model_multiprocessing, args=(i,))
+#            pool.apply_async(homology_model_multiprocessing, args=(i,update,))
 #        pool.close()
 #        pool.join()
 
@@ -81,10 +92,11 @@ class HomologyModeling(object):
         default: same as reference
     '''
     segment_coding = {1:'TM1',2:'TM2',3:'TM3',4:'TM4',5:'TM5',6:'TM6',7:'TM7'}
-    def __init__(self, reference_entry_name, state, query_states):
+    def __init__(self, reference_entry_name, state, query_states, update=False):
         self.reference_entry_name = reference_entry_name
         self.state = state
         self.query_states = query_states
+        self.update = update
         self.statistics = CreateStatistics(self.reference_entry_name)
         self.reference_protein = Protein.objects.get(entry_name=self.reference_entry_name)
         self.uniprot_id = self.reference_protein.accession
@@ -111,18 +123,32 @@ class HomologyModeling(object):
         self.logger = logging.getLogger('homology_modeling')
         l.acquire()
         self.logger.info('Building model for {} {}.'.format(self.reference_protein, self.state))
-        l.release()        
+        l.release()
         
     def __repr__(self):
         return "<Hommod: {}, {}>".format(self.reference_entry_name, self.state)
 
-    def upload_to_db(self):
+    def upload_to_db(self, sections, rotamers):
         # upload StructureModel        
-        state=ProteinState.objects.get(name=self.state)
-        hommod, created = StructureModel.objects.update_or_create(protein=self.reference_protein, state=state, 
+        s_state=ProteinState.objects.get(name=self.state)
+        hommod, created = StructureModel.objects.update_or_create(protein=self.reference_protein, state=s_state, 
                                                                   main_template=self.main_structure, 
-                                                                  pdb=self.format_final_model())
-                                                                  
+                                                                  pdb=self.format_final_model(), 
+                                                                  defaults={'protein':self.reference_protein,'state':s_state})
+        print(created)
+        for s in sections:
+            segs, created = StructureModelStatsSegment.objects.update_or_create(homology_model=hommod, segment=s[0],
+                                                                                start=s[1],end=s[2],start_gn=s[3],
+                                                                                end_gn=s[4],backbone_template=s[6])
+        segs = StructureModelStatsSegment.objects.filter(homology_model=hommod)
+        
+        for r in rotamers:
+            for s in segs:
+                if s.start<=r[1]<=s.end:
+                    m_seg = s
+            rots, created = StructureModelStatsRotamer.objects.update_or_create(homology_model=hommod, segment=r[0],
+                                                                                sequence_number=r[1],generic_number=r[2],
+                                                                                rotamer_template=r[4],model_segment=m_seg)
 #        # upload StructureModelLoopTemplates
 #        for loop,template in self.statistics.info_dict['loops'].items():
 #            seg = ProteinSegment.objects.get(slug=loop[:4])
@@ -1178,6 +1204,10 @@ class HomologyModeling(object):
                 for rot in rot_table:
                     if int(sec[1])<=int(rot[1])<=int(sec[2]):
                         s_file.write(str(rot)+"\n")
+        
+        if self.update==True:
+            print('UPDATING DB')
+            self.upload_to_db(sections, rot_table)
 
         print('MODELLER build: ',datetime.now() - startTime)
         pprint.pprint(self.statistics)
