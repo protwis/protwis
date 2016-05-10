@@ -375,14 +375,14 @@ class designPDB(AbsTargetSelection):
     # Left panel
     step = 1
     number_of_steps = 1
-    docs = 'generic_numbering.html'  # FIXME
+    # docs = 'generic_numbering.html'  # FIXME
 
     # description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
     #     + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \
     #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
     #     + ' have selected all your receptors, click the green button.'
 
-    description = 'Mutant Design Tool'
+    description = 'Upload a structure of a receptor and ligand bound. The tool will then deduce the interactions and suggest mutations to verify these.'
 
     # Middle section
     numbering_schemes = False
@@ -423,20 +423,20 @@ class design(AbsTargetSelection):
     # Left panel
     step = 1
     number_of_steps = 1
-    docs = 'generic_numbering.html'  # FIXME
+    # docs = 'generic_numbering.html'  # FIXME
 
     # description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
     #     + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \
     #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
     #     + ' have selected all your receptors, click the green button.'
 
-    description = 'Mutant Design Tool'
+    description = 'Get mutation suggestions based on interaction data from structures and mutagenesis experimental data.'
 
     # Middle section
     numbering_schemes = False
     filters = False
     search = True
-    title = "Select annotated receptor interactions, PDB code or upload PDB file"
+    title = "Select a receptor"
 
     template_name = 'mutation/designselection.html'
 
@@ -743,7 +743,7 @@ def pocket(request):
 
     context = {}
 
-    gpcr_class = '004' #class a
+    gpcr_class = '005' #class a 1 , c 4, f 5
 
     class_interactions = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=gpcr_class, structure_ligand_pair__annotated=True).prefetch_related(
@@ -756,7 +756,7 @@ def pocket(request):
 
     generic = {}
 
-    score_copy = {'score': {'a':0,'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0} , 'interaction' : {},'mutation': {}}
+    score_copy = {'score': {'a':0,'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0, 'pdbs' : [], 'pos' : [] } , 'interaction' : {},'mutation': {}}
 
     for i in class_interactions:
         ligand = i.structure_ligand_pair.ligand.name
@@ -764,8 +764,13 @@ def pocket(request):
         receptor = receptor.split("_")[0]
         interaction_type = i.interaction_type.slug
         interaction_type_class = i.interaction_type.type
+        pdb = i.structure_ligand_pair.structure.pdb_code.index
+        pos = i.rotamer.residue.sequence_number
+        aa = i.rotamer.residue.amino_acid
         if i.rotamer.residue.display_generic_number:
             gn = i.rotamer.residue.display_generic_number.label
+            gn2 = i.rotamer.residue.generic_number.label
+            gn = gn +" - "+gn2
         else:
             continue
         if gn not in generic:
@@ -779,6 +784,7 @@ def pocket(request):
             if 'a' not in generic[gn]['interaction'][receptor][ligand]:
                 generic[gn]['score']['a'] += 1
                 generic[gn]['score']['s'] += 1
+                generic[gn]['score']['pdbs'].append([pdb,pos,aa])
                 generic[gn]['interaction'][receptor][ligand]['a'] = 1
         elif interaction_type!='acc':
             if 'i' not in generic[gn]['interaction'][receptor][ligand]:
@@ -814,7 +820,7 @@ def pocket(request):
                     generic[gn]['score']['s_weight'] += 1
                     generic[gn]['mutation'][receptor][ligand] = {}
 
-    generic = OrderedDict(sorted(generic.items(), key=lambda x: x[1]['score']['s_weight'], reverse=True))
+    generic = OrderedDict(sorted(generic.items(), key=lambda x: x[1]['score']['a'], reverse=True))
     #print(generic)
     context['gn'] = generic
     return render(request, 'mutation/pocket.html', context)
@@ -1349,6 +1355,7 @@ def showcalculation(request):
     for res,values in results.items():
 
         if position_scores[res]['score']['a']==0: #skip those who have no evidence of being in pocket
+            #pass
             continue
 
         if res in lookup:
