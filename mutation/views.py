@@ -165,7 +165,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
         numbering_schemes = ''
         mutations_pos_list = []
         mutations = MutationExperiment.objects.filter(protein__family__slug__startswith=receptor_class, 
-                                residue__display_generic_number__label=gn, residue__amino_acid=aa).prefetch_related('residue__display_generic_number',
+                                residue__generic_number__label=gn, residue__amino_acid=aa).prefetch_related('residue__generic_number',
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
                                 'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
                                 'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource')
@@ -173,14 +173,14 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
      
     mutations_list = {}
-    mutations_display_generic_number = {}
+    mutations_generic_number = {}
     context = {}
 
     residue_table_list = []
     for mutation in mutations:
         residue_table_list.append(mutation.residue.generic_number)
-        if not mutation.residue.display_generic_number: continue #cant map those without display numbers
-        if mutation.residue.display_generic_number.label not in mutations_list: mutations_list[mutation.residue.display_generic_number.label] = []
+        if not mutation.residue.generic_number: continue #cant map those without display numbers
+        if mutation.residue.generic_number.label not in mutations_list: mutations_list[mutation.residue.generic_number.label] = []
         if mutation.ligand:
             ligand = mutation.ligand.name
         else:
@@ -189,9 +189,9 @@ def render_mutations(request, protein = None, family = None, download = None, re
             qual = mutation.exp_qual.qual
         else:
             qual = ''
-        mutations_list[mutation.residue.display_generic_number.label].append([mutation.foldchange,ligand,qual])
+        mutations_list[mutation.residue.generic_number.label].append([mutation.foldchange,ligand,qual])
 
-        mutations_display_generic_number[mutation.raw.id] = mutation.residue.display_generic_number.label
+        mutations_generic_number[mutation.raw.id] = mutation.residue.generic_number.label
 
     if receptor_class==None: #if not a small lookup
         # create an alignment object
@@ -217,12 +217,12 @@ def render_mutations(request, protein = None, family = None, download = None, re
             # for aa,v in a.full_consensus[seg].items():
             r = Residue()
             r.sequence_number =  aa.sequence_number #FIXME is this certain to be correct that the position in consensus is seq position? 
-            if aa.family_generic_number and aa.display_generic_number:
-                r.display_generic_number = aa.display_generic_number #FIXME
-                if r.display_generic_number.label in mutations_list:
+            if aa.family_generic_number and aa.generic_number:
+                r.generic_number = aa.generic_number #FIXME
+                if r.generic_number.label in mutations_list:
                     if r.sequence_number not in mutations_pos_list: 
                         mutations_pos_list[r.sequence_number] = []
-                    mutations_pos_list[r.sequence_number].append(mutations_list[r.display_generic_number.label])
+                    mutations_pos_list[r.sequence_number].append(mutations_list[r.generic_number.label])
                 r.segment_slug = aa.segment_slug
                 r.family_generic_number = aa.family_generic_number
             else:
@@ -326,8 +326,8 @@ def render_mutations(request, protein = None, family = None, download = None, re
             for field, val in r:
                 headers.append(field)
                 values[field] = val
-            if values['id'] in mutations_display_generic_number:
-                values['generic'] = mutations_display_generic_number[values['id']]
+            if values['id'] in mutations_generic_number:
+                values['generic'] = mutations_generic_number[values['id']]
             else:
                 values['generic'] = ''
             data.append(values)
@@ -874,20 +874,20 @@ def showcalculation(request):
     lookup_with_pos = {}
     lookup_pos = {}
     for r in residues:
-        if r.display_generic_number: 
-            lookup[r.display_generic_number.label] = r.amino_acid
-            lookup_with_pos[r.display_generic_number.label] = r.amino_acid+str(r.sequence_number)
-            lookup_pos[r.display_generic_number.label] = str(r.sequence_number)
+        if r.generic_number: 
+            lookup[r.generic_number.label] = r.amino_acid
+            lookup_with_pos[r.generic_number.label] = r.amino_acid+str(r.sequence_number)
+            lookup_pos[r.generic_number.label] = str(r.sequence_number)
             
     gpcr_class = family
     class_interactions = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=gpcr_class.slug, structure_ligand_pair__annotated=True).prefetch_related(
-        'rotamer__residue__display_generic_number','interaction_type',
+        'rotamer__residue__generic_number','interaction_type',
         'structure_ligand_pair__structure__protein_conformation__protein__parent__family',
         'structure_ligand_pair__ligand__properities')
 
     class_mutations = MutationExperiment.objects.filter(
-        protein__family__slug__startswith=gpcr_class.slug).prefetch_related('protein__family','residue__display_generic_number','mutation','refs__web_link', 'exp_qual','ligand').order_by('foldchange','exp_qual')
+        protein__family__slug__startswith=gpcr_class.slug).prefetch_related('protein__family','residue__generic_number','mutation','refs__web_link', 'exp_qual','ligand').order_by('foldchange','exp_qual')
 
     generic = {}
 
@@ -908,8 +908,8 @@ def showcalculation(request):
 
         if interaction_type=='polar_backbone':
             continue
-        if i.rotamer.residue.display_generic_number:
-            gn = i.rotamer.residue.display_generic_number.label
+        if i.rotamer.residue.generic_number:
+            gn = i.rotamer.residue.generic_number.label
         else:
             continue
         if gn not in generic:
@@ -956,8 +956,8 @@ def showcalculation(request):
             pass
             #continue
 
-        if m.residue.display_generic_number:
-            gn = m.residue.display_generic_number.label
+        if m.residue.generic_number:
+            gn = m.residue.generic_number.label
         else:
             continue
         if gn not in generic:
@@ -1016,10 +1016,10 @@ def showcalculation(request):
 
     #NEW CLASS METHOD, then select closest
     class_interactions = ResidueFragmentInteraction.objects.filter(
-        structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=family.slug, structure_ligand_pair__annotated=True).prefetch_related('rotamer__residue__display_generic_number','interaction_type','structure_ligand_pair__structure__protein_conformation__protein__parent__family','structure_ligand_pair__structure__pdb_code','structure_ligand_pair__ligand__properities')
+        structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=family.slug, structure_ligand_pair__annotated=True).prefetch_related('rotamer__residue__generic_number','interaction_type','structure_ligand_pair__structure__protein_conformation__protein__parent__family','structure_ligand_pair__structure__pdb_code','structure_ligand_pair__ligand__properities')
 
     class_mutations = MutationExperiment.objects.filter(
-        protein__family__slug__startswith=family.slug).prefetch_related('protein__family','residue__display_generic_number','mutation','refs__web_link', 'exp_qual','ligand__properities').order_by('-foldchange','exp_qual')
+        protein__family__slug__startswith=family.slug).prefetch_related('protein__family','residue__generic_number','mutation','refs__web_link', 'exp_qual','ligand__properities').order_by('-foldchange','exp_qual')
 
     class_proteins = Protein.objects.filter(family__slug__startswith=family.slug, source__name='SWISSPROT',species__common_name='Human').all()
 
@@ -1061,7 +1061,7 @@ def showcalculation(request):
     json_alternative = '/tmp/'+str(context['proteins'][0])+'_alternative.json'
     json_similarity_list = '/tmp/'+str(context['proteins'][0])+'_similarity_list.json'
 
-    if os.path.isfile(json_generic) and os.path.isfile(json_alternative) and os.path.isfile(json_similarity_list):
+    if os.path.isfile(json_generic) and os.path.isfile(json_alternative) and os.path.isfile(json_similarity_list) and 1==2:
         generic_aa_count = json.load(open(json_generic, 'r'))
         alternative_aa = json.load(open(json_alternative, 'r'))
         similarity_list = json.load(open(json_similarity_list, 'r'))
@@ -1124,8 +1124,8 @@ def showcalculation(request):
         if interaction_type_class=='accessible':
             continue
 
-        if i.rotamer.residue.display_generic_number:
-            generic = i.rotamer.residue.display_generic_number.label
+        if i.rotamer.residue.generic_number:
+            generic = i.rotamer.residue.generic_number.label
 
             entry_name = i.structure_ligand_pair.structure.protein_conformation.protein.parent.entry_name
             family_id = i.structure_ligand_pair.structure.protein_conformation.protein.parent.family.slug.split("_")
@@ -1223,8 +1223,8 @@ def showcalculation(request):
 
     for m in class_mutations:
         #continue
-        if m.residue.display_generic_number:
-            generic = m.residue.display_generic_number.label
+        if m.residue.generic_number:
+            generic = m.residue.generic_number.label
             entry_name = m.protein.entry_name
             family_id = m.protein.family.slug.split("_")
             if m.ligand:
