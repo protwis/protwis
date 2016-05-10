@@ -63,6 +63,7 @@ class StructureModel(models.Model):
     state = models.ForeignKey('protein.ProteinState')
     main_template = models.ForeignKey('structure.Structure')
     pdb = models.TextField()
+    version = models.DecimalField(max_digits=2, decimal_places=1)
     
     def __repr__(self):
         return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'

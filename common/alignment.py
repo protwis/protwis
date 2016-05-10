@@ -968,9 +968,13 @@ class AlignedReferenceTemplate(Alignment):
             if (self.segment_labels[0]=='ECL2' and ref_ECL2==None and StructureCoordinates.objects.get(structure=struct,
                                                         protein_segment__slug=self.segment_labels[0]).description.text!='Full'):
                 continue
-            elif (self.segment_labels[0]!='ECL2' and StructureCoordinates.objects.get(structure=struct,
-                                                          protein_segment__slug=self.segment_labels[0]).description.text!='Full'):
-                continue
+            elif self.segment_labels[0]!='ECL2':
+                try:
+                    if (StructureCoordinates.objects.get(structure=struct,
+                                                         protein_segment__slug=self.segment_labels[0]).description.text!='Full'):
+                        continue
+                except:
+                    continue
             protein = struct.protein_conformation.protein.parent
             if protein==self.main_template_protein:
                 main_template_mid_failed = False

@@ -43,7 +43,8 @@ class Command(BaseCommand):
     help = 'Build automated chimeric GPCR homology model'    
     
     def add_arguments(self, parser):
-        parser.add_argument('--update', help='Upload model to GPCRdb', default=False, action='store_true')
+        parser.add_argument('--update', help='Upload model to GPCRdb, overwrites existing entry', default=False, 
+                            action='store_true')
         parser.add_argument('-r', help='Run program for specific receptor(s) by giving UniProt common name as argument', 
                             default=False, type=str, nargs='+')
         
@@ -53,17 +54,25 @@ class Command(BaseCommand):
         classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species=1, family__slug__istartswith='001')
         receptor_list = [i.entry_name for i in classA if i not in struct_parent]
         
-#        for i in receptor_list[:2]:
+#        db_list = [i.protein.entry_name for i in list(StructureModel.objects.all())]
+#        with open('./structure/homology_models/receptor_list.txt','r') as names:
+#            c = 0
+#            for line in names.readlines():
+#                if line.split('\n')[0] not in db_list:
+#                    c+=1
+#                    print(line.split('\n')[0])
+#        print(c)
         if options['update']==True:
             update = True
         else:
             update = False
-        Homology_model = HomologyModeling('ox1r_human','Inactive',['Inactive'], update=update)
+#        for i in receptor_list[:2]:
+        Homology_model = HomologyModeling('5ht2c_human','Inactive',['Inactive'], update=update)
         alignment = Homology_model.run_alignment()
         Homology_model.build_homology_model(alignment)
         Homology_model.format_final_model()
-
-        
+#
+#        
 #        if os.path.isfile('./logs/homology_modeling.log'):
 #            os.remove('./logs/homology_modeling.log')
 #        logger = logging.getLogger('homology_modeling')
@@ -74,7 +83,7 @@ class Command(BaseCommand):
 #        logger.setLevel(logging.INFO)        
 #        
 #        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-#        for i in receptor_list[151:]:
+#        for i in receptor_list:
 #            pool.apply_async(homology_model_multiprocessing, args=(i,update,))
 #        pool.close()
 #        pool.join()
@@ -131,11 +140,23 @@ class HomologyModeling(object):
     def upload_to_db(self, sections, rotamers):
         # upload StructureModel        
         s_state=ProteinState.objects.get(name=self.state)
-        hommod, created = StructureModel.objects.update_or_create(protein=self.reference_protein, state=s_state, 
-                                                                  main_template=self.main_structure, 
-                                                                  pdb=self.format_final_model(), 
-                                                                  defaults={'protein':self.reference_protein,'state':s_state})
-        print(created)
+        formatted_model = self.format_final_model()
+        new_entry = False
+        try:
+            hommod = StructureModel.objects.get(protein=self.reference_protein, state=s_state)
+            hommod.main_template = self.main_structure
+            hommod.pdb = formatted_model
+            hommod.version = 1.0
+            hommod.save()
+        except:
+            hommod, created = StructureModel.objects.update_or_create(protein=self.reference_protein, state=s_state, 
+                                                                      main_template=self.main_structure, 
+                                                                      pdb=self.format_final_model(), 
+                                                                      version=1.0)
+            new_entry = True
+        if not new_entry:
+            StructureModelStatsSegment.objects.filter(homology_model=hommod).delete()
+            StructureModelStatsRotamer.objects.filter(homology_model=hommod).delete()
         for s in sections:
             segs, created = StructureModelStatsSegment.objects.update_or_create(homology_model=hommod, segment=s[0],
                                                                                 start=s[1],end=s[2],start_gn=s[3],
@@ -241,9 +262,12 @@ class HomologyModeling(object):
                                                                               'r+') as f:
             pdblines = f.readlines()
             out_list = []
-            prev_num = 1
+            prev_num = None
             for line in pdblines:
                 try:
+                    if prev_num==None:
+                        pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3}\s+)(\d+)([A-Z\s\d.-]{49,53})',line)
+                        prev_num = int(pdb_re.group(2))
                     pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3}\s+)(\d+)([A-Z\s\d.-]{49,53})',line)
                     if int(pdb_re.group(2))>prev_num:
                         i+=1
@@ -551,8 +575,8 @@ class HomologyModeling(object):
         # loops
         if loops==True:
             loop_stat = OrderedDict()
-            print(self.loop_template_table)
-            print(self.helix_end_mods)
+#            print(self.loop_template_table)
+#            print(self.helix_end_mods)
             for label, structures in self.loop_template_table.items():
                 loop = Loops(self.reference_protein, label, structures, self.main_structure, self.helix_end_mods,
                              list(self.template_source))
@@ -1135,7 +1159,7 @@ class HomologyModeling(object):
         self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
                           self.uniprot_id, 1, "{}_{}_model.pdb".format(self.reference_entry_name,self.state), atom_dict=trimmed_res_nums)
-        os.remove(path+self.uniprot_id+"_post.pdb")
+#        os.remove(path+self.uniprot_id+"_post.pdb")
         
         # stat file
 #        with open('./structure/homology_models/{}_{}/{}.stat.txt'.format(self.reference_entry_name, self.state, 
@@ -1210,7 +1234,7 @@ class HomologyModeling(object):
             self.upload_to_db(sections, rot_table)
 
         print('MODELLER build: ',datetime.now() - startTime)
-        pprint.pprint(self.statistics)
+#        pprint.pprint(self.statistics)
         print('################################')
         return self
     
@@ -1629,7 +1653,7 @@ class Loops(object):
                             before_gns = [x.sequence_number for x in before4]
                             mid_nums = [x.sequence_number for x in loop_residues]
                             after_gns = [x.sequence_number for x in after4]
-                            print(template,loop_residues)
+#                            print(template,loop_residues)
                             alt_residues = parse.fetch_residues_from_pdb(template, before_gns+mid_nums+after_gns)
                             orig_residues = parse.fetch_residues_from_pdb(self.main_structure, 
                                                                           orig_before_gns+orig_after_gns)
