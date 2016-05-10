@@ -573,6 +573,10 @@ class Alignment:
                 for p in s:
                     generic_number = p[0]
                     amino_acid = p[2]
+
+                    # stop here if this is gapped position (no need to collect stats on those)
+                    if amino_acid in self.gaps:
+                        continue
                     
                     # init counters
                     if generic_number not in self.aa_count[j]:
@@ -584,9 +588,6 @@ class Alignment:
                     if generic_number not in most_freq_aa[j]:
                         most_freq_aa[j][generic_number] = [[], 0]
 
-                    # stop here if this is gapped position (no need to collect stats on those)
-                    if amino_acid in self.gaps:
-                        continue
 
                     # update amino acid counter for this generic number
                     self.aa_count[j][generic_number][amino_acid] += 1
