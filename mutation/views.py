@@ -1061,7 +1061,7 @@ def showcalculation(request):
     json_alternative = '/tmp/'+str(context['proteins'][0])+'_alternative.json'
     json_similarity_list = '/tmp/'+str(context['proteins'][0])+'_similarity_list.json'
 
-    if os.path.isfile(json_generic) and os.path.isfile(json_alternative) and os.path.isfile(json_similarity_list) and 1==2:
+    if os.path.isfile(json_generic) and os.path.isfile(json_alternative) and os.path.isfile(json_similarity_list):
         generic_aa_count = json.load(open(json_generic, 'r'))
         alternative_aa = json.load(open(json_alternative, 'r'))
         similarity_list = json.load(open(json_similarity_list, 'r'))
