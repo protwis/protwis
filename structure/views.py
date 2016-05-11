@@ -20,6 +20,7 @@ Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlis
 
 import inspect
 import os
+import time
 import zipfile
 import math
 import json
@@ -1437,6 +1438,13 @@ def webformdata(request) :
     context = {'data':data,  'all_deletions':all_deletions, 
     'contact_info':contact_info, 'construct_crystal':construct_crystal ,
     'auxiliary' : auxiliary , 'expression': expression}
+
+    dump_dir = '/protwis/construct_dump'
+    if not os.path.exists(dump_dir):
+        os.makedirs(dump_dir)
+    ts = int(time.time())
+    json_data = context
+    json.dump(json_data, open(dump_dir+"/"+str(ts)+"_"+data['pdb']+".json", 'w'), sort_keys=True, indent=4, separators=(',', ': '))
 
     return render(request, 'web_form_results.html', context)
 

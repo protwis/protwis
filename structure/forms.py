@@ -455,4 +455,4 @@ class construct_form(forms.Form):
     concentr= forms.CharField(label='Concentration',  widget=forms.TextInput(attrs={'class':'half half row_id', 'placeholder':'value'}), label_suffix='' , max_length=50, required=True)
     concentr_unit=forms.CharField(label='Concentration unit', widget=forms.TextInput(attrs={'class':'unit unit row_id','placeholder': 'unit'}), label_suffix='' , max_length=50, required=True)
 f = construct_form()
-print(f.as_table())
+# print(f.as_table())
