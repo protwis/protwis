@@ -1364,9 +1364,6 @@ def webform(request):
     context = {'form':form}
     return render(request, 'web_form.html',context)
 
-
-
-
 def webformdata(request) :
     data = request.POST
     del_dict, deletions, del_start, del_end, del_single={},[],[],[],{} 

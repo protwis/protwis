@@ -1,10 +1,17 @@
 
-
 {% extends "home/base.html" %}
 {% load staticfiles %}
+<link href="{% static 'bootstrap/css/bootstrap.min.css' %}"
+          rel="stylesheet" media="screen">
 {% block addon_css %}
-<style type="text/css">
 
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+
+<link rel="stylesheet" href="{% static 'home/css/jquery-ui.min.css' %}" type="text/css" />
+
+<link rel="stylesheet" href="{% static 'home/css/jquery-ui.theme.min.css' %}" type="text/css" />
+<style type="text/css">
 th{
 	padding-right: 30px;
 	white-space: nowrap;
@@ -32,7 +39,22 @@ table {
     border-collapse: collapse;
     border-spacing: 0;
 }
-.modremark{
+select.form-control {
+	height:28px;
+	font-size:9pt;
+}
+input.form-control{
+    width: 180px;  
+    height:24px; 
+    padding: 2px 2px;
+    font-size: 9pt;
+}
+textarea.form-control{
+	width: 180px;
+    height: 100px;
+    overflow: scroll;
+}
+.modremark.form-control{
 	 width: 180px;
 	 height:30px;
 	 overflow: scroll;
@@ -45,35 +67,40 @@ table {
 	text-align: right;
 	white-space: nowrap;
 }
-#expr_system input, #solubil_purif input, #crystallization input{
+#expr_system input.form-control, #solubil_purif input.form-control, 
+#crystallization input.form-control{
 	width:110px;
-	height:22px;
+	height:24px;
 }
-#expr_system select, #solubil_purif select, #crystallization select{
+#expr_system select.form-control, #solubil_purif select.form-control
+,#crystallization select.form-control{
 	width:110px;
-	height:22px;
+	height:26px;
+	padding: 2px 2px;
 }
-#expr_system textarea, #solubil_purif textarea, #crystallization textarea{
+#expr_system textarea.form-control, #solubil_purif textarea.form-control, 
+#crystallization textarea.form-control{
 	width:110px;	
 }
-#solubil_purif input.half, #crystallization input.half {
+#solubil_purif input.half.form-control, #crystallization input.half.form-control {
 	width:40px;	
-	font-size: 8pt;
+	font-size: 5pt;
 }
-#solubil_purif input.unit, #crystallization input.unit {
+#solubil_purif input.unit.form-control, #crystallization input.unit.form-control {
 	width:70px;	
 	font-size: 7pt;
 }
-#crystallization select.ph {
+#crystallization select.ph.form-control {
 	width:60px;	
 	font-size: 8pt;
 }
-#crystallization input.single_ph {
+#crystallization input.single_ph.form-control {
 	width:46px;		
 }
-#crystallization input.range_ph {
+#crystallization input.range_ph.form-control {
 	width:23px;	
-	font-size: 7pt;
+	font-size: 8px;	
+	padding: 2px 2px;
 }
 #id_date_month { 
     width:85px;
@@ -88,41 +115,55 @@ table {
 	font-size: 9pt;
 }
 .mut{
-	height:22px;
+	height:24px;
 	width:70px;
 }
 .hidetext{
 	display:none;
 }
-.custom_single{
+.form-control.hidetext{
+	display:none;
+	width:180px;
+}
+.custom_single.form-control{
 	width:84px;
+	padding:2px 2px;
 }
-.custom_pair{
+.custom_pair.form-control{
 	width:37px;
 }
-.custom_range{
+.custom_range.form-control.hidetext{
 	width:37px;
 }
-.delet_range{
+.delet_range.form-control.hidetext{
 	width:84px;
 }
 input.checked{ font-size: 6pt;}
-input.custom_pair::-webkit-input-placeholder { font-size: 8pt;}
-input.custom_range::-webkit-input-placeholder { font-size: 8pt;}
-input.custom_single::-webkit-input-placeholder { font-size: 8pt;}
-.unit{
+input.custom_pair.form-control::-webkit-input-placeholder {font-size: 5pt;}
+input.custom_range.form-control::-webkit-input-placeholder { font-size: 5pt;}
+input.custom_single.form-control::-webkit-input-placeholder { font-size: 7pt;}
+input.chem_enz_remark.form-control::-webkit-input-placeholder { font-size: 8pt;}
+input.other_type_deterg.form-control::-webkit-input-placeholder { font-size: 8pt;}
+.unit.form-control{
 	width:90px;
+	padding: 2px 2px; 
 }
-.half{
+.half.form-control{
 	width:90px;
+	padding: 2px 4px;
 }
-.button{
-	width:70px;
-	font-size: 7pt;
+.custom_select.form-control{
+	width:180px;
+	height:28px;
 }
 .delrow{
 	width:30px;
 	font-size: 11pt;
+}
+.button{
+	width:90px;
+	font-size: 10pt;
+	height: 30px;
 }
 .delcol{
 	width:30px;
@@ -147,105 +188,130 @@ input.custom_single::-webkit-input-placeholder { font-size: 8pt;}
 .right_border{
 	padding-right: 25px;
 }
-input.second_table{
+input.second_table.form-control{
 	width: 60px;
 	height:22px;
 }
-input.widen{
+input.widen.form-control{
 	width: 120px;
 	height:22px;
 }
-#mutations, #modifications{
-	border:1px solid grey;	   
-}
-.glyphicon:hover{
+.glyphicon-minus:hover{
     cursor: pointer;
     font-size: 20px;
     color:blue;
 }
-
+.btn-success{
+	font-size: 10pt;
+	width:110px;
+	height:40px;
+}
+span.button{
+	font-size: 8pt;
+}
+input.error {
+   border:1px dotted red;
+}
 </style>
 {% endblock %}
 
 {% block addon_js %}
 <script src="{% static 'home/js/addcol_jquery.js' %}"></script>
 <script src="{% static 'home/js/addcol.js' %}"></script>
-{% endblock %}
+<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
 
+<script src="http://cdn.jsdelivr.net/jquery.validation/1.15.0/jquery.validate.min.js"></script>
+
+<script src="http://cdn.jsdelivr.net/jquery.validation/1.15.0/additional-methods.min.js"></script>
+
+
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css"> 
+
+<script src="http://code.jquery.com/ui/1.11.0/jquery-ui.js"></script>
+
+ <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+
+{% endblock %}
 {% block content %}	
-	<form method="post"  target="_blank" action='webformdata'>
+	{%load widget_tweaks%}
+
+	<form id="xtals_form" method="post"  target="_blank" action='webformdata'>
 		{% csrf_token %}
+		<div id ="tabs">
 		<table class="table_1"  id="table_1">
 			<td> 
-				<div class="contr_contact">
+				<div id="contr_contact_div" class="contr_contact">
 					<h1>Contributor Contact information</h1> <br>
 					<table style="table-layout: fixed" style="width:100%" id="contact_information" >
 						  <tr>
 						    <th>Date</th>
-						    <td>{{ form.date }}</td> 
+						    <td>{{form.date|add_class:"datepicker form-control"}}<span class="glyphicon glyphicon-calendar"></td> 
 						  </tr>
 						  <tr>
 						    <th>Name</th>
-						    <td>{{ form.name_cont }}</td> 
+						    <td>{{ form.name_cont|add_class:"form-control"}}</td> 
 						  </tr>
 				     	  <tr>
-						    <th>Name of PI (group leader)</th>
-						    <td>{{ form.pi_name }}</td> 
+						    <th font-color="blue">Name of PI (group leader)</th>
+						    <td>{{ form.pi_name|add_class:"form-control"}}</td> 
 						  </tr>
 						  <tr>
 						    <th>PI contact e-mail address</th>
-						    <td>{{form.pi_email}}</td> 
+						    <td>{{form.pi_email|add_class:"form-control"}}</td> 
 						  </tr>
 					     <tr>
 						    <th>Affiliation address</th>
-						    <td> {{form.address}}</textarea></td>
+						    <td> {{form.address|add_class:"form-control"}}</textarea></td>
 					     </tr>
 					     <tr>
 						    <th>Database group/URL</th>
-						    <td>{{form.url}} <span id="addurl" class="glyphicon glyphicon-plus row_id"></span></td> 
+						    <td>{{form.url|add_class:"form-control"}} <span id="addurl" class="glyphicon glyphicon-plus btn btn-xs btn-info row_id"></span></td> 
 						  </tr>      
 					</table>
 					<br>
-			    	<input class="button"type="button" id="deleteurl" value="Delete URL"/>
+			    	<input class="button btn btn-danger "type="button" id="deleteurl" value="Delete URL"/>
 					<br><br>
 				</div>
 		    </td> 
 
 			<td style="vertical-align: top" class="left_border_contact">
-				<div class="construct_crystal">
+				<div id="construct_crystal_div" class="construct_crystal">
 					<h1>Construct Crystal Information</h1> <br>
 					<table style="table-layout: fixed" style="width:100%"  id="construct">
 						  <tr>
 						    <th>PDB code</th>
-						    <td>{{form.pdb}}</td> 
+						    <td>{{form.pdb|add_class:"form-control"}}</td> 
 						  </tr>
 			              <tr>
 						    <th>Name</th>
-						    <td>{{form.pdb_name}}</td> 
+						    <td>{{form.pdb_name|add_class:"form-control"}}</td>
 						  </tr>
 		                  <tr>
 						    <th ><a href="http://www.uniprot.org/">Protein name or ID (Uniprot)</a></th>
-						    <td>{{form.uniprot}}</td>
+						    <td>{{form.uniprot|add_class:"form-control"}}</td>
 						  </tr>
 						   <tr>
 						    <th>Ligand Name</th>
-						    <td>{{form.ligand_name}}</td> 
+						    <td>{{form.ligand_name|add_class:"form-control"}}</td> 
 						 </tr>
 						 <tr>
 						    <th>Ligand activity type</th>
-						    <td>{{form.ligand_activity}}</td> 
+						    <td>{{form.ligand_activity|add_class:"form-control"}}</td> 
 						 </tr>
 						 <tr>
 						    <th>Ligand ID Type</th>
-						    <td>{{form.ligand_id_type}}</td> 
+						    <td>{{form.ligand_id_type|add_class:"form-control custom_select	"}}</td> 
 						 </tr>
 						 <tr>
 						    <th>Ligand ID</th>
-						    <td>{{form.ligand_id}}</td> 
+						    <td>{{form.ligand_id|add_class:"form-control "}}</td> 
 						 </tr>
 						 <tr>
 						    <th>Ligand Concentration</th>
-						    <td>{{form.ligand_conc}}{{form.ligand_conc_unit}}</td> 
+						    <td>{{form.ligand_conc|add_class:"form-control"}}{{form.ligand_conc_unit|add_class:"form-control"}}</td> 
 						 </tr>      
 			        </table>    
 				</div>
@@ -254,10 +320,10 @@ input.widen{
 <br><br><br>   
 		<table class="table_2" id="table_2">
 			<tr><td  colspan="3">
-				<div class="auxiliary_proteins">
+				<div id="auxiliary_proteins_div" class="auxiliary_proteins">
 		            <h3>Auxiliary proteins</h3><br>
 				    <input class="button" type="button" value="Add Column" id="add_aux" onclick="addaux('aux_proteins')"  />
-				    <input class="button" type="button" value="Delete last" onclick="deleteColumn('aux_proteins')"/>
+				    <input class="button btn btn-danger" type="button" value="Delete last" onclick="deleteColumn('aux_proteins')"/>
 					   <br><br>
 					<table  style="table-layout: fixed" style="width:100%"  id="aux_proteins">
 						   <tr>
@@ -284,17 +350,17 @@ input.widen{
 						  </tr>
 				 		  <tr> 
 						    <th></th> 
-				 		    <td align="center"><span id="remove_button" class="hidetext delcol glyphicon glyphicon glyphicon-trash col_id"></span></td>
+				 		    <td align="center"><span type="button" id="remove_button" class="btn btn-danger btn-xs hidetext delcol glyphicon glyphicon glyphicon-remove col_id"></span></td>
 						 </tr>
 				    </table>
 				</div>
 				<br><br><br>
 			</td></tr>
 			<tr><td class='del_1 del_table_td'>
-					<div class="deletions">
+					<div id="deletions_div" class="deletions col-md-12 panel panel-primary">
 		                <h3>Deletions</h3>
 		                <input class='button' type="button" value="Add row" id="addmut" onclick="addRow('deletions', '0')"/>
-						<input class="button" type="button" value="Delete last" onclick="deleteRow('deletions')"/>
+						<input class="button btn btn-danger" type="button" value="Delete last" onclick="deleteRow('deletions')"/>
 		                <br><br>
 		                <table id="deletions">
 							<tr>
@@ -303,17 +369,17 @@ input.widen{
 						    </tr>
 						    <tr>
 						   	<td> {{form.deletion}}</td>
-						    <td>{{form.deletion_single}}{{form.delet_start}} <label class="del_type hidetext del_range row_id">-</label> {{form.delet_end}} <span id="del_deletions" class="hidetext del_delrow delrow glyphicon glyphicon-minus row_id"></span>
+						    <td>{{form.deletion_single}}{{form.delet_start}} <label class="del_type hidetext del_range row_id">-</label> {{form.delet_end}} <span type="button" id="del_deletions" class="button btn btn-danger btn-xs hidetext del_delrow delrow glyphicon glyphicon-remove row_id"></span>
 						    </td> 
 						    </tr>
 						</table>
 					</div>
 				</td>
 				<td class="mut_2 left_border">
-					<div class="mutations">
+					<div id="mutations_div" class="mutations col-md-12 panel panel-primary">
 						<h3>Mutations</h3>
-						<input class='button' type="button" value="Add row" id="addmut" onclick="addRow('mutations', '0')"/>
-						<input class="button" type="button" value="Delete last" onclick="deleteRow('mutations')"/>
+						<span class='button glyphicon glyphicon-plus' id="addmut" onclick="addRow('mutations', '0')"/>Add row</span>
+						<input class="button btn btn-danger" type="button" value="Delete last" onclick="deleteRow('mutations')"/>
 						<input  class="checked button" type="button" value="Delete selected" />
 						<br><br>
 						<table style="table-layout: fixed" style="width:100%"  id="mutations">
@@ -334,10 +400,10 @@ input.widen{
 					</div>
 				</td>
 				<td class="mod_3 left_border">
-					<div class="modifications">
+					<div id="modifications_div" class="modifications col-md-12 panel panel-primary">
 						<h3>Modifications</h3>
 						<input class="button" type="button" value="Add row" id="addmod" onclick="addRow('modifications')"  />
-				     	<input class="button" type="button" value="Delete last" onclick="deleteRow('modifications')"/>
+				     	<input class="button btn btn-danger" type="button" value="Delete last" onclick="deleteRow('modifications')"/>
 						<br><br>
 						<table style="table-layout: fixed" style="width:100%"  id="modifications">
 							  <tr>
@@ -350,7 +416,7 @@ input.widen{
 							    <td>{{form.aamod_position}}  
 							    	{{form.aamod_single}}{{form.aamod_pair_one}} <label id="mod_comma" class="aa_type hidetext pair row_id">,</label> {{form.aamod_pair_two}}{{form.aamod_start}}<label id="mod_minus"  class="aa_type hidetext range row_id">-</label> {{form.aamod_end}}</td> 
 							    <td>{{form.mod_remark}}</td>
-							    <td><span id='del_mod'  class='glyphicon glyphicon-minus hidetext mod_delrow delrow row_id'/></td>
+							    <td><span id='del_mod' type="button" class='btn btn-danger btn-xs glyphicon glyphicon-remove hidetext mod_delrow delrow row_id'/></td>
 							  </tr>  
 						</table>
 					</div>
@@ -361,35 +427,35 @@ input.widen{
 	    <table id="table_3">
 			<tr>
 				<td class="exp1">
-					<div class="expression_system right_border">
+					<div id="expression_system_div" class="expression_system right_border">
 						<h2>Expression System</h2><br>
 						<table  style="table-layout: fixed"  id="expr_system">
 			                  <tr>
-							    <th >Expression Method</th>
-							    <td>{{form.expr_method}}</td>        
+							    <th>Expression Method</th>
+							    <td>{{form.expr_method|add_class:"form-control"}}</td>        
 						     </tr>
 			                 <tr>
 							    <th>Host cell type</th>
-							     <td>{{form.host_cell_type}}</td>
+							     <td>{{form.host_cell_type|add_class:'form-control'}}</td>
 						     </tr>
 			                 <tr>
 							    <th>Host cell</th>
-							    <td>{{form.host_cell}}</td>
+							    <td>{{form.host_cell|add_class:'form-control'}}</td>
 						      </tr>
 			                 <tr>
 						        <th>Remark</th>
-						        <td>{{form.expr_remark}}</td>
+						        <td>{{form.expr_remark|add_class:'form-control'}}</td>
 					         </tr>
 						</table>
 					</div>
 				</td>
 				<td class="sol2 left_border_contact">
-					<div class="solubilization">
+					<div id="solubilization_div"class="solubilization">
 						<h2>Solubilization and Purification</h2> <br>
 						<table  style="table-layout: fixed"  id="solubil_purif">
 			                 <tr>
 							    <th>Solubilization detergent type</th>
-							    <td>{{form.deterg_type}}<br>{{form.other_deterg_type}}</td>
+							    <td>{{form.deterg_type|add_class:"form-control"}}<br>{{form.other_deterg_type|add_class:"form-control"}}</td>
 						     </tr>
 			                 <tr>
 							    <th>Detergent concentration</th>
@@ -397,7 +463,7 @@ input.widen{
 							 </tr>
 			                 <tr>
 							    <th>Solubilization additive</th>
-							    <td>{{form.solub_additive}}</td> 
+							    <td>{{form.solub_additive|add_class:"form-control"}}</td> 
 							 </tr>
 			                 <tr>
 							    <th>Additive concentration</th>
@@ -405,69 +471,70 @@ input.widen{
 							 </tr>
 			                 <tr class="last">
 							    <th>Chemical/Enzymatic treatment</th>
-							    <td></span>{{form.chem_enz_treatment}}  <span id="add_treatment" class="glyphicon glyphicon-plus row_id"></span> &nbsp;<span id='del_chem_enz'  class='glyphicon glyphicon-minus hidetext chem_enz_delrow delrow row_id'/> </span><br>{{form.sol_remark}}</td>
+							    <td></span>{{form.chem_enz_treatment}}  <span type="button" id="add_treatment" class="btn btn-info btn-xs glyphicon glyphicon-plus row_id"></span> &nbsp;<span type="button" id='del_chem_enz' class=' 
+							    	btn btn-xs btn-danger glyphicon glyphicon-remove   hidetext chem_enz_delrow delrow row_id'/></span><br>{{form.sol_remark}}</td>
 						     </tr>
 						</table>
 		  			</div>
 				</td>
 				<td class="cryst3 left_border_sol">
-					<div class="crystallization">
+					<div id="crystallization_div"class="crystallization_div">
 						<h2 style="text-align:center">Crystallization</h2> <br>
 						<table style="width:100%" id="crystallization">
 			                  <tr>
 							    <th>Type</th>
-							    <td>{{form.crystal_type}}<br>{{form.other_crystal_type}}</td>
+							    <td>{{form.crystal_type|add_class:"form-control"}}<br>{{form.other_crystal_type|add_class:"form-control"}}</td>
 						     </tr>
 			                 <tr>
 							    <th>Method</th>
-							    <td>{{form.crystal_method}}<br>{{form.other_method}}</td>
+							    <td>{{form.crystal_method|add_class:"form-control"}}<br>{{form.other_method|add_class:"form-control"}}</td>
 						     </tr>
 			                 <tr>
 							    <th >Protein concentration</th>
-							    <td>{{form.protein_concentr}}{{form.protein_conc_unit}}</td> 
+							    <td>{{form.protein_concentr|add_class:"form-control"}}{{form.protein_conc_unit|add_class:"form-control"}}</td> 
 							 </tr>
 			                 <tr>
 							    <th>Temperature °C</th>
-							    <td>{{form.temperature}}</td> 
+							    <td>{{form.temperature|add_class:"form-control"}}</td> 
 							 </tr>
 			                 <tr>
 							    <th>pH</th>
-							    <td>{{form.ph}} {{form.ph_single}}{{form.ph_range_one}} <label class="ph_type hidetext range_ph ">-</label> {{form.ph_range_two}}</td> </tr>
+							    <td>{{form.ph|add_class:"form-control"}} {{form.ph_single|add_class:"form-control"}}{{form.ph_range_one|add_class:"form-control"}} <label class="ph_type hidetext range_ph ">-</label> {{form.ph_range_two|add_class:"form-control"}}</td> </tr>
 			                 <tr>
 						        <th>Remark</th>
-						        <td> {{form.crystal_remark}}</textarea>
+						        <td> {{form.crystal_remark|add_class:"form-control"}}</textarea>
 					          </tr>
 			                 <tr>
 							    <th>LCP Lipid</th>
-							    <td>{{form.lcp_lipid}}<br>{{form.other_lcp_lipid}}</td>
+							    <td>{{form.lcp_lipid|add_class:"form-control"}}<br>{{form.other_lcp_lipid|add_class:"form-control"}}</td>
 						     </tr>
 			                 <tr>
 							    <th>LCP Lipid additive</th>
-							    <td>{{form.lcp_add}}</td> 
+							    <td>{{form.lcp_add|add_class:"form-control"}}</td> 
 							 </tr>
 			                 <tr>
 							    <th>LCP Lipid additive conentration</th>
-							    <td>{{form.lcp_conc}}{{form.lcp_conc_unit}}</td> 
+							    <td>{{form.lcp_conc|add_class:"form-control"}}{{form.lcp_conc_unit|add_class:"form-control"}}</td> 
 							 </tr>
 							 <tr>
 							    <th>Detergent</th>
-							    <td>{{form.detergent}}<br>{{form.other_deterg}}</td> 
+							    <td>{{form.detergent|add_class:"form-control"}}<br>{{form.other_deterg|add_class:"form-control"}}</td> 
 							 </tr>
 							 <tr>
 							    <th>Detergent Concentration</th>
-							    <td>{{form.deterg_conc}}{{form.deterg_conc_unit}}</td> 
+							    <td>{{form.deterg_conc|add_class:"form-control"}}{{form.deterg_conc_unit|add_class:"form-control"}}</td> 
 							 </tr>	                 
 			                 <tr>
 							    <th>Lipid</th>
-							    <td>{{form.lipid}}<br>{{form.other_lipid}}</td> 
+							    <td>{{form.lipid|add_class:"form-control"}}<br>{{form.other_lipid|add_class:"form-control"}}</td> 
 							 </tr>
 							 <tr>
 							    <th>Lipid Concentration</th>
-							    <td>{{form.lipid_concentr}}{{form.lipid_concentr_unit}}</td> 
+							    <td>{{form.lipid_concentr|add_class:"form-control"}}{{form.lipid_concentr_unit|add_class:"form-control"}}</td> 
 							 </tr>
 						</table> <br>
 						<input  type="button" value="Add row" id="add_chem" onclick="addRow('chem_comp')"  class="button"/>
-						<input class="button" type="button" value="Delete last" onclick="deleteRow('chem_comp')"/>
+						<input class="button btn btn-danger" type="button" value="Delete last" onclick="deleteRow('chem_comp')"/>
 						<br><br>
 						<table  style="table-layout: fixed" id="chem_comp">
 							 <tr>
@@ -477,7 +544,7 @@ input.widen{
 							 <tr>
 							    <td>{{form.chemical_comp}}</td>
 							    <td>{{form.concentr}}{{form.concentr_unit}}</td> 
-							    <td><input id='chem_delrow' type="button" class=' hidetext chem_delrow delrow row_id'/>
+							    <td><span id='chem_delrow' type="button" class='btn btn-danger btn-xs glyphicon glyphicon-remove hidetext chem_delrow delrow row_id'/>
 							    </td> 
 							 </tr>
 						</table>
@@ -485,10 +552,12 @@ input.widen{
 				</td>
 			</tr>
 		</table>
-		<input type="submit" value="Save"  id="btn_s">
+		<input type="submit" class="btn btn-success" value="Save"  id="btn_s">
 		</div>
+	</div>
 	</form>
 <br><br>
+
 {% endblock %}
 
 
