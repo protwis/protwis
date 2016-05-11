@@ -66,8 +66,6 @@ class Command(BaseCommand):
                     secondary = secondary.replace("G protein (identity unknown)","None") #replace none
                     secondary = secondary.split(", ")
 
-                    #print(entry_name,primary,"|",secondary)
-
                     if primary=='None' and secondary=='None':
                         print('no data for ',entry_name)
                         continue
@@ -76,7 +74,6 @@ class Command(BaseCommand):
                         if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
                             continue
                         g = ProteinGProtein.objects.get_or_create(name=gp, sequence = '')[0]
-                        print(p,g)
                         gpair = ProteinGProteinPair(protein=p,g_protein=g,transduction='primary')
                         gpair.save()
 
@@ -86,21 +83,8 @@ class Command(BaseCommand):
                         if gp in primary: #sip those that were already primary
                              continue 
                         g = ProteinGProtein.objects.get_or_create(name=gp, sequence = '')[0]
-                        print(p,g)
                         gpair = ProteinGProteinPair(protein=p,g_protein=g,transduction='secondary')
                         gpair.save()
 
 
-            #         if p:
-            #             # create a link
-            #             link, created = WebLink.objects.get_or_create(web_resource=resource, index=link_index)
-            #             if created:
-            #                 num_created_links += 1
-
-            #             # add the link to this protein
-            #             p.web_links.add(link)
-
-            # if num_created_links:
-            #     self.logger.info('Created {} web links for resource {}'.format(num_created_links, resource.name))
-
-        self.logger.info('COMPLETED CREATING LINKS')
+        self.logger.info('COMPLETED CREATING G PROTEINS')

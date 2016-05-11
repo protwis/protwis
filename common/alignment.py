@@ -573,28 +573,28 @@ class Alignment:
                 for p in s:
                     generic_number = p[0]
                     amino_acid = p[2]
+
+                    # stop here if this is gapped position (no need to collect stats on those)
+                    if amino_acid in self.gaps:
+                        continue
                     
                     # init counters
                     if generic_number not in self.aa_count[j]:
                         self.aa_count[j][generic_number] = amino_acids.copy()
                         if generic_number in self.generic_number_objs:
-                            self.aa_count_with_protein[self.generic_number_objs[generic_number].label] = {}
+                            self.aa_count_with_protein[generic_number] = {}
                     if generic_number not in feature_count[j]:
                         feature_count[j][generic_number] = features.copy()
                     if generic_number not in most_freq_aa[j]:
                         most_freq_aa[j][generic_number] = [[], 0]
 
-                    # stop here if this is gapped position (no need to collect stats on those)
-                    if amino_acid in self.gaps:
-                        continue
-
                     # update amino acid counter for this generic number
                     self.aa_count[j][generic_number][amino_acid] += 1
                     if generic_number in self.generic_number_objs:
-                        if amino_acid not in self.aa_count_with_protein[self.generic_number_objs[generic_number].label]:
-                            self.aa_count_with_protein[self.generic_number_objs[generic_number].label][amino_acid] = []
-                        if entry_name not in self.aa_count_with_protein[self.generic_number_objs[generic_number].label][amino_acid]:
-                            self.aa_count_with_protein[self.generic_number_objs[generic_number].label][amino_acid].append(entry_name)
+                        if amino_acid not in self.aa_count_with_protein[generic_number]:
+                            self.aa_count_with_protein[generic_number][amino_acid] = []
+                        if entry_name not in self.aa_count_with_protein[generic_number][amino_acid]:
+                            self.aa_count_with_protein[generic_number][amino_acid].append(entry_name)
 
                     # update feature counter for this generic number
                     for feature, members in AMINO_ACID_GROUPS.items():
