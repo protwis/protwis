@@ -1421,14 +1421,15 @@ def showcalculation(request):
 
         #Find alternatives for position (useful for specificity investigation)
         temp = 0
-        for aalist in alternative_aa[res].items(): 
-            if aalist[0] !=summary[res]['aa']:
-                for p in aalist[1]:
-                    if similarity_list[p][1]>60: #close enough to suggest
-                         summary[res]['alternatives'].append([p,similarity_list[p][1],aalist[0]])
-                         summary[res]['interest_score'] += 1 #add a small value for these hits
-                         temp += 1
-        if temp: #if alternatives found
+        if res in alternative_aa:
+            for aalist in alternative_aa[res].items(): 
+                if aalist[0] !=summary[res]['aa']:
+                    for p in aalist[1]:
+                        if similarity_list[p][1]>60: #close enough to suggest
+                             summary[res]['alternatives'].append([p,similarity_list[p][1],aalist[0]])
+                             summary[res]['interest_score'] += 1 #add a small value for these hits
+                             temp += 1
+            if temp: #if alternatives found
             summary[res]['score_text'] += '# alternatives: '+str(temp)+'<br>'
 
         if res in generic_aa_count:
