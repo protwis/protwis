@@ -1356,13 +1356,13 @@ def RenderTrees(request):
     context = {'tree':tree, 'leg':legend, 'num':number}
     return render(request, 'phylogenetic_trees.html', context)
 
-
-
-
 def webform(request):
     form = construct_form()
     context = {'form':form}
     return render(request, 'web_form.html',context)
+   
+def webform_two(request):
+    return render(request, 'web_form_2.html')
 
 def webformdata(request) :
     data = request.POST

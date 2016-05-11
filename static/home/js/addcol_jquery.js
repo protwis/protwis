@@ -18,9 +18,7 @@ $('#xtals_form').validate({ // initialize the plugin
                 //email: true
             },  
             pi_name: {
-                number: true,
-                required: true,
-                minlength: 5
+                required: true,  
             }
         },
 
@@ -31,26 +29,21 @@ $('#xtals_form').validate({ // initialize the plugin
             },
             pi_name: {
                 required: "You must enter the name of your PI leader",
-                number : "Phone number must contain digits only"
             },
            
         },
-
-     
     highlight: function(element) {
         $(element).attr("class", $(element).attr("class").replace("tobereplaced", "error"));
     },   
     unhighlight: function(element) {
         $(element).removeClass("error");
     }
-
     });
 
 //$("input[id*=id_del]").rules("add", "required");    //add rules after validator is initialized
   //$("select").addClass("form-control");
   $(".button").addClass("btn btn-primary"); 
   
-
       $(".aamod_pos_type").on('change', function () {
         temp_index = $(this).parent().parent().index();     //parent of td is tr
         var aamod_type= ["single", "pair", "range"];
@@ -226,7 +219,6 @@ $('.delcol').on('click', function (){
   }
   else{}
  });
-
 
 $(".position").on('click',function(){ 
    var my_index=$(this).parent().index();
