@@ -1,0 +1,4 @@
+<form id='target-input-form' method="post" enctype="multipart/form-data" onsubmit="return ReadTargetsForm(document.getElementById('target-input-form'))"> {% csrf_token %}
+    <textarea name="input-targets" rows="5" cols="40"></textarea>
+</form>
+<button onclick='$("#target-input-form").submit()' type="button" class="btn btn-success"> Add targets </button>

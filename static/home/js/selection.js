@@ -151,6 +151,32 @@ function SelectionSpeciesToggle(species_id) {
     });
 }
 
+function SelectionGproteinPredefined(g_protein) {
+    $.ajax({
+        'url': '/common/selectiongproteinpredefined',
+        'data': {
+            g_protein: g_protein
+        },
+        'type': 'GET',
+        'success': function (data) {
+            $("#filters-gproteins").html(data);
+        }
+    });
+}
+
+function SelectionGproteinToggle(g_protein_id) {
+    $.ajax({
+        'url': '/common/selectiongproteintoggle',
+        'data': {
+            g_protein_id: g_protein_id
+        },
+        'type': 'GET',
+        'success': function (data) {
+            $("#filters-gproteins-selector").html(data);
+        }
+    });
+}
+
 function ExpandSegment(segment_id, position_type, scheme) {
     $.ajax({
         'url': '/common/expandsegment',
@@ -190,6 +216,41 @@ function SelectionSchemesToggle(numbering_scheme_id) {
             $("#filters-schemes").html(data);
         }
     });
+}
+
+function ReadTargetsForm(form) {
+    //Dealing with csrf token
+    function getCookie(c_name) {
+        if (document.cookie.length > 0) {
+            c_start = document.cookie.indexOf(c_name + "=");
+            if (c_start != -1) {
+                c_start = c_start + c_name.length + 1;
+                c_end = document.cookie.indexOf(";", c_start);
+                if (c_end == -1) c_end = document.cookie.length;
+                return unescape(document.cookie.substring(c_start, c_end));
+            }
+        }
+        return "";
+    }
+    $.ajaxSetup({
+        headers: { "X-CSRFToken": getCookie("csrftoken") }
+    });
+    //Actual post
+    var fd = new FormData(form);
+    $.ajax({
+        type: 'POST',
+        url: '/common/targetformread',
+        data: fd,
+        cache: false,
+        processData: false,
+        contentType: false,
+        'success': function (data) {
+            $("#selection-targets").html(data);
+        },
+    }).fail(function (jqXHR, textStatus, error) {
+        alert("Request failed: " + textStatus + error);
+    });
+    return false;
 }
 
 function SetTreeSelection(option_no, option_id) {
@@ -276,4 +337,40 @@ function SetGroupMinMatch(selection_type, group_id, min_match) {
             $("#selection-" + selection_type).html(data);
         },
     });
+}
+
+function ReadDefinitionFromFile(form, url) {
+    //Dealing with csrf token
+    function getCookie(c_name) {
+        if (document.cookie.length > 0) {
+            c_start = document.cookie.indexOf(c_name + "=");
+            if (c_start != -1) {
+                c_start = c_start + c_name.length + 1;
+                c_end = document.cookie.indexOf(";", c_start);
+                if (c_end == -1) c_end = document.cookie.length;
+                return unescape(document.cookie.substring(c_start, c_end));
+            }
+        }
+        return "";
+    }
+    $.ajaxSetup({
+        headers: { "X-CSRFToken": getCookie("csrftoken") }
+    });
+    //Actual post
+    var fd = new FormData();
+    fd.append('xml_file', form, form.name)
+    $.ajax({
+        type: 'POST',
+        'url': url,
+        data: fd,
+        cache: false,
+        processData: false,
+        contentType: false,
+        'success': function (data) {
+            $("#selection-segments").html(data);
+        },
+    }).fail(function (jqXHR, textStatus, error) {
+        alert("Request failed: " + textStatus + error);
+    });
+    return false;
 }

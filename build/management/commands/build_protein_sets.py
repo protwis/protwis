@@ -31,7 +31,7 @@ class Command(BaseCommand):
         structures = Structure.objects.order_by('protein_conformation__protein__parent__entry_name').distinct(
             'protein_conformation__protein__parent__entry_name')
         if structures:
-            ps = ProteinSet.objects.create(name='Structure determined')
+            ps = ProteinSet.objects.create(name='Crystallized') # David's request
             for structure in structures:
                 ps.proteins.add(structure.protein_conformation.protein.parent)
 

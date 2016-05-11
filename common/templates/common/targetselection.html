@@ -25,6 +25,10 @@
                     <div id="filters-annotation">
                     {% include 'common/selection_filters_annotation.html' %}
                     </div>
+                    <div id="filters-gproteins">
+                        {% include 'common/selection_filters_gproteins.html' %}
+                    </div>
+
                 </div>
             </div>
             {% endif %}
@@ -36,6 +40,18 @@
                     <h4>Numbering schemes</h4>
                     <div id="filters-schemes">
                         {% include 'common/selection_filters_numbering_schemes.html' %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- target input form -->
+            {% if target_input %}
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Input target list</h4>
+                    <div id="target-input">
+                        {% include 'common/targetselection_input_form.html' %}
                     </div>
                 </div>
             </div>

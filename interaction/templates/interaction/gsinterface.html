@@ -155,7 +155,7 @@ canvas {
     </div>
 </div> -->
 
-<h2>Residue Diagrams</h2>
+<h2>Gs interaction snakeplot</h2>
 
 <div class="row">
 <div class="col-md-10 text-center">
@@ -167,13 +167,22 @@ canvas {
     </div>
 </div>
 
+<div class="row">
 
+    <div class="col-md-12">
+            <div class="panel-body">
+                    <div class='col-md-10'>
+                        <p><strong>β2-adrenoceptor - G protein interaction snakeplot.</strong> G protein interacting residues are shown in <font style="color: #FDFF7B; background-color: #E60A0A" >dark red</font> and dashed circles. G protein accessible residues are shown in <font style="color: #fffffB; background-color: #ff9999">light red</font>.</p>
+                    </div>
+                </div>
+            </div>
+
+</div>
 
 <!-- <h2>Residue Table</h2>
 <div class="col-md-10">
 {% include "residue/residue_table_only.html" with header=header segments=segments data=data onlymutants=1 %}
-</div>
- -->
+</div> -->
 
 
 {% endblock %}
@@ -190,8 +199,8 @@ canvas {
 
                    $.each( accessible, function( index, val ) {
                       key = val;
-                      extra = "\n GPROTEIN STUFF" ;
-                      $('#'+plotid).find("#"+key).css("fill", "#060FFF");
+                      extra = "\n - \nG protein accessible" ;
+                      $('#'+plotid).find("#"+key).css("fill", "#ff9999");
                       $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
                       original_title = $('#'+plotid).find("#"+key).attr('original_title')
                       $('#'+plotid).find("#"+key).attr('title',original_title+extra);
@@ -201,8 +210,11 @@ canvas {
 
                   $.each( interacting, function( index, val ) {
                       key = val;
-                      extra = "\n GPROTEIN STUFF" ;
+                      extra = "\n - \nG protein interacting" ;
                       $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
+                      $('#'+plotid).find("#"+key).css("stroke-width", "5px");
+                      $('#'+plotid).find("#"+key).css("stroke-dasharray", "5, 2");
+                      
                       $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
                       original_title = $('#'+plotid).find("#"+key).attr('original_title')
                       $('#'+plotid).find("#"+key).attr('title',original_title+extra);
@@ -216,13 +228,12 @@ canvas {
 
             gprotein_sets()
 
-            // $('#snakeplot').find("#143").css("stroke-width", "5px");
-
             // Force shown loops
             $(".short").hide();
             $(".long").show();
             maxmin();
 
             });
-    </script> 
+    </script>
+
 {% endblock %}

@@ -1225,8 +1225,8 @@ def GSinterface(request):
     #                                                       'header': context['header'], 'segments': context['segments'],
     #                                                       'number_of_schemes': len(numbering_schemes)})
 
-    interacting = [135, 136, 139, 141, 225, 229, 232, 235, 239, 274, 328]
-    accessible = [1,100,110, 135, 136, 139, 141, 225, 229, 232, 235, 239, 274, 328]
+    interacting = [135, 136, 139, 141, 225, 229, 274, 328]
+    accessible = [131, 134, 135, 136, 138, 139, 141, 142, 222, 225, 226, 228, 229, 267, 270, 271, 274, 275, 328, 330, 331]
 
     return render(request, 'interaction/gsinterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting': interacting, 'accessible': accessible} )
 

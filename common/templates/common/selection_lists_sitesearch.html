@@ -9,6 +9,32 @@
         {% endif %}
     </p>
         {% if selection_type == 'segments' %}
+            <!-- Read from file -->
+            <p>
+                <a data-toggle="modal" data-target="#SiteFileSelector"
+                   class="btn btn-primary btn-xs">
+                    <span class="glyphicon glyphicon-plus"></span> Read site from file
+                </a>
+            </p>
+            <div class="modal fade" id="SiteFileSelector" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            Select a file to upload.
+                        </div>
+                        <div class="modal-body">
+                            <form id="xls-form" enctype="multipart/form-data" method="post" onsubmit="return ReadDefinitionFromFile(document.getElementById('xls-file').files[0], '/sitesearch/siteupload')" >
+                                <input id="xls-file" type="file" /> {% csrf_token %}
+                            </form>                
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
+                            <button onclick='$("#xls-form").submit()' type="button" class="btn btn-success" data-dismiss="modal">Save & close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
             
             {% if selection.site_residue_groups %}
             <!-- Add interaction button -->
@@ -73,6 +99,14 @@
             {% empty %}
             None
             {% endfor %}
+            <!-- Save site definition -->
+            <p>
+                <a href="/sitesearch/sitesave"
+                    class="btn btn-primary btn-xs">
+                    <span class="glyphicon glyphicon-plus"></span> Save site definition
+                </a>
+            </p>
+
         {% else %}
             {% for selected_item in selected_items %}
             <div class="target-selection">
