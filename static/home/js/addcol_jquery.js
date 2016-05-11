@@ -1,8 +1,49 @@
 
 
-
 $(document).ready(function () {
 
+ $('.datepicker').datepicker({
+     inline: true,
+    showOtherMonths: true
+ });
+
+$('.numeric').keyup(function () { 
+    this.value = this.value.replace(/[^0-9\.]/g,'');
+});
+
+$('#xtals_form').validate({ // initialize the plugin
+            rules: {
+            name_cont: {
+                required: true,
+                //email: true
+            },  
+            pi_name: {
+                required: true,  
+            }
+        },
+
+         messages: {   //customize messages
+            name_cont: {
+                required: "You must enter your full name",
+                //email: true
+            },
+            pi_name: {
+                required: "You must enter the name of your PI leader",
+            },
+           
+        },
+    highlight: function(element) {
+        $(element).attr("class", $(element).attr("class").replace("tobereplaced", "error"));
+    },   
+    unhighlight: function(element) {
+        $(element).removeClass("error");
+    }
+    });
+
+//$("input[id*=id_del]").rules("add", "required");    //add rules after validator is initialized
+  //$("select").addClass("form-control");
+  $(".button").addClass("btn btn-primary"); 
+  
       $(".aamod_pos_type").on('change', function () {
         temp_index = $(this).parent().parent().index();     //parent of td is tr
         var aamod_type= ["single", "pair", "range"];
@@ -64,7 +105,7 @@ $(".position").on('change', function () {
          }
   });
 
-var proteins= [ "type", "signal", "tag", "fusion", "linker", "prot_cleavage"];
+var proteins=[ "type", "signal", "tag", "fusion", "linker", "prot_cleavage"];
             $(".protein_type").on('change', function () {
              temp_index = $(this).parent().index();
               for (pos=0; pos<proteins.length; pos+=1){
@@ -118,7 +159,7 @@ $(".deletion_type").on('change', function () {
           if(this.value === del){    
           if (temp_index>1) {
                     $(".del_type.row_id_"+temp_index).hide(); 
-                    $('.'+del+'.row_id_'+temp_index).show(); 
+                    $('.'+del+'.row_id_'+temp_index).show();
                   } else {
                     $(".del_type.row_id").hide(); 
                     $('.'+del+'.row_id').show(); 
@@ -178,7 +219,6 @@ $('.delcol').on('click', function (){
   }
   else{}
  });
-
 
 $(".position").on('click',function(){ 
    var my_index=$(this).parent().index();
