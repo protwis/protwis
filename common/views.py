@@ -13,8 +13,7 @@ from interaction.forms import PDBform
 import inspect
 from collections import OrderedDict
 from io import BytesIO
-import xlsxwriter
-from openpyxl import load_workbook
+import xlsxwriter, xlrd
 
 
 class AbsTargetSelection(TemplateView):
@@ -540,7 +539,7 @@ def ToggleFamilyTreeNode(request):
             ps = Protein.objects.order_by('id').filter(family=ppf,
                 source__in=(protein_source_list)).order_by('source_id', 'id')
         if g_proteins_list:
-            proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list)]
+            proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list, transduction='primary')]
 
             gprots = Protein.objects.order_by('id').filter(pk__in=proteins).filter(pk__in=ps)
             ps = gprots
@@ -1138,22 +1137,23 @@ def ResiduesUpload(request):
     selection.clear(selection_type)
 
     #The excel file
-    wb=load_workbook(filename=request.FILES['xml_file'].file)
-    ws=wb.active
-
     o = []
-    for row in ws.rows:
-        if len(row) < 2:
-            continue
-        try:
-            if row[0].value == 'residue':
-                position = ResidueGenericNumberEquivalent.objects.get(label=row[2].value, scheme__slug=row[1].value)
-                o.append(position)
-            elif row[0].value == 'helix':
-                o.append(ProteinSegment.objects.get(slug=row[2].value))
-        except Exception as msg:
-            print(msg)
-            continue
+    workbook = xlrd.open_workbook(file_contents=request.FILES['xml_file'].read())
+    worksheets = workbook.sheet_names()
+    for worksheet_name in worksheets:
+        worksheet = workbook.sheet_by_name(worksheet_name)
+        for row in worksheet.get_rows():
+            if len(row) < 2:
+                continue
+            try:
+                if row[0].value == 'residue':
+                    position = ResidueGenericNumberEquivalent.objects.get(label=row[2].value, scheme__slug=row[1].value)
+                    o.append(position)
+                elif row[0].value == 'helix':
+                    o.append(ProteinSegment.objects.get(slug=row[2].value))
+            except Exception as msg:
+                print(msg)
+                continue
     for obj in o:
         # add the selected item to the selection
         if obj.__class__.__name__ == 'ResidueGenericNumberEquivalent':
