@@ -1021,10 +1021,9 @@ def showcalculation(request):
     class_mutations = MutationExperiment.objects.filter(
         protein__family__slug__startswith=family.slug).prefetch_related('protein__family','residue__generic_number','mutation','refs__web_link', 'exp_qual','ligand__properities').order_by('-foldchange','exp_qual')
 
-    class_proteins = Protein.objects.filter(family__slug__startswith=family.slug, source__name='SWISSPROT',species__common_name='Human').all()
-
-    family_proteins = Protein.objects.filter(family__parent__in=family_ids, source__name='SWISSPROT').all() #,species__common_name='Human'
-    ligand_proteins = Protein.objects.filter(family__parent__parent__in =parent_ids, source__name='SWISSPROT',species__common_name='Human').all()
+    # class_proteins = Protein.objects.filter(family__slug__startswith=family.slug, source__name='SWISSPROT',species__common_name='Human').all()
+    # family_proteins = Protein.objects.filter(family__parent__in=family_ids, source__name='SWISSPROT').all() #,species__common_name='Human'
+    # ligand_proteins = Protein.objects.filter(family__parent__parent__in =parent_ids, source__name='SWISSPROT',species__common_name='Human').all()
 
     class_p = []
     for i in class_interactions:
@@ -1032,28 +1031,31 @@ def showcalculation(request):
         if p not in class_p:
             class_p.append(p)
     for m in class_mutations:
-        p = m.protein
-        if p not in class_p:
-            class_p.append(p)
-    for p in class_proteins:
-        if p not in class_p:
-            class_p.append(p)
-    print("Proteins in alignment",len(class_p),'proteins in family',len(family_proteins),'proteins in ligand class',len(ligand_proteins))
+        entry_name = m.protein.entry_name
+        if (int(m.foldchange)!=0 or m.exp_qual): 
+            p = m.protein
+            if p not in class_p:
+                class_p.append(p)
+    # for p in class_proteins: #remove these as they are never used.
+    #     if p not in class_p:
+    #         class_p.append(p)
+    print("Proteins in alignment",len(class_p),'proteins with contributing data')
 
     # print(list(settings.REFERENCE_POSITIONS.keys()))
     segments = ProteinSegment.objects.filter(slug__in=list(settings.REFERENCE_POSITIONS.keys()))
+    segments = ProteinSegment.objects.filter(category='helix') #only use helix for faster rendering.
 
-    a = Alignment()
-    a.load_reference_protein(context['proteins'][0])
-    a.load_proteins(family_proteins)
-    #segments = ProteinSegment.objects.filter(category='helix')
-    a.load_segments(segments)
-    a.build_alignment()
-    a.calculate_similarity()
-    a.calculate_statistics()
-    family_generic_aa_count = a.calculate_aa_count_per_generic_number()
+    # a = Alignment()
+    # a.load_reference_protein(context['proteins'][0])
+    # a.load_proteins(family_proteins)
+    # #segments = ProteinSegment.objects.filter(category='helix')
+    # a.load_segments(segments)
+    # a.build_alignment()
+    # a.calculate_similarity()
+    # a.calculate_statistics()
+    # family_generic_aa_count = a.calculate_aa_count_per_generic_number()
 
-    print('alignment 1')
+    # print('alignment 1')
 
 
     #Consider caching result! Would be by protein since it compares protein to whole class. 
@@ -1065,12 +1067,12 @@ def showcalculation(request):
         generic_aa_count = json.load(open(json_generic, 'r'))
         alternative_aa = json.load(open(json_alternative, 'r'))
         similarity_list = json.load(open(json_similarity_list, 'r'))
-        print('alignment 3 (class) using cache')
+        print('alignment (class) using cache')
     else:
         a = Alignment()
         a.load_reference_protein(context['proteins'][0])
         a.load_proteins(class_p)
-        #segments = ProteinSegment.objects.filter(category='helix')
+        segments = ProteinSegment.objects.filter(category='helix') #only use helix for faster rendering.
         #segments = ProteinSegment.objects.all()
         a.load_segments(segments) #get all segments to make correct diagrams
 
@@ -1084,7 +1086,7 @@ def showcalculation(request):
         generic_aa_count = a.calculate_aa_count_per_generic_number()
         alternative_aa = a.aa_count_with_protein
 
-        print('alignment 3 (class)')
+        print('alignment (class)')
 
         similarity_list = {}
         for p in a.proteins:
@@ -1092,12 +1094,10 @@ def showcalculation(request):
             if (p.protein.entry_name==context['proteins'][0].entry_name):
                 similarity_list[p.protein.entry_name] = [int(100),int(100),1000]
 
-
         json.dump(generic_aa_count, open(json_generic, 'w'))
         json.dump(alternative_aa, open(json_alternative, 'w'))
         json.dump(similarity_list, open(json_similarity_list, 'w'))
 
-    print('built all alignments')
     results = {}
     mutant_lookup = {}
     distinct_species = {}
@@ -1262,8 +1262,9 @@ def showcalculation(request):
                     #if row is allowed due to mutant data, create entry if it isnt there.
                     if generic not in results and (int(m.foldchange)!=0 or qual!=''):
                         results[generic] = copy.deepcopy(empty_result)
-                    elif generic not in results and not (int(m.foldchange)!=0 or qual!=''): #skip no data on non-interesting positions / potentially miss a bit of data if datamutant comes later.. risk! FIXME
+                    elif not (int(m.foldchange)!=0 or qual!=''): #skip no data on non-interesting positions / potentially miss a bit of data if datamutant comes later.. risk! FIXME
                     #should be fixed with order by
+                    # generic not in results and
                         continue
 
                     if m.foldchange>20:
@@ -1421,22 +1422,23 @@ def showcalculation(request):
 
         #Find alternatives for position (useful for specificity investigation)
         temp = 0
-        for aalist in alternative_aa[res].items(): 
-            if aalist[0] !=summary[res]['aa']:
-                for p in aalist[1]:
-                    if similarity_list[p][1]>60: #close enough to suggest
-                         summary[res]['alternatives'].append([p,similarity_list[p][1],aalist[0]])
-                         summary[res]['interest_score'] += 1 #add a small value for these hits
-                         temp += 1
-        if temp: #if alternatives found
-            summary[res]['score_text'] += '# alternatives: '+str(temp)+'<br>'
+        if res in alternative_aa:
+            for aalist in alternative_aa[res].items(): 
+                if aalist[0] !=summary[res]['aa']:
+                    for p in aalist[1]:
+                        if similarity_list[p][1]>60: #close enough to suggest
+                             summary[res]['alternatives'].append([p,similarity_list[p][1],aalist[0]])
+                             summary[res]['interest_score'] += 1 #add a small value for these hits
+                             temp += 1
+            if temp: #if alternatives found
+                summary[res]['score_text'] += '# alternatives: '+str(temp)+'<br>'
 
-        if res in generic_aa_count:
-            #removed ligand_generic_aa_count[res][lookup[res]] -- not used
-            summary[res]['conservation'] = [family_generic_aa_count[res][lookup[res]],0,generic_aa_count[res][lookup[res]], round(family_generic_aa_count[res][lookup[res]] / generic_aa_count[res][lookup[res]],1), round(family_generic_aa_count[res][lookup[res]] - generic_aa_count[res][lookup[res]],1)]
+        # if res in generic_aa_count:
+        #     #removed ligand_generic_aa_count[res][lookup[res]] -- not used
+        #     summary[res]['conservation'] = [family_generic_aa_count[res][lookup[res]],0,generic_aa_count[res][lookup[res]], round(family_generic_aa_count[res][lookup[res]] / generic_aa_count[res][lookup[res]],1), round(family_generic_aa_count[res][lookup[res]] - generic_aa_count[res][lookup[res]],1)]
 
-            summary[res]['interest_score'] += summary[res]['conservation'][4]/10
-            summary[res]['score_text'] += '# cons span: '+str(summary[res]['conservation'][4]/10)+'<br>'
+        #     summary[res]['interest_score'] += summary[res]['conservation'][4]/10
+        #     summary[res]['score_text'] += '# cons span: '+str(summary[res]['conservation'][4]/10)+'<br>'
 
         scores = {'hyd':0,'aromatic':0,'polar':0,'unknown':0} #dict to keep track of scores to select subs.
         
