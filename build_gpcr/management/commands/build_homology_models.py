@@ -67,7 +67,7 @@ class Command(BaseCommand):
         else:
             update = False
 #        for i in receptor_list[:2]:
-        Homology_model = HomologyModeling('5ht2c_human','Inactive',['Inactive'], update=update)
+        Homology_model = HomologyModeling('5ht4r_human','Inactive',['Inactive'], update=update)
         alignment = Homology_model.run_alignment()
         Homology_model.build_homology_model(alignment)
         Homology_model.format_final_model()
@@ -1157,6 +1157,7 @@ class HomologyModeling(object):
         
         # Model with MODELLER
         self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
+        print(trimmed_res_nums)
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
                           self.uniprot_id, 1, "{}_{}_model.pdb".format(self.reference_entry_name,self.state), atom_dict=trimmed_res_nums)
 #        os.remove(path+self.uniprot_id+"_post.pdb")
