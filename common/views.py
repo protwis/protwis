@@ -110,6 +110,7 @@ class AbsTargetSelection(TemplateView):
             context['selection']['species'] = selection.species
             context['selection']['annotation'] = selection.annotation
             context['selection']['g_proteins'] = selection.g_proteins
+            context['selection']['pref_g_proteins'] = selection.pref_g_proteins
 
         # get attributes of this class and add them to the context
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
@@ -526,6 +527,12 @@ def ToggleFamilyTreeNode(request):
         for protein_source in selection.annotation:
             protein_source_list.append(protein_source.item)
 
+        # preferred g proteins filter
+        pref_g_proteins_list = []
+        for g_protein in selection.pref_g_proteins:
+            pref_g_proteins_list.append(g_protein.item)
+
+
         # g proteins filter
         g_proteins_list = []
         for g_protein in selection.g_proteins:
@@ -538,11 +545,14 @@ def ToggleFamilyTreeNode(request):
         else:
             ps = Protein.objects.order_by('id').filter(family=ppf,
                 source__in=(protein_source_list)).order_by('source_id', 'id')
-        if g_proteins_list:
-            proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list, transduction='primary')]
+        if pref_g_proteins_list:
+            proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list, transduction='primary')]             
+            ps = Protein.objects.order_by('id').filter(pk__in=proteins).filter(pk__in=ps)
 
-            gprots = Protein.objects.order_by('id').filter(pk__in=proteins).filter(pk__in=ps)
-            ps = gprots
+        if g_proteins_list:
+            proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list)]  
+            ps = Protein.objects.order_by('id').filter(pk__in=proteins).filter(pk__in=ps)
+
         action = 'collapse'
     else:
         pfs = ps = {}
@@ -665,8 +675,9 @@ def SelectionSpeciesToggle(request):
     return render(request, 'common/selection_filters_species_selector.html', context)
 
 def SelectionGproteinPredefined(request):
-    """Updates the selected species to predefined sets (Human and all)"""
+    """Updates the selected g proteins to predefined sets (Gi/Go and all)"""
     g_protein = request.GET['g_protein']
+    preferred = request.GET['preferred']
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
@@ -684,13 +695,19 @@ def SelectionGproteinPredefined(request):
         gprots = ProteinGProtein.objects.filter(name=g_protein)
 
     if gprots != False:
-        # reset the species selection
-        selection.clear('g_proteins')
+        # reset the g proteins selection
+        if preferred == 'true':
+            selection.clear('pref_g_proteins')
+        else:
+            selection.clear('g_proteins')
 
         # add the selected items to the selection
         for gprot in gprots:
             selection_object = SelectionItem('g_protein', gprot)
-            selection.add('g_proteins', 'g_proteins', selection_object)
+            if preferred == 'true':
+                selection.add('pref_g_proteins', 'g_protein', selection_object)
+            else:
+                selection.add('g_proteins', 'g_protein', selection_object)
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
@@ -699,17 +716,25 @@ def SelectionGproteinPredefined(request):
     request.session['selection'] = simple_selection
 
     # add all species objects to context (for comparison to selected species)
-    context = selection.dict('g_proteins')
-    context['gprots'] = all_gprots
+    if preferred == 'true':
+        context = selection.dict('pref_g_proteins')
+    else:
+        context = selection.dict('g_proteins')
+    context['gprots'] = ProteinGProtein.objects.all()
     
-    return render(request, 'common/selection_filters_gproteins.html', context)
+    if preferred == 'true':
+        return render(request, 'common/selection_filters_pref_gproteins.html', context)
+    else:
+        return render(request, 'common/selection_filters_gproteins.html', context)
 
 def SelectionGproteinToggle(request):
-    """Updates the selected species arbitrary selections"""
+    """Updates the selected g proteins arbitrary selections"""
     g_protein_id = request.GET['g_protein_id']
+    preferred = request.GET['preferred']
 
     all_gprots = ProteinGProtein.objects.all()
     gprots = ProteinGProtein.objects.filter(pk=g_protein_id)
+    print("'{}'".format(ProteinGProtein.objects.get(pk=g_protein_id).name))
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
@@ -721,10 +746,16 @@ def SelectionGproteinToggle(request):
 
     # add the selected items to the selection
     for gprot in gprots:
-        exists = selection.remove('g_proteins', 'g_proteins', g_protein_id)
+        if preferred == 'true':
+            exists = selection.remove('pref_g_proteins', 'g_protein', g_protein_id)
+        else:
+            exists = selection.remove('g_proteins', 'g_protein', g_protein_id)
         if not exists:
             selection_object = SelectionItem('g_protein', gprot)
-            selection.add('g_proteins', 'g_proteins', selection_object)
+            if preferred == 'true':
+                selection.add('pref_g_proteins', 'g_protein', selection_object)
+            else:
+                selection.add('g_proteins', 'g_protein', selection_object)
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
@@ -733,10 +764,18 @@ def SelectionGproteinToggle(request):
     request.session['selection'] = simple_selection
 
     # add all species objects to context (for comparison to selected species)
-    context = selection.dict('g_proteins')
+    if preferred == 'true':
+        context = selection.dict('pref_g_proteins')
+    else:
+        context = selection.dict('g_proteins')
+
     context['gprots'] = ProteinGProtein.objects.all()
     
-    return render(request, 'common/selection_filters_gproteins_selector.html', context)
+    if preferred == 'true':
+        print(request.session['selection'])
+        return render(request, 'common/selection_filters_pref_gproteins_selector.html', context)
+    else:
+        return render(request, 'common/selection_filters_gproteins_selector.html', context)
 
 def ExpandSegment(request):
     """Expands a segment to show it's generic numbers"""

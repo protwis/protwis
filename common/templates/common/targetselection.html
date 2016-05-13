@@ -25,6 +25,9 @@
                     <div id="filters-annotation">
                     {% include 'common/selection_filters_annotation.html' %}
                     </div>
+                    <div id="filters-pref-gproteins">
+                        {% include 'common/selection_filters_pref_gproteins.html' %}
+                    </div>
                     <div id="filters-gproteins">
                         {% include 'common/selection_filters_gproteins.html' %}
                     </div>
@@ -50,20 +53,9 @@
             <div class="col-md-12 panel panel-primary">
                 <div class="panel-body">
                     <h4>Input target list</h4>
+                    (UniProt names, one per line)
                     <div id="target-input">
                         {% include 'common/targetselection_input_form.html' %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- target search -->
-            {% if search %}
-            <div class="col-md-12 panel panel-primary">
-                <div class="panel-body">
-                    <h4>Search</h4>
-                    <div>
-                        <input id="selection-autocomplete" class="form-control" size="15">
                     </div>
                 </div>
             </div>
@@ -76,6 +68,18 @@
                     <h4>Predefined sets</h4>
                     <div>
                         {% include 'common/targetselection_predefined.html' %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- target search -->
+            {% if search %}
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Search</h4>
+                    <div>
+                        <input id="selection-autocomplete" class="form-control" size="15">
                     </div>
                 </div>
             </div>
