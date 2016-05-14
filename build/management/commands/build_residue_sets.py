@@ -69,7 +69,7 @@ class Command(BaseCommand):
 
             for i in class_interactions:
                 if i.rotamer.residue.generic_number:
-                    gn = i.rotamer.residue.generic_number.label
+                    gn = i.rotamer.residue.display_generic_number.label
                 else:
                     continue
                 if gn not in generic.keys():
@@ -84,8 +84,10 @@ class Command(BaseCommand):
                 continue
             for g in sorted(generic):
                 if generic[g] >= 2:
+                    bw, gpcrdb = g.split('x')
+                    h, pos = bw.split('.')
                     try:
-                        rs.residue_position.add(ResidueGenericNumberEquivalent.objects.get(label=g, scheme__slug=c))
+                        rs.residue_position.add(ResidueGenericNumberEquivalent.objects.get(label='{}x{}'.format(h,gpcrdb), scheme__slug=c))
                     except Exception as msg:
                         print(g)
                         print(msg)
