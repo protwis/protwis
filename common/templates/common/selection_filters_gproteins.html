@@ -1,10 +1,10 @@
-﻿<b>Preferred G protein</b>
+﻿<b>G protein coupling</b><br />
 <div class="btn-group btn-group-sm" role="group">
-    <a href="javascript:void(0)" onclick="SelectionGproteinPredefined('Gi/Go family')"
+    <a href="javascript:void(0)" onclick="SelectionGproteinPredefined('Gi/Go family', false)"
        class="btn btn-primary{% if selection.g_proteins|length == 1 and selection.g_proteins.0.item.name == 'Gi/Go family' %} active{% endif %}">
         Gi/Go family
     </a>
-    <a href="javascript:void(0)" onclick="SelectionGproteinPredefined('All')"
+    <a href="javascript:void(0)" onclick="SelectionGproteinPredefined('All', false)"
        class="btn btn-primary{% if selection.g_proteins|length == 0 or selection.g_proteins|length == gprots|length %} active{% endif %}">
         All
     </a>
@@ -13,7 +13,7 @@
         Other..
     </a>
 </div>
-   <!-- Modal -->
+<!-- Modal -->
 <div class="modal fade" id="GProteinsSelector" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">

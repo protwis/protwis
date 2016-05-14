@@ -1,0 +1,34 @@
+﻿<b>Preferred G protein</b><br />
+<div class="btn-group btn-group-sm" role="group">
+    <a href="javascript:void(0)" onclick="SelectionGproteinPredefined('Gi/Go family', true)"
+       class="btn btn-primary{% if selection.pref_g_proteins|length == 1 and selection.pref_g_proteins.0.item.name == 'Gi/Go family' %} active{% endif %}">
+        Gi/Go family
+    </a>
+    <a href="javascript:void(0)" onclick="SelectionGproteinPredefined('All', true)"
+       class="btn btn-primary{% if selection.pref_g_proteins|length == 0 or selection.pref_g_proteins|length == gprots|length %} active{% endif %}">
+        All
+    </a>
+    <a data-toggle="modal" data-target="#PrefGProteinsSelector"
+       class="btn btn-primary{% if selection.pref_g_proteins|length == 1 and selection.pref_g_proteins.0.item.name != 'Gi/Go family' or selection.pref_g_proteins|length > 1 and selection.pref_g_proteins|length < gprots|length %} active{% endif %}">
+        Other..
+    </a>
+</div>
+
+   <!-- Modal -->
+<div class="modal fade" id="PrefGProteinsSelector" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">Choose G proteins</h4>
+            </div>
+            <div class="modal-body" id="filters-pref-gproteins-selector">
+                {% include 'common/selection_filters_pref_gproteins_selector.html' %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-dismiss="modal">Save & close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<br />

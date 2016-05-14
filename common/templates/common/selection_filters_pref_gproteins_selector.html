@@ -1,0 +1,7 @@
+<p>Please choose one or more G proteins, and click 'Save & close'.</p>
+{% for gprot in gprots %}
+    <a href="javascript:void(0)" onclick="SelectionGproteinToggle('{{ gprot.id }}', true)"
+        class="btn btn-primary{% for sel_pgpt in selection.pref_g_proteins %}{% if gprot == sel_pgpt.item %} active{% endif %}{% endfor %}">
+        {{ gprot.name }}
+    </a>
+{% endfor %}
