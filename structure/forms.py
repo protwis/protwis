@@ -6,8 +6,6 @@ from django.forms.extras.widgets import SelectDateWidget
 from django.forms import ModelForm, Form
 from django.utils.safestring import mark_safe
 
-from django.forms.utils import flatatt
-
 from functools import partial
 DateInput = partial(forms.DateInput, {'class': 'datepicker'})
 #controlled vocabularies
@@ -456,6 +454,5 @@ class construct_form(forms.Form):
     #concentr_unit.widget.attrs.update({'class' : 'form-control'})
 
 f = construct_form()
-print(f.as_table())
 
 
