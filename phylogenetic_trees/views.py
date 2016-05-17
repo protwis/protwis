@@ -154,6 +154,7 @@ class Treeclass:
         if len(a.proteins) < 3:
             return 'More_prots',None, None, None, None,None,None,None
         ####Get additional protein information
+        accesions = []
         for n in a.proteins:
             fam = self.Tree.trans_0_2_A(n.protein.family.slug)
             if n.protein.sequence_type.slug == 'consensus':
@@ -176,6 +177,7 @@ class Treeclass:
             if len(name)>25:
                 name=name[:25]+'...'
             self.family[acc] = {'name':name,'family':fam,'description':desc,'species':spec,'class':'','ligand':'','type':'','link': link}
+            accesions.append(acc)
             ####Write PHYLIP input
             sequence = ''
             for chain in n.alignment:
@@ -230,9 +232,12 @@ class Treeclass:
         ###
             subprocess.check_output(['phylip consense<temp'], shell=True, cwd = '/tmp/%s' %dirname)
         self.phylip = open('/tmp/%s/outtree' %dirname).read()
+        self.phylogeny_output = self.phylip
         self.outtree = open('/tmp/%s/outfile' %dirname).read().lstrip()
         phylogeny_input = self.get_phylogeny('/tmp/%s/' %dirname)
         shutil.rmtree('/tmp/%s' %dirname)
+        for acc in accesions:
+            self.phylip=self.phylip.replace(acc,self.family[acc]['link'])
         if build != False:
             open('static/home/images/'+build+'_legend.svg','w').write(str(self.Tree.legend))
             open('static/home/images/'+build+'_tree.xml','w').write(phylogeny_input)
@@ -240,7 +245,8 @@ class Treeclass:
             return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
         
     def get_phylogeny(self, dirname):
-        self.Tree.treeDo(dirname, self.phylip,self.branches,self.family,self.Additional_info, self.famdict)
+
+        self.Tree.treeDo(dirname, self.phylogeny_output,self.branches,self.family,self.Additional_info, self.famdict)
         phylogeny_input = open('%s/out.xml' %dirname,'r').read().replace('\n','')
         return phylogeny_input
     
@@ -256,6 +262,10 @@ def get_buttons(request):
         
 
 def modify_tree(request):
+    try:
+        shutil.rmtree('/tmp/modify')
+    except:
+        pass
     arg = request.GET.getlist('arg[]')
     value = request.GET.getlist('value[]')
     Tree_class=request.session['Tree']
@@ -271,7 +281,7 @@ def modify_tree(request):
     else:
         count = 1900 - 1400/math.sqrt(float(total))
     print(count)
-    return render(request, 'phylogenetic_trees/main.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree})
+    return render(request, 'phylogenetic_trees/main.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylogeny_output, 'outtree':Tree_class.outtree})
 
 def render_tree(request):
     Tree_class=Treeclass()
@@ -285,6 +295,6 @@ def render_tree(request):
         count = 1900 - 1400/math.sqrt(float(total))
     
     request.session['Tree']=Tree_class
-    return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
+    return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylogeny_output, 'outtree':Tree_class.outtree })
 
 
