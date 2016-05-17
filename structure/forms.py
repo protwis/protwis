@@ -8,7 +8,6 @@ from django.utils.safestring import mark_safe
 
 from django.forms.utils import flatatt
 
-from bootstrap3_datetime.widgets import DateTimePicker
 from functools import partial
 DateInput = partial(forms.DateInput, {'class': 'datepicker'})
 #controlled vocabularies
