@@ -1,10 +1,10 @@
-from django.core.management.base import BaseCommand
+from build.management.commands.base_build import Command as BaseBuild
 from django.db import transaction
 
-from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinAnomaly, ProteinState
+from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState
 from residue.models import Residue
 from structure.models import *
-from common.alignment import Alignment, AlignedReferenceTemplate
+from common.alignment import AlignedReferenceTemplate
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
 
@@ -39,58 +39,59 @@ def homology_model_multiprocessing(receptor, update):
     print('Model for {} successfully built.'.format(receptor))
     l.release()
         
-class Command(BaseCommand):  
+class Command(BaseBuild):  
     help = 'Build automated chimeric GPCR homology model'    
     
     def add_arguments(self, parser):
+        super(Command, self).add_arguments(parser=parser)
         parser.add_argument('--update', help='Upload model to GPCRdb, overwrites existing entry', default=False, 
                             action='store_true')
         parser.add_argument('-r', help='Run program for specific receptor(s) by giving UniProt common name as argument', 
                             default=False, type=str, nargs='+')
         
     def handle(self, *args, **options):
-        structures = Structure.objects.all()
-        struct_parent = [i.protein_conformation.protein.parent for i in structures]
-        classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species=1, family__slug__istartswith='001')
-        receptor_list = [i.entry_name for i in classA if i not in struct_parent]
-        
-#        db_list = [i.protein.entry_name for i in list(StructureModel.objects.all())]
-#        with open('./structure/homology_models/receptor_list.txt','r') as names:
-#            c = 0
-#            for line in names.readlines():
-#                if line.split('\n')[0] not in db_list:
-#                    c+=1
-#                    print(line.split('\n')[0])
-#        print(c)
+        if not os.path.exists('./structure/homology_models/'):
+            os.mkdir('./structure/homology_models')
+        if not os.path.exists('./structure/PIR/'):
+            os.mkdir('./structure/PIR')
         if options['update']==True:
-            update = True
+            self.update = True
         else:
-            update = False
-#        for i in receptor_list[:2]:
-        Homology_model = HomologyModeling('5ht4r_human','Inactive',['Inactive'], update=update)
+            self.update = False
+        if options['r']==False:
+            structures = Structure.objects.all()
+            struct_parent = [i.protein_conformation.protein.parent for i in structures]
+            classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species=1, 
+                                            family__slug__istartswith='001')
+            self.receptor_list = [i.entry_name for i in classA if i not in struct_parent]
+            try:
+                self.prepare_input(options['proc'], self.receptor_list)
+            except Exception as msg:
+                print(msg)
+        elif len(options['r'])>1:
+            self.receptor_list = options['r']
+            try:
+                self.prepare_input(options['proc'], self.receptor_list)
+            except Exception as msg:
+                print(msg)
+        else:
+            self.run_HomologyModeling(options['r'][0])
+
+    def main_func(self, positions, iteration):
+        if not positions[1]:
+            receptor_list = self.receptor_list[positions[0]:]
+        else:
+            receptor_list = self.receptor_list[positions[0]:positions[1]]
+        
+        for receptor in receptor_list:
+            self.run_HomologyModeling(receptor)
+    
+    def run_HomologyModeling(self, receptor):
+        Homology_model = HomologyModeling(receptor, 'Inactive',['Inactive'], update=self.update)
         alignment = Homology_model.run_alignment()
         Homology_model.build_homology_model(alignment)
         Homology_model.format_final_model()
-#
-#        
-#        if os.path.isfile('./logs/homology_modeling.log'):
-#            os.remove('./logs/homology_modeling.log')
-#        logger = logging.getLogger('homology_modeling')
-#        hdlr = logging.FileHandler('./logs/homology_modeling.log')
-#        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-#        hdlr.setFormatter(formatter)
-#        logger.addHandler(hdlr) 
-#        logger.setLevel(logging.INFO)        
-#        
-#        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-#        for i in receptor_list:
-#            pool.apply_async(homology_model_multiprocessing, args=(i,update,))
-#        pool.close()
-#        pool.join()
 
-        print('\n###############################')
-        print('Total runtime: ',datetime.now() - startTime)
-        print('###############################\n')
         
 class HomologyModeling(object):
     ''' Class to build homology models for GPCRs. 
