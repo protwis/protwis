@@ -18,13 +18,18 @@
 {% endfor %}
 <br>
 <h2> Deletions</h2>
- Deletion: position  <br>
-{% for key,value in all_deletions.items %}
-  {% if 'single' in key %}
-     {{key}} : {{value}} <br>
-    {% else %}
-       {{key.upper}}  :  {{value.0}} - {{value.1}}  <br>
-  {% endif %} 
+{% for deletion in deletions %}
+     {{deletion}} <br>
+{% endfor %}
+<br>
+<h2> Mutations</h2>
+{% for mut in mutations %}
+     {{mut}} <br>
+{% endfor %}
+<br>
+<h2> Modifications</h2>
+{% for mod in modifications %}
+     {{mod}} <br>
 {% endfor %}
 <br>
 <h2> Construct Crystal Information </h2>
@@ -41,6 +46,17 @@
 {% for key,value in expression.items %}  
   {{key.upper}}  : {{value}} <br>
 {% endfor %}
+<br><br>
+<h2> Solubilization and Purification </h2>
+{% for key,value in solubilization.items %}  
+  {{key.upper}}  : {{value}} <br>
+{% endfor %}
+<br><br>
+<h2> Crystallization </h2>
+{% for key,value in crystallization.items %}  
+  {{key.upper}}  : {{value}} <br>
+{% endfor %}
+
 
 {% endblock %}
 
