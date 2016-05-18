@@ -21,6 +21,7 @@ from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
 from common.views import AbsTargetSelection
+from common.alignment import Alignment
 from protein.models import Protein, ProteinFamily, ProteinGProtein
 
 import os
@@ -947,6 +948,7 @@ def calculate(request, redirect=None):
                             continue
 
                         # get residue number equivalent object
+                        print(gn)
                         rne = ResidueGenericNumberEquivalent.objects.get(label=gn, scheme__slug='gpcrdba')
 
                         # create a selection item
@@ -1208,28 +1210,56 @@ def GProtein(request):
 
     return render(request, 'interaction/gprotein.html', context)
 
+class TargetSelection(AbsTargetSelection):
+    step = 1
+    number_of_steps = 1
+    filters = False
+    psets = False
+    target_input = False
+    redirect_on_select = True
+    type_of_selection = 'gsinterface'
 
-def GSinterface(request):
+    # template_name = 'common/targetselection.html'
+
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+
+    buttons = {
+        'continue': {
+            'label': 'Continue to next step',
+            'url': '#',
+            'color': 'success',
+        },
+    }
+
+
+def GSinterface(request, protein = None):
 
     context = OrderedDict()
 
-    residuelist = Residue.objects.filter(protein_conformation__protein__entry_name="adrb2_human").prefetch_related('protein_segment','display_generic_number','generic_number')
+    residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=protein).prefetch_related('protein_segment','display_generic_number','generic_number')
     SnakePlot = DrawSnakePlot(
-                residuelist, "Class A (Rhodopsin)", "adrb2_human", nobuttons=1)
+                residuelist, "Class A (Rhodopsin)", protein, nobuttons=1)
 
     crystal = Structure.objects.get(pdb_code__index="3SN6")
 
-    # return render(request, 'interaction/structure.html', {'pdbname': pdbname, 'structures': structures,
-    #                                                       'crystal': crystal, 'protein': p, 'helixbox' : HelixBox, 'snakeplot': SnakePlot, 'residues': residues_browser, 'annotated_resn':
-    #                                                       resn_list, 'ligands': ligands, 'data': context['data'],
-    #                                                       'header': context['header'], 'segments': context['segments'],
-    #                                                       'number_of_schemes': len(numbering_schemes)})
-
-    interacting = [135, 136, 139, 141, 225, 229, 274, 328]
-    accessible = [131, 134, 135, 136, 138, 139, 141, 142, 222, 225, 226, 228, 229, 267, 270, 271, 274, 275, 328, 330, 331]
-
     residues_browser = [{'pos': 135, 'aa': 'I', 'gprotseg': "H5",'segment': 'TM3', 'ligand': 'Gs', 'type': 'hydrophobic', 'gpcrdb': '3.54x54', 'wt_pos': 135, 'gpnum': 'G.H5.16', 'gpaa': 'Q384', 'availability': 'interacting'},{'pos': 136, 'aa': 'T', 'gprotseg': "H5",'segment': 'TM3', 'ligand': 'Gs', 'type': 'polar', 'gpcrdb': '3.55x55', 'wt_pos': 136, 'gpnum': 'G.H5.12', 'gpaa': 'R380', 'availability': 'interacting'},{'pos': 139, 'aa': 'F', 'gprotseg': "H5",'segment': 'ICL2', 'ligand': 'Gs', 'type': 'aromatic', 'gpcrdb': '34.51x51', 'wt_pos': 139, 'gpnum': 'G.H5.8', 'gpaa': 'F376', 'availability': 'interacting'},{'pos': 139, 'aa': 'F', 'gprotseg': "S1",'segment': 'ICL2', 'ligand': 'Gs', 'type': 'aromatic', 'gpcrdb': '34.51x51', 'wt_pos': 139, 'gpnum': 'G.S1.2', 'gpaa': 'H41', 'availability': 'interacting'},{'pos': 141, 'aa': 'Y', 'gprotseg': "H5",'segment': 'ICL2', 'ligand': 'Gs', 'type': 'aromatic', 'gpcrdb': '34.53x53', 'wt_pos': 141, 'gpnum': 'G.H5.19', 'gpaa': 'H387', 'availability': 'interacting'},{'pos': 225, 'aa': 'E', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'negative charge', 'gpcrdb': '5.64x64', 'wt_pos': 225, 'gpnum': 'G.H5.12', 'gpaa': 'R380', 'availability': 'interacting'},{'pos': 225, 'aa': 'E', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'negative charge', 'gpcrdb': '5.64x64', 'wt_pos': 225, 'gpnum': 'G.H5.16', 'gpaa': 'Q384', 'availability': 'interacting'},{'pos': 229, 'aa': 'Q', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'polar', 'gpcrdb': '5.68x68', 'wt_pos': 229, 'gpnum': 'G.H5.13', 'gpaa': 'D381', 'availability': 'interacting'},{'pos': 229, 'aa': 'Q', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'polar', 'gpcrdb': '5.68x68', 'wt_pos': 229, 'gpnum': 'G.H5.16', 'gpaa': 'Q384', 'availability': 'interacting'},{'pos': 229, 'aa': 'Q', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'polar', 'gpcrdb': '5.68x68', 'wt_pos': 229, 'gpnum': 'G.H5.17', 'gpaa': 'R385', 'availability': 'interacting'},{'pos': 274, 'aa': 'T', 'gprotseg': "H5",'segment': 'TM6', 'ligand': 'Gs', 'type': 'polar', 'gpcrdb': '6.36x36', 'wt_pos': 274, 'gpnum': 'G.H5.23', 'gpaa': 'D343', 'availability': 'interacting'},{'pos': 274, 'aa': 'T', 'gprotseg': "H5",'segment': 'TM6', 'ligand': 'Gs', 'type': 'polar', 'gpcrdb': '6.36x36', 'wt_pos': 274, 'gpnum': 'G.H5.24', 'gpaa': 'E392', 'availability': 'interacting'},{'pos': 328, 'aa': 'T', 'gprotseg': "H5",'segment': 'TM7', 'ligand': 'Gs', 'type': 'polar', 'gpcrdb': '7.55x55', 'wt_pos': 328, 'gpnum': 'G.H5.24', 'gpaa': 'D343', 'availability': 'interacting'}]
 
-    return render(request, 'interaction/gsinterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting': interacting, 'accessible': accessible, 'residues': residues_browser} )
+    interacting_gn = []
+    for i in residues_browser:
+        interacting_gn.append(i['gpcrdb'])
+
+    if protein == 'adrb2_human':
+        interacting_pos = [135, 136, 139, 141, 225, 229, 274, 328]
+        accessible = [131, 134, 135, 136, 138, 139, 141, 142, 222, 225, 226, 228, 229, 267, 270, 271, 274, 275, 328, 330, 331]
+    else:
+        interacting_pos = residuelist.filter(display_generic_number__label__in=interacting_gn).values_list('sequence_number', flat=True)
+        accessible = []
+
+
+    return render(request, 'interaction/gsinterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting': interacting_pos, 'accessible': accessible, 'residues': residues_browser} )
 
 

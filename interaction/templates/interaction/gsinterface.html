@@ -210,7 +210,7 @@ canvas {
                    $.each( accessible, function( index, val ) {
                       key = val;
                       extra = "\n - \nG protein accessible" ;
-                      $('#'+plotid).find("#"+key).css("fill", "#66B36C");
+                      $('#'+plotid).find("#"+key).css("fill", "#87E88F");
                       $('#'+plotid).find("#"+key).next().css("fill", "#000");
                       $('#'+plotid).find("#"+key).css("stroke-width", "3px");
                       original_title = $('#'+plotid).find("#"+key).attr('original_title')
@@ -222,7 +222,7 @@ canvas {
                   $.each( interacting, function( index, val ) {
                       key = val;
                       extra = "\n - \nG protein interacting" ;
-                      $('#'+plotid).find("#"+key).css("fill", "#87E88F");
+                      $('#'+plotid).find("#"+key).css("fill", "#66B36C");
                       $('#'+plotid).find("#"+key).css("stroke-width", "4px");
                       // $('#'+plotid).find("#"+key).css("stroke-dasharray", "5, 2");
                       $('#'+plotid).find("#"+key).next().css("fill", "#000");
