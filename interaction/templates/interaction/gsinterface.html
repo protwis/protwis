@@ -12,7 +12,7 @@ canvas {
 
 {% endblock %}
 {% block content %}
-<h2>Structure information</h2>
+<h2>Structure information from:</h2>
  <script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script> 
  <div class="row">
     <table width="100%">
@@ -98,7 +98,7 @@ canvas {
     </table>
 </div>
 
-<h2>Interface snake diagram</h2>
+<h2>Interface snake diagram for {{ mapped_protein }}</h2>
 <div class="row">
 <div class="col-md-10 text-center">
     {{ snakeplot }}
@@ -114,7 +114,7 @@ canvas {
     <div class="col-md-12">
             <div class="panel-body">
                     <div class='col-md-10'>
-                        <p><strong>β2-adrenoceptor - Gs interface </strong> <br> <font style="color: #000; background-color: #66B36C" >Dark-Green</font>: Gs-interacting residues <br> <font style="color: #000; background-color: #87E88F">Light</font>: G protein accessible residues </p>
+                        <p><strong>{{ mapped_protein }} - Gs interface </strong> <br> <font style="color: #000; background-color: #66B36C" >Dark-Green</font>: Gs-interacting residues similar to β2-adrenoceptor <br> <font style="color: #000; background-color: #E67E22" >Orange</font>: Gs-interacting residues not facilitated in {{ mapped_protein }} <br> <font style="color: #000; background-color: #87E88F">Light</font>: G protein accessible residues that have a generic number (ICL3 can also be accessible) </p>
                     </div>
                 </div>
             </div>
@@ -204,7 +204,8 @@ canvas {
 
             function gprotein_sets() {
                 plotid = 'snakeplot'
-                interacting = {{ interacting|safe }};
+                interacting_equivalent = {{ interacting_equivalent|safe }};
+                interacting_none_equivalent = {{ interacting_none_equivalent|safe }};
                 accessible = {{ accessible|safe }};
 
                    $.each( accessible, function( index, val ) {
@@ -219,10 +220,23 @@ canvas {
 
                   });
 
-                  $.each( interacting, function( index, val ) {
+                    $.each( interacting_equivalent, function( index, val ) {
                       key = val;
                       extra = "\n - \nG protein interacting" ;
                       $('#'+plotid).find("#"+key).css("fill", "#66B36C");
+                      $('#'+plotid).find("#"+key).css("stroke-width", "4px");
+                      // $('#'+plotid).find("#"+key).css("stroke-dasharray", "5, 2");
+                      $('#'+plotid).find("#"+key).next().css("fill", "#000");
+                      original_title = $('#'+plotid).find("#"+key).attr('original_title')
+                      $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                      $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+                  });
+
+                    $.each( interacting_none_equivalent, function( index, val ) {
+                      key = val;
+                      extra = "\n - \nG protein interacting" ;
+                      $('#'+plotid).find("#"+key).css("fill", "#E67E22");
                       $('#'+plotid).find("#"+key).css("stroke-width", "4px");
                       // $('#'+plotid).find("#"+key).css("stroke-dasharray", "5, 2");
                       $('#'+plotid).find("#"+key).next().css("fill", "#000");
