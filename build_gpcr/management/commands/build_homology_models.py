@@ -1,5 +1,4 @@
 from build.management.commands.base_build import Command as BaseBuild
-from django.db import transaction
 
 from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState
 from residue.models import Residue
@@ -17,30 +16,15 @@ import logging
 import pprint
 from io import StringIO
 import sys
-import multiprocessing
 import re
 from datetime import datetime
 
 
 startTime = datetime.now()
-l = multiprocessing.Lock()
 
-
-@transaction.atomic
-def homology_model_multiprocessing(receptor, update):
-    print('Building model for {}'.format(receptor))
-    Homology_model = HomologyModeling(receptor, 'Inactive', ['Inactive'], update=update)
-    alignment = Homology_model.run_alignment()
-    Homology_model.build_homology_model(alignment)
-    Homology_model.format_final_model()
-    logger = logging.getLogger('homology_modeling')
-    l.acquire()
-    logger.info('Model for {} successfully built.'.format(receptor))
-    print('Model for {} successfully built.'.format(receptor))
-    l.release()
         
 class Command(BaseBuild):  
-    help = 'Build automated chimeric GPCR homology model'    
+    help = 'Build automated chimeric GPCR homology models'    
     
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
@@ -1158,7 +1142,7 @@ class HomologyModeling(object):
         
         # Model with MODELLER
         self.create_PIR_file(a, path+self.uniprot_id+"_post.pdb")
-        print(trimmed_res_nums)
+        
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
                           self.uniprot_id, 1, "{}_{}_model.pdb".format(self.reference_entry_name,self.state), atom_dict=trimmed_res_nums)
 #        os.remove(path+self.uniprot_id+"_post.pdb")
@@ -1634,7 +1618,7 @@ class Loops(object):
                                 except:
                                     continue
                             else:
-                                print('BUG: need to superpose aligned {}'.format(self.loop_label))
+                                print('Warning: need to superpose aligned {}'.format(self.loop_label))
                                 return self.fetch_loop_residues(main_pdb_array,superpose_modded_loop=True)
                         else:
                             prot_conf = ProteinConformation.objects.get(protein=self.reference_protein)
@@ -1655,13 +1639,11 @@ class Loops(object):
                             before_gns = [x.sequence_number for x in before4]
                             mid_nums = [x.sequence_number for x in loop_residues]
                             after_gns = [x.sequence_number for x in after4]
-#                            print(template,loop_residues)
                             alt_residues = parse.fetch_residues_from_pdb(template, before_gns+mid_nums+after_gns)
                             orig_residues = parse.fetch_residues_from_pdb(self.main_structure, 
                                                                           orig_before_gns+orig_after_gns)
                             superpose = sp.LoopSuperpose(orig_residues, alt_residues)
                             new_residues = superpose.run()
-                            print(self.loop_label,'RMSD: ',superpose.backbone_rmsd)
                             key_list = list(new_residues.keys())[4:-4]
                             for key in key_list:
                                 output[key] = new_residues[key]
@@ -1711,7 +1693,6 @@ class Loops(object):
                                 alt_residues1 = parse.fetch_residues_from_pdb(first_temp,before_gns+mid_gns1+['45x50','45x51','45x52'])
                                 superpose = sp.LoopSuperpose(orig_residues1,alt_residues1,ECL2=True,part=1)
                                 new_residues = superpose.run()
-                                print("ECL2_1 RMSD: ",superpose.backbone_rmsd)
                                 key_list = list(new_residues.keys())[4:-3]
                                 for key in key_list:
                                     ECL2_1["1_"+key] = new_residues[key]
@@ -1755,7 +1736,6 @@ class Loops(object):
                                 alt_residues2 = parse.fetch_residues_from_pdb(second_temp,['45x50','45x51','45x52']+mid_gns2+after_gns)
                                 superpose = sp.LoopSuperpose(orig_residues2,alt_residues2,ECL2=True,part=2)
                                 new_residues = superpose.run()
-                                print("ECL2_2 RMSD: ",superpose.backbone_rmsd)
                                 key_list = list(new_residues.keys())[3:-4]
                                 for key in key_list:
                                     ECL2_2["2_"+key] = new_residues[key]
