@@ -101,7 +101,7 @@ class Treeclass:
         for n in sets:
             if n.id==1:
                 for prot in n.proteins.all():
-                    crysts.append(prot.accession)
+                    crysts.append(prot.entry_name)
 
             
         #############################
@@ -154,12 +154,12 @@ class Treeclass:
         if len(a.proteins) < 3:
             return 'More_prots',None, None, None, None,None,None,None
         ####Get additional protein information
-        accesions = []
+        accesions = {}
         for n in a.proteins:
             fam = self.Tree.trans_0_2_A(n.protein.family.slug)
             if n.protein.sequence_type.slug == 'consensus':
                 fam+='_CON'
-            link = n.protein.entry_name
+            entry_name = n.protein.entry_name
             name = n.protein.name.replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')
             if '&' in name and ';' in name:
                 name = name.replace('&','').replace(';',' ')
@@ -171,13 +171,13 @@ class Treeclass:
             spec = str(n.protein.species)
             fam += '_'+n.protein.species.common_name.replace(' ','_').upper()
             desc = name
-            if acc in crysts:
+            if entry_name in crysts:
                 if not fam in self.Additional_info['crystal']['proteins']:
                     self.Additional_info['crystal']['proteins'].append(fam)
             if len(name)>25:
                 name=name[:25]+'...'
-            self.family[acc] = {'name':name,'family':fam,'description':desc,'species':spec,'class':'','ligand':'','type':'','link': link}
-            accesions.append(acc)
+            self.family[entry_name] = {'name':name,'family':fam,'description':desc,'species':spec,'class':'','accession':acc,'ligand':'','type':'','link': entry_name}
+            accesions[acc]=entry_name
             ####Write PHYLIP input
             sequence = ''
             for chain in n.alignment:
@@ -232,12 +232,13 @@ class Treeclass:
         ###
             subprocess.check_output(['phylip consense<temp'], shell=True, cwd = '/tmp/%s' %dirname)
         self.phylip = open('/tmp/%s/outtree' %dirname).read()
-        self.phylogeny_output = self.phylip
+        for acc in accesions.keys():
+            self.phylip=self.phylip.replace(acc,accesions[acc])
+#        self.phylogeny_output = self.phylip
         self.outtree = open('/tmp/%s/outfile' %dirname).read().lstrip()
         phylogeny_input = self.get_phylogeny('/tmp/%s/' %dirname)
         shutil.rmtree('/tmp/%s' %dirname)
-        for acc in accesions:
-            self.phylip=self.phylip.replace(acc,self.family[acc]['link'])
+        
         if build != False:
             open('static/home/images/'+build+'_legend.svg','w').write(str(self.Tree.legend))
             open('static/home/images/'+build+'_tree.xml','w').write(phylogeny_input)
@@ -246,7 +247,7 @@ class Treeclass:
         
     def get_phylogeny(self, dirname):
 
-        self.Tree.treeDo(dirname, self.phylogeny_output,self.branches,self.family,self.Additional_info, self.famdict)
+        self.Tree.treeDo(dirname, self.phylip,self.branches,self.family,self.Additional_info, self.famdict)
         phylogeny_input = open('%s/out.xml' %dirname,'r').read().replace('\n','')
         return phylogeny_input
     
@@ -281,7 +282,7 @@ def modify_tree(request):
     else:
         count = 1900 - 1400/math.sqrt(float(total))
     print(count)
-    return render(request, 'phylogenetic_trees/main.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylogeny_output, 'outtree':Tree_class.outtree})
+    return render(request, 'phylogenetic_trees/main.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree})
 
 def render_tree(request):
     Tree_class=Treeclass()
@@ -295,6 +296,6 @@ def render_tree(request):
         count = 1900 - 1400/math.sqrt(float(total))
     
     request.session['Tree']=Tree_class
-    return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylogeny_output, 'outtree':Tree_class.outtree })
+    return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
 
 
