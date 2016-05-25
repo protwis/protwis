@@ -1,6 +1,8 @@
 
-
 $(document).ready(function () {
+
+addaux('aux_proteins');
+addRow('chem_comp');
 
  $('.datepicker').datepicker({
      inline: true,
@@ -9,6 +11,10 @@ $(document).ready(function () {
 
 $('.numeric').keyup(function () { 
     this.value = this.value.replace(/[^0-9\.]/g,'');
+});
+
+$(".searchclear").on('click',function(){
+    $(this).prev('input').val("");
 });
 
 $('#xtals_form').validate({ // initialize the plugin
@@ -51,9 +57,11 @@ $('#xtals_form').validate({ // initialize the plugin
         var aa=aamod_type[k] ;
           if(this.value === aa){
           if (temp_index>1) {
+                    $(".aa_type.row_id_"+temp_index).val(''); 
                     $(".aa_type.row_id_"+temp_index).hide(); 
                     $('.'+aa+'.row_id_'+temp_index).show(); 
                   } else {
+                    $(".aa_type.row_id_"+temp_index).val(''); 
                     $(".aa_type.row_id").hide(); 
                     $('.'+aa+'.row_id').show(); 
                   }
@@ -68,9 +76,11 @@ $(".insert_pos_type").on('change', function () {
         var ins=insert_type[k] ;
           if(this.value === ins){
           if (temp_index>1) {
+                    $(".ins_pos_type.col_id_"+temp_index).val('');
                     $(".ins_pos_type.col_id_"+temp_index).hide(); 
                     $('.'+ins+'.col_id_'+temp_index).show(); 
                   } else {
+                    $(".ins_pos_type.col_id").val(''); 
                     $(".ins_pos_type.col_id").hide(); 
                     $('.'+ins+'.col_id').show(); 
                   }
@@ -91,12 +101,14 @@ $(".position").on('change', function () {
           }   
          else{
              if (temp_index>1) {
+                      $(".with_rec.col_id_"+temp_index).prop('selectedIndex',0); 
                       $(".with_rec.col_id_"+temp_index).hide(); 
                       $(".with_rec_val.col_id_"+temp_index).val('');
                       $(".with_rec_val.col_id_"+temp_index).hide();
                       $(".stable.col_id_"+temp_index).show();
                     } 
                     else { 
+                      $(".with_rec.col_id").prop('selectedIndex',0); 
                       $(".with_rec.col_id").hide(); 
                       $(".with_rec_val.col_id").val(''); 
                       $(".with_rec_val.col_id").hide();
@@ -145,6 +157,7 @@ $(".ph").on('change', function () {
   for (var n=0; n<ph_type.length; n+=1){
       var ph_val=ph_type[n] ;
       if(this.value === ph_val){
+        $(".ph_type").val('');
         $(".ph_type").hide();
         $("."+ph_val).show();
       }
@@ -158,9 +171,11 @@ $(".deletion_type").on('change', function () {
         var del=delet_type[l] ;
           if(this.value === del){    
           if (temp_index>1) {
+                    $(".del_type.row_id_"+temp_index).val('');
                     $(".del_type.row_id_"+temp_index).hide(); 
                     $('.'+del+'.row_id_'+temp_index).show();
                   } else {
+                    $(".del_type.row_id").val(''); 
                     $(".del_type.row_id").hide(); 
                     $('.'+del+'.row_id').show(); 
                   }
@@ -174,6 +189,9 @@ showOther('id_lcp_lipid','other_lcp','other [See next field]');
 showOther('id_crystal_type','other_cryst_type','other [See next field]');
 showOther('id_lipid','other_lipid','other [See next field]');
 showOther('id_crystal_method','other_method','other [See next field]');
+showOther('id_expr_method','other_expr','Other [In case of E.Coli or Yeast recombinant expression]');
+showOther('id_host_cell_type','other_host_cell','other [See next field]');
+showOther('id_host_cell','host_cell_other','other [See next field]');
 showOtherAux('signal','other_signal','Other');
 showOtherAux('prot_cleavage','other_prot','Other');
 showOtherAux('tag','other_tag','Other');
@@ -185,16 +203,19 @@ delRow(".mod_delrow", "#modifications");
 delLast(".chem_enz_delrow", "#solubil_purif");
 
 $('.delcol').on('click', function (){
-    col_index=$(this).parent().index();    
-    $("#aux_proteins tr td:nth-child(" + (col_index+1) + ")").each(function(){
-     if ($(this).is('[class^="klon"]')){
-        klon_class=$(this).attr("class").split("").pop();    
-     }
- });
-     if (confirm("Are you sure you want to delete this column?")){
+    col_index=$(this).parent().index();      
+
+    if (confirm("Are you sure you want to delete this column?")){
     $("#aux_proteins tr").each(function() {
-    $(this).children().eq(col_index).remove();
-    $(".cloned_insertion"+klon_class).remove();
+      $(this).children().eq(col_index).remove();
+
+          console.log("col_index:"+col_index);
+          $("#deletions tr").each(function() {
+            if ($(this).hasClass("cloned_insertion"+col_index)){
+                $(this).remove();
+            }
+          });
+  
     });
    //udpate the id's 
     $('#aux_proteins td').each(function(){
@@ -232,7 +253,7 @@ if (my_index>1){
               var insertion_clone=$(insertion).clone(true);
               insertion.addClass("klon"+insertion.index());
               insertion_clone.find(".insert_pos_type").remove();
-              $("#deletions tr:last").after("<tr><th>Del. from Insertion"+cur_index+"</th></tr>")
+              $("#deletions tr:last").after("<tr><th class='cloned_th"+insertion.index()+"'>Del. from Insertion"+cur_index+"</th></tr>");
               $("#deletions tr:last").append(insertion_clone);
               var last_del_index=$("#deletions tr:last").index();
               insertion_clone.parent().addClass("cloned_insertion"+cur_index);
@@ -338,6 +359,7 @@ $(".position.col_id").on('change', function(){
           }
  else {
   $(".cloned_insertion"+grab_index).hide();
+  $("th").hasClass("cloned_th"+grab_index).hide();
  }         
 });
 
