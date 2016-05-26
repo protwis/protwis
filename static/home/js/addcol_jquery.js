@@ -216,8 +216,8 @@ $('.delcol').on('click', function (){
             }
           });
   
-    });
-   //udpate the id's 
+    });      
+   //udpate the id's  (of all table and originals)
     $('#aux_proteins td').each(function(){
       var my_index=$(this).index();
       $(this).children().each(function(){    
@@ -235,8 +235,47 @@ $('.delcol').on('click', function (){
           $(this).attr("name", $(this).attr("name").replace(/\d+$/, my_index));
           }
       });
-   });
-    //update the ids
+   });  
+   ///update also the cloned td ids classes etc
+     $('#aux_proteins td').each(function(){
+       var td_class=$(this).attr('class').split(' ').pop();
+        if (td_class.match("^klon")){
+          console.log(td_class);
+          //$("."+td_class).hide();
+          klon_td=$(this).index();
+          $("#deletions td").each(function(){
+              if ( $(this).hasClass(td_class) ){
+                del_row_index=$(this).parent().index();
+                  var del_class=$(this).attr('class').split(' ').pop();
+                  $(this).children().each(function(){
+                    //now my this is children of del td
+                    //tr index  
+                    $(this).attr("class", $(this).attr("class").replace(/\bins_del_single.*?\b/g, 'ins_del_single'+klon_td));
+                    $(this).attr("class", $(this).attr("class").replace(/\bins_del_start.*?\b/g, 'ins_del_start'+klon_td));
+                    $(this).attr("class", $(this).attr("class").replace(/\bins_del_end.*?\b/g, 'ins_del_end'+klon_td));
+                    $(this).attr("class", $(this).attr("class").replace(/\bcol_id.*?\b/g, 'col_id_'+klon_td));
+                    $(this).attr("class", $(this).attr("class").replace(/\brow_id.*?\b/g, 'row_id_'+del_row_index));
+                    $(this).attr("id", $(this).attr("id").replace(/\d+$/, klon_td));
+
+                    }); //children
+                $(this).attr("class", $(this).attr("class").replace(/\bklon.*?\b/g, 'klon'+klon_td));
+                $(this).attr("class", $(this).attr("class").replace(/\bklon.*?\b/g, 'klon'+klon_td));
+   
+                //update the tr cloned insertion class
+                $(this).parent().each(function(){
+                  $(this).attr("class", $(this).attr("class").replace(/\bcloned.*?\b/g, 'cloned_insertion'+klon_td));   
+                  $(this).children().each(function(){
+                    if ($(this).is('th')){
+                      klon_td_minus=klon_td-1;
+                      $(this).text("Del. from Insertion"+klon_td_minus); //update of th
+                    }
+                });               
+                }); 
+              }
+        }); ///deletions td
+          $(this).attr("class", $(this).attr("class").replace(/\bklon.*?\b/g, 'klon'+klon_td));
+       }
+    });
   }
   else{}
  });
@@ -247,17 +286,19 @@ $(".position").on('click',function(){
 if (my_index>1){
     $(".insert_pos_type.col_id_"+my_index).one('click',function(){ 
         cur_index=$(this).parent().index();
+        actual_index=cur_index-1;
         console.log("my_index="+cur_index);
         console.log("cur_index="+cur_index);
               var insertion= $(this).closest('td');
-              var insertion_clone=$(insertion).clone(true);
               insertion.addClass("klon"+insertion.index());
+              var insertion_clone=$(insertion).clone(true);
               insertion_clone.find(".insert_pos_type").remove();
-              $("#deletions tr:last").after("<tr><th class='cloned_th"+insertion.index()+"'>Del. from Insertion"+cur_index+"</th></tr>");
+              $("#deletions tr:last").after("<tr><th class='cloned_th"+insertion.index()+"'>Del. from Insertion"+actual_index+"</th></tr>");
               $("#deletions tr:last").append(insertion_clone);
               var last_del_index=$("#deletions tr:last").index();
               insertion_clone.parent().addClass("cloned_insertion"+cur_index);
-               $('.cloned_insertion'+cur_index).not(':first').remove();
+              //avoid duplicates
+              $('.cloned_insertion'+cur_index).not(':first').remove();
               $(insertion_clone).each(function(){
                 $(this).children().each(function(){
                 $(this).addClass("row_id_"+last_del_index); 
@@ -343,23 +384,15 @@ else{
 
 });
 
-$(".position.col_id").on('change', function(){
- if ( $(".insert_pos_type.col_id").is(":visible") ){
-            $(".cloned_insertion").show();
-          }
- else {
-  $(".cloned_insertion").hide();
- }         
-});
-
-$(".position.col_id").on('change', function(){
+$(".position").on('change', function(){
   var grab_index=$(this).parent().index();
+  console.log("grabbed index="+grab_index);
  if ( $(".insert_pos_type.col_id_"+grab_index).is(":visible") ){
             $(".cloned_insertion"+grab_index).show();
           }
  else {
   $(".cloned_insertion"+grab_index).hide();
-  $("th").hasClass("cloned_th"+grab_index).hide();
+  //$("th").hasClass("cloned_th"+grab_index).hide();
  }         
 });
 
