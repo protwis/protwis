@@ -483,9 +483,9 @@ class DrawSnakePlot(Diagram):
             res_helix = []
             res_after = []
             for ii in range(0,len(rs)):
-                if start==1 and rs[ii][2]=='':
+                if start==1 and (rs[ii][2]=='' or 'x' not in rs[ii][2]):
                     res_before.append(ii)
-                elif rs[ii][2]!='':
+                elif rs[ii][2]!='' and 'x' in rs[ii][2]:
                     res_helix.append(ii)
                     start = 0
                 elif start==0 and rs[ii][2]=='':
@@ -758,8 +758,6 @@ class DrawSnakePlot(Diagram):
             smallrow = 3
 
 
-        startX = self.TBCoords[prevhelix]['intra'][0]+40
-        startY =  self.TBCoords[prevhelix]['intra'][1]+40
 
         row_length = 3 #start a row row helix
         row_pos = 0
@@ -772,13 +770,17 @@ class DrawSnakePlot(Diagram):
         res_helix = []
         res_after = []
         for i in range(0,res_num):
-            if start==1 and rs[i][2]=='':
+            if start==1 and (rs[i][2]=='' or 'x' not in rs[i][2]):
                 res_before.append(i)
-            elif rs[i][2]!='':
+            elif rs[i][2]!='' and 'x' in rs[i][2]:
                 res_helix.append(i)
                 start = 0
             elif start==0 and rs[i][2]=='':
                 res_after.append(i)
+
+
+        startX = self.TBCoords[prevhelix]['intra'][0]+40
+        startY =  self.TBCoords[prevhelix]['intra'][1]+40+10*len(res_before)
 
 
         for p,i in list(enumerate(res_helix)):

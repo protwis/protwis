@@ -134,7 +134,7 @@ function table_ajaxMutants() {
                 count = 0;
               $.each( data, function( key, val ) {
                 count = count + 1;
-                 console.log('#'+protein_index+"#"+key+" val:"+val);
+                 // console.log('#'+protein_index+"#"+key+" val:"+val);
 
                             var ligands = [], bigincreases=0, increases = 0, bigdecreases=0, decreases = 0, unchanged=0, unspecified = 0;
                              
@@ -209,7 +209,7 @@ function table_ajaxMutants() {
 
 
               });
-              console.log("Mutants for "+protein+ " : "+count);
+              // console.log("Mutants for "+protein+ " : "+count);
 
         });
 

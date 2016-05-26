@@ -27,6 +27,7 @@ def detail(request, slug):
     no_of_proteins = proteins.count()
     no_of_human_proteins = Protein.objects.filter(family__slug__startswith=pf.slug, species__id=1,
         sequence_type__slug='wt').count()
+    list_proteins = proteins.values_list('pk',flat=True)
 
 
     # get structures of this family
@@ -36,7 +37,8 @@ def detail(request, slug):
     mutations = MutationExperiment.objects.filter(protein__in=proteins)
     
     # fetch proteins and segments
-    proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt', species__id=1)
+    # proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt', species__id=1) 
+    ## Why only make it based on human?
     segments = ProteinSegment.objects.filter(partial=False)
 
     # create an alignment object
@@ -52,8 +54,8 @@ def detail(request, slug):
     # calculate consensus sequence + amino acid and feature frequency
     a.calculate_statistics()
 
-    HelixBox = DrawHelixBox(a.full_consensus,'Class A',str('test'))
-    SnakePlot = DrawSnakePlot(a.full_consensus,'Class A',str('test'))
+    HelixBox = DrawHelixBox(a.full_consensus,'Class A',str(list_proteins))
+    SnakePlot = DrawSnakePlot(a.full_consensus,'Class A',str(list_proteins))
 
     try:
         pc = ProteinConformation.objects.get(protein__family__slug=slug, protein__sequence_type__slug='consensus')
