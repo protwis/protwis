@@ -1197,12 +1197,14 @@ def GProtein(request):
 
     # proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('proteingproteinpair_set')
     gproteins = ProteinGProtein.objects.all().prefetch_related('proteingproteinpair_set')
+
     jsondata = {}
     for gp in gproteins:
         ps = gp.proteingproteinpair_set.all()
         if ps:
             jsondata[str(gp)] = []
             for p in ps:
+                # print(p.protein.family.parent.parent.parent)
                 jsondata[str(gp)].append(str(p.protein.entry_name)+'\n')
             jsondata[str(gp)] = ''.join(jsondata[str(gp)])
 
@@ -1218,6 +1220,10 @@ class TargetSelection(AbsTargetSelection):
     target_input = False
     redirect_on_select = True
     type_of_selection = 'gsinterface'
+    title = 'SELECT TARGET for Gs INTERFACE'
+    description = 'Select a reference target by searching or browsing.' \
+        + '\n\nThe Gs interface from adrb2 (PDB: 3SN6) will be superposed onto the selected target.' \
+        + '\n\nAn interaction browser for the adrb2 Gs interface will be given for comparison"'
 
     # template_name = 'common/targetselection.html'
 
@@ -1248,9 +1254,12 @@ def GSinterface(request, protein = None):
     aa_names = definitions.AMINO_ACID_GROUP_NAMES
     names_aa = dict(zip(aa_names.values(),aa_names.keys()))
 
-    residues_browser = [{'pos': 135, 'aa': 'I', 'gprotseg': "H5",'segment': 'TM3', 'ligand': 'Gs', 'type': aa_names['hp'], 'gpcrdb': '3.54x54', 'wt_pos': 135, 'gpnum': 'G.H5.16', 'gpaa': 'Q384', 'availability': 'interacting'},{'pos': 136, 'aa': 'T', 'gprotseg': "H5",'segment': 'TM3', 'ligand': 'Gs', 'type': 'Polar', 'gpcrdb': '3.55x55', 'wt_pos': 136, 'gpnum': 'G.H5.12', 'gpaa': 'R380', 'availability': 'interacting'},{'pos': 139, 'aa': 'F', 'gprotseg': "H5",'segment': 'ICL2', 'ligand': 'Gs', 'type': 'Aromatic', 'gpcrdb': '34.51x51', 'wt_pos': 139, 'gpnum': 'G.H5.8', 'gpaa': 'F376', 'availability': 'interacting'},{'pos': 139, 'aa': 'F', 'gprotseg': "S1",'segment': 'ICL2', 'ligand': 'Gs', 'type': 'Aromatic', 'gpcrdb': '34.51x51', 'wt_pos': 139, 'gpnum': 'G.S1.2', 'gpaa': 'H41', 'availability': 'interacting'},{'pos': 141, 'aa': 'Y', 'gprotseg': "H5",'segment': 'ICL2', 'ligand': 'Gs', 'type': 'Aromatic', 'gpcrdb': '34.53x53', 'wt_pos': 141, 'gpnum': 'G.H5.19', 'gpaa': 'H387', 'availability': 'interacting'},{'pos': 225, 'aa': 'E', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'Negative charge', 'gpcrdb': '5.64x64', 'wt_pos': 225, 'gpnum': 'G.H5.12', 'gpaa': 'R380', 'availability': 'interacting'},{'pos': 225, 'aa': 'E', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'Negative charge', 'gpcrdb': '5.64x64', 'wt_pos': 225, 'gpnum': 'G.H5.16', 'gpaa': 'Q384', 'availability': 'interacting'},{'pos': 229, 'aa': 'Q', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'Polar', 'gpcrdb': '5.68x68', 'wt_pos': 229, 'gpnum': 'G.H5.13', 'gpaa': 'D381', 'availability': 'interacting'},{'pos': 229, 'aa': 'Q', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'Polar', 'gpcrdb': '5.68x68', 'wt_pos': 229, 'gpnum': 'G.H5.16', 'gpaa': 'Q384', 'availability': 'interacting'},{'pos': 229, 'aa': 'Q', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'Polar', 'gpcrdb': '5.68x68', 'wt_pos': 229, 'gpnum': 'G.H5.17', 'gpaa': 'R385', 'availability': 'interacting'},{'pos': 274, 'aa': 'T', 'gprotseg': "H5",'segment': 'TM6', 'ligand': 'Gs', 'type': 'Polar', 'gpcrdb': '6.36x36', 'wt_pos': 274, 'gpnum': 'G.H5.23', 'gpaa': 'D343', 'availability': 'interacting'},{'pos': 274, 'aa': 'T', 'gprotseg': "H5",'segment': 'TM6', 'ligand': 'Gs', 'type': 'Polar', 'gpcrdb': '6.36x36', 'wt_pos': 274, 'gpnum': 'G.H5.24', 'gpaa': 'E392', 'availability': 'interacting'},{'pos': 328, 'aa': 'R', 'gprotseg': "H5",'segment': 'TM7', 'ligand': 'Gs', 'type': 'Polar', 'gpcrdb': '7.55x55', 'wt_pos': 328, 'gpnum': 'G.H5.24', 'gpaa': 'D343', 'availability': 'interacting'}]
+    residues_browser = [{'pos': 135, 'aa': 'I', 'gprotseg': "H5",'segment': 'TM3', 'ligand': 'Gs', 'type': aa_names['hp'], 'gpcrdb': '3.54x54', 'wt_pos': 135, 'gpnum': 'G.H5.16', 'gpaa': 'Q384', 'availability': 'interacting'},{'pos': 136, 'aa': 'T', 'gprotseg': "H5",'segment': 'TM3', 'ligand': 'Gs', 'type': 'Polar', 'gpcrdb': '3.55x55', 'wt_pos': 136, 'gpnum': 'G.H5.12', 'gpaa': 'R380', 'availability': 'interacting'},{'pos': 139, 'aa': 'F', 'gprotseg': "H5",'segment': 'ICL2', 'ligand': 'Gs', 'type': 'Aromatic', 'gpcrdb': '34.51x51', 'wt_pos': 139, 'gpnum': 'G.H5.8', 'gpaa': 'F376', 'availability': 'interacting'},{'pos': 139, 'aa': 'F', 'gprotseg': "S1",'segment': 'ICL2', 'ligand': 'Gs', 'type': 'Aromatic', 'gpcrdb': '34.51x51', 'wt_pos': 139, 'gpnum': 'G.S1.2', 'gpaa': 'H41', 'availability': 'interacting'},{'pos': 141, 'aa': 'Y', 'gprotseg': "H5",'segment': 'ICL2', 'ligand': 'Gs', 'type': 'Aromatic', 'gpcrdb': '34.53x53', 'wt_pos': 141, 'gpnum': 'G.H5.19', 'gpaa': 'H387', 'availability': 'interacting'},{'pos': 225, 'aa': 'E', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'Negative charge', 'gpcrdb': '5.64x64', 'wt_pos': 225, 'gpnum': 'G.H5.12', 'gpaa': 'R380', 'availability': 'interacting'},{'pos': 225, 'aa': 'E', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'Negative charge', 'gpcrdb': '5.64x64', 'wt_pos': 225, 'gpnum': 'G.H5.16', 'gpaa': 'Q384', 'availability': 'interacting'},{'pos': 229, 'aa': 'Q', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'Polar', 'gpcrdb': '5.68x68', 'wt_pos': 229, 'gpnum': 'G.H5.13', 'gpaa': 'D381', 'availability': 'interacting'},{'pos': 229, 'aa': 'Q', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'Polar', 'gpcrdb': '5.68x68', 'wt_pos': 229, 'gpnum': 'G.H5.16', 'gpaa': 'Q384', 'availability': 'interacting'},{'pos': 229, 'aa': 'Q', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'Polar', 'gpcrdb': '5.68x68', 'wt_pos': 229, 'gpnum': 'G.H5.17', 'gpaa': 'R385', 'availability': 'interacting'},{'pos': 274, 'aa': 'T', 'gprotseg': "H5",'segment': 'TM6', 'ligand': 'Gs', 'type': 'Polar', 'gpcrdb': '6.36x36', 'wt_pos': 274, 'gpnum': 'G.H5.23', 'gpaa': 'D343', 'availability': 'interacting'},{'pos': 274, 'aa': 'T', 'gprotseg': "H5",'segment': 'TM6', 'ligand': 'Gs', 'type': 'Polar', 'gpcrdb': '6.36x36', 'wt_pos': 274, 'gpnum': 'G.H5.24', 'gpaa': 'E392', 'availability': 'interacting'},{'pos': 328, 'aa': 'R', 'gprotseg': "H5",'segment': 'TM7', 'ligand': 'Gs', 'type': 'Polar', 'gpcrdb': '7.55x55', 'wt_pos': 328, 'gpnum': 'G.H5.24', 'gpaa': 'D343', 'availability': 'interacting'}, {'pos': 232, 'aa': 'K', 'segment': 'TM5', 'ligand': 'Gs', 'type': 'Positive charge', 'gpcrdb': '5.71x71', 'wt_pos': 232, 'gprotseg': "H5", 'gpnum': 'G.H5.13', 'gpaa': 'D381', 'availability': 'interacting'}, {'pos': 235, 'aa': 'K', 'segment': 'TM5', 'ligand': 'Gs', 'type': 'Positive charge', 'gpcrdb': '5.74x74', 'wt_pos': 235, 'gprotseg': "H4", 'gpnum': 'G.H4.22', 'gpaa': 'R342', 'availability': 'interacting'}]
 
-    accessible_gn = ['3.50x50','3.53x53','34.50x50','34.54x54','5.61x61','5.65x65','5.67x67', '6.37x37','6.33x33','6.32x32','6.29x29','8.48x48','8.49x49',]
+    # accessible_gn = ['3.50x50', '3.53x53', '3.54x54', '3.55x55', '34.50x50', '34.51x51', '34.53x53', '34.54x54', '5.61x61', '5.64x64', '5.65x65', '5.67x67', '5.68x68', '5.71x71', '5.72x72', '5.74x74', '5.75x75', '6.29x29', '6.32x32', '6.33x33', '6.36x36', '6.37x37', '7.55x55', '8.48x48', '8.49x49']
+
+    accessible_gn = ['3.50x50', '3.53x53','34.50x50', '34.54x54', '5.61x61', '5.64x64', '5.65x65', '5.67x67', '5.68x68', '5.71x71', '5.72x72', '5.75x75', '6.29x29', '6.32x32', '6.33x33', '6.36x36', '6.37x37','8.48x48', '8.49x49']
+
     interacting_gn = []
 
     for i in residues_browser:
@@ -1260,22 +1269,23 @@ def GSinterface(request, protein = None):
     accessible_pos = residuelist.filter(display_generic_number__label__in=accessible_gn).values_list('sequence_number', flat=True)
 
     # Which of the interacting_pos can be facilitated in the same way as observed in 3SN6?
-
     GS_none_equivalent_interacting_pos = []
 
     for interaction in interacting_gn:
         gs_b2_interaction_type_long = (next((item['type'] for item in residues_browser if item['gpcrdb'] == interaction), None))
         gs_b2_interaction_type_short = ''
 
-        interacting_aa = residuelist.filter(display_generic_number__label__in=[interaction]).values_list('amino_acid', flat=True)[0]
+        interacting_aa = residuelist.filter(display_generic_number__label__in=[interaction]).values_list('amino_acid', flat=True)
 
-        feature = names_aa[gs_b2_interaction_type_long]
-        if interacting_aa not in definitions.AMINO_ACID_GROUPS[feature]:
-            pos = residuelist.filter(display_generic_number__label__in=[interaction]).values_list('sequence_number', flat=True)[0]
-            GS_none_equivalent_interacting_pos.append(pos)
+        if interacting_aa:
+            feature = names_aa[gs_b2_interaction_type_long]
+            if interacting_aa[0] not in definitions.AMINO_ACID_GROUPS[feature]:
+                pos = residuelist.filter(display_generic_number__label__in=[interaction]).values_list('sequence_number', flat=True)[0]
+                GS_none_equivalent_interacting_pos.append(pos)
 
-
-
+    # residue browser change wt_pos and AA depending on selected receptor
+    # highlight in respective colors, whether interaction is conserved or not based on the 
+    # GS_none_equivalent_interacting_pos!
 
     return render(request, 'interaction/gsinterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein} )
 
