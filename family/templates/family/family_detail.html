@@ -96,4 +96,10 @@
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/diagrams.js' %}"></script>
 <script src="{% static 'home/js/color_picker.js' %}"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            mutant_json = '{{mutations_pos_list|safe}}';
+            interaction_json = '{{interaction_pos_list|safe}}';
+        });        
+    </script> 
 {% endblock %}

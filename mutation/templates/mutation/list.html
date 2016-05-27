@@ -197,13 +197,22 @@ input.form-control {
     {% else %}
         <p> Ooops! There is no data to show here yet. </p>
     {% endif %}
- {% if HelixBox %}   
+
+ {% if data %}   
 <br><br><br><br>
 <div class="col-md-2 text-right text-info">
     <h4>Residue Table</h4>
 </div>
 <div class="col-md-10">
 {% include "residue/residue_table_only.html" with header=header segments=segments data=data onlymutants=1 longest_name=longest_name%}
+</div>
+{% else %}
+<br><br><br><br>
+<div class="col-md-2 text-right text-info">
+    <h4>Residue Table</h4>
+</div>
+<div class="col-md-10">
+Too many proteins to produce meaningful residue table.
 </div>
 {% endif %}
 <!-- sequence alignment ends -->

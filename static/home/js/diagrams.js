@@ -307,10 +307,14 @@
                                 unchanged ++;
                               } else if (v[2]=='No effect on') {
                                 unchanged ++;
+                              } else if (v[2]=='No effect') {
+                                unchanged ++;
                               } else if (v[2]=='Abolish') {
-                                bigdecreases ++;
-                              } else if (v[2]=='Gain of') {
                                 bigincreases ++;
+                              } else if (v[2]=='Abolished effect') {
+                                bigincreases ++;
+                              } else if (v[2]=='Gain of') {
+                                bigdecreases ++;
                               } else if (v[2]=='Increase') {
                                 increases ++;
                               } else if (v[2]=='Decrease') {
@@ -395,10 +399,14 @@
                                 unchanged ++;
                               } else if (v[2]=='No effect on') {
                                 unchanged ++;
+                              } else if (v[2]=='No effect') {
+                                unchanged ++;
                               } else if (v[2]=='Abolish') {
-                                bigdecreases ++;
-                              } else if (v[2]=='Gain of') {
                                 bigincreases ++;
+                              } else if (v[2]=='Abolished effect') {
+                                bigincreases ++;
+                              } else if (v[2]=='Gain of') {
+                                bigdecreases ++;
                               } else if (v[2]=='Increase') {
                                 increases ++;
                               } else if (v[2]=='Decrease') {
@@ -491,6 +499,46 @@
                         $("text").tooltip('fixTitle');
     
                         });
+                    }
+
+                    function ajaxInteractionsPos(plotid) {
+
+                      resetColors(plotid);
+
+
+                      var pos = jQuery.parseJSON(interaction_json);
+
+                          $.each( pos, function( key, val ) {
+
+                            var flags = [], falgsAA = [], output = [], outputAA = [], l = val.length, i;
+                            for( i=0; i<l; i++) {
+                                if( flags[val[i][1]]) continue;
+                                flags[val[i][1]] = true;
+                                output.push(val[i][1]);
+                            }
+                            for( i=0; i<l; i++) {
+                                if( flags[val[i][0]]) continue;
+                                flags[val[i][0]] = true;
+                                outputAA.push(val[i][0]);
+                            }
+                             
+                             extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
+
+
+                             $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
+                             $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+
+                             original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+
+                             $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+                          });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
+  
                     }
 
                     function ajaxInteractionsLigand(protein,ligand) {
