@@ -2,8 +2,8 @@
 {% load staticfiles %}
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
-<link href="{% static 'home/css/residue_table.css' %}" rel="stylesheet">
+<!-- <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" /> -->
+<!-- <link href="{% static 'home/css/residue_table.css' %}" rel="stylesheet"> -->
 <style>
 canvas {
     border:2px solid #888888;
@@ -114,14 +114,14 @@ canvas {
     <div class="col-md-12">
             <div class="panel-body">
                     <div class='col-md-10'>
-                        <p><strong>{{ mapped_protein }} - Gs interface </strong> <br> <font style="color: #000; background-color: #66B36C" >Dark-Green</font>: Gs-interacting residues similar to β2-adrenoceptor <br> <font style="color: #000; background-color: #E67E22" >Orange</font>: Gs-interacting residues not conserved in {{ mapped_protein }} <br> <font style="color: #000; background-color: #87E88F">Light</font>: G protein accessible residues facing the G protein and that have a generic number (ICL3 residues can also be accessible) </p>
+                        <p><strong>{{ mapped_protein }} - Gs interface </strong> <br> <font style="color: #000; background-color: #1F9439" >Dark-Green</font>: Gs-interacting residues similar to β2-adrenoceptor <br> <font style="color: #000; background-color: #E67E22" >Orange</font>: Gs-interacting residues not conserved in {{ mapped_protein }} <br> <font style="color: #000; background-color: #BDEEC8">Light-Green</font>: G protein accessible residues facing the G protein and that have a generic number (ICL3 residues can also be accessible) </p>
                     </div>
                 </div>
             </div>
 
 </div>
 
-<h2>β2 adrenoceptor - Gs Interaction Browser</h2>
+<h2>Gs Interaction Browser</h2>
 <div class="row">
     <div class="col-md-11 text-center">
         {% if residues %}              
@@ -204,7 +204,7 @@ canvas {
                    $.each( accessible, function( index, val ) {
                       key = val;
                       extra = "\n - \nG protein accessible" ;
-                      $('#'+plotid).find("#"+key).css("fill", "#87E88F");
+                      $('#'+plotid).find("#"+key).css("fill", "#BDEEC8");
                       $('#'+plotid).find("#"+key).next().css("fill", "#000");
                       $('#'+plotid).find("#"+key).css("stroke-width", "3px");
                       original_title = $('#'+plotid).find("#"+key).attr('original_title')
@@ -216,7 +216,7 @@ canvas {
                     $.each( interacting_equivalent, function( index, val ) {
                       key = val;
                       extra = "\n - \nG protein interacting" ;
-                      $('#'+plotid).find("#"+key).css("fill", "#66B36C");
+                      $('#'+plotid).find("#"+key).css("fill", "#1F9439");
                       $('#'+plotid).find("#"+key).css("stroke-width", "3px");
                       // $('#'+plotid).find("#"+key).css("stroke-dasharray", "5, 2");
                       $('#'+plotid).find("#"+key).next().css("fill", "#000");
@@ -262,6 +262,16 @@ canvas {
                 'paging': false,
                 orderCellsTop: true,
                 "autoWidth": true,
+                "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                    if ({{ interacting_gn|safe }}.indexOf(aData[2] ) >=0  )
+                    {
+                        $('td', nRow).css('background-color', '#E67E22');
+                    }
+                    else
+                    {
+                        $('td', nRow).css('background-color', '#1F9439');
+                    }
+                },
                 dom: 'T<"clear">lfrtip',
                 "aoColumnDefs": [
                     { "sType": "string", "aTargets": [0] },
@@ -285,6 +295,7 @@ canvas {
                         ]
                     });
                 }
+
             });
 
             $('[data-toggle="tooltip"]').tooltip(); 
@@ -340,8 +351,6 @@ canvas {
                 
             }
             ajaxInteractions('snakeplot')
-            ajaxInteractions('helixbox')
-
 
             });
     </script> 
