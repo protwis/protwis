@@ -35,7 +35,7 @@ function addaux(tableid){
             td = $(this).find("td").eq(0);
             $(this).append(td.clone(true));      
             newtd = $(this).find("td").last();   
-            //newtd.show();
+            newtd.show();
             cur_index = newtd.index();        
             if (newtd.hasClass("klon1")){
               newtd.attr("class", newtd.attr("class").replace("klon1", "klon"+cur_index));
@@ -81,14 +81,14 @@ function deleteRow(tblId){
 
 function addRow(tblid){
 var r_i= 0 ;
-  $("#"+tblid+" tr").eq(1).clone(true).appendTo("#"+tblid);
-   $("#"+tblid+" tr:last").each(function(){
+  $("#"+tblid+" tr").eq(0).show();
+  $("#"+tblid+" tr").eq(1).clone(true).show().appendTo("#"+tblid);
+  $("#"+tblid+" tr:last").each(function(){
    cur_index = $(this).index();
    newtd=$(this).find('td');   //find the cells for each row
    newtd.children().each(function(){
               if ($(this).is('span,input,textarea')){ 
                   if ($(this).hasClass('checkrow')){
-                    
                     button_class=$(this).attr('class');
                     new_button_class=button_class+" new_delrow row";
                     $(this).attr('class',new_button_class); 
