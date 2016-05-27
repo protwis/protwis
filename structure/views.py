@@ -31,6 +31,13 @@ from Bio.PDB import PDBIO, PDBParser
 from operator import itemgetter
 import xlsxwriter
 
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+from smtplib import SMTP
+import smtplib
+import sys
+
 class StructureBrowser(TemplateView):
     """
     Fetching Structure data for browser
@@ -1366,8 +1373,10 @@ def webform_two(request):
     return render(request, 'web_form_2.html')
 
 def webformdata(request) :
+
     data = request.POST
     raw_data = deepcopy(data)
+    purge_keys = ('Please Select','aamod_position','wt_aa','mut_aa','insert_pos_type','protein_type','deletion','csrfmiddlewaretoken')
     data = dict((k, v) for k, v in data.items() if v!='' and v!='Please Select') #remove empty 
     deletions = []
     mutations = []
@@ -1381,171 +1390,205 @@ def webformdata(request) :
     aamod, aamod_start, aamod_end=[], [], []
 
     i=1
-
+    error = 0
     for key,value in sorted(data.items()):
-
-        if key.startswith('delet_start'):
-            deletions.append({'start':value, 'end':data[key.replace('start','end')], 'origin':'user', 'type':'range'})
-            data.pop(key, None)
-            data.pop(key.replace('start','end'), None)
-        elif key.startswith('ins_start'):
-            deletions.append({'start':value, 'end':data[key.replace('start','end')], 'origin':'insertion'+key.replace('ins_start',''), 'type':'range'})
-            data.pop(key, None)
-            data.pop(key.replace('start','end'), None)
-            data.pop(key.replace('ins_start',''), None)
-        elif key.startswith(('deletion_single', 'insert_pos_single')):
-            if key.startswith('insert_pos_single'):
-                deletions.append({'pos':value, 'origin':'insertion'+key.replace('insert_pos_single',''), 'type':'single'})
-                data.pop(key.replace('insert_pos_single',''), None)
-            else:
-                deletions.append({'pos':value, 'origin':'user', 'type':'single'})
-            data.pop(key, None)
-
-        if key.startswith('aa_no'):
-            pos_id = key.replace('aa_no','')
-            if pos_id=='':
-                mut_id='1'
-            else:
-                mut_id=pos_id.replace('_','')
-
-            mutations.append({'pos':value,'wt':data['wt_aa'+pos_id],'mut':data['mut_aa'+pos_id]})
-            data.pop(key, None)
-            data.pop('wt_aa'+pos_id, None)
-            data.pop('mut_aa'+pos_id, None)
-
-        if key.startswith(('date','name_cont', 'pi_name', 
-            'pi_address','address','url','pi_email' )):
-            contact_info[key]=value
-            data.pop(key, None)
-
-        if key.startswith(('pdb', 'pdb_name',
-            'uniprot','ligand_name', 'ligand_activity', 'ligand_conc', 'ligand_conc_unit','ligand_id','ligand_id_type')):
-            construct_crystal[key]=value
-            data.pop(key, None)
-
-        if key.startswith('position'):
-            pos_id = key.replace('position','')
-            if pos_id=='':
-                aux_id='1'
-            else:
-                aux_id=pos_id.replace('_','')
-
-            if 'aux'+aux_id not in auxiliary:
-                auxiliary['aux'+aux_id] = {'position':value,'type':data['protein_type'+pos_id],'presence':data['presence'+pos_id]}
-
+        try:
+            if key.startswith('delet_start'):
+                deletions.append({'start':value, 'end':data[key.replace('start','end')], 'origin':'user', 'type':'range'})
                 data.pop(key, None)
-                data.pop('protein_type'+pos_id, None)
-                data.pop('presence'+pos_id, None)
+                data.pop(key.replace('start','end'), None)
+            elif key.startswith('ins_start'):
+                deletions.append({'start':value, 'end':data[key.replace('start','end')], 'origin':'insertion'+key.replace('ins_start',''), 'type':'range'})
+                data.pop(key, None)
+                data.pop(key.replace('start','end'), None)
+                data.pop(key.replace('ins_start',''), None)
+            elif key.startswith(('deletion_single', 'insert_pos_single')):
+                if key.startswith('insert_pos_single'):
+                    deletions.append({'pos':value, 'origin':'insertion'+key.replace('insert_pos_single',''), 'type':'single'})
+                    data.pop(key.replace('insert_pos_single',''), None)
+                else:
+                    deletions.append({'pos':value, 'origin':'user', 'type':'single'})
+                data.pop(key, None)
 
-        if key.startswith(('tag', 'fusion_prot', 'signal', 'linker_seq','prot_cleavage' )):
-            temp = key.split('_')
-            if len(temp)==3:
-                pos_id = "_"+temp[2]
-                aux_id=pos_id.replace('_','')
-            elif len(temp)==2 and temp[1].isdigit():
-                pos_id = "_"+temp[1]
-                aux_id=pos_id.replace('_','')
-            else:
-                pos_id = ''
-                aux_id = '1'
-            print(key,aux_id,pos_id)
+            if key.startswith('aa_no'):
+                pos_id = key.replace('aa_no','')
+                if pos_id=='':
+                    mut_id='1'
+                else:
+                    mut_id=pos_id.replace('_','')
 
-            if 'aux'+aux_id not in auxiliary:
-                auxiliary['aux'+aux_id] = {'position':data['position'+pos_id],'type':data['protein_type'+pos_id],'presence':data['presence'+pos_id]}
+                mutations.append({'pos':value,'wt':data['wt_aa'+pos_id],'mut':data['mut_aa'+pos_id]})
+                data.pop(key, None)
+                data.pop('wt_aa'+pos_id, None)
+                data.pop('mut_aa'+pos_id, None)
 
-                data.pop('position'+pos_id, None)
-                data.pop('protein_type'+pos_id, None)
-                data.pop('presence'+pos_id, None)
+            if key.startswith(('date','name_cont', 'pi_name', 
+                'pi_address','address','url','pi_email' )):
+                contact_info[key]=value
+                data.pop(key, None)
 
-            if value=='Other':
-                auxiliary['aux'+aux_id]['other'] = data['other_'+auxiliary['aux'+aux_id]['type']+pos_id]
-                data.pop('other_'+auxiliary['aux'+aux_id]['type']+pos_id,None)
+            if key.startswith(('pdb', 'pdb_name',
+                'uniprot','ligand_name', 'ligand_activity', 'ligand_conc', 'ligand_conc_unit','ligand_id','ligand_id_type')):
+                construct_crystal[key]=value
+                data.pop(key, None)
 
-            auxiliary['aux'+aux_id]['subtype'] = value
-            data.pop(key, None)
+            if key.startswith('position'):
+                pos_id = key.replace('position','')
+                if pos_id=='':
+                    aux_id='1'
+                else:
+                    aux_id=pos_id.replace('_','')
 
-        if key.startswith(('expr_method', 'host_cell_type',
-                'host_cell', 'expr_remark' )):
-            expression[key]=value
-            data.pop(key, None)
+                if 'aux'+aux_id not in auxiliary:
+                    auxiliary['aux'+aux_id] = {'position':value,'type':data['protein_type'+pos_id],'presence':data['presence'+pos_id]}
 
-        if key.startswith(('deterg_type','deterg_concentr','deterg_concentr_unit','solub_additive','additive_concentr','addit_concentr_unit','chem_enz_treatment','sol_remark')):
-            solubilization[key]=value
-            data.pop(key, None)
+                    data.pop(key, None)
+                    data.pop('protein_type'+pos_id, None)
+                    data.pop('presence'+pos_id, None)
 
-        if key.startswith(('crystal_type','crystal_method','other_method','other_crystal_type',
-                           'protein_concentr','protein_conc_unit','temperature','ph_single','ph',
-                           'ph_range_one','ph_range_two','crystal_remark','lcp_lipid','lcp_add',
-                           'lcp_conc','lcp_conc_unit','detergent','deterg_conc','deterg_conc_unit','lipid','lipid_concentr','lipid_concentr_unit',
-                           'other_deterg','other_deterg_type', 'other_lcp_lipid','other_lipid')):
-            crystallization[key]=value
-            data.pop(key, None)
+            if key.startswith(('tag', 'fusion_prot', 'signal', 'linker_seq','prot_cleavage' )):
+                temp = key.split('_')
+                if len(temp)==3:
+                    pos_id = "_"+temp[2]
+                    aux_id=pos_id.replace('_','')
+                elif len(temp)==2 and temp[1].isdigit():
+                    pos_id = "_"+temp[1]
+                    aux_id=pos_id.replace('_','')
+                else:
+                    pos_id = ''
+                    aux_id = '1'
+                print(key,aux_id,pos_id)
 
-        if key.startswith('chemical_comp'):
+                if 'aux'+aux_id not in auxiliary:
+                    auxiliary['aux'+aux_id] = {'position':data['position'+pos_id],'type':data['protein_type'+pos_id],'presence':data['presence'+pos_id]}
 
-            if 'chemical_components' not in crystallization:
-                crystallization['chemical_components'] = []
+                    data.pop('position'+pos_id, None)
+                    data.pop('protein_type'+pos_id, None)
+                    data.pop('presence'+pos_id, None)
 
-            if key!='chemical_comp': #not first
-                comp_id = key.replace('chemical_comp','')
-            else:
-                comp_id = ''
+                if value=='Other':
+                    auxiliary['aux'+aux_id]['other'] = data['other_'+auxiliary['aux'+aux_id]['type']+pos_id]
+                    data.pop('other_'+auxiliary['aux'+aux_id]['type']+pos_id,None)
 
-            crystallization['chemical_components'].append({'component':value,'value':data['concentr'+comp_id],'unit':data['concentr_unit'+comp_id]})
-            data.pop(key, None)
-            data.pop('concentr'+comp_id, None)
-            data.pop('concentr_unit'+comp_id, None)
+                auxiliary['aux'+aux_id]['subtype'] = value
+                data.pop(key, None)
+
+            if key.startswith(('expr_method', 'host_cell_type',
+                    'host_cell', 'expr_remark','expr_other','other_host','other_host_cell' )):
+                expression[key]=value
+                data.pop(key, None)
+
+            if key.startswith(('deterg_type','deterg_concentr','deterg_concentr_unit','solub_additive','additive_concentr','addit_concentr_unit','chem_enz_treatment','sol_remark')):
+                solubilization[key]=value
+                data.pop(key, None)
+
+            if key.startswith(('crystal_type','crystal_method','other_method','other_crystal_type',
+                               'protein_concentr','protein_conc_unit','temperature','ph_single','ph',
+                               'ph_range_one','ph_range_two','crystal_remark','lcp_lipid','lcp_add',
+                               'lcp_conc','lcp_conc_unit','detergent','deterg_conc','deterg_conc_unit','lipid','lipid_concentr','lipid_concentr_unit',
+                               'other_deterg','other_deterg_type', 'other_lcp_lipid','other_lipid')):
+                crystallization[key]=value
+                data.pop(key, None)
+
+            if key.startswith('chemical_comp'):
+
+                if 'chemical_components' not in crystallization:
+                    crystallization['chemical_components'] = []
+
+                if key!='chemical_comp': #not first
+                    comp_id = key.replace('chemical_comp','')
+                else:
+                    comp_id = ''
+
+                crystallization['chemical_components'].append({'component':value,'value':data['concentr'+comp_id],'unit':data['concentr_unit'+comp_id]})
+                data.pop(key, None)
+                data.pop('concentr'+comp_id, None)
+                data.pop('concentr_unit'+comp_id, None)
 
 
-        if key.startswith('aamod') and len(key.split("_"))<3 and not key=='aamod_position' and not key=='aamod_single':
-            if key!='aamod': #not first
-                mod_id = key.replace('aamod','')
-            else:
-                mod_id = ''
+            if key.startswith('aamod') and len(key.split("_"))<3 and not key=='aamod_position' and not key=='aamod_single':
+                if key!='aamod': #not first
+                    mod_id = key.replace('aamod','')
+                else:
+                    mod_id = ''
 
-            if data['aamod_position'+mod_id]=='single':
-                pos = ['single',data['aamod_single'+mod_id]]
-                data.pop('aamod_single'+mod_id, None)
-            elif data['aamod_position'+mod_id]=='range':
-                pos = ['range',[data['aamod_start'+mod_id],data['aamod_end'+mod_id]]]
-                data.pop('aamod_start'+mod_id, None)
-                data.pop('aamod_end'+mod_id, None)
-            elif data['aamod_position'+mod_id]=='pair':
-                pos = ['pair',[data['aamod_pair_one'+mod_id],data['aamod_pair_two'+mod_id]]]
-                data.pop('aamod_pair_one'+mod_id, None)
-                data.pop('aamod_pair_two'+mod_id, None)
+                if data['aamod_position'+mod_id]=='single':
+                    pos = ['single',data['aamod_single'+mod_id]]
+                    data.pop('aamod_single'+mod_id, None)
+                elif data['aamod_position'+mod_id]=='range':
+                    pos = ['range',[data['aamod_start'+mod_id],data['aamod_end'+mod_id]]]
+                    data.pop('aamod_start'+mod_id, None)
+                    data.pop('aamod_end'+mod_id, None)
+                elif data['aamod_position'+mod_id]=='pair':
+                    pos = ['pair',[data['aamod_pair_one'+mod_id],data['aamod_pair_two'+mod_id]]]
+                    data.pop('aamod_pair_one'+mod_id, None)
+                    data.pop('aamod_pair_two'+mod_id, None)
 
 
-            modifications.append({'type':value,'remark':data['mod_remark'+mod_id],'position':pos })
-            data.pop(key, None)
-            data.pop('mod_remark'+mod_id, None)
-            data.pop('aamod_position'+mod_id, None)
+                modifications.append({'type':value,'remark':data['mod_remark'+mod_id],'position':pos })
+                data.pop(key, None)
+                data.pop('mod_remark'+mod_id, None)
+                data.pop('aamod_position'+mod_id, None)
 
-        if key.startswith(('insert_pos_type','deletion','csrfmiddlewaretoken')):
-            data.pop(key, None)
-
+            if key.startswith(purge_keys):
+                data.pop(key, None)
+        except:
+            error = 1
 
     auxiliary = OrderedDict(sorted(auxiliary.items()))
-    print(modifications)
-
 
     context = OrderedDict( [('contact_info',contact_info), ('construct_crystal',construct_crystal),
                            ('auxiliary' , auxiliary),  ('deletions',deletions), ('mutations',mutations),
                            ('modifications', modifications), ('expression', expression), ('solubilization',solubilization),
-                           ('crystallization',crystallization),  ('unparsed',data),  ('raw_data',raw_data)] )
+                           ('crystallization',crystallization),  ('unparsed',data),  ('raw_data',raw_data), ('error', error)] )
 
-    dump_dir = '/protwis/construct_dump'
-    if not os.path.exists(dump_dir):
-        os.makedirs(dump_dir)
-    ts = int(time.time())
-    json_data = context
-    json.dump(json_data, open(dump_dir+"/"+str(ts)+"_"+construct_crystal['pdb']+".json", 'w'), indent=4, separators=(',', ': '))
+    if error==0:
+        dump_dir = '/protwis/construct_dump'
+        if not os.path.exists(dump_dir):
+            os.makedirs(dump_dir)
+        ts = int(time.time())
+        json_data = context
+        json.dump(json_data, open(dump_dir+"/"+str(ts)+"_"+construct_crystal['pdb']+".json", 'w'), indent=4, separators=(',', ': '))
 
-    context['data'] = sorted(data.items())
-    #context['data'] = sorted(raw_data.items())
+        context['data'] = sorted(data.items())
+        #context['data'] = sorted(raw_data.items())
+
+        recipients = ['christian@munk.be']
+        emaillist = [elem.strip().split(',') for elem in recipients]
+        msg = MIMEMultipart()
+        msg['Subject'] = 'GPCRdb: New webform data'
+        msg['From'] = 'gpcrdb@gmail.com'
+        msg['Reply-to'] = 'gpcrdb@gmail.com'
+         
+        msg.preamble = 'Multipart massage.\n'
+         
+        part = MIMEText("Hi, please find the attached file")
+        msg.attach(part)
+         
+        part = MIMEApplication(open(str(dump_dir+"/"+str(ts)+"_"+construct_crystal['pdb']+".json"),"rb").read())
+        part.add_header('Content-Disposition', 'attachment', filename=str(dump_dir+"/"+str(ts)+"_"+construct_crystal['pdb']+".json"))
+        msg.attach(part)
+         
+
+        server = smtplib.SMTP("smtp.gmail.com:587")
+        server.ehlo()
+        server.starttls()
+        server.login("gpcrdb@gmail.com", "gpcrdb2016")
+         
+        server.sendmail(msg['From'], emaillist , msg.as_string())
+
+        context['filename'] = str(ts)+"_"+construct_crystal['pdb']
 
     return render(request, 'web_form_results.html', context)
 
+def webform_download(request,slug):
+    dump_dir = '/protwis/construct_dump'
+    file = dump_dir+"/"+str(slug)+".json"
+    out_stream = open(file,"rb").read()
+    response = HttpResponse(content_type="application/json")
+    response['Content-Disposition'] = 'attachment; filename="{}"'.format(file)
+    response.write(out_stream)
+    return response
 
 
 
