@@ -1544,6 +1544,7 @@ def webformdata(request) :
 
     if error==0:
         dump_dir = '/protwis/construct_dump'
+        dump_dir = '/web/sites/files/construct_data' #for sites
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
         ts = int(time.time())
@@ -1583,6 +1584,7 @@ def webformdata(request) :
 
 def webform_download(request,slug):
     dump_dir = '/protwis/construct_dump'
+    dump_dir = '/web/sites/files/construct_data' #for sites
     file = dump_dir+"/"+str(slug)+".json"
     out_stream = open(file,"rb").read()
     response = HttpResponse(content_type="application/json")
