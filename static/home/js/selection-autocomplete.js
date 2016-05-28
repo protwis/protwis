@@ -37,10 +37,15 @@ $(function() {
                 toggleButtonClass('selection-button'); // loading effect on button
                 setTimeout(function(){window.location = '/' + ui.item['type'] + '/' + ui.item['slug'];}, 200);
             
+            } else if (type_of_selection == 'gsinterface') {
+                //custom for gsinterface
+                AddToSelection('targets', ui.item['type'], ui.item['id']);
+                toggleButtonClass('selection-button'); // loading effect on button
+                setTimeout(function(){window.location = '/interaction/gsinterface/' + ui.item['slug'];}, 200);
+            
             } else {
                 // add to selection
-                AddToSelection(type_of_selection, ui.item['type'], ui.item['id']);
-                
+                AddToSelection(type_of_selection, ui.item['type'], ui.item['id']);                
                 // redirect the user if only one target can be selected
                 if (type_of_selection == 'reference' && redirect_on_select == 'True') {
                     toggleButtonClass('selection-button'); // loading effect on button
