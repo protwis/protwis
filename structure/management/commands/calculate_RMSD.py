@@ -45,27 +45,41 @@ class Validation():
         pdb1 = assign_gn1.assign_generic_numbers()
         assign_gn2 = as_gn.GenericNumbering(structure=pdb2)
         pdb2 = assign_gn2.assign_generic_numbers()
-        
-        for chain1 in pdb1:
-            for residue1 in chain1:
-                if residue1.get_full_id()[3][0]!=' ':
-                    continue
-                pdb_array1[int(residue1.get_id()[1])] = residue1
-                try:
-                    if -8.1 < residue1['CA'].get_bfactor() < 8.1:
-                        pdb_array3[int(residue1.get_id()[1])] = residue1
-                except:
-                    pass
-        for chain2 in pdb2:
-            for residue2 in chain2:
-                if residue2.get_full_id()[3][0]!=' ':
-                    continue
-                pdb_array2[int(residue2.get_id()[1])] = residue2
-                try:
-                    if -8.1 < residue2['CA'].get_bfactor() < 8.1:
-                        pdb_array4[int(residue2.get_id()[1])] = residue2
-                except:
-                    pass
+
+        for i in pdb1:
+            for j in pdb2:
+                if i.get_id()==j.get_id():
+                    chain1 = i.get_id()                        
+                    chain2 = i.get_id()
+                    break
+                
+        if 'chain1' not in locals():
+            for i in pdb1.get_chains():
+                chain1 = i.get_id()
+                break
+        if 'chain2' not in locals():
+            for i in pdb2.get_chains():
+                chain2 = i.get_id()
+                break
+
+        for residue1 in pdb1[chain1]:
+            if residue1.get_full_id()[3][0]!=' ':
+                continue
+            pdb_array1[int(residue1.get_id()[1])] = residue1
+            try:
+                if -8.1 < residue1['CA'].get_bfactor() < 8.1:
+                    pdb_array3[int(residue1.get_id()[1])] = residue1
+            except:
+                pass
+        for residue2 in pdb2[chain2]:
+            if residue2.get_full_id()[3][0]!=' ':
+                continue
+            pdb_array2[int(residue2.get_id()[1])] = residue2
+            try:
+                if -8.1 < residue2['CA'].get_bfactor() < 8.1:
+                    pdb_array4[int(residue2.get_id()[1])] = residue2
+            except:
+                pass
         overall_all1, overall_all2, overall_backbone1, overall_backbone2, o_a, o_b = self.create_lists(pdb_array1, pdb_array2)
         TM_all1, TM_all2, TM_backbone1, TM_backbone2, t_a, t_b = self.create_lists(pdb_array3, pdb_array4)
         
@@ -73,7 +87,7 @@ class Validation():
         rmsd2 = self.calc_RMSD(overall_backbone1, overall_backbone2,o_b)
         rmsd3 = self.calc_RMSD(TM_all1, TM_all2,t_a)
         rmsd4 = self.calc_RMSD(TM_backbone1, TM_backbone2,t_b)  
-        return rmsd1, rmsd2, rmsd3, rmsd4
+        return [rmsd1, rmsd2, rmsd3, rmsd4]
         
     def create_lists(self, pdb_array1, pdb_array2):
         ''' Creates the 4 atom lists needed for run_RMSD().
