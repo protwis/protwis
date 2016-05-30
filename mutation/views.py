@@ -190,7 +190,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
         else:
             qual = ''
         mutations_list[mutation.residue.generic_number.label].append([mutation.foldchange,ligand,qual])
-
         mutations_generic_number[mutation.raw.id] = mutation.residue.generic_number.label
 
     if receptor_class==None: #if not a small lookup
@@ -217,12 +216,13 @@ def render_mutations(request, protein = None, family = None, download = None, re
             # for aa,v in a.full_consensus[seg].items():
             r = Residue()
             r.sequence_number =  aa.sequence_number #FIXME is this certain to be correct that the position in consensus is seq position? 
-            if aa.family_generic_number and aa.generic_number:
-                r.generic_number = aa.generic_number #FIXME
-                if r.generic_number.label in mutations_list:
+            #print(aa,aa.family_generic_number,aa.generic_number)
+            if aa.family_generic_number and aa.family_generic_number in a.generic_number_objs:
+                r.generic_number = a.generic_number_objs[aa.family_generic_number] #FIXME
+                if aa.family_generic_number in mutations_list:
                     if r.sequence_number not in mutations_pos_list: 
                         mutations_pos_list[r.sequence_number] = []
-                    mutations_pos_list[r.sequence_number].append(mutations_list[r.generic_number.label])
+                    mutations_pos_list[r.sequence_number].append(mutations_list[aa.family_generic_number])
                 r.segment_slug = aa.segment_slug
                 r.family_generic_number = aa.family_generic_number
             else:
@@ -1647,20 +1647,57 @@ def ajax(request, slug, **response_kwargs):
     if '[' in slug:
         x = ast.literal_eval(urllib.parse.unquote(slug))
         mutations = MutationExperiment.objects.filter(protein__pk__in=x).order_by('residue__sequence_number').prefetch_related('residue')
+        
+        mutations_list = {}
+        mutations_generic_number = {}
+        residue_table_list = []
+        for mutation in mutations:
+            if not mutation.residue.generic_number: continue #cant map those without display numbers
+            if mutation.residue.generic_number.label not in mutations_list: mutations_list[mutation.residue.generic_number.label] = []
+            if mutation.ligand:
+                ligand = mutation.ligand.name
+            else:
+                ligand = ''
+            if mutation.exp_qual:
+                qual = mutation.exp_qual.qual
+            else:
+                qual = ''
+            mutations_list[mutation.residue.generic_number.label].append([mutation.foldchange,ligand,qual])
+
+        a = Alignment()
+        proteins = Protein.objects.filter(pk__in=x).all()
+        a.load_proteins(proteins)
+        segments = ProteinSegment.objects.all().filter().prefetch_related()
+        a.load_segments(segments) #get all segments to make correct diagrams
+
+        # build the alignment data matrix
+        a.build_alignment()
+
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
+
+        jsondata = {}
+        for aa in a.full_consensus:
+            if aa.family_generic_number and aa.family_generic_number in a.generic_number_objs:
+                if aa.family_generic_number in mutations_list:
+                    jsondata[aa.sequence_number] = mutations_list[aa.family_generic_number]
+
     else:
+        slug_without_species = slug.split('_')[0]
         mutations = MutationExperiment.objects.filter(protein__entry_name=slug).order_by('residue__sequence_number').prefetch_related('residue')
-    jsondata = {}
-    for mutation in mutations:
-        if mutation.residue.sequence_number not in jsondata: jsondata[mutation.residue.sequence_number] = []
-        if mutation.ligand:
-            ligand = mutation.ligand.name
-        else:
-            ligand = ''
-        if mutation.exp_qual:
-            qual = mutation.exp_qual.qual
-        else:
-            qual = ''
-        jsondata[mutation.residue.sequence_number].append([mutation.foldchange,ligand,qual])
+        # mutations = MutationExperiment.objects.filter(protein__entry_name__startswith=slug_without_species).order_by('residue__sequence_number').prefetch_related('residue')
+        jsondata = {}
+        for mutation in mutations:
+            if mutation.residue.sequence_number not in jsondata: jsondata[mutation.residue.sequence_number] = []
+            if mutation.ligand:
+                ligand = mutation.ligand.name
+            else:
+                ligand = ''
+            if mutation.exp_qual:
+                qual = mutation.exp_qual.qual
+            else:
+                qual = ''
+            jsondata[mutation.residue.sequence_number].append([mutation.foldchange,ligand,qual])
 
     jsondata = json.dumps(jsondata)
     response_kwargs['content_type'] = 'application/json'

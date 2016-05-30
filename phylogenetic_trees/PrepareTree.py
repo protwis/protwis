@@ -186,8 +186,8 @@ class PrepareTree:
             return m
 
     def get_family_meta(self,inp):
-        for acc in inp.keys():
-            fam = inp[acc]['family'].split('_')
+        for entry_name in inp.keys():
+            fam = inp[entry_name]['family'].split('_')
             prot_class=fam[0]
             family='_'.join(fam[:2])
             ligand='_'.join(fam[:3])
@@ -198,8 +198,8 @@ class PrepareTree:
                 self.rings['family']['items'].append(family)
             if not ligand in self.rings['ligand']['items']:
                 self.rings['ligand']['items'].append(ligand)
-            self.prots[acc]={'class':prot_class,'family':family,'ligand':ligand, 'acc':prot, 'name':inp[acc]['name'], 'link':inp[acc]['link'], 'species':inp[acc]['species'], 'desc':inp[acc]['description']}
-            self.prots[prot]=acc
+            self.prots[entry_name]={'class':prot_class,'family':family,'ligand':ligand, 'acc':prot, 'name':inp[entry_name]['name'], 'link':inp[entry_name]['link'], 'species':inp[entry_name]['species'], 'desc':inp[entry_name]['description']}
+            self.prots[prot]=entry_name
 
     def get_tree_data(self, Additional_info):
            for datatype in Additional_info:

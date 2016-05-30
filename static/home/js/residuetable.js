@@ -45,8 +45,8 @@ function ajaxMutants(plotid,protein) {
                              var ligands = [], bigincreases=0, increases = 0, bigdecreases=0, decreases = 0, unchanged=0, unspecified = 0;
                              
                              
-                              $.each( val, function( key, v ) {
-                              if( !(ligands[v[1]]) ) ligands[v[1]] = [];
+                             $.each( val, function( key, v ) {
+                               if( !(ligands[v[1]]) ) ligands[v[1]] = [];
                               ligands[v[1]].push(v[0])
                               if (v[0]>10) {
                                 bigincreases ++; //mix-up increase is decrease.
@@ -62,10 +62,14 @@ function ajaxMutants(plotid,protein) {
                                 unchanged ++;
                               } else if (v[2]=='No effect on') {
                                 unchanged ++;
+                              } else if (v[2]=='No effect') {
+                                unchanged ++;
                               } else if (v[2]=='Abolish') {
-                                bigdecreases ++;
-                              } else if (v[2]=='Gain of') {
                                 bigincreases ++;
+                              } else if (v[2]=='Abolished effect') {
+                                bigincreases ++;
+                              } else if (v[2]=='Gain of') {
+                                bigdecreases ++;
                               } else if (v[2]=='Increase') {
                                 increases ++;
                               } else if (v[2]=='Decrease') {
@@ -134,16 +138,16 @@ function table_ajaxMutants() {
                 count = 0;
               $.each( data, function( key, val ) {
                 count = count + 1;
-                 console.log('#'+protein_index+"#"+key+" val:"+val);
+                 // console.log('#'+protein_index+"#"+key+" val:"+val);
 
                             var ligands = [], bigincreases=0, increases = 0, bigdecreases=0, decreases = 0, unchanged=0, unspecified = 0;
                              
                              
                              $.each( val, function( key, v ) {
-                              if( !(ligands[v[1]]) ) ligands[v[1]] = [];
+                               if( !(ligands[v[1]]) ) ligands[v[1]] = [];
                               ligands[v[1]].push(v[0])
                               if (v[0]>10) {
-                                bigincreases ++;
+                                bigincreases ++; //mix-up increase is decrease.
                               } else if (v[0]>5) {
                                 increases ++;
                               } else if (v[0]>0) {
@@ -156,10 +160,14 @@ function table_ajaxMutants() {
                                 unchanged ++;
                               } else if (v[2]=='No effect on') {
                                 unchanged ++;
+                              } else if (v[2]=='No effect') {
+                                unchanged ++;
                               } else if (v[2]=='Abolish') {
-                                bigdecreases ++;
-                              } else if (v[2]=='Gain of') {
                                 bigincreases ++;
+                              } else if (v[2]=='Abolished effect') {
+                                bigincreases ++;
+                              } else if (v[2]=='Gain of') {
+                                bigdecreases ++;
                               } else if (v[2]=='Increase') {
                                 increases ++;
                               } else if (v[2]=='Decrease') {
@@ -209,7 +217,7 @@ function table_ajaxMutants() {
 
 
               });
-              console.log("Mutants for "+protein+ " : "+count);
+              // console.log("Mutants for "+protein+ " : "+count);
 
         });
 
@@ -244,7 +252,7 @@ function table_ajaxInteractions() {
 
 
           $('#P'+protein_index+"R"+key).css("background-color", "#E60A0A");
-          $('#P'+protein_index+"R"+key).next().css("color", "#FDFF7B");
+          $('#P'+protein_index+"R"+key).css("color", "#FDFF7B");
 
          original_title =  $('#P'+protein_index+"R"+key).attr('original_title')
 

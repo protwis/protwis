@@ -13,6 +13,7 @@ from collections import OrderedDict
 class ReferenceSelection(AbsReferenceSelection):
     step = 1
     number_of_steps = 3
+    target_input = False
     docs = 'sequences.html#similarity-search-gpcrdb'
     buttons = {
         'continue': {

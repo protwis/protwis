@@ -101,7 +101,7 @@ class Treeclass:
         for n in sets:
             if n.id==1:
                 for prot in n.proteins.all():
-                    crysts.append(prot.accession)
+                    crysts.append(prot.entry_name)
 
             
         #############################
@@ -154,11 +154,12 @@ class Treeclass:
         if len(a.proteins) < 3:
             return 'More_prots',None, None, None, None,None,None,None
         ####Get additional protein information
+        accesions = {}
         for n in a.proteins:
             fam = self.Tree.trans_0_2_A(n.protein.family.slug)
             if n.protein.sequence_type.slug == 'consensus':
                 fam+='_CON'
-            link = n.protein.entry_name
+            entry_name = n.protein.entry_name
             name = n.protein.name.replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','')
             if '&' in name and ';' in name:
                 name = name.replace('&','').replace(';',' ')
@@ -170,12 +171,13 @@ class Treeclass:
             spec = str(n.protein.species)
             fam += '_'+n.protein.species.common_name.replace(' ','_').upper()
             desc = name
-            if acc in crysts:
+            if entry_name in crysts:
                 if not fam in self.Additional_info['crystal']['proteins']:
                     self.Additional_info['crystal']['proteins'].append(fam)
             if len(name)>25:
                 name=name[:25]+'...'
-            self.family[acc] = {'name':name,'family':fam,'description':desc,'species':spec,'class':'','ligand':'','type':'','link': link}
+            self.family[entry_name] = {'name':name,'family':fam,'description':desc,'species':spec,'class':'','accession':acc,'ligand':'','type':'','link': entry_name}
+            accesions[acc]=entry_name
             ####Write PHYLIP input
             sequence = ''
             for chain in n.alignment:
@@ -230,9 +232,13 @@ class Treeclass:
         ###
             subprocess.check_output(['phylip consense<temp'], shell=True, cwd = '/tmp/%s' %dirname)
         self.phylip = open('/tmp/%s/outtree' %dirname).read()
+        for acc in accesions.keys():
+            self.phylip=self.phylip.replace(acc,accesions[acc])
+#        self.phylogeny_output = self.phylip
         self.outtree = open('/tmp/%s/outfile' %dirname).read().lstrip()
         phylogeny_input = self.get_phylogeny('/tmp/%s/' %dirname)
         shutil.rmtree('/tmp/%s' %dirname)
+        
         if build != False:
             open('static/home/images/'+build+'_legend.svg','w').write(str(self.Tree.legend))
             open('static/home/images/'+build+'_tree.xml','w').write(phylogeny_input)
@@ -240,6 +246,7 @@ class Treeclass:
             return phylogeny_input, self.branches, self.ttype, self.total, str(self.Tree.legend), self.Tree.box, self.Additional_info, self.buttons
         
     def get_phylogeny(self, dirname):
+
         self.Tree.treeDo(dirname, self.phylip,self.branches,self.family,self.Additional_info, self.famdict)
         phylogeny_input = open('%s/out.xml' %dirname,'r').read().replace('\n','')
         return phylogeny_input
@@ -256,6 +263,10 @@ def get_buttons(request):
         
 
 def modify_tree(request):
+    try:
+        shutil.rmtree('/tmp/modify')
+    except:
+        pass
     arg = request.GET.getlist('arg[]')
     value = request.GET.getlist('value[]')
     Tree_class=request.session['Tree']

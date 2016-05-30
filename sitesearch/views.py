@@ -17,8 +17,7 @@ from residue.models import ResidueGenericNumberEquivalent
 import os
 from collections import OrderedDict
 from io import BytesIO
-import xlsxwriter
-from openpyxl import load_workbook
+import xlsxwriter, xlrd
 
 
 class TargetSelection(AbsTargetSelection):
@@ -166,39 +165,41 @@ def site_upload(request):
     #Overwriting the existing selection
     selection.clear(selection_type)
 
-    print(type(request.FILES['xml_file'].file))
+    #wb=load_workbook(filename=request.FILES['xml_file'].file)
+    #ws=wb.active
+    workbook = xlrd.open_workbook(file_contents=request.FILES['xml_file'].read())
+    worksheets = workbook.sheet_names()
+    for worksheet_name in worksheets:
+        worksheet = workbook.sheet_by_name(worksheet_name)
+        for row in worksheet.get_rows():
 
-    wb=load_workbook(filename=request.FILES['xml_file'].file)
-    ws=wb.active
+    #for row in ws.rows:
+            if len(row) < 5:
+                continue
+            group_id = int(row[0].value)
+            min_match = int(row[1].value)
+            try:
+                position = ResidueGenericNumberEquivalent.objects.get(label=row[2].value, scheme__slug=row[3].value)
+            except e:
+                print(e)
+                continue
+            feature = row[4].value
 
-
-    for row in ws.rows:
-        if len(row) < 5:
-            continue
-        group_id = int(row[0].value)
-        min_match = int(row[1].value)
-        try:
-            position = ResidueGenericNumberEquivalent.objects.get(label=row[2].value, scheme__slug=row[3].value)
-        except e:
-            print(e)
-            continue
-        feature = row[4].value
-
-        # update the selected group
-        selection.active_site_residue_group = group_id
-        print(selection.site_residue_groups)
-        if not selection.site_residue_groups:
-            selection.site_residue_groups = [[]]
-        selection.site_residue_groups[selection.active_site_residue_group - 1].append(1)
-        if len(selection.site_residue_groups) < group_id:
-            for x in group_id - len(selection.site_residue_groups):
-                selection.site_residue_groups.append([])
-        selection.site_residue_groups[group_id - 1][0] = min_match
-        selection_object = SelectionItem(selection_subtype, position)
-        selection_object.properties['feature'] = feature
-        selection_object.properties['site_residue_group'] = selection.active_site_residue_group
-        selection_object.properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS[feature])
-        selection.add(selection_type, selection_subtype, selection_object)
+            # update the selected group
+            selection.active_site_residue_group = group_id
+            print(selection.site_residue_groups)
+            if not selection.site_residue_groups:
+                selection.site_residue_groups = [[]]
+            selection.site_residue_groups[selection.active_site_residue_group - 1].append(1)
+            if len(selection.site_residue_groups) < group_id:
+                for x in group_id - len(selection.site_residue_groups):
+                    selection.site_residue_groups.append([])
+            selection.site_residue_groups[group_id - 1][0] = min_match
+            selection_object = SelectionItem(selection_subtype, position)
+            selection_object.properties['feature'] = feature
+            selection_object.properties['site_residue_group'] = selection.active_site_residue_group
+            selection_object.properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS[feature])
+            selection.add(selection_type, selection_subtype, selection_object)
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
