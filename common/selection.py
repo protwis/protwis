@@ -16,6 +16,7 @@ class SimpleSelection:
         self.species = []
 
         # G proteins
+        self.pref_g_proteins = []
         self.g_proteins = []
 
         # annotation
@@ -48,6 +49,7 @@ class Selection(SimpleSelection):
         self.targets = simple_selection.targets
         self.segments = simple_selection.segments
         self.species = simple_selection.species
+        self.pref_g_proteins = simple_selection.pref_g_proteins
         self.g_proteins = simple_selection.g_proteins
         self.annotation = simple_selection.annotation
         self.numbering_schemes = simple_selection.numbering_schemes
@@ -62,6 +64,7 @@ class Selection(SimpleSelection):
         ss.targets = self.targets
         ss.segments = self.segments
         ss.species = self.species
+        ss.pref_g_proteins = self.pref_g_proteins
         ss.g_proteins = self.g_proteins
         ss.annotation = self.annotation
         ss.numbering_schemes = self.numbering_schemes

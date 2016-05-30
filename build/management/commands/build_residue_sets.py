@@ -28,7 +28,7 @@ class Command(BaseCommand):
         self.logger.info('CREATING RESIDUE SETS')
 
         residue_sets = {
-            'Signalling protein pocket': ['gpcrdba', ['3x50', '3x53', '3x54', '3x55', '34x50', '34x51', '34x53', '34x54', '5x64', '5x67', '5x68', '6x29', '6x36', '7x55', '8x48', '8x49']],
+            'Signalling protein pocket': ['gpcrdba', ['3x50', '3x53', '3x54', '3x55', '34x50', '34x51', '34x53', '34x54', '5x64', '5x67', '5x68', '5x71', '5x74','6x29', '6x36', '7x55', '8x48', '8x49']],
                         }
         for set_name in residue_sets.keys():
             residues = []
@@ -69,7 +69,7 @@ class Command(BaseCommand):
 
             for i in class_interactions:
                 if i.rotamer.residue.generic_number:
-                    gn = i.rotamer.residue.generic_number.label
+                    gn = i.rotamer.residue.display_generic_number.label
                 else:
                     continue
                 if gn not in generic.keys():
@@ -84,8 +84,10 @@ class Command(BaseCommand):
                 continue
             for g in sorted(generic):
                 if generic[g] >= 2:
+                    bw, gpcrdb = g.split('x')
+                    h, pos = bw.split('.')
                     try:
-                        rs.residue_position.add(ResidueGenericNumberEquivalent.objects.get(label=g, scheme__slug=c))
+                        rs.residue_position.add(ResidueGenericNumberEquivalent.objects.get(label='{}x{}'.format(h,gpcrdb), scheme__slug=c))
                     except Exception as msg:
                         print(g)
                         print(msg)

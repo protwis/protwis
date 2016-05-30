@@ -2,8 +2,8 @@
 {% load staticfiles %}
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
-<link href="{% static 'home/css/residue_table.css' %}" rel="stylesheet">
+<!-- <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" /> -->
+<!-- <link href="{% static 'home/css/residue_table.css' %}" rel="stylesheet"> -->
 <style>
 canvas {
     border:2px solid #888888;
@@ -12,7 +12,7 @@ canvas {
 
 {% endblock %}
 {% block content %}
-<h2>Structure information</h2>
+<h2>Structure information from:</h2>
  <script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script> 
  <div class="row">
     <table width="100%">
@@ -97,66 +97,8 @@ canvas {
     </tr>
     </table>
 </div>
-<!-- 
-<h2>Ligand Interaction Browser</h2>
-<a href="excel/{{pdbname}}">Download list in excel</a>
-<div class="row">
-    <div class="col-md-11 text-center">
-        {% if residues %}              
-        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
-            <table width="100%" class="display" id="residues">
 
-                <thead>
-                    <tr>
-                        <th>Ligand</th>
-                        <th>Amino Acid</th>
-                        <th>Generic Number</th>
-                        <th>Segment</th>
-                        <th>Interaction Type</th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tfoot>
-                    <tr>
-                        <th>Ligand</th>
-                        <th>Amino Acid</th>
-                        <th>Generic Number</th>
-                        <th>Segment</th>
-                        <th>Interaction Type</th>
-                    </tr>
-                </tfoot>
-                {% for residue in residues %}
-                <tr>
-                <td>{{residue.ligand}}</td>
-                <td>{{residue.aa}}{{residue.pos}}</td>
-                <td>{{residue.gpcrdb}}</td>
-                <td>{{residue.segment}}</td>
-                <td>{{residue.type}}</td>
-                {% endfor %}
-            </table>
-        </div>
-    {% else %}
-        <p> Ooops! There is no data to show here yet. </p>
-    {% endif %}
-
-    </div>
-</div> -->
-
-<h2>Gs interaction snakeplot</h2>
-
+<h2>Interface snake diagram for {{ mapped_protein }}</h2>
 <div class="row">
 <div class="col-md-10 text-center">
     {{ snakeplot }}
@@ -172,21 +114,82 @@ canvas {
     <div class="col-md-12">
             <div class="panel-body">
                     <div class='col-md-10'>
-                        <p><strong>β2-adrenoceptor - G protein interaction snakeplot.</strong> G protein interacting residues are shown in <font style="color: #FDFF7B; background-color: #E60A0A" >dark red</font> and dashed circles. G protein accessible residues are shown in <font style="color: #fffffB; background-color: #ff9999">light red</font>.</p>
+                        <p><strong>{{ mapped_protein }} - Gs interface </strong> <br> <font style="color: #000; background-color: #1F9439" >Dark-Green</font>: Gs-interacting residues similar to β2-adrenoceptor <br> <font style="color: #000; background-color: #E67E22" >Orange</font>: Gs-interacting residues not conserved in {{ mapped_protein }} <br> <font style="color: #000; background-color: #BDEEC8">Light-Green</font>: G protein accessible residues facing the G protein and that have a generic number (ICL3 residues can also be accessible) </p>
                     </div>
                 </div>
             </div>
 
 </div>
 
-<!-- <h2>Residue Table</h2>
-<div class="col-md-10">
-{% include "residue/residue_table_only.html" with header=header segments=segments data=data onlymutants=1 %}
-</div> -->
+<h2>Gs Interaction Browser</h2>
+<div class="row">
+    <div class="col-md-11 text-center">
+        {% if residues %}              
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+            <table width="100%" class="display" id="residues">
 
+                <thead>
+                    <tr>
+                        <th colspan=2 style="text-align:center">Segment</th>
+                        <th colspan=2 style="text-align:center">Generic Number</th>
+                        <th colspan=2 style="text-align:center">Amino Acid</th>
+                        <th rowspan=2 style="text-align:center">Interaction Type</th>
+                    </tr>
+                    <tr>
+                        <th style="text-align:center">GPCR</th>
+                        <th style="text-align:center">Gprot</th>
+                        <th style="text-align:center">GPCR</th>
+                        <th style="text-align:center">Gprot</th>
+                        <th style="text-align:center">GPCR</th>
+                        <th style="text-align:center">Gprot</th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th style="text-align:center"></th>
+                        <th style="text-align:center"></th>
+                        <th style="text-align:center"></th>
+                        <th style="text-align:center"></th>
+                        <th style="text-align:center"></th>
+                        <th style="text-align:center"></th>
+                        <th style="text-align:center"></th>
+                    </tr>
+                    <tr>
+                        <th style="text-align:center">GPCR</th>
+                        <th style="text-align:center">Gprot</th>
+                        <th style="text-align:center">GPCR</th>
+                        <th style="text-align:center">Gprot</th>
+                        <th style="text-align:center">GPCR</th>
+                        <th style="text-align:center">Gprot</th>
+                        <th style="text-align:center">Interaction Type</th>
+                    </tr>
+                </tfoot>
+                {% for residue in residues %}
+                <tr>
+                <td>{{residue.segment}}</td>
+                <td>{{residue.gprotseg}}</td>
+                <td>{{residue.gpcrdb}}</td>
+                <td>{{residue.gpnum}}</td>
+                <td>{{residue.aa}}{{residue.pos}}</td>
+                <td>{{residue.gpaa}}</td>
+                <td>{{residue.type}}</td>
+                {% endfor %}
+            </table>
+        </div>
+    {% else %}
+        <p> Ooops! There is no data to show here yet. </p>
+    {% endif %}
+
+    </div>
+</div>
+<br>
 
 {% endblock %}
 {% block addon_js %}
+<script src="{% static 'home/js/diagrams.js' %}"></script>
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/diagrams.js' %}"></script>
     <script type="text/javascript" charset="utf-8">
@@ -194,28 +197,42 @@ canvas {
 
             function gprotein_sets() {
                 plotid = 'snakeplot'
-                interacting = {{ interacting|safe }};
+                interacting_equivalent = {{ interacting_equivalent|safe }};
+                interacting_none_equivalent = {{ interacting_none_equivalent|safe }};
                 accessible = {{ accessible|safe }};
 
                    $.each( accessible, function( index, val ) {
                       key = val;
                       extra = "\n - \nG protein accessible" ;
-                      $('#'+plotid).find("#"+key).css("fill", "#ff9999");
-                      $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+                      $('#'+plotid).find("#"+key).css("fill", "#BDEEC8");
+                      $('#'+plotid).find("#"+key).next().css("fill", "#000");
+                      $('#'+plotid).find("#"+key).css("stroke-width", "3px");
                       original_title = $('#'+plotid).find("#"+key).attr('original_title')
                       $('#'+plotid).find("#"+key).attr('title',original_title+extra);
                       $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
 
                   });
 
-                  $.each( interacting, function( index, val ) {
+                    $.each( interacting_equivalent, function( index, val ) {
                       key = val;
                       extra = "\n - \nG protein interacting" ;
-                      $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
-                      $('#'+plotid).find("#"+key).css("stroke-width", "5px");
-                      $('#'+plotid).find("#"+key).css("stroke-dasharray", "5, 2");
-                      
-                      $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+                      $('#'+plotid).find("#"+key).css("fill", "#1F9439");
+                      $('#'+plotid).find("#"+key).css("stroke-width", "3px");
+                      // $('#'+plotid).find("#"+key).css("stroke-dasharray", "5, 2");
+                      $('#'+plotid).find("#"+key).next().css("fill", "#000");
+                      original_title = $('#'+plotid).find("#"+key).attr('original_title')
+                      $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                      $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+                  });
+
+                    $.each( interacting_none_equivalent, function( index, val ) {
+                      key = val;
+                      extra = "\n - \nG protein interaction not conserved" ;
+                      $('#'+plotid).find("#"+key).css("fill", "#E67E22");
+                      $('#'+plotid).find("#"+key).css("stroke-width", "3px");
+                      // $('#'+plotid).find("#"+key).css("stroke-dasharray", "5, 2");
+                      $('#'+plotid).find("#"+key).next().css("fill", "#000");
                       original_title = $('#'+plotid).find("#"+key).attr('original_title')
                       $('#'+plotid).find("#"+key).attr('title',original_title+extra);
                       $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
@@ -236,4 +253,105 @@ canvas {
             });
     </script>
 
+<script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            var table = $('#residues').DataTable({
+                "scrollX": true,
+                "scrollY": 600,
+                "bScrollCollapse": true,
+                'paging': false,
+                orderCellsTop: true,
+                "autoWidth": true,
+                "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                    if ({{ interacting_gn|safe }}.indexOf(aData[2] ) >=0  )
+                    {
+                        $('td', nRow).css('background-color', '#E67E22');
+                    }
+                    else
+                    {
+                        $('td', nRow).css('background-color', '#1F9439');
+                    }
+                },
+                dom: 'T<"clear">lfrtip',
+                "aoColumnDefs": [
+                    { "sType": "string", "aTargets": [0] },
+                ],
+                tableTools: {
+                    "sRowSelect": "multi",
+                    "aButtons": []
+                },
+                initComplete: function () {
+                    $('#residues').dataTable().columnFilter({
+                        sPlaceHolder: "foot:after",
+                        aoColumns: [
+                            { type: "select" }, //G protein
+                            { type: "select" }, //protein name
+                            { type: "select" }, //Alt Position
+                            { type: "select" }, //Position
+                            { type: "select" }, //Segment
+                            { type: "select" }, //G protein GN
+                            { type: "select" }, //G protein AA
+                            { type: "select" }, //G protein GN
+                        ]
+                    });
+                }
+
+            });
+
+            $('[data-toggle="tooltip"]').tooltip(); 
+            //$('[data-toggle="tooltip"]').tooltip({html:true});
+
+
+            function ajaxInteractions(plotid) {
+
+                interactions = {{ residues|safe }};
+                count = [];
+                output = [];
+                
+                  $.each( interactions, function( index, val ) {
+
+                    console.log(val);
+
+                    key = val['wt_pos'];
+
+                    if (key in count) {
+                        count[key] += 1;
+                        // if (!(val['type'] in output[key])) output[key].push(val['type'])
+                    } else {
+                        count[key] = 1;
+                        output[key] = [val['type']]
+                    }
+
+                    // var flags = [], falgsAA = [], output = [], outputAA = [], l = val.length, i;
+                    // for( i=0; i<l; i++) {
+                    //     if( flags[val[i][1]]) continue;
+                    //     flags[val[i][1]] = true;
+                    //     output.push(val[i][1]);
+                    // }
+                    // for( i=0; i<l; i++) {
+                    //     if( flags[val[i][0]]) continue;
+                    //     flags[val[i][0]] = true;
+                    //     outputAA.push(val[i][0]);
+                    // }
+                     
+                      extra = "\n" + String(count[key]) + " interaction | Type: "+ output[key];
+
+                      original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+
+                      // $('#'+plotid).find("#"+key).attr('title',original_title);
+                      // $('#'+plotid).find("#"+key+"t").attr('title',original_title);
+
+
+                  });
+
+                $("circle").tooltip('fixTitle');
+                $("text").tooltip('fixTitle');
+
+                
+            }
+            ajaxInteractions('snakeplot')
+
+            });
+    </script> 
 {% endblock %}
