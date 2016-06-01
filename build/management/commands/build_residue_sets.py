@@ -28,7 +28,7 @@ class Command(BaseCommand):
         self.logger.info('CREATING RESIDUE SETS')
 
         residue_sets = {
-            'Signalling protein pocket': ['gpcrdba', ['3x50', '3x53', '3x54', '3x55', '34x50', '34x51', '34x53', '34x54', '5x64', '5x67', '5x68', '6x29', '6x36', '7x55', '8x48', '8x49']],
+            'Signalling protein pocket': ['gpcrdba', ['3x50', '3x53', '3x54', '3x55', '34x50', '34x51', '34x53', '34x54', '5x64', '5x67', '5x68', '5x71', '5x74','6x29', '6x36', '7x55', '8x48', '8x49']],
                         }
         for set_name in residue_sets.keys():
             residues = []
