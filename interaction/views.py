@@ -1289,11 +1289,7 @@ def GSinterface(request, protein = None):
             interaction['pos'] = pos
 
             feature = names_aa[gs_b2_interaction_type_long]
-
-            # if feature == 'pol':
-
             
-            print(pos, interacting_aa[0], feature)
             if interacting_aa[0] not in exchange_table[feature]:
                 GS_none_equivalent_interacting_pos.append(pos)
                 GS_none_equivalent_interacting_gn.append(interaction['gpcrdb'])
