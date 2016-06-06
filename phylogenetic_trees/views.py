@@ -8,13 +8,20 @@ from common.views import AbsMiscSelection
 from common.selection import SelectionItem
 from mutation.models import *
 import math
-import os, shutil, subprocess
+import os, shutil, subprocess, signal
 import uuid
 from phylogenetic_trees.PrepareTree import *
 from collections import OrderedDict
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
+def kill_phylo(): #FIXME, needs better way of handling this!
+    p = subprocess.Popen(['ps', '-A'], stdout=subprocess.PIPE)
+    out, err = p.communicate()
+    for line in out.splitlines():
+        if 'protdist' in str(line):
+            pid = int(line.split(None, 1)[0])
+            os.kill(pid, signal.SIGKILL)
 
 class TargetSelection(AbsTargetSelection):
     step = 1
@@ -193,8 +200,12 @@ class Treeclass:
             inp.write('\n'.join(['r',str(self.bootstrap),'y','77','y'])+'\n')
             inp.close()
         ###
-            subprocess.check_output(['phylip seqboot<temp'], shell=True, cwd = '/tmp/%s' %dirname)
-            os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
+            try:
+                subprocess.check_output(['phylip seqboot<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
+                os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
+            except:
+                kill_phylo() #FIXME, needs better way of handling this!
+                return "too big","too big","too big","too big","too big","too big","too big","too big"
 
         ### Write phylip input options
         inp = open('/tmp/%s/temp' %dirname,'w')
@@ -204,7 +215,11 @@ class Treeclass:
             inp.write('y\n')
         inp.close()
         ###
-        subprocess.check_output(['phylip protdist<temp>>log'], shell=True, cwd = '/tmp/%s' %dirname)
+        try:
+            subprocess.check_output(['phylip protdist<temp>>log'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
+        except:
+            kill_phylo() #FIXME, needs better way of handling this!
+            return "too big","too big","too big","too big","too big","too big","too big","too big"
         os.rename('/tmp/%s/infile' %dirname, '/tmp/%s/dupa' %dirname)
         os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
         inp = open('/tmp/%s/temp' %dirname,'w')
@@ -220,8 +235,12 @@ class Treeclass:
             else:
                 inp.write('y\n')
         inp.close()
-        ### 
-        subprocess.check_output(['phylip neighbor<temp'], shell=True, cwd = '/tmp/%s' %dirname)
+        ###
+        try: 
+            subprocess.check_output(['phylip neighbor<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
+        except:
+            kill_phylo() #FIXME, needs better way of handling this!
+            return "too big","too big","too big","too big","too big","too big","too big","too big"
         if self.bootstrap:
             os.rename('/tmp/%s/outfile' %dirname, '/tmp/%s/infile' %dirname)
             os.rename('/tmp/%s/outtree' %dirname, '/tmp/%s/intree' %dirname)
@@ -230,7 +249,11 @@ class Treeclass:
             inp.write('y\n')
             inp.close()
         ###
-            subprocess.check_output(['phylip consense<temp'], shell=True, cwd = '/tmp/%s' %dirname)
+        try:
+            subprocess.check_output(['phylip consense<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
+        except:
+            kill_phylo() #FIXME, needs better way of handling this!
+            return "too big","too big","too big","too big","too big","too big","too big","too big"
         self.phylip = open('/tmp/%s/outtree' %dirname).read()
         for acc in accesions.keys():
             self.phylip=self.phylip.replace(acc,accesions[acc])
@@ -287,6 +310,9 @@ def modify_tree(request):
 def render_tree(request):
     Tree_class=Treeclass()
     phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.Prepare_file(request)
+    if phylogeny_input == 'too big':
+        return render(request, 'phylogenetic_trees/too_big.html')
+
     if phylogeny_input == 'More_prots':
         return render(request, 'phylogenetic_trees/warning.html')
     
