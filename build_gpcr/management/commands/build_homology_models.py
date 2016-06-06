@@ -17,10 +17,18 @@ import pprint
 from io import StringIO
 import sys
 import re
+import zipfile
+import shutil
 from datetime import datetime
 
 
 startTime = datetime.now()
+logger = logging.getLogger('homology_modeling')
+hdlr = logging.FileHandler('./logs/homology_modeling.log')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr) 
+logger.setLevel(logging.INFO)
 
         
 class Command(BaseBuild):  
@@ -32,6 +40,9 @@ class Command(BaseBuild):
                             action='store_true')
         parser.add_argument('-r', help='Run program for specific receptor(s) by giving UniProt common name as argument', 
                             default=False, type=str, nargs='+')
+        parser.add_argument('-z', help='Create zip file of model directory containing all built models', default=False,
+                            action='store_true')
+        parser.add_argument('--hmver', help='Homology modeling version', default=1.0, type=float)
         
     def handle(self, *args, **options):
         if not os.path.exists('./structure/homology_models/'):
@@ -42,6 +53,10 @@ class Command(BaseBuild):
             self.update = True
         else:
             self.update = False
+        if options['hmver']!=1.0:
+            self.version = options['hmver']
+        else:
+            self.version = 1.0
         if options['r']==False:
             structures = Structure.objects.all()
             struct_parent = [i.protein_conformation.protein.parent for i in structures]
@@ -60,6 +75,16 @@ class Command(BaseBuild):
                 print(msg)
         else:
             self.run_HomologyModeling(options['r'][0])
+        
+        os.chdir('./structure/')
+        if options['z']==True:
+            zipf = zipfile.ZipFile('./static/homology_models/homology_models_v{}.zip'.format(str(self.version)),'w',zipfile.ZIP_DEFLATED)
+            for root, dirs, files in os.walk('homology_models'):
+                for f in files:
+                    zipf.write(os.path.join(root, f))
+            zipf.close()
+#        shutil.rmtree('homology_models')
+        shutil.rmtree('PIR')
 
     def main_func(self, positions, iteration):
         if not positions[1]:
@@ -71,10 +96,16 @@ class Command(BaseBuild):
             self.run_HomologyModeling(receptor)
     
     def run_HomologyModeling(self, receptor):
-        Homology_model = HomologyModeling(receptor, 'Inactive',['Inactive'], update=self.update)
-        alignment = Homology_model.run_alignment()
-        Homology_model.build_homology_model(alignment)
-        Homology_model.format_final_model()
+        try:
+            state = 'Inactive'
+            Homology_model = HomologyModeling(receptor, state, [state], update=self.update, version=self.version)
+            alignment = Homology_model.run_alignment()
+            Homology_model.build_homology_model(alignment)
+            Homology_model.format_final_model()
+            logger.info('Model built for {} {}'.format(receptor, state))
+        except Exception as msg:
+            print('Failed to build model {}\n{}'.format(receptor,msg))
+            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
 
         
 class HomologyModeling(object):
@@ -86,11 +117,12 @@ class HomologyModeling(object):
         default: same as reference
     '''
     segment_coding = {1:'TM1',2:'TM2',3:'TM3',4:'TM4',5:'TM5',6:'TM6',7:'TM7'}
-    def __init__(self, reference_entry_name, state, query_states, update=False):
+    def __init__(self, reference_entry_name, state, query_states, update=False, version=1.0):
         self.reference_entry_name = reference_entry_name
         self.state = state
         self.query_states = query_states
         self.update = update
+        self.version = version
         self.statistics = CreateStatistics(self.reference_entry_name)
         self.reference_protein = Protein.objects.get(entry_name=self.reference_entry_name)
         self.uniprot_id = self.reference_protein.accession
@@ -114,16 +146,11 @@ class HomologyModeling(object):
                 self.template_source[r.protein_segment.slug][r.generic_number.label] = [None,None]
             except:
                 self.template_source[r.protein_segment.slug][str(r.sequence_number)] = [None,None]
-        self.logger = logging.getLogger('homology_modeling')
-        l.acquire()
-        self.logger.info('Building model for {} {}.'.format(self.reference_protein, self.state))
-        l.release()
         
     def __repr__(self):
         return "<Hommod: {}, {}>".format(self.reference_entry_name, self.state)
 
     def upload_to_db(self, sections, rotamers):
-        # upload StructureModel        
         s_state=ProteinState.objects.get(name=self.state)
         formatted_model = self.format_final_model()
         new_entry = False
@@ -131,13 +158,13 @@ class HomologyModeling(object):
             hommod = StructureModel.objects.get(protein=self.reference_protein, state=s_state)
             hommod.main_template = self.main_structure
             hommod.pdb = formatted_model
-            hommod.version = 1.0
+            hommod.version = self.version
             hommod.save()
         except:
             hommod, created = StructureModel.objects.update_or_create(protein=self.reference_protein, state=s_state, 
                                                                       main_template=self.main_structure, 
                                                                       pdb=self.format_final_model(), 
-                                                                      version=1.0)
+                                                                      version=self.version)
             new_entry = True
         if not new_entry:
             StructureModelStatsSegment.objects.filter(homology_model=hommod).delete()
@@ -155,72 +182,6 @@ class HomologyModeling(object):
             rots, created = StructureModelStatsRotamer.objects.update_or_create(homology_model=hommod, segment=r[0],
                                                                                 sequence_number=r[1],generic_number=r[2],
                                                                                 rotamer_template=r[4],model_segment=m_seg)
-#        # upload StructureModelLoopTemplates
-#        for loop,template in self.statistics.info_dict['loops'].items():
-#            seg = ProteinSegment.objects.get(slug=loop[:4])
-#            try:
-#                StructureModelLoopTemplates.objects.update_or_create(homology_model=hommod,template=template,segment=seg)
-#            except:
-#                pass
-#            
-#        # upload StructureModelAnomalies
-#        ref_bulges = self.statistics.info_dict['reference_bulges']
-#        temp_bulges = self.statistics.info_dict['template_bulges']
-#        ref_const = self.statistics.info_dict['reference_constrictions']
-#        temp_const = self.statistics.info_dict['template_constrictions']
-#                
-#        # upload StructureModelResidues
-#        
-#        for gn, res in self.statistics.info_dict['conserved_residues'].items():
-#            if gn[0] not in ['E','I']:
-#                res = Residue.objects.get(protein_conformation__protein=self.reference_protein, 
-#                                          generic_number__label=gn)
-#                res_temp = Residue.objects.get(protein_conformation=self.main_structure.protein_conformation, 
-#                                               generic_number__label=gn)
-#                rotamer = Rotamer.objects.filter(structure=self.main_structure, residue=res_temp)
-#            else:
-#                res = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
-#                                             protein_segment__slug=gn.split('|')[0])[int(gn.split('|')[1])-1]
-#                if gn[0] in ['E','I'] and gn[:4]+"_dis" in self.statistics.info_dict['loops'].keys():
-#                    alt_temp = self.statistics.info_dict['loops'][gn[:4]+"_dis"]
-#                    res_temp = Residue.objects.filter(protein_conformation=alt_temp.protein_conformation, 
-#                                                  protein_segment__slug=gn.split('|')[0])[int(gn.split('|')[1])-1]
-#                    rotamer = Rotamer.objects.filter(structure=alt_temp, residue=res_temp)
-#                else:
-#                    res_temp = Residue.objects.filter(protein_conformation=self.main_structure.protein_conformation, 
-#                                                  protein_segment__slug=gn.split('|')[0])[int(gn.split('|')[1])-1]
-#                    rotamer = Rotamer.objects.filter(structure=self.main_structure, residue=res_temp)                          
-#            rotamer = self.right_rotamer_select(rotamer)
-#            if gn[0] in ['E','I'] and gn[:4]+"_dis" in self.statistics.info_dict['loops'].keys():
-#                alt_temp = self.statistics.info_dict['loops'][gn[:4]+"_dis"]
-#                StructureModelResidues.objects.update_or_create(homology_model=hommod, sequence_number=res.sequence_number,
-#                                                                residue=res, rotamer=rotamer, template=alt_temp,
-#                                                                origin='conserved', segment=res.protein_segment)
-#            else:
-#                StructureModelResidues.objects.update_or_create(homology_model=hommod, sequence_number=res.sequence_number,
-#                                                                residue=res, rotamer=rotamer, template=self.main_structure,
-#                                                                origin='conserved', segment=res.protein_segment)
-#        for gn, temp in self.statistics.info_dict['non_conserved_residue_templates'].items():
-#            res = Residue.objects.get(protein_conformation__protein=self.reference_protein, generic_number__label=gn)
-#            res_temp = Residue.objects.get(protein_conformation=temp.protein_conformation,
-#                                           generic_number__label=gn)
-#            rotamer = Rotamer.objects.filter(structure=temp, residue=res_temp)
-#            rotamer = self.right_rotamer_select(rotamer)
-#            StructureModelResidues.objects.update_or_create(homology_model=hommod, sequence_number=res.sequence_number, 
-#                                                            residue=res, rotamer=rotamer, template=temp, 
-#                                                            origin='switched', segment=res.protein_segment)
-#        for gn in self.statistics.info_dict['trimmed_residues']:
-#            if gn[0] not in ['E','I']:
-#                gn = gn.replace('.','x')
-#                res = Residue.objects.get(protein_conformation__protein=self.reference_protein, 
-#                                          generic_number__label=gn)
-#            else:
-#                gn = gn.replace('?','|')
-#                res = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
-#                                             protein_segment__slug=gn.split('|')[0])[int(gn.split('|')[1])-1]
-#            StructureModelResidues.objects.update_or_create(homology_model=hommod, sequence_number=res.sequence_number,
-#                                                            residue=res, rotamer__isnull=True, template__isnull=True,
-#                                                            origin='free', segment=res.protein_segment)
                                    
     def right_rotamer_select(self, rotamer):
         if len(rotamer)>1:
@@ -441,9 +402,6 @@ class HomologyModeling(object):
                                     break
                             except:
                                 pass
-#        print(self.reference_entry_name)
-#        pprint.pprint(modifications)
-#        print(main_structure)
         self.helix_end_mods = modifications
         self.statistics.add_info('helix_end_mods',self.helix_end_mods)
         return main_pdb_array, a
@@ -560,8 +518,6 @@ class HomologyModeling(object):
         # loops
         if loops==True:
             loop_stat = OrderedDict()
-#            print(self.loop_template_table)
-#            print(self.helix_end_mods)
             for label, structures in self.loop_template_table.items():
                 loop = Loops(self.reference_protein, label, structures, self.main_structure, self.helix_end_mods,
                              list(self.template_source))
@@ -912,7 +868,7 @@ class HomologyModeling(object):
                     temp_coo = None
             elif len(last_five)==5:
                 try:
-                    temp_nums = last_five + [i for i in range(last_five[-1],last_five[-1]+4)]
+                    temp_nums = last_five + [i for i in range(last_five[-1]+1,last_five[-1]+5)]
                     template = parse.fetch_residues_from_pdb(N_struct,temp_nums)
                     ref_nums = list(main_pdb_array['TM1'])[:4]
                     reference = OrderedDict()
@@ -982,7 +938,7 @@ class HomologyModeling(object):
                     temp_coo2 = None
             elif len(first_five)==5:
                 try:
-                    temp_nums2 = [i for i in range(first_five[0]-4,first_five[0]-1)] + first_five
+                    temp_nums2 = [i for i in range(first_five[0]-4,first_five[0])] + first_five
                     template2 = parse.fetch_residues_from_array(C_struct,temp_nums2)
                     ref_nums2 = list(main_pdb_array[last_seg])[-4:]
                     reference2 = OrderedDict()
@@ -1080,11 +1036,6 @@ class HomologyModeling(object):
             temp_source[s_seg] = temp_source_seg      
         self.template_source = temp_source
         
-#        for i,j,k,l in zip(a.reference_dict,a.template_dict,a.alignment_dict,main_pdb_array):
-#            for q,w,e,r in zip(a.reference_dict[i],a.template_dict[j],a.alignment_dict[k],main_pdb_array[l]):
-#                print(q,a.reference_dict[i][q],w,a.template_dict[j][w],e,a.alignment_dict[k][e],r,main_pdb_array[l][r])
-#        raise AssertionError()
-        
         # non-conserved residue switching
         if switch_rotamers==True:
             non_cons_switch = self.run_non_conserved_switcher(main_pdb_array,a.reference_dict,a.template_dict,
@@ -1145,7 +1096,7 @@ class HomologyModeling(object):
         
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
                           self.uniprot_id, 1, "{}_{}_model.pdb".format(self.reference_entry_name,self.state), atom_dict=trimmed_res_nums)
-#        os.remove(path+self.uniprot_id+"_post.pdb")
+        os.remove(path+self.uniprot_id+"_post.pdb")
         
         # stat file
 #        with open('./structure/homology_models/{}_{}/{}.stat.txt'.format(self.reference_entry_name, self.state, 
@@ -1220,7 +1171,7 @@ class HomologyModeling(object):
             self.upload_to_db(sections, rot_table)
 
         print('MODELLER build: ',datetime.now() - startTime)
-#        pprint.pprint(self.statistics)
+        pprint.pprint(self.statistics)
         print('################################')
         return self
     
@@ -1512,7 +1463,7 @@ sequence:{uniprot}::::::::
                 os.rename("./"+file, "./structure/homology_models/{}_{}/".format(self.reference_entry_name,
                                                                                  self.state)+output_file_name)
             elif file.startswith(self.uniprot_id):
-                os.remove("./"+file)#, "./structure/homology_models/{}_{}/".format(self.uniprot_id,self.state)+file)
+                os.remove("./"+file)
 
 
 class SilentModeller(object):

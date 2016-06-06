@@ -81,7 +81,7 @@ class StructureModelStatsRotamer(models.Model):
     model_segment = models.ForeignKey('structure.StructureModelStatsSegment')
 
     def __repr__(self):
-        return '<StructureModelStatsRotamer: seqnum '+str(sequence_number)+' hommod '+str(homology_model.protein)+'>'
+        return '<StructureModelStatsRotamer: seqnum '+str(self.sequence_number)+' hommod '+str(self.homology_model.protein)+'>'
 
     class Meta():
         db_table = 'structure_model_stats_rotamer'
@@ -97,7 +97,7 @@ class StructureModelStatsSegment(models.Model):
     backbone_template = models.ForeignKey('structure.Structure', null=True)
 
     def __repr__(self):
-        return '<StructureModelStatsSegment: '+str(start)+'-'+str(end)+' hommod '+str(homology_model.protein)+'>'
+        return '<StructureModelStatsSegment: '+str(self.start)+'-'+str(self.end)+' hommod '+str(self.homology_model.protein)+'>'
 
     class Meta():
         db_table = 'structure_model_stats_segment'
@@ -105,49 +105,20 @@ class StructureModelStatsSegment(models.Model):
 
 class StructureModelRMSD(models.Model):
     homology_model = models.ForeignKey('structure.StructureModel')
+    pdb = models.CharField(max_length=4)
     service = models.CharField(max_length=10)
-    overall_all = models.DecimalField(null=True, max_digits=5, decimal_places=3)
-    overall_backbone = models.DecimalField(null=True, max_digits=5, decimal_places=3)
-    TM_all = models.DecimalField(null=True, max_digits=5, decimal_places=3)
-    TM_backbone = models.DecimalField(null=True, max_digits=5, decimal_places=3)
+    version = models.DecimalField(max_digits=2, decimal_places=1)
+    date = models.DateField(null=True)
+    overall_all = models.DecimalField(null=True, max_digits=3, decimal_places=1)
+    overall_backbone = models.DecimalField(null=True, max_digits=3, decimal_places=1)
+    TM_all = models.DecimalField(null=True, max_digits=3, decimal_places=1)
+    TM_backbone = models.DecimalField(null=True, max_digits=3, decimal_places=1)
 
     def __repr__(self):
-        return '<StructureModelRMSD: '+service+' hommod '+str(homology_model.protein)+'>'
+        return '<StructureModelRMSD: '+self.service+' hommod '+str(self.homology_model.protein)+'>'
 
     class Meta():
         db_table = 'structure_model_rmsd'
-
-
-class StructureModelLoopTemplates(models.Model):
-    homology_model = models.ForeignKey('structure.StructureModel')
-    template = models.ForeignKey('structure.Structure')
-    segment = models.ForeignKey('protein.ProteinSegment')
-        
-    class Meta():
-        db_table = 'structure_model_loop_templates'
-        
-        
-class StructureModelAnomalies(models.Model):
-    homology_model = models.ForeignKey('structure.StructureModel')
-    anomaly = models.ForeignKey('protein.ProteinAnomaly')
-    reference = models.CharField(max_length=1)
-    template = models.ForeignKey('structure.Structure')
-    
-    class Meta():
-        db_table = 'structure_model_anomalies'
-        
-        
-class StructureModelResidues(models.Model):
-    homology_model = models.ForeignKey('structure.StructureModel')
-    sequence_number = models.IntegerField()
-    residue = models.ForeignKey('residue.Residue')
-    rotamer = models.ForeignKey('structure.Rotamer', null=True)
-    template = models.ForeignKey('structure.Structure', null=True)
-    origin = models.CharField(max_length=15)
-    segment = models.ForeignKey('protein.ProteinSegment')
-    
-    class Meta():
-        db_table = 'structure_model_residues'
 
 
 class StructureType(models.Model):
