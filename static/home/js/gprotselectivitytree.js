@@ -29,7 +29,7 @@ function step(d) {
     "L" + t[0] + "," + t[1]);
 }
 
-var wrap = d3.select("#svg_tree").append("svg")
+var wrap = d3.select("#selectivitydata").append("svg")
     .attr("width", r * 2)
     .attr("height", r * 2)
     .style("-webkit-backface-visibility", "hidden");
@@ -45,9 +45,11 @@ var vis = wrap.append("g")
 
 var start = null,
     rotate = 0,
-    div = document.getElementById("svg_tree");
+    div = document.getElementById("selectivitydata");
 
 function mouse(e) {
+
+  console.log(e);
   return [
     e.pageX - div.offsetLeft - r,
     e.pageY - div.offsetTop - r
@@ -159,11 +161,10 @@ d3.csv("GPCRdbcsv.csv")
 //console.log(myData);// will trace null
 
 function myDataIsReady() {
-  //console.log(myData[1]);
+  console.log(selectivitydata)
   // Here you can draw your visualization
 
 for (i=0; i<myData.length; i++){
-
 
      if(myData[i].red==1){
 
