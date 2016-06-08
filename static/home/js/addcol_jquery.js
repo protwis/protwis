@@ -9,47 +9,223 @@ addRow('chem_comp');
     showOtherMonths: true
  });
 
+
+$(".half").on("mouseover",function (){
+  $(this).addClass("numeric");
+
+});
+
+
 $('.numeric').keyup(function () { 
     this.value = this.value.replace(/[^0-9\.]/g,'');
 });
 
-$(".searchclear").on('click',function(){
-    $(this).prev('input').val("");
-});
+
+
+//validation 
 
 $('#xtals_form').validate({ // initialize the plugin
+  validClass: "random",
+  //onfocusout: function (element) { $(element).valid();},
+  //onkeyup: function(element) { $(element).valid(); },
+
+});
+
+//put it also on document change
+$('select').each(function() {  
+      $(this).rules('add', {
+          required: true,
+          messages: {
+              required:  "*",
+          }
+      });
+  });
+
+$("#add_aux").on("click", function (){
+      $('select').each(function() {
+      $(this).rules('add', {
+          required: true,
+          messages: {
+              required:  "*",
+          }
+      });  
+  });  
+
+});
+//for inputs that are invoked when document changes
+$(document).change(function () {
+
+     //makes sure that "label" messages are shown only when fields are
+    $(".error").each( function(){
+      if ($(this).is("label")){
+        var original= $(this).attr("id");
+        var error_id = original.substr(0, original.indexOf('-')); 
+       if ($("#"+error_id).is(":visible")){  
+       } 
+        else{
+         $("#"+original).hide();
+        }
+      }
+    });
+
+  $('select').each(function() {
+      $(this).rules('add', {
+          required: true,
+          messages: {
+              required:  "*",
+          }
+      });  
+  });
+
+
+  $('.del_single').each(function() {
+    if ($(this).is(':visible')){
+      $(this).rules('add', {
+          required: true,
+          messages: {
+              required:  "please fill field",
+          
+          }
+      });
+    }
+  });
+
+
+    //every value should be followed by its unit
+$('.unit').each(function() {
+    if ($(this).prev('input').val() != ""){
+      $(this).rules('add', {
+          required: true,
+          messages: {
+              required:  "please add the unit",    
+          }
+      }); 
+      }     
+  });
+
+  //every unit should be followed by its value
+$('.half').each(function () {
+    if ($(this).next('input').val() != ""){
+      $(this).rules('add', {
+          required: true,
+          messages: {
+              required:  "please add the value or remove the unit",
+          }
+      });
+      }
+  });
+//doc change closing
+});
+
+
+//validation with rules
+
+/*
+jQuery.validator.setDefaults({
+  debug: true,
+  success: "valid"
+});
+
+ jQuery.validator.addMethod("textonlyname", function (value, element) {
+        return /^[A-Za-z\s]+$/.test(value);
+    }, "Please enter text and spaces only.");
+
+$('#xtals_form').validate({ // initialize the plugin
+       
             rules: {
             name_cont: {
                 required: true,
+                //minlength: 3,
+                textonlyname:true,
                 //email: true
             },  
+
             pi_name: {
                 required: true,  
+                textonlyname:true,
+            },
+            additive_concentr :{
+               required: function(element) {
+                return $("#id_addit_concentr_unit").val() < 13;
+               }
             }
+          
+
         },
 
          messages: {   //customize messages
             name_cont: {
                 required: "You must enter your full name",
+                //minlength:"be big",
                 //email: true
             },
             pi_name: {
                 required: "You must enter the name of your PI leader",
+            },     
+           additive_concentr: {
+                required: "text *",
+               // required:"please"
             },
            
         },
+
+    onkeyup: function (element, event) {
+           
+                $.validator.defaults.onkeyup.call(this, element, event);
+            },
+
+    onfocusout : function (element, event) {
+           
+                $.validator.defaults.onfocusout.call(this, element, event);
+            },
     highlight: function(element) {
         $(element).attr("class", $(element).attr("class").replace("tobereplaced", "error"));
     },   
     unhighlight: function(element) {
         $(element).removeClass("error");
     }
+
     });
 
+$("#id_additive_concentr").on('blur',function(){
+    if ($(this).val() == ""){
+      $("#id_additive_concentr-error").remove();
+    }
+
+});
+
+*/
+
+
+/*
+$('#id_addit_concentr_unit').on("focusout", function(){
+        $(this).prev("input").addClass("error");
+           var prev_id=$(this).prev("input").attr("id");
+        console.log("auto einai to id"+prev_id+"-error");
+        $(this).prev("input").attr("aria-invalid", "true");
+        //$("#"+prev_id+"-error").remove();
+
+        $(this).prev("input").rules('add', {
+         
+
+          required:true,
+          textonlyname:true,
+          messages: {
+              required:  "*",
+              textonlyname: "haha"
+          
+          }
+        
+        });
+*/
+       // $(this).removeClass("error");
+       // var unit_id=$(this).attr("id");
+        //$("#"+unit_id+"-error").remove();
+    
 //$("input[id*=id_del]").rules("add", "required");    //add rules after validator is initialized
   //$("select").addClass("form-control");
-  $(".button").addClass("btn btn-primary"); 
-  
+
+
       $(".aamod_pos_type").on('change', function () {
         temp_index = $(this).parent().parent().index();     //parent of td is tr
         var aamod_type= ["single", "pair", "range"];
@@ -117,7 +293,7 @@ $(".position").on('change', function () {
          }
   });
 
-var proteins=[ "type", "signal", "tag", "fusion", "linker", "prot_cleavage"];
+var proteins=[ "", "signal", "tag", "fusion", "linker", "prot_cleavage"];
             $(".protein_type").on('change', function () {
              temp_index = $(this).parent().index();
               for (pos=0; pos<proteins.length; pos+=1){
@@ -126,7 +302,7 @@ var proteins=[ "type", "signal", "tag", "fusion", "linker", "prot_cleavage"];
                     $(".sub_type").show();       
                     if (temp_index>1) {
                       $('.prot_type.col_id_'+temp_index).hide(); 
-                      $('.prot_type.col_id_'+temp_index).val("Please Select"); 
+                      $('.prot_type.col_id_'+temp_index).val(""); 
                       $('.others.col_id_'+temp_index).val("");
                       $('.linker.col_id_'+temp_index).val("");
                       $('.'+i+'.col_id_'+temp_index).show();   
@@ -198,6 +374,7 @@ showOtherAux('tag','other_tag','Other');
 showOtherChem('chem', 'chem_enz_remark', 'Other [See remark]');
 //call delrow for the tables
 delRow(".del_delrow", "#deletions");
+delRow(".mut_delrow", "#mutations");
 delRow(".chem_delrow", "#chem_comp");
 delRow(".mod_delrow", "#modifications");
 delLast(".chem_enz_delrow", "#solubil_purif");
@@ -293,7 +470,7 @@ if (my_index>1){
               insertion.addClass("klon"+insertion.index());
               var insertion_clone=$(insertion).clone(true);
               insertion_clone.find(".insert_pos_type").remove();
-              $("#deletions tr:last").after("<tr><th class='cloned_th"+insertion.index()+"'>Del. from Insertion"+actual_index+"</th></tr>");
+              $("#deletions tr:last").after("<tr><th class='cloned_th"+insertion.index()+"'>Insertion"+actual_index+"</th></tr>");
               $("#deletions tr:last").append(insertion_clone);
               var last_del_index=$("#deletions tr:last").index();
               insertion_clone.parent().addClass("cloned_insertion"+cur_index);
@@ -420,6 +597,26 @@ $('.checked').on('click', function (){
         });
      }
  });
+
+//trying to make the auxiliary proteins rearranged 
+var i=0;
+$('.position').on('change',function() {
+    current_index=$(this).parent().index(); //td
+    
+    
+    var sel_val = $(".position.col_id_"+current_index+" option:selected");
+    
+    if (sel_val.is('[name="C-term"]') ) {
+      i++;
+        $(sel_val).attr("name", $(this).attr("name").replace("C-term", "C-term"+i));
+        $(sel_val).text('C-term '+i);
+    }
+  
+   //return r_i+=1;
+   
+});
+
+ //i+=1;
 
 //!!!!! closing of document ready function
 });

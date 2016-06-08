@@ -164,6 +164,7 @@ function delRow(button_class, table_id){
             $(this).children().each(function(){       
               if (my_index>1){
                 var out_class=$(this).attr('class').split(' ').pop();
+                //console.log("current_class"+out_class);
                 $(this).removeClass(out_class);
                 $(this).addClass('row_id_'+my_index); 
                if ($(this).hasClass('with_rec_val')){
