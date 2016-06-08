@@ -40,6 +40,9 @@ from io import StringIO, BytesIO
 from Bio.PDB import PDBIO, PDBParser
 import xlsxwriter
 
+######@
+import numpy as np
+
 AA = {'ALA': 'A', 'ARG': 'R', 'ASN': 'N', 'ASP': 'D',
       'CYS': 'C', 'GLN': 'Q', 'GLU': 'E', 'GLY': 'G',
       'HIS': 'H', 'ILE': 'I', 'LEU': 'L', 'LYS': 'K',
@@ -1194,6 +1197,7 @@ def pdb(request):
 def GProtein(request):
 
     context = OrderedDict()
+    i=0
 
     # proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('proteingproteinpair_set')
     gproteins = ProteinGProtein.objects.all().prefetch_related('proteingproteinpair_set')
@@ -1201,6 +1205,8 @@ def GProtein(request):
     jsondata = {}
     for gp in gproteins:
         ps = gp.proteingproteinpair_set.all()
+        #print(ps)
+
         if ps:
             jsondata[str(gp)] = []
             for p in ps:
@@ -1209,6 +1215,14 @@ def GProtein(request):
             jsondata[str(gp)] = ''.join(jsondata[str(gp)])
 
     context["gdata"] = jsondata
+
+    #printing gproteins
+
+    gigofam = jsondata["Gi/Go family"]
+    gigofamarr = np.asarray(gigofam)
+    print(gigofamarr)
+    
+
 
     return render(request, 'interaction/gprotein.html', context)
 

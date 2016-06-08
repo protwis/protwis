@@ -10,6 +10,8 @@
 <link href="{% static 'home/css/color_picker.css' %}" rel="stylesheet" media="screen">
 <link href="{% static 'home/css/bootstrap-responsive.css' %}"  rel="stylesheet" media="screen">
 
+<link rel="stylesheet" href="{% static 'home/css/gprottree.css' %}"media="screen" />
+
 <script src="{% static 'home/js/jquery.min.js' %}"></script>
 
 <script language="Javascript">
@@ -403,14 +405,24 @@
   }(window.jQuery)
 </script>
 
-<!-- <div id="svg_tree">
+<div id="svg_tree">
+
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/newick.js' %}"></script>
+<script src="{% static 'home/js/gprotselectivitytree.js' %}"></script>
+
 </div>
+
+  <div>
+  <textarea id = "GproteinSubtreeTxtArea" placeholder="Click on tree nodes to get descendence" cols="30" rows="3"></textarea>
+
+  </div>
+
 
 <div class="row">
 
     <div class="col-md-12">
             <div class="panel-body">
-                    <img src="{% static 'home/images/Figure6.png' %}" style="height:1100px;width:700px;">
                     <div class='col-md-10'>
                         <p><strong>GPCR phylogenetic relationship is convoluted with G protein selectivity.</strong> A phylogenetic tree of Class A GPCRs was derived from a full-length GPCR multiple sequence alignment. Concentric circles illustrate the G protein-coupling selectivity of each GPCR: the five dots depict both primary and secondary G protein coupling and unknown coupling (orphan) is shown as a grey dot (from inside to outside: Gs, Gi/o, Gq/11, G12/13, orphan). The coloured bar chart highlights the primary signal transduction mechanism (Gs - blue, Gi/o - red, Gq/11 - black, G12/13 - green, multiple G proteins - grey). The same information is displayed in the branch colour of each terminal node in the phylogenetic tree. Thus, a GPCR with promiscuous primary coupling has multiple dots and a grey terminal branch/barchart. A GPCR that couples mainly through one G protein but that has secondary pathways has multiple dots, but one terminal branch/barchart colour for its primary signal transduction. The inset on the bottom shows a magnification of one clade in the phylogenetic tree.</p>
                     </div>
@@ -432,10 +444,10 @@
 {% endblock %}
 {% block addon_js %}
 <script src="{% static 'home/js/d3.min.js' %}"></script>
-<script src="{% static 'home/js/phyl_tree.js' %}"></script>
 <script src="{% static 'home/js/bootstrap-colorpicker.min.js' %}"></script>
 <script src="{% static 'home/js/canvas2svg.js' %}"></script>
 <script src="{% static 'home/js/jvenn.min.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+
 {% endblock %}
