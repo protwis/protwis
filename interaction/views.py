@@ -1219,7 +1219,7 @@ class TargetSelection(AbsTargetSelection):
     psets = False
     target_input = False
     redirect_on_select = True
-    type_of_selection = 'gsinterface'
+    type_of_selection = 'ginterface'
     title = 'SELECT TARGET for Gs INTERFACE'
     description = 'Select a reference target by searching or browsing.' \
         + '\n\nThe Gs interface from adrb2 (PDB: 3SN6) will be superposed onto the selected target.' \
@@ -1242,7 +1242,7 @@ class TargetSelection(AbsTargetSelection):
     }
 
 
-def GSinterface(request, protein = None):
+def Ginterface(request, protein = None):
 
     context = OrderedDict()
 
@@ -1296,6 +1296,6 @@ def GSinterface(request, protein = None):
 
     GS_equivalent_interacting_pos = residuelist.filter(display_generic_number__label__in=interacting_gn).values_list('sequence_number', flat=True)
 
-    return render(request, 'interaction/gsinterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn} )
+    return render(request, 'interaction/ginterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn} )
 
 
