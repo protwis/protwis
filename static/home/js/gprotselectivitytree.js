@@ -129,11 +129,10 @@ var innernodes= vis.selectAll('g.inner.node')
       .attr("r", 2.5);
 
 
-myDataIsReady(selectivitydata);
+DrawSelectivity(selectivitydata);
 
-function myDataIsReady(selectivityinfo) {
-  //console.log(selectivitydata)
-  // Here you can draw your visualization
+function DrawSelectivity(selectivityinfo) {
+
 
 for (var x in selectivityinfo){
     console.log(selectivityinfo[x]);
@@ -214,6 +213,9 @@ for (var x in selectivityinfo){
       //console.log(subtreeArray);
       //print coordinates
       //console.log(d.x, d.y);
+      for (i = 0; i < subtreeArray.length; i++)
+        subtreeArray[i] = subtreeArray[i]+"_human"
+
       makeUL(subtreeArray);
 
   });
@@ -242,9 +244,10 @@ return subtree;
 
 
 function makeUL(descendents){
-   
+
 var textarea = document.getElementById('names');
-textarea.value = descendents.join("_human\n");
+textarea.value = descendents.join("\n");
+
 
 }
 
