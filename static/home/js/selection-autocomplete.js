@@ -37,11 +37,11 @@ $(function() {
                 toggleButtonClass('selection-button'); // loading effect on button
                 setTimeout(function(){window.location = '/' + ui.item['type'] + '/' + ui.item['slug'];}, 200);
             
-            } else if (type_of_selection == 'gsinterface') {
-                //custom for gsinterface
+            } else if (type_of_selection == 'ginterface') {
+                //custom for ginterface
                 AddToSelection('targets', ui.item['type'], ui.item['id']);
                 toggleButtonClass('selection-button'); // loading effect on button
-                setTimeout(function(){window.location = '/interaction/gsinterface/' + ui.item['slug'];}, 200);
+                setTimeout(function(){window.location = '/interaction/ginterface/' + ui.item['slug'];}, 200);
             
             } else {
                 // add to selection
