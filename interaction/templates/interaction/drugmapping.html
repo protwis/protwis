@@ -1,0 +1,11 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% load structure_extras %}
+{% block addon_css %}
+{% endblock %}
+{% block content %}
+<h2>Drug target classification tree</h2>
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+{% endblock %}
