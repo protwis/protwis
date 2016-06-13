@@ -41,7 +41,7 @@ class Validation():
         self.rmsds = OrderedDict()
         self.four_scores = ['overall_all','overall_backbone','TM_all','TM_backbone']
     
-    def run_RMSD_list(self, files):
+    def run_RMSD_list(self, files, seq_nums=None):
         ''' Calculates 4 RMSD values between a list of GPCR pdb files. It compares the files using sequence and generic
         numbers. First file in the list has to be the reference file.
             1. overall all atoms RMSD
@@ -93,7 +93,10 @@ class Validation():
             for residue in p[chain]:
                 if residue.get_full_id()[3][0]!=' ':
                     continue
-                pdb_array1[int(residue.get_id()[1])] = residue
+                if seq_nums!=None and int(residue.get_id()[1]) in seq_nums:
+                    pdb_array1[int(residue.get_id()[1])] = residue
+                elif seq_nums==None:
+                    pdb_array1[int(residue.get_id()[1])] = residue
                 try:
                     if -8.1 < residue['CA'].get_bfactor() < 8.1:
                         pdb_array2[int(residue.get_id()[1])] = residue
@@ -156,11 +159,12 @@ class Validation():
                         for atom in sorted(atoms):
                             if atom in ref_atoms:
                                 this_list_all.append(m[i][res][atom])
-                                if atom in ['N','CA','C','O']:
+                                if atom in ['N','CA','C']:
                                     this_list_bb.append(m[i][res][atom])
                 this_model.append(this_list_all)
                 this_model.append(this_list_bb)
             atom_lists.append(this_model)
+        TM_keys = list(num_atoms[1].keys())        
         c = 0
         for m in atom_lists:
             c+=1
@@ -172,7 +176,7 @@ class Validation():
                 if c>1:
                     self.number_of_residues_superposed['file{}'.format(str(c))][self.four_scores[i]] = len(num_atoms[j])
                     self.number_of_atoms_superposed['file{}'.format(str(c))][self.four_scores[i]] = len(m[i])
-                    rmsd = self.calc_RMSD(atom_lists[0][i],m[i])
+                    rmsd = self.calc_RMSD(atom_lists[0][i], m[i])#, TM_keys)
                     self.rmsds['file{}'.format(str(c))][self.four_scores[i]] = rmsd
                 else:
                     self.number_of_residues_superposed['reference'][self.four_scores[i]] = len(num_atoms[j])
@@ -261,15 +265,16 @@ class Validation():
                     break
         return overall_all1, overall_all2, overall_backbone1, overall_backbone2, keys1, keys2
 
-    def calc_RMSD(self, list1, list2):
+    def calc_RMSD(self, list1, list2, TM_keys=None):
         ''' Calculates RMSD between two atoms lists. The two lists have to have the same length. 
         '''
-        superpose = sp.RotamerSuperpose(list1, list2)
+        superpose = sp.RotamerSuperpose(list1, list2, TM_keys)
         list2 = superpose.run()
         array1, array2 = np.array([0,0,0]), np.array([0,0,0])
         for a1, a2 in zip(list1, list2):
             array1 = np.vstack((array1, list(a1.get_coord())))
             array2 = np.vstack((array2, list(a2.get_coord())))
+        print(array1.shape,array2.shape)
         rmsd = np.sqrt(sum(sum((array1[1:]-array2[1:])**2))/array1[1:].shape[0])
         return rmsd
         
