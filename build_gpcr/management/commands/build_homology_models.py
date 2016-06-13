@@ -78,7 +78,7 @@ class Command(BaseBuild):
         
         os.chdir('./structure/')
         if options['z']==True:
-            zipf = zipfile.ZipFile('./static/homology_models/homology_models_v{}.zip'.format(str(self.version)),'w',zipfile.ZIP_DEFLATED)
+            zipf = zipfile.ZipFile('../static/homology_models/homology_models_v{}.zip'.format(str(self.version)),'w',zipfile.ZIP_DEFLATED)
             for root, dirs, files in os.walk('homology_models'):
                 for f in files:
                     zipf.write(os.path.join(root, f))
