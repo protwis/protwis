@@ -22,7 +22,7 @@ import re
 class Command(BaseCommand):
     def handle(self, *args, **options):
         v = Validation()
-        v.run_RMSD_list(['./structure/PDB/pdb4zjc.ent','./structure/homology_models/ox1r_human_Inactive/ox1r_human_Inactive_model.pdb','./structure/homology_models/SwissMod/ox1r_human_2016-05-04/model/01/ox1r_model.pdb'],[99, 102, 103, 112, 122, 123, 126, 130, 179, 183, 204, 219, 314, 318, 344, 348])
+        v.run_RMSD_list(['./structure/PDB/pdb4zjc.ent','./structure/homology_models/ox1r_human_Inactive/ox1r_human_Inactive_model_updated.pdb','./structure/homology_models/SwissMod/ox1r_human_2016-05-04/model/01/ox1r_model.pdb'],[99, 102, 103, 112, 122, 123, 126, 130, 179, 183, 204, 219, 314, 318, 344, 348])
 #        v.run_RMSD_list(['./structure/PDB/pdb5cxv.ent','./structure/homology_models/acm1_human_Inactive/acm1_human_Inactive_model.pdb','./structure/homology_models/SwissMod/acm1_human_2016-05-27/model/01/acm1_model.pdb','./structure/homology_models/SwissMod/acm1_human_2016-05-27/model/acm1_model.pdb'],[105, 106, 109, 110, 157, 189, 192, 193, 196, 197, 378, 381, 382, 404, 407, 408])
 #        files = []        
 #        gpcrm_dir = os.listdir('./structure/homology_models/GPCRM/ACM1_HUMAN_inact')
@@ -43,9 +43,9 @@ class Command(BaseCommand):
             else:
                 print(i)
                 pprint.pprint(j)
-#        ar = ar[1:]
-#        print(ar)
-#        print(np.mean(ar,axis=0))
+        ar = ar[1:]
+        print(ar)
+        print(np.mean(ar,axis=0))
 #        n = nx.QueryPDB()
 #        n.list_xtals()
 #        for r in n.new_uniques:
