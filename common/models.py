@@ -67,7 +67,10 @@ class Publication(models.Model):
             # update record
             try:
                 self.title = pub['message']['title'][0]
-                self.year = pub['message']['deposited']['date-parts'][0][0]
+                try: 
+                    self.year = pub['message']['created']['date-parts'][0][0]
+                except:
+                    self.year = pub['message']['deposited']['date-parts'][0][0]
 
                 # go from [{'family': 'Gloriam', 'given': 'David E.'}] to ['Gloriam DE']
                 authors = ['{} {}'.format(x['family'], ''.join([y[:1] for y in x['given'].split()]))

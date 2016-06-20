@@ -1391,6 +1391,7 @@ def webformdata(request) :
 
     i=1
     error = 0
+    error_msg = []
     for key,value in sorted(data.items()):
         try:
             if key.startswith('delet_start'):
@@ -1524,15 +1525,18 @@ def webformdata(request) :
                     data.pop('aamod_pair_one'+mod_id, None)
                     data.pop('aamod_pair_two'+mod_id, None)
 
-
-                modifications.append({'type':value,'remark':data['mod_remark'+mod_id],'position':pos })
+                remark = ''
+                if 'mod_remark'+mod_id in data:
+                    remark = data['mod_remark'+mod_id]
+                modifications.append({'type':value,'remark':remark,'position':pos })
                 data.pop(key, None)
                 data.pop('mod_remark'+mod_id, None)
                 data.pop('aamod_position'+mod_id, None)
 
             if key.startswith(purge_keys):
                 data.pop(key, None)
-        except:
+        except BaseException as e:
+            error_msg.append(str(e))
             error = 1
 
     auxiliary = OrderedDict(sorted(auxiliary.items()))
@@ -1540,7 +1544,7 @@ def webformdata(request) :
     context = OrderedDict( [('contact_info',contact_info), ('construct_crystal',construct_crystal),
                            ('auxiliary' , auxiliary),  ('deletions',deletions), ('mutations',mutations),
                            ('modifications', modifications), ('expression', expression), ('solubilization',solubilization),
-                           ('crystallization',crystallization),  ('unparsed',data),  ('raw_data',raw_data), ('error', error)] )
+                           ('crystallization',crystallization),  ('unparsed',data),  ('raw_data',raw_data), ('error', error), ('error_msg',error_msg)] )
 
     if error==0:
         dump_dir = '/protwis/construct_dump'
