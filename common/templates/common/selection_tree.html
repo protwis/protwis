@@ -72,10 +72,10 @@
 <a href="javascript:void(0)" onclick="AddToSelection('targets', 'protein', '{{ p.id }}');
     toggleButtonClass('selection-button');
     setTimeout(function(){window.location = '/protein/{{ p.entry_name }}';}, 200);" class="target-selection">
-    {% elif type_of_selection == 'gsinterface' %}
+    {% elif type_of_selection == 'ginterface' %}
 <a href="javascript:void(0)" onclick="AddToSelection('targets', 'protein', '{{ p.id }}');
     toggleButtonClass('selection-button');
-    setTimeout(function(){window.location = '/interaction/gsinterface/{{ p.entry_name }}';}, 200);" class="target-selection">
+    setTimeout(function(){window.location = '/interaction/ginterface/{{ p.entry_name }}';}, 200);" class="target-selection">
     {% else %}
 <a href="javascript:void(0)" class="target-selection" onclick="AddToSelection('{{ type_of_selection }}', 'protein',
     '{{ p.id }}');
