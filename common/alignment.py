@@ -997,10 +997,13 @@ class AlignedReferenceTemplate(Alignment):
                         main_template_mid_failed = True
                         raise Exception()
                 except:
+                    main_template_mid_failed = True
                     if len(ref_seq)==len(main_temp_seq):
                         similarity_table[self.main_template_structure] = self.provide_similarity_table[
                                                                                             self.main_template_structure]
                         temp_list.append((struct, len(main_temp_seq), similarity, float(struct.resolution), protein))
+                    else:
+                        ref_ECL2 = None
             else:
                 temp_length, temp_length1, temp_length2 = [],[],[]
                 try:
