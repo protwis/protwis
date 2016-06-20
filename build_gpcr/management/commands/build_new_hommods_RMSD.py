@@ -22,14 +22,14 @@ import re
 class Command(BaseCommand):
     def handle(self, *args, **options):
         v = Validation()
-        v.run_RMSD_list(['./structure/PDB/pdb4zjc.ent','./structure/homology_models/ox1r_human_Inactive/ox1r_human_Inactive_model_updated.pdb','./structure/homology_models/SwissMod/ox1r_human_2016-05-04/model/01/ox1r_model.pdb'],[99, 102, 103, 112, 122, 123, 126, 130, 179, 183, 204, 219, 314, 318, 344, 348])
-#        v.run_RMSD_list(['./structure/PDB/pdb5cxv.ent','./structure/homology_models/acm1_human_Inactive/acm1_human_Inactive_model.pdb','./structure/homology_models/SwissMod/acm1_human_2016-05-27/model/01/acm1_model.pdb','./structure/homology_models/SwissMod/acm1_human_2016-05-27/model/acm1_model.pdb'],[105, 106, 109, 110, 157, 189, 192, 193, 196, 197, 378, 381, 382, 404, 407, 408])
-#        files = []        
-#        gpcrm_dir = os.listdir('./structure/homology_models/GPCRM/ACM1_HUMAN_inact')
-#        for i in gpcrm_dir:
-#            if i.startswith('gpcrm'):
-#                files.append(os.path.join('./structure/homology_models/GPCRM/ACM1_HUMAN_inact',i))        
-#        v.run_RMSD_list(['./structure/PDB/pdb5dsg.ent','./structure/homology_models/acm4_human_Inactive/acm4_human_Inactive_model.pdb','./structure/homology_models/SwissMod/acm4_human_2016-05-27/model/01/acm4_model.pdb','./structure/homology_models/SwissMod/acm4_human_2016-05-27/model/acm4_model.pdb'],[112, 113, 116, 117, 164, 190, 196, 199, 200, 203, 204, 413, 416, 417, 439, 442, 443])
+#        v.run_RMSD_list(['./structure/PDB/pdb4zjc.ent','./structure/homology_models/ox1r_human_Inactive/ox1r_human_Inactive_model_updated.pdb','./structure/homology_models/SwissMod/ox1r_human_2016-05-04/model/01/ox1r_model.pdb'],[99, 102, 103, 112, 122, 123, 126, 130, 179, 183, 204, 219, 314, 318, 344, 348])
+#        v.run_RMSD_list(['./structure/PDB/pdb5cxv.ent','./structure/homology_models/acm1_human_Inactive/acm1_human_Inactive_model.pdb','./structure/homology_models/SwissMod/acm1_human_2016-05-27/model/01/acm1_model.pdb','./structure/homology_models/SwissMod/acm1_human_2016-05-27/model/acm1_model.pdb'])#,[105, 106, 109, 110, 157, 189, 192, 193, 196, 197, 378, 381, 382, 404, 407, 408])
+        files = []        
+        gpcrm_dir = os.listdir('./structure/homology_models/GPCRM/ACM4_HUMAN_inact')
+        for i in gpcrm_dir:
+            if i.startswith('gpcrm_model_r'):
+                files.append(os.path.join('./structure/homology_models/GPCRM/ACM4_HUMAN_inact',i))        
+        v.run_RMSD_list(['./structure/PDB/pdb5dsg.ent','./structure/homology_models/acm4_human_Inactive/acm4_human_Inactive_model.pdb','./structure/homology_models/SwissMod/acm4_human_2016-05-27/model/01/acm4_model.pdb','./structure/homology_models/SwissMod/acm4_human_2016-05-27/model/acm4_model.pdb']+files)#,[112, 113, 116, 117, 164, 190, 196, 199, 200, 203, 204, 413, 416, 417, 439, 442, 443])
         c=0
         ar = np.array([0,0,0,0])
         for k,l in v.number_of_residues_superposed.items():

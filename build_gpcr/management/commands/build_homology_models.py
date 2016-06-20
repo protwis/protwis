@@ -835,15 +835,15 @@ class HomologyModeling(object):
         # Move H8 if needed
         if 'H8' in main_pdb_array and 'ICL4' not in main_pdb_array and len(self.helix_end_mods['removed']['TM7'][1])>0:
             reference = OrderedDict()
-            ref_nums = list(main_pdb_array['TM7'])[-4:]
+            ref_nums = list(main_pdb_array['TM7'])[-2:]
             for i in ref_nums:
                 reference[i] = main_pdb_array['TM7'][i]
             h8_temp = self.template_source['H8'][list(self.template_source['H8'])[0]][0]
             tm7 = list(Residue.objects.filter(protein_conformation=h8_temp.protein_conformation,protein_segment__slug='TM7'))
-            temp_nums = [i.generic_number.label for i in tm7[-4:]] 
+            temp_nums = [i.generic_number.label for i in tm7[-2:]] 
             tm7_template = parse.fetch_residues_from_pdb(h8_temp,temp_nums)
             template = parse.add_two_ordereddict(tm7_template,main_pdb_array['H8'])
-            superpose = sp.OneSidedSuperpose(reference,template,4,1)
+            superpose = sp.OneSidedSuperpose(reference,template,2,1)
             sup_residues = superpose.run()
             new_h8 = OrderedDict()
             for gn, atoms in sup_residues.items():
@@ -852,7 +852,8 @@ class HomologyModeling(object):
             main_pdb_array['H8'] = new_h8
             moved_h8 = True
         else:
-            moved_h8 = False      
+            moved_h8 = False
+        self.statistics.add_info('moved_H8', moved_h8)
         
         # N- and C-termini
         if N_and_C_termini==True:
