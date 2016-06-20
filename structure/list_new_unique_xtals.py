@@ -30,7 +30,7 @@ class QueryPDB():
     <queryType>org.pdb.query.simple.TreeQuery</queryType>
     <description>TransmembraneTree Search for G Protein-Coupled Receptors (GPCRs)</description>
     <t>19</t>
-    <n>230</n>
+    <n>232</n>
     <nodeDesc>G Protein-Coupled Receptors (GPCRs)</nodeDesc>
 </orgPdbQuery>
     
