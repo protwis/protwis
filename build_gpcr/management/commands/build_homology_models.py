@@ -96,16 +96,16 @@ class Command(BaseBuild):
             self.run_HomologyModeling(receptor)
     
     def run_HomologyModeling(self, receptor):
-        try:
-            state = 'Inactive'
-            Homology_model = HomologyModeling(receptor, state, [state], update=self.update, version=self.version)
-            alignment = Homology_model.run_alignment()
-            Homology_model.build_homology_model(alignment)
-            Homology_model.format_final_model()
-            logger.info('Model built for {} {}'.format(receptor, state))
-        except Exception as msg:
-            print('Failed to build model {}\n{}'.format(receptor,msg))
-            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
+#        try:
+        state = 'Inactive'
+        Homology_model = HomologyModeling(receptor, state, [state], update=self.update, version=self.version)
+        alignment = Homology_model.run_alignment()
+        Homology_model.build_homology_model(alignment)
+        Homology_model.format_final_model()
+        logger.info('Model built for {} {}'.format(receptor, state))
+#        except Exception as msg:
+#            print('Failed to build model {}\n{}'.format(receptor,msg))
+#            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
 
         
 class HomologyModeling(object):
@@ -239,11 +239,25 @@ class HomologyModeling(object):
         ends = OrderedDict()
         for i in raw:
             if i.protein_segment.slug[0]=='T' or i.protein_segment.slug=='H8':
-                while Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=i.start).generic_number==None:
-                    i.start+=1
+                start_found = False
+                while start_found==False:
+                    try:
+                        if Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=i.start).generic_number==None:
+                            i.start+=1
+                        else:
+                            start_found = True
+                    except:
+                        i.start+=1
                 s = Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=i.start)
-                while Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=i.end).generic_number==None:
-                    i.end-=1
+                end_found = False                
+                while end_found==False:
+                    try:
+                        if Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=i.end).generic_number==None:
+                            i.end-=1
+                        else:
+                            end_found = True
+                    except:
+                        i.end-=1
                 e = Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=i.end)
                 ends[s.protein_segment.slug] = [s.generic_number.label,e.generic_number.label]
         for j in annotated:
