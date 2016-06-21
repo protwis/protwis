@@ -1,4 +1,5 @@
 
+
 function addColumn(tableid, myindex) {
    var r_i = 0 ;
     $('#'+tableid+' tr').each(function(){       
@@ -70,6 +71,7 @@ function addaux(tableid){
               $(this).attr('id', new_id);
             })
       });
+ValidateForm();
 }
 
 function deleteRow(tblId){
@@ -78,6 +80,8 @@ function deleteRow(tblId){
     $('#'+tblId+' tr:last').remove();
     }
 }
+
+
 
 function addRow(tblid){
 var r_i= 0 ;
@@ -115,6 +119,7 @@ var r_i= 0 ;
               $(this).attr('id', new_id);
             }) 
       });
+  ValidateForm();  
 }
 
 function showOther(dropdown_id, other_class, drop_value){
@@ -127,6 +132,7 @@ function showOther(dropdown_id, other_class, drop_value){
             $("."+other_class).hide(); 
           }
       });
+    ValidateForm();
 }
 
 function showOtherAux(dropdown_class, other_class, drop_value){
@@ -152,7 +158,35 @@ function showOtherAux(dropdown_class, other_class, drop_value){
           }
       }
       });
+    ValidateForm();
 }
+
+function showOtherDynamic(dropdown_class, other_class, drop_value){
+    $("."+dropdown_class).on('change', function () {
+          this_index=$(this).parent().parent().index();
+          console.log(this_index);
+      if (this_index>1){
+          if(this.value === drop_value){
+            $('.'+other_class+'.row_id_'+this_index).show();  
+          } 
+          else {
+            $("."+other_class+'.row_id_'+this_index).val('')
+            $("."+other_class+'.row_id_'+this_index).hide(); 
+          }
+      } 
+      else{
+         if(this.value === drop_value){
+            $('.'+other_class+'.row_id').show();  
+          } 
+          else {
+            $("."+other_class+'.row_id').val('')
+            $("."+other_class+'.row_id').hide(); 
+          }
+      }
+      });
+    ValidateForm();
+}
+
 
 function delRow(button_class, table_id){
  $(button_class).on('click', function (){
@@ -183,7 +217,7 @@ function delRow(button_class, table_id){
   });
 }
 
-function delLast(button_class, table_id){
+function delLast(button_class, table_id, ins_index){
    $(button_class).on('click', function (){
       if (confirm("Are you sure you want to delete this row?")){
           $(this).closest('tr').remove ();   //this parent().parent().remove()
@@ -191,16 +225,16 @@ function delLast(button_class, table_id){
               var my_index=$(this).index();
               $(this).children().each(function(){    //td
                   $(this).children().each(function(){   //elements inside td
-                         if (my_index>4){
+                         if (my_index>ins_index){
                       var out_class=$(this).attr('class').split(' ').pop();
                       $(this).removeClass(out_class);
-                      $(this).addClass('row_id_'+(my_index-4));
+                      $(this).addClass('row_id_'+(my_index-ins_index));
                      //update ids and names excluding those from the insertions table
                      if ($(this).hasClass('with_rec_val')){
                       }
                      else{
-                      $(this).attr("id", $(this).attr("id").replace(/\d+$/, (my_index-4)));
-                      $(this).attr("name", $(this).attr("name").replace(/\d+$/, (my_index-4) ));
+                      $(this).attr("id", $(this).attr("id").replace(/\d+$/, (my_index-ins_index)));
+                      $(this).attr("name", $(this).attr("name").replace(/\d+$/, (my_index-ins_index) ));
                      }
                       }
                   });
@@ -220,7 +254,13 @@ function addLast(button_id, table_id, row_index){
        cur_index = $(this).index()-row_index;       //so the counting starts from 1
        newtd=$(this).find('td');   //find the cells for each row
        newtd.children().each(function(){
+                   if ($(this).is("label")){
+                    $(this).hide();
+                  }
                   if ($(this).hasClass("chem_enz_delrow")){
+                    $(this).show();
+                  }
+                  if ($(this).hasClass("delrow_db")){
                     $(this).show();
                   }
                   if ($(this).hasClass("chem_enz_remark")){
@@ -238,6 +278,7 @@ function addLast(button_id, table_id, row_index){
                 })
      });
   });
+ValidateForm();
 }
 
 function showOtherChem(dropdown_class, other_class, drop_value){
@@ -263,4 +304,37 @@ function showOtherChem(dropdown_class, other_class, drop_value){
             }
         }
    });
+    ValidateForm();
+}
+
+
+function ValidateForm(){
+  $('#xtals_form').validate({ // invoke the validator plugin
+  validClass: "",
+});
+
+$("input:visible:not(.optional)").each(function() {
+  input_id=$(this).attr("id");
+  if (input_id != "id_date"){
+
+    $(this).rules('add', {
+          required: true,
+          messages: {
+              required:  "*",
+          }
+      });
+  }
+});
+
+$('select:visible:not(.optional)').each(function() {  
+      $(this).rules('add', {
+          required: true,
+          messages: {
+              required:  "*",
+          }
+      });
+  });
+
+
+
 }
