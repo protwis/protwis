@@ -249,11 +249,11 @@ class Treeclass:
             inp.write('y\n')
             inp.close()
         ###
-        try:
-            subprocess.check_output(['phylip consense<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
-        except:
-            kill_phylo() #FIXME, needs better way of handling this!
-            return "too big","too big","too big","too big","too big","too big","too big","too big"
+            try:
+                subprocess.check_output(['phylip consense<temp'], shell=True, cwd = '/tmp/%s' %dirname, timeout=60)
+            except:
+                kill_phylo() #FIXME, needs better way of handling this!
+                return "too big","too big","too big","too big","too big","too big","too big","too big"
         self.phylip = open('/tmp/%s/outtree' %dirname).read()
         for acc in accesions.keys():
             self.phylip=self.phylip.replace(acc,accesions[acc])
