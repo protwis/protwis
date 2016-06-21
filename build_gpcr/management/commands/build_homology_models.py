@@ -19,6 +19,7 @@ import sys
 import re
 import zipfile
 import shutil
+import math
 from datetime import datetime
 
 
@@ -847,27 +848,30 @@ class HomologyModeling(object):
 #        print('Free loops: ',datetime.now() - startTime)
         
         # Move H8 if needed
+        trimmed_residues=[]
         if 'H8' in main_pdb_array and 'ICL4' not in main_pdb_array and len(self.helix_end_mods['removed']['TM7'][1])>0:
-            reference = OrderedDict()
-            ref_nums = list(main_pdb_array['TM7'])[-2:]
-            for i in ref_nums:
-                reference[i] = main_pdb_array['TM7'][i]
-            h8_temp = self.template_source['H8'][list(self.template_source['H8'])[0]][0]
-            tm7 = list(Residue.objects.filter(protein_conformation=h8_temp.protein_conformation,protein_segment__slug='TM7'))
-            temp_nums = [i.generic_number.label for i in tm7[-2:]] 
-            tm7_template = parse.fetch_residues_from_pdb(h8_temp,temp_nums)
-            template = parse.add_two_ordereddict(tm7_template,main_pdb_array['H8'])
-            superpose = sp.OneSidedSuperpose(reference,template,2,1)
-            sup_residues = superpose.run()
-            new_h8 = OrderedDict()
-            for gn, atoms in sup_residues.items():
-                if gn[0]=='8':
-                    new_h8[gn] = atoms
-            main_pdb_array['H8'] = new_h8
-            moved_h8 = True
-        else:
-            moved_h8 = False
-        self.statistics.add_info('moved_H8', moved_h8)
+            unwind_num = math.ceil(len(self.helix_end_mods['removed']['TM7'][1])/2)
+            trimmed_residues+=list(main_pdb_array['TM7'].keys())[(unwind_num*-1):]+list(main_pdb_array['H8'].keys())[:unwind_num]
+#            reference = OrderedDict()
+#            ref_nums = list(main_pdb_array['TM7'])[-2:]
+#            for i in ref_nums:
+#                reference[i] = main_pdb_array['TM7'][i]
+#            h8_temp = self.template_source['H8'][list(self.template_source['H8'])[0]][0]
+#            tm7 = list(Residue.objects.filter(protein_conformation=h8_temp.protein_conformation,protein_segment__slug='TM7'))
+#            temp_nums = [i.generic_number.label for i in tm7[-2:]] 
+#            tm7_template = parse.fetch_residues_from_pdb(h8_temp,temp_nums)
+#            template = parse.add_two_ordereddict(tm7_template,main_pdb_array['H8'])
+#            superpose = sp.OneSidedSuperpose(reference,template,2,1)
+#            sup_residues = superpose.run()
+#            new_h8 = OrderedDict()
+#            for gn, atoms in sup_residues.items():
+#                if gn[0]=='8':
+#                    new_h8[gn] = atoms
+#            main_pdb_array['H8'] = new_h8
+#            moved_h8 = True
+#        else:
+#            moved_h8 = False
+#        self.statistics.add_info('moved_H8', moved_h8)
         
         # N- and C-termini
         if N_and_C_termini==True:
@@ -946,7 +950,7 @@ class HomologyModeling(object):
                                                  protein_segment__slug='C-term')
                                                  
             first_five = [i.sequence_number for i in list(C_term_temp)[:5]]
-            if self.main_structure==N_struct and moved_h8==False and len(first_five)==5:
+            if self.main_structure==N_struct and len(first_five)==5:
                 try:
                     temp_coo2 = list(parse.fetch_residues_from_pdb(C_struct,first_five).values())
                 except:
@@ -994,9 +998,9 @@ class HomologyModeling(object):
         # Shorten N- and C-termini 
         n_count=1
         orig_n_len = len(a.reference_dict['N-term'])
-        if orig_n_len>10:
+        if orig_n_len>5:
             for num in a.reference_dict['N-term']:
-                if n_count<orig_n_len-9:
+                if n_count<orig_n_len-4:
                     del a.reference_dict['N-term'][num]
                     del a.template_dict['N-term'][num]
                     del a.alignment_dict['N-term'][num]
@@ -1005,9 +1009,9 @@ class HomologyModeling(object):
                 n_count+=1
         c_count=1
         orig_c_len = len(a.reference_dict['C-term'])
-        if orig_c_len>10:
+        if orig_c_len>5:
             for num in a.reference_dict['C-term']:
-                if c_count>10:
+                if c_count>5:
                     del a.reference_dict['C-term'][num]
                     del a.template_dict['C-term'][num]
                     del a.alignment_dict['C-term'][num]
@@ -1017,14 +1021,14 @@ class HomologyModeling(object):
         
         # Shorten ICL3
         try:
-            if len(a.reference_dict['ICL3_free'])>20:
+            if len(a.reference_dict['ICL3_free'])>10:
                 icl3_c = 0
                 keys = list(self.template_source['ICL3'].keys())
                 length = len(a.template_dict['ICL3_free'])
                 for r_s,t_s,a_s,ar_s in zip(a.reference_dict['ICL3_free'],a.template_dict['ICL3_free'],
                                             a.alignment_dict['ICL3_free'],main_pdb_array['ICL3_free']):
                     icl3_c+=1
-                    if 10<icl3_c<length-9:
+                    if 5<icl3_c<length-4:
                         del a.reference_dict['ICL3_free'][r_s]
                         del a.template_dict['ICL3_free'][t_s]
                         del a.alignment_dict['ICL3_free'][a_s]
@@ -1059,16 +1063,17 @@ class HomologyModeling(object):
             a.reference_dict = non_cons_switch[1]
             a.template_dict = non_cons_switch[2]
             a.alignment_dict = non_cons_switch[3]
-            trimmed_residues = non_cons_switch[4]
+            trimmed_residues+=non_cons_switch[4]
         else:
-            trimmed_residues=[]
             for seg_id, seg in main_pdb_array.items():
                 for key in seg:
                     if a.reference_dict[seg_id][str(key).replace('.','x')]!='-':
                         trimmed_residues.append(key)
         if 'ICL4_free' in main_pdb_array:
-            moved_h8=True
-        if moved_h8==True:
+            freeICL4=True
+        else:
+            freeICL4=False
+        if freeICL4==True:
             for i in list(main_pdb_array['H8']):
                 if i not in trimmed_residues:
                     trimmed_residues.append(i)
@@ -1094,7 +1099,7 @@ class HomologyModeling(object):
                 trimmed_residues.append(parse.gn_indecer(i,'.',1))
             if parse.gn_indecer(i,'.',2) not in trimmed_residues:
                 trimmed_residues.append(parse.gn_indecer(i,'.',2))
-
+                
 #        print('Rotamer switching: ',datetime.now() - startTime) 
         
         # write to file
