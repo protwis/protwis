@@ -64,6 +64,15 @@ class DrawSnakePlot(Diagram):
             self.segments[segment].append([r.sequence_number,r.amino_acid,label,displaylabel])
             i += 1
 
+        for helix_num in range(1,8): #FIX for missing generic numbers
+            rs = self.segments['TM'+str(helix_num)]
+            for i in range(0,len(rs)):
+                if not rs[i][2]:
+                    if i+1<len(rs): #if there is a next one
+                        if rs[i+1][2]: #if it has generic number
+                            number = str(int(rs[i+1][2].split('x')[1])-1)
+                            rs[i][2] = str(helix_num) + "x" + number
+
         self.helixWidth = 85           # Width of helix
         self.resNumPerRow = 4          # Residue number per row in helix
         self.angleDeg = 22.0           # Angle size of each helix turn
@@ -107,8 +116,16 @@ class DrawSnakePlot(Diagram):
                 pass
 
         if "H8" in self.segments: #if helix8
-            self.helixoutput += self.drawSnakePlotHelix8()
-        
+            try:
+                self.helixoutput += self.drawSnakePlotHelix8()
+            except Exception as msg:
+                self.TBCoords[8] = {}
+                startX = self.helixWidth+self.offsetX+(self.margin+self.helixWidth)*(8-1)
+                startY = self.offsetY
+                self.TBCoords[8]['extra'] = [startX,startY]
+                self.TBCoords[8]['intra'] = [startX,startY+140]
+                print('error with helix',8,msg)
+
         self.drawSnakePlotLoops()
         self.drawSnakePlotTerminals()
 
@@ -910,7 +927,8 @@ class DrawHelixBox(Diagram):
                     self.plot_data[self.family]['helixTopResidues'][i],
                     self.plot_data[self.family]['rotation'][i]
                     )
-            except:
+            except Exception as msg:
+                print('failed helix',i,msg)
                 pass
 
     def __str__(self):  
@@ -924,8 +942,10 @@ class DrawHelixBox(Diagram):
             generic_number = ''
             if r.generic_number: 
                 generic_number = r.generic_number.label
-            elif r.family_generic_number:
+            elif hasattr(r, 'family_generic_number'):
                 generic_number = r.family_generic_number
+            else:
+                continue #FIXME for TMs without generic number
             if r.display_generic_number: displaylabel += "\n"+r.display_generic_number.label
             if hasattr(r, 'frequency'): displaylabel += "\n" + r.frequency
             sequence[int(generic_number[2:])] = {'residueType':r.amino_acid,'residueNumber':r.sequence_number,'generic_number':generic_number,'displaylabel':displaylabel}
