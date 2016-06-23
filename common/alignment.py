@@ -928,9 +928,11 @@ class AlignedReferenceTemplate(Alignment):
         self.ordered_proteins = [self.proteins[0]]
         similarity_table = OrderedDict()
         for protein in self.proteins:
-            if protein.protein!=self.reference_protein.protein:
+            try:
                 matches = self.structures_data.filter(protein_conformation__protein__parent__id=protein.protein.id)
                 temp_list.append((list(matches)[0], int(protein.similarity), float(list(matches)[0].resolution), protein))
+            except:
+                pass
         sorted_list = sorted(temp_list, key=lambda x: (-x[1],x[2]))
         for i in sorted_list:
             similarity_table[i[0]] = i[1]
@@ -965,16 +967,15 @@ class AlignedReferenceTemplate(Alignment):
             except:
                 ref_ECL2 = None
         for struct, similarity in self.provide_similarity_table.items():
-            if (self.segment_labels[0]=='ECL2' and ref_ECL2==None and StructureCoordinates.objects.get(structure=struct,
-                                                        protein_segment__slug=self.segment_labels[0]).description.text!='Full'):
-                continue
-            elif self.segment_labels[0]!='ECL2':
-                try:
-                    if (StructureCoordinates.objects.get(structure=struct,
-                                                         protein_segment__slug=self.segment_labels[0]).description.text!='Full'):
-                        continue
-                except:
-                    continue
+#            if self.segment_labels[0]=='ECL2' and ref_ECL2==None:
+#                continue
+#            elif self.segment_labels[0]!='ECL2':
+#                try:
+#                    if (StructureCoordinates.objects.get(structure=struct,
+#                                                         protein_segment__slug=self.segment_labels[0]).description.text!='Full'):
+#                        continue
+#                except:
+#                    continue
             protein = struct.protein_conformation.protein.parent
             if protein==self.main_template_protein:
                 main_template_mid_failed = False
@@ -994,7 +995,6 @@ class AlignedReferenceTemplate(Alignment):
                         elif len(ref_ECL2[0])!=len(main_temp_ECL2[0]) and len(ref_ECL2[2])==len(main_temp_ECL2[2]):
                             temp_list2.append((struct, len(main_temp_ECL2[2]), similarity, float(struct.resolution),protein))
                     else:
-                        main_template_mid_failed = True
                         raise Exception()
                 except:
                     main_template_mid_failed = True
@@ -1061,6 +1061,9 @@ class AlignedReferenceTemplate(Alignment):
                 self.loop_table=None
             return self.loop_table
         else:
+            if self.segment_labels[0]=='ECL2':
+                print(self.order_sim_table(temp_list, ref_seq, similarity_table))
+                raise AssertionError()
             return self.order_sim_table(temp_list, ref_seq, similarity_table)
                     
     def order_sim_table(self, temp_list, ref_seq, similarity_table):     
