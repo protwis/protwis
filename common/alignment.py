@@ -856,11 +856,13 @@ class AlignedReferenceTemplate(Alignment):
         template is already known.
     '''
     def __init__(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
-                 provide_similarity_table=None, main_pdb_array=None):
+                 provide_similarity_table=None, main_pdb_array=None, provide_alignment=None):
         super(AlignedReferenceTemplate, self).__init__()
         self.logger = logging.getLogger('homology_modeling')
         self.segment_labels = segments
         self.reference_protein = Protein.objects.get(entry_name=reference_protein)
+        self.provide_alignment = provide_alignment
+        self.code_dict = {'ICL1':'12x50','ECL1':'23x50','ICL2':'34x50'}
         if provide_main_template_structure==None and provide_similarity_table==None:
             self.query_states = query_states
             self.order_by = order_by
@@ -967,15 +969,6 @@ class AlignedReferenceTemplate(Alignment):
             except:
                 ref_ECL2 = None
         for struct, similarity in self.provide_similarity_table.items():
-#            if self.segment_labels[0]=='ECL2' and ref_ECL2==None:
-#                continue
-#            elif self.segment_labels[0]!='ECL2':
-#                try:
-#                    if (StructureCoordinates.objects.get(structure=struct,
-#                                                         protein_segment__slug=self.segment_labels[0]).description.text!='Full'):
-#                        continue
-#                except:
-#                    continue
             protein = struct.protein_conformation.protein.parent
             if protein==self.main_template_protein:
                 main_template_mid_failed = False
@@ -998,12 +991,12 @@ class AlignedReferenceTemplate(Alignment):
                         raise Exception()
                 except:
                     main_template_mid_failed = True
-                    if len(ref_seq)==len(main_temp_seq):
+                    if len(ref_seq)==len(main_temp_seq) or self.segment_labels[0] in self.provide_alignment.reference_dict:
                         similarity_table[self.main_template_structure] = self.provide_similarity_table[
                                                                                             self.main_template_structure]
                         temp_list.append((struct, len(main_temp_seq), similarity, float(struct.resolution), protein))
-                    else:
-                        ref_ECL2 = None
+#                    else:
+#                        ref_ECL2 = None
             else:
                 temp_length, temp_length1, temp_length2 = [],[],[]
                 try:
@@ -1061,19 +1054,29 @@ class AlignedReferenceTemplate(Alignment):
                 self.loop_table=None
             return self.loop_table
         else:
-            if self.segment_labels[0]=='ECL2':
-                print(self.order_sim_table(temp_list, ref_seq, similarity_table))
-                raise AssertionError()
             return self.order_sim_table(temp_list, ref_seq, similarity_table)
                     
-    def order_sim_table(self, temp_list, ref_seq, similarity_table):     
+    def order_sim_table(self, temp_list, ref_seq, similarity_table):
+        alt_temps_gn = []
+        if self.segment_labels[0]!='ECL2':
+            for entry in temp_list:
+                res_list = [i for i in list(Residue.objects.filter(protein_conformation=entry[0].protein_conformation,
+                                                                   protein_segment__slug=self.segment_labels[0]))]
+                for i in res_list:
+                    try:
+                        if i.generic_number.label[-3:]=='x50':
+                            alt_temps_gn.append(entry)
+                    except:
+                        pass
         alt_temps = [entry for entry in temp_list if entry[1]==len(ref_seq)]
+        sorted_list_gn = sorted(alt_temps_gn, key=lambda x: (-x[2],x[3]))
         sorted_list = sorted(alt_temps, key=lambda x: (-x[2],x[3]))
-        for i in sorted_list:            
+        combined = sorted_list_gn+sorted_list
+        for i in combined:
             similarity_table[i[0]] = i[2]
         try:
-            self.main_template_protein = sorted_list[0][4]
-            self.main_template_structure = sorted_list[0][0]
+            self.main_template_protein = combined[0][4]
+            self.main_template_structure = combined[0][0]
             self.loop_table = similarity_table
         except:
             self.main_template_protein = None
@@ -1154,18 +1157,25 @@ class AlignedReferenceTemplate(Alignment):
                 self.reference_dict[ref_seglab] = ref_segment_dict
                 self.template_dict[ref_seglab] = temp_segment_dict
                 self.alignment_dict[ref_seglab] = align_segment_dict
-
+#        import pprint
+#        pprint.pprint(self.reference_dict)
+#        pprint.pprint(self.template_dict)
+#        pprint.pprint(self.alignment_dict)
+#        raise AssertionError()
         for r_seglab, t_seglab, a_seglab in zip(self.reference_dict,self.template_dict,self.alignment_dict):
             if r_seglab in ['ICL1','ECL1','ICL2']:
                 if len(list(self.reference_dict[r_seglab].keys()))==0:
                     well_aligned = False
                 else:
                     well_aligned = True
-                    for r, t, a in zip(self.reference_dict[r_seglab],self.template_dict[t_seglab],self.alignment_dict[a_seglab]):
-                        if 'x' in r and 'x' in t and self.alignment_dict[a_seglab][a] in ['-','x']:
-                            well_aligned = False
-                        if self.reference_dict[r_seglab][r]=='-' and self.template_dict[t_seglab][t]!='-':
-                            well_aligned = False
+                    if (self.code_dict[r_seglab] not in self.reference_dict[r_seglab] 
+                        or self.code_dict[r_seglab] not in self.template_dict[t_seglab]):
+                        well_aligned = False
+#                    for r, t, a in zip(self.reference_dict[r_seglab],self.template_dict[t_seglab],self.alignment_dict[a_seglab]):
+#                        if 'x' in r and 'x' in t and self.alignment_dict[a_seglab][a] in ['-','x']:
+#                            well_aligned = False
+#                        if self.reference_dict[r_seglab][r]=='-' and self.template_dict[t_seglab][t]!='-':
+#                            well_aligned = False
                     if well_aligned==False:
                         del self.reference_dict[r_seglab]
                         del self.template_dict[t_seglab]
@@ -1174,4 +1184,5 @@ class AlignedReferenceTemplate(Alignment):
                 del self.reference_dict[r_seglab]
                 del self.template_dict[t_seglab]
                 del self.alignment_dict[a_seglab]
+
         return self
