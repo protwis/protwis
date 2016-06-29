@@ -531,7 +531,6 @@ class HomologyModeling(object):
             pass
         
         # loops
-
         if loops==True:
             model_loops = []
             loop_stat = OrderedDict()
@@ -546,8 +545,6 @@ class HomologyModeling(object):
                     loop_insertion = loop.insert_ECL2_to_arrays(loop.loop_output_structure, main_pdb_array, loop_template,
                                                                 a.reference_dict, a.template_dict, a.alignment_dict)
                 if loop.model_loop==True:
-                    print(loop.loop_label)
-                    print(loop.new_label)
                     model_loops.append(loop.new_label)
                 main_pdb_array = loop_insertion.main_pdb_array
                 a.reference_dict = loop_insertion.reference_dict
@@ -1074,6 +1071,14 @@ class HomologyModeling(object):
                     trimmed_residues.append(j[1][0].replace('x','.'))
             except:
                 pass
+            try:
+                trimmed_residues.append(parse.gn_indecer(j[0][-1],'x',1).replace('x','.'))
+            except:
+                pass
+            try:
+                trimmed_residues.append(parse.gn_indecer(j[1][0],'x',-1).replace('x','.'))
+            except:
+                pass
         
         for i in ref_bulge_list+temp_bulge_list+ref_const_list+temp_const_list:
             i = list(i.keys())[0].replace('x','.')
@@ -1087,18 +1092,12 @@ class HomologyModeling(object):
                 trimmed_residues.append(parse.gn_indecer(i,'.',2))
                 
 #        print('Rotamer switching: ',datetime.now() - startTime) 
-        print(model_loops)
         for i in model_loops:
             for j in a.reference_dict[i]:
                 trimmed_residues.append(j.replace('x','.'))
         
         self.statistics.add_info('trimmed_residues', trimmed_residues)
-#        raise AssertionError()
-#        import pprint
-#        pprint.pprint(a.reference_dict)
-#        pprint.pprint(a.template_dict)
-#        pprint.pprint(a.alignment_dict)
-#        raise AssertionError()
+
         # write to file
         path = "./structure/homology_models/{}_{}/".format(self.reference_entry_name,self.state)
         if not os.path.exists(path):
@@ -1109,22 +1108,12 @@ class HomologyModeling(object):
 #        raise AssertionError()
         self.statistics.add_info('template_source',self.template_source)
 
-        pprint.pprint(trimmed_res_nums)
         # Model with MODELLER
         self.create_PIR_file(a.reference_dict, a.template_dict, path+self.uniprot_id+"_post.pdb")
 #        raise AssertionError()
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
                           self.uniprot_id, 1, "{}_{}_model.pdb".format(self.reference_entry_name,self.state), atom_dict=trimmed_res_nums)
-#        loop_trimmed_res_nums = OrderedDict()
-#        for i in model_loops:
-#            loop_trimmed_res_nums[i] = trimmed_res_nums[i]
-#        pprint.pprint(loop_trimmed_res_nums)
-#        raise AssertionError()
-#        self.create_PIR_file(a.reference_dict, a.reference_dict, path+"{}_{}_model.pdb".format(self.reference_entry_name,self.state))
-#        self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", 
-#                          path+"{}_{}_model.pdb".format(self.reference_entry_name,self.state), 
-#                          self.uniprot_id, 1, "{}_{}_model.pdb".format(self.reference_entry_name,self.state), 
-#                          atom_dict=loop_trimmed_res_nums, loop_modeller=True)
+
 #        os.remove(path+self.uniprot_id+"_post.pdb")
         
         # stat file
@@ -1548,26 +1537,6 @@ class HomologyMODELLER(automodel):
     def make(self):
         with SilentModeller():
             super(HomologyMODELLER, self).make()
-            
-            
-class LoopMODELLER(loopmodel):
-    def __init__(self, env, alnfile, knowns, sequence, assess_methods, atom_selection):
-        super(LoopMODELLER, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence, 
-                                           assess_methods=assess_methods)
-        self.atom_dict = atom_selection
-        print('INIT',atom_selection)
-        
-    def select_loop_atoms(self):
-        selection_out = []
-        print('BLAA',self.atom_dict)
-        for seg_id, segment in self.atom_dict.items():
-            for gn, atom in segment.items():
-                selection_out.append(self.residues[str(atom)])
-        return selection(selection_out)
-        
-    def make(self):
-        with SilentModeller():
-            super(LoopMODELLER, self).make()
 
 
 class Loops(object):
@@ -1610,6 +1579,7 @@ class Loops(object):
                     r_x50 = ref_res.get(generic_number__label='45x50').sequence_number
                 except:
                     pass
+            
             if (self.loop_label=='ECL2' and 'ECL2_1' not in self.loop_template_structures) or self.loop_label!='ECL2' or superpose_modded_loop==True:
                 for template in self.loop_template_structures:
                     output = OrderedDict()
@@ -1652,26 +1622,53 @@ class Loops(object):
                             prot_conf = ProteinConformation.objects.get(protein=self.reference_protein)
                             if self.loop_label=='ICL4' and len(list(Residue.objects.filter(protein_conformation=prot_conf,protein_segment__slug='ICL4')))<3:
                                 raise Exception()
-                            print(last_before_gn)
-                            b_num = Residue.objects.get(protein_conformation=template.protein_conformation,
-                                                        generic_number__label=last_before_gn).sequence_number
-                            print(self.loop_label,template, superpose_modded_loop)
-                            a_num = Residue.objects.get(protein_conformation=template.protein_conformation,
-                                                        generic_number__label=first_after_gn).sequence_number
+                            if superpose_modded_loop==True and template=='aligned':
+                                template = self.main_structure
+                                self.aligned = True
+                                alt_last_before_gn = last_before_gn
+                                b_num_found = False
+                                while b_num_found==False:
+                                    try:
+                                        b_num = Residue.objects.get(protein_conformation=template.protein_conformation,
+                                                                    generic_number__label=alt_last_before_gn).sequence_number
+                                        b_num_found = True
+                                    except:
+                                        alt_last_before_gn = parse.gn_indecer(alt_last_before_gn,'x',-1)
+                                alt_first_after_gn = first_after_gn
+                                a_num_found = False
+                                while a_num_found==False:
+                                    try:
+                                        a_num = Residue.objects.get(protein_conformation=template.protein_conformation,
+                                                                    generic_number__label=alt_first_after_gn).sequence_number
+                                        a_num_found = True
+                                    except:
+                                        alt_first_after_gn = parse.gn_indecer(alt_first_after_gn,'x',1)
+                            else:
+                                b_num = Residue.objects.get(protein_conformation=template.protein_conformation,
+                                                            generic_number__label=last_before_gn).sequence_number
+                                
+                                a_num = Residue.objects.get(protein_conformation=template.protein_conformation,
+                                                            generic_number__label=first_after_gn).sequence_number
                             before4 = Residue.objects.filter(protein_conformation=template.protein_conformation, 
                                                              sequence_number__in=[b_num,b_num-1,b_num-2,b_num-3])
                             after4 = Residue.objects.filter(protein_conformation=template.protein_conformation, 
                                                              sequence_number__in=[a_num,a_num+1,a_num+2,a_num+3])
-                            loop_residues = Residue.objects.filter(protein_conformation=template.protein_conformation,
-                                                                   sequence_number__in=list(range(b_num+1,a_num)))
-                            if len(loop_residues)!=len(Residue.objects.filter(protein_conformation=self.prot_conf,protein_segment__slug=self.loop_label)):
-                                raise Exception()
+                            if superpose_modded_loop==True and self.aligned==True:
+                                loop_residues = Residue.objects.filter(protein_conformation=template.protein_conformation,
+                                                                       protein_segment__slug=self.loop_label)
+                                if len(loop_residues)!=len(Residue.objects.filter(protein_conformation=self.prot_conf,protein_segment__slug=self.loop_label)):
+                                    raise Exception()
+                            else:                            
+                                loop_residues = Residue.objects.filter(protein_conformation=template.protein_conformation,
+                                                                       sequence_number__in=list(range(b_num+1,a_num)))
+
                             before_gns = [x.sequence_number for x in before4]
                             mid_nums = [x.sequence_number for x in loop_residues]
                             after_gns = [x.sequence_number for x in after4]
                             alt_residues = parse.fetch_residues_from_pdb(template, before_gns+mid_nums+after_gns)
-                            orig_residues = parse.fetch_residues_from_pdb(self.main_structure, 
-                                                                          orig_before_gns+orig_after_gns)
+                            orig_residues1 = parse.fetch_residues_from_array(main_pdb_array[prev_seg],orig_before_gns)
+                            orig_residues2 = parse.fetch_residues_from_array(main_pdb_array[next_seg],orig_after_gns)
+                            orig_residues = parse.add_two_ordereddict(orig_residues1,orig_residues2)
                             superpose = sp.LoopSuperpose(orig_residues, alt_residues)
                             new_residues = superpose.run()
                             key_list = list(new_residues.keys())[4:-4]
@@ -1810,7 +1807,6 @@ class Loops(object):
                     self.model_loop = True
         except:
             pass
-        print(loop_template,loop_output_structure,self.aligned,shorter_ref,shorter_temp)
         if loop_template!=None and loop_output_structure!=self.main_structure:
             loop_keys = list(loop_template.keys())[1:-1]
             continuous_loop = False
@@ -1834,7 +1830,6 @@ class Loops(object):
             self.main_pdb_array = self.cont_loop_insert_to_pdb(main_pdb_array, loop_template)
         else:
             self.main_pdb_array = main_pdb_array
-#        print(self.loop_label,continuous_loop)
         if loop_template!=None:
             temp_ref_dict, temp_temp_dict, temp_aligned_dict = OrderedDict(),OrderedDict(),OrderedDict()
             if continuous_loop==True:
