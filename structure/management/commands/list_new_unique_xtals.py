@@ -30,7 +30,7 @@ class QueryPDB():
     <queryType>org.pdb.query.simple.TreeQuery</queryType>
     <description>TransmembraneTree Search for G Protein-Coupled Receptors (GPCRs)</description>
     <t>19</t>
-    <n>232</n>
+    <n>236</n>
     <nodeDesc>G Protein-Coupled Receptors (GPCRs)</nodeDesc>
 </orgPdbQuery>
     
@@ -74,11 +74,12 @@ class QueryPDB():
                     pass
             if miss_count==1:
                 new_unique.append((i,p))
-        print('\nStructures not on GPCRdb:',new_struct)
-        print('\nNew unique structures:',new_unique)
+        print('\nStructures not on GPCRdb: ',len(new_struct),'\n',new_struct)
+        print('\nNew unique structures: ',len(new_unique),'\n',new_unique)
         self.num_struct = len(structures)
         self.new_structures = new_struct
         self.new_uniques = new_unique
         
     
-
+q = QueryPDB()
+q.list_xtals()
