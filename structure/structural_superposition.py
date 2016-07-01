@@ -325,4 +325,29 @@ class OneSidedSuperpose(BulgeConstrictionSuperpose):
         self.backbone_rmsd = self.calc_backbone_RMSD(ref_backbone_atoms, temp_backbone_atoms)
         return self.rebuild_dictionary(all_template_atoms)
         
-                    
+#============================================================================== 
+class ECL2MidSuperpose(BulgeConstrictionSuperpose):
+    ''' Class to superimpose 45x50-52 in ECL2 based on last residue of TM4, first residue of TM5 and 3x25 in TM3.
+    '''
+
+    def run(self):
+        ''' Run the superpositioning.
+        '''
+        super_imposer = Superimposer()
+        ref_backbone_atoms, temp_backbone_atoms, all_template_atoms = [], [], []
+        for gn, atoms in self.reference_dict.items():
+            for atom in atoms:
+                if atom.get_name() in ['N','CA','C','O']:
+                    ref_backbone_atoms.append(atom)
+        res_count=0
+        array_length = len(self.template_dict.keys())
+        for gn, atoms in self.template_dict.items():
+            res_count+=1
+            for atom in atoms:
+                if res_count<4 and atom.get_name() in ['N','CA','C','O']:
+                    temp_backbone_atoms.append(atom)
+                all_template_atoms.append(atom)
+        self.backbone_rmsd = self.calc_backbone_RMSD(ref_backbone_atoms, temp_backbone_atoms)
+        super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
+        super_imposer.apply(all_template_atoms)        
+        return self.rebuild_dictionary(all_template_atoms)

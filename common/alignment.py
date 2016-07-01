@@ -995,8 +995,6 @@ class AlignedReferenceTemplate(Alignment):
                         similarity_table[self.main_template_structure] = self.provide_similarity_table[
                                                                                             self.main_template_structure]
                         temp_list.append((struct, len(main_temp_seq), similarity, float(struct.resolution), protein))
-#                    else:
-#                        ref_ECL2 = None
             else:
                 temp_length, temp_length1, temp_length2 = [],[],[]
                 try:
@@ -1008,7 +1006,7 @@ class AlignedReferenceTemplate(Alignment):
                     alt_seq = Residue.objects.filter(protein_conformation=struct.protein_conformation, 
                                            sequence_number__in=list(range(alt_last_gn.sequence_number+1,
                                                                           alt_first_gn.sequence_number)))
-                    if self.segment_labels[0]=='ECL2' and ref_ECL2!=None and main_template_mid_failed==False:
+                    if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
                         alt_ECL2 = self.ECL2_slicer(alt_seq)
                         alt_rota = [x for x in Rotamer.objects.filter(structure=struct, residue__in=alt_ECL2[1]) if x.pdbdata.pdb.startswith('COMPND')==False]
                         if len(alt_rota)==3:
