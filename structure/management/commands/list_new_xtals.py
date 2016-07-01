@@ -13,6 +13,13 @@ import requests
 import urllib
 
 
+class Command(BaseCommand):
+        
+    def handle(self, *args, **options):
+        q = QueryPDB()
+        q.list_xtals()
+
+
 class QueryPDB():    
     def __init__(self):
         self.num_struct = None
@@ -79,7 +86,3 @@ class QueryPDB():
         self.num_struct = len(structures)
         self.new_structures = new_struct
         self.new_uniques = new_unique
-        
-    
-q = QueryPDB()
-q.list_xtals()
