@@ -117,7 +117,7 @@ class HomologyModeling(object):
         @param query_states: list, list of endogenous ligand states to be applied for template search, 
         default: same as reference
     '''
-    segment_coding = {1:'TM1',2:'TM2',3:'TM3',4:'TM4',5:'TM5',6:'TM6',7:'TM7'}
+    segment_coding = {1:'TM1',2:'TM2',3:'TM3',4:'TM4',5:'TM5',6:'TM6',7:'TM7',8:'H8'}
     def __init__(self, reference_entry_name, state, query_states, update=False, version=1.0):
         self.reference_entry_name = reference_entry_name
         self.state = state
@@ -566,7 +566,7 @@ class HomologyModeling(object):
                 
             self.statistics.add_info('loops', loop_stat)
             self.loops = loop_stat
-        
+
 #        print('Integrate loops: ',datetime.now() - startTime)
 
         # bulges and constrictions
@@ -864,7 +864,7 @@ class HomologyModeling(object):
             last_five = [i.sequence_number for i in list(N_term_temp)[-5:]]
             if self.main_structure==N_struct and len(last_five)==5:
                 try:
-                    temp_coo = list(parse.fetch_residues_from_pdb(N_struct,last_five).values())
+                    temp_coo = list(parse.fetch_residues_from_pdb(N_struct,last_five).values())                    
                 except:
                     temp_coo = None
             elif len(last_five)==5:
@@ -976,7 +976,7 @@ class HomologyModeling(object):
                 else:
                     a.template_dict['C-term'][str(c.sequence_number)] = '-'
                     main_pdb_array['C-term'][str(c.sequence_number)] = '-'
-        
+
         # Shorten N- and C-termini 
         n_count=1
         orig_n_len = len(a.reference_dict['N-term'])
@@ -1203,7 +1203,7 @@ class HomologyModeling(object):
             
             @param main_pdb_array: nested OrderedDict(), output of GPCRDBParsingPDB().pdb_array_creator()
             @param reference_dict: reference dictionary of AlignedReferenceTemplate.
-            @param template_dict: template dictionary of AlignedReferenceTemplate.
+            @param template_dict: template dictionary of AlignedReferenceTemplate.o2
             @param alignment_dict: alignment dictionary of AlignedReferenceTemplate.
         '''
         parse = GPCRDBParsingPDB()
@@ -1353,7 +1353,6 @@ class HomologyModeling(object):
                     try:
                         if alignment.reference_dict[seg_id][key.replace('.','x')] in ['-','x']:
                             counter_num-=1
-#                            continue
                     except:
                         pass
                     if key in trimmed_residues:
@@ -1687,10 +1686,25 @@ class Loops(object):
                     if mid_template==self.main_structure:
                         ECL2_mid = parse.fetch_residues_from_pdb(self.main_structure,['45x50','45x51','45x52'])
                         x50 = main_temp_seq.get(generic_number__label='45x50').sequence_number
+                        alt_mid = False
                         break
+                    else:
+                        ECL2_mid = parse.fetch_residues_from_pdb(mid_template,[last_before_gn,first_after_gn,'3x25','45x50','45x51','45x52'])
+                        ref_ECL2_mid1 = parse.fetch_residues_from_array(main_pdb_array['TM4'],[last_before_gn])
+                        ref_ECL2_mid2 = parse.fetch_residues_from_array(main_pdb_array['TM5'],[first_after_gn])
+                        ref_ECL2_mid3 = parse.fetch_residues_from_array(main_pdb_array['TM3'],['3x25'])
+                        ref_ECL2_mid = parse.add_two_ordereddict(parse.add_two_ordereddict(ref_ECL2_mid1,ref_ECL2_mid2),ref_ECL2_mid3)
+                        superpose = sp.ECL2MidSuperpose(ref_ECL2_mid,ECL2_mid)
+                        new_mid_residues = superpose.run()
+                        ECL2_mid = OrderedDict()
+                        for i,j in new_mid_residues.items():
+                            if i in ['45.50','45.51','45.52']:
+                                ECL2_mid[i] = j
+                        alt_mid = True
+                        break
+                
                 o1 = parse.fetch_residues_from_array(main_pdb_array[prev_seg],orig_before_gns)
-                o2 = parse.fetch_residues_from_pdb(self.main_structure,['45x50','45x51','45x52'])
-                orig_residues1 = parse.add_two_ordereddict(o1,o2)
+                orig_residues1 = parse.add_two_ordereddict(o1,ECL2_mid)
 
                 if self.loop_template_structures['ECL2_1']==None:
                     no_first_temp=True
@@ -1732,9 +1746,9 @@ class Loops(object):
                     for i in range(1,r_x50-r_first+1):
                         ECL2_1['1_'+str(i)]='x'
                     first_temp=None
-                o11 = parse.fetch_residues_from_pdb(self.main_structure,['45x50','45x51','45x52'])
-                o22 = parse.fetch_residues_from_array(main_pdb_array[next_seg],orig_after_gns)
-                orig_residues2 = parse.add_two_ordereddict(o11,o22)
+                o2 = parse.fetch_residues_from_array(main_pdb_array[next_seg],orig_after_gns)
+                orig_residues2 = parse.add_two_ordereddict(ECL2_mid,o2)
+
                 if self.loop_template_structures['ECL2_2']==None:
                     no_second_temp=True
                 else:
@@ -2324,9 +2338,12 @@ class GPCRDBParsingPDB(object):
         return array
         
     def add_two_ordereddict(self, dict1, dict2):
+        output = OrderedDict()
+        for i,j in dict1.items():
+            output[i] = j
         for i,j in dict2.items():
-            dict1[i] = j
-        return dict1
+            output[i] = j
+        return output
 
     def pdb_array_creator(self, structure=None, filename=None):
         ''' Creates an OrderedDict() from the pdb of a Structure object where residue numbers/generic numbers are 
