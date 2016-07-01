@@ -116,8 +116,16 @@ class DrawSnakePlot(Diagram):
                 pass
 
         if "H8" in self.segments: #if helix8
-            self.helixoutput += self.drawSnakePlotHelix8()
-        
+            try:
+                self.helixoutput += self.drawSnakePlotHelix8()
+            except Exception as msg:
+                self.TBCoords[8] = {}
+                startX = self.helixWidth+self.offsetX+(self.margin+self.helixWidth)*(8-1)
+                startY = self.offsetY
+                self.TBCoords[8]['extra'] = [startX,startY]
+                self.TBCoords[8]['intra'] = [startX,startY+140]
+                print('error with helix',8,msg)
+
         self.drawSnakePlotLoops()
         self.drawSnakePlotTerminals()
 
