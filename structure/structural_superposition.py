@@ -340,7 +340,6 @@ class ECL2MidSuperpose(BulgeConstrictionSuperpose):
                 if atom.get_name() in ['N','CA','C','O']:
                     ref_backbone_atoms.append(atom)
         res_count=0
-        array_length = len(self.template_dict.keys())
         for gn, atoms in self.template_dict.items():
             res_count+=1
             for atom in atoms:

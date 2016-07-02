@@ -971,7 +971,6 @@ class AlignedReferenceTemplate(Alignment):
         for struct, similarity in self.provide_similarity_table.items():
             protein = struct.protein_conformation.protein.parent
             if protein==self.main_template_protein:
-                main_template_mid_failed = False
                 main_temp_seq = Residue.objects.filter(protein_conformation=struct.protein_conformation, 
                                          protein_segment__slug=self.segment_labels[0])
                 try:
@@ -990,7 +989,6 @@ class AlignedReferenceTemplate(Alignment):
                     else:
                         raise Exception()
                 except:
-                    main_template_mid_failed = True
                     if len(ref_seq)==len(main_temp_seq) or self.segment_labels[0] in self.provide_alignment.reference_dict:
                         similarity_table[self.main_template_structure] = self.provide_similarity_table[
                                                                                             self.main_template_structure]
@@ -1155,11 +1153,7 @@ class AlignedReferenceTemplate(Alignment):
                 self.reference_dict[ref_seglab] = ref_segment_dict
                 self.template_dict[ref_seglab] = temp_segment_dict
                 self.alignment_dict[ref_seglab] = align_segment_dict
-#        import pprint
-#        pprint.pprint(self.reference_dict)
-#        pprint.pprint(self.template_dict)
-#        pprint.pprint(self.alignment_dict)
-#        raise AssertionError()
+                
         for r_seglab, t_seglab, a_seglab in zip(self.reference_dict,self.template_dict,self.alignment_dict):
             if r_seglab in ['ICL1','ECL1','ICL2']:
                 if len(list(self.reference_dict[r_seglab].keys()))==0:
@@ -1169,11 +1163,6 @@ class AlignedReferenceTemplate(Alignment):
                     if (self.code_dict[r_seglab] not in self.reference_dict[r_seglab] 
                         or self.code_dict[r_seglab] not in self.template_dict[t_seglab]):
                         well_aligned = False
-#                    for r, t, a in zip(self.reference_dict[r_seglab],self.template_dict[t_seglab],self.alignment_dict[a_seglab]):
-#                        if 'x' in r and 'x' in t and self.alignment_dict[a_seglab][a] in ['-','x']:
-#                            well_aligned = False
-#                        if self.reference_dict[r_seglab][r]=='-' and self.template_dict[t_seglab][t]!='-':
-#                            well_aligned = False
                     if well_aligned==False:
                         del self.reference_dict[r_seglab]
                         del self.template_dict[t_seglab]
