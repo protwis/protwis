@@ -190,6 +190,10 @@ class Migration(migrations.Migration):
             model_name='crystallization',
             name='ligands',
         ),
+        migrations.RemoveField(
+            model_name='chemicalconc',
+            name='concentration',
+        ),
         migrations.AddField(
             model_name='chemicalconc',
             name='concentration_unit',
@@ -275,11 +279,10 @@ class Migration(migrations.Migration):
             field=models.TextField(default=1),
             preserve_default=False,
         ),
-        migrations.AlterField(
+        migrations.AddField(
             model_name='chemicalconc',
             name='concentration',
-            field=models.FloatField(default=1),
-            preserve_default=False,
+            field=models.FloatField(),
         ),
         migrations.AlterField(
             model_name='chemicaltype',
