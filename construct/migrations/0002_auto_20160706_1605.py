@@ -194,6 +194,14 @@ class Migration(migrations.Migration):
             model_name='chemicalconc',
             name='concentration',
         ),
+        migrations.RemoveField(
+            model_name='crystallization',
+            name='protein_conc',
+        ),
+        migrations.RemoveField(
+            model_name='crystallization',
+            name='temp',
+        ),
         migrations.AddField(
             model_name='chemicalconc',
             name='concentration_unit',
@@ -299,15 +307,15 @@ class Migration(migrations.Migration):
             name='ligands',
             field=models.ManyToManyField(to='construct.CrystallizationLigandConc'),
         ),
-        migrations.AlterField(
+        migrations.AddField(
             model_name='crystallization',
             name='protein_conc',
             field=models.FloatField(),
         ),
-        migrations.AlterField(
+        migrations.AddField(
             model_name='crystallization',
             name='temp',
-            field=models.FloatField(default=1),
+            field=models.FloatField(),
             preserve_default=False,
         ),
         migrations.AlterField(
