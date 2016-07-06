@@ -1,0 +1,374 @@
+﻿{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.yadcf.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+        <style type="text/css">
+        .select2-result-label{
+            font-size:x-small;
+            font-size: 10px;
+        }
+        @media (min-width: 1600px){
+            #content {
+                width: 1570px;
+            }
+        }
+        @media (min-width: 1800px){
+            #content {
+                width: 1770px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script> 
+
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function () {
+            // 'use strict';
+
+            var oTable;
+            oTable = $('#constructs').DataTable({
+                'scrollX': true,
+                'paging': false,
+                'autoWidth': true,
+            });
+            $("#constructs_div").show();
+
+            yadcf.init(oTable,
+                [
+                    {
+                        column_number : 1,
+                        filter_type: "text",
+                        column_data_type: "text",
+                        filter_default_label: "Construct",
+                        filter_container_id: "external_filter_container0"
+                    }, {
+                        column_number : 2,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "Receptor",
+                        filter_container_id: "external_filter_container1"
+                    }, 
+                    {
+                        column_number: 3,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "Family",
+                        filter_container_id: "external_filter_container2"
+                    },
+                    {
+                        column_number: 4,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Class",
+                        filter_container_id: "external_filter_container3"
+                    }, 
+                    {
+                        column_number : 5,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Species",
+                        filter_container_id: "external_filter_container4"
+                    },
+                    {
+                        column_number : 6,
+                        filter_type: "text",
+                        column_data_type: "text",
+                        filter_default_label: "PDB",
+                        filter_container_id: "external_filter_container5"
+                    }, 
+                ],
+                {
+                    cumulative_filtering: false
+                }
+            );
+
+            yadcf.exResetAllFilters(oTable);
+
+            // $.datepicker.regional[""].dateFormat = "yy-mm-dd";
+            // $.datepicker.setDefaults($.datepicker.regional['']);
+
+            $('.alt').change(function () {
+                $(this).parent().parent().toggleClass('alt_selected');
+            });
+
+            $('.select-all').change(function () {
+                $('.alt').prop('checked', $(this).prop("checked"));
+                $('.alt').parent().parent().toggleClass('alt_selected');
+            });
+
+            $(function () {
+                $('[data-toggle="tooltip"]').tooltip({ container: 'body' })
+            })
+
+            function update_tables() {
+
+                $('#wt_schematics > tbody  > tr').each(function() {
+                    $(this).hide();
+                });
+                $('#constructs_schematics > tbody  > tr').each(function() {
+                    $(this).hide();
+                });
+                i = 0;
+                $('#constructs > tbody  > tr').each(function() {
+                    id = $(this).attr('id');
+                    $("#wt_sche_"+id).show();
+                    $("#wt_sche_"+id).find('td:eq(1)').attr('data-text',i);
+                    $("#con_sche_"+id).show();
+                    $("#con_sche_"+id).find('td:eq(1)').attr('data-text',i);
+                    i++;
+                });
+                header_height = $("#constructs_div").find("thead").innerHeight();
+                console.log('height',header_height);
+                if (header_height>0) {
+                    $(".spacer").height(header_height+14);
+                }
+                $("#wt_schematics").trigger("destroy");
+                $("#constructs_schematics").trigger("destroy");
+                $("#wt_schematics").tablesorter( {sortList: [[1,0]],textExtraction: 'basic'} ); 
+                $("#constructs_schematics").tablesorter( {sortList: [[1,0]],textExtraction: 'basic'} ); 
+            };
+
+            $('#show_browser').click(function() {
+                $("#wt_schematics_div").hide();
+                $("#constructs_schematics_div").hide();
+                $("#constructs_div").show();
+            });
+
+            $('#show_wt').click(function() {
+                update_tables();
+                $("#wt_schematics_div").show();
+                $("#constructs_schematics_div").hide();
+                $("#constructs_div").hide();
+            });
+
+            $('#show_construct').click(function() {
+                update_tables();
+                $("#wt_schematics_div").hide();
+                $("#constructs_schematics_div").show();
+                $("#constructs_div").hide();
+            });
+
+            $('#apply_filter').click(function() {
+                update_tables();
+            });
+
+            $('.slider').slider({
+              min: 30,
+              max: 200,
+              value: 70,
+              change: function( event, ui ) {
+                console.log(ui.value);
+                $(".schematic-block").width(ui.value);
+              }
+            });
+
+        });
+    </script> 
+{% endblock %}
+
+{% block content %}
+
+    <br />
+    <button id='show_browser'>Browser</button>
+    <button id='show_wt'>WT schematic</button>
+    <button id='show_construct'>Construct schematic</button>
+    <button id='apply_filter'>Apply Filter</button>
+    <br>
+    Filters:<br>
+    <div style='width: 600px; display: inline-block;margin-bottom: 50px;'>
+    <div><span style='width: 160px;display: inline-block;'>Construct:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container0"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Receptor(s):</span><span  style='width: 160px;display: inline-block;' id="external_filter_container1"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Family:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container2"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Class:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container3"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Species:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container4"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>PDB:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container5"></span></div>
+    </div>
+    <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" id="constructs_div">
+        <table width="100%" class="display" id="constructs">
+            <thead>
+                <tr>
+                    <th class="protein-th"></th>
+                    <th class="protein-th">Construct</th>
+                    <th class="protein-th">Protein</th>
+                    <th class="protein-th">Family</th>
+                    <th class="protein-th">Class</th>
+                    <th class="protein-th">Species</th>
+                    <th class="pdb-th">PDB</th>
+                    <th class="pdb-th">Resolution</th>
+                    <th class="pdb-th">Mutations</th>
+                    <th class='pdb-th'>Deletions</th>
+                    <th class="pdb-th">Modifications</th>
+                    <th class='pdb-th'>Insertions</th>
+                    <th class="parts-th">Expression</th>
+                    <th class="parts-th">Solubilization</th>
+                    <th class="parts-th">Purification</th>
+                    <th class="parts-th">Crystallization</th>
+                    <th class="parts-th">Components</th>
+                    <th class="pub-th">Contributor (PI)</th>
+                    <th class="pub-th">Contributed Date</th>
+                </tr>
+
+            </thead>
+            <tbody>
+            {% for construct in constructs.all %}
+                    <tr id="{{ construct.pk }}">
+                    <td><input class="alt" type="checkbox"></td>
+                    <td><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
+                    <td><span>{{ construct.protein.name|safe }}</span></td>
+                    <td><span>{{ construct.protein.family.parent.name|safe }}</span></td>
+                    <td>{{ construct.protein.family.parent.parent.parent.name }}</td>
+                    <td>{{ construct.protein.species.common_name }}</td>
+                    <td class="text-center"><a href="{{ construct.crystal.pdb_code}}">{{ construct.crystal.pdb_code}}
+                    </a></td>
+                    <td class="text-center">{{ construct.crystal.resolution|floatformat:"1" }}</td>
+                    <td class="text-center">{{ construct.mutations.count }}</td>
+                    <td class="text-center">{{ construct.deletions.count }}</td>
+                    <td class="text-center">{{ construct.modifications.count }}</td>
+                    <td class="text-center">{{ construct.insertions.count }}</td>
+                    <td>
+                        {% if construct.expression %}
+                            {{ construct.expression.expression_method}} - {{ construct.expression.host_cell_type}} - {{ construct.expression.host_cell}}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if construct.solubilization %}
+                            {{ construct.solubilization.chemical_list.chemicals.count}} chemicals
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if construct.purification %}
+                            {{ construct.purification.steps.count}} steps
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if construct.crystallization %}
+                            {{ construct.crystallization.crystal_method.name}} - {{ construct.crystallization.crystal_type.name}}
+                            {% if construct.crystallization.crystal_type.sub_name %}
+                                ({{ construct.crystallization.crystal_type.sub_name}})
+                            {% endif %}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if construct.crystallization %}
+                            {{ construct.crystallization.chemicals_total}} chems
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>{{ construct.contributor.pi_name|safe }}
+                    </td>
+                    <td>{{ construct.contributor.date|safe }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div><br>
+<div style='overflow-x: scroll;font-size: 10px;border-bottom: 1px solid #111;' id="wt_schematics_div">
+        <div class='spacer'><br>
+            Size: <div class="slider" style='width:100px'></div></div>
+        <table width=100% class="display" id="wt_schematics">
+                            <thead>
+                <tr class='hidden'>
+                    <th class="protein-th"></th>
+                    <th class="protein-th">Construct name</th>
+                    <th class="protein-th">N-term</th>
+                    <th class="protein-th">TM1</th>
+                    <th class="pdb-th">ICL1 </th>
+                    <th class="pdb-th">TM2</th>
+                    <th class="pdb-th">ECL1</th>
+                    <th class='pdb-th'>TM3</th>
+                    <th class="pdb-th">ICL2</th>
+                    <th class='pdb-th'>TM4</th>
+                    <th class="parts-th">ECL2</th>
+                    <th class="parts-th">TM5</th>
+                    <th class="parts-th">ICL3</th>
+                    <th class="parts-th">TM6</th>
+                    <th class="pub-th">ECL3</th>
+                    <th class="pub-th">TM7</th>
+                    <th class="pub-th">ICL4</th>
+                    <th class="pub-th">H8</th>
+                    <th class="pub-th">C-term</th>
+                </tr>
+            </thead>
+                    <tbody style='border-top: 1px solid #111;'>
+                    {% for construct in constructs.all %}
+                            <tr style='height: 32px' id="wt_sche_{{ construct.pk }}">
+                            <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox"></td>
+                            <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
+                            {{construct.schematic.3|safe}}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+        </table>
+</div>
+        <div style='overflow-x: scroll;font-size: 10px;border-bottom: 1px solid #111;' id="constructs_schematics_div">
+        <div class='spacer'><br>
+            Size: <div class="slider" style='width:100px'></div>
+        </div>
+        <table width=100% class="display" id="constructs_schematics">
+                    <thead>
+                <tr class='hidden'>
+                    <th class="protein-th"></th>
+                    <th class="protein-th">Construct name</th>
+                    <th class="protein-th">Pre-inserts</th>
+                    <th class="protein-th">N-term</th>
+                    <th class="protein-th">TM1</th>
+                    <th class="pdb-th">ICL1 </th>
+                    <th class="pdb-th">TM2</th>
+                    <th class="pdb-th">ECL1</th>
+                    <th class='pdb-th'>TM3</th>
+                    <th class="pdb-th">ICL2</th>
+                    <th class='pdb-th'>TM4</th>
+                    <th class="parts-th">ECL2</th>
+                    <th class="parts-th">TM5</th>
+                    <th class="parts-th">INSERT</th>
+                    <th class="parts-th">ICL3</th>
+                    <th class="parts-th">TM6</th>
+                    <th class="pub-th">ECL3</th>
+                    <th class="pub-th">TM7</th>
+                    <th class="pub-th">ICL4</th>
+                    <th class="pub-th">H8</th>
+                    <th class="pub-th">C-term</th>
+                </tr>
+            </thead>
+                    <tbody style='border-top: 1px solid #111;'>
+                    {% for construct in constructs.all %}
+                            <tr style='height: 32px' id="con_sche_{{ construct.pk }}">
+                            <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox"></td>
+                            <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
+                            {{construct.schematic.2|safe}}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+        </table>
+</div>
+{% endblock %}
+
+

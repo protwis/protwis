@@ -2,11 +2,30 @@
     <div class="col-md-2 text-right text-info">
         <h4>SEQUENCE</h4>
     </div>
-    <div class="col-md-5">
-        <div class="row">
+    <div class="col-md-9">
+    Perspective:
+    <input type="radio" name="sequence" id="wt" checked="checked" value="wt">Wild-type
+    <input type="radio" name="sequence" id="construct" value="construct">Construct
+    <br>
+    <br>
+        <div class="row" id="seq_wt">
             {% for rs in r_chunks %}
-            <div class="col-md-2 col-sm-2 col-xs-3">
-                <table style="width:100%">
+            <div class2="col-md-2 col-sm-2 col-xs-3" style="float:left;width:85px; position: relative;padding-left:5px;padding-right:5px;">
+                <table style="width2:100%">
+                    <tr>
+                    {% for r in rs %}
+                        {% if r.3 %}
+                            <td class="seqv seqv-segment no-wrap {{r.3.1}}" >
+                            <div data-toggle="tooltip" data-placement="top" data-html="true"
+                            title=" {{r.3.2}}">{% if r.3.4 %} {{r.3.4}} {% else %}&nbsp;{% endif %}</div>
+                            </td>
+                        {% else %}
+                            <td class="seqv seqv-segment no-wrap">
+                            &nbsp;
+                            </td>
+                        {% endif %}
+                    {% endfor %}
+                    </tr>
                     <tr>
                     {% for r in rs %}
                         {% if not r.1 and r.2 %}
@@ -32,14 +51,17 @@
                     </tr>
                     <tr>
                     {% for r in rs %}
-                        <td class="seqv seqv-sequence">
+                        {% if r.3 %}
+                            <td class="seqv seqv-sequence">
+                        {% else %}
+                            <td class="seqv seqv-sequence">
+                        {% endif %}
                             <div data-toggle="tooltip" data-placement="top" data-html="true"
-                            title="<div class='no-wrap'>{{ r.0.protein_segment.slug }}</div>
-                            <div class='no-wrap'>Sequence # {{ r.0.amino_acid }}{{ r.0.sequence_number }}<div>
+                            title="<div class='no-wrap'>{{ r.0.protein_segment.slug }}
+                            <div class='no-wrap'>Sequence # {{ r.0.amino_acid }}{{ r.0.sequence_number }}
                             {% if r.0.generic_number.label %}
                             <div class='no-wrap'>GPCRdb # {{ r.0.amino_acid }}{{ r.0.display_generic_number.label }}
                             </div>
-                            <div class='no-wrap'>{{ r.0.generic_number.label }}</div>
                             {% endif %}
                             ">
                             {{ r.0.amino_acid }}
@@ -58,7 +80,110 @@
             </div>
             {% endfor %}
         </div>
+
+        <div class="row" id="seq_c">
+            {% for rs in r_chunks_custom %}
+            <div class2="col-md-2 col-sm-2 col-xs-3" style="float:left;width:85px; position: relative;padding-left:5px;padding-right:5px;">
+                <table style="width2:100%">
+                    <tr>
+                    {% for r in rs %}
+                        {% if r.3 %}
+                            <td class="seqv seqv-segment no-wrap {{r.3.1}}" >
+                            <div data-toggle="tooltip" data-placement="top" data-html="true"
+                            title=" {{r.3.2}}">{% if r.3.4 %} {{r.3.4}} {% else %}&nbsp;{% endif %}</div>
+                            </td>
+                        {% else %}
+                            <td class="seqv seqv-segment no-wrap">
+                            &nbsp;
+                            </td>
+                        {% endif %}
+                    {% endfor %}
+                    </tr>
+                    <tr>
+                    {% for r in rs %}
+                        {% if r.3.1 = 'deletion' or r.3.1 = 'insertion' %}
+                            {% if not r.2 %}
+                                <td class="seqv seqv-segment no-wrap bg-{{r.3.1}}"
+                                {% if r.1 %}
+                                    colspan="{{ r.1|length }}"
+                                {% endif %}>
+                                {% if r.1 %}
+                                    {{ r.1 }}
+                                {% else %}
+                                    &nbsp;
+                                {% endif %}
+                                </td>
+                            {% endif %}
+                        {% else %}
+                            {% if not r.1 and r.2 %}
+                            {% else %}
+                            <td class="seqv seqv-segment no-wrap
+                            {% if r.0.protein_segment.id|divisibleby:2 %}
+                             bg-success
+                            {% else %} 
+                             bg-info
+                            {% endif %}"
+                            {% if r.1 %}
+                                colspan="{{ r.0.protein_segment.slug|length }}"
+                            {% endif %}
+                            >
+                            {% if r.1 %}
+                                {{ r.0.protein_segment.slug }}
+                            {% else %}
+                                &nbsp;
+                            {% endif %}
+                            </td>
+                        {% endif %}
+                    {% endif %}
+                    {% endfor %}
+                    </tr>
+                    <tr>
+                    {% for r in rs %}
+                        {% if r.3.1 = 'deletion' or r.3.1 = 'insertion' %}
+                        <td class="seqv seqv-sequence no-wrap bg-{{r.3.1}}">                           
+                            <div data-toggle="tooltip" data-placement="top" data-html="true"
+                                title="">
+                                &nbsp;
+                                </div>
+                            </td>
+                        {% else %}
+                                {% if r.3.1 = 'mutation' %}
+                                <td class="seqv seqv-sequence bg-{{r.3.1}}">
+                                {% else %}
+                                <td class="seqv seqv-sequence">
+                                {% endif %}
+                                <div data-toggle="tooltip" data-placement="top" data-html="true"
+                                title="<div class='no-wrap'>{{ r.0.protein_segment.slug }}
+                                <div class='no-wrap'>Sequence # {{ r.0.amino_acid }}{{ r.0.sequence_number }}
+                                {% if r.0.generic_number.label %}
+                                <div class='no-wrap'>GPCRdb # {{ r.0.amino_acid }}{{ r.0.display_generic_number.label }}
+                                </div>
+                                {% endif %}
+                                ">
+                                {{ r.0.print_amino_acid }}
+                                </div>
+                            </td>
+                        {% endif %}
+                    {% endfor %}
+                    </tr>
+                    <tr>
+                    {% for r in rs %}
+                        {% if forloop.counter = chunk_size and r.3.1 != 'deletion' or forloop.counter = rs|length  %}
+                            {% if r.3.1 = 'insertion' %}
+                            <td colspan="{{ rs|length }}" class="seqv seqv-number"> &nbsp;</td>
+                            {% else %}
+                            <td colspan="{{ rs|length }}" class="seqv seqv-number">{{ r.0.sequence_number }}</td>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    </tr>
+                </table>
+            </div>
+            {% endfor %}
+        </div>
     </div>
     <div class="col-md-5 text-right text-info">
     </div>
 </div>
+
+

@@ -1,18 +1,6 @@
-from django.shortcuts import render
-from django.views.generic import TemplateView, View
+from residue.models import Residue
 
-from construct.models import *
-from protein.models import Protein, ProteinConformation
-from mutation.models import Mutation
-
-from datetime import datetime
-
-
-# Create your views here.
-def detail(request, slug):
-
-    # get constructs
-    c = Construct.objects.get(name=slug)
+def generate_schematic(c):
 
     annotations = {}
     n_term = {}
@@ -82,15 +70,15 @@ def detail(request, slug):
             a_list = {}
             if ii<20:
                 counter = ii
-                width = 42/(ii+1)
+                width = round(100/ii,1)
             else:
                 counter = 20
-                width = 2
+                width = 5
             for a in a_buffer:
                 temp = a[0]*counter // (ii)
                 a_list[temp]  = a[1]
             if (last_segment):
-                for a in range(counter+1):
+                for a in range(counter):
                     if a<len(prev_r.protein_segment.slug):
                         title_cell_skip = 1
                     else:
@@ -107,7 +95,7 @@ def detail(request, slug):
                         r_buffer.append([prev_r, False, 0,annotation,width])
 
                 r_chunks_schematic.append(r_buffer)
-                print(last_segment,counter,len(r_buffer),width,len(r_buffer)*width)
+                # print(last_segment,prev_r.protein_segment.slug,counter,len(r_buffer),width,len(r_buffer)*width)
             border = True
             r_buffer = []
             a_buffer = []
@@ -122,7 +110,7 @@ def detail(request, slug):
     for aux in sorted(n_term):
         name = n_term[aux].insert_type.subtype[:6]
         title_cell_skip = 0
-        for i in range(21):
+        for i in range(20):
             if i==0:
                 r_buffer.append([None, name, title_cell_skip,['insert','insertion',n_term[aux]]])
             else:
@@ -138,6 +126,7 @@ def detail(request, slug):
 
     last_segment = False
     a_buffer = []
+    r_buffer = []
     nudge = 0
     # create schemtics with annotations
     for i, r in enumerate(residues_custom):
@@ -150,9 +139,11 @@ def detail(request, slug):
 
         if (r.protein_segment.slug != last_segment and i!=0) or i == len(residues_custom)-1:
             a_list = {}
+            print(a_buffer,ii)
             for a in a_buffer:
                 temp = a[0]*20 // (ii)
                 a_list[temp]  = a[1]
+            print(prev_r.protein_segment.slug,a_list)
             if (last_segment):
                 for a in range(21):
                     if (a-nudge)<len(prev_r.protein_segment.slug):
@@ -162,13 +153,21 @@ def detail(request, slug):
 
                     if a in a_list:
                         annotation = a_list[a]
+                        if annotation[1] == 'deletion' and a==20:
+                            no_r = True
+                        else:
+                            no_r = False
                     else:
                         annotation = ''
+                        no_r = False
 
                     if a==0:
                         r_buffer.append([prev_r, prev_r.protein_segment.slug, 0,annotation])
                     else:
-                        r_buffer.append([prev_r, False, title_cell_skip,annotation])
+                        if no_r:
+                            r_buffer.append([None, False, title_cell_skip,annotation])
+                        else:
+                            r_buffer.append([prev_r, False, title_cell_skip,annotation])
                 r_chunks_schematic_construct.append(r_buffer)
             last_segment = r.protein_segment.slug
             border = True
@@ -346,23 +345,193 @@ def detail(request, slug):
     if r_buffer:
         r_chunks_custom.append(r_buffer)
 
-    context = {'c':c,'r_chunks': r_chunks, 'r_chunks_schematic':r_chunks_schematic, 'r_chunks_custom': r_chunks_custom, 'r_chunks_schematic_construct':r_chunks_schematic_construct, 'chunk_size': chunk_size, 'residues_lookup': residues_lookup}
-    return render(request,'construct/construct_detail.html',context)
 
-class ConstructBrowser(TemplateView):
-    """
-    Fetching construct data for browser
-    """
+    #BUILDING
 
-    template_name = "construct_browser.html"
 
-    def get_context_data (self, **kwargs):
 
-        context = super(ConstructBrowser, self).get_context_data(**kwargs)
-        try:
-            context['constructs'] = Construct.objects.all().prefetch_related(
-                "crystal","mutations","purification")
-        except Construct.DoesNotExist as e:
+    ## SCHEMATIC WT
+
+    wt_schematic = """<div class="row no-wrap" id="schematic_seq_wt">"""
+    for rs in r_chunks_schematic:
+        wt_schematic += """<div class="construct_div" style="">
+                <table style='table-layout: fixed;width:50px' ><tr style="height:10px;">"""
+        for r in rs:
+            if r[3]:
+                wt_schematic += """<td class="seqv seqv-segment no-wrap {}">
+                            <div data-toggle="tooltip" data-placement="top" data-html="true"
+                            title="{}">&nbsp;</div></td>""".format(r[3][1],r[3][2])
+            else:
+                wt_schematic += """<td class="seqv seqv-segment no-wrap">
+                            &nbsp;
+                            </td>"""
+        wt_schematic += """</tr><tr>"""
+        for r in rs:
+            if not r[1] and r[2]:
+                pass
+            else:
+                if r[0].protein_segment.id % 2 == 0:
+                    extra = "bg-success"
+                else:
+                    extra = "bg-info"
+
+                wt_schematic += """<td class="seqv seqv-segment no-wrap {}">""".format(extra)
+                if r[1]:
+                    wt_schematic += r[0].protein_segment.slug
+                else:
+                    wt_schematic += "&nbsp;"
+                wt_schematic += "</td>"
+
+        wt_schematic += "</tr></table></div>"
+    wt_schematic += "</div>"
+
+
+    ## SCHEMATIC CONSTRUCT
+
+    c_schematic = """<div class="row no-wrap" id="schematic_seq_c">"""
+    for rs in r_chunks_schematic_construct:
+        c_schematic += """<div class="construct_div" style="">
+                <table style='table-layout: fixed;width:50px'><tr style="height:10px;">"""
+        for r in rs:
+            if r[3]:
+                c_schematic += """<td class="seqv seqv-segment no-wrap {}">
+                            <div data-toggle="tooltip" data-placement="top" data-html="true"
+                            title="{}">&nbsp;</div></td>""".format(r[3][1],r[3][2])
+            else:
+                c_schematic += """<td class="seqv seqv-segment no-wrap">
+                            &nbsp;
+                            </td>"""
+        c_schematic += """</tr><tr>"""
+        for r in rs:
+            if not r[1] and r[2]:
+                pass
+            else:
+                try:
+                    extra = "bg-"+r[3][1]
+                except:
+                    extra = ""
+                if r[0]: 
+                    if r[0].protein_segment.id % 2 == 0:
+                        extra = "bg-success"
+                    else:
+                        extra = "bg-info"
+
+                colspan = 1
+
+                if r[3] and r[1]:
+                    text = r[1]
+                    colspan = len(text)
+                elif r[1]:
+                    text = r[0].protein_segment.slug
+                    colspan = len(text)
+                else:
+                    text = "&nbsp;"
+
+                c_schematic += """<td colspan={} class="seqv seqv-segment no-wrap {}">{}</td>""".format(colspan,extra,text)
+
+        c_schematic += "</tr></table></div>"
+    c_schematic += "</div>"
+
+
+    ### BUILD WT SPECIFIC TABLE
+    wt_schematic_table = ""
+    order_list = ['N-term','TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','ECL2','TM5','ICL3','TM6','ECL3','TM7','ICL4','H8','C-term']
+    i = 0
+    for block in order_list:
+        wt_schematic_table += "<td>"
+        print(i,r_chunks_schematic[i][0][0].protein_segment.slug)
+        slug = r_chunks_schematic[i][0][0].protein_segment.slug
+        if i<len(r_chunks_schematic):
+            if block==slug:
+                wt_schematic_table += create_block(r_chunks_schematic[i])
+            else:
+                i -=1 #not found match, dont move up
+            i += 1
+        wt_schematic_table += "</td>"
+
+
+    ### BUILD CONSTRUCT SPECIFIC TABLE
+    c_schematic_table = ""
+    order_list = ['pre','N-term','TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','ECL2','TM5','insert','ICL3','TM6','ECL3','TM7','ICL4','H8','C-term']
+    i = 0
+    for block in order_list:
+        c_schematic_table += "<td>"
+        if i<len(r_chunks_schematic_construct):
+            if block=='pre':
+                a = True
+                c_schematic_table += "<div style2='float:right'><table align='right' width2='100%' class='no-wrap'><tr>"
+                while a:
+                    if r_chunks_schematic_construct[i][0][3]:
+                        if r_chunks_schematic_construct[i][0][3][0]=='insert':
+                            c_schematic_table += "<td style='min-width:80px'>"+create_block(r_chunks_schematic_construct[i]) +"</td>"
+                            i+=1
+                        else:
+                            a = False
+                    else:
+                        a = False
+                c_schematic_table += "</tr></table></div>"
+            elif block=='insert':
+                if r_chunks_schematic_construct[i][0][3]:
+                    if r_chunks_schematic_construct[i][0][3][0]=='insert':
+                        c_schematic_table += create_block(r_chunks_schematic_construct[i])
+                        i+=1
+            else:
+                if block==r_chunks_schematic_construct[i][0][1]:
+                    c_schematic_table += create_block(r_chunks_schematic_construct[i])
+                elif block==r_chunks_schematic_construct[i][1][1]: #if started with deletion
+                    c_schematic_table += create_block(r_chunks_schematic_construct[i])
+                else:
+                    i -=1 #not found match, dont move up
+                    c_schematic_table += "&nbsp;"
+                i += 1
+        c_schematic_table += "</td>"
+        
+
+
+    return [wt_schematic,c_schematic,c_schematic_table,wt_schematic_table]
+
+
+def create_block(chunk):
+
+    temp = """<div class="construct_div" style="">
+            <table class='schematic-block'><tr>"""
+    for r in chunk:
+
+        if r[3]:
+            temp += """<td class="seqv seqv-segment no-wrap {}">
+                        <div data-toggle="tooltip" data-placement="top" data-html="true"
+                        title="{}">&nbsp;</div></td>""".format(r[3][1],r[3][2])
+        else:
+            temp += """<td class="seqv seqv-segment no-wrap">
+                        &nbsp;
+                        </td>"""
+    temp += """</tr><tr>"""
+    for r in chunk:
+        if not r[1] and r[2] and 2==3:
             pass
+        else:
+            try:
+                extra = "bg-"+r[3][1]
+            except:
+                extra = ""
+            if r[0]: 
+                if r[0].protein_segment.id % 2 == 0:
+                    extra = "bg-success"
+                else:
+                    extra = "bg-info"
 
-        return context
+            if r[3] and r[1]:
+                text = r[1]
+                if text == True:
+                    text = r[0].protein_segment.slug
+            elif r[1]:
+                text = r[0].protein_segment.slug
+            else:
+                text = "&nbsp;"
+
+            temp += """<td class="seqv seqv-segment no-wrap {}">{}</td>""".format(extra,text)
+
+    temp += "</tr></table></div>"
+    return temp
+
+        # </div>
