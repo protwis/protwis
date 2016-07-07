@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.cache import cache
 
 from protein.models import Protein
 from residue.models import Residue
@@ -27,7 +28,11 @@ class Construct(models.Model):
     json = models.TextField(null=True)
 
     def schematic(self):
-        return generate_schematic(self)
+        ## Use cache if possible
+        temp = cache.get(self.name+'_schematics')
+        if temp==None:
+            temp = cache.get_or_set(self.name+'_schematics', generate_schematic(self), 100)
+        return temp
 
 
 
