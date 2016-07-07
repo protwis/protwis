@@ -2,6 +2,9 @@ from residue.models import Residue
 
 def generate_schematic(c):
 
+    print("GENERATING!")
+
+    ### PREPARE DATA
     annotations = {}
     n_term = {}
     insert = {}
@@ -55,6 +58,10 @@ def generate_schematic(c):
         residues_custom.append(r)
 
 
+    results = {}
+
+    #### VERSION 1 SCHEMATIC
+
     chunk_size = 10
     r_chunks_schematic = []
     r_chunks_schematic_construct = []
@@ -107,6 +114,10 @@ def generate_schematic(c):
         last_segment = r.protein_segment.slug
         ii+=1
 
+    results['schematic_1_wt'] = r_chunks_schematic
+
+    #### VERSION 1 SCHEMATIC CONSTRUC
+
     for aux in sorted(n_term):
         name = n_term[aux].insert_type.subtype[:6]
         title_cell_skip = 0
@@ -139,11 +150,9 @@ def generate_schematic(c):
 
         if (r.protein_segment.slug != last_segment and i!=0) or i == len(residues_custom)-1:
             a_list = {}
-            print(a_buffer,ii)
             for a in a_buffer:
                 temp = a[0]*20 // (ii)
                 a_list[temp]  = a[1]
-            print(prev_r.protein_segment.slug,a_list)
             if (last_segment):
                 for a in range(21):
                     if (a-nudge)<len(prev_r.protein_segment.slug):
@@ -215,6 +224,9 @@ def generate_schematic(c):
         prev_r = r
         ii+=1
 
+
+    results['schematic_1_c'] = r_chunks_schematic_construct
+
     # process residues and return them in chunks of 10
     # this is done for easier scaling on smaller screens
     chunk_size = 10
@@ -254,6 +266,9 @@ def generate_schematic(c):
             title_cell_skip -= 1
     if r_buffer:
         r_chunks.append(r_buffer)
+
+
+    results['residues_wt'] = r_chunks
 
     # process residues and return them in chunks of 10
     # this is done for easier scaling on smaller screens
@@ -346,8 +361,9 @@ def generate_schematic(c):
         r_chunks_custom.append(r_buffer)
 
 
-    #BUILDING
+    results['residues_c'] = r_chunks_custom
 
+    #BUILDING
 
 
     ## SCHEMATIC WT
@@ -433,13 +449,14 @@ def generate_schematic(c):
     c_schematic += "</div>"
 
 
+
+
     ### BUILD WT SPECIFIC TABLE
     wt_schematic_table = ""
     order_list = ['N-term','TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','ECL2','TM5','ICL3','TM6','ECL3','TM7','ICL4','H8','C-term']
     i = 0
     for block in order_list:
         wt_schematic_table += "<td>"
-        print(i,r_chunks_schematic[i][0][0].protein_segment.slug)
         slug = r_chunks_schematic[i][0][0].protein_segment.slug
         if i<len(r_chunks_schematic):
             if block==slug:
@@ -448,6 +465,9 @@ def generate_schematic(c):
                 i -=1 #not found match, dont move up
             i += 1
         wt_schematic_table += "</td>"
+
+
+    results['schematic_2_wt'] = wt_schematic_table
 
 
     ### BUILD CONSTRUCT SPECIFIC TABLE
@@ -485,10 +505,13 @@ def generate_schematic(c):
                     c_schematic_table += "&nbsp;"
                 i += 1
         c_schematic_table += "</td>"
+
+
+    results['schematic_2_c'] = c_schematic_table
         
 
 
-    return [wt_schematic,c_schematic,c_schematic_table,wt_schematic_table]
+    return results
 
 
 def create_block(chunk):

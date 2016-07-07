@@ -228,7 +228,7 @@
 
             </thead>
             <tbody>
-            {% for construct in constructs.all %}
+            {% for construct in constructs %}
                     <tr id="{{ construct.pk }}">
                     <td><input class="alt" type="checkbox"></td>
                     <td><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
@@ -318,11 +318,11 @@
                 </tr>
             </thead>
                     <tbody style='border-top: 1px solid #111;'>
-                    {% for construct in constructs.all %}
+                    {% for construct in constructs %}
                             <tr style='height: 32px' id="wt_sche_{{ construct.pk }}">
                             <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox"></td>
                             <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
-                            {{construct.schematic.3|safe}}
+                            {{construct.schematics.schematic_2_wt|safe}}
                         </tr>
                     {% endfor %}
                     </tbody>
@@ -359,11 +359,11 @@
                 </tr>
             </thead>
                     <tbody style='border-top: 1px solid #111;'>
-                    {% for construct in constructs.all %}
+                    {% for construct in constructs %}
                             <tr style='height: 32px' id="con_sche_{{ construct.pk }}">
                             <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox"></td>
                             <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
-                            {{construct.schematic.2|safe}}
+                            {{construct.schematics.schematic_2_c|safe}}
                         </tr>
                     {% endfor %}
                     </tbody>
