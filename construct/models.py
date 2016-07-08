@@ -33,7 +33,8 @@ class Construct(models.Model):
         temp = cache.get(self.name+'_schematics')
         if temp==None:
             print(self.name+'_schematics no cache')
-            temp = cache.get_or_set(self.name+'_schematics', generate_schematic(self), 60*60*24*2) #two days
+            temp = cache.set(self.name+'_schematics', generate_schematic(self), 60*60*24*2) #two days
+            temp = cache.get(self.name+'_schematics')
         else:
             print(self.name+'_schematics used cache')
             # temp = cache.set(self.name+'_schematics', generate_schematic(self), 60*60*24*2) #two days
