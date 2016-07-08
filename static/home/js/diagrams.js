@@ -555,7 +555,7 @@
                             // }
                              
                             //  extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
-                             extra = "\n<br>"+val[1]; //.replace(/<br>/g, '&#013;');
+                             extra = "<br>"+val[1]; //.replace(/<br>/g, '&#013;');
 
 
                              $('#'+plotid).find("#"+key).css("fill", val[2]);
