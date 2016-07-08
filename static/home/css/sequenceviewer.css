@@ -36,8 +36,8 @@
     padding-right:3px;
     float:left;
     position: relative;
+    min-width: 80px;
 }
 
 .schematic_table td {
-    min-width: 80px;
 }

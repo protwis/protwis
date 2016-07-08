@@ -23,6 +23,7 @@ class Construct(models.Model):
     purification = models.ForeignKey('Purification', null=True)  #method description if present
     crystallization = models.ForeignKey('Crystallization', null=True)  #method description if present
     crystal = models.ForeignKey('CrystalInfo', null=True) #might not exist, if failed
+    structure = models.ForeignKey('structure.Structure', null=True) #might not exist, if failed
 
     #Back up of original entry
     json = models.TextField(null=True)
@@ -31,7 +32,13 @@ class Construct(models.Model):
         ## Use cache if possible
         temp = cache.get(self.name+'_schematics')
         if temp==None:
-            temp = cache.get_or_set(self.name+'_schematics', generate_schematic(self), 100)
+            print(self.name+'_schematics no cache')
+            temp = cache.get_or_set(self.name+'_schematics', generate_schematic(self), 60*60*24*2) #two days
+        else:
+            print(self.name+'_schematics used cache')
+            # temp = cache.set(self.name+'_schematics', generate_schematic(self), 60*60*24*2) #two days
+
+        # temp = generate_schematic(self) #override
         return temp
 
 
