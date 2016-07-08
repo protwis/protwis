@@ -32,7 +32,8 @@ def detail(request, slug):
     snake = cache.get(c.name+'_snake')
     if snake==None:
         print(c.name+'_snake no cache')
-        snake = cache.get_or_set(c.name+'_snake', DrawSnakePlot(residues,c.protein.get_protein_class(),str(c.protein),nobuttons = True), 60*60*24*2) #two days
+        snake = cache.set(c.name+'_snake', DrawSnakePlot(residues,c.protein.get_protein_class(),str(c.protein),nobuttons = True), 60*60*24*2) #two days
+        snake = cache.get(c.name+'_snake')
     else:
         print(c.name+'_snake used cache')
 
