@@ -5,39 +5,77 @@ def generate_schematic(c):
     print("GENERATING!")
 
     ### PREPARE DATA
+    summary = {}
     annotations = {}
+    json_annotations = {}
+
+
+    summary['solubilization'] = ''
+    for chem in c.solubilization.chemical_list.chemicals.all():
+        summary['solubilization'] += """{} ({} {})<br>""".format(chem.chemical.name,chem.concentration,chem.concentration_unit)
+
+
+    summary['purification'] = ''
+    for step in c.purification.steps.all():
+        summary['purification'] += """{}<br>""".format(step.name)
+
+
+    summary['crystallization_chems'] = ''
+    for clist in c.crystallization.chemical_lists.all():
+        summary['crystallization_chems'] += """{}<br>""".format(clist.name)    
+        for chem in clist.chemicals.all():
+            summary['crystallization_chems'] += """{} ({} {})<br>""".format(chem.chemical.name,chem.concentration,chem.concentration_unit)
+
+
     n_term = {}
     insert = {}
     deletion = {}
     pair_no = 0
+    summary['modifications'] = ''
     for mod in c.modifications.all():
         if mod.position_type == 'pair':
             pair_no += 1
-            pair_info = "<br>Pair No"+str(pair_no)+"<br>Between "+str(mod.pos_start)+" - "+str(mod.pos_end)
+            pair_info = "Pair No"+str(pair_no)+" - "+str(mod.pos_start)+" : "+str(mod.pos_end)
             pair_short = str(pair_no)
         else:
-            pair_info = ''
+            pair_info = str(mod.pos_start)
             pair_short = ''
 
-        annotations[mod.pos_start] = ['mod','modification','Modified<br>'+mod.modification+pair_info,mod,pair_short]
-        annotations[mod.pos_end] = ['mod','modification','Modified<br>'+mod.modification+pair_info,mod,pair_short]
+        annotations[mod.pos_start] = ['mod','modification','Modified<br>'+mod.modification+"<br>"+pair_info,mod,pair_short]
+        annotations[mod.pos_end] = ['mod','modification','Modified<br>'+mod.modification+"<br>"+pair_info,mod,pair_short]
+        json_annotations[mod.pos_start] = ['mod','Modified<br>'+mod.modification+"<br>"+pair_info,"yellow","black"]
+        json_annotations[mod.pos_end] = ['mod','Modified<br>'+mod.modification+"<br>"+pair_info,"yellow","black"]
+        summary['modifications'] += pair_info+" - "+mod.modification+"<br>"
 
+
+    summary['mutations'] = ''
     for mut in c.mutations.all():
         annotations[mut.sequence_number] = ['mut','mutation','Mutated from '+mut.wild_type_amino_acid+' to '+mut.mutated_amino_acid,mut]
+        json_annotations[mut.sequence_number] = ['mut','Mutated from '+mut.wild_type_amino_acid+' to '+mut.mutated_amino_acid,"gold","black"]
+        summary['mutations'] += mut.wild_type_amino_acid+str(mut.sequence_number)+mut.mutated_amino_acid+'<br>'
 
-    for aux in c.insertions.all():
+    summary['insertions'] = '<div style="text-align:left">'
+    for aux in c.insertions.order_by('position').all():
+        position_without_number = aux.position.split("_")[0]
         if aux.start:
             for i in range(aux.start,aux.end+1):
                 annotations[i] = [aux.insert_type.name,'Insertion<br>Protein_type: '+aux.insert_type.name,aux]
+                json_annotations[i] = ['ins','Insertion<br>Protein_type: '+aux.insert_type.name,"purple","white"]
                 insert[aux.start] = aux
         if aux.position.startswith('N-term'):
             n_term[aux.position] = aux
+        summary['insertions'] += """{} - {} ({})<br>""".format(position_without_number,aux.insert_type.subtype,aux.insert_type.name)
+    summary['insertions'] += '</div>'
 
+    summary['deletions'] = ''
     for dele in c.deletions.all():
         deletion[dele.start] = ['del','deletion','Deleted from '+str(dele.start)+' to '+str(dele.end),dele]
         deletion[dele.end] = ['del','deletion','Deleted from '+str(dele.start)+' to '+str(dele.end),dele]
+
+        summary['deletions'] += str(dele.start)+ " to "+str(dele.end)+'<br>'
         for i in range(dele.start,dele.end+1):
             annotations[i] = ['del','deletion','Deleted from '+str(dele.start)+' to '+str(dele.end),dele]
+            json_annotations[i] = ['del','Deleted from '+str(dele.start)+' to '+str(dele.end),"red","white"]
 
     # get residues
     residues = Residue.objects.filter(protein_conformation__protein=c.protein).order_by('sequence_number').prefetch_related(
@@ -59,7 +97,7 @@ def generate_schematic(c):
 
 
     results = {}
-
+    results['annotations'] = json_annotations
     #### VERSION 1 SCHEMATIC
 
     chunk_size = 10
@@ -146,7 +184,10 @@ def generate_schematic(c):
             nudge = 1
 
         if r.sequence_number+1 in deletion:
-            a_buffer.append([ii,annotations[r.sequence_number+1]])
+            if i < len(residues_custom)-1: #not last
+                a_buffer.append([ii+1,annotations[r.sequence_number+1]])
+            else:
+                a_buffer.append([ii,annotations[r.sequence_number+1]])
 
         if (r.protein_segment.slug != last_segment and i!=0) or i == len(residues_custom)-1:
             a_list = {}
@@ -509,6 +550,7 @@ def generate_schematic(c):
 
     results['schematic_2_c'] = c_schematic_table
         
+    results['summary'] = summary
 
 
     return results

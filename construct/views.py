@@ -1,11 +1,14 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView, View
 
+from common.diagrams_gpcr import DrawSnakePlot
+
 from construct.models import *
 from protein.models import Protein, ProteinConformation
 from mutation.models import Mutation
 
 from datetime import datetime
+import json
 
 
 # Create your views here.
@@ -26,8 +29,15 @@ def detail(request, slug):
 
     schematics = c.schematic()
 
+    snake = cache.get(c.name+'_snake')
+    if snake==None:
+        print(c.name+'_snake no cache')
+        snake = cache.get_or_set(c.name+'_snake', DrawSnakePlot(residues,c.protein.get_protein_class(),str(c.protein),nobuttons = True), 60*60*24*2) #two days
+    else:
+        print(c.name+'_snake used cache')
+
     chunk_size = 10
-    context = {'c':c, 'chunk_size': chunk_size, 'schematics': schematics, 'residues_lookup': residues_lookup}
+    context = {'c':c, 'chunk_size': chunk_size, 'snake': snake, 'annotations': json.dumps(schematics['annotations']), 'schematics': schematics, 'residues_lookup': residues_lookup}
     return render(request,'construct/construct_detail.html',context)
 
 class ConstructBrowser(TemplateView):

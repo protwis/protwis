@@ -1,5 +1,5 @@
 $(function () {
-    $('[data-toggle="tooltip"]').tooltip({ container: 'body' })
+    $('[data-toggle="tooltip"]').tooltip({ container: 'body', html: true})
 })
 
 $(document).ready(function() {

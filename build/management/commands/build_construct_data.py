@@ -92,6 +92,7 @@ class Command(BaseCommand):
                 construct.protein = protein
                 construct.name = d['construct_crystal']['pdb_name']
                 construct.json = d
+                construct.structure = structure
 
                 #CrystalInfo
                 crystal = CrystalInfo()

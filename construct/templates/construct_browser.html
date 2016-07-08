@@ -12,6 +12,28 @@
             font-size:x-small;
             font-size: 10px;
         }
+
+        #filters{
+            float:left;
+          display:none;
+          position:absolute; 
+          background:white; 
+          border: 1px solid #D1C9C2; 
+          border-top: 1; 
+          width: 400px; 
+          margin: 0 auto; 
+          padding:  7px 15px; 
+          text-align: left; 
+          -webkit-border-bottom-right-radius: 6px; 
+          -webkit-border-bottom-left-radius: 6px; 
+          -moz-border-radius-bottomright: 6px; 
+          -moz-border-radius-bottomleft: 6px; 
+          border-bottom-right-radius: 6px; 
+          border-bottom-left-radius: 6px;
+          z-index: 1;
+            font-size: 10px;
+        }
+
         @media (min-width: 1600px){
             #content {
                 width: 1570px;
@@ -114,10 +136,6 @@
                 $('.alt').parent().parent().toggleClass('alt_selected');
             });
 
-            $(function () {
-                $('[data-toggle="tooltip"]').tooltip({ container: 'body' })
-            })
-
             function update_tables() {
 
                 $('#wt_schematics > tbody  > tr').each(function() {
@@ -168,6 +186,11 @@
 
             $('#apply_filter').click(function() {
                 update_tables();
+                $("#filters").toggle();
+            });
+
+            $("#OpenFilters").click(function () {
+                $("#filters").toggle();
             });
 
             $('.slider').slider({
@@ -180,6 +203,10 @@
               }
             });
 
+            $('[data-toggle="tooltip"]').tooltip({ container: 'body' })
+            $('.table_tooltip').tooltip({ container: 'body', html: true, placement: "top"})
+
+
         });
     </script> 
 {% endblock %}
@@ -187,43 +214,59 @@
 {% block content %}
 
     <br />
+    <div>
+    <button id='OpenFilters'>Filters</button>
     <button id='show_browser'>Browser</button>
     <button id='show_wt'>WT schematic</button>
     <button id='show_construct'>Construct schematic</button>
-    <button id='apply_filter'>Apply Filter</button>
-    <br>
-    Filters:<br>
-    <div style='width: 600px; display: inline-block;margin-bottom: 50px;'>
-    <div><span style='width: 160px;display: inline-block;'>Construct:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container0"></span></div>
-    <div><span style='width: 160px;display: inline-block;'>Receptor(s):</span><span  style='width: 160px;display: inline-block;' id="external_filter_container1"></span></div>
-    <div><span style='width: 160px;display: inline-block;'>Family:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container2"></span></div>
+    </div>
+    <div id='filters'>
     <div><span style='width: 160px;display: inline-block;'>Class:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container3"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Family:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container2"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Receptor(s):</span><span  style='width: 160px;display: inline-block;' id="external_filter_container1"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Construct:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container0"></span></div>
     <div><span style='width: 160px;display: inline-block;'>Species:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container4"></span></div>
     <div><span style='width: 160px;display: inline-block;'>PDB:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container5"></span></div>
+    <button id='apply_filter'>Apply Filter</button>
     </div>
     <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" id="constructs_div">
         <table width="100%" class="display" id="constructs">
             <thead>
+                    <tr style='max-height: 20px'>
+                    <th class="protein-th" colspan=1></th>
+                    <th class="protein-th" colspan=5>Construct</th>
+                    <th class="seq-th" colspan=4>Sequence modifications</th>
+                    <th class="parts1-th" colspan=3>Expression </th>
+                    <th class="parts2-th" colspan=1>Solubilization</th>
+                    <th class="parts3-th" colspan=1>Purification</th>
+                    <th class="parts4-th" colspan=4>Crystallization</th>
+                    <th class="pdb-th" colspan=2></th>
+                    <th class="pub-th" colspan=2></th>
+                </tr>
                 <tr>
                     <th class="protein-th"></th>
-                    <th class="protein-th">Construct</th>
+                    <th class="protein-th">Name</th>
                     <th class="protein-th">Protein</th>
                     <th class="protein-th">Family</th>
                     <th class="protein-th">Class</th>
                     <th class="protein-th">Species</th>
+                    <th class="seq-th">Mutations</th>
+                    <th class='seq-th'>Deletions</th>
+                    <th class="seq-th">Modifications</th>
+                    <th class='seq-th'>Insertions</th>
+                    <th class="parts1-th">Method</th>
+                    <th class="parts1-th">Host cell</th>
+                    <th class="parts1-th">Host cell type</th>
+                    <th class="parts2-th">Solubilization</th>
+                    <th class="parts3-th">Purification</th>
+                    <th class="parts4-th">Method</th>
+                    <th class="parts4-th">Type</th>
+                    <th class="parts4-th">Additional</th>
+                    <th class="parts4-th">Components</th>
                     <th class="pdb-th">PDB</th>
                     <th class="pdb-th">Resolution</th>
-                    <th class="pdb-th">Mutations</th>
-                    <th class='pdb-th'>Deletions</th>
-                    <th class="pdb-th">Modifications</th>
-                    <th class='pdb-th'>Insertions</th>
-                    <th class="parts-th">Expression</th>
-                    <th class="parts-th">Solubilization</th>
-                    <th class="parts-th">Purification</th>
-                    <th class="parts-th">Crystallization</th>
-                    <th class="parts-th">Components</th>
-                    <th class="pub-th">Contributor (PI)</th>
-                    <th class="pub-th">Contributed Date</th>
+                    <th class="pub-th">Reference</th>
+                    <th class="pub-th">Date</th>
                 </tr>
 
             </thead>
@@ -236,55 +279,59 @@
                     <td><span>{{ construct.protein.family.parent.name|safe }}</span></td>
                     <td>{{ construct.protein.family.parent.parent.parent.name }}</td>
                     <td>{{ construct.protein.species.common_name }}</td>
+                    <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.mutations }}"> {{ construct.mutations.count }}</a></td>
+                    <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.deletions }}"> {{ construct.deletions.count }}</a></td>
+                    <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.modifications }}"> {{ construct.modifications.count }}</a></td>
+                    <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.insertions }}"> {{ construct.insertions.count }}</a></td>
+
+                        {% if construct.expression %}
+                    <td>{{ construct.expression.expression_method}}</td><td>{{ construct.expression.host_cell_type}}</td><td>{{ construct.expression.host_cell}}</td>
+                        {% else %}
+                    <td colspan=3> N/A</td>
+                        {% endif %}
+
+                    <td>
+                        {% if construct.solubilization %}
+                            <a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.solubilization }}"> {{ construct.solubilization.chemical_list.chemicals.count}} chemicals</a>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if construct.purification %}
+                            <a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.purification }}">  {{ construct.purification.steps.count}} steps</a>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+
+                        {% if construct.crystallization %}
+                    <td>{{ construct.crystallization.crystal_method.name}}</td><td>{{ construct.crystallization.crystal_type.name}}</td><td>{{ construct.crystallization.crystal_type.sub_name}}</td>
+                        {% else %}
+                    <td colspan=3> N/A</td>
+                        {% endif %}
+
+                    <td>
+                        {% if construct.crystallization %}
+                            <a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.crystallization_chems }}"> {{ construct.crystallization.chemicals_total}} chems</a>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+
                     <td class="text-center"><a href="{{ construct.crystal.pdb_code}}">{{ construct.crystal.pdb_code}}
                     </a></td>
                     <td class="text-center">{{ construct.crystal.resolution|floatformat:"1" }}</td>
-                    <td class="text-center">{{ construct.mutations.count }}</td>
-                    <td class="text-center">{{ construct.deletions.count }}</td>
-                    <td class="text-center">{{ construct.modifications.count }}</td>
-                    <td class="text-center">{{ construct.insertions.count }}</td>
+                    <!-- 
+                    <td>{{ construct.contributor.pi_name|safe }}</td>
+                    <td>{{ construct.contributor.date|safe }}</td> -->
                     <td>
-                        {% if construct.expression %}
-                            {{ construct.expression.expression_method}} - {{ construct.expression.host_cell_type}} - {{ construct.expression.host_cell}}
-                        {% else %}
-                            N/A
-                        {% endif %}
+                        <a href="{{ structure.publication.web_link }}">
+                        {{ construct.structure.publication.web_link.index }}
+                        </a>
                     </td>
-                    <td>
-                        {% if construct.solubilization %}
-                            {{ construct.solubilization.chemical_list.chemicals.count}} chemicals
-                        {% else %}
-                            N/A
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if construct.purification %}
-                            {{ construct.purification.steps.count}} steps
-                        {% else %}
-                            N/A
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if construct.crystallization %}
-                            {{ construct.crystallization.crystal_method.name}} - {{ construct.crystallization.crystal_type.name}}
-                            {% if construct.crystallization.crystal_type.sub_name %}
-                                ({{ construct.crystallization.crystal_type.sub_name}})
-                            {% endif %}
-                        {% else %}
-                            N/A
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if construct.crystallization %}
-                            {{ construct.crystallization.chemicals_total}} chems
-                        {% else %}
-                            N/A
-                        {% endif %}
-                    </td>
-                    <td>{{ construct.contributor.pi_name|safe }}
-                    </td>
-                    <td>{{ construct.contributor.date|safe }}
-                    </td>
+                    <td>{{ construct.structure.publication_date|date:"Y-m-d" }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
