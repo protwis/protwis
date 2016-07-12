@@ -2,15 +2,14 @@
 """
 Created on Mon Apr 25 15:50:57 2016
 
-@author: gaspar
+@author: Gaspar Pandy
 """
 from django.core.management.base import BaseCommand
 
 from protein.models import Protein
 
-from lxml import html
-import requests
 import urllib
+import re
 
 
 class Command(BaseCommand):
@@ -52,15 +51,15 @@ class QueryPDB():
         new_struct = []
         new_unique = []
         for i in structures:
-            page = requests.get('http://www.rcsb.org/pdb/explore/explore.do?structureId={}'.format(i))
-            tree = html.fromstring(page.content)
-            method = tree.xpath('//*[@id="summary"]/div[1]/div[2]/div[2]/div[1]/ul/li[1]/text()')
-            if 'NMR' in method[0]:
+            response = urllib.request.urlopen('http://www.rcsb.org/pdb/rest/describeMol?structureId={}'.format(i.lower()))
+            response_des = urllib.request.urlopen('http://www.rcsb.org/pdb/rest/describePDB?structureId={}'.format(i.lower()))
+            str_text = str(response.read())
+            str_des = str(response_des.read())
+            if 'NMR' in str_des:
                 continue
-            description = tree.xpath('//*[@id="structureTitle"]/text()')
-            if 'extracellular' in description[0]:
+            if 'extracellular' in str_des:
                 continue
-            uniprots = tree.xpath('//td[@class="ProteinFeatureView"]/div/p/a[@class="querySearchLink"]/text()')
+            uniprots = re.findall('accession id="([A-Z0-9]+)"', str_text)
             try:
                 s = Protein.objects.get(entry_name=i.lower())
                 continue
