@@ -304,6 +304,9 @@ class HomologyModeling(object):
         parser = GPCRDBParsingPDB()
         for raw_seg, anno_seg in zip(raw_helix_ends, anno_helix_ends):
             s_dif = parser.gn_comparer(raw_helix_ends[raw_seg][0],anno_helix_ends[anno_seg][0],main_structure.protein_conformation)
+            pprint.pprint(raw_helix_ends)
+            pprint.pprint(anno_helix_ends)
+            print(raw_helix_ends[raw_seg][1],anno_helix_ends[anno_seg][1],main_structure.protein_conformation)
             e_dif = parser.gn_comparer(raw_helix_ends[raw_seg][1],anno_helix_ends[anno_seg][1],main_structure.protein_conformation)
             if s_dif<0:
                 s_gn = Residue.objects.get(protein_conformation=main_structure.protein_conformation, generic_number__label=raw_helix_ends[raw_seg][0])
@@ -448,9 +451,9 @@ class HomologyModeling(object):
         alignment = AlignedReferenceTemplate(self.reference_protein, segments, query_states, order_by)
         main_pdb_array = OrderedDict()
         if core_alignment==True:
-#            print('Alignment: ',datetime.now() - startTime)
+            print('Alignment: ',datetime.now() - startTime)
             enhanced_alignment = alignment.enhance_best_alignment()
-#            print('Enhanced alignment: ',datetime.now() - startTime)
+            print('Enhanced alignment: ',datetime.now() - startTime)
             if enhanced_alignment==None:
                 return None
             self.segments = segments
@@ -477,6 +480,7 @@ class HomologyModeling(object):
                 for gn, res in seg.items():
                     self.update_template_source([gn.replace('.','x')],self.main_structure,seg_l)
             end_correction = self.correct_helix_ends(self.main_structure, main_pdb_array, alignment)
+            print('Corrected helix ends: ',datetime.now() - startTime)
             main_pdb_array = end_correction[0]
             alignment = end_correction[1]
             loops_in_ref = [i for i in list(self.template_source) if i[0] not in ['N','C','T','H']]
@@ -500,7 +504,7 @@ class HomologyModeling(object):
                     pass
             self.statistics.add_info('similarity_table', self.similarity_table)
             self.statistics.add_info('loops',self.loop_template_table)
-#            print('Loop alignment: ',datetime.now() - startTime)
+            print('Loop alignment: ',datetime.now() - startTime)
         return alignment, main_pdb_array
         
         
@@ -567,7 +571,7 @@ class HomologyModeling(object):
             self.statistics.add_info('loops', loop_stat)
             self.loops = loop_stat
 
-#        print('Integrate loops: ',datetime.now() - startTime)
+        print('Integrate loops: ',datetime.now() - startTime)
 
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
@@ -781,7 +785,7 @@ class HomologyModeling(object):
                             seg[gn] = main_pdb_array[seg_id][gn]
                     out_pdb_array[seg_id] = seg
                 main_pdb_array = out_pdb_array
-#        print('Integrate bulges/constrictions: ',datetime.now() - startTime)
+        print('Integrate bulges/constrictions: ',datetime.now() - startTime)
                 
         # check for inconsitencies with db
         pdb_db_inconsistencies = []
@@ -835,7 +839,7 @@ class HomologyModeling(object):
 #        self.write_homology_model_pdb(
 #                                "./structure/homology_models/{}_{}/pre_switch.pdb".format(self.reference_entry_name, self.state), 
 #                                main_pdb_array)        
-#        print('Check inconsistencies: ',datetime.now() - startTime)
+        print('Check inconsistencies: ',datetime.now() - startTime)
         # inserting loops for free modeling
         for label, template in loop_stat.items():
             if template==None:
@@ -847,7 +851,7 @@ class HomologyModeling(object):
                 a.reference_dict = modeling_loops.reference_dict
                 a.template_dict = modeling_loops.template_dict
                 a.alignment_dict = modeling_loops.alignment_dict
-#        print('Free loops: ',datetime.now() - startTime)
+        print('Free loops: ',datetime.now() - startTime)
         
         # Adjust H8 if needed
         trimmed_residues=[]
@@ -1091,7 +1095,7 @@ class HomologyModeling(object):
             if parse.gn_indecer(i,'.',2) not in trimmed_residues:
                 trimmed_residues.append(parse.gn_indecer(i,'.',2))
                 
-#        print('Rotamer switching: ',datetime.now() - startTime) 
+        print('Rotamer switching: ',datetime.now() - startTime) 
         for i in model_loops:
             for j in a.reference_dict[i]:
                 trimmed_residues.append(j.replace('x','.'))
