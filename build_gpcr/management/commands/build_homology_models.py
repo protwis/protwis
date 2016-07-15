@@ -31,7 +31,38 @@ hdlr.setFormatter(formatter)
 logger.addHandler(hdlr) 
 logger.setLevel(logging.INFO)
 
-        
+
+def ggn(gn):
+    return gn.split('.')[0]+'x'+gn.split('x')[1]
+
+def dgn(gn, prot_conf):
+    tm, num = gn.split('x')
+    if len(num)==3:
+        num1 = num[:2]
+    else:
+        num1 = num
+    try:
+        n = Residue.objects.get(protein_conformation=prot_conf, display_generic_number__label=tm+'.'+num1+'x'+num)
+    except:
+        p = 1
+        plus = False
+        while plus==False and p<4:
+            try:
+                n = Residue.objects.get(protein_conformation=prot_conf, display_generic_number__label=tm+'.'+str(int(num1)+p)+'x'+num)
+                plus = True
+            except:
+                p+=1
+        if plus==False:
+            m = -1
+            minus = False
+            while minus==False and m>-4:
+                try:
+                    n = Residue.objects.get(protein_conformation=prot_conf, display_generic_number__label=tm+'.'+str(int(num1)+m)+'x'+num)
+                    minus = True
+                except:
+                    m-=1
+    return n.display_generic_number.label
+
 class Command(BaseBuild):  
     help = 'Build automated chimeric GPCR homology models'    
     
@@ -63,7 +94,8 @@ class Command(BaseBuild):
             struct_parent = [i.protein_conformation.protein.parent for i in structures]
             classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species=1, 
                                             family__slug__istartswith='001')
-            self.receptor_list = [i.entry_name for i in classA if i not in struct_parent]
+            self.receptor_list = [i.entry_name for i in classA if i not in struct_parent][40:60]
+            print(self.receptor_list)
             try:
                 self.prepare_input(options['proc'], self.receptor_list)
             except Exception as msg:
@@ -143,8 +175,8 @@ class HomologyModeling(object):
         for r in Residue.objects.filter(protein_conformation=self.prot_conf):
             if r.protein_segment.slug not in self.template_source:
                 self.template_source[r.protein_segment.slug] = OrderedDict()
-            try:
-                self.template_source[r.protein_segment.slug][r.generic_number.label] = [None,None]
+            try:                
+                self.template_source[r.protein_segment.slug][ggn(r.display_generic_number.label)] = [None,None]
             except:
                 self.template_source[r.protein_segment.slug][str(r.sequence_number)] = [None,None]
         
@@ -199,7 +231,7 @@ class HomologyModeling(object):
         for seg in self.template_source:
             for num in self.template_source[seg]:
                 try:
-                    num = str(Residue.objects.get(protein_conformation=self.prot_conf,generic_number__label=num).sequence_number)
+                    num = str(Residue.objects.get(protein_conformation=self.prot_conf,display_generic_number__label=dgn(num,self.prot_conf)).sequence_number)
                 except:
                     pass
                 pos_list.append(num)
@@ -240,6 +272,8 @@ class HomologyModeling(object):
         ends = OrderedDict()
         for i in raw:
             if i.protein_segment.slug[0]=='T' or i.protein_segment.slug=='H8':
+                if len(list(Residue.objects.filter(protein_conformation=structure.protein_conformation,protein_segment=i.protein_segment)))==0:
+                    continue
                 start_found = False
                 while start_found==False:
                     try:
@@ -260,19 +294,19 @@ class HomologyModeling(object):
                     except:
                         i.end-=1
                 e = Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=i.end)
-                ends[s.protein_segment.slug] = [s.generic_number.label,e.generic_number.label]
+                ends[s.protein_segment.slug] = [ggn(s.display_generic_number.label),ggn(e.display_generic_number.label)]
         for j in annotated:
             if j.protein_segment.slug[0]=='T' or j.protein_segment.slug=='H8':
                 if j.start!=0:
                     while Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=j.start).generic_number==None:
                         j.start+=1
                     sa = Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=j.start)
-                    ends[j.protein_segment.slug][0] = sa.generic_number.label
+                    ends[j.protein_segment.slug][0] = ggn(sa.display_generic_number.label)
                 if j.end!=0:
                     while Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=j.end).generic_number==None:
                         j.end-=1
                     ea = Residue.objects.get(protein_conformation=structure.protein_conformation,sequence_number=j.end)
-                    ends[j.protein_segment.slug][1] = ea.generic_number.label
+                    ends[j.protein_segment.slug][1] = ggn(ea.display_generic_number.label)
         return ends      
 
     def fetch_struct_helix_ends_from_array(self, array):
@@ -296,7 +330,7 @@ class HomologyModeling(object):
                     if lab[0] in ['H']:
                         if res!='-':
                             r = Residue.objects.get(protein_conformation=main_structure.protein_conformation,
-                                                    generic_number__label=gn)
+                                                    display_generic_number__label=dgn(gn,main_structure.protein_conformation))
                             if len(Rotamer.objects.filter(structure=main_structure,residue=r))<1:
                                 raise Exception()
                 except:
@@ -304,21 +338,18 @@ class HomologyModeling(object):
         parser = GPCRDBParsingPDB()
         for raw_seg, anno_seg in zip(raw_helix_ends, anno_helix_ends):
             s_dif = parser.gn_comparer(raw_helix_ends[raw_seg][0],anno_helix_ends[anno_seg][0],main_structure.protein_conformation)
-            pprint.pprint(raw_helix_ends)
-            pprint.pprint(anno_helix_ends)
-            print(raw_helix_ends[raw_seg][1],anno_helix_ends[anno_seg][1],main_structure.protein_conformation)
             e_dif = parser.gn_comparer(raw_helix_ends[raw_seg][1],anno_helix_ends[anno_seg][1],main_structure.protein_conformation)
             if s_dif<0:
-                s_gn = Residue.objects.get(protein_conformation=main_structure.protein_conformation, generic_number__label=raw_helix_ends[raw_seg][0])
+                s_gn = Residue.objects.get(protein_conformation=main_structure.protein_conformation, display_generic_number__label=dgn(raw_helix_ends[raw_seg][0],main_structure.protein_conformation))
                 seq_nums = [i for i in range(s_gn.sequence_number,s_gn.sequence_number-s_dif)]
-                gns = [j.generic_number.label for j in list(Residue.objects.filter(protein_conformation=main_structure.protein_conformation, sequence_number__in=seq_nums))]
+                gns = [ggn(j.display_generic_number.label) for j in list(Residue.objects.filter(protein_conformation=main_structure.protein_conformation, sequence_number__in=seq_nums))]
                 for gn in gns:
                     a.template_dict[raw_seg][gn]='x'
                     a.alignment_dict[raw_seg][gn]='x'
             if e_dif>0:
-                e_gn = Residue.objects.get(protein_conformation=main_structure.protein_conformation, generic_number__label=raw_helix_ends[raw_seg][1])
+                e_gn = Residue.objects.get(protein_conformation=main_structure.protein_conformation, display_generic_number__label=dgn(raw_helix_ends[raw_seg][1],main_structure.protein_conformation))
                 seq_nums = [i for i in range(e_gn.sequence_number-e_dif+1,e_gn.sequence_number+1)]
-                gns = [j.generic_number.label for j in list(Residue.objects.filter(protein_conformation=main_structure.protein_conformation, sequence_number__in=seq_nums))]
+                gns = [ggn(j.display_generic_number.label) for j in list(Residue.objects.filter(protein_conformation=main_structure.protein_conformation, sequence_number__in=seq_nums))]
                 for gn in gns:
                     a.template_dict[raw_seg][gn]='x'
                     a.alignment_dict[raw_seg][gn]='x'
@@ -533,6 +564,11 @@ class HomologyModeling(object):
                 del main_pdb_array['H8']
         except:
             pass
+#        for q,w,e in zip(a.reference_dict,a.template_dict,a.alignment_dict):
+#            for r,t,z in zip(a.reference_dict[q],a.template_dict[w],a.alignment_dict[e]):
+#                print(r,t,z,a.reference_dict[q][r],a.template_dict[w][t],a.alignment_dict[e][z])
+                
+        trimmed_residues=[]
         
         # loops
         if loops==True:
@@ -800,7 +836,7 @@ class HomologyModeling(object):
                             try:
                                 Residue.objects.get(
                                         protein_conformation__protein=self.main_structure.protein_conformation.protein, 
-                                        generic_number__label=gn)
+                                        display_generic_number__label=dgn(gn,self.main_structure.protein_conformation))
                                 pdb_db_inconsistencies.append({gn:a.template_dict[seg_label][gn]})
                             except:
                                 pass
@@ -814,7 +850,7 @@ class HomologyModeling(object):
                 seg = self.segment_coding[int(list(incons.keys())[0][0])]
                 seq_num = Residue.objects.get(
                                         protein_conformation__protein=self.main_structure.protein_conformation.protein, 
-                                        generic_number__label=list(incons.keys())[0])
+                                        display_generic_number__label=dgn(list(incons.keys())[0],self.main_structure.protein_conformation))
                 temp_segment, temp_array = OrderedDict(), OrderedDict()
                 for key, value in main_pdb_array[seg].items():
                     if key==str(seq_num.sequence_number):
@@ -854,7 +890,7 @@ class HomologyModeling(object):
         print('Free loops: ',datetime.now() - startTime)
         
         # Adjust H8 if needed
-        trimmed_residues=[]
+        
         if 'H8' in main_pdb_array and 'ICL4' not in main_pdb_array and len(self.helix_end_mods['removed']['TM7'][1])>0:
             unwind_num = math.ceil(len(self.helix_end_mods['removed']['TM7'][1])/2)
             trimmed_residues+=list(main_pdb_array['TM7'].keys())[(unwind_num*-1):]+list(main_pdb_array['H8'].keys())[:unwind_num]
@@ -1114,7 +1150,7 @@ class HomologyModeling(object):
 
         # Model with MODELLER
         self.create_PIR_file(a.reference_dict, a.template_dict, path+self.uniprot_id+"_post.pdb")
-#        raise AssertionError()
+
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
                           self.uniprot_id, 1, "{}_{}_model.pdb".format(self.reference_entry_name,self.state), atom_dict=trimmed_res_nums)
 
@@ -1136,7 +1172,7 @@ class HomologyModeling(object):
                 first_temp = self.template_source[seg][first_gn][0]
                 if 'x' in first_gn:
                     try:
-                        first_seqnum = Residue.objects.get(protein_conformation=self.prot_conf,generic_number__label=list_keys[0]).sequence_number
+                        first_seqnum = Residue.objects.get(protein_conformation=self.prot_conf,display_generic_number__label=dgn(list_keys[0],self.prot_conf)).sequence_number
                     except:
                         try:
                             first_seqnum = int(list_keys[0])
@@ -1148,7 +1184,7 @@ class HomologyModeling(object):
                 for gn, res in resis.items():
                     key = gn
                     if 'x' in gn:
-                        seq_num = Residue.objects.get(protein_conformation=self.prot_conf,generic_number__label=gn).sequence_number
+                        seq_num = Residue.objects.get(protein_conformation=self.prot_conf,display_generic_number__label=dgn(gn,self.prot_conf)).sequence_number
                         curr_seqnum = seq_num
                     else:
                         seq_num = int(gn)
@@ -1262,10 +1298,10 @@ class HomologyModeling(object):
                                                         just_rot=True)
                             key_in_template_source = seq_num
                         except:
-                            self.update_template_source([this_res.generic_number.label],
-                                                        self.template_source[segment][this_res.generic_number.label][0],
+                            self.update_template_source([ggn(this_res.display_generic_number.label)],
+                                                        self.template_source[segment][ggn(this_res.display_generic_number.label)][0],
                                                         segment,just_rot=True)
-                            key_in_template_source = this_res.generic_number.label
+                            key_in_template_source = ggn(this_res.display_generic_number.label)
                     else:
                         self.update_template_source([ref_res],self.template_source[segment][ref_res][0],segment,
                                                     just_rot=True)
@@ -1282,8 +1318,8 @@ class HomologyModeling(object):
                     if '|' in gn_:
                         try:
                             list_num = int(gn.split('|')[1])-1                       
-                            gn = list(Residue.objects.filter(protein_conformation__protein=self.reference_protein,
-                                      protein_segment__slug=ref_seg.split('_')[0]))[list_num].generic_number.label
+                            gn = ggn(list(Residue.objects.filter(protein_conformation__protein=self.reference_protein,
+                                         protein_segment__slug=ref_seg.split('_')[0]))[list_num].display_generic_number.label)
                             gn_ = gn.replace('x','.')
                         except:
                             pass
@@ -1569,9 +1605,15 @@ class Loops(object):
             seg_list = self.segment_order
             prev_seg = seg_list[seg_list.index(self.loop_label)-1]
             next_seg = seg_list[seg_list.index(self.loop_label)+1]
-            orig_before_gns = [i.replace('.','x') for i in list(main_pdb_array[prev_seg].keys())[-4:]]
+            if prev_seg=='C-term':
+                orig_before_gns = []
+            else:
+                orig_before_gns = [i.replace('.','x') for i in list(main_pdb_array[prev_seg].keys())[-4:]]
             orig_after_gns = [j.replace('.','x') for j in list(main_pdb_array[next_seg].keys())[:4]]
-            last_before_gn = orig_before_gns[-1]
+            if len(orig_before_gns)==0:
+                last_before_gn = None
+            else:
+                last_before_gn = orig_before_gns[-1]
             first_after_gn = orig_after_gns[0]
             if self.loop_label=='ECL2':
                 try:
@@ -1579,7 +1621,7 @@ class Loops(object):
                                                      protein_segment__slug='ECL2')
                     r_first = list(ref_res)[0].sequence_number
                     r_last = list(ref_res)[-1].sequence_number
-                    r_x50 = ref_res.get(generic_number__label='45x50').sequence_number
+                    r_x50 = ref_res.get(display_generic_number__label='45.50x50').sequence_number
                 except:
                     pass
             
@@ -1603,7 +1645,7 @@ class Loops(object):
                                     at_least_one_gn = False
                                     for i in ref_loop_res:
                                         try:
-                                            i.generic_number.label
+                                            ggn(i.display_generic_number.label)
                                             at_least_one_gn = True
                                         except:
                                             pass
@@ -1625,7 +1667,8 @@ class Loops(object):
                             prot_conf = ProteinConformation.objects.get(protein=self.reference_protein)
                             if self.loop_label=='ICL4' and len(list(Residue.objects.filter(protein_conformation=prot_conf,protein_segment__slug='ICL4')))<3:
                                 raise Exception()
-                            if superpose_modded_loop==True and template=='aligned':
+                            if superpose_modded_loop==True and (template=='aligned' or template==self.main_structure):
+                                self.model_loop = True
                                 template = self.main_structure
                                 self.aligned = True
                                 alt_last_before_gn = last_before_gn
@@ -1633,7 +1676,7 @@ class Loops(object):
                                 while b_num_found==False:
                                     try:
                                         b_num = Residue.objects.get(protein_conformation=template.protein_conformation,
-                                                                    generic_number__label=alt_last_before_gn).sequence_number
+                                                                    display_generic_number__label=dgn(alt_last_before_gn,template.protein_conformation)).sequence_number
                                         b_num_found = True
                                     except:
                                         alt_last_before_gn = parse.gn_indecer(alt_last_before_gn,'x',-1)
@@ -1642,16 +1685,16 @@ class Loops(object):
                                 while a_num_found==False:
                                     try:
                                         a_num = Residue.objects.get(protein_conformation=template.protein_conformation,
-                                                                    generic_number__label=alt_first_after_gn).sequence_number
+                                                                    display_generic_number__label=dgn(alt_first_after_gn,template.protein_conformation)).sequence_number
                                         a_num_found = True
                                     except:
                                         alt_first_after_gn = parse.gn_indecer(alt_first_after_gn,'x',1)
                             else:
                                 b_num = Residue.objects.get(protein_conformation=template.protein_conformation,
-                                                            generic_number__label=last_before_gn).sequence_number
+                                                            display_generic_number__label=dgn(last_before_gn,template.protein_conformation)).sequence_number
                                 
                                 a_num = Residue.objects.get(protein_conformation=template.protein_conformation,
-                                                            generic_number__label=first_after_gn).sequence_number
+                                                            display_generic_number__label=dgn(first_after_gn,template.protein_conformation)).sequence_number
                             before4 = Residue.objects.filter(protein_conformation=template.protein_conformation, 
                                                              sequence_number__in=[b_num,b_num-1,b_num-2,b_num-3])
                             after4 = Residue.objects.filter(protein_conformation=template.protein_conformation, 
@@ -1659,8 +1702,8 @@ class Loops(object):
                             if superpose_modded_loop==True and self.aligned==True:
                                 loop_residues = Residue.objects.filter(protein_conformation=template.protein_conformation,
                                                                        protein_segment__slug=self.loop_label)
-                                if len(loop_residues)!=len(Residue.objects.filter(protein_conformation=self.prot_conf,protein_segment__slug=self.loop_label)):
-                                    raise Exception()
+#                                if len(loop_residues)!=len(Residue.objects.filter(protein_conformation=self.prot_conf,protein_segment__slug=self.loop_label)):
+#                                    raise Exception()
                             else:                            
                                 loop_residues = Residue.objects.filter(protein_conformation=template.protein_conformation,
                                                                        sequence_number__in=list(range(b_num+1,a_num)))
@@ -1689,23 +1732,24 @@ class Loops(object):
                 for mid_template in self.loop_template_structures['ECL2_mid']:
                     if mid_template==self.main_structure:
                         ECL2_mid = parse.fetch_residues_from_pdb(self.main_structure,['45x50','45x51','45x52'])
-                        x50 = main_temp_seq.get(generic_number__label='45x50').sequence_number
-                        alt_mid = False
+                        x50 = main_temp_seq.get(display_generic_number__label='45.50x50').sequence_number
                         break
                     else:
-                        ECL2_mid = parse.fetch_residues_from_pdb(mid_template,[last_before_gn,first_after_gn,'3x25','45x50','45x51','45x52'])
-                        ref_ECL2_mid1 = parse.fetch_residues_from_array(main_pdb_array['TM4'],[last_before_gn])
-                        ref_ECL2_mid2 = parse.fetch_residues_from_array(main_pdb_array['TM5'],[first_after_gn])
-                        ref_ECL2_mid3 = parse.fetch_residues_from_array(main_pdb_array['TM3'],['3x25'])
-                        ref_ECL2_mid = parse.add_two_ordereddict(parse.add_two_ordereddict(ref_ECL2_mid1,ref_ECL2_mid2),ref_ECL2_mid3)
-                        superpose = sp.ECL2MidSuperpose(ref_ECL2_mid,ECL2_mid)
-                        new_mid_residues = superpose.run()
-                        ECL2_mid = OrderedDict()
-                        for i,j in new_mid_residues.items():
-                            if i in ['45.50','45.51','45.52']:
-                                ECL2_mid[i] = j
-                        alt_mid = True
-                        break
+                        try:
+                            ECL2_mid = parse.fetch_residues_from_pdb(mid_template,[last_before_gn,first_after_gn,'3x25','45x50','45x51','45x52'])
+                            ref_ECL2_mid1 = parse.fetch_residues_from_array(main_pdb_array['TM4'],[last_before_gn])
+                            ref_ECL2_mid2 = parse.fetch_residues_from_array(main_pdb_array['TM5'],[first_after_gn])
+                            ref_ECL2_mid3 = parse.fetch_residues_from_array(main_pdb_array['TM3'],['3x25'])
+                            ref_ECL2_mid = parse.add_two_ordereddict(parse.add_two_ordereddict(ref_ECL2_mid1,ref_ECL2_mid2),ref_ECL2_mid3)
+                            superpose = sp.ECL2MidSuperpose(ref_ECL2_mid,ECL2_mid)
+                            new_mid_residues = superpose.run()
+                            ECL2_mid = OrderedDict()
+                            for i,j in new_mid_residues.items():
+                                if i in ['45.50','45.51','45.52']:
+                                    ECL2_mid[i] = j
+                            break
+                        except:
+                            continue
                 
                 o1 = parse.fetch_residues_from_array(main_pdb_array[prev_seg],orig_before_gns)
                 orig_residues1 = parse.add_two_ordereddict(o1,ECL2_mid)
@@ -1724,13 +1768,13 @@ class Loops(object):
                         else:
                             try:
                                 b_num = Residue.objects.get(protein_conformation=first_temp.protein_conformation,
-                                                            generic_number__label=last_before_gn).sequence_number
+                                                            display_generic_number__label=dgn(last_before_gn,first_temp.protein_conformation)).sequence_number
                                 before4 = Residue.objects.filter(protein_conformation=first_temp.protein_conformation, 
                                                                  sequence_number__in=[b_num,b_num-1,b_num-2,b_num-3])
                                 alt_mid1 = Residue.objects.filter(protein_conformation=first_temp.protein_conformation,
                                                                   protein_segment__slug=self.loop_label, 
-                                                                  generic_number__label__in=['45x50','45x51','45x52'])
-                                alt1_x50 = alt_mid1.get(generic_number__label='45x50').sequence_number
+                                                                  display_generic_number__label__in=['45.50x50','45.51x51','45.52x52'])
+                                alt1_x50 = alt_mid1.get(display_generic_number__label='45.50x50').sequence_number
                                 loop_res1 = Residue.objects.filter(protein_conformation=first_temp.protein_conformation,
                                                                    sequence_number__in=list(range(b_num, alt1_x50)))
                                 before_gns = [x.sequence_number for x in before4]
@@ -1767,13 +1811,13 @@ class Loops(object):
                         else:
                             try:                                
                                 a_num = Residue.objects.get(protein_conformation=second_temp.protein_conformation,
-                                                            generic_number__label=first_after_gn).sequence_number
+                                                            display_generic_number__label=dgn(first_after_gn,second_temp.protein_conformation)).sequence_number
                                 after4 = Residue.objects.filter(protein_conformation=second_temp.protein_conformation, 
                                                                 sequence_number__in=[a_num,a_num+1,a_num+2,a_num+3])
                                 alt_mid2 = Residue.objects.filter(protein_conformation=second_temp.protein_conformation,
                                                                   protein_segment__slug=self.loop_label, 
-                                                                  generic_number__label__in=['45x50','45x51','45x52'])
-                                alt2_x50 = alt_mid2.get(generic_number__label='45x50').sequence_number
+                                                                  display_generic_number__label__in=['45.50x50','45.51x51','45.52x52'])
+                                alt2_x50 = alt_mid2.get(display_generic_number__label='45.50x50').sequence_number
                                 loop_res2 = Residue.objects.filter(protein_conformation=second_temp.protein_conformation,
                                                                    sequence_number__in=list(range(alt2_x50+3, a_num)))
                                 mid_gns2 = [x.sequence_number for x in loop_res2]
@@ -1875,8 +1919,8 @@ class Loops(object):
                         for r_res, r_id in zip(ref_residues, input_residues):
                             l_res+=1
                             try:
-                                loop_gn = Residue.objects.get(protein_conformation=self.main_structure.protein_conformation, 
-                                                              generic_number__label=r_id.replace('.','x')).generic_number.label
+                                loop_gn = ggn(Residue.objects.get(protein_conformation=self.main_structure.protein_conformation, 
+                                                                 display_generic_number__label=dgn(r_id.replace('.','x'),self.main_structure.protein_conformation)).display_generic_number.label)
                             except:
                                 try:
                                     Residue.objects.get(protein_conformation=self.main_structure.protein_conformation, 
@@ -1908,8 +1952,8 @@ class Loops(object):
                         for r_res, r_id in zip(ref_residues[1:-1], input_residues[1:-1]):
                             l_res+=1
                             try:
-                                loop_gn = Residue.objects.get(protein_conformation=loop_output_structure.protein_conformation, 
-                                                              sequence_number=r_id).generic_number.label
+                                loop_gn = ggn(Residue.objects.get(protein_conformation=loop_output_structure.protein_conformation, 
+                                                                 sequence_number=r_id).display_generic_number.label)
                             except:
                                 loop_gn = self.loop_label+'|'+str(l_res)
                             ref_loop_seg[loop_gn] = r_res.amino_acid
@@ -2068,8 +2112,8 @@ class Loops(object):
                 for key in loop_keys:
                     l_res+=1
                     try:
-                        loop_gn = Residue.objects.get(protein_conformation=loop_output_structure.protein_conformation, 
-                                                      sequence_number=key).generic_number.label.replace('x','.')
+                        loop_gn = ggn(Residue.objects.get(protein_conformation=loop_output_structure.protein_conformation, 
+                                                         sequence_number=key).display_generic_number.label.replace('x','.'))
                         temp_loop[loop_gn] = loop_template[key]
                     except:
                         temp_loop[self.loop_label+'|'+str(l_res)] = loop_template[key]
@@ -2178,6 +2222,7 @@ class Bulges(object):
                     if 'no' not in suitable_temp:
                         gn_list = [parse.gn_indecer(gn,'x',-2), parse.gn_indecer(gn,'x',-1),
                                    parse.gn_indecer(gn,'x',+1), parse.gn_indecer(gn,'x',+2)]
+                        print(gn_list)
                         alt_bulge = parse.fetch_residues_from_pdb(structure, gn_list)
                         self.template = structure
                         return alt_bulge
@@ -2264,8 +2309,8 @@ class GPCRDBParsingPDB(object):
     def gn_comparer(self, gn1, gn2, protein_conformation):
         '''
         '''
-        res1 = Residue.objects.get(protein_conformation=protein_conformation, generic_number__label=gn1)
-        res2 = Residue.objects.get(protein_conformation=protein_conformation, generic_number__label=gn2)
+        res1 = Residue.objects.get(protein_conformation=protein_conformation, display_generic_number__label=dgn(gn1,protein_conformation))
+        res2 = Residue.objects.get(protein_conformation=protein_conformation, display_generic_number__label=dgn(gn2,protein_conformation))
         return res1.sequence_number-res2.sequence_number
             
     def gn_indecer(self, gn, delimiter, direction):
@@ -2302,14 +2347,14 @@ class GPCRDBParsingPDB(object):
             rotamer=None
             if 'x' in str(gn):      
                 rotamer = list(Rotamer.objects.filter(structure__protein_conformation=structure.protein_conformation, 
-                        residue__generic_number__label=gn, structure__preferred_chain=structure.preferred_chain))
+                        residue__display_generic_number__label=dgn(gn,structure.protein_conformation), structure__preferred_chain=structure.preferred_chain))
             else:
                 rotamer = list(Rotamer.objects.filter(structure__protein_conformation=structure.protein_conformation, 
                         residue__sequence_number=gn, structure__preferred_chain=structure.preferred_chain))
                 if just_nums==False:
                     try:
-                        gn = Residue.objects.get(protein_conformation=structure.protein_conformation,
-                                                 sequence_number=gn).generic_number.label
+                        gn = ggn(Residue.objects.get(protein_conformation=structure.protein_conformation,
+                                                    sequence_number=gn).display_generic_number.label)
                     except:
                         pass
             if len(rotamer)>1:
@@ -2401,7 +2446,7 @@ class GPCRDBParsingPDB(object):
                 try:
                     found_res = Residue.objects.get(protein_conformation=structure.protein_conformation,
                                                     sequence_number=gn)
-                    found_gn = str(found_res.generic_number.label).replace('x','.')
+                    found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
                     if -9.1 < float(found_gn) < 9.1:
                         seg_label = self.segment_coding[int(found_gn.split('.')[0])]
                         output[seg_label][found_gn] = res

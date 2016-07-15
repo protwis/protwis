@@ -957,10 +957,16 @@ class AlignedReferenceTemplate(Alignment):
                 segment_order.append(i.protein_segment.slug)
         prev_seg = segment_order[segment_order.index(self.segment_labels[0])-1]
         next_seg = segment_order[segment_order.index(self.segment_labels[0])+1]
-        orig_before_gns = [i.replace('.','x') for i in list(self.main_pdb_array[prev_seg].keys())[-4:]]
+        if prev_seg=='C-term':
+            orig_before_gns = []
+        else:
+            orig_before_gns = [i.replace('.','x') for i in list(self.main_pdb_array[prev_seg].keys())[-4:]]
         orig_after_gns = [j.replace('.','x') for j in list(self.main_pdb_array[next_seg].keys())[:4]]                                         
-                                         
-        last_before_gn = orig_before_gns[-1]
+        
+        if len(orig_before_gns)==0:
+            last_before_gn = None
+        else:
+            last_before_gn = orig_before_gns[-1]
         first_after_gn = orig_after_gns[0]
 
         if self.segment_labels[0]=='ECL2':
@@ -1108,12 +1114,14 @@ class AlignedReferenceTemplate(Alignment):
                 for ref_position, temp_position in zip(self.reference_protein.alignment[ref_seglab],
                                                        self.main_template_protein.alignment[temp_seglab]):
                     if ref_position[1]!=False and temp_position[1]!=False and ref_position[1]!='' and temp_position!='':
-                        ref_segment_dict[ref_position[0]]=ref_position[2]
-                        temp_segment_dict[temp_position[0]]=temp_position[2]
+                        bw, gn = ref_position[1].split('x')
+                        gen_num = '{}x{}'.format(bw.split('.')[0],gn)
+                        ref_segment_dict[gen_num]=ref_position[2]
+                        temp_segment_dict[gen_num]=temp_position[2]
                         if ref_position[2]==temp_position[2]:
-                            align_segment_dict[ref_position[0]]=ref_position[2]
+                            align_segment_dict[gen_num]=ref_position[2]
                         else:
-                            align_segment_dict[ref_position[0]]='.'
+                            align_segment_dict[gen_num]='.'
                     elif ref_position[1]=='' and temp_position[1]=='':                        
                         ref_segment_dict[str(ref_position[4])]=ref_position[2]
                         temp_segment_dict[str(temp_position[4])]=temp_position[2]
@@ -1122,7 +1130,9 @@ class AlignedReferenceTemplate(Alignment):
                         else:
                             align_segment_dict[ref_position[4]]='.'                                
                     elif ref_position[1]!=False and temp_position[1]==False and ref_position[1]!='':
-                        ref_segment_dict[ref_position[0]]=ref_position[2]                    
+                        bw, gn = ref_position[1].split('x')
+                        gen_num = '{}x{}'.format(bw.split('.')[0],gn)
+                        ref_segment_dict[gen_num]=ref_position[2]                    
                         if temp_position[2]=='-':
                             temp_segment_dict[temp_position[0]]='-'
                             align_segment_dict[temp_position[0]]='-'
@@ -1138,16 +1148,20 @@ class AlignedReferenceTemplate(Alignment):
                             temp_segment_dict[temp_position[0]]='x'
                             align_segment_dict[temp_position[0]]='x'
                     elif ref_position[2]=='-' and temp_position[1]!=False and temp_position[1]!='':
-                        ref_segment_dict[ref_position[0]]='-'
-                        temp_segment_dict[temp_position[0]]=temp_position[2]
+                        bw, gn = temp_position[1].split('x')
+                        gen_num = '{}x{}'.format(bw.split('.')[0],gn)
+                        ref_segment_dict[gen_num]='-'
+                        temp_segment_dict[gen_num]=temp_position[2]
                         align_segment_dict[ref_position[0]]='-'
                     elif (ref_position[2]=='-' or ref_position[2]=='_') and temp_position[1]=='':
                         ref_segment_dict[ref_position[0]]='-'
                         temp_segment_dict[str(temp_position[4])]=temp_position[2]
                         align_segment_dict[ref_position[0]]='-'
                     elif ref_position[2]=='_' and temp_position[1]!=False:
+                        bw, gn = temp_position[1].split('x')
+                        gen_num = '{}x{}'.format(bw.split('.')[0],gn)
                         ref_segment_dict[ref_position[0]]='x'
-                        temp_segment_dict[temp_position[0]]=temp_position[2]
+                        temp_segment_dict[gen_num]=temp_position[2]
                         align_segment_dict[ref_position[0]]='x'
     
                 self.reference_dict[ref_seglab] = ref_segment_dict
