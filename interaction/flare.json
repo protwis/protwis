@@ -1,0 +1,4575 @@
+{
+  "name": "GPCRome",
+  "trials": 0,
+  "crystal_sum": 137,
+  "children": [
+    {
+      "crystal_sum": 123,
+      "group": 0,
+      "name": "Class A (Rhodopsin)",
+      "family_sum_approved": 749,
+      "family_sum_trials": 461,
+      "trials": 0,
+      "font": "13px sans-serif",
+      "establishment": 3,
+      "children": [
+        {
+          "crystal_sum": 0,
+          "name": "Alicarboxylic acid",
+          "family_sum_approved": 0,
+          "family_sum_trials": 6,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 0,
+              "name": "Hydroxycarboxylic acid",
+              "family_sum_approved": 0,
+              "family_sum_trials": 6,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "hcar1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "hcar2",
+                  "trials": 3,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "hcar3",
+                  "trials": 3,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Oxoglutarate",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "oxgr1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Succinate",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "sucr1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        },
+        {
+          "crystal_sum": 46,
+          "name": "Aminergic",
+          "family_sum_approved": 563,
+          "family_sum_trials": 214,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 4,
+              "name": "5-Hydroxytryptamine",
+              "family_sum_approved": 97,
+              "family_sum_trials": 68,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "5ht1a",
+                  "trials": 10,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 13
+                },
+                {
+                  "name": "5ht1b",
+                  "trials": 2,
+                  "crystal_structure": 2,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 10
+                },
+                {
+                  "name": "5ht1d",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 10
+                },
+                {
+                  "name": "5ht1e",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                },
+                {
+                  "name": "5ht1f",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 3
+                },
+                {
+                  "name": "5ht2a",
+                  "trials": 21,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 28
+                },
+                {
+                  "name": "5ht2b",
+                  "trials": 10,
+                  "crystal_structure": 2,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 5
+                },
+                {
+                  "name": "5ht2c",
+                  "trials": 9,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 14
+                },
+                {
+                  "name": "5ht4r",
+                  "trials": 5,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 2
+                },
+                {
+                  "name": "5ht5a",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                },
+                {
+                  "name": "5ht5a",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                },
+                {
+                  "name": "5ht6r",
+                  "trials": 7,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 4
+                },
+                {
+                  "name": "5ht7r",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 5
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 7,
+              "name": "Acetylcholine (musc.)",
+              "family_sum_approved": 137,
+              "family_sum_trials": 17,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "acm1",
+                  "trials": 7,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 50
+                },
+                {
+                  "name": "acm2",
+                  "trials": 3,
+                  "crystal_structure": 3,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 32
+                },
+                {
+                  "name": "acm3",
+                  "trials": 5,
+                  "crystal_structure": 4,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 25
+                },
+                {
+                  "name": "acm4",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 16
+                },
+                {
+                  "name": "acm5",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 14
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 33,
+              "name": "Adrenoceptors",
+              "family_sum_approved": 176,
+              "family_sum_trials": 65,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "ada1a",
+                  "trials": 9,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 39
+                },
+                {
+                  "name": "ada1b",
+                  "trials": 6,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 21
+                },
+                {
+                  "name": "ada1d",
+                  "trials": 5,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 14
+                },
+                {
+                  "name": "ada2a",
+                  "trials": 8,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 25
+                },
+                {
+                  "name": "ada2b",
+                  "trials": 5,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 12
+                },
+                {
+                  "name": "ada2c",
+                  "trials": 5,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 12
+                },
+                {
+                  "name": "adrb1",
+                  "trials": 7,
+                  "crystal_structure": 17,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 28
+                },
+                {
+                  "name": "adrb2",
+                  "trials": 17,
+                  "crystal_structure": 16,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 23
+                },
+                {
+                  "name": "adrb3",
+                  "trials": 3,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 2
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 1,
+              "name": "Dopamine",
+              "family_sum_approved": 93,
+              "family_sum_trials": 48,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "drd1",
+                  "trials": 7,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 20
+                },
+                {
+                  "name": "drd2",
+                  "trials": 24,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 44
+                },
+                {
+                  "name": "drd3",
+                  "trials": 9,
+                  "crystal_structure": 1,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 12
+                },
+                {
+                  "name": "drd4",
+                  "trials": 5,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 11
+                },
+                {
+                  "name": "drd5",
+                  "trials": 3,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 6
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 1,
+              "name": "Histamine",
+              "family_sum_approved": 58,
+              "family_sum_trials": 16,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "hrh1",
+                  "trials": 11,
+                  "crystal_structure": 1,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 49
+                },
+                {
+                  "name": "hrh2",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 8
+                },
+                {
+                  "name": "hrh3",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "hrh4",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Trace amine",
+              "family_sum_approved": 2,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "taar1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 2
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        },
+        {
+          "crystal_sum": 6,
+          "name": "Lipid",
+          "family_sum_approved": 29,
+          "family_sum_trials": 52,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 0,
+              "name": "Cannabinoid",
+              "family_sum_approved": 7,
+              "family_sum_trials": 16,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "cnr1",
+                  "trials": 9,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 4
+                },
+                {
+                  "name": "cnr2",
+                  "trials": 7,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 3
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 1,
+              "name": "Free fatty acid",
+              "family_sum_approved": 0,
+              "family_sum_trials": 1,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "ffar1",
+                  "trials": 0,
+                  "crystal_structure": 1,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ffar2",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "ffar3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ffar4",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr42",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "GPR18/55/119",
+              "family_sum_approved": 0,
+              "family_sum_trials": 4,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "gp119",
+                  "trials": 4,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr18",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr55",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Leukotriene",
+              "family_sum_approved": 3,
+              "family_sum_trials": 3,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "cltr1",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 3
+                },
+                {
+                  "name": "cltr2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "lt4r1",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "lt4r2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "oxer1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "oxer1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 3,
+              "name": "Lysophospholipid",
+              "family_sum_approved": 0,
+              "family_sum_trials": 7,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "lpar1",
+                  "trials": 5,
+                  "crystal_structure": 3,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "lpar2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "lpar3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "lpar4",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "lpar5",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "lpar6",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 2,
+              "name": "Lysophospholipid",
+              "family_sum_approved": 1,
+              "family_sum_trials": 6,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "s1pr1",
+                  "trials": 6,
+                  "crystal_structure": 2,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                },
+                {
+                  "name": "s1pr2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "s1pr3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "s1pr4",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "s1pr5",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Platelet-activating",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "ptafr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Prostanoid",
+              "family_sum_approved": 18,
+              "family_sum_trials": 15,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "pd2r",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "pd2r2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "pe2r1",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 5
+                },
+                {
+                  "name": "pe2r2",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 2
+                },
+                {
+                  "name": "pe2r3",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 2
+                },
+                {
+                  "name": "pe2r4",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                },
+                {
+                  "name": "pf2r",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 3
+                },
+                {
+                  "name": "pi2r",
+                  "trials": 4,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 5
+                },
+                {
+                  "name": "ta2r",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        },
+        {
+          "crystal_sum": 0,
+          "name": "Melatonin",
+          "family_sum_approved": 2,
+          "family_sum_trials": 6,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 0,
+              "name": "Melatonin",
+              "family_sum_approved": 2,
+              "family_sum_trials": 6,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "mtr1a",
+                  "trials": 3,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                },
+                {
+                  "name": "mtr1b",
+                  "trials": 3,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        },
+        {
+          "crystal_sum": 19,
+          "name": "Nucleotide",
+          "family_sum_approved": 15,
+          "family_sum_trials": 39,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 14,
+              "name": "Adenosine",
+              "family_sum_approved": 10,
+              "family_sum_trials": 25,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "aa1r",
+                  "trials": 9,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 3
+                },
+                {
+                  "name": "aa2ar",
+                  "trials": 10,
+                  "crystal_structure": 14,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 4
+                },
+                {
+                  "name": "aa2br",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 2
+                },
+                {
+                  "name": "aa3r",
+                  "trials": 4,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 5,
+              "name": "P2Y",
+              "family_sum_approved": 5,
+              "family_sum_trials": 14,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "p2ry1",
+                  "trials": 1,
+                  "crystal_structure": 2,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "p2ry2",
+                  "trials": 4,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "p2ry4",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "p2ry6",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "p2y11",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "p2y12",
+                  "trials": 3,
+                  "crystal_structure": 3,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 5
+                },
+                {
+                  "name": "p2y13",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "p2y14",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        },
+        {
+          "crystal_sum": 0,
+          "name": "Orphan",
+          "family_sum_approved": 0,
+          "family_sum_trials": 6,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 0,
+              "name": "Class A orphans",
+              "family_sum_approved": 0,
+              "family_sum_trials": 6,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "etbr2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp101",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp101",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp132",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp135",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp139",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp141",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp142",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp146",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp148",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp149",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp150",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp151",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp152",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp153",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp160",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp161",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp162",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp171",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp173",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp174",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp176",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp182",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp183",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr12",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr15",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr17",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr17",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr19",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr20",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr21",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr22",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr25",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr26",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr27",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr31",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr32",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr33",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr34",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr35",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr37",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr39",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr39",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr4",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr45",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr52",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr52",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr6",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr61",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr62",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr63",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr75",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr78",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr78",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr82",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr83",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr84",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr85",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr87",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr88",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "lgr4",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "lgr5",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "lgr6",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "mas",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "mas1l",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "mrgrd",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "mrgre",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "mrgrf",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "mrgrg",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "mrgx1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "mrgx2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "mrgx3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "mrgx4",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "mrgx4",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "mrgx4",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "mrgx4",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "mtr1l",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ogr1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "p2ry8",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "p2y10",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "psyr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "taar2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "taar3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "taar3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "taar5",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "taar6",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "taar8",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "taar9",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        },
+        {
+          "crystal_sum": 0,
+          "name": "Other",
+          "family_sum_approved": 0,
+          "family_sum_trials": 0,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 0,
+              "name": "Unclassified",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "taar9",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        },
+        {
+          "crystal_sum": 16,
+          "name": "Peptide",
+          "family_sum_approved": 125,
+          "family_sum_trials": 101,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 2,
+              "name": "Angiotensin",
+              "family_sum_approved": 7,
+              "family_sum_trials": 9,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "agtr1",
+                  "trials": 6,
+                  "crystal_structure": 2,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 7
+                },
+                {
+                  "name": "agtr2",
+                  "trials": 3,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Apelin",
+              "family_sum_approved": 0,
+              "family_sum_trials": 1,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "apj",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Bombesin",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "brs3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "grpr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "nmbr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Bradykinin",
+              "family_sum_approved": 1,
+              "family_sum_trials": 1,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "bkrb1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "bkrb2",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Cholecystokinin",
+              "family_sum_approved": 2,
+              "family_sum_trials": 1,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "cckar",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                },
+                {
+                  "name": "gasr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Complement",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "c3ar",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "c5ar1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "c5ar2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Endothelin",
+              "family_sum_approved": 5,
+              "family_sum_trials": 6,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "ednra",
+                  "trials": 6,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 3
+                },
+                {
+                  "name": "ednrb",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 2
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Formylpeptide",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "fpr1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "fpr2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "fpr3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Galanin",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "galr1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "galr2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "galr3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Ghrelin",
+              "family_sum_approved": 0,
+              "family_sum_trials": 4,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "ghsr",
+                  "trials": 4,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Gonadotrophin",
+              "family_sum_approved": 15,
+              "family_sum_trials": 9,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "gnrhr",
+                  "trials": 5,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 9
+                },
+                {
+                  "name": "gnrr2",
+                  "trials": 4,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 6
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Kisspeptin",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "kissr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Melanin-conc.",
+              "family_sum_approved": 0,
+              "family_sum_trials": 1,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "mchr1",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "mchr2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Melanocortin",
+              "family_sum_approved": 2,
+              "family_sum_trials": 12,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "acthr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 2
+                },
+                {
+                  "name": "mc3r",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "mc4r",
+                  "trials": 5,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "mc5r",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "mshr",
+                  "trials": 5,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Motilin",
+              "family_sum_approved": 0,
+              "family_sum_trials": 2,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "mtlr",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Neuromedin U",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "nmur1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "nmur2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Neuropeptide FF/ AF",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "npff1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "npff2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Neuropeptide S",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "npsr1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Neuropeptide W/ B",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "npbw1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "npbw2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Neuropeptide Y",
+              "family_sum_approved": 0,
+              "family_sum_trials": 4,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "npy1r",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "npy2r",
+                  "trials": 3,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "npy4r",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "npy5r",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "npy6r",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 5,
+              "name": "Neurotensin",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "ntr1",
+                  "trials": 0,
+                  "crystal_structure": 5,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ntr2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 7,
+              "name": "Opioid",
+              "family_sum_approved": 72,
+              "family_sum_trials": 26,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "oprd",
+                  "trials": 6,
+                  "crystal_structure": 4,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 19
+                },
+                {
+                  "name": "oprk",
+                  "trials": 9,
+                  "crystal_structure": 1,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 19
+                },
+                {
+                  "name": "oprm",
+                  "trials": 10,
+                  "crystal_structure": 1,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 34
+                },
+                {
+                  "name": "oprx",
+                  "trials": 1,
+                  "crystal_structure": 1,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 1,
+              "name": "Orexin",
+              "family_sum_approved": 0,
+              "family_sum_trials": 3,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "ox1r",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "ox2r",
+                  "trials": 2,
+                  "crystal_structure": 1,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Peptide P518",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "qrfpr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Prolactin",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "prlhr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 1,
+              "name": "Proteinase-activated",
+              "family_sum_approved": 0,
+              "family_sum_trials": 3,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "par1",
+                  "trials": 1,
+                  "crystal_structure": 1,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "par2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "par3",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "par4",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Relaxin family",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "rl3r1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "rl3r2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "rxfp1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "rxfp2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Somatostatin",
+              "family_sum_approved": 7,
+              "family_sum_trials": 7,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "ssr1",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 2
+                },
+                {
+                  "name": "ssr2",
+                  "trials": 3,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 2
+                },
+                {
+                  "name": "ssr3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ssr4",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "ssr5",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 3
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Tachykinin",
+              "family_sum_approved": 1,
+              "family_sum_trials": 5,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "nk1r",
+                  "trials": 3,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                },
+                {
+                  "name": "nk2r",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "nk3r",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Thyrotropin",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "trfr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "trfr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Urotensin",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "ur2r",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Vasopressin/Oxytocin",
+              "family_sum_approved": 13,
+              "family_sum_trials": 7,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "oxyr",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                },
+                {
+                  "name": "v1ar",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 4
+                },
+                {
+                  "name": "v1br",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 3
+                },
+                {
+                  "name": "v2r",
+                  "trials": 3,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 5
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        },
+        {
+          "crystal_sum": 7,
+          "name": "Protein",
+          "family_sum_approved": 15,
+          "family_sum_trials": 36,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 0,
+              "name": "Chemerin",
+              "family_sum_approved": 0,
+              "family_sum_trials": 2,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "cml1",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 7,
+              "name": "Chemokine",
+              "family_sum_approved": 3,
+              "family_sum_trials": 29,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "ackr1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ackr2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ackr3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ackr4",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ccr1",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "ccr10",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ccr2",
+                  "trials": 6,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "ccr3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ccr4",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "ccr5",
+                  "trials": 2,
+                  "crystal_structure": 1,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 2
+                },
+                {
+                  "name": "ccr6",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ccr7",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ccr8",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ccr9",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "ccrl2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "cx3c1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "cxcr1",
+                  "trials": 4,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "cxcr2",
+                  "trials": 4,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "cxcr3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "cxcr4",
+                  "trials": 9,
+                  "crystal_structure": 6,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                },
+                {
+                  "name": "cxcr5",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "cxcr6",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "xcr1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Glycoprotein",
+              "family_sum_approved": 12,
+              "family_sum_trials": 5,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "fshr",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 5
+                },
+                {
+                  "name": "lshr",
+                  "trials": 3,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 6
+                },
+                {
+                  "name": "tshr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Prokineticin",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "pkr1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "pkr2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        },
+        {
+          "crystal_sum": 29,
+          "name": "Sensory",
+          "family_sum_approved": 0,
+          "family_sum_trials": 0,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 29,
+              "name": "Opsins",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "opn3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "opn4",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "opn5",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "opsb",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "opsd",
+                  "trials": 0,
+                  "crystal_structure": 29,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "opsg",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "opsr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        },
+        {
+          "crystal_sum": 0,
+          "name": "Steroid",
+          "family_sum_approved": 0,
+          "family_sum_trials": 1,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 0,
+              "name": "Bile acid",
+              "family_sum_approved": 0,
+              "family_sum_trials": 1,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "gpbar",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Estrogen",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "gper1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        }
+      ],
+      "approved": 0
+    },
+    {
+      "crystal_sum": 2,
+      "group": 1,
+      "name": "Class B1 (Secretin)",
+      "family_sum_approved": 26,
+      "family_sum_trials": 43,
+      "trials": 0,
+      "font": "13px sans-serif",
+      "establishment": 3,
+      "children": [
+        {
+          "crystal_sum": 2,
+          "name": "Peptide",
+          "family_sum_approved": 26,
+          "family_sum_trials": 43,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 0,
+              "name": "Calcitonin",
+              "family_sum_approved": 12,
+              "family_sum_trials": 8,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "calcr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 3
+                },
+                {
+                  "name": "calcr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 3
+                },
+                {
+                  "name": "calcr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 3
+                },
+                {
+                  "name": "calcr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 3
+                },
+                {
+                  "name": "calrl",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "calrl",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "calrl",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "calrl",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 1,
+              "name": "Corticotropin",
+              "family_sum_approved": 0,
+              "family_sum_trials": 3,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "crfr1",
+                  "trials": 2,
+                  "crystal_structure": 1,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "crfr2",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 1,
+              "name": "Glucagon family",
+              "family_sum_approved": 9,
+              "family_sum_trials": 25,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "ghrhr",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 2
+                },
+                {
+                  "name": "gipr",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "glp1r",
+                  "trials": 16,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 3
+                },
+                {
+                  "name": "glp2r",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                },
+                {
+                  "name": "glr",
+                  "trials": 4,
+                  "crystal_structure": 1,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 2
+                },
+                {
+                  "name": "sctr",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "Parathyroid",
+              "family_sum_approved": 5,
+              "family_sum_trials": 7,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "pth1r",
+                  "trials": 4,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 4
+                },
+                {
+                  "name": "pth2r",
+                  "trials": 3,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 0,
+              "name": "VIP and PACAP",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "pacr",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "vipr1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "vipr2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        }
+      ],
+      "approved": 0
+    },
+    {
+      "crystal_sum": 0,
+      "group": 2,
+      "name": "Class B2 (Adhesion)",
+      "family_sum_approved": 0,
+      "family_sum_trials": 0,
+      "trials": 0,
+      "font": "13px sans-serif",
+      "establishment": 3,
+      "children": [
+        {
+          "crystal_sum": 0,
+          "name": "Orphan",
+          "family_sum_approved": 0,
+          "family_sum_trials": 0,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 0,
+              "name": "Adhesion orphans",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "agra1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agra3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrb2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrb3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrd1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrd2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agre1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agre2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agre3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agre4",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrf1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrf2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrf3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrf4",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrf5",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrg2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrg3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrg4",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrg5",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrg7",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrl2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "agrl4",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "bai1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "cd97",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "celr1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "celr2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "celr3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp124",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp126",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr56",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpr98",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        }
+      ],
+      "approved": 0
+    },
+    {
+      "crystal_sum": 2,
+      "group": 3,
+      "name": "Class C (Glutamate)",
+      "family_sum_approved": 12,
+      "family_sum_trials": 36,
+      "trials": 0,
+      "font": "13px sans-serif",
+      "establishment": 3,
+      "children": [
+        {
+          "crystal_sum": 2,
+          "name": "Amino acid",
+          "family_sum_approved": 11,
+          "family_sum_trials": 31,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 0,
+              "name": "GABAB",
+              "family_sum_approved": 10,
+              "family_sum_trials": 13,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "gabr1",
+                  "trials": 5,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 4
+                },
+                {
+                  "name": "gabr2",
+                  "trials": 4,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 3
+                },
+                {
+                  "name": "gabr2",
+                  "trials": 4,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 3
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 2,
+              "name": "Metabotropic glutamate",
+              "family_sum_approved": 1,
+              "family_sum_trials": 18,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "grm1",
+                  "trials": 1,
+                  "crystal_structure": 1,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "grm2",
+                  "trials": 4,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "grm3",
+                  "trials": 3,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "grm4",
+                  "trials": 2,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "grm5",
+                  "trials": 5,
+                  "crystal_structure": 1,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                },
+                {
+                  "name": "grm6",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "grm7",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "grm8",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        },
+        {
+          "crystal_sum": 0,
+          "name": "Ion",
+          "family_sum_approved": 1,
+          "family_sum_trials": 5,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 0,
+              "name": "Calcium-sensing",
+              "family_sum_approved": 1,
+              "family_sum_trials": 5,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "casr",
+                  "trials": 5,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                },
+                {
+                  "name": "gpc6a",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        },
+        {
+          "crystal_sum": 0,
+          "name": "Orphan",
+          "family_sum_approved": 0,
+          "family_sum_trials": 0,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 0,
+              "name": "Class C Orphans",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "gp156",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp158",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp179",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpc5b",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpc5c",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gpc5d",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "rai3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        },
+        {
+          "crystal_sum": 0,
+          "name": "Sensory",
+          "family_sum_approved": 0,
+          "family_sum_trials": 0,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 0,
+              "name": "Taste 1",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "ts1r1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ts1r2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ts1r3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        }
+      ],
+      "approved": 0
+    },
+    {
+      "crystal_sum": 10,
+      "group": 4,
+      "name": "Class F (Frizzled)",
+      "family_sum_approved": 2,
+      "family_sum_trials": 5,
+      "trials": 0,
+      "font": "13px sans-serif",
+      "establishment": 3,
+      "children": [
+        {
+          "crystal_sum": 10,
+          "name": "Protein",
+          "family_sum_approved": 2,
+          "family_sum_trials": 5,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 5,
+              "name": "Frizzled",
+              "family_sum_approved": 1,
+              "family_sum_trials": 3,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "fzd1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "fzd10",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "fzd2",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "fzd3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "fzd4",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "fzd5",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "fzd6",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "fzd7",
+                  "trials": 1,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 7,
+                  "approved": 0
+                },
+                {
+                  "name": "fzd8",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "fzd9",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "smo",
+                  "trials": 2,
+                  "crystal_structure": 5,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                }
+              ],
+              "approved": 0
+            },
+            {
+              "crystal_sum": 5,
+              "name": "Smoothened",
+              "family_sum_approved": 1,
+              "family_sum_trials": 2,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "smo",
+                  "trials": 2,
+                  "crystal_structure": 5,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 1
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        }
+      ],
+      "approved": 0
+    },
+    {
+      "crystal_sum": 0,
+      "group": 5,
+      "name": "Taste 2",
+      "family_sum_approved": 0,
+      "family_sum_trials": 0,
+      "trials": 0,
+      "font": "13px sans-serif",
+      "establishment": 3,
+      "children": [
+        {
+          "crystal_sum": 0,
+          "name": "Sensory",
+          "family_sum_approved": 0,
+          "family_sum_trials": 0,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 0,
+              "name": "Taste 2",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "t2r10",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r13",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r14",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r16",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r19",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r20",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r30",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r31",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r38",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r39",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r40",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r41",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r42",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r43",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r45",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r46",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r50",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "t2r60",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ta2r1",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ta2r3",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ta2r4",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ta2r5",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ta2r7",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ta2r8",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "ta2r9",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        }
+      ],
+      "approved": 0
+    },
+    {
+      "crystal_sum": 0,
+      "group": 6,
+      "name": "Other GPCRs",
+      "family_sum_approved": 0,
+      "family_sum_trials": 0,
+      "trials": 0,
+      "font": "13px sans-serif",
+      "establishment": 3,
+      "children": [
+        {
+          "crystal_sum": 0,
+          "name": "Orphan",
+          "family_sum_approved": 0,
+          "family_sum_trials": 0,
+          "trials": 0,
+          "font": "12px sans-serif",
+          "establishment": 3,
+          "children": [
+            {
+              "crystal_sum": 0,
+              "name": "Other GPCR orphans",
+              "family_sum_approved": 0,
+              "family_sum_trials": 0,
+              "trials": 0,
+              "font": "12px sans-serif",
+              "establishment": 3,
+              "children": [
+                {
+                  "name": "gp143",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                },
+                {
+                  "name": "gp157",
+                  "trials": 0,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 2,
+                  "approved": 0
+                }
+              ],
+              "approved": 0
+            }
+          ],
+          "approved": 0
+        }
+      ],
+      "approved": 0
+    }
+  ],
+  "family_sum_approved": 789,
+  "family_sum_trials": 545,
+  "font": "12px sans-serif",
+  "establishment": 2,
+  "approved": 0
+}
