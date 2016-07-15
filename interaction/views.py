@@ -1257,8 +1257,6 @@ class TargetSelection(AbsTargetSelection):
 
 def Ginterface(request, protein = None):
 
-    context = OrderedDict()
-
     residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=protein).prefetch_related('protein_segment','display_generic_number','generic_number')
     SnakePlot = DrawSnakePlot(
                 residuelist, "Class A (Rhodopsin)", protein, nobuttons=1)
@@ -1313,5 +1311,15 @@ def Ginterface(request, protein = None):
 
 
 def drugmapping(request):
+    
+    context = dict()
 
-    return render(request, 'interaction/drugmapping.html')
+    with open('/protwis/sites/protwis/interaction/flare.json') as data_file:    
+        drugdata = json.load(data_file)
+    
+    context["drugdata"] = drugdata
+
+    return render(request, 'interaction/drugmapping.html', {'drugdata':context})
+
+
+
