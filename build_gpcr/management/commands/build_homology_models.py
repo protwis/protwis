@@ -630,17 +630,13 @@ class HomologyModeling(object):
                                             Bulge = Bulges(gn)
                                             bulge_template = Bulge.find_bulge_template(self.similarity_table_all, 
                                                                                        bulge_in_reference=False)
-                                            bulge_site = OrderedDict([
-                                                (parse.gn_indecer(gn,'x',-2).replace('x','.'), 
-                                                 main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-2).replace('x','.')]),
-                                                (parse.gn_indecer(gn,'x',-1).replace('x','.'), 
-                                                 main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',-1).replace('x','.')]),
-                                                (gn.replace('x','.'), 
-                                                 main_pdb_array[ref_seg][gn.replace('x','.')]),
-                                                (parse.gn_indecer(gn,'x',+1).replace('x','.'), 
-                                                 main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+1).replace('x','.')]),
-                                                (parse.gn_indecer(gn,'x',+2).replace('x','.'), 
-                                                 main_pdb_array[ref_seg][parse.gn_indecer(gn,'x',+2).replace('x','.')])]) 
+                                            l = list(main_pdb_array[temp_seg].keys())
+                                            this = l.index(gn.replace('x','.'))
+                                            bulge_site = OrderedDict([(l[this-2],main_pdb_array[ref_seg][l[this-2]]),
+                                                                      (l[this-1],main_pdb_array[ref_seg][l[this-1]]),
+                                                                      (l[this],main_pdb_array[ref_seg][l[this]]),
+                                                                      (l[this+1],main_pdb_array[ref_seg][l[this+1]]),
+                                                                      (l[this+2],main_pdb_array[ref_seg][l[this+2]])])
                                             superpose = sp.BulgeConstrictionSuperpose(bulge_site, bulge_template)
                                             new_residues = superpose.run()
                                             switch_res = 0
@@ -2184,6 +2180,15 @@ class Bulges(object):
         self.gn = gn
         self.bulge_templates = []
         self.template = None
+        
+    def check_range(self, gn_list, protein_conformation, num):
+        check = [dgn(i,protein_conformation) for i in gn_list]
+        check_list = [i.sequence_number for i in list(Residue.objects.filter(protein_conformation=protein_conformation,display_generic_number__label__in=check))]
+        ref_list = list(range(check_list[0],check_list[0]+num))
+        if ref_list==check_list:
+            return 1
+        else:
+            return 0
     
     def find_bulge_template(self, similarity_table, bulge_in_reference):
         ''' Searches for bulge template, returns residues of template (5 residues if the bulge is in the reference, 4
@@ -2204,8 +2209,8 @@ class Bulges(object):
                 try:
                     for anomaly in this_anomaly:
                         if anomaly in anomaly_list:
-                            gn_list = [parse.gn_indecer(gn,'x',-2),parse.gn_indecer(gn,'x',-1),gn,
-                                       parse.gn_indecer(gn,'x',+1),parse.gn_indecer(gn,'x',+2)]
+                            gn_list = [parse.gn_indecer(gn,'x',-2), parse.gn_indecer(gn,'x',-1), gn,
+                                       parse.gn_indecer(gn,'x',+1), parse.gn_indecer(gn,'x',+2)]
                             alt_bulge = parse.fetch_residues_from_pdb(structure, gn_list)
                             self.template = structure
                             return alt_bulge
@@ -2222,7 +2227,8 @@ class Bulges(object):
                     if 'no' not in suitable_temp:
                         gn_list = [parse.gn_indecer(gn,'x',-2), parse.gn_indecer(gn,'x',-1),
                                    parse.gn_indecer(gn,'x',+1), parse.gn_indecer(gn,'x',+2)]
-                        print(gn_list)
+                        if self.check_range(gn_list,structure.protein_conformation,4)==0:
+                            raise Exception()                      
                         alt_bulge = parse.fetch_residues_from_pdb(structure, gn_list)
                         self.template = structure
                         return alt_bulge
@@ -2231,7 +2237,7 @@ class Bulges(object):
         return None
             
             
-class Constrictions(object):
+class Constrictions(Bulges):
     ''' Class to handle constrictions in GPCRs.
     '''
     def __init__(self, gn):
@@ -2258,8 +2264,8 @@ class Constrictions(object):
                 try:
                     for anomaly in this_anomaly:
                         if anomaly in anomaly_list:
-                            gn_list = [parse.gn_indecer(gn,'x',-2),parse.gn_indecer(gn,'x',-1),
-                                       parse.gn_indecer(gn,'x',+1),parse.gn_indecer(gn,'x',+2)]
+                            gn_list = [parse.gn_indecer(gn,'x',-2), parse.gn_indecer(gn,'x',-1),
+                                       parse.gn_indecer(gn,'x',+1), parse.gn_indecer(gn,'x',+2)]
                             alt_const = parse.fetch_residues_from_pdb(structure, gn_list)
                             self.template = structure
                             return alt_const
@@ -2274,7 +2280,7 @@ class Constrictions(object):
                         else:
                             suitable_temp.append('no')
                     if 'no' not in suitable_temp:
-                        gn_list = [parse.gn_indecer(gn,'x',-2), parse.gn_indecer(gn,'x',-1),gn,
+                        gn_list = [parse.gn_indecer(gn,'x',-2), parse.gn_indecer(gn,'x',-1), gn,
                                    parse.gn_indecer(gn,'x',+1), parse.gn_indecer(gn,'x',+2)]
                         alt_const = parse.fetch_residues_from_pdb(structure, gn_list)
                         self.template = structure
@@ -2321,14 +2327,12 @@ class GPCRDBParsingPDB(object):
             @param direction: int, n'th position from gn (+ or -)
         '''
         split = self.gn_num_extract(gn, delimiter)
-        if split[0]!='/':
-            if len(str(split[1]))==2:
-                return str(split[0])+delimiter+str(split[1]+direction)
-            elif len(str(split[1]))==3:
-                if direction<0:
-                    direction += 1
-                return str(split[0])+delimiter+str(int(str(split[1])[:2])+direction)
-        return '/'
+        if len(str(split[1]))==2:
+            return str(split[0])+delimiter+str(split[1]+direction)
+        elif len(str(split[1]))==3:
+            if direction<0:
+                direction += 1
+            return str(split[0])+delimiter+str(int(str(split[1])[:2])+direction)
 
     def fetch_residues_from_pdb(self, structure, generic_numbers, modify_bulges=False, just_nums=False):
         ''' Fetches specific lines from pdb file by generic number (if generic number is
