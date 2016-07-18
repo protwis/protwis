@@ -2,6 +2,7 @@
 {% load staticfiles %}
 {% load structure_extras %}
 {% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/gprottree.css' %}"media="screen" />
 {% endblock %}
 {% block content %}
 
@@ -10,7 +11,6 @@
 <link href="{% static 'home/css/color_picker.css' %}" rel="stylesheet" media="screen">
 <link href="{% static 'home/css/bootstrap-responsive.css' %}"  rel="stylesheet" media="screen">
 
-<link rel="stylesheet" href="{% static 'home/css/gprottree.css' %}"media="screen" />
 
 <script src="{% static 'home/js/jquery.min.js' %}"></script>
 
@@ -420,7 +420,7 @@
     <div class="col-md-12">
             <div class="panel-body">
                     <div class='col-md-10'>
-                        <p><strong>GPCR selectivity tree.</strong> Concentric circles illustrate the G protein-coupling selectivity of each GPCR: the four dots depict both primary and secondary G protein coupling (from inside to outside: Gs, Gi/o, Gq/11, G12/13). Tree nodes can be selected to retrieve clade-specific receptor sets, which can be used in dedicated sequence alignments.</p>
+                        <p><strong>GPCR selectivity tree.</strong> Concentric circles illustrate the G protein-coupling selectivity of each GPCR: the four dots depict both primary and secondary G protein coupling (from inside to outside: Gs, Gi/o, Gq/11, G12/13). Tree nodes can be highlighted and selected to retrieve clade-specific receptor sets, which can be used in dedicated segment specific sequence alignments.</p>
                     </div>
                 </div>
             </div>
