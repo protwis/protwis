@@ -331,7 +331,7 @@ if (click_count>0){
       var subtreeArray = selectSubtree(node, subtree);
 
       for (i = 0; i < subtreeArray.length; i++)
-        subtreeArray[i] = subtreeArray[i]+"_human"
+        subtreeArray[i] = subtreeArray[i].toLowerCase()+"_human"
 
 
   var subnode = vis.selectAll('g.inner.node')
@@ -349,7 +349,7 @@ if (click_count>0){
     .style("fill", "#000000");
 
 
-      console.log(subtreeArray);
+      // console.log(subtreeArray);
 
       makeUL(subtreeArray);
 
@@ -404,7 +404,7 @@ if (click_count % 2 == 0){
     subnode1=vis.selectAll('g#sub1.inner.node')
     .attr("id", "deselect");
 
-      console.log(subtreeArray);
+      // console.log(subtreeArray);
 
       makeUL(subtreeArray);
 
@@ -426,7 +426,7 @@ if (click_count % 2 == 0){
     subnode2=vis.selectAll('g#sub2.inner.node')
     .attr("id", "deselect");
 
-      console.log(subtreeArray);
+      // console.log(subtreeArray);
       makeUL(subtreeArray);
       
 
