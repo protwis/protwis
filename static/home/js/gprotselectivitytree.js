@@ -148,7 +148,7 @@ var node = vis.selectAll("g.node")
 
 var innernodes= vis.selectAll('g.inner.node')
       .append("circle")
-      .attr("r", 2.9);
+      .attr("r", 2.5);
 
 
 DrawSelectivity(selectivitydata);
@@ -161,43 +161,42 @@ function DrawSelectivity(selectivityinfo) {
 for (var x in selectivityinfo){
     //console.log(selectivityinfo[x]);
 
-     if(selectivityinfo[x].indexOf("Gi/Go family") >= 0){
+    var spacer = 8
 
+
+    if(selectivityinfo[x].indexOf("Gs family") >= 0){
     var leafwithname = vis.selectAll('g.X'+x)
         .append("circle")
-        .attr("r", 2.5)
+        .attr("r", 3.25)
+        .style("fill", "blue")
+        .attr("transform", "translate(" + (33 + spacer) + ",0)");
+
+      }
+
+    if(selectivityinfo[x].indexOf("Gi/Go family") >= 0){
+    var leafwithname = vis.selectAll('g.X'+x)
+        .append("circle")
+        .attr("r", 3.25)
         .style("fill", "red")
-        .attr("transform", "translate(" + (40) + ",0)");
+        .attr("transform", "translate(" + (33  + 2*spacer) + ",0)");
 
       }
 
     if(selectivityinfo[x].indexOf("Gq/G11 family") >= 0){
-
     var leafwithname = vis.selectAll('g.X'+x)
         .append("circle")
-        .attr("r", 2.5)
+        .attr("r", 3.25)
         .style("fill", "black")
-        .attr("transform", "translate(" + (45) + ",0)");
+        .attr("transform", "translate(" + (33 + 3*spacer) + ",0)");
 
       }
 
     if( selectivityinfo[x].indexOf("G12/G13 family") >= 0){
-
     var leafwithname = vis.selectAll('g.X'+x)
         .append("circle")
-        .attr("r", 2.5)
+        .attr("r", 3.25)
         .style("fill", "green")
-        .attr("transform", "translate(" + (50) + ",0)");
-
-      }
-
-    if(selectivityinfo[x].indexOf("Gs family") >= 0){
-
-    var leafwithname = vis.selectAll('g.X'+x)
-        .append("circle")
-        .attr("r", 2.5)
-        .style("fill", "blue")
-        .attr("transform", "translate(" + (55) + ",0)");
+        .attr("transform", "translate(" + (33 + 4*spacer) + ",0)");
 
       }
 
@@ -237,7 +236,9 @@ node.on("mouseover", function(h){
 //Unhighlight clade when mouse is out of node
 node.on("mouseout", function(u){
 
-  var unhighlight = vis.selectAll("path.link").style("stroke", "grey");
+  var unhighlight = vis.selectAll("path.link")
+    .style("stroke", "#ccc")
+    .style("stroke-width", "1.5");
 });
 
 
@@ -247,7 +248,9 @@ function highlightlink(src,tgt){
                          var flag = (d3.select(d).data()[0].source.name == src && d3.select(d).data()[0].target.name == tgt);
                         return flag;
                       });
-                      d3.selectAll(link).style("stroke", "green");
+                      d3.selectAll(link)
+                        .style("stroke", "#000000")
+                        .style("stroke-width", "2r"); 
                     }
 
 //Recursive function to highlight all links of a subtree
@@ -342,8 +345,8 @@ if (click_count>0){
 
 
     subnode1=vis.selectAll('#sub1').selectAll("circle")
-    .attr("r", 2)
-    .style("fill", "red");
+    .attr("r", 2.5)
+    .style("fill", "#000000");
 
 
       console.log(subtreeArray);
@@ -362,7 +365,7 @@ function doubleclade(node){
   if (click_count%2==0 && click_count>1){
 
   var deselection = vis.selectAll('g.inner.node').selectAll("circle")
-    .attr("r", 2)
+    .attr("r", 2.5)
     .style("fill", "white");
 
   deselection = vis.selectAll('g.inner.node')
@@ -395,7 +398,7 @@ function doubleclade(node){
 if (click_count % 2 == 0){
 
     subnode1=vis.selectAll('#sub1').selectAll("circle")
-    .attr("r", 2)
+    .attr("r", 2.5)
     .style("fill", "red");
 
     subnode1=vis.selectAll('g#sub1.inner.node')
@@ -417,7 +420,7 @@ if (click_count % 2 == 0){
   var subtree = [];
 
     subnode2=vis.selectAll('#sub2').selectAll("circle")
-    .attr("r", 2)
+    .attr("r", 2.5)
     .style("fill", "blue");
 
     subnode2=vis.selectAll('g#sub2.inner.node')
