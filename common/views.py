@@ -1231,7 +1231,7 @@ def ReadTargetInput(request):
     up_names = request.POST['input-targets'].split('\r')
     for up_name in up_names:
         try:
-            o.append(Protein.objects.get(entry_name=up_name.strip()))
+            o.append(Protein.objects.get(entry_name=up_name.strip().lower()))
         except:
             continue
 
