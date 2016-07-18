@@ -15,12 +15,6 @@
   stroke-width: 1.5px;
 }
 
-.link-extensions {
-  fill: none;
-  stroke: #000;
-  stroke-opacity: .25;
-}
-
 circle {
 fill : #100;
 }
