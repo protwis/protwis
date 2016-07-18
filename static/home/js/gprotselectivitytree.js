@@ -1,7 +1,7 @@
 
-var r = 1400 / 2;
- var innerRadius = r - 170;
- var names=0;
+var r = 1200 / 2;
+var innerRadius = r - 170 // change inner radius of tree with this argument
+var names=0; // indexing for all nodes
 
 
 var cluster = d3.layout.cluster()
@@ -31,19 +31,24 @@ function step(d) {
     "L" + t[0] + "," + t[1]);
 }
 
+var rect_dim = (r-90)* 2 ;
+var svg_dim = (r-90)* 2 ;
+
+
 var wrap = d3.select("#selectivitydata").append("svg")
-    .attr("width", r * 2)
-    .attr("height", r * 2)
+    .attr("width", svg_dim)
+    .attr("height", svg_dim)
     .style("-webkit-backface-visibility", "hidden");
 
 // Catch mouse events in Safari.
 wrap.append("rect")
-    .attr("width", r * 2)
-    .attr("height", r * 2)
-    .attr("fill", "none")
+    .attr("width", rect_dim)
+    .attr("height", rect_dim)
+    .attr("fill", "none");
+
 
 var vis = wrap.append("g")
-    .attr("transform", "translate(" + r + "," + r + ")");
+    .attr("transform", "translate(" + rect_dim/2 + "," + rect_dim/2 + ")");
 
 var start = null,
     rotate = 0,
@@ -75,7 +80,7 @@ d3.select(window)
       start = null;
       wrap.style("-webkit-transform", null);
       vis
-          .attr("transform", "translate(" + r + "," + r + ")rotate(" + rotate + ")")
+          .attr("transform", "translate(" + rect_dim/2 + "," + rect_dim/2 + ")rotate(" + rotate + ")")
         .selectAll("text")
           .attr("text-anchor", function(d) { return (d.x + rotate) % 360 < 180 ? "start" : "end"; })
           .attr("transform", function(d) {
