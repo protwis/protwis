@@ -41,6 +41,7 @@
                             { type: "number" }, // sequence similarity
                             { type: "number" }, // sequence identity
                             { type: "select" }, // protein name
+                            { type: "select" }, // protein family
                             { type: "select" }, // class
                             { type: "select" }, // species
                             { type: "text" }, // pdb code
@@ -66,7 +67,7 @@
             $('#superpose_btn').click(function () {
                 if (table.rows('.selected').data().length == 1) {
                     var div = document.createElement("div");
-                    div.innerHTML = table.rows('.selected').data()[0][6];
+                    div.innerHTML = table.rows('.selected').data()[0][7];
                     if (typeof div.innerText !== "undefined") {
                         AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, ''));
                     } else {
@@ -76,7 +77,7 @@
                 var checked_data = table.rows('.alt_selected').data();
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][4];
+                    div.innerHTML = checked_data[i][7];
                     if (typeof div.innerText !== "undefined") {
                         AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
                     } else {
@@ -107,7 +108,7 @@
                 var checked_data = table.rows('.alt_selected').data();
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][6];
+                    div.innerHTML = checked_data[i][7];
                     if (typeof div.innerText !== "undefined") {
                         AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
                     } else {
@@ -121,7 +122,7 @@
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][6];
+                    div.innerHTML = checked_data[i][7];
                     if (typeof div.innerText !== "undefined") {
                         AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
                     } else {
@@ -164,6 +165,7 @@
                         <th class="similarity-th">Sequence similarity</th>
                         <th class="similarity-th">Sequence identity</th>
                         <th class="protein-th">Protein name</th>
+                        <th class="protein-th">Protein family</th>
                         <th class="protein-th">Protein class</th>
                         <th class="protein-th">Species</th>
                         <th class="pdb-th">PDB code</th>
@@ -196,6 +198,7 @@
                         <th></th>
                         <th></th>
                         <th></th>
+                        <th></th>
                     </tr>
                 </thead>
                 {% for structure in structures%}
@@ -208,6 +211,7 @@
                     <td>{{ structure.0 }}</td>
                     <td>{{ structure.1 }}</td>
                     <td>{{ structure.2.protein_conformation.protein.family.name|safe }}</td>
+                    <td>{{ structure.protein_conformation.protein.family.parent.name|safe }}</td>
                     <td>{{ structure.2.protein_conformation.protein.family.parent.parent.parent.name }}</td>
                     <td>{{ structure.2.protein_conformation.protein.species.common_name }}</td>
                     <td class="text-center">
