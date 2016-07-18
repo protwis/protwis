@@ -40,6 +40,9 @@ from io import StringIO, BytesIO
 from Bio.PDB import PDBIO, PDBParser
 import xlsxwriter
 
+######@
+import numpy as np
+
 AA = {'ALA': 'A', 'ARG': 'R', 'ASN': 'N', 'ASP': 'D',
       'CYS': 'C', 'GLN': 'Q', 'GLU': 'E', 'GLY': 'G',
       'HIS': 'H', 'ILE': 'I', 'LEU': 'L', 'LYS': 'K',
@@ -1194,21 +1197,31 @@ def pdb(request):
 def GProtein(request):
 
     context = OrderedDict()
+    i=0
 
     # proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('proteingproteinpair_set')
     gproteins = ProteinGProtein.objects.all().prefetch_related('proteingproteinpair_set')
 
     jsondata = {}
+    selectivitydata = {}
     for gp in gproteins:
         ps = gp.proteingproteinpair_set.all()
+
         if ps:
             jsondata[str(gp)] = []
             for p in ps:
+                if str(p.protein.entry_name).split('_')[0].upper() not in selectivitydata:
+                    selectivitydata[str(p.protein.entry_name).split('_')[0].upper()] = []
+                selectivitydata[str(p.protein.entry_name).split('_')[0].upper()].append(str(gp))
                 # print(p.protein.family.parent.parent.parent)
                 jsondata[str(gp)].append(str(p.protein.entry_name)+'\n')
+
             jsondata[str(gp)] = ''.join(jsondata[str(gp)])
 
+    print(selectivitydata)
+
     context["gdata"] = jsondata
+    context["selectivitydata"] = selectivitydata
 
     return render(request, 'interaction/gprotein.html', context)
 

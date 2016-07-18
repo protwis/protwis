@@ -2,6 +2,7 @@
 {% load staticfiles %}
 {% load structure_extras %}
 {% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/gprottree.css' %}"media="screen" />
 {% endblock %}
 {% block content %}
 
@@ -9,6 +10,7 @@
 <!-- <link href="{% static 'home/css/prettify.css' %}" rel="stylesheet" media="screen"> -->
 <link href="{% static 'home/css/color_picker.css' %}" rel="stylesheet" media="screen">
 <link href="{% static 'home/css/bootstrap-responsive.css' %}"  rel="stylesheet" media="screen">
+
 
 <script src="{% static 'home/js/jquery.min.js' %}"></script>
 
@@ -403,18 +405,27 @@
   }(window.jQuery)
 </script>
 
-<div id="svg_tree">
+
+<script type="text/javascript" charset="utf-8">
+   selectivitydata = {{ selectivitydata|safe }};
+</script>
+
+<div id="selectivitydata">
 </div>
 
-<!-- <div class="row">
+<div class="row">
+</div>
+
+<div class="row">
     <div class="col-md-12">
             <div class="panel-body">
                     <div class='col-md-10'>
-                        <p><strong>GPCR selectivity tree.</strong> Concentric circles illustrate the G protein-coupling selectivity of each GPCR: the four dots depict both primary and secondary G protein coupling (from inside to outside: Gs, Gi/o, Gq/11, G12/13). Tree nodes can be selected to retrieve clade-specific receptor sets, which can be used in dedicated sequence alignments.</p>
+                        <p><strong>GPCR selectivity tree.</strong> Concentric circles illustrate the G protein-coupling selectivity of each GPCR: the four dots depict both primary and secondary G protein coupling (from inside to outside: Gs, Gi/o, Gq/11, G12/13). Tree nodes can be highlighted and selected to retrieve clade-specific receptor sets, which can be used in dedicated segment specific sequence alignments.</p>
                     </div>
                 </div>
             </div>
-</div> -->
+
+</div>
 
 <br>
 <br>
@@ -433,9 +444,12 @@
 {% endblock %}
 {% block addon_js %}
 <script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/newick.js' %}"></script>
+<script src="{% static 'home/js/gprotselectivitytree.js' %}"></script>
 <script src="{% static 'home/js/bootstrap-colorpicker.min.js' %}"></script>
 <script src="{% static 'home/js/canvas2svg.js' %}"></script>
 <script src="{% static 'home/js/jvenn.min.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+
 {% endblock %}
