@@ -9,50 +9,92 @@ addRow('chem_comp');
     showOtherMonths: true
  });
 
-$('.numeric').keyup(function () { 
-    this.value = this.value.replace(/[^0-9\.]/g,'');
-});
+$('.numeric').on('keydown',  function(e){
+    -1!==$.inArray(e.keyCode,[46,8,9,27,13,110,190])||/65|67|86|88/.test(e.keyCode)&&(!0===e.ctrlKey||!0===e.metaKey)||35<=e.keyCode&&40>=e.keyCode||(e.shiftKey||48>e.keyCode||57<e.keyCode)&&(96>e.keyCode||105<e.keyCode)&&e.preventDefault()});
 
-$(".searchclear").on('click',function(){
-    $(this).prev('input').val("");
-});
-
-$('#xtals_form').validate({ // initialize the plugin
-            rules: {
-            name_cont: {
-                required: true,
-                //email: true
-            },  
-            pi_name: {
-                required: true,  
-            }
-        },
-
-         messages: {   //customize messages
-            name_cont: {
-                required: "You must enter your full name",
-                //email: true
-            },
-            pi_name: {
-                required: "You must enter the name of your PI leader",
-            },
-           
-        },
-    highlight: function(element) {
-        $(element).attr("class", $(element).attr("class").replace("tobereplaced", "error"));
-    },   
-    unhighlight: function(element) {
-        $(element).removeClass("error");
+$("#id_crystal_type").on("change", function() {
+  if (this.value === "lipidic cubic phase" ){
+      $(".lcp").addClass("optional opt").show();     
     }
-    });
+    else{
+      $(".lcp").hide();
+    }
+});
 
-//$("input[id*=id_del]").rules("add", "required");    //add rules after validator is initialized
-  //$("select").addClass("form-control");
-  $(".button").addClass("btn btn-primary"); 
-  
+//--WT,MUT AA cannot have the same value 
+$(".wild").on('change', function() {
+  row_id=$(this).attr('class').split(' ').pop();
+  my_id=$(this).attr("id")
+  selected=$("#"+my_id+" :selected").text();
+  $(".mutant."+row_id).each(function (){
+    console.log("h aksia "+selected);
+    console.log($(this).attr("id"));
+    $(this).find("option").attr("disabled", false); //reset by enabling all 
+   $(this).find("option[value="+ selected +"]").attr('disabled', true);
+
+  }); 
+});
+
+$(".mutant").on('change', function() {
+  row_id=$(this).attr('class').split(' ').pop();
+  my_id=$(this).attr("id")
+  selected=$("#"+my_id+" :selected").text();
+  $(".wild."+row_id).each(function (){
+    console.log("h aksia "+selected);
+    console.log($(this).attr("id"));
+    $(this).find("option").attr("disabled", false); //reset by enabling all 
+   $(this).find("option[value="+ selected +"]").attr('disabled', true);
+
+  }); 
+});
+
+//--make optional visible to the user
+$('input').on('keyup', function () {
+    $("#xtals_form input.opt").filter(function () {
+        this.value === '' ? $(this).addClass('optional') : $(this).removeClass('optional')
+    });
+});
+
+//--if ratio on value then the unit is optional
+$("input.half").on("keyup", function() {
+    str=$(this).val();
+  if (str.indexOf(":") >= 0){
+    pl=$(this).next("input.unit").attr('placeholder');
+    $(this).next("input.unit").removeAttr('placeholder');
+    //$(this).next("input.unit").attr("placeholder", "ratio");
+    $(this).next("input.unit").val('ratio');
+    $(this).next("input.unit").keydown(function(){
+      return false;
+    });
+    //make sure that it is not necessary
+    console.log(pl);
+
+  }
+else{
+  $(this).next("input.unit").val('');
+   $(this).next("input.unit").attr("placeholder", "unit i.e.:%w/v");  //this doesn't apply to id protein conc_unit, adjust to that
+   $(this).next("input.unit").off("keydown");
+   if ($(this).hasClass("optional")){
+   $(this).next("input.unit").addClass("optional");
+   }
+}
+});
+
+//--validation
+$("#btn_s").on("click", function(){
+ValidateForm();
+});
+
+//this way for some reason it needs double submission to invoke the validation function
+// $("#xtals_form").on("submit", function(){
+// ValidateForm();
+// });
+
+//---------------------------------------------------------------------------------------------------
+
       $(".aamod_pos_type").on('change', function () {
         temp_index = $(this).parent().parent().index();     //parent of td is tr
-        var aamod_type= ["single", "pair", "range"];
+        var aamod_type= ["","single", "pair", "range"];
       for (var k=0; k<aamod_type.length; k+=1){
         var aa=aamod_type[k] ;
           if(this.value === aa){
@@ -117,7 +159,7 @@ $(".position").on('change', function () {
          }
   });
 
-var proteins=[ "type", "signal", "tag", "fusion", "linker", "prot_cleavage"];
+var proteins=[ "", "signal", "tag", "fusion", "linker", "prot_cleavage"];
             $(".protein_type").on('change', function () {
              temp_index = $(this).parent().index();
               for (pos=0; pos<proteins.length; pos+=1){
@@ -126,7 +168,7 @@ var proteins=[ "type", "signal", "tag", "fusion", "linker", "prot_cleavage"];
                     $(".sub_type").show();       
                     if (temp_index>1) {
                       $('.prot_type.col_id_'+temp_index).hide(); 
-                      $('.prot_type.col_id_'+temp_index).val("Please Select"); 
+                      $('.prot_type.col_id_'+temp_index).val(""); 
                       $('.others.col_id_'+temp_index).val("");
                       $('.linker.col_id_'+temp_index).val("");
                       $('.'+i+'.col_id_'+temp_index).show();   
@@ -153,7 +195,7 @@ $("#deleteurl").on('click', function() {
  });
 
 $(".ph").on('change', function () {
-  var ph_type= ["single_ph", "range_ph"];
+  var ph_type= ["", "single_ph", "range_ph"];
   for (var n=0; n<ph_type.length; n+=1){
       var ph_val=ph_type[n] ;
       if(this.value === ph_val){
@@ -166,7 +208,7 @@ $(".ph").on('change', function () {
 
 $(".deletion_type").on('change', function () {
         temp_index = $(this).parent().parent().index();     //parent of td is tr
-        var delet_type= ["del_single", "del_range"];
+        var delet_type= ["","del_single", "del_range"];
       for (var l=0; l<delet_type.length; l+=1){
         var del=delet_type[l] ;
           if(this.value === del){    
@@ -183,6 +225,8 @@ $(".deletion_type").on('change', function () {
      }
   });
 
+showOtherDynamic('mod_other', 'other_mod', 'other')
+showOther('id_ligand_activity','ligand_act_oth','other');
 showOther('id_detergent','other_det','other [See next field]');
 showOther('id_deterg_type','other_type_deterg','other [See next field]');
 showOther('id_lcp_lipid','other_lcp','other [See next field]');
@@ -198,9 +242,14 @@ showOtherAux('tag','other_tag','Other');
 showOtherChem('chem', 'chem_enz_remark', 'Other [See remark]');
 //call delrow for the tables
 delRow(".del_delrow", "#deletions");
+delRow(".mut_delrow", "#mutations");
 delRow(".chem_delrow", "#chem_comp");
 delRow(".mod_delrow", "#modifications");
-delLast(".chem_enz_delrow", "#solubil_purif");
+
+delLast(".chem_enz_delrow", "#solubil_purif", "4");
+delLast(".delrow_db", "#contact_information", "5");
+
+
 
 $('.delcol').on('click', function (){
     col_index=$(this).parent().index();      
@@ -293,7 +342,7 @@ if (my_index>1){
               insertion.addClass("klon"+insertion.index());
               var insertion_clone=$(insertion).clone(true);
               insertion_clone.find(".insert_pos_type").remove();
-              $("#deletions tr:last").after("<tr><th class='cloned_th"+insertion.index()+"'>Del. from Insertion"+actual_index+"</th></tr>");
+              $("#deletions tr:last").after("<tr><th class='cloned_th"+insertion.index()+"'>Insertion"+actual_index+"</th></tr>");
               $("#deletions tr:last").append(insertion_clone);
               var last_del_index=$("#deletions tr:last").index();
               insertion_clone.parent().addClass("cloned_insertion"+cur_index);
@@ -420,6 +469,24 @@ $('.checked').on('click', function (){
         });
      }
  });
+
+//trying to make the auxiliary proteins rearranged 
+var i=0;
+$('.position').on('change',function() {
+    current_index=$(this).parent().index(); //td
+    
+    
+    var sel_val = $(".position.col_id_"+current_index+" option:selected");
+    
+    if (sel_val.is('[name="C-term"]') ) {
+      i++;
+        $(sel_val).attr("name", $(this).attr("name").replace("C-term", "C-term"+i));
+        $(sel_val).text('C-term '+i);
+    }  
+   //return r_i+=1 
+});
+
+ //i+=1;
 
 //!!!!! closing of document ready function
 });

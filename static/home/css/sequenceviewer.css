@@ -24,3 +24,20 @@
 .no-wrap {
     white-space: nowrap;
 }
+
+.schematic-block {
+    table-layout: fixed;
+    width:70px;
+    height:10px;
+}
+
+.construct_div {
+    padding-left:3px;
+    padding-right:3px;
+    float:left;
+    position: relative;
+    min-width: 80px;
+}
+
+.schematic_table td {
+}
