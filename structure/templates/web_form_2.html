@@ -121,7 +121,7 @@ textarea.form-control{
 	width:180px;
 }
 .custom_single.form-control{
-	width:84px;
+	width:86px;
 	padding:1px 1px;
 }
 .custom_pair.form-control{
@@ -153,10 +153,11 @@ input.other_type_deterg.form-control::-webkit-input-placeholder { font-size: 9pt
 	width:180px;
 	height:28px;
 }
-.button{
-	width:90px;
-	font-size: 10pt;
+.button.btn-primary{
+	width:95px;
+	font-size: 9pt;
 	height: 30px;
+	padding:1px 1px;
 }
 .delcol{
 	width:30px;
@@ -185,9 +186,8 @@ input.second_table.form-control{
 	width: 60px;
 	height:22px;
 }
-input.widen.form-control{
+input.widen.form-control, select.widen.form-control{
 	width: 120px;
-	height:22px;
 }
 .glyphicon-minus:hover{
     cursor: pointer;
@@ -199,8 +199,12 @@ input.widen.form-control{
 	width:110px;
 	height:40px;
 }
-input.error {
+input.error, select.error {
    border:1px dotted red;
+}
+label.error{
+color:red;
+font-family:verdana, Helvetica;font-size: 9pt;
 }
 .searchclear {
 	right:18px;
@@ -209,6 +213,158 @@ input.error {
     font-size: 12px;
     cursor: pointer;
     color: #ccc;
+}
+#auxiliary_proteins_div{
+	width: 1200px;
+    overflow: auto;
+    overflow-y: hidden;
+}  
+.del_single.form-control{
+	width:86px;
+	padding:1px 1px;
+}
+.del_range.delet_range.form-control{
+	width:37px;
+	padding: 1px 1px;
+}
+select option:disabled {
+	background: #dddddd;
+    color: #FF0000;
+    font-weight: bold;
+}
+.help-tip{
+	float:right;
+	position:relative;
+	text-align: center;
+	background-color: #BCDBEA;
+	border-radius: 50%;
+	width: 24px;
+	height: 24px;
+	font-size: 14px;
+	line-height: 26px;
+	cursor: default;
+}
+.help-tip:before{
+	position:relative;
+	content:'?';
+	font-weight: bold;
+	color:#fff;
+}
+.help-tip:hover p{
+	display:block;
+	-webkit-animation: fadeIn 0.3s ease-in-out;
+	animation: fadeIn 0.3s ease-in-out;
+}
+.help-tip p{
+	position:absolute;
+	display: none;
+	text-align: center;
+	background-color: #1E2021;
+	padding: 10px;
+	width: 300px;
+	border-radius: 3px;
+	box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+	line-height: 1.4;
+	color: #FFF;
+	font-size: 13px;
+	right: -5px;
+}
+.help-tip p:before{
+	position: absolute;
+	content: '';
+	width:0;
+	height: 0;
+	border:6px solid transparent;
+	border-bottom-color:#1E2021;
+	right:10px;
+	top:-12px;
+}
+.help-tip p:after{
+	position: absolute;
+	width:100%;
+	height:40px;
+	content:'';
+	top:-40px;
+	left:0;
+}
+@-webkit-keyframes fadeIn {
+	0% { 
+		opacity:0; 
+		transform: scale(0.6);
+	}
+
+	100% {
+		opacity:100%;
+		transform: scale(1);
+	}
+}
+@keyframes fadeIn {
+	0% { opacity:0; }
+	100% { opacity:100%; }
+}
+.help_aux{
+	float:left;
+	position:relative;
+	text-align: center;
+	background-color: #BCDBEA;
+	border-radius: 50%;
+	width: 24px;
+	height: 24px;
+	font-size: 14px;
+	line-height: 26px;
+	cursor: default;
+}
+.help_aux:before{
+	position:relative;
+	content:'?';
+	font-weight: bold;
+	color:#fff;
+}
+.help_aux:hover p{
+	display:block;
+	-webkit-animation: fadeIn 0.3s ease-in-out;
+	animation: fadeIn 0.3s ease-in-out;
+}
+.help_aux p{
+	position:absolute;
+	display: none;
+	text-align: center;
+	background-color: #1E2021;
+	padding: 10px;
+	width: 300px;
+	border-radius: 3px;
+	box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+	line-height: 1.4;
+	color: #FFF;
+	font-size: 13px;
+	right: -290px;
+	top:20px;
+}
+.help_aux p:before{
+	content: '';
+	width:0;
+	height: 0;
+	border:6px solid transparent;
+	border-bottom-color:#1E2021;
+}
+.help_aux p:after{
+	width:100%;
+	height:40px;
+	content:'';	
+}
+span.glyphicon-calendar{
+	color: #428bca;
+	font-size:16px;
+}
+span.ui-datepicker-month,span.ui-datepicker-year,.ui-datepicker-calendar{
+	color: #428bca
+}
+input.optional {
+  border: 1px solid #A8A8A8;
+  background-color: #eee;
+}
+select.optional option{
+	background-color: #eee;
 }
 </style>
 {% endblock %}
@@ -225,6 +381,8 @@ input.error {
 <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
  <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
  <script src="{% static 'home/js/selection.js' %}"> </script>
+  <script src="{% static 'home/js/dragtable.js' %}"> </script>
+
 {% endblock %}
 {% block content %}	
 	<form id="xtals_form" method="post"  target="_blank" action='webformdata'>
@@ -233,7 +391,7 @@ input.error {
 		<table class="table_1"  id="table_1">
 			<td> 
 				<div id="contr_contact_div" class="contr_contact">
-					<h1>Contributor Contact information</h1> <br>
+					<h1>Contributor Contact information</h1><br>
 					<table style="table-layout: fixed" style="width:100%" id="contact_information" >
 						  <tr>
 						    <th>Date</th>
@@ -242,7 +400,7 @@ input.error {
 						  </tr>
 						  <tr>
 						    <th>Name</th>
-						    <td><input class="form-control" id="id_name_cont" maxlength="50" name="name_cont" type="text" />
+						    <td><input class="required form-control" id="id_name_cont" maxlength="50" name="name_cont" type="text" />
 						    </td> 
 						  </tr>
 				     	  <tr>
@@ -256,16 +414,15 @@ input.error {
 					     <tr>
 						    <th>Affiliation address</th>
 						    <td><textarea class="form-control" cols="40" id="id_address" name="address" rows="10">
-							</textarea></td>
+							</textarea><div style="font-size:10px;">If you have more than one URL address<br>please add it below</div><button name="url_button" type="button" id="addurl" class="btn btn-xs btn-info row_id"><span class="glyphicon glyphicon-plus row_id"></span> Add URL</button></td>
 					     </tr>
 					     <tr>
 						    <th>Database group/URL</th>
-						    <td><input class="form-control form-control" id="id_url" name="url" type="text" value="http://Database/" /><span id="addurl" class="glyphicon glyphicon-plus btn btn-xs btn-info row_id"></span></td> 
+						    <td><input class="opt optional form-control form-control row_id" id="id_url" name="url" type="text" value="http://Database/" /><span name="url_add" type="button" id="remove_db" class="hidetext btn btn-danger btn-xs delrow delrow_db glyphicon glyphicon glyphicon-remove row_id"></span></td> 
 						 </tr>      
 					</table>
-					<br>
-			    	<input class="button btn btn-danger "type="button" id="deleteurl" value="Delete URL"/>
-					<br><br>
+					<br>		    	
+					
 				</div>
 		    </td> 
 
@@ -275,15 +432,15 @@ input.error {
 					<table style="table-layout: fixed" style="width:100%"  id="construct">
 						  <tr>
 						    <th>PDB code</th>
-						    <td><input class="form-control" id="id_pdb" maxlength="50" name="pdb" type="text" /></td> 
+						    <td><input class="form-control" id="id_pdb" placeholder="e.g.2RH1" maxlength="50" name="pdb" type="text" /></td> 
 						  </tr>
 			              <tr>
 						    <th>Name</th>
-						    <td><input class="form-control" id="id_pdb_name" maxlength="50" name="pdb_name" type="text"/></td>
+						    <td><input class="form-control" id="id_pdb_name" maxlength="50" placeholder="e.g.Rhodopsin" name="pdb_name" type="text"/></td>
 						  </tr>
 		                  <tr>
 						    <th ><a href="http://www.uniprot.org/">Protein name or ID (Uniprot)</a></th>
-						    <td><input class="form-control" id="id_uniprot" maxlength="50" name="uniprot" type="text"/></td>
+						    <td><input placeholder="e.g.OPSD_HUMAN or P08100 "  class="form-control" id="id_uniprot" maxlength="50" name="uniprot" type="text"/></td>
 						  </tr>
 						   <tr>
 						    <th>Ligand Name</th>
@@ -291,19 +448,38 @@ input.error {
 						 </tr>
 						 <tr>
 						    <th>Ligand activity type</th>
-						    <td><input class="form-control" id="id_ligand_activity" maxlength="50" name="ligand_activity" type="text" /></td> 
+						    <td><select class="form-control custom_select" id="id_ligand_activity" name="acitvity_ligand">
+								<option value="">Please Select</option>
+								<option value="agonist">Agonist</option>
+								<option value="antagonist">Antagonist</option>
+								<option value="nam">NAM</option>
+								<option value="inverse agonist">Inverse Agonist</option>
+								<option value="unknown">Unknown</option>
+								<option value="agonist-partial">Agonist (partial)</option>
+								<option value="pam">PAM</option>
+								<option value="inverse-agonist-partial">Inverse Agonist (partial)</option>
+								<option value="binding-unknown-pharmacological-activity">Binding-unknown pharmacological activity</option>
+								<option value="negative-allosteric-modulator-noncompetitive-antagonist">Negative allosteric modulator - Non Competitive Antagonist</option>
+								<option value="positive-allosteric-modulator">Positive allosteric modulator</option>
+								<option value="positive-ago-allosteric-modulator">Positive ago-allosteric modulator</option>
+								<option value="allosteric-agonist">Allosteric agonist</option>
+								<option value="full-agonist">Full agonist</option>
+								<option value="antagonist-neutralsilent">Antagonist(neutral/silent)</option>
+								<option value="other">Other</option>
+						    </select><br>
+						<input class="hidetext ligand_act_oth form-control" id="id_ligand_act_oth" name="other_lig_act" placeholder="please insert" type="text"/></td>
 						 </tr>
 						 <tr>
 						    <th>Ligand ID Type</th>
 						    <td>
 						    <select class="form-control custom_select	" id="id_ligand_id_type" name="ligand_id_type">
-								<option value="Please Select">Please Select</option>
+								<option value="">Please Select</option>
 								<option value="PubChem CID">PubChem CID</option>
 								<option value="ChEMBL Compound ID">ChEMBL Compound ID</option>
 								<option value="SMILES">SMILES</option>
 								<option value="FASTA sequence (peptide)">FASTA sequence (peptide)</option>
 								<option value="UniProt Entry Code (peptide)">UniProt Entry Code (peptide)</option>
-						    </select></td> 
+						    </select><span class="help-tip"><p>PubChem CID:description<br>ChEMBL Compound ID:description<br>SMILES:description<br>FASTA sequence (peptide):description<br>UniProt Entry Code (peptide):description</p></span></td>
 						 </tr>
 						 <tr>
 						    <th>Ligand ID</th>
@@ -313,33 +489,34 @@ input.error {
 						    <th>Ligand Concentration</th>
 						    <td><input class="half form-control" id="id_ligand_conc" maxlength="50" name="ligand_conc" placeholder="value" type="text" /><input class="unit form-control" id="id_ligand_conc_unit" name="ligand_conc_unit" placeholder="unit i.e.%w/v" type="text" /></td> 
 						 </tr>      
-			        </table>    
+			        </table>   
 				</div>
 			</td>
 		</table>
 <br><br><br>   
 		<table class="table_2" id="table_2">
-			<tr><td  colspan="3">
+			<tr><td colspan="3">
+				 <span class="help_aux"><p>Fusion Protein:description<br>Signal Peptide:description<br>Tag:description<br>Linker Sequence:description<br>Proteolytic cleavage site:description</p></span>
 				<div id="auxiliary_proteins_div" class="auxiliary_proteins">
-		            <h3>Auxiliary proteins</h3><br>
-				    <input class="button btn btn-primary" type="button" value="Add Column" id="add_aux" onclick="addaux('aux_proteins')"  />
-				    <input class="button btn btn-danger" type="button" value="Delete last" onclick="deleteColumn('aux_proteins')"/>
-					   <br><br>
-					<table  style="table-layout: fixed" style="width:100%"  id="aux_proteins">
+		            	<h3>Auxiliary proteins</h3>
+		            <br>
+				    <input class="button btn btn-primary" type="button" value="Add Protein" id="add_aux" onclick="addaux('aux_proteins')" />
+				    <br><br>
+					<table style="table-layout: fixed" style="width:100%"  id="aux_proteins">
 						   <tr>
 						    <th>Position in construct</th>
-						    <td class="hidetext"> <select class="custom_select form-control position col_id" id="id_position" name="position">
-									<option value="Please Select">Please Select</option>
+						    <td class="hidetext"><select class="custom_select form-control position col_id" id="id_position" name="position">
+									<option value="">Please Select</option>
 									<option value="N-term">N-term</option>
 									<option value="Within Receptor">Within Receptor</option>
-									<option value="C-term">C-term</option>
+									<option name="C-term" value="C-term">C-term</option>
 							    </select>
 							</td> 
 						   </tr>
 						   <tr> 	
 						    <th>Protein Type</th>	    		 
 						    <td class="hidetext"><select class="custom_select form-control protein_type col_id" id="id_protein_type" name="protein_type">
-									<option value="type">Please select Type</option>
+									<option value="" >Please select Type</option>
 									<option value="fusion">Fusion Protein</option>
 									<option value="signal">Signal Peptide</option>
 									<option value="tag">Tag</option>
@@ -351,7 +528,7 @@ input.error {
 						   <tr> 
 						    <th class="sub_type hidetext">Subprotein Type</th>
 						    <td class="hidetext"><select class="custom_select form-control prot_type fusion hidetext col_id" id="id_fusion_prot" name="fusion_prot">
-									<option value="Please Select">Please Select</option>
+									<option value=''>Please Select</option>
 									<option value="T4 Lysozyme (T4L)">T4 Lysozyme (T4L)</option>
 									<option value="mT4L">mT4L</option>
 									<option value="dsT4L">dsT4L</option>
@@ -359,13 +536,13 @@ input.error {
 									<option value="Rubredoxin">Rubredoxin</option>
 									<option value="PGS (Pyrococcus abyssi glycogen synthase)">PGS (Pyrococcus abyssi glycogen synthase)</option>
 								</select>
- 								<select class="custom_select form-control prot_type signal hidetext col_id" id="id_signal" name="signal">
-									<option value="Please Select">Please Select</option>
+ 								<select class="custom_select form-control prot_type signal hidetext col_id" id="id_signalta" name="signal">
+									<option value="">Please Select</option>
 									<option value="hemagglutinin">hemagglutinin</option>
 									<option value="Other">Other</option>
 								</select>
 								<select class="custom_select form-control prot_type tag hidetext col_id" id="id_tag" name="tag">
-									<option value="Please Select">Please Select</option>
+									<option value="">Please Select</option>
 									<option value="FLAG">FLAG</option>
 									<option value="His(10)">His(10)</option>
 									<option value="His(8)">His(8)</option>
@@ -381,7 +558,7 @@ input.error {
 								</select> 
 								<input class="form-control prot_type linker hidetext col_id" id="id_linker_seq" maxlength="50" name="linker_seq" placeholder="Please input sequence" type="text" />
   								<select class="custom_select form-control prot_type prot_cleavage hidetext col_id" id="id_prot_cleavage" name="prot_cleavage">
-									<option value="Please Select">Please Select</option>
+									<option value="">Please Select</option>
 									<option value="Thrombin">Thrombin</option>
 									<option value="TEV protease">TEV protease</option>
 									<option value="HRV 3C protease (PreScission protease)">HRV 3C protease (PreScission protease)</option>
@@ -401,7 +578,7 @@ input.error {
 						     <th class="hidetext within_receptor_th"> Position of insert in receptor</th>
 						     <td class="hidetext"><span name="span" id="span" class="stable hidetext col_id"></span>
 						         <select class="form-control with_rec hidetext half insert_pos_type col_id" id="id_insert_pos_type" name="insert_pos_type">
-									<option value="select_ins">Select</option>
+									<option value="">Select</option>
 									<option value="ins_single">Single</option>
 									<option value="ins_range">Range</option>
 								 </select>
@@ -414,7 +591,7 @@ input.error {
 					      <tr> 
 						    <th>Presence in Crystal</th> 
 				 		    <td class="hidetext"><select class="custom_select form-control col_id col_id" id="id_presence" name="presence">
-									<option value="Please Select">Please Select</option>
+									<option value="">Please Select</option>
 									<option value="YES">YES</option>
 									<option value="NO">NO</option>
 								</select>
@@ -431,8 +608,7 @@ input.error {
 			<tr><td class='del_1 del_table_td'>
 					<div id="deletions_div" class="deletions col-md-12 panel panel-primary">
 		                <h3>Deletions</h3>
-		                <input class='button btn btn-primary' type="button" value="Add row" id="add_deletions" onclick="addRow('deletions', '0')"/>
-						<input class="button btn btn-danger" type="button" value="Delete last" onclick="deleteRow('deletions')"/>
+		                <input class='button btn btn-primary' type="button" value="Add Deletion" id="add_deletions" onclick="addRow('deletions', '0')"/>
 		                <br><br>
 		                <table id="deletions">
 							<tr>
@@ -441,13 +617,16 @@ input.error {
 						    </tr>
 						    <tr class="hidetext">
 						   	<td><select class="form-control deletion_type half row_id" id="id_deletion" name="deletion">
-									<option value="select_del">Select</option>
+									<option value="">Select</option>
 									<option value="del_single">Single</option>
 									<option value="del_range">Range</option>
 								</select>
 							</td>
-						    <td><input class="numeric form-control hidetext del_single del_type row_id" id="id_deletion_single" name="deletion_single" placeholder="position" type="text"/>
-						    	<input class="numeric form-control delet_range hidetext del_range del_type row_id" id="id_delet_start" name="delet_start" placeholder="start" type="text" /><label class="del_type hidetext del_range row_id">-</label><input class="numeric form-control delet_range hidetext del_range del_type row_id" id="id_delet_end" name="delet_end" placeholder="end" type="text"/><span id="del_deletions" type="button"  class="btn btn-danger btn-xs hidetext del_delrow delrow glyphicon glyphicon-remove row_id"></span>
+						    <td><input class="numeric form-control hidetext del_single del_type row_id" id="id_deletion_single" name="deletion_single" placeholder="position" type="text"/><input class="numeric form-control delet_range hidetext del_range del_type row_id" id="id_delet_start" name="delet_start" placeholder="start" type="text" />
+						    	<label class="del_type hidetext del_range row_id"> 
+						    	-</label>
+						    	<input class="numeric form-control delet_range hidetext del_range del_type row_id" id="id_delet_end" name="delet_end" placeholder="end" type="text"/>
+						    	<span id="del_deletions" type="button"  class="btn btn-danger btn-xs hidetext del_delrow delrow glyphicon glyphicon-remove row_id"></span>
 						    </td> 
 						    </tr>
 						</table>
@@ -456,9 +635,7 @@ input.error {
 				<td class="mut_2 left_border">
 					<div id="mutations_div" class="mutations col-md-12 panel panel-primary">
 						<h3>Mutations</h3>
-						<input value="Add row" class='button btn btn-primary' id="addmut" onclick="addRow('mutations', '0')"/>
-						<input class="button btn btn-danger" type="button" value="Delete last" onclick="deleteRow('mutations')"/>
-						<input  class="checked button" type="button" value="Delete selected" />
+						<input value="Add mutation" class='button btn btn-primary' id="addmut" onclick="addRow('mutations', '0')"/>
 						<br><br>
 						<table style="table-layout: fixed" style="width:100%"  id="mutations">
 			                  <tr>
@@ -470,7 +647,8 @@ input.error {
 			                  <tr class="hidetext">
 							    <td><input class="form-control second_table row_id" id="id_aa_no" maxlength="50" name="aa_no" type="text" />
 							    </td> 
-							    <td><select class="form-control mut row_id" id="id_wt_aa" name="wt_aa">
+							    <td><select class="form-control wild mut row_id" id="id_wt_aa" name="wt_aa">
+							    		<option value="">---</option>
 										<option value="A">A</option>
 										<option value="C">C</option>
 										<option value="D">D</option>
@@ -493,7 +671,8 @@ input.error {
 										<option value="Y">Y</option>
 									</select>
 								</td>
-					            <td><select class="form-control mut row_id" id="id_mut_aa" name="mut_aa">
+					            <td><select class="form-control mutant mut row_id" id="id_mut_aa" name="mut_aa">
+					            		<option value="">---</option>
 										<option value="A">A</option>
 										<option value="C">C</option>
 										<option value="D">D</option>
@@ -516,7 +695,7 @@ input.error {
 										<option value="Y">Y</option>
 									</select>
 							    </td>
-					            <td><input id='del_mut' type='checkbox'  class='hidetext del_checkbox checkrow row' />
+					            <td><span id="del_mut" type="button"  class="btn btn-danger btn-xs hidetext mut_delrow delrow glyphicon glyphicon-remove row_id"></span>
 					            </td> 
 						      </tr>             
 					    </table>    
@@ -525,20 +704,25 @@ input.error {
 				<td class="mod_3 left_border">
 					<div id="modifications_div" class="modifications col-md-12 panel panel-primary">
 						<h3>Modifications</h3>
-						<input class="button" type="button" value="Add row" id="addmod" onclick="addRow('modifications')"  />
-				     	<input class="button btn btn-danger" type="button" value="Delete last" onclick="deleteRow('modifications')"/>
+						<input class="button btn btn-primary" type="button" value="Add modification" id="addmod" onclick="addRow('modifications')"  />
 						<br><br>
-						<table style="table-layout: fixed" style="width:100%"  id="modifications">
+						<table id="modifications">
 							  <tr>
-							    <th>AminoAcid modifications</th>
-							    <th>aamod position</th>
+							    <th style="text-align:left; ">AminoAcid<br>Modifications</th>
+							    <th>Position</th>
 							    <th>Remark</th>
 							   </tr>
 				              <tr class="hidetext">
-							    <td><input class="form-control widen second_table row_id" id="id_aamod" maxlength="50" name="aamod" type="text" />
+							    <td><select id="id_modification_type" class="form-control mod_other widen row_id">
+							    		<option value="">Select</option>
+							    		<option value="phosphorylation">Phosphorylation</option>
+							    		<option value="glycosylation">Glycosyltation</option>
+							    		<option value="other">Other</option>
+							    	</select><br>
+							    	<input class="hidetext form-control other_mod widen second_table row_id" id="id_aamod" maxlength="50" name="aamod" type="text" placeholder="please insert" />
 							    </td>
 							    <td><select class="form-control half aamod_pos_type row_id" id="id_aamod_position" name="aamod_position">
-										<option value="select">Select</option>
+										<option value="">Select</option>
 										<option value="single">Single</option>
 										<option value="pair">Pair</option>
 										<option value="range">Range</option>
@@ -566,10 +750,24 @@ input.error {
 					<div id="expression_system_div" class="expression_system right_border">
 						<h2>Expression System</h2><br>
 						<table  style="table-layout: fixed"  id="expr_system">
+							<tr>
+							    <th>Host cell</th>
+							    <td><select class="form-control" id="id_host_cell" name="host_cell">
+										<option value="">Select</option>
+										<option value="Mammal">Mammal</option>
+										<option value="Insect">Insect</option>
+										<option value="Yeast">Yeast</option>
+										<option value="Bacteria">Bacteria</option>
+										<option value="Cell-free">Cell-free</option>
+										<option value="other [See next field]">other [See next field]</option>
+									</select><br>
+									<input class="hidetext host_cell_other form-control" id="id_other_host_cell" name="other_host_cell" placeholder="please insert" type="text"/>
+							    </td>
+						      </tr>
 			                  <tr>
 							    <th>Expression Method</th>
 							    <td><select class="form-control" id="id_expr_method" name="expr_method">
-										<option value="Select">Select</option>
+										<option value="">Select</option>
 										<option value="Native_source">Native_source</option>
 										<option value="Stable_cells">Stable_cells</option>
 										<option value="Transient_transfection">Transient_transfection</option>
@@ -583,7 +781,7 @@ input.error {
 			                 <tr>
 							    <th>Host cell type</th>
 							     <td><select class="form-control" id="id_host_cell_type" name="host_cell_type">
-										<option value="Select">Select</option>
+										<option value="">Select</option>
 										<option value="Sf9">Sf9</option>
 										<option value="Sf21">Sf21</option>
 										<option value="Hi5">Hi5</option>
@@ -604,20 +802,6 @@ input.error {
 								</td>
 						     </tr>
 			                 <tr>
-							    <th>Host cell</th>
-							    <td><select class="form-control" id="id_host_cell" name="host_cell">
-										<option value="Select">Select</option>
-										<option value="Mammal">Mammal</option>
-										<option value="Insect">Insect</option>
-										<option value="Yeast">Yeast</option>
-										<option value="Bacteria">Bacteria</option>
-										<option value="Cell-free">Cell-free</option>
-										<option value="other [See next field]">other [See next field]</option>
-									</select><br>
-									<input class="hidetext host_cell_other form-control" id="id_other_host_cell" name="other_host_cell" placeholder="please insert" type="text"/>
-							    </td>
-						      </tr>
-			                 <tr>
 						        <th>Remark</th>
 						        <td><textarea class="form-control" cols="40" id="id_expr_remark" name="expr_remark" rows="10"></textarea></td>
 					         </tr>
@@ -631,7 +815,7 @@ input.error {
 			                 <tr>
 							    <th>Solubilization detergent type</th>
 							    <td><select class="form-control" id="id_deterg_type" name="deterg_type">
-										<option value="Select">Select</option>
+										<option value="">Select</option>
 										<option value="DDM">DDM</option>
 										<option value="DM">DM</option>
 										<option value="LMNG">LMNG</option>
@@ -657,7 +841,7 @@ input.error {
 			                 <tr class="last">
 							    <th>Chemical/Enzymatic treatment</th>
 							    <td><select class="form-control chem row_id" id="id_chem_enz_treatment" name="chem_enz_treatment">
-										<option value="Select">Select</option>
+										<option value="">Select</option>
 										<option value="Deglycosylation by PNGase F">Deglycosylation by PNGase F</option>
 										<option value="Deglycosylation by Endo F">Deglycosylation by Endo F</option>
 										<option value="Deglycosylation by Endo H">Deglycosylation by Endo H</option>
@@ -672,7 +856,7 @@ input.error {
 										<option value="None">None</option>
 										<option value="P. pastoris SMD1163">P. pastoris SMD1163</option>
 										<option value="Other [See remark]">Other [See remark]</option>
-									</select> <span type="button" id="add_treatment" class="btn btn-info btn-xs glyphicon glyphicon-plus row_id"></span><span type="button" id='del_chem_enz' class=' btn btn-xs btn-danger glyphicon glyphicon-remove   hidetext chem_enz_delrow delrow row_id'/></span><br><input class="form-control hidetext chem_enz_remark row_id" id="id_sol_remark" name="sol_remark" placeholder="insert treatment" type="text" />
+									</select><span type="button" id="add_treatment" class="btn btn-info btn-xs glyphicon glyphicon-plus row_id"></span><span type="button" id='del_chem_enz' class=' btn btn-xs btn-danger glyphicon glyphicon-remove   hidetext chem_enz_delrow delrow row_id'/></span><br><input class="form-control hidetext chem_enz_remark row_id" id="id_sol_remark" name="sol_remark" placeholder="insert treatment" type="text" />
 							    </td>
 						     </tr>
 						</table>
@@ -680,12 +864,13 @@ input.error {
 				</td>
 				<td class="cryst3 left_border_sol">
 					<div id="crystallization_div"class="crystallization_div">
-						<h2 style="text-align:center">Crystallization</h2> <br>
-						<table style="width:100%" id="crystallization">
+						<h2 style="text-align:center">Crystallization</h2>
+						<div style="font-size:10px; text-align:center;">*Fields marked with grey font are optional</div><br>
+						<table style="" id="crystallization">
 			                  <tr>
 							    <th>Type</th>
 							    <td><select class="form-control" id="id_crystal_type" name="crystal_type">
-										<option value="Please Select">Please Select</option>
+										<option value="">Please Select</option>
 										<option value="lipidic cubic phase">lipidic cubic phase</option>
 										<option value="sponge phase">sponge phase</option>
 										<option value="bicelles">bicelles</option>
@@ -698,15 +883,14 @@ input.error {
 						     </tr>
 			                 <tr>
 							    <th>Method</th>
-							    <td><select class="form-control" id="id_crystal_method" name="crystal_method">
-										<option value="Please Select">Please Select</option>
+							    <td ><select class="form-control" id="id_crystal_method" name="crystal_method">
+										<option value="">Please Select</option>
 										<option value="microbatch">microbatch</option>
 										<option value="vapour diffusion">vapour diffusion</option>
 										<option value="free interface diffusion">free interface diffusion</option>
 										<option value="other [See next field]">other [See next field]</option>
-									</select><br>
-									<input class="hidetext other_method form-control" id="id_other_method" maxlength="50" name="other_method" placeholder="insert method" type="text" />
-								</td>
+									</select><span class="help-tip"><p>microbatch:description<br>vapour diffusion:description<br>free interface diffusion:description</p></span><br>
+									<input class="hidetext other_method form-control" id="id_other_method" maxlength="50" name="other_method" placeholder="insert method" type="text" /></td>
 						     </tr>
 			                 <tr>
 							    <th>Protein concentration</th>
@@ -720,20 +904,20 @@ input.error {
 			                 <tr>
 							    <th>pH</th>
 							    <td><select class="ph half form-control" id="id_ph" name="ph">
+							    		<option value="">select</option>
 										<option value="single_ph">Single</option>
 										<option value="range_ph">Range</option>
-									</select><input class="ph_type custom_single single_ph form-control" id="id_ph_single" name="ph_single" placeholder="insert pH" type="text" /><input class="hidetext ph_type custom_range range_ph form-control" id="id_ph_range_one" name="ph_range_one" placeholder="pH" type="text" /><label class="ph_type hidetext range_ph ">-</label><input class="hidetext ph_type custom_range range_ph form-control" id="id_ph_range_two" name="ph_range_two" placeholder="pH" type="text" />
+									</select><input class="hidetext numeric ph_type custom_single single_ph form-control" id="id_ph_single" name="ph_single" placeholder="insert pH" type="text" /><input class=" numeric hidetext ph_type custom_range range_ph form-control" id="id_ph_range_one" name="ph_range_one" placeholder="pH" type="text" /><label class="ph_type hidetext range_ph ">-</label><input class="numeric hidetext ph_type custom_range range_ph form-control" id="id_ph_range_two" name="ph_range_two" placeholder="pH" type="text" />
 							    </td>
 							</tr>
 			                 <tr>
 						        <th>Remark</th>
-						        <td><textarea class="form-control" cols="40" id="id_crystal_remark" name="crystal_remark" rows="10">
-								   </textarea>
+						        <td><textarea class="form-control" cols="40" id="id_crystal_remark" name="crystal_remark" rows="10"></textarea>  
 								</td>
 					          </tr>
-			                 <tr>
-							    <th>LCP Lipid</th>
-							    <td><select class="form-control" id="id_lcp_lipid" name="lcp_lipid">
+			                 <tr class="hidetext lcp">
+			                 	<th class="lcp hidetext">LCP Lipid</th>
+							    <td><select class="lcp hidetext form-control" id="id_lcp_lipid" name="lcp_lipid">
 										<option value="Please Select">Please Select</option>
 										<option value="monoolein (9.9 MAG)">monoolein (9.9 MAG)</option>
 										<option value="7.7 MAG">7.7 MAG</option>
@@ -752,17 +936,17 @@ input.error {
 							    </td>
 						     </tr>
 			                 <tr>
-							    <th>LCP Lipid additive</th>
-							    <td><input class="form-control" id="id_lcp_add" maxlength="50" name="lcp_add" type="text" /></td> 
+							    <th class="lcp hidetext">LCP Lipid additive</th>
+							    <td><input class="lcp hidetext form-control" id="id_lcp_add" maxlength="50" name="lcp_add" type="text" /></td> 
 							 </tr>
 			                 <tr>
-							    <th>LCP Lipid additive conentration</th>
-							    <td><input class="half form-control" id="id_lcp_conc" maxlength="50" name="lcp_conc" placeholder="value" type="text" /><input class="unit form-control" id="id_lcp_conc_unit" maxlength="50" name="lcp_conc_unit" placeholder="unit" type="text"/></td> 
+							    <th class="lcp hidetext">LCP Lipid additive concentration</th>
+							    <td><input class="lcp hidetext half form-control" id="id_lcp_conc" maxlength="50" name="lcp_conc" placeholder="value" type="text" /><input class="lcp hidetext unit form-control" id="id_lcp_conc_unit" maxlength="50" name="lcp_conc_unit" placeholder="unit" type="text"/></td> 
 							 </tr>
 							 <tr>
 							    <th>Detergent</th>
-							    <td><select class="form-control" id="id_detergent" name="detergent">
-										<option value="Please Select">Please Select</option>
+							    <td><select class="optional form-control" id="id_detergent" name="detergent">
+										<option value="">Please Select</option>
 										<option value="LMNG">LMNG</option>
 										<option value="DMNG">DMNG</option>
 										<option value="DGNG">DGNG</option>
@@ -789,18 +973,18 @@ input.error {
 										<option value="amphipol A8-35">amphipol A8-35</option>
 										<option value="other [See next field]">other [See next field]</option>
 									</select><br>
-									<input class="hidetext other_det form-control" id="id_other_deterg" maxlength="50" name="other_deterg" placeholder="insert detergent" type="text"/>
+									<input class="otpional opt hidetext other_det form-control" id="id_other_deterg" maxlength="50" name="other_deterg" placeholder="insert detergent" type="text"/>
 							    </td> 
 							 </tr>
 							 <tr>
 							    <th>Detergent Concentration</th>
-							    <td><input class="half form-control" id="id_deterg_conc" maxlength="50" name="deterg_conc" placeholder="value" type="text"/><input class="unit form-control" id="id_deterg_conc_unit" maxlength="50" name="deterg_conc_unit" placeholder="unit i.e.%w/v" type="text"/>
+							    <td><input class="opt optional half form-control" id="id_deterg_conc" maxlength="50" name="deterg_conc" placeholder="value" type="text"/><input class="opt optional unit form-control" id="id_deterg_conc_unit" maxlength="50" name="deterg_conc_unit" placeholder="unit i.e.%w/v" type="text"/>
 							    </td> 
 							 </tr>	                 
 			                 <tr>
 							    <th>Lipid</th>
-							    <td><select class="form-control" id="id_lipid" name="lipid">
-										<option value="Please Select">Please Select</option>
+							    <td><select class="optional form-control" id="id_lipid" name="lipid">
+										<option value="">Please Select</option>
 										<option value="CHS">CHS</option>
 										<option value="POPC">POPC</option>
 										<option value="POPE">POPE</option>
@@ -813,17 +997,16 @@ input.error {
 										<option value="Brain_lipid_extract">Brain_lipid_extract</option>
 										<option value="other [See next field]">other [See next field]</option>
 									</select><br>
-									<input class="hidetext other_lipid form-control" id="id_other_lipid" maxlength="50" name="other_lipid" placeholder="insert lipid" type="text"/>
+									<input class="opt optional hidetext other_lipid form-control" id="id_other_lipid" maxlength="50" name="other_lipid" placeholder="insert lipid" type="text"/>
 								</td> 
 							 </tr>
 							 <tr>
 							    <th>Lipid Concentration</th>
-							    <td><input class="half form-control" id="id_lipid_concentr" maxlength="50" name="lipid_concentr" placeholder="value" type="text" /><input class="unit form-control" id="id_lipid_concentr_unit" maxlength="50" name="lipid_concentr_unit" placeholder="unit i.e.%w/v" type="text"/>
+							    <td><input class="opt optional half form-control" id="id_lipid_concentr" maxlength="50" name="lipid_concentr" placeholder="value" type="text" /><input class="opt optional unit form-control" id="id_lipid_concentr_unit" maxlength="50" name="lipid_concentr_unit" placeholder="unit i.e.%w/v" type="text"/>
 							    </td> 
 							 </tr>
 						</table> <br>
-						<input  type="button" value="Add row" id="add_chem" onclick="addRow('chem_comp')"  class="button"/>
-						<input class="button btn btn-danger" type="button" value="Delete last" onclick="deleteRow('chem_comp')"/>
+						<input  type="button" value="Add Component" id="add_chem" onclick="addRow('chem_comp')"  class="button btn btn-primary "/>
 						<br><br>
 						<table  style="table-layout: fixed" id="chem_comp">
 							 <tr>
@@ -833,7 +1016,7 @@ input.error {
 							 <tr class="hidetext">
 							    <td><input type="search" class="form-control row_id row_id" id="id_chemical_comp" maxlength="50" name="chemical_comp" type="text" />
 							    </td>
-							    <td><input type="search" class="form-control half half row_id" id="id_concentr" maxlength="50" name="concentr" placeholder="value" type="text" /><input class="form-control unit unit row_id" id="id_concentr_unit" maxlength="50" name="concentr_unit" placeholder="unit" type="text" />
+							    <td><input type="search" class="form-control half half row_id" id="id_concentr" maxlength="50" name="concentr" placeholder="value" type="text" /><input class="otpional form-control unit unit row_id" id="id_concentr_unit" maxlength="50" name="concentr_unit" placeholder="unit" type="text" />
 							    </td> 
 							    <td><span id='chem_delrow' type="button" class='btn btn-danger btn-xs glyphicon glyphicon-remove hidetext chem_delrow delrow row_id'/>
 							    </td> 
@@ -848,5 +1031,4 @@ input.error {
 	</div>
 	</form>
 <br><br>
-
 {% endblock %}
