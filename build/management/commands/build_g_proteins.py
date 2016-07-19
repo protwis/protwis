@@ -32,16 +32,21 @@ class Command(BaseCommand):
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
+    
+    def purge_data(self):
+        try:
+            ProteinGProtein.objects.filter().delete()
+        except:
+            self.logger.warning('Existing data cannot be deleted')
 
     def create_g_proteins(self, filenames=False):
         self.logger.info('CREATING GPROTEINS')
-
+        self.purge_data()
         # read source files
         if not filenames:
-            filenames = os.listdir(self.gprotein_data_dir)
+            filenames = [fn for fn in os.listdir(self.gprotein_data_dir) if fn.endswith('.csv')]
 
         for filename in filenames:
-
             filepath = os.sep.join([self.gprotein_data_dir, filename])
 
             with open(filepath, 'r') as f:
