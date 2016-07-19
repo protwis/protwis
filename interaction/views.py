@@ -1199,26 +1199,29 @@ def GProtein(request):
     context = OrderedDict()
     i=0
 
-    # proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('proteingproteinpair_set')
     gproteins = ProteinGProtein.objects.all().prefetch_related('proteingproteinpair_set')
-
-    jsondata = {}
+    slugs = ['001','002','004','005']
+    slug_translate = {'001':"ClassA", '002':"ClassB1",'004':"ClassC", '005':"ClassF"}
     selectivitydata = {}
-    for gp in gproteins:
-        ps = gp.proteingproteinpair_set.all()
+    for slug in slugs:
+        jsondata = {}
+        for gp in gproteins:
+            # ps = gp.proteingproteinpair_set.all()
+            ps = gp.proteingproteinpair_set.filter(protein__family__slug__startswith=slug)
 
-        if ps:
-            jsondata[str(gp)] = []
-            for p in ps:
-                if str(p.protein.entry_name).split('_')[0].upper() not in selectivitydata:
-                    selectivitydata[str(p.protein.entry_name).split('_')[0].upper()] = []
-                selectivitydata[str(p.protein.entry_name).split('_')[0].upper()].append(str(gp))
-                # print(p.protein.family.parent.parent.parent)
-                jsondata[str(gp)].append(str(p.protein.entry_name)+'\n')
+            if ps:
+                jsondata[str(gp)] = []
+                for p in ps:
+                    if str(p.protein.entry_name).split('_')[0].upper() not in selectivitydata:
+                        selectivitydata[str(p.protein.entry_name).split('_')[0].upper()] = []
+                    selectivitydata[str(p.protein.entry_name).split('_')[0].upper()].append(str(gp))
+                    # print(p.protein.family.parent.parent.parent)
+                    jsondata[str(gp)].append(str(p.protein.entry_name)+'\n')
 
-            jsondata[str(gp)] = ''.join(jsondata[str(gp)])
+                jsondata[str(gp)] = ''.join(jsondata[str(gp)])
 
-    context["gdata"] = jsondata
+        context[slug_translate[slug]] = jsondata
+
     context["selectivitydata"] = selectivitydata
 
     return render(request, 'interaction/gprotein.html', context)

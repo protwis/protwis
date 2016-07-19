@@ -26,7 +26,7 @@
         fontSize     = "16px",
         fontFamily   = "Arial";
 
-        gdata = {{ gdata|safe }};
+        gdata = {{ ClassA|safe }};
 
         $("#name1").val("Gs Family");
         $("#area1").val(gdata['Gs family']);
@@ -94,15 +94,16 @@
           displayStat: displayStat,
           fnClickCallback: function() {
             var value = "";
-            if (this.listnames.length == 1) {
-              value += "Receptors only coupling to ";
-            } else {
-              value += "Receptors binding to ";
-            }
-            for (name in this.listnames) {
-              value += this.listnames[name] + " ";
-            }
-            value += ":\n";
+            // Information for selected venn area:
+            // if (this.listnames.length == 1) {
+            //   value += "Receptors only coupling to ";
+            // } else {
+            //   value += "Receptors binding to ";
+            // }
+            // for (name in this.listnames) {
+            //   value += this.listnames[name] + " ";
+            // }
+            // value += ":\n";
             for (val in this.list) {
               value += this.list[val] + "\n";
             }
@@ -111,7 +112,8 @@
         });
       }
       
-      $("#example").click(function() {
+      $("#ClassA").click(function() {
+          gdata = {{ ClassA|safe }}
           $("#name1").val("Gs Family");
           $("#area1").val(gdata['Gs family']);
 
@@ -125,7 +127,75 @@
           $("#area4").val(gdata['G12/G13 family']);
         updateJvenn();
       });
-      
+
+      $("#ClassB1").click(function() {
+          gdata = {{ ClassB1|safe }}
+          $("#name1").val("Gs Family");
+          $("#area1").val(gdata['Gs family']);
+
+          $("#name2").val("Gi/Go family");
+          $("#area2").val(gdata['Gi/Go family']);
+
+          $("#name3").val("Gq/G11 family");
+          $("#area3").val(gdata['Gq/G11 family']);
+
+          $("#name4").val("G12/G13 family");
+          $("#area4").val(gdata['G12/G13 family']);
+        updateJvenn();
+      });
+
+      $("#CrossClass").click(function() {
+          gdataA = {{ ClassA|safe }}
+          gdataB1 = {{ ClassB1|safe }}
+          gdataC = {{ ClassC|safe }}
+          gdataF = {{ ClassF|safe }}
+
+          $("#name1").val("Gs Family");
+          $("#area1").val(gdataA['Gs family']+gdataB1['Gs family']+gdataC['Gs family']+gdataF['Gs family']);
+
+          $("#name2").val("Gi/Go family");
+          $("#area2").val(gdataA['Gi/Go family']+gdataB1['Gi/Go family']+gdataC['Gi/Go family']+gdataF['Gi/Go family']);
+
+          $("#name3").val("Gq/G11 family");
+          $("#area3").val(gdataA['Gq/G11 family']+gdataB1['Gq/G11 family']+gdataC['Gq/G11 family']+gdataF['Gq/G11 family']);
+
+          $("#name4").val("G12/G13 family");
+          $("#area4").val(gdataA['G12/G13 family']+gdataB1['G12/G13 family']+gdataC['G12/G13 family']+gdataF['G12/G13 family']);
+        updateJvenn();
+      });
+
+      $("#ClassC").click(function() {
+          gdata = {{ ClassC|safe }}
+          $("#name1").val("Gs Family");
+          $("#area1").val(gdata['Gs family']);
+
+          $("#name2").val("Gi/Go family");
+          $("#area2").val(gdata['Gi/Go family']);
+
+          $("#name3").val("Gq/G11 family");
+          $("#area3").val(gdata['Gq/G11 family']);
+
+          $("#name4").val("G12/G13 family");
+          $("#area4").val(gdata['G12/G13 family']);
+        updateJvenn();
+      });
+
+      $("#ClassF").click(function() {
+          gdata = {{ ClassF|safe }}
+          $("#name1").val("Gs Family");
+          $("#area1").val(gdata['Gs family']);
+
+          $("#name2").val("Gi/Go family");
+          $("#area2").val(gdata['Gi/Go family']);
+
+          $("#name3").val("Gq/G11 family");
+          $("#area3").val(gdata['Gq/G11 family']);
+
+          $("#name4").val("G12/G13 family");
+          $("#area4").val(gdata['G12/G13 family']);
+        updateJvenn();
+      });
+
       $('[id^="clear"]').click(function() {
         var index = $(this).attr("id").split("_")[1];
         $("#area" + index).val("");
@@ -299,7 +369,11 @@
 
       <p style="clear:both;text-align:center">
         <button id="clear-all" class="btn">Clear all</button>
-        <button id="example" class="btn btn-primary">Class A dataset</button>
+        <button id="ClassA" class="btn btn-primary">Class A</button>
+        <button id="ClassB1" class="btn btn-primary">Class B1 (Secretin)</button>
+        <button id="ClassC" class="btn btn-primary">Class C</button>
+        <button id="ClassF" class="btn btn-primary">Class F</button>
+        <button id="CrossClass" class="btn btn-primary">Cross Class</button>
       </p>
     <div class="row-fluid">
       <div class="span12">
