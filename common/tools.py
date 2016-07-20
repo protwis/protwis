@@ -63,9 +63,13 @@ def fetch_from_web_api(url, index, cache_dir=False):
         try:
             req = urlopen(full_url)
             d = json.loads(req.read().decode('UTF-8'))
-        except HTTPError:
+        except HTTPError as e:
             tries += 1
-            time.sleep(2)
+            if e.code == 404:
+                logger.warning('Failed fetching {}, 404 - does not exist'.format(full_url))
+                tries = max_tries #skip more tries
+            else:
+                time.sleep(2)
         else:
             # save to cache
             if cache_dir:
