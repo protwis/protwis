@@ -9,6 +9,7 @@ urlpatterns = [
     url(r'^designpdb', views.designPDB.as_view(), name='design'),
     url(r'^design', views.design.as_view(), name='design'),
     url(r'^pocket', views.pocket, name='pocket'),
+    url(r'^statistics', views.coverage, name='statistics'),
     url(r'^coverage', views.coverage, name='coverage'),
     url(r'^calculatepdb', views.showcalculationPDB, name='showcalculationPDB'),
     url(r'^calculate', views.showcalculation, name='showcalculation'),
