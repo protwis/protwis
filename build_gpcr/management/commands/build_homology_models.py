@@ -97,7 +97,7 @@ class Command(BaseBuild):
             struct_parent = [i.protein_conformation.protein.parent for i in structures]
             classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species=1, 
                                             family__slug__istartswith='001')
-            self.receptor_list = [i.entry_name for i in classA if i not in struct_parent][40:60]
+            self.receptor_list = [i.entry_name for i in classA if i not in struct_parent][:10]
             print(self.receptor_list)
             try:
                 self.prepare_input(options['proc'], self.receptor_list)
@@ -132,16 +132,16 @@ class Command(BaseBuild):
             self.run_HomologyModeling(receptor)
     
     def run_HomologyModeling(self, receptor):
-#        try:
-        state = 'Inactive'
-        Homology_model = HomologyModeling(receptor, state, [state], update=self.update, version=self.version)
-        alignment = Homology_model.run_alignment()
-        Homology_model.build_homology_model(alignment)
-        Homology_model.format_final_model()
-        logger.info('Model built for {} {}'.format(receptor, state))
-#        except Exception as msg:
-#            print('Failed to build model {}\n{}'.format(receptor,msg))
-#            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
+        try:
+            state = 'Inactive'
+            Homology_model = HomologyModeling(receptor, state, [state], update=self.update, version=self.version)
+            alignment = Homology_model.run_alignment()
+            Homology_model.build_homology_model(alignment)
+            Homology_model.format_final_model()
+            logger.info('Model built for {} {}'.format(receptor, state))
+        except Exception as msg:
+            print('Failed to build model {}\n{}'.format(receptor,msg))
+            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
 
         
 class HomologyModeling(object):
