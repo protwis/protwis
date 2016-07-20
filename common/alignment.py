@@ -855,14 +855,19 @@ class AlignedReferenceTemplate(Alignment):
         @param provide_main_temlpate_structure: Structure object, use only when aligning loops and when the main 
         template is already known.
     '''
-    def __init__(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
-                 provide_similarity_table=None, main_pdb_array=None, provide_alignment=None):
+    def __init__(self):
         super(AlignedReferenceTemplate, self).__init__()
+        self.reference_dict = OrderedDict()
+        self.template_dict = OrderedDict()
+        self.alignment_dict = OrderedDict()
+        self.code_dict = {'ICL1':'12x50','ECL1':'23x50','ICL2':'34x50'}
+        
+    def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
+                             provide_similarity_table=None, main_pdb_array=None, provide_alignment=None):
         self.logger = logging.getLogger('homology_modeling')
         self.segment_labels = segments
         self.reference_protein = Protein.objects.get(entry_name=reference_protein)
         self.provide_alignment = provide_alignment
-        self.code_dict = {'ICL1':'12x50','ECL1':'23x50','ICL2':'34x50'}
         if provide_main_template_structure==None and provide_similarity_table==None:
             self.query_states = query_states
             self.order_by = order_by
@@ -894,10 +899,7 @@ class AlignedReferenceTemplate(Alignment):
             self.similarity_table = self.create_loop_similarity_table()
         if self.main_template_structure==None:
             self.main_template_structure = self.get_main_template()
-        self.reference_dict = OrderedDict()
-        self.template_dict = OrderedDict()
-        self.alignment_dict = OrderedDict()
-       
+            
     def __repr__(self):
         return '<AlignedReferenceTemplate: Reference: {} ; Template: {}>'.format(self.reference_protein.protein.entry_name, 
                                                                                  self.main_template_structure)
@@ -1098,21 +1100,14 @@ class AlignedReferenceTemplate(Alignment):
             raise AssertionError()
         return[ECL2_1,ECL2_mid,ECL2_2]
                 
-    def enhance_best_alignment(self):
+    def enhance_alignment(self, reference, template):
         ''' Creates an alignment between reference and main_template where matching residues are depicted with the 
             one-letter residue code, mismatches with '.', gaps with '-', gaps due to shorter sequences with 'x'.
         '''
-        if not self.main_template_protein: 
-            self.logger.error(
-            '''No main template with same helix endings. 
-               No homology model will be built for {}.'''.format(self.reference_protein))
-            return None
-        
-        for ref_seglab, temp_seglab in zip(self.reference_protein.alignment, self.main_template_protein.alignment):
+        for ref_seglab, temp_seglab in zip(reference.alignment, template.alignment):
             if 'TM' in ref_seglab or ref_seglab in ['ICL1','ECL1','ICL2','ECL2','H8']:
                 ref_segment_dict,temp_segment_dict,align_segment_dict = OrderedDict(), OrderedDict(), OrderedDict()
-                for ref_position, temp_position in zip(self.reference_protein.alignment[ref_seglab],
-                                                       self.main_template_protein.alignment[temp_seglab]):
+                for ref_position, temp_position in zip(reference.alignment[ref_seglab],template.alignment[temp_seglab]):
                     if ref_position[1]!=False and temp_position[1]!=False and ref_position[1]!='' and temp_position!='':
                         bw, gn = ref_position[1].split('x')
                         gen_num = '{}x{}'.format(bw.split('.')[0],gn)
