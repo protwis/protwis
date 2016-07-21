@@ -440,7 +440,7 @@ if (click_count % 2 == 0){
 //Fill text area with subtree data
 function makeUL(descendents){
 
-var textarea = document.getElementById('names');
+var textarea = document.getElementById('input-targets');
 textarea.value = descendents.join("\n");
 
 

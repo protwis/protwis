@@ -35,7 +35,7 @@ class Command(BaseCommand):
     
     def purge_data(self):
         try:
-            ProteinGProtein.objects.filter().delete()
+            ProteinGProteinPair.objects.filter().delete()
         except:
             self.logger.warning('Existing data cannot be deleted')
 
