@@ -11,11 +11,48 @@
 <link href="{% static 'home/css/color_picker.css' %}" rel="stylesheet" media="screen">
 <link href="{% static 'home/css/bootstrap-responsive.css' %}"  rel="stylesheet" media="screen">
 
-
 <script src="{% static 'home/js/jquery.min.js' %}"></script>
+<script src="{% static 'home/js/selection.js' %}"></script>
 
 <script language="Javascript">
 
+    function clear_select_segmentselection(form) {
+
+    ClearSelection('targets')      
+    //Dealing with csrf token
+    function getCookie(c_name) {
+        if (document.cookie.length > 0) {
+            c_start = document.cookie.indexOf(c_name + "=");
+            if (c_start != -1) {
+                c_start = c_start + c_name.length + 1;
+                c_end = document.cookie.indexOf(";", c_start);
+                if (c_end == -1) c_end = document.cookie.length;
+                return unescape(document.cookie.substring(c_start, c_end));
+            }
+        }
+        return "";
+    }
+    $.ajaxSetup({
+        headers: { "X-CSRFToken": getCookie("csrftoken") }
+    });
+    //Actual post
+    var fd = new FormData(form);
+    $.ajax({
+        type: 'POST',
+        url: '/common/targetformread',
+        data: fd,
+        cache: false,
+        processData: false,
+        contentType: false,
+        'success': function (data) {
+            location.href="/alignment/segmentselection";
+            console.log('ready!');
+        },
+    }).fail(function (jqXHR, textStatus, error) {
+        alert("Request failed: " + textStatus + error);
+    });
+    return false;
+}
     $(document).ready(function () {     
 
       var colorDefault = ["#5a9bd4", "#f15a60", "#808080", "#006600"],
@@ -107,7 +144,7 @@
             for (val in this.list) {
               value += this.list[val] + "\n";
             }
-            $("#names").val(value);
+            $("#input-targets").val(value);
           }
         });
       }
@@ -385,8 +422,12 @@
             <div class="row-fluid">
               <div>
                 <p> Click on an area of the venn diagram or a receptor clade on the phylogenetic G-protein selectivity tree to display the respective receptor sets: </p>
-                <textarea readonly id="names" style="width: 100%;" wrap="off" rows="10"></textarea>
               </div>
+              <form id='target-input-form' method="post" enctype="multipart/form-data"> 
+                <textarea name="input-targets" id="input-targets" style="width: 100%;" wrap="off" rows="10"></textarea>
+            </form>
+            <button onclick="clear_select_segmentselection(document.getElementById('target-input-form'))" type="button" class="btn btn-success" style="float: right;"> Make sequence alignment </button>
+<!--             <button onclick="location.href='/alignment/segmentselection'" type="button" class="btn btn-success"> Make sequence alignment </button> -->
             </div>
           </div>
           
