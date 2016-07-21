@@ -623,24 +623,33 @@ var path = svg3.datum(interactions).selectAll("path")
       .attr("display", function(d) { return d.depth ? null : "none"; }) // hide inner ring
       .attr("d", arc)
       .style("fill", function(d) { 
-          if (d.color && d.depth<4 && 1==1 ){ return "#FFF" } //&& d.depth<4 && 1==2
+          if (d.color && d.depth<4 && 1==2 ){ return "#FFF" } //&& d.depth<4 && 1==2
           // else if (d.interactions > 0 && d.mutations_an > 0) {return "#31a354" }
           // else if (d.interactions > 0) {return "#3182bd" }
           // else if (d.mutations_an > 0) {return "#fdae6b" }
           // else {return "#969696"}; })
-          else if (d.interactions > 0 && d.mutations_an > 0) {return "FireBrick" }
-          else if (d.interactions > 0) {return "Olive" }
-          else if (d.mutations_an > 0) {return "Chocolate" }
+          // else if (d.interactions > 0 && d.mutations_an > 0) {return "FireBrick" }
+          // else if (d.interactions > 0) {return "Olive" }
+          // else if (d.mutations_an > 0) {return "Chocolate" }
+          else if (d.interactions > 0 && d.mutations_an > 0) {return "#75C262" }
+          else if (d.interactions > 0) {return "#5493D0" }
+          else if (d.mutations_an > 0) {return "#F8A153" }
+          else if (d.interactions > 0 && d.mutations_an > 0) {return "#7893BC" }
+          else if (d.interactions > 0) {return "#AAE58B" }
+          else if (d.mutations_an > 0) {return "#FFEA87" }
+          else if (d.interactions > 0 && d.mutations_an > 0) {return "#31a354" }
+          else if (d.interactions > 0) {return "#3182bd" }
+          else if (d.mutations_an > 0) {return "#fdae6b" }
           else {return "#ddd" }
           })
       .style("stroke-width", function(d) { return (d.depth<4? "2px" : "1px" ) })
       .style("stroke", function(d) {
-          if (d.color && d.depth<4 && 1==1 ){ return d.color } //&& d.depth<4 && 1==2
+          if (d.color && d.depth<4 && 1==2 ){ return d.color } //&& d.depth<4 && 1==2
           // else if (d.interactions > 0 && d.mutations_an > 0) {return "#31a354" }
           // else if (d.interactions > 0) {return "#3182bd" }
           // else if (d.mutations_an > 0) {return "#fdae6b" }
           // else {return "#969696"}; })
-          else if (1==1) {return "#000"}
+          else if (1==1) {return "#FFF"}
           else if (d.interactions > 0 && d.mutations_an > 0) {return "FireBrick" }
           else if (d.interactions > 0) {return "Olive" }
           else if (d.mutations_an > 0) {return "Chocolate" }
@@ -648,10 +657,10 @@ var path = svg3.datum(interactions).selectAll("path")
         })
       // .style("fill", function(d) { return color((d.children ? d : d.parent).name); })
       .style("opacity", function(d) {
-          if ((d.interactions > 0 && d.mutations_an > 0) || 1==1 ) {return 0.6 } // || 1==1
+          if ((d.interactions > 0 && d.mutations_an > 0) || 1==2 ) {return 0.9 } // || 1==1
           else if (d.interactions > 0) {return 0.9 }
           else if (d.mutations_an > 0) {return 0.9 }
-          else {return 1}; })
+          else {return 0.3}; })
       // .style("fill-rule", "evenodd")
       .each(stash);
 
@@ -729,25 +738,25 @@ var path = svg3.datum(interactions).selectAll("path")
             }
         })
         // .attr("dx", "1") // margin
-         .attr("dx", function() {if (d.depth==4) { return arc.centroid(d)[0] < 0 ? "-53px" : "53px";
+         .attr("dx", function() {if (d.depth==4) { return arc.centroid(d)[0] < 0 ? "-58px" : "58px";
                                     } else if (d.depth==1) { return arc.centroid(d)[0] < 0 ? "-65px" : "65px";
                                     } else if (d.depth==2) { return arc.centroid(d)[0] < 0 ? "-65px" : "65px";
-                                    } else if (d.depth==3) { return arc.centroid(d)[0] < 0 ? "-80px" : "80px";
+                                    } else if (d.depth==3) { return arc.centroid(d)[0] < 0 ? "-100px" : "100px";
                                     } else { return "0px"; } } ) // vertical-align
          .attr("dy", ".35em") // vertical-align
         .attr("pointer-events", "none")
         // .style("font", function () { return (d.depth==1 ? "14px" : d.depth!=4 ? "12px" : "10px") + " Palatino" ;})
 
         // .style("font", "Palatino")
-        .style("font", function() { if (d.depth<3) {return "16px"+ " Palatino"} else if (d.depth==3) {return "14px"+ " Palatino"} else { return "12px"+ " Palatino" } })
+        .style("font", function() { if (d.depth<3) {return "17px"+ " Palatino"} else if (d.depth==3) {return "16px"+ " Palatino"} else { return "14px"+ " Palatino" } })
        
-        // .style("fill", function() { return (d.depth==4 && (d.interactions == 0 && d.mutations_an == 0) ? "#AAA" : "#000") })
+        .style("fill", function() { return (d.depth<4 && (d.interactions > 0 && d.mutations_an > 0) ? "#000" : "#000") })
        
         // .style("fill", function(d) {
-        //   if (d.interactions > 0 && d.mutations_an > 0) {return "green" }
-        //   else if (d.interactions > 0) {return "Olive" }
-        //   else if (d.mutations_an > 0) {return "palegreen" }
-        //   else {return "#ddd"}; });
+        //   if (d.interactions > 0 && d.mutations_an > 0) {return "#FFF" }
+        //   else if (d.interactions > 0) {return "#000" }
+        //   else if (d.mutations_an > 0) {return "#000" }
+        //   else {return "#000"}; });
 })
 
 
