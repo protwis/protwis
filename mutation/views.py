@@ -612,16 +612,21 @@ def coverage(request):
         # with open('interactions_dump.csv', 'w', newline='') as myfile:
         #     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)    
         #     wr.writerows(dump_interactions)
-
+        total_r = 0
+        total_r_un = 0 #unannotated
+        total_m = 0 #annotated
+        total_m_un = 0 #unannotated
         for m in class_mutations:
             # break
             fid = m.protein.family.slug.split("_")
+            total_m_un += 1
             coverage[fid[0]]['mutations'] += 1
             coverage[fid[0]]['children'][fid[1]]['mutations'] += 1
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['mutations'] += 1
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['mutations'] += 1
 
             if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['mutations']==1: #if first time receptor gets a point
+                total_r_un += 1
                 coverage[fid[0]]['receptor_m'] += 1
                 coverage[fid[0]]['children'][fid[1]]['receptor_m'] += 1
                 coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_m'] += 1
@@ -631,12 +636,14 @@ def coverage(request):
                 coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['fraction_m'] = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_m']/coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t']
 
             if m.exp_func is not None or m.foldchange!=0 or m.exp_qual is not None or m.ligand is not None: #if exp with data
+                total_m += 1
                 coverage[fid[0]]['mutations_an'] += 1
                 coverage[fid[0]]['children'][fid[1]]['mutations_an'] += 1
                 coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['mutations_an'] += 1
                 coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['mutations_an'] += 1
 
                 if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['mutations_an']==1: #if first time receptor gets a point
+                    total_r += 1
                     coverage[fid[0]]['receptor_m_an'] += 1
                     coverage[fid[0]]['children'][fid[1]]['receptor_m_an'] += 1
                     coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_m_an'] += 1
@@ -646,7 +653,8 @@ def coverage(request):
                     coverage[fid[0]]['children'][fid[1]]['fraction_m_an'] = coverage[fid[0]]['children'][fid[1]]['receptor_m_an']/coverage[fid[0]]['children'][fid[1]]['receptor_t']
                     coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['fraction_m_an'] = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_m_an']/coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t']
 
-
+        print("Total R",total_r,"Total M",total_m," <-- annotated || unannotated -->","Total R",total_r_un,"Total M",total_m_un)
+        context['totals'] = {'total_r':total_r,'total_r_un':total_r_un, 'total_m':total_m, 'total_m_un':total_m_un}
         generic = OrderedDict(sorted(generic.items(), key=lambda x: x[1]['score']['s_weight'], reverse=True))
 
     CSS_COLOR_NAMES = ["AliceBlue","AntiqueWhite","Aqua","Aquamarine","Azure","Beige","Bisque","Black","BlanchedAlmond","Blue","BlueViolet","Brown","BurlyWood","CadetBlue","Chartreuse","Chocolate","Coral","CornflowerBlue","Cornsilk","Crimson","Cyan","DarkBlue","DarkCyan","DarkGoldenRod","DarkGray","DarkGrey","DarkGreen","DarkKhaki","DarkMagenta","DarkOliveGreen","Darkorange","DarkOrchid","DarkRed","DarkSalmon","DarkSeaGreen","DarkSlateBlue","DarkSlateGray","DarkSlateGrey","DarkTurquoise","DarkViolet","DeepPink","DeepSkyBlue","DimGray","DimGrey","DodgerBlue","FireBrick","FloralWhite","ForestGreen","Fuchsia","Gainsboro","GhostWhite","Gold","GoldenRod","Gray","Grey","Green","GreenYellow","HoneyDew","HotPink","IndianRed","Indigo","Ivory","Khaki","Lavender","LavenderBlush","LawnGreen","LemonChiffon","LightBlue","LightCoral","LightCyan","LightGoldenRodYellow","LightGray","LightGrey","LightGreen","LightPink","LightSalmon","LightSeaGreen","LightSkyBlue","LightSlateGray","LightSlateGrey","LightSteelBlue","LightYellow","Lime","LimeGreen","Linen","Magenta","Maroon","MediumAquaMarine","MediumBlue","MediumOrchid","MediumPurple","MediumSeaGreen","MediumSlateBlue","MediumSpringGreen","MediumTurquoise","MediumVioletRed","MidnightBlue","MintCream","MistyRose","Moccasin","NavajoWhite","Navy","OldLace","Olive","OliveDrab","Orange","OrangeRed","Orchid","PaleGoldenRod","PaleGreen","PaleTurquoise","PaleVioletRed","PapayaWhip","PeachPuff","Peru","Pink","Plum","PowderBlue","Purple","Red","RosyBrown","RoyalBlue","SaddleBrown","Salmon","SandyBrown","SeaGreen","SeaShell","Sienna","Silver","SkyBlue","SlateBlue","SlateGray","SlateGrey","Snow","SpringGreen","SteelBlue","Tan","Teal","Thistle","Tomato","Turquoise","Violet","Wheat","White","WhiteSmoke","Yellow","YellowGreen"];
@@ -663,7 +671,7 @@ def coverage(request):
     n = 0
     for c,c_v in coverage.items():
         c_v['name'] = c_v['name'].split("(")[0]
-        if c_v['name'].strip() == 'Other GPCRs':
+        if c_v['name'].strip() in ['Other GPCRs','Taste 2','Class B2']:
             # i += 1
             continue
             # pass
@@ -736,7 +744,8 @@ def coverage(request):
     context['tree'] = json.dumps(tree)
     context['tree2'] = json.dumps(tree2)
     print("time 7")
-    return render(request, 'mutation/coverage.html', context)
+    # return render(request, 'mutation/coverage.html', context)
+    return render(request, 'mutation/statistics.html', context)
 
 
 def pocket(request):
