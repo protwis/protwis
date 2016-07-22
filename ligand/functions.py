@@ -16,7 +16,6 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
         except:
             # abort if pdb resource is not found
             raise Exception('PubChem resource not found, aborting!')
-
         if name:
             ligand_name = name
         else:
@@ -47,23 +46,34 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
                                                 properities__smiles=ligand_id)
                     except Ligand.DoesNotExist:
                         try:   
-                            print('hi!')
-                            l = Ligand.objects.get(name=ligand_name, canonical=True,properities__smiles=None) #if no properities exist
-                            l.properities.smiles = ligand_id
-                            l.properities.save()
-                            l.save()
-                        except Ligand.DoesNotExist:
-                            l = Ligand()
-                            l.name = ligand_name
-                            lp = LigandProperities()
-                            lp.smiles = ligand_id
-                            lp.ligand_type = lt
-                            lp.save()
-                            l.properities = lp
-                            l.canonical = True #maybe false, but that would break stuff.
-                            l.ambigious_alias = False
-                            l.save()
-        
+                            l = Ligand.objects.get(name__startswith=ligand_name, canonical=True,properities__smiles=ligand_id) #if no properities exist
+                        except Ligand.DoesNotExist: 
+                            try:   
+                                l = Ligand.objects.get(name=ligand_name, canonical=True,properities__smiles=None) #if no properities exist
+                                l.properities.smiles = ligand_id
+                                l.properities.save()
+                                l.save()
+                            except Ligand.DoesNotExist: 
+                                ## now insert a new ligand, but first make sure name is unique
+                                if Ligand.objects.filter(name=ligand_name).exists():
+                                    ls = Ligand.objects.filter(name__startswith=ligand_name, canonical=True).order_by("pk")
+                                    for l_temp in ls:
+                                        last = l_temp.name.split("_")[-1]
+                                    if last==ligand_name: #no addition yet
+                                        ligand_name = ligand_name +"_1"
+                                    else:
+                                        ligand_name = ligand_name +"_"+str(int(last)+1)
+                                l = Ligand()
+                                l.name = ligand_name
+                                lp = LigandProperities()
+                                lp.smiles = ligand_id
+                                lp.ligand_type = lt
+                                lp.save()
+                                l.properities = lp
+                                l.canonical = True #maybe false, but that would break stuff.
+                                l.ambigious_alias = False
+                                l.save()
+            
     elif name:
         
         # if this name is canonical and it has a ligand record already
