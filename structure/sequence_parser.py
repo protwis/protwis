@@ -1,6 +1,7 @@
 from django.conf import settings
 
 from residue.models import Residue
+from protein.models import Protein, ProteinSegment
 from structure.models import Structure
 from structure.functions import BlastSearch
 
@@ -36,7 +37,7 @@ atom_count = {
 
 class ParsedResidue(object):
 
-    def __init__(self, res_name, res_num, gpcrdb=None):
+    def __init__(self, res_name, res_num, gpcrdb=None, segment=None):
         
         self.resnum = None
         self.wt_num = res_num
@@ -46,6 +47,7 @@ class ParsedResidue(object):
         self.deletion = False
         self.coords = ''
         self.gpcrdb = gpcrdb if gpcrdb else ''
+        self.segment = segment
         self.seqres = False
         self.fusion = None
 
@@ -97,21 +99,29 @@ class SequenceParser(object):
 
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR", "HIS", "HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
 
-    def __init__(self, pdb_file, sequence=None, wt_protein_id=None):
+    def __init__(self, pdb_file=None, sequence=None, wt_protein_id=None):
 
         # dictionary of 'ParsedResidue' object storing information about alignments and bw numbers
         self.mapping = {}
         self.residues = {}
+        self.segments = {}
         self.blast = BlastSearch(blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_human_blastdb']))
 
-        self.pdb_struct = PDBParser(QUIET=True).get_structure('pdb', pdb_file)[0]
-        # a list of SeqRecord objects retrived from the pdb SEQRES section
-        self.seqres = list(SeqIO.parse(pdb_file, 'pdb-seqres'))
+        if pdb_file is not None:
+            self.pdb_struct = PDBParser(QUIET=True).get_structure('pdb', pdb_file)[0]
+            # a list of SeqRecord objects retrived from the pdb SEQRES section
+            self.seqres = list(SeqIO.parse(pdb_file, 'pdb-seqres'))
 
-        # SeqRecord id is a pdb_code:chain 
-        self.struct_id = self.seqres[0].id.split(':')[0]
+            # SeqRecord id is a pdb_code:chain 
+            self.struct_id = self.seqres[0].id.split(':')[0]
+
+        self.sequence = sequence
+        if type(sequence) == "string":
+            self.sequence = { x: y for x,y in enumerate(sequnece) }
+
+
         # If not specified, attempt to get wildtype from pdb.
-        if not wt_protein_id:
+        if not wt_protein_id and pdb_file is not None:
             self.wt = Structure.objects.get(pdb_code__index=self.struct_id).protein_conformation.protein.parent
         else:
             self.wt = Protein.objects.get(id=wt_protein_id)
@@ -131,14 +141,32 @@ class SequenceParser(object):
         wt_resi = list(Residue.objects.filter(protein_conformation__protein=self.wt.id))
         for chain in pdb_struct:
             self.residues[chain.id] = []
-            self.mapping[chain.id] = {x.sequence_number: ParsedResidue(x.amino_acid, x.sequence_number, str(x.display_generic_number) if x.display_generic_number else None) for x in wt_resi}
+            self.mapping[chain.id] = {x.sequence_number: ParsedResidue(x.amino_acid, x.sequence_number, str(x.display_generic_number) if x.display_generic_number else None, x.protein_segment) for x in wt_resi}
             
             for res in chain:
             #in bio.pdb the residue's id is a tuple of (hetatm flag, residue number, insertion code)
                 if res.resname.replace('HID', 'HIS') not in self.residue_list:
                     continue
                 self.residues[chain.id].append(res)
-                #self.mapping[chain.id][res.id[1]] = ParsedResidue(polypeptide.three_to_one(res.resname.replace('HID', 'HIS')), res.id[1])
+            poly = self.get_chain_peptides(chain.id)
+            for peptide in poly:
+                #print("Start: {} Stop: {} Len: {}".format(peptide[0].id[1], peptide[-1].id[1], len(peptide)))
+                self.map_to_wt_blast(chain.id, peptide, None, int(peptide[0].id[1]))
+
+    def get_segments(self):
+
+        #get the first chain
+        c = list(self.mapping.keys())[0]
+
+        for segment in ProteinSegment.objects.all():
+            resi = []
+            for r in Residue.objects.filter(protein_conformation__protein=self.wt.id, protein_segment=segment):
+                if self.mapping[c][r.sequence_number].resnum is not None:
+                    resi.append(self.mapping[c][r.sequence_number].resnum)
+            if resi == []:
+                continue
+            self.segments[segment.slug] = [min(resi), max(resi)]
+        return self.segments
 
 
     def get_chain_peptides(self, chain_id, gap_threshold=230):
@@ -185,10 +213,8 @@ class SequenceParser(object):
         alignments = self.blast.run(seq)
 
         for alignment in alignments:
-            if alignment[1].hsps[0].expect > 1. and residues:
-                self.fusions.append(residues)
-                #for res in residues:
-                #    self.mapping[chain_id][res.id[1]].set_fusion()
+            if alignment[1].hsps[0].expect > .5 and residues:
+                self.fusions.append((min([x.id[1] for x in residues]), max([x.id[1] for x in residues])))
             if self.wt.id != int(alignment[0]):
                 continue
             for hsps in alignment[1].hsps:
@@ -206,11 +232,6 @@ class SequenceParser(object):
 
         for s, q in zip(sbjct, q):
             if s == q:
-                #r = Residue.objects.get(sequence_number=sbjct_counter, protein_conformation__protein=self.wt.id)
-                #if r.display_generic_number is not None:
-                #    self.mapping[chain_id][offset + q_counter].set_gpcrdb(r.display_generic_number)
-                
-                #self.mapping[chain_id][offset - 1 + q_counter].set_wt_number(sbjct_counter)
                 if seqres:
                     self.mapping[chain_id][sbjct_counter].set_seqres(True)
                 else:
@@ -218,9 +239,6 @@ class SequenceParser(object):
                 sbjct_counter += 1
                 q_counter += 1
             elif s != '-' and q != '-':
-                #print(s)
-                #self.mapping[chain_id][offset - 1 + q_counter].set_mutation(s)
-                #self.mapping[chain_id][offset - 1 + q_counter].set_wt_number(sbjct_counter)
                 self.mapping[chain_id][sbjct_counter].set_pdb_res_num(offset - 1 + q_counter)
                 self.mapping[chain_id][sbjct_counter].set_mutation(q)
                 sbjct_counter += 1
@@ -232,10 +250,14 @@ class SequenceParser(object):
 
     def map_to_wt_pw(self, chain_id, residues = None, sequence=None, starting_aa = 1):
 
+        """
+        @param sequence: a dictionary of residue number: residue one letter code pairs
+        """
+
         if residues:
             seq = self.get_chain_sequence(residues)
         elif sequence:
-            seq = sequence
+            seq = sequence.values()
         else:
             return
 
@@ -352,8 +374,6 @@ class SequenceParserPW(object):
         print(chain_seq)
         offset = 0
         for w, c in zip(wt, chain_seq):
-            #if offset+self.wt_seq_start not in self.mapping[chain.id].keys() and w != '-':
-            #    self.mapping[chain.id][offset+self.wt_seq_start] = ParsedResidue(w, offset+self.wt_seq_start)
             if w == c:
                 if seqres:
                     self.mapping[chain.id][offset+self.wt_seq_start].seqres=True
