@@ -25,7 +25,7 @@ class QueryPDB():
         self.new_structures = None
         self.new_uniques = None
     
-    def list_xtals(self):
+    def list_xtals(self, verbose=True):
         ''' Lists structures and matching receptors from PDB that are not on GPCRdb yet. '''
     
         url = 'http://www.rcsb.org/pdb/rest/search'
@@ -47,7 +47,8 @@ class QueryPDB():
         structures = result.decode('utf-8').split('\n')[:-1]
         if len(structures)<159:
             raise AssertionError('Less than 159 structures, change the pdb query.')
-        print('Number of GPCR structures on PDB:',len(structures))
+        if verbose:
+            print('Number of GPCR structures on PDB:',len(structures))
         new_struct = []
         new_unique = []
         for i in structures:
@@ -64,7 +65,7 @@ class QueryPDB():
                 s = Protein.objects.get(entry_name=i.lower())
                 continue
             except:
-                new_struct.append(i)
+                new_struct.append((i, s))
             miss_count = 0
             for j in uniprots:
                 try:
@@ -80,8 +81,9 @@ class QueryPDB():
                     pass
             if miss_count==1:
                 new_unique.append((i,p))
-        print('\nStructures not on GPCRdb: ',len(new_struct),'\n',new_struct)
-        print('\nNew unique structures: ',len(new_unique),'\n',new_unique)
+        if verbose:
+            print('\nStructures not on GPCRdb: ',len(new_struct),'\n',new_struct)
+            print('\nNew unique structures: ',len(new_unique),'\n',new_unique)
         self.num_struct = len(structures)
         self.new_structures = new_struct
         self.new_uniques = new_unique
