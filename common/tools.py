@@ -9,8 +9,11 @@ from urllib.parse import quote
 from urllib.request import urlopen
 from urllib.error import HTTPError
 import json
+import gzip
+from io import BytesIO
 from string import Template
 from Bio import Entrez, Medline
+import xml.etree.ElementTree as etree 
 
 
 def save_to_cache(path, file_id, data):
@@ -37,7 +40,7 @@ def create_cache_dirs(path):
         intermediate_path = os.sep.join([intermediate_path, directory])
         os.chmod(intermediate_path, 0o777)
 
-def fetch_from_web_api(url, index, cache_dir=False):
+def fetch_from_web_api(url, index, cache_dir=False, xml=False):
     logger = logging.getLogger('build')
 
     # slugify the index for the cache filename (some indices have symbols not allowed in file names (e.g. /))
@@ -62,7 +65,15 @@ def fetch_from_web_api(url, index, cache_dir=False):
         
         try:
             req = urlopen(full_url)
-            d = json.loads(req.read().decode('UTF-8'))
+            if full_url[-2:]=='gz' and xml:
+                buf = BytesIO( req.read())
+                f = gzip.GzipFile(fileobj=buf)
+                data = f.read()
+                d = etree.fromstring(data)
+            elif xml:
+                d = etree.fromstring(req.read().decode('UTF-8'))
+            else:
+                d = json.loads(req.read().decode('UTF-8'))
         except HTTPError as e:
             tries += 1
             if e.code == 404:

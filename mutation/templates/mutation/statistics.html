@@ -370,5 +370,15 @@ var path = svg3.datum(interactions).selectAll("path")
 The tree highlights receptors for which ligand interaction data is available from: Orange: annotated literature mutations, Blue: crystal structure complexes and Green: both.<br>
 The following receptors have no data and has been exluded for clarity: Class A orphans, Class B2 (Adhesions), Taste 2 and Other GPCRs (not part of any of the classes A-C or F).<br>
 The labs of David Gloriam, Anke Schiedel, Chris de Graaf and Hugo Gutiérrez-de-Terán are acknowledged for the annotation of mutation data.
-</table>
+
+<br>
+{% for k_class,v_class in coverage.items %}
+  {% for k_ligand,v_ligand in v_class.children.items %}
+    {% for k_family,v_family in v_ligand.children.items %}
+      {% for k,v in v_family.children.items %}
+       {{v.name}}_human, {{v_class.name}}, {{v_ligand.name}}, {{v_family.name}}<br>
+      {% endfor %}
+    {% endfor %}
+  {% endfor %}
+{% endfor %}
 {% endblock %}
