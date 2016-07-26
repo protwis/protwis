@@ -5,7 +5,7 @@ from protein.models import Protein
 from residue.models import Residue
 from mutation.models import Mutation
 
-from construct.functions import generate_schematic
+from construct.schematics import generate_schematic
 
 class Construct(models.Model): 
     #overall class 
@@ -33,8 +33,11 @@ class Construct(models.Model):
         temp = cache.get(self.name+'_schematics')
         if temp==None:
             print(self.name+'_schematics no cache')
-            temp = cache.set(self.name+'_schematics', generate_schematic(self), 60*60*24*2) #two days
-            temp = cache.get(self.name+'_schematics')
+            try:
+                temp = cache.set(self.name+'_schematics', generate_schematic(self), 60*60*24*2) #two days
+                temp = cache.get(self.name+'_schematics')
+            except:
+                temp = {}
         else:
             print(self.name+'_schematics used cache')
             # temp = cache.set(self.name+'_schematics', generate_schematic(self), 60*60*24*2) #two days

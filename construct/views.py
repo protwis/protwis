@@ -4,7 +4,9 @@ from django.views.generic import TemplateView, View
 from common.diagrams_gpcr import DrawSnakePlot
 
 from construct.models import *
+from construct.functions import *
 from protein.models import Protein, ProteinConformation
+from structure.models import Structure
 from mutation.models import Mutation
 
 from datetime import datetime
@@ -40,6 +42,48 @@ def detail(request, slug):
     chunk_size = 10
     context = {'c':c, 'chunk_size': chunk_size, 'snake': snake, 'annotations': json.dumps(schematics['annotations']), 'schematics': schematics, 'residues_lookup': residues_lookup}
     return render(request,'construct/construct_detail.html',context)
+
+def fetch_all_pdb(request):
+
+    structures = Structure.objects.all()
+
+    for s in structures:
+        pdbname = str(s)
+        print(pdbname)
+        try:
+            protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
+            d = fetch_pdb_info(pdbname,protein)
+
+            #delete before adding new
+            Construct.objects.filter(name=d['construct_crystal']['pdb_name']).delete()
+            add_construct(d)
+        except:
+            print(pdbname,'failed')
+
+
+    # d = fetch_pdb_info(slug,protein)
+
+    # #delete before adding new
+    # Construct.objects.filter(name=d['construct_crystal']['pdb_name']).delete()
+    # add_construct(d)
+
+    context = {'d':d}
+
+    return render(request,'pdb_fetch.html',context)
+
+def fetch_pdb(request, slug):
+
+    protein = Protein.objects.filter(entry_name=slug).get()
+
+    d = fetch_pdb_info(slug,protein)
+
+    #delete before adding new
+    Construct.objects.filter(name=d['construct_crystal']['pdb_name']).delete()
+    add_construct(d)
+
+    context = {'d':d}
+
+    return render(request,'pdb_fetch.html',context)
 
 class ConstructBrowser(TemplateView):
     """

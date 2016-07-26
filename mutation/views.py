@@ -561,7 +561,7 @@ def coverage(request):
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['name'] = p.entry_name.split("_")[0] #[:10]
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_t'] = 1
 
-
+    coverage3 = copy.deepcopy(coverage)
     print("time 2")
 
 
@@ -740,7 +740,7 @@ def coverage(request):
        # break
     #print(json.dumps(tree))
     print("time 6")
-    context['coverage'] = coverage #coverage
+    context['coverage'] = coverage3 #coverage
     context['tree'] = json.dumps(tree)
     context['tree2'] = json.dumps(tree2)
     print("time 7")

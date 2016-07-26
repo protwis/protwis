@@ -1,0 +1,93 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+    <table class='table'>
+    <tr><td>Protein</td><td>{{d.protein|safe}}</td></tr>
+    <tr><td>WT seq</td><td>{{d.wt_seq|length}} aa long</td></tr>
+    <tr><td>PDB</td><td>{{d.pdb}}</td></tr>
+    <tr><td>experimental_method</td><td>{{d.experimental_method}}</td></tr>
+    <tr><td>resolution</td><td>{{d.resolution}}</td></tr>
+    <tr><td>r_factor</td><td>{{d.r_factor}}</td></tr>
+
+    <tr><td>crystal_growth</td><td>
+    {% for k,v in d.crystal_growth.0.items %}
+    {{k}} : {{v}}<br>
+    {% endfor %}
+    </td></tr>
+
+    <tr><td>xml</td><td>
+    <table width=800 ><tr><th>SegRes position</th><th>Name</th><th>ResID range</th><th>WT seqpos range(s)</th></tr>
+    {% for v in d.xml_segments %}
+    <tr><td>{{v.0}}</td><td>{{v.1.0}}</td><td>{{v.2}}-{{v.3}}</td><td>{{v.4}}</td></tr>
+    {% endfor %}
+    </table>
+
+    <br>
+    WT not observed: {{d.not_observed}}<br>
+    WT missing (deleted): {{d.deletions}}
+    </td></tr>
+
+
+<!--     <tr><td>inserts</td><td>
+    {% for k,v in d.inserts.items %}
+    {{k}} ({{v.alt_name}}):
+    <table width=200>
+    <tr><th>I start</th><th>I end</th><th>C start</th><th>C end</th></tr>
+        {% for p in v.positions.0 %}
+        <tr>
+            <td>{{p.i_start}}</td>
+            <td>{{p.i_end}}</td>
+            <td>{{p.c_start}}</td>
+            <td>{{p.c_end}}</td>
+        </tr>
+        {% endfor %}
+    </table><br>
+    {% endfor %}
+    </td></tr> -->
+
+    <tr><td>mutations</td><td>
+    {% for v in d.mutations %}
+    {{v}}<br>
+    {% endfor %}
+    </td></tr>
+
+    <tr><td>mutations_pdbe</td><td>
+    {% for v in d.mutations_pdbe %}
+    {{v}}<br>
+    {% endfor %}
+    </td></tr>
+
+    <tr><td>auxiliary</td><td>
+    {% for v in d.auxiliary %}
+    {{v}}<br>
+    {% endfor %}
+    </td></tr>
+
+    
+
+    <tr><td>modifications</td><td>
+    {% for v in d.modifications %}
+    {{v}}<br>
+    {% endfor %}
+    </td></tr>
+
+
+    <tr><td>modifications2</td><td>
+    {% for v in d.modifications2.protmod.domains %}
+    {{v.id}} {{v.range}} {{v.description}} {{v.pdbCcId}} <br><br>
+    {% endfor %}
+    </td></tr>
+
+    <tr><td>Urls</td><td>
+    {% for v in d.links %}
+    {{v}}<br>
+    {% endfor %}
+    </td></tr>
+
+    </table>
+
+{% endblock %}
+
+
