@@ -84,7 +84,7 @@ d3.select(window)
         .selectAll("text")
           .attr("text-anchor", function(d) { return (d.x + rotate) % 360 < 180 ? "start" : "end"; })
           .attr("transform", function(d) {
-            return "rotate(" + (d.x - 90) + ")translate(" + (r - 170 + 8) + ")rotate(" + ((d.x + rotate) % 360 < 180 ? 0 : 180) + ")";
+            return "rotate(" + (d.x - 90) + ")translate(" + (r - 170 + 2) + ")rotate(" + ((d.x + rotate) % 360 < 180 ? 0 : 180) + ")";
           });
     }
   })
@@ -169,7 +169,7 @@ for (var x in selectivityinfo){
         .append("circle")
         .attr("r", 3.25)
         .style("fill", "blue")
-        .attr("transform", "translate(" + (33 + spacer) + ",0)");
+        .attr("transform", "translate(" + (23 + spacer) + ",0)");
 
       }
 
@@ -178,7 +178,7 @@ for (var x in selectivityinfo){
         .append("circle")
         .attr("r", 3.25)
         .style("fill", "red")
-        .attr("transform", "translate(" + (33  + 2*spacer) + ",0)");
+        .attr("transform", "translate(" + (23  + 2*spacer) + ",0)");
 
       }
 
@@ -187,7 +187,7 @@ for (var x in selectivityinfo){
         .append("circle")
         .attr("r", 3.25)
         .style("fill", "black")
-        .attr("transform", "translate(" + (33 + 3*spacer) + ",0)");
+        .attr("transform", "translate(" + (23 + 3*spacer) + ",0)");
 
       }
 
@@ -196,7 +196,7 @@ for (var x in selectivityinfo){
         .append("circle")
         .attr("r", 3.25)
         .style("fill", "green")
-        .attr("transform", "translate(" + (33 + 4*spacer) + ",0)");
+        .attr("transform", "translate(" + (23 + 4*spacer) + ",0)");
 
       }
 
@@ -209,7 +209,7 @@ for (var x in selectivityinfo){
     .enter().append("text")
       .attr("dy", ".31em")
       .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
-      .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (r - 170 + 8) + ")rotate(" + (d.x < 180 ? 0 : 180) + ")"; })
+      .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (r - 170 + 2) + ")rotate(" + (d.x < 180 ? 0 : 180) + ")"; })
       .text(function(d) { return d.name.replace(/_/g, ' '); });
 
 
