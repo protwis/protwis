@@ -1,7 +1,7 @@
-var diameter = 1350; 
+var diameter = 1200;
 
 var tree = d3.layout.tree()
-    .size([360, diameter / 2 - 160])
+    .size([360, diameter / 2 - 50])
     .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
 
 var diagonal = d3.svg.diagonal.radial()
@@ -80,7 +80,7 @@ var node = svg_g.selectAll(".node")
   });
 
 var xlegend = 370;
-var ylegend = -460;
+var ylegend = -520;
 
 var legend1 = svg_g.selectAll("circle")
 .data([ylegend, ylegend-40]);
