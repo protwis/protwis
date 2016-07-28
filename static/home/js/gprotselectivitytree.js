@@ -239,6 +239,9 @@ node.on("mouseout", function(u){
   var unhighlight = vis.selectAll("path.link")
     .style("stroke", "#ccc")
     .style("stroke-width", "1.5");
+
+  // var unhighlight_labels = vis.selectAll("text").style("font-weight", "normal");
+
 });
 
 
@@ -248,13 +251,26 @@ function highlightlink(src,tgt){
                          var flag = (d3.select(d).data()[0].source.name == src && d3.select(d).data()[0].target.name == tgt);
                         return flag;
                       });
+
                       d3.selectAll(link)
                         .style("stroke", "#000000")
-                        .style("stroke-width", "2r"); 
+                        .style("stroke-width", "2r");
+
                     }
+//iterate over labels for leaf nodes info to highlight labels
+function highlightlabel(tgt){
+
+var highlight_labels = vis.selectAll("text")[0].filter(function(t){
+                         var th = (d3.select(t).data()[0].name == tgt);
+                        
+                        return th;
+                      });
+
+                       d3.selectAll(highlight_labels)
+                         .style("font-weight", "bold");
+}
 
 //Recursive function to highlight all links of a subtree
-
 function traverse(node){
 
 
@@ -263,12 +279,16 @@ if(node.children){
 node.children.forEach(function(d)
 {
 
-      highlightlink(node.name, d.name)
+      
+      //highlightlabel(d.name);
+      highlightlink(node.name, d.name);
 
         traverse(d);
 });
 
   }
+
+
 }
 
 //Recursive function to traverse a subtree and deselect all nodes
@@ -301,13 +321,14 @@ node.children.forEach(function(d)
 {
 
   d.isSelected = true;
-
+  highlightlabel(d.name)
   
   if (d.name.length>3){
   subtree.push(d.name);
     }
 
-        selectSubtree(d, subtree);
+  selectSubtree(d, subtree);
+
 });
 
   }
@@ -321,8 +342,11 @@ function singleclade(node){
 if (click_count>0){
 
   var deselection = vis.selectAll('g.inner.node').selectAll("circle")
-    .attr("r", 2.9)
+    .attr("r", 2.5)
     .style("fill", "white");
+
+  var unhighlight_labels = vis.selectAll("text").style("font-weight", "normal");
+
 
 }
 
