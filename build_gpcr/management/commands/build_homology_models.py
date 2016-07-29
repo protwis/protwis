@@ -2,6 +2,7 @@ from build.management.commands.base_build import Command as BaseBuild
 
 from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState
 from residue.models import Residue
+from residue.functions import dgn, ggn
 from structure.models import *
 from common.alignment import AlignedReferenceTemplate
 import structure.structural_superposition as sp
@@ -31,40 +32,6 @@ hdlr.setFormatter(formatter)
 logger.addHandler(hdlr) 
 logger.setLevel(logging.INFO)
 
-
-def ggn(gn):
-    return gn.split('.')[0]+'x'+gn.split('x')[1]
-
-def dgn(gn, prot_conf):
-    tm, num = gn.split('x')
-    if len(num)==3:
-        num1 = num[:2]
-    else:
-        num1 = num
-    try:
-        n = Residue.objects.get(protein_conformation=prot_conf, display_generic_number__label=tm+'.'+num1+'x'+num)
-    except:
-        p = 1
-        plus = False
-        while plus==False and p<4:
-            try:
-                n = Residue.objects.get(protein_conformation=prot_conf, 
-                                        display_generic_number__label=tm+'.'+str(int(num1)+p)+'x'+num)
-                plus = True
-            except:
-                p+=1
-        if plus==False:
-            m = -1
-            minus = False
-            while minus==False and m>-4:
-                try:
-                    n = Residue.objects.get(protein_conformation=prot_conf, 
-                                            display_generic_number__label=tm+'.'+str(int(num1)+m)+'x'+num)
-                    minus = True
-                except:
-                    m-=1
-    return n.display_generic_number.label
-    
 
 class Command(BaseBuild):  
     help = 'Build automated chimeric GPCR homology models'    
@@ -240,14 +207,25 @@ class HomologyModeling(object):
         return rotamer
                                                             
     def format_final_model(self):
+        if self.prot_conf.protein!=self.main_structure.protein_conformation.protein.parent:
+            try:
+                del self.template_source['N-term']
+            except:
+                pass
+            try:
+                del self.template_source['C-term']
+            except:
+                pass
         pos_list = []
         for seg in self.template_source:
             for num in self.template_source[seg]:
                 try:
-                    num = str(Residue.objects.get(protein_conformation=self.prot_conf,display_generic_number__label=dgn(num,self.prot_conf)).sequence_number)
+                    num = str(Residue.objects.get(protein_conformation=self.prot_conf,
+                                                  display_generic_number__label=dgn(num,self.prot_conf)).sequence_number)
                 except:
                     pass
                 pos_list.append(num)
+        
         i = 0
         with open ('./structure/homology_models/{}_{}/{}_{}_model.pdb'.format(self.reference_entry_name, self.state,
                                                                               self.reference_entry_name, self.state), 
@@ -272,7 +250,8 @@ class HomologyModeling(object):
                     out_list.append(out_line)
                 except:
                     out_list.append(line)
-        with open ('./structure/homology_models/{}_{}/{}_{}_model.pdb'.format(self.reference_entry_name, self.state,self.reference_entry_name,self.state), 'w') as f:
+        with open ('./structure/homology_models/{}_{}/{}_{}_model.pdb'.format(self.reference_entry_name, self.state,
+                   self.reference_entry_name,self.state), 'w') as f:
             f.write(''.join(out_list))
         return ''.join(out_list)
 
@@ -766,8 +745,8 @@ class HomologyModeling(object):
             self.loops = loop_stat
 #        pprint.pprint(a.reference_dict)
 #        pprint.pprint(a.template_dict)
-        pprint.pprint(main_pdb_array)
-        raise AssertionError()
+#        pprint.pprint(main_pdb_array)
+#        raise AssertionError()
         print('Integrate loops: ',datetime.now() - startTime)
 
         # bulges and constrictions
@@ -1053,16 +1032,16 @@ class HomologyModeling(object):
             trimmed_residues+=list(main_pdb_array['TM7'].keys())[(unwind_num*-1):]+list(main_pdb_array['H8'].keys())[:unwind_num]
         
         # N- and C-termini
-        if N_and_C_termini==True and self.prot_conf==self.main_structure.protein_conformation:
+        if N_and_C_termini==True and self.prot_conf.protein==self.main_structure.protein_conformation.protein.parent:
             N_struct = self.template_source['TM1'][list(self.template_source['TM1'])[0]][0]
             N_term = Residue.objects.filter(protein_conformation=self.prot_conf, protein_segment__slug='N-term')
             if N_struct!=None:
                 N_term_temp = Residue.objects.filter(protein_conformation=N_struct.protein_conformation,
                                                      protein_segment__slug='N-term')
-                last_five = [i.sequence_number for i in list(N_term_temp)[-5:]]
+                last_five = [i.sequence_number for i in list(N_term_temp)]#[-5:]]
             else:
                 last_five = []
-            if self.main_structure==N_struct and len(last_five)==5:
+            if self.main_structure==N_struct:# and len(last_five)==5:
                 try:
                     temp_coo = list(parse.fetch_residues_from_pdb(N_struct,last_five).values())                    
                 except:
@@ -1094,17 +1073,18 @@ class HomologyModeling(object):
                 n_count+=1
                 N_r[str(n.sequence_number)] = n.amino_acid
                 N_a[str(n.sequence_number)] = '-'
-                if n_count>len(N_term)-5:
-                    try:
-                        N_arr[str(n.sequence_number)] = temp_coo[-1*(len(N_term)-n_count+1)]
-                        N_t[str(n.sequence_number)] = list(N_term_temp)[-1*(len(N_term)-n_count+1)].amino_acid
-                        self.template_source['N-term'][str(n.sequence_number)][0] = N_struct
-                    except:
-                        N_t[str(n.sequence_number)] = '-'
-                        N_arr[str(n.sequence_number)] = '-'
-                else:
+#                if n_count>len(N_term)-5:
+                try:
+                    N_arr[str(n.sequence_number)] = temp_coo[-1*(len(N_term)-n_count+1)]
+                    N_t[str(n.sequence_number)] = list(N_term_temp)[-1*(len(N_term)-n_count+1)].amino_acid
+                    self.template_source['N-term'][str(n.sequence_number)][0] = N_struct
+                except:
                     N_t[str(n.sequence_number)] = '-'
                     N_arr[str(n.sequence_number)] = '-'
+#                else:
+#                    N_t[str(n.sequence_number)] = '-'
+#                    N_arr[str(n.sequence_number)] = '-'
+
             r_i['N-term'] = N_r
             t_i['N-term'] = N_t
             a_i['N-term'] = N_a
@@ -1131,8 +1111,8 @@ class HomologyModeling(object):
             C_term_temp = Residue.objects.filter(protein_conformation=C_struct.protein_conformation,
                                                  protein_segment__slug='C-term')
                                                  
-            first_five = [i.sequence_number for i in list(C_term_temp)[:5]]
-            if self.main_structure==N_struct and len(first_five)==5:
+            first_five = [i.sequence_number for i in list(C_term_temp)]#[:5]]
+            if self.main_structure==C_struct:# and len(first_five)==5:
                 try:
                     temp_coo2 = list(parse.fetch_residues_from_pdb(C_struct,first_five).values())
                 except:
@@ -1165,41 +1145,41 @@ class HomologyModeling(object):
                 c_count+=1
                 a.reference_dict['C-term'][str(c.sequence_number)] = c.amino_acid
                 a.alignment_dict['C-term'][str(c.sequence_number)] = '-'
-                if c_count<4:
-                    try:
-                        main_pdb_array['C-term'][str(c.sequence_number)] = temp_coo2[c_count]    
-                        a.template_dict['C-term'][str(c.sequence_number)] = list(C_term_temp)[c_count].amino_acid
-                        self.template_source['C-term'][str(c.sequence_number)][0] = C_struct 
-                    except:
-                        a.template_dict['C-term'][str(c.sequence_number)] = '-'
-                        main_pdb_array['C-term'][str(c.sequence_number)] = '-'
-                else:
+#                if c_count<4:
+                try:
+                    main_pdb_array['C-term'][str(c.sequence_number)] = temp_coo2[c_count]    
+                    a.template_dict['C-term'][str(c.sequence_number)] = list(C_term_temp)[c_count].amino_acid
+                    self.template_source['C-term'][str(c.sequence_number)][0] = C_struct 
+                except:
                     a.template_dict['C-term'][str(c.sequence_number)] = '-'
                     main_pdb_array['C-term'][str(c.sequence_number)] = '-'
+#                else:
+#                    a.template_dict['C-term'][str(c.sequence_number)] = '-'
+#                    main_pdb_array['C-term'][str(c.sequence_number)] = '-'
 
             # Shorten N- and C-termini
             n_count=1
             orig_n_len = len(a.reference_dict['N-term'])
-            if orig_n_len>5:
-                for num in a.reference_dict['N-term']:
-                    if n_count<orig_n_len-4:
-                        del a.reference_dict['N-term'][num]
-                        del a.template_dict['N-term'][num]
-                        del a.alignment_dict['N-term'][num]
-                        del main_pdb_array['N-term'][num]
-                        del self.template_source['N-term'][num]
-                    n_count+=1
+#            if orig_n_len>5:
+            for num in a.template_dict['N-term']:
+                if a.template_dict['N-term'][num]=='-':
+                    del a.reference_dict['N-term'][num]
+                    del a.template_dict['N-term'][num]
+                    del a.alignment_dict['N-term'][num]
+                    del main_pdb_array['N-term'][num]
+                    del self.template_source['N-term'][num]
+                n_count+=1
             c_count=1
             orig_c_len = len(a.reference_dict['C-term'])
-            if orig_c_len>5:
-                for num in a.reference_dict['C-term']:
-                    if c_count>5:
-                        del a.reference_dict['C-term'][num]
-                        del a.template_dict['C-term'][num]
-                        del a.alignment_dict['C-term'][num]
-                        del main_pdb_array['C-term'][num]
-                        del self.template_source['C-term'][num]
-                    c_count+=1
+#            if orig_c_len>5:
+            for num in a.template_dict['C-term']:
+                if a.template_dict['C-term'][num]=='-':
+                    del a.reference_dict['C-term'][num]
+                    del a.template_dict['C-term'][num]
+                    del a.alignment_dict['C-term'][num]
+                    del main_pdb_array['C-term'][num]
+                    del self.template_source['C-term'][num]
+                c_count+=1
             
             if len(a.reference_dict['N-term'])==0:
                 del a.reference_dict['N-term']
@@ -1238,13 +1218,6 @@ class HomologyModeling(object):
 #                    temp_source_seg[s] = self.template_source[s_seg][s]
 #            temp_source[s_seg] = temp_source_seg      
 #        self.template_source = temp_source
-#        for i,j in self.helix_end_mods.items():
-#            print(i)
-#            for k,l in j.items():
-#                print(k,l)
-#        pprint.pprint(a.reference_dict)
-#        pprint.pprint(a.template_dict)
-#        pprint.pprint(main_pdb_array)
         
         # non-conserved residue switching
         if switch_rotamers==True:
@@ -1325,10 +1298,7 @@ class HomologyModeling(object):
                                                                            trimmed_residues=trimmed_residues)
         
         self.statistics.add_info('template_source',self.template_source)
-#        pprint.pprint(a.reference_dict)
-#        pprint.pprint(a.template_dict)
-#        pprint.pprint(main_pdb_array)
-#        raise AssertionError()
+
         # Model with MODELLER
         self.create_PIR_file(a.reference_dict, a.template_dict, path+self.uniprot_id+"_post.pdb")
         
