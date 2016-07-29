@@ -6,7 +6,8 @@ from protein.models import Protein, ProteinConformation, ProteinState, ProteinSe
 from residue.models import Residue
 from residue.models import ResidueGenericNumber, ResidueGenericNumberEquivalent
 from residue.models import ResidueNumberingScheme
-from structure.models import Structure, Rotamer, StructureSegment, StructureSegmentModeling, StructureCoordinates
+from residue.functions import dgn, ggn
+from structure.models import Structure, Rotamer
 
 from collections import OrderedDict
 from copy import deepcopy
@@ -955,7 +956,15 @@ class AlignedReferenceTemplate(Alignment):
         similarity_table = OrderedDict()
         self.main_template_protein = self.main_template_structure.protein_conformation.protein.parent        
         ref_seq = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
-                                         protein_segment__slug=self.segment_labels[0])                                        
+                                         protein_segment__slug=self.segment_labels[0])
+        x50_ref = False
+        for i in ref_seq:
+            try:
+                if i.generic_number.label[-3:]=='x50':
+                    x50_ref = True
+                    break
+            except:
+                pass
         prot_conf = ProteinConformation.objects.get(protein=self.reference_protein)
         segment_order = []
         for i in list(Residue.objects.filter(protein_conformation=prot_conf)):
@@ -1009,9 +1018,11 @@ class AlignedReferenceTemplate(Alignment):
                 temp_length, temp_length1, temp_length2 = [],[],[]
                 try:
                     alt_last_gn = Residue.objects.get(protein_conformation=struct.protein_conformation, 
-                                                      generic_number__label=last_before_gn)
+                                                      display_generic_number__label=dgn(last_before_gn,
+                                                                                        struct.protein_conformation))
                     alt_first_gn= Residue.objects.get(protein_conformation=struct.protein_conformation, 
-                                                      generic_number__label=first_after_gn)
+                                                      display_generic_number__label=dgn(first_after_gn,
+                                                                                        struct.protein_conformation))
                     temp_length = alt_first_gn.sequence_number-alt_last_gn.sequence_number-1
                     alt_seq = Residue.objects.filter(protein_conformation=struct.protein_conformation, 
                                            sequence_number__in=list(range(alt_last_gn.sequence_number+1,
@@ -1041,8 +1052,8 @@ class AlignedReferenceTemplate(Alignment):
                                                          sequence_number__in=before_nums)
                     alt_after8 = Residue.objects.filter(protein_conformation__protein=protein,
                                                          sequence_number__in=after_nums)
-                    alt_before_gns = [r.generic_number.label for r in alt_before8]
-                    alt_after_gns = [r.generic_number.label for r in alt_after8]
+                    alt_before_gns = [ggn(r.display_generic_number.label) for r in alt_before8]
+                    alt_after_gns = [ggn(r.display_generic_number.label) for r in alt_after8]
                     if orig_before_gns==alt_before_gns and orig_after_gns==alt_after_gns:
                         pass
                     else:
@@ -1062,10 +1073,9 @@ class AlignedReferenceTemplate(Alignment):
                 self.loop_table=None
             return self.loop_table
         else:
-            print(self.segment_labels,temp_list)
-            return self.order_sim_table(temp_list, ref_seq, similarity_table)
+            return self.order_sim_table(temp_list, ref_seq, similarity_table, x50_ref)
                     
-    def order_sim_table(self, temp_list, ref_seq, similarity_table):
+    def order_sim_table(self, temp_list, ref_seq, similarity_table, x50_ref=None):
         alt_temps_gn = []
         if self.segment_labels[0]!='ECL2':
             for entry in temp_list:
@@ -1073,12 +1083,10 @@ class AlignedReferenceTemplate(Alignment):
                                                                    protein_segment__slug=self.segment_labels[0]))]
                 for i in res_list:
                     try:
-                        if i.generic_number.label[-3:]=='x50':
+                        if i.generic_number.label[-3:]=='x50' and x50_ref==True:
                             alt_temps_gn.append(entry)
                     except:
                         pass
-        for i in temp_list:
-            print(self.segment_labels,len(ref_seq),i)
         alt_temps = [entry for entry in temp_list if entry[1]==len(ref_seq)]
         sorted_list_gn = sorted(alt_temps_gn, key=lambda x: (-x[2],x[3]))
         sorted_list = sorted(alt_temps, key=lambda x: (-x[2],x[3]))
