@@ -18,7 +18,6 @@ urlpatterns = [
     url(r'^ligand', views.ligand, name='ligand'),
     url(r'^fragment', views.fragment, name='fragment'),
     url(r'^gprotein',  views.GProtein, name='gprotein'),
-    url(r'^drugmapping',  views.drugmapping, name='drugmapping'),
     url(r'^ginterface/(?P<protein>[^/]*?)/$', views.Ginterface, name='render'),
     url(r'^ginterface[/]?$', views.TargetSelection.as_view(), name='targetselection'),
     url(r'^excel/(?P<session>session)/(?P<slug>[-\w]+)/$', views.excel, name='excel'),

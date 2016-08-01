@@ -284,32 +284,4 @@ class ProteinGProteinPair(models.Model):
 
     class Meta():
         db_table = 'protein_gprotein_pair'
-
-# ==========
-
-class ProteinDrugIndication(models.Model):
-    indications = models.ManyToManyField('indication', through='ProteinDrug')
-s
-    def __str__(self):
-        return self.drug_name
-
-    class Meta():
-        db_table = 'protein_drug_indication'
-
-class ProteinDrug(models.Model):
-    receptor_target = models.ForeignKey('Protein')
-    # Use manytoMany here?!
-    drug_name = models.CharField(max_length=50, unique=True)
-    synonym = models.CharField(max_length=100)
-    drug_type = models.CharField(max_length=50)
-    status = models.CharField(max_length=30)
-    indication = models.CharField(max_length=200)
-    approved_year = models.IntegerField()
-    external_link = models.CharField(max_length=200)
-    target_novelty = models.CharField(max_length=50)
-
-    def __str__(self):
-        return self.drug_name
-
-    class Meta():
-        db_table = 'protein_drug'
+        
