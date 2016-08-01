@@ -75,9 +75,7 @@ var node = svg_g.selectAll(".node")
   .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
   .on('mouseover', tip.show)
   .on('mouseout', tip.hide)
-  .on("click", function(d){
-    console.log("In Trials: "+d.trials);
-  });
+  .on("click",  tip.show);
 
 var xlegend = 370;
 var ylegend = -520;

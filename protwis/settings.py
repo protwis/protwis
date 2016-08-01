@@ -49,6 +49,7 @@ INSTALLED_APPS = (
     'build_' + SITE_NAME,
     'construct',
     'tools',
+    'drugs',
 )
 
 MIDDLEWARE_CLASSES = (

@@ -2,12 +2,14 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 
 from common.models import WebResource, WebLink
-from protein.models import Protein, ProteinDrug
+from protein.models import Protein
+from drugs.models import Drugs
 
 from optparse import make_option
 import logging
 import csv
 import os
+import pandas as pd
 
 class Command(BaseCommand):
     help = 'Build Drug Data'
@@ -28,10 +30,17 @@ class Command(BaseCommand):
             filenames = False
         
         try:
+            self.purge_drugs()
             self.create_drug_data(filenames)
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
+
+    def purge_drugs(self):
+        try:
+            Drugs.objects.all().delete()
+        except Drugs.DoesNotExist:
+            self.logger.warning('Drugs mod not found: nothing to delete.')
 
     def create_drug_data(self, filenames=False):
         self.logger.info('CREATING DRUGDATA')
@@ -44,49 +53,38 @@ class Command(BaseCommand):
 
             filepath = os.sep.join([self.drugdata_data_dir, filename])
 
-            with open(filepath, 'r') as f:
-            	# Read file and parse it according to the data structure
-            	
-                # reader = csv.reader(f)
-                # for row in reader:
+            data = pd.read_csv(filepath, header=0)
 
-                #     entry_name = row[4]
-                #     primary = row[8]
-                #     secondary = row[9]
+            for index, row in enumerate(data.iterrows()):
+                drugname = data[index:index+1]['Drug Name'].values[0]
+                entry_name = data[index:index+1]['EntryName'].values[0]
 
-                #     # fetch protein
-                #     try:
-                #         p = Protein.objects.get(entry_name=entry_name)
-                #     except Protein.DoesNotExist:
-                #         self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
-                #         print('error',entry_name)
-                #         continue
+                drugtype = data[index:index+1]['Drug Class'].values[0]
+                indication = data[index:index+1]['Indication(s)'].values[0]
+                novelty = data[index:index+1]['Target_novelty'].values[0]
+                
+                try:
+                    approval = int(data[index:index+1]['Year of Approval (FDA)'].values[0])
+                    status = 'approved'
+                except:
+                    approval = int()
+                    status = "not approved"
 
-                #     primary = primary.replace("G protein (identity unknown)","None") #replace none
-                #     primary = primary.split(", ")
+                # fetch protein
+                try:
+                    p = Protein.objects.get(entry_name=entry_name)
+                except Protein.DoesNotExist:
+                    self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
+                    print('error', entry_name)
+                    continue
 
-                #     secondary = secondary.replace("G protein (identity unknown)","None") #replace none
-                #     secondary = secondary.split(", ")
+                drug, created = Drugs.objects.get_or_create(name=drugname, drugtype=drugtype, indication=indication, novelty=novelty, approval=approval, status=status)
+                drug.target.add(p)
+                drug.save()
 
-                #     if primary=='None' and secondary=='None':
-                #         print('no data for ',entry_name)
-                #         continue
-
-                #     for gp in primary:
-                #         if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
-                #             continue
-                #         g = ProteinGProtein.objects.get_or_create(name=gp, sequence = '')[0]
-                #         gpair = ProteinGProteinPair(protein=p,g_protein=g,transduction='primary')
-                #         gpair.save()
-
-                #     for gp in secondary:
-                #         if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism', '']: #skip bad ones
-                #             continue
-                #         if gp in primary: #sip those that were already primary
-                #              continue 
-                #         g = ProteinGProtein.objects.get_or_create(name=gp, sequence = '')[0]
-                #         gpair = ProteinGProteinPair(protein=p,g_protein=g,transduction='secondary')
-                #         gpair.save()
-
+                # target_list = drug.target.all()
+                # print('drug',target_list)
+                # drug_list = p.drugs_set.all()
+                # print('drug_list',drug_list)
 
         self.logger.info('COMPLETED CREATING DRUGDATA')

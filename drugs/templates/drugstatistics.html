@@ -1,0 +1,216 @@
+t{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block addon_css %}
+<style>
+  #chart {
+    height: 360px;
+    margin: 0 auto;                                               /* NEW */
+    position: relative;
+    width: 360px;
+  }
+  .d3-tip {
+	  font-family: Verdana;
+	  background: rgba(0, 0, 0, 0.8);
+	  padding: 9px;
+	  border: 0px;      
+	  border-radius: 10px;   
+	  color: #fff; 
+	  z-index: 5070;
+	}
+  .tooltip {
+    background: #eee;
+    box-shadow: 0 0 5px #999999;
+    color: #333;
+    display: none;
+    font-size: 12px;
+    left: 130px;
+    padding: 10px;
+    position: absolute;
+    text-align: center;
+    top: 95px;
+    width: 80px;
+    z-index: 10;
+  }
+  .legend {
+    font-size: 12px;
+  }
+  rect {
+    cursor: pointer;                                              /* NEW */
+    stroke-width: 2;
+  }
+  rect.disabled {                                                 /* NEW */
+    fill: transparent !important;                                 /* NEW */
+  }                                                               /* NEW */
+  h1 {                                                            /* NEW */
+    font-size: 14px;                                              /* NEW */
+    text-align: center;                                           /* NEW */
+  }                                                               /* NEW */
+</style>
+{% endblock %}
+{% block content %}
+  </head>
+  <body>
+    <div id="chart"></div>
+    <script src="{% static 'home/js/d3.min.js' %}"></script>
+	<script src="{% static 'home/js/d3.tip.js' %}"></script>
+    <script>
+      (function(d3) {
+
+        var width = 800;
+        var height = 360;
+        var radius = Math.min(width, height) / 2;
+        var donutWidth = 75;
+        var legendRectSize = 18;
+        var legendSpacing = 4;
+
+        var color = d3.scale.category20b();
+
+        var svg = d3.select('#chart')
+          .append('svg')
+          .attr('width', width)
+          .attr('height', height)
+          .append('g')
+          .attr('transform', 'translate(' + (width / 2) + 
+            ',' + (height / 2) + ')');
+
+		
+
+        var arc = d3.svg.arc()
+          .innerRadius(radius - donutWidth)
+          .outerRadius(radius);
+
+        var pie = d3.layout.pie()
+          .value(function(d) { return d.count; })
+          .sort(null);
+
+        var tooltip = d3.select('#chart')
+          .append('div')
+          .attr('class', 'tooltip');
+        
+        tooltip.append('div')
+          .attr('class', 'label');
+
+        tooltip.append('div')
+          .attr('class', 'count');
+
+        tooltip.append('div')
+          .attr('class', 'percent');
+      
+
+        d3.csv("{% static 'home/weekdays.csv' %}", function(error, dataset) {
+          dataset.forEach(function(d) {
+            d.count = +d.count;
+            d.enabled = true;                                         // NEW
+          });
+
+	      var tip = d3.tip()
+		        .attr('class', 'd3-tip')
+		        .style("visibility","visible")
+		        .offset([0, 0])
+		        .html(function(d) {
+		        var total = d3.sum(dataset.map(function(d) {
+              return (d.enabled) ? d.count : 0;                       // UPDATED
+            }));
+		          var percent = Math.round(1000 * d.data.count / total) / 10;
+		          return "<span style='color:#43A047'> Percent: " + percent});
+			                        
+			tip(svg.append("g"));
+
+          var path = svg.selectAll('path')
+            .data(pie(dataset))
+            .enter()
+            .append('path')
+            // .on("click",  tip.show)
+            .attr('d', arc)
+            .attr('fill', function(d, i) { 
+              return color(d.data.label); 
+            })
+            .each(function(d) { this._current = d; })                // NEW
+          path.on('click', function(d) {
+            var total = d3.sum(dataset.map(function(d) {
+              return (d.enabled) ? d.count : 0;                       // UPDATED
+            }));
+            var percent = Math.round(1000 * d.data.count / total) / 10;
+          	// console.log(percent)
+            tooltip.select('.label').html(d.data.label);
+            tooltip.select('.count').html(d.data.count); 
+            tooltip.select('.percent').html(percent + '%'); 
+            tooltip.style('display', 'block');
+          });	
+  
+
+
+// LEGEND
+
+          path.on('mouseout', function() {
+            tooltip.style('display', 'none');
+          });
+
+          /* OPTIONAL 
+          path.on('mousemove', function(d) {
+            tooltip.style('top', (d3.event.pageY + 10) + 'px')
+              .style('left', (d3.event.pageX + 10) + 'px');
+          });
+          */
+            
+          var legend = svg.selectAll('.legend')
+            .data(color.domain())
+            .enter()
+            .append('g')
+            .attr('class', 'legend')
+            .attr('transform', function(d, i) {
+              var height = legendRectSize + legendSpacing;
+              var offset =  height * color.domain().length / 2;
+              var horz = -400;
+              var vert = i * height - offset;
+              return 'translate(' + horz + ',' + vert + ')';
+            });
+
+          legend.append('rect')
+            .attr('width', legendRectSize)
+            .attr('height', legendRectSize)                                   
+            .style('fill', color)
+            .style('stroke', color)                                   // UPDATED (removed semicolon)
+            .on('click', function(label) {                            // NEW
+              var rect = d3.select(this);                             // NEW
+              var enabled = true;                                     // NEW
+              var totalEnabled = d3.sum(dataset.map(function(d) {     // NEW
+                return (d.enabled) ? 1 : 0;                           // NEW
+              }));                                                    // NEW
+              
+              if (rect.attr('class') === 'disabled') {                // NEW
+                rect.attr('class', '');                               // NEW
+              } else {                                                // NEW
+                if (totalEnabled < 2) return;                         // NEW
+                rect.attr('class', 'disabled');                       // NEW
+                enabled = false;                                      // NEW
+              }                                                       // NEW
+
+              pie.value(function(d) {                                 // NEW
+                if (d.label === label) d.enabled = enabled;           // NEW
+                return (d.enabled) ? d.count : 0;                     // NEW
+              });                                                     // NEW
+
+              path = path.data(pie(dataset));                         // NEW
+
+              path.transition()                                       // NEW
+                .duration(750)                                        // NEW
+                .attrTween('d', function(d) {                         // NEW
+                  var interpolate = d3.interpolate(this._current, d); // NEW
+                  this._current = interpolate(0);                     // NEW
+                  return function(t) {                                // NEW
+                    return arc(interpolate(t));                       // NEW
+                  };                                                  // NEW
+                });                                                   // NEW
+            });                                                       // NEW
+            
+          legend.append('text')
+            .attr('x', legendRectSize + legendSpacing)
+            .attr('y', legendRectSize - legendSpacing)
+            .text(function(d) { return d; });
+
+        });
+
+      })(window.d3);
+    </script>
+{% endblock %}

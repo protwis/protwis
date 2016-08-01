@@ -1308,18 +1308,3 @@ def Ginterface(request, protein = None):
     GS_equivalent_interacting_pos = residuelist.filter(display_generic_number__label__in=interacting_gn).values_list('sequence_number', flat=True)
 
     return render(request, 'interaction/ginterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn} )
-
-
-def drugmapping(request):
-    
-    context = dict()
-
-    with open('/protwis/sites/protwis/interaction/flare.json') as data_file:    
-        drugdata = json.load(data_file)
-    
-    context["drugdata"] = drugdata
-
-    return render(request, 'interaction/drugmapping.html', {'drugdata':context})
-
-
-
