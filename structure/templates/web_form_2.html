@@ -394,10 +394,203 @@ select.optional option{
 
  <script src="{% static 'home/js/selection.js' %}"> </script>
 
+ <script>
+ 	
+(function(){
+    
+    function onChange(event) {
+        var reader = new FileReader();
+        reader.onload = onReaderLoad;
+        reader.readAsText(event.target.files[0]);
+    }
+
+    function onReaderLoad(event){
+        // console.log(event.target.result);
+        var obj = JSON.parse(event.target.result);
+        prefill_data(obj);
+    }
+
+    $("#get_json").click(function () 
+	{
+		slug = $("#fetch_json").val();
+	    $.getJSON( "/construct/auto_webform/"+slug, function( data ) {
+	  		// console.log(data);
+	  		prefill_data(data);
+	  	});
+	});
+    
+    function prefill_data(obj){
+
+    	var keys = [];
+    	for (k in obj.raw_data){
+    		if (obj.raw_data[k]) { //dont push keys without values
+        		keys.push(k);
+    		}
+        }
+        keys.sort();
+        len = keys.length;
+
+        for (i = 0; i < len; i++) {
+		  	k = keys[i];
+	    	v = obj.raw_data[k];
+	    	if ( $( "[name='"+k+"']" ).length && v ) {
+	    		if($( "[name='"+k+"']" ).is("select") && $( "[name='"+k+"']" ).is(":visible")) {
+	    			// if select, then select correctly
+	    			// console.log('is select '+k);
+			    	if (v=='auto') {
+			    		// $("[name='"+k+"']").val($("[name='"+k+"'] option:first").val());
+			    	} else {
+			    		$( "[name='"+k+"']" ).val(v);
+			    		$("#id_"+k ).change();
+			    	}
+			    	
+			    	// console.log('firing on change '+k);
+			    	// $( "[name='"+k+"']" ).onchange();
+
+				} else if ($( "[name='"+k+"']" ).is(":visible")) {
+	    			// console.log(k);
+			    	$( "[name='"+k+"']" ).val(v);
+			    }
+			} else if (v) {
+				// console.log('Not found '+k);
+				if (k.startsWith('aamod')) {
+					addRow('modifications');
+					// console.log("adding aamod "+k);
+			    	$( "[name='"+k+"']" ).val(v);
+			    	$( "[name='"+k+"']" ).trigger("change")
+				} else if (k.startsWith('aa_no')) {
+					addRow('mutations', '0');
+				} else if (k.startsWith('fusion_prot')) {
+					addaux('aux_proteins');
+				} else if (k.startsWith('chemical_comp')) {
+					addRow('chem_comp')
+				} else if (k.startsWith('delet_end')) {
+					addRow('deletions', '0');
+			    	$( "[name='"+k+"']" ).val(v);
+				} else {
+					// console.log('Not found '+k)
+				}
+
+				
+			} else {
+				// console.log(k + ' is empty value anyway..');
+			}
+		}
+
+		//run 2nd time to ensure all rows added (sometimes missing one)
+		for (i = 0; i < len; i++) {
+		  	k = keys[i];
+	    	v = obj.raw_data[k];
+	    	if ( $( "[name='"+k+"']" ).length && v) {
+	    		if($( "[name='"+k+"']" ).is("select") && $( "[name='"+k+"']" ).is(":visible")) {
+	    			
+	    			// if select, then select correctly
+	    			// console.log('is select '+k);
+	    			if ($( "[name='"+k+"']" ).val()!=v) {
+	    				// if first time changing
+			    		// console.log('2x firing on change '+k+' '+v+' '+$( "[name='"+k+"']" ).val());
+				    	if (v=='auto') {
+				    		// $("[name='"+k+"']").val($("[name='"+k+"'] option:first").val());
+				    	} else if ( k.startsWith('insert_pos_type')) {
+				    		id = k.split("_")[3]
+				    		$("#id_position_"+id ).click();
+				    		console.log("click! #id_position_"+id);
+				    		$( "[name='"+k+"']" ).val(v);
+				    		$( "[name='"+k+"']" ).click();
+				    		$("#id_"+k ).change();
+				    	}  else {
+				    		$( "[name='"+k+"']" ).val(v);
+				    		$("#id_"+k ).change();
+				    	}
+	    			}
+				} else {
+			    	$( "[name='"+k+"']" ).val(v);
+			    }
+			}  else if (v) {
+				// console.log('Not found '+k);
+				if (k.startsWith('aamod')) {
+					addRow('modifications');
+					// console.log("adding aamod "+k);
+			    	$( "[name='"+k+"']" ).val(v);
+			    	$( "[name='"+k+"']" ).trigger("change")
+				} else if (k.startsWith('aa_no')) {
+					addRow('mutations', '0');
+				} else if (k.startsWith('fusion_prot')) {
+					addaux('aux_proteins');
+				} else if (k.startsWith('chemical_comp')) {
+					addRow('chem_comp')
+				} else if (k.startsWith('delet_end')) {
+					addRow('deletions', '0');
+			    	$( "[name='"+k+"']" ).val(v);
+				} else {
+					// console.log('Not found '+k)
+				}
+			} 
+		}
+
+
+
+		//run 3nd time to fix those that happened after onchange
+		for (i = 0; i < len; i++) {
+		  	k = keys[i];
+	    	v = obj.raw_data[k];
+	    	if ( $( "[name='"+k+"']" ).length && v && $( "[name='"+k+"']" ).val()!=v) {
+	    		if($( "[name='"+k+"']" ).is("select") && $( "[name='"+k+"']" ).is(":visible")) {
+	    			// if select, then select correctly
+	    			// console.log('is select '+k);
+	    			if ($( "[name='"+k+"']" ).val()!=v) {
+	    				// if first time changing
+			    		// console.log('2x firing on change '+k+' '+v+' '+$( "[name='"+k+"']" ).val());
+				    	if (v=='auto') {
+				    		$( "[name='"+k+"']" ).append($("<option></option>")
+		                    .attr("value",v)
+		                    .text("Undefined - please update"));
+				    		id = k.split("_")[2]
+				    		subtype = obj.raw_data['aux'+id+'_subtype']
+				    		// console.log(k,id)
+				    		$( "[name='"+k+"']" ).after("<br>Parser: "+subtype);
+				    		$( "[name='"+k+"']" ).val(v);
+				    		$("#id_"+k ).change();
+			    			// $("[name='"+k+"']").val($("[name='"+k+"'] option:first").val());
+				    	} else if ( k.startsWith('insert_pos_type')) {
+				    		id = k.split("_")[3]
+				    		$("#id_position_"+id ).click();
+				    		console.log("click! #id_position_"+id);
+				    		$( "[name='"+k+"']" ).val(v);
+				    		$( "[name='"+k+"']" ).click();
+				    		$("#id_"+k ).change();
+				    	} else {
+				    		$( "[name='"+k+"']" ).val(v);
+				    		$("#id_"+k ).change();
+				    	}
+	    			}
+				} else {
+			    	$( "[name='"+k+"']" ).val(v);
+			    }
+			}
+			else if (!($( "[name='"+k+"']" ).length)) {
+				console.log('Not found '+k)
+			} 
+		}
+    }
+    {% if edit %}
+    json_edit = {{edit|safe}}
+    $(document).ready(function () {
+    	prefill_data(json_edit);
+	})
+    {% endif %}
+ 
+    document.getElementById('file').addEventListener('change', onChange);
+
+}());
+ </script>
+
 
 {% endblock %}
 {% block content %}	
-	<form id="xtals_form" method="post"  target="_blank" action='webformdata'>
+	Load a JSON file: <input id="file" type="file" />
+	<input id="fetch_json"><button id="get_json" value="Fetch data">Fetch data</button>
+	<form id="xtals_form" method="post"  target="_blank" action='/structure/webformdata'>
 		{% csrf_token %}
 		<div id ="tabs">
 		<table class="table_1"  id="table_1">
@@ -460,7 +653,7 @@ select.optional option{
 						 </tr>
 						 <tr>
 						    <th>Ligand activity type</th>
-						    <td><select class="form-control custom_select" id="id_ligand_activity" name="acitvity_ligand">
+						    <td><select class="form-control custom_select" id="id_ligand_activity" name="ligand_activity">
 								<option value="">Please Select</option>
 								<option value="agonist">Agonist</option>
 								<option value="antagonist">Antagonist</option>
@@ -758,8 +951,9 @@ select.optional option{
 							    <th>Remark</th>
 							   </tr>
 				              <tr class="hidetext">
-							    <td><select id="id_modification_type" class="form-control mod_other widen row_id">
+							    <td><select id="id_modification_type" class="form-control mod_other widen row_id" name="aamod">
 							    		<option value="">Select</option>
+							    		<option value="Disulfide bond">Disulfide bond</option>
 							    		<option value="phosphorylation">Phosphorylation</option>
 							    		<option value="glycosylation">Glycosyltation</option>
 							    		<option value="other">Other</option>

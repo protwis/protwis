@@ -33,6 +33,7 @@ urlpatterns = [
     url(r'^webform$', views.webform, name='webform'), 
     url(r'^webformdata$', views.webformdata, name='webformdata'),
     url(r'^construct$', views.webform_two, name='webform_two'), 
+    url(r'^construct/(?P<slug>[\w_]+)$', views.webform_two, name='webform_two'), 
     url(r'^webform/(?P<slug>[\w_]+)$', views.webform_download, name='webform_download'), 
     url(r'^(?P<pdbname>\w+)$', StructureDetails, name='structure_details'), 
     url(r'^pdb/(?P<pdbname>\w+)$', ServePdbDiagram, name='structure_serve_pdb'), 
