@@ -520,13 +520,14 @@ def generate_schematic(c):
     c_schematic_table = ""
     order_list = ['pre','N-term','TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','ECL2','TM5','insert','ICL3','TM6','ECL3','TM7','ICL4','H8','C-term']
     i = 0
+    # print(r_chunks_schematic_construct)
     for block in order_list:
         c_schematic_table += "<td>"
         if i<len(r_chunks_schematic_construct):
             if block=='pre':
                 a = True
                 c_schematic_table += "<div style2='float:right'><table align='right' width2='100%' class='no-wrap'><tr>"
-                while a:
+                while a and i<len(r_chunks_schematic_construct):
                     if r_chunks_schematic_construct[i][0][3]:
                         if r_chunks_schematic_construct[i][0][3][0]=='insert':
                             c_schematic_table += "<td style='min-width:80px'>"+create_block(r_chunks_schematic_construct[i]) +"</td>"

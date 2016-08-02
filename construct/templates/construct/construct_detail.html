@@ -25,6 +25,9 @@
 {% endblock %}
 
 {% block content %}
+
+<button id='{{ c.name }}' class='button_edit'>EDIT</button>
+
 <div class="row text-success">
     <div class="text-center">
         <h2> {{ c.protein.entry_name }} </h2>
@@ -249,6 +252,12 @@
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/diagrams.js' %}"></script>
 <script type="text/javascript" charset="utf-8">
+
+$('.button_edit').click(function() {
+   window.location = "/structure/construct/" + this.id;
+});
+
+
 $(document).ready(function() {
     annotations_json = '{{annotations|safe}}';
     construct_annotations('snakeplot')
