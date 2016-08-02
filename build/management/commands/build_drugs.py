@@ -62,13 +62,8 @@ class Command(BaseCommand):
                 drugtype = data[index:index+1]['Drug Class'].values[0]
                 indication = data[index:index+1]['Indication(s)'].values[0]
                 novelty = data[index:index+1]['Target_novelty'].values[0]
-                
-                try:
-                    approval = int(data[index:index+1]['Year of Approval (FDA)'].values[0])
-                    status = 'approved'
-                except:
-                    approval = int()
-                    status = "not approved"
+                approval = data[index:index+1]['Approval'].values[0]
+                status = data[index:index+1]['Status'].values[0]
 
                 # fetch protein
                 try:

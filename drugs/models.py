@@ -15,19 +15,19 @@ from django.db import models
 
 class Drugs(models.Model):
     target = models.ManyToManyField('protein.Protein')
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=75)
     
-    synonym = models.CharField(max_length=100, null=True) # addName as list, make as ManyField
+    synonym = models.CharField(max_length=300, null=True) # addName as list, make as ManyField
 
-    drugtype = models.CharField(max_length=50, null=True)
+    drugtype = models.CharField(max_length=40, null=True)
 
-    status = models.CharField(max_length=30)
-    indication = models.CharField(max_length=200, null=True)
-    approval = models.IntegerField()
+    status = models.CharField(max_length=15)
+    indication = models.CharField(max_length=150, null=True)
+    approval = models.CharField(max_length=5)
 
-    externallink = models.CharField(max_length=200, null=True) # Link Framework
+    externallink = models.CharField(max_length=150, null=True) # Link Framework
 
-    novelty = models.CharField(max_length=50) #Boolean
+    novelty = models.CharField(max_length=15) #Boolean
 
     def __str__(self):
         return self.name
