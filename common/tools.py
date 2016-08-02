@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.utils.text import slugify
+from django.core.cache import cache
 
 import os
 import yaml
@@ -49,7 +50,8 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False):
     
     # try fetching from cache
     if cache_dir:
-        d = fetch_from_cache(cache_dir, index_slug)
+        d = cache.get(cache_file_path)
+        # d = fetch_from_cache(cache_dir, index_slug)
         if d:
             logger.info('Fetched {} from cache'.format(cache_file_path))
             return d
@@ -84,7 +86,8 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False):
         else:
             # save to cache
             if cache_dir:
-                save_to_cache(cache_dir, index_slug, d)
+                # save_to_cache(cache_dir, index_slug, d)
+                cache.set(cache_file_path, d, 60*60*24*7) #7 days
                 logger.info('Saved entry for {} in cache'.format(cache_file_path))
             return d
     
