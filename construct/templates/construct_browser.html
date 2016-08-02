@@ -287,7 +287,9 @@
                         {% if construct.expression %}
                     <td>{{ construct.expression.expression_method}}</td><td>{{ construct.expression.host_cell_type}}</td><td>{{ construct.expression.host_cell}}</td>
                         {% else %}
-                    <td colspan=3> N/A</td>
+                    <td colspan=1> N/A</td>
+                    <td colspan=1> N/A</td>
+                    <td colspan=1> N/A</td>
                         {% endif %}
 
                     <td>
@@ -309,7 +311,9 @@
                         {% if construct.crystallization %}
                     <td>{{ construct.crystallization.crystal_method.name}}</td><td>{{ construct.crystallization.crystal_type.name}}</td><td>{{ construct.crystallization.crystal_type.sub_name}}</td>
                         {% else %}
-                    <td colspan=3> N/A</td>
+                    <td colspan=1> N/A</td>
+                    <td colspan=1> N/A</td>
+                    <td colspan=1> N/A</td>
                         {% endif %}
 
                     <td>
@@ -337,7 +341,7 @@
             </tbody>
         </table>
     </div><br>
-<!-- <div style='overflow-x: scroll;font-size: 10px;border-bottom: 1px solid #111;' id="wt_schematics_div">
+<div style='overflow-x: scroll;font-size: 10px;border-bottom: 1px solid #111;' id="wt_schematics_div">
         <div class='spacer'><br>
             Size: <div class="slider" style='width:100px'></div></div>
         <table width=100% class="display" id="wt_schematics">
@@ -415,7 +419,7 @@
                     {% endfor %}
                     </tbody>
         </table>
-</div> -->
+</div>
 {% endblock %}
 
 

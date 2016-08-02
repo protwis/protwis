@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView, View
+from django.http import HttpResponse
 
 from common.diagrams_gpcr import DrawSnakePlot
 
@@ -73,17 +74,29 @@ def fetch_all_pdb(request):
 
 def fetch_pdb(request, slug):
 
-    protein = Protein.objects.filter(entry_name=slug).get()
+    protein = Protein.objects.filter(entry_name=slug.lower()).get()
 
     d = fetch_pdb_info(slug,protein)
 
     #delete before adding new
-    Construct.objects.filter(name=d['construct_crystal']['pdb_name']).delete()
+    print(d['construct_crystal']['pdb_name'])
+    Construct.objects.filter(name__iexact=d['construct_crystal']['pdb_name']).delete()
     add_construct(d)
-
     context = {'d':d}
 
     return render(request,'pdb_fetch.html',context)
+
+def fetch_pdb_for_webform(request, slug, **response_kwargs):
+
+    slug = slug.lower()
+    protein = Protein.objects.filter(entry_name=slug).get()
+
+    d = fetch_pdb_info(slug,protein)
+    d = convert_ordered_to_disordered_annotation(d)
+
+    jsondata = json.dumps(d)
+    response_kwargs['content_type'] = 'application/json'
+    return HttpResponse(jsondata, **response_kwargs)
 
 class ConstructBrowser(TemplateView):
     """

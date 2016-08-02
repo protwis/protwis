@@ -1,3 +1,5 @@
+from django.utils.text import slugify
+from django.db import IntegrityError
 from protein.models import Protein, ProteinConformation
 from residue.models import Residue
 from structure.models import Structure
@@ -15,6 +17,8 @@ from itertools import groupby
 import time
 import json
 import datetime
+from collections import OrderedDict
+import pickle
 
 AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
      'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N', 
@@ -26,7 +30,8 @@ AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
 
 
 def fetch_pdb_info(pdbname,protein):
-    d = {}
+    #d = {}
+    d = OrderedDict()
     d['construct_crystal'] = {}
     d['construct_crystal']['pdb'] = pdbname
     d['construct_crystal']['pdb_name'] = 'auto_'+pdbname
@@ -56,7 +61,11 @@ def fetch_pdb_info(pdbname,protein):
     uniprot_mapping = req.read().decode('UTF-8')
     rows = ( line.split(' ') for line in uniprot_mapping.split('\n') )
     uniprot_mapping = { row[0]:row[1:] for row in rows }
-    # print(uniprot_mapping)
+
+    #errors, fix it.
+    uniprot_mapping['P08483'] = ['acm3_rat']
+    uniprot_mapping['P42866'] = ['oprm_mouse']
+     
 
     #ftp://ftp.ebi.ac.uk/pub/databases/msd/sifts/xml/1xyz.xml.gz
     cache_dir = ['sifts', 'xml']
@@ -64,22 +73,48 @@ def fetch_pdb_info(pdbname,protein):
     sifts = fetch_from_web_api(url, pdbname.lower(), cache_dir, xml = True)
     d['links'].append(Template(url).substitute(index=quote(str(pdbname.lower()), safe='')))
     d['mutations'] = []
-    d['auxiliary'] = {}
+    d['auxiliary'] = OrderedDict()
     receptor_seq_ids = []
+    receptor_chain = ''
     if sifts: #success
         # print(sifts)
         insert_position = 'N-term'
         insert_start = 0
-        for elem in sifts.find('.//{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}entity'):
+        msg_1 = 0
+        msg_2 = 0
+        # for elem in sifts:
+        #     print(elem)
+        for elem in sifts.findall('.//{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
+            receptor = False
+            chain = elem.attrib['segId'].split('_')[1]
+            for res in elem[0]: #first element is residuelist
+                if receptor_chain!='':
+                    break #break if found
+                for node in res:
+                    if node.tag == '{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}crossRefDb':
+                        source = node.attrib['dbSource']
+                        if source=='UniProt':
+                            u_id = node.attrib['dbAccessionId']
+                            if u_id in uniprot_mapping:
+                                receptor_chain = chain
+                                break
+                                
+        for elem in sifts.findall('.//{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}segment'):
+            # print(elem.attrib)
+            if 'segId' not in elem.attrib:
+                continue #not receptor
             seg_uniprot_ids = []
             max_pos = 0
             min_pos = 99999
             pos_list = []
             uniprot_pos = None
             receptor = False
-            u_id = 'N/A'
             u_id_source = 'N/A'
+            chain = elem.attrib['segId'].split('_')[1]
+            # print(chain,'chain')
             for res in elem[0]: #first element is residuelist
+                u_id = 'N/A'
+                pdb_aa = ''
                 for node in res:
                     if node.tag == '{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}crossRefDb':
                         source = node.attrib['dbSource']
@@ -89,19 +124,27 @@ def fetch_pdb_info(pdbname,protein):
                             if u_id in uniprot_mapping:
                                 u_id = uniprot_mapping[u_id][0] 
                                 receptor = True ## this is receptor element
+                                if receptor_chain=='' or receptor_chain==chain:
+                                    receptor_chain = chain
+                                elif msg_1==0:
+                                    msg_1 = 1
+                                    print('\treceptor in many chains?!',chain,receptor_chain)
                                 insert_position = 'Within Receptor'
                             if u_id not in seg_uniprot_ids:
                                 seg_uniprot_ids.append(u_id)
                             uniprot_pos = int(node.attrib['dbResNum'])
                             uniprot_aa = node.attrib['dbResName']
-                        elif source=='PDB':
+                        elif source=='PDB' and isinstance(node.attrib['dbResNum'], int):
                             pos = int(node.attrib['dbResNum'])
-                            pdb_aa = AA_three[node.attrib['dbResName'].upper()]
+                            try:
+                                pdb_aa = AA_three[node.attrib['dbResName'].upper()]
+                            except:
+                                pdb_aa = "X"
                             if receptor:
                                 receptor_seq_ids.append(pos)
                             if pos>max_pos: max_pos = pos
                             if pos<min_pos: min_pos = pos
-                    elif node.tag == '{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}residueDetail':
+                    elif pdb_aa and node.tag == '{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}residueDetail':
                         #print(node.attrib['property'],node.text)
                         if node.text=='Not_Observed' and receptor:
                             d['xml_not_observed'].append(uniprot_pos)
@@ -109,13 +152,16 @@ def fetch_pdb_info(pdbname,protein):
                             u_id = node.text
                             if u_id not in seg_uniprot_ids:
                                 seg_uniprot_ids.append(u_id)
-                        elif node.attrib['property']=='Annotation' and node.text == 'Engineered mutation':
+                        elif receptor and node.attrib['property']=='Annotation' and node.text == 'Engineered mutation': ## only in receptor
                             d['mutations'].append({'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos})
                 if uniprot_pos:
-                    pos_list.append(uniprot_pos)
-                    if receptor:
+                    pos_list.append(uniprot_pos) 
+                    if receptor and uniprot_pos in pos_in_wt:
                        pos_in_wt.remove(uniprot_pos)
                        insert_start =  str(uniprot_pos+1)
+                    elif receptor:
+                        # print('wierd error with position already deleted',uniprot_pos)
+                        pass
             ranges = []
             for k, g in groupby(enumerate(pos_list), lambda x:x[0]-x[1]):
                 group = list(map(itemgetter(1), g))
@@ -130,8 +176,15 @@ def fetch_pdb_info(pdbname,protein):
                     seg_uniprot_ids[0] = elm.find('{http://uniprot.org/uniprot}fullName').text
 
             d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position])
-            if receptor == False:
-                d['auxiliary']['aux'+str(len(d['auxiliary']))] = {'type':'auto','subtype':seg_uniprot_ids[0],'presence':'YES','position':insert_position, 'start':insert_start}
+            if receptor == False and receptor_chain==chain: #not receptor, but is in same chain
+                if len(seg_uniprot_ids):
+                    subtype =seg_uniprot_ids[0]
+                else:
+                    subtype ='N/A'
+                    continue #do not add segments without information
+                d['auxiliary']['aux'+str(len(d['auxiliary']))] = {'type':'auto','subtype':subtype,'presence':'YES','position':insert_position, 'start':insert_start}
+            elif receptor == False:
+                print('\tProtein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
         d['deletions'] = []
         for k, g in groupby(enumerate(pos_in_wt), lambda x:x[0]-x[1]):
             group = list(map(itemgetter(1), g))
@@ -179,16 +232,28 @@ def fetch_pdb_info(pdbname,protein):
     url = 'http://www.rcsb.org/pdb/explore/jmol.do?structureId=$index&json=true'
     rcsb_mod = fetch_from_web_api(url, pdbname, cache_dir)
     d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
-
+    # print(Template(url).substitute(index=quote(str(pdbname), safe='')))
     if rcsb_mod: #success
         d['modifications'] = []
         d['modifications2'] = rcsb_mod
         # print(receptor_seq_ids)
         for mod in rcsb_mod['protmod']['domains']:
             t = mod['range'].split(',')
-            pair = [t[0].split(':')[0],t[1].split(':')[0]]
+            if t[0].split(':')[1]!=receptor_chain:
+                # print('modification not in receptor chain, not interested')
+                continue
+            if len(t)>1:
+                position_type = 'pair'
+                position_info = [t[0].split(':')[0],t[1].split(':')[0]]
+            elif len(t)==1:
+                position_type = 'single'
+                position_info = [t[0].split(':')[0],0]
+            else:
+                print('error',t)
+                continue
             # print(mod['id'],pair,mod['description'])
-            d['modifications'].append({'position':['pair',pair],'type':mod['id'],'remark':mod['description']})
+            if mod['id']=='crosslink2': mod['id']="Disulfide bond" #replace non-descript crosslink2 
+            d['modifications'].append({'position':[position_type,position_info],'type':mod['id'],'remark':mod['description']})
             #{{v.id}} {{v.range}} {{v.description}} {{v.pdbCcId}} <br><br>
    
     else:
@@ -292,6 +357,10 @@ def fetch_pdb_info(pdbname,protein):
 
 
 def add_construct(d):
+
+    #delete if already name there
+    Construct.objects.filter(name = d['construct_crystal']['pdb_name']).delete()
+
     protein = Protein.objects.filter(entry_name=d['construct_crystal']['uniprot']).get()
     structure = Structure.objects.filter(pdb_code__index=d['construct_crystal']['pdb'].upper()).get()
     protein_conformation = structure.protein_conformation
@@ -299,7 +368,7 @@ def add_construct(d):
     construct = Construct()
     construct.protein = protein
     construct.name = d['construct_crystal']['pdb_name']
-    construct.json = d
+    construct.json = json.dumps(d, indent=4, separators=(',', ': '))
     construct.structure = structure
 
     #CrystalInfo
@@ -346,7 +415,7 @@ def add_construct(d):
 
         if insert.presence == 'YES' and insert.position.startswith('Within Receptor'):
             #need to fetch range
-            if aux['start']:
+            if 'start' in aux:
                 insert.start = aux['start']
                 insert.end = aux['start']
             else:
@@ -366,142 +435,249 @@ def add_construct(d):
 
     #EXPRESSION
     if 'expression' in d:
-        construct.expression,created = ExpressionSystem.objects.get_or_create(expression_method=d['expression']['expr_method'],
-                                                        host_cell_type=d['expression']['host_cell_type'],
-                                                        host_cell=d['expression']['host_cell'],
-                                                        remarks=d['expression']['expr_remark'])
+        if 'expr_method' in d['expression']:
+            construct.expression,created = ExpressionSystem.objects.get_or_create(expression_method=d['expression']['expr_method'],
+                                                            host_cell_type=d['expression']['host_cell_type'],
+                                                            host_cell=d['expression']['host_cell'],
+                                                            remarks=d['expression']['expr_remark'])
 
 
     
     #solubilization
     if 'solubilization' in d:
-        c_list = ChemicalList()
-        list_name,created  = ChemicalListName.objects.get_or_create(name='Solubilization')
-        c_list.name = list_name
-        c_list.save()
-        ct, created = ChemicalType.objects.get_or_create(name='detergent')
-        chem, created = Chemical.objects.get_or_create(name=d['solubilization']['deterg_type'], chemical_type=ct)
-        cc, created = ChemicalConc.objects.get_or_create(concentration=d['solubilization']['deterg_concentr'], concentration_unit=d['solubilization']['deterg_concentr_unit'], chemical=chem)
-        c_list.chemicals.add(cc)                
-        ct, created = ChemicalType.objects.get_or_create(name='additive')
-        chem, created = Chemical.objects.get_or_create(name=d['solubilization']['solub_additive'], chemical_type=ct)
-        cc, created = ChemicalConc.objects.get_or_create(concentration=d['solubilization']['additive_concentr'], concentration_unit=d['solubilization']['addit_concentr_unit'], chemical=chem)
-        c_list.chemicals.add(cc)
+        if 'deterg_type' in d['solubilization']:
+            c_list = ChemicalList()
+            list_name,created  = ChemicalListName.objects.get_or_create(name='Solubilization')
+            c_list.name = list_name
+            c_list.save()
+            ct, created = ChemicalType.objects.get_or_create(name='detergent')
+            chem, created = Chemical.objects.get_or_create(name=d['solubilization']['deterg_type'], chemical_type=ct)
+            cc, created = ChemicalConc.objects.get_or_create(concentration=d['solubilization']['deterg_concentr'], concentration_unit=d['solubilization']['deterg_concentr_unit'], chemical=chem)
+            c_list.chemicals.add(cc)                
+            ct, created = ChemicalType.objects.get_or_create(name='additive')
+            chem, created = Chemical.objects.get_or_create(name=d['solubilization']['solub_additive'], chemical_type=ct)
+            cc, created = ChemicalConc.objects.get_or_create(concentration=d['solubilization']['additive_concentr'], concentration_unit=d['solubilization']['addit_concentr_unit'], chemical=chem)
+            c_list.chemicals.add(cc)
 
-        solubilization = Solubilization.objects.create(chemical_list = c_list)
+            solubilization = Solubilization.objects.create(chemical_list = c_list)
 
-        construct.solubilization = solubilization
-        construct.save()
+            construct.solubilization = solubilization
+            construct.save()
 
-        #Purification
-        purification = Purification.objects.create()
-        for puri,step in d['solubilization'].items():
-            if not puri.startswith(('chem_enz_treatment','sol_remark')):
-                continue
-            else:
-                s,created = PurificationStep.objects.get_or_create(name=step)
-                purification.steps.add(s)
-                print(step)
-        construct.purification = purification
+            #Purification
+            purification = Purification.objects.create()
+            for puri,step in d['solubilization'].items():
+                if not puri.startswith(('chem_enz_treatment','sol_remark')):
+                    continue
+                else:
+                    s,created = PurificationStep.objects.get_or_create(name=step)
+                    purification.steps.add(s)
+            construct.purification = purification
     construct.save()
 
     #CRYSTALLIZATION 
     if 'crystallization' in d:
-        c = Crystallization()
-        sub_name = "" if 'lcp_lipid' not in d['crystallization'] else d['crystallization']['lcp_lipid']
-        c_type, created = CrystallizationTypes.objects.get_or_create(name=d['crystallization']['crystal_type'], sub_name=sub_name)
-        c_method, created = CrystallizationMethods.objects.get_or_create(name=d['crystallization']['crystal_method'])
+        if 'crystal_type' in d['crystallization']:
+            c = Crystallization()
+            sub_name = "" if 'lcp_lipid' not in d['crystallization'] else d['crystallization']['lcp_lipid']
+            c_type, created = CrystallizationTypes.objects.get_or_create(name=d['crystallization']['crystal_type'], sub_name=sub_name)
+            c_method, created = CrystallizationMethods.objects.get_or_create(name=d['crystallization']['crystal_method'])
 
-        c.crystal_type = c_type
-        c.crystal_method = c_method
-        c.remarks = d['crystallization']['crystal_remark']
-        c.temp = d['crystallization']['temperature']
+            c.crystal_type = c_type
+            c.crystal_method = c_method
+            c.remarks = d['crystallization']['crystal_remark']
+            c.temp = d['crystallization']['temperature']
 
-        if d['crystallization']['ph']=='single_ph':
-            c.ph_start = d['crystallization']['ph_single']
-            c.ph_end = d['crystallization']['ph_single']
-        else:
-            c.ph_start = d['crystallization']['ph_range_one']
-            c.ph_end = d['crystallization']['ph_range_two']
+            if d['crystallization']['ph']=='single_ph':
+                c.ph_start = d['crystallization']['ph_single']
+                c.ph_end = d['crystallization']['ph_single']
+            else:
+                c.ph_start = d['crystallization']['ph_range_one']
+                c.ph_end = d['crystallization']['ph_range_two']
 
 
-        c.protein_conc = d['crystallization']['protein_concentr']
-        c.protein_conc_unit = d['crystallization']['protein_conc_unit']
+            c.protein_conc = d['crystallization']['protein_concentr']
+            c.protein_conc_unit = d['crystallization']['protein_conc_unit']
 
-        c.json = d
-        c.save()
+            c.save()
 
-        #MAKE LISTS
-        c_list = ChemicalList()
-        list_name,created  = ChemicalListName.objects.get_or_create(name='crystallization_chemical_components')
-        c_list.name = list_name
-        c_list.save()
-        for chemical in d['crystallization']['chemical_components']:
-            ct, created = ChemicalType.objects.get_or_create(name='crystallization_chemical_components')
-            chem, created = Chemical.objects.get_or_create(name=chemical['component'], chemical_type=ct)
-            cc, created = ChemicalConc.objects.get_or_create(concentration=chemical['value'], concentration_unit=chemical['unit'], chemical=chem)
-            c_list.chemicals.add(cc)
-        c.chemical_lists.add(c_list)
-
-        if d['crystallization']['crystal_type']=='lipidic cubic phase': #make list of LCP stuff
+            #MAKE LISTS
             c_list = ChemicalList()
-            # c_list.name = d['crystallization']['lcp_lipid']
-            list_name,created  = ChemicalListName.objects.get_or_create(name='LCP')
+            list_name,created  = ChemicalListName.objects.get_or_create(name='crystallization_chemical_components')
             c_list.name = list_name
             c_list.save()
-            ct, created = ChemicalType.objects.get_or_create(name='LCP Lipid additive')
-            chem, created = Chemical.objects.get_or_create(name=d['crystallization']['lcp_add'], chemical_type=ct)
-            cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['lcp_conc'], concentration_unit=d['crystallization']['lcp_conc_unit'], chemical=chem)
+            for chemical in d['crystallization']['chemical_components']:
+                ct, created = ChemicalType.objects.get_or_create(name='crystallization_chemical_components')
+                chem, created = Chemical.objects.get_or_create(name=chemical['component'], chemical_type=ct)
+                cc, created = ChemicalConc.objects.get_or_create(concentration=chemical['value'], concentration_unit=chemical['unit'], chemical=chem)
+                c_list.chemicals.add(cc)
+            c.chemical_lists.add(c_list)
+
+            if d['crystallization']['crystal_type']=='lipidic cubic phase': #make list of LCP stuff
+                c_list = ChemicalList()
+                # c_list.name = d['crystallization']['lcp_lipid']
+                list_name,created  = ChemicalListName.objects.get_or_create(name='LCP')
+                c_list.name = list_name
+                c_list.save()
+                ct, created = ChemicalType.objects.get_or_create(name='LCP Lipid additive')
+                chem, created = Chemical.objects.get_or_create(name=d['crystallization']['lcp_add'], chemical_type=ct)
+                cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['lcp_conc'], concentration_unit=d['crystallization']['lcp_conc_unit'], chemical=chem)
+                c_list.chemicals.add(cc)
+                c.chemical_lists.add(c_list)
+
+            #DETERGENT
+            c_list = ChemicalList()
+            list_name,created  = ChemicalListName.objects.get_or_create(name='Detergent')
+            c_list.name = list_name
+            c_list.save()
+            ct, created = ChemicalType.objects.get_or_create(name='detergent')
+            chem, created = Chemical.objects.get_or_create(name=d['crystallization']['detergent'], chemical_type=ct)
+            cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['deterg_conc'], concentration_unit=d['crystallization']['deterg_conc_unit'], chemical=chem)
             c_list.chemicals.add(cc)
             c.chemical_lists.add(c_list)
 
-        #DETERGENT
-        c_list = ChemicalList()
-        list_name,created  = ChemicalListName.objects.get_or_create(name='Detergent')
-        c_list.name = list_name
-        c_list.save()
-        ct, created = ChemicalType.objects.get_or_create(name='detergent')
-        chem, created = Chemical.objects.get_or_create(name=d['crystallization']['detergent'], chemical_type=ct)
-        cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['deterg_conc'], concentration_unit=d['crystallization']['deterg_conc_unit'], chemical=chem)
-        c_list.chemicals.add(cc)
-        c.chemical_lists.add(c_list)
-
-        #LIPID
-        c_list = ChemicalList()
-        list_name,created  = ChemicalListName.objects.get_or_create(name='Lipid')
-        c_list.name = list_name
-        c_list.save()
-        ct, created = ChemicalType.objects.get_or_create(name='lipid')
-        chem, created = Chemical.objects.get_or_create(name=d['crystallization']['lipid'], chemical_type=ct)
-        cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['lipid_concentr'], concentration_unit=d['crystallization']['lipid_concentr_unit'], chemical=chem)
-        c_list.chemicals.add(cc)
-        c.chemical_lists.add(c_list)
+            #LIPID
+            c_list = ChemicalList()
+            list_name,created  = ChemicalListName.objects.get_or_create(name='Lipid')
+            c_list.name = list_name
+            c_list.save()
+            ct, created = ChemicalType.objects.get_or_create(name='lipid')
+            chem, created = Chemical.objects.get_or_create(name=d['crystallization']['lipid'], chemical_type=ct)
+            cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['lipid_concentr'], concentration_unit=d['crystallization']['lipid_concentr_unit'], chemical=chem)
+            c_list.chemicals.add(cc)
+            c.chemical_lists.add(c_list)
 
 
 
-        #Use ligand function to get ligand if it exists or otherwise create. Lots of checks for inchi/smiles/name
-        ligand = get_or_make_ligand(d['construct_crystal']['ligand_id'],d['construct_crystal']['ligand_id_type'],d['construct_crystal']['ligand_name'])
+            #Use ligand function to get ligand if it exists or otherwise create. Lots of checks for inchi/smiles/name
+            ligand = get_or_make_ligand(d['construct_crystal']['ligand_id'],d['construct_crystal']['ligand_id_type'],d['construct_crystal']['ligand_name'])
+            if 'ligand_activity' not in d['construct_crystal']:
+                d['construct_crystal']['ligand_activity'] = 'unknown'
+            if ligand and 'ligand_activity' in d['construct_crystal']:
+                role_slug = slugify(d['construct_crystal']['ligand_activity'])
+                try:
+                    lr, created = LigandRole.objects.get_or_create(slug=role_slug,
+                    defaults={'name': d['construct_crystal']['ligand_activity']})
+                except IntegrityError:
+                    lr = LigandRole.objects.get(slug=role_slug)
 
-        if ligand and 'ligand_activity' in d['construct_crystal']:
-            role_slug = slugify(d['construct_crystal']['ligand_activity'])
-            try:
-                lr, created = LigandRole.objects.get_or_create(slug=role_slug,
-                defaults={'name': d['construct_crystal']['ligand_activity']})
-            except IntegrityError:
-                lr = LigandRole.objects.get(slug=role_slug)
 
-        ligand_c = CrystallizationLigandConc()
-        ligand_c.construct_crystallization = c
-        ligand_c.ligand = ligand
-        ligand_c.ligand_role = lr
-        if 'ligand_conc' in d['construct_crystal']:
-            ligand_c.ligand_conc = d['construct_crystal']['ligand_conc']
-        if 'ligand_conc_unit' in d['construct_crystal']:
-            ligand_c.ligand_conc_unit = d['construct_crystal']['ligand_conc_unit']
-        ligand_c.save()
+            ligand_c = CrystallizationLigandConc()
+            ligand_c.construct_crystallization = c
+            ligand_c.ligand = ligand
+            if lr: 
+                ligand_c.ligand_role = lr
+            if 'ligand_conc' in d['construct_crystal']:
+                ligand_c.ligand_conc = d['construct_crystal']['ligand_conc']
+            if 'ligand_conc_unit' in d['construct_crystal']:
+                ligand_c.ligand_conc_unit = d['construct_crystal']['ligand_conc_unit']
+            ligand_c.save()
 
-        c.ligands.add(ligand_c)
+            c.ligands.add(ligand_c)
 
-        construct.crystallization = c
+            construct.crystallization = c
 
     construct.save()
+
+def convert_ordered_to_disordered_annotation(d):
+    if 'raw_data' not in d:
+        d['raw_data'] = {}
+    d['raw_data']['pdb'] = d['construct_crystal']['pdb']
+    d['raw_data']['uniprot'] = d['construct_crystal']['uniprot']
+    if 'pdb_name' not in d['construct_crystal']:
+        d['raw_data']['pdb_name'] = d['construct_crystal']['uniprot']+"_construct"
+    else:
+        d['raw_data']['pdb_name'] = d['construct_crystal']['pdb_name']
+
+
+    #contributor
+    for k,v in d['contact_info'].items():
+        d['raw_data'][k] = v
+
+    #growth information
+    if 'crystal_growth' in d:
+        d['raw_data']['crystal_type'] = d['crystal_growth'][0]['grow_method']
+
+    i = 2 #starts with two for some reason, ask Anna
+    insert_starts = {}
+    for aux,v in d['auxiliary'].items():
+        # print(aux)
+        d['raw_data']['protein_type_'+str(i)] = v['type']
+        d['raw_data']['position_'+str(i)] = v['position']
+        d['raw_data']['presence_'+str(i)] = v['presence']
+        d['raw_data']['fusion_prot_'+str(i)] = "Please Select"
+        d['raw_data']['aux'+str(i)+'_subtype'] = v['subtype']
+        if 'start' in v:
+            insert_starts[v['start']] = str(i)
+            #         "position": "N-term",
+            # "presence": "NO",
+            # "type": "signal",
+            # "subtype": "hemagglutinin"
+        i+=1
+
+    # print(insert_starts)
+
+    i = 2
+    for mut in d['mutations']:
+        d['raw_data']['mut_aa_'+str(i)] = mut['mut']
+        d['raw_data']['wt_aa_'+str(i)] = mut['wt']
+        d['raw_data']['aa_no_'+str(i)] = mut['pos']
+        i+=1
+
+    i = 2
+    for dele in d['deletions']:
+        if str(dele['start']) not in insert_starts.keys():
+            d['raw_data']['delet_start_'+str(i)] = dele['start']
+            d['raw_data']['delet_end_'+str(i)] = dele['end']
+            d['raw_data']['delet_origin_'+str(i)] = dele['origin']
+            d['raw_data']['deletion_'+str(i)] = "del_range"
+            i+=1    
+        else:
+            i_id = insert_starts[str(dele['start'])]
+            d['raw_data']['insert_pos_type_'+str(i_id)] = "ins_range"
+            d['raw_data']['ins_start_'+str(i_id)] = dele['start']
+            d['raw_data']['ins_end_'+str(i_id)] = dele['end']
+
+    i = 2
+    for mod in d['modifications']:
+        d['raw_data']['aamod_'+str(i)] = mod['type']
+        if mod['position'][0]=='single':
+            d['raw_data']['aamod_single_'+str(i)] = mod['position'][1][0]
+        else:   
+            d['raw_data']['aamod_pair_one_'+str(i)] = mod['position'][1][0]
+            d['raw_data']['aamod_pair_two_'+str(i)] = mod['position'][1][1]
+        d['raw_data']['aamod_position_'+str(i)] = mod['position'][0]
+        d['raw_data']['mod_remark_'+str(i)] = mod['remark']
+        i+=1
+
+    return d
+    # uniprot
+    # d['protein']
+    #     "auxiliary": {
+    #     "aux2"
+    #         "deletions": [
+    #     {
+    #         "origin": "user",
+    #         "end": "189",
+    #         "start": "1",
+    #         "type": "range"
+    #     },
+    #     {
+    #         "origin": "user",
+    #         "end": "787",
+    #         "start": "556",
+    #         "type": "range"
+    #     }
+    #        "mutations": [],
+    # "modifications": [
+    #     {
+    #         "remark": "NA",
+    #         "type": "Disulfide bond",
+    #         "position": [
+    #             "pair",
+    #             [
+    #                 "193",
+    #                 "213"
+    #             ]
+    #         ]
+    #     },
