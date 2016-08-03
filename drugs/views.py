@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from django.db.models import Count
+from django.core.cache import cache
 
 from drugs.models import Drugs
 from protein.models import Protein
@@ -9,8 +10,6 @@ from protein.models import Protein
 import re
 import json
 import numpy as np
-import colorsys
-import codecs
 
 def get_spaced_colors(n):
     max_value = 16581375 #255**3
@@ -21,11 +20,47 @@ def get_spaced_colors(n):
     # return [(int(i[:2], 16), int(i[2:4], 16), int(i[4:], 16)) for i in colors] # RGB colors
 
 def drugstatistics(request):
-    # Get drugdata from here somehow
-    drugtargets = Drugs.objects.all().filter(status='approved')
 
-    # Query all proteins 
+    # ===== drugtargets =====
+    drugtargets_raw = Protein.objects.filter(drugs__status='approved').values('entry_name').annotate(value=Count('entry_name')).order_by('-value')
 
+    list_of_hec_colors = get_spaced_colors(len(drugtargets_raw))
+    drugtargets = []
+    for i, drugtarget in enumerate(drugtargets_raw):
+        drugtarget['label'] = drugtarget['entry_name']
+        # drugtarget['color'] = str(list_of_hec_colors[i])
+        del drugtarget['entry_name']
+        drugtargets.append(drugtarget)
+        if i >= 25:
+            break
+
+    # ===== drugfamilies =====
+    drugfamilies_raw = Protein.objects.filter().filter(drugs__status='approved').values('family_id__parent__name').annotate(value=Count('family_id__parent__name')).order_by('-value')
+
+    list_of_hec_colors = get_spaced_colors(27)
+    drugfamilies = []
+    for i, drugfamily in enumerate(drugfamilies_raw):
+        drugfamily['label'] = drugfamily['family_id__parent__name']
+        drugfamily['color'] = str(list_of_hec_colors[i])
+        del drugfamily['family_id__parent__name']
+        drugfamilies.append(drugfamily)
+        if i >= 25:
+            break
+
+    # ===== drugclas =====
+    drugclasses_raw = Protein.objects.filter().filter(drugs__status='approved').values('family_id__parent__parent__parent__name').annotate(value=Count('family_id__parent__parent__parent__name')).order_by('-value')
+
+    list_of_hec_colors = get_spaced_colors(len(drugclasses_raw)+1)
+    drugclasses = []
+    for i, drugclas in enumerate(drugclasses_raw):
+        drugclas['label'] = drugclas['family_id__parent__parent__parent__name']
+        drugclas['color'] = str(list_of_hec_colors[i+1])
+        del drugclas['family_id__parent__parent__parent__name']
+        drugclasses.append(drugclas)
+        if i >= 25:
+            break
+
+    # ===== drugtypes =====
     drugtypes_raw = Drugs.objects.values('drugtype').filter(status='approved').annotate(value=Count('drugtype')).order_by('value')
 
     list_of_hec_colors = get_spaced_colors(len(drugtypes_raw))
@@ -36,6 +71,7 @@ def drugstatistics(request):
         del drugtype['drugtype']
         drugtypes.append(drugtype)
 
+    # ===== drugindications =====
     drugindications_raw = Drugs.objects.values('indication').filter(status='approved').annotate(value=Count('indication')).order_by('-value')
 
     list_of_hec_colors = get_spaced_colors(len(drugindications_raw))
@@ -45,42 +81,49 @@ def drugstatistics(request):
         drugindication['color'] = str(list_of_hec_colors[i])
         del drugindication['indication']
         drugindications.append(drugindication)
-        if i >= 20:
-        	break
+        if i >= 25:
+            break
 
-    return render(request, 'drugstatistics.html', {'drugtypes':drugtypes, 'drugindications':drugindications})
+    return render(request, 'drugstatistics.html', {'drugtypes':drugtypes, 'drugindications':drugindications, 'drugtargets':drugtargets, 'drugfamilies':drugfamilies, 'drugclasses':drugclasses})
 
 def drugbrowser(request):
     # Get drugdata from here somehow
-    context = list()
 
-    drugs = Drugs.objects.all().prefetch_related()
+    name_of_cache = 'drug_browser'
 
-    for drug in drugs:
-        drugname = drug.name
-        drugtype = drug.drugtype
-        status = drug.status
-        approval = drug.approval
-        if approval==0:
-            approval = '-'
-        indication = drug.indication
-        novelty = drug.novelty
+    context = cache.get(name_of_cache)
+
+    if context==None:
+        context = list()
+
+        drugs = Drugs.objects.all().prefetch_related('target__family__parent__parent__parent')
+
+        for drug in drugs:
+            drugname = drug.name
+            drugtype = drug.drugtype
+            status = drug.status
+            approval = drug.approval
+            if approval==0:
+                approval = '-'
+            indication = drug.indication
+            novelty = drug.novelty
 
 
-        target_list = drug.target.all()
-        targets = []
-        for protein in target_list:
-            # targets.append(str(protein))
-            # jsondata = {'name':drugname, 'target': str(protein), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
-            
-            clas = str(protein.family.parent.parent.parent.name)
-            family = str(protein.family.parent.name)
+            target_list = drug.target.all()
+            targets = []
+            for protein in target_list:
+                # targets.append(str(protein))
+                # jsondata = {'name':drugname, 'target': str(protein), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
+                
+                clas = str(protein.family.parent.parent.parent.name)
+                family = str(protein.family.parent.name)
 
-            jsondata = {'name':drugname, 'target': str(protein), 'approval': approval, 'class':clas, 'family':family, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
-            context.append(jsondata)
+                jsondata = {'name':drugname, 'target': str(protein), 'approval': approval, 'class':clas, 'family':family, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
+                context.append(jsondata)
 
-        # jsondata = {'name':drugname, 'target': ', '.join(set(targets)), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
-        # context.append(jsondata)
+            # jsondata = {'name':drugname, 'target': ', '.join(set(targets)), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
+            # context.append(jsondata)
+        cache.set(name_of_cache, context, 60*60*24*2) #two days timeout on cache
 
     return render(request, 'drugbrowser.html', {'drugdata':context})
 
