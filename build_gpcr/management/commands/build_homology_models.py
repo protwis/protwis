@@ -73,8 +73,8 @@ class Command(BaseBuild):
             struct_parent = [i.protein_conformation.protein.parent for i in structures]
             classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species=1, 
                                             family__slug__istartswith='001')
-            self.receptor_list = [i.entry_name for i in classA if i not in struct_parent][:40]
-            print(self.receptor_list)
+            self.receptor_list = [i.entry_name for i in classA if i not in struct_parent]
+#            print(self.receptor_list)
 #            raise AssertionError()
             try:
                 self.prepare_input(options['proc'], self.receptor_list)
@@ -353,7 +353,8 @@ class HomologyModeling(object):
                             if len(Rotamer.objects.filter(structure=main_structure,residue=r))<1:
                                 raise Exception()
                 except:
-                    a.template_dict[lab][gn] = 'x'       
+                    a.template_dict[lab][gn] = 'x'
+                    a.alignment_dict[lab][gn] = 'x'
         parser = GPCRDBParsingPDB()
         for raw_seg, anno_seg in zip(raw_helix_ends, anno_helix_ends):
             if H8_alt!=None and H8_alt!=main_structure and raw_seg=='H8':
@@ -429,8 +430,8 @@ class HomologyModeling(object):
                     found_alt_start = False
                     for struct in self.similarity_table:
                         if struct!=main_structure:
-                            alt_helix_ends = self.fetch_struct_helix_ends_from_db(struct)
                             try:
+                                alt_helix_ends = self.fetch_struct_helix_ends_from_db(struct)
                                 if parser.gn_comparer(alt_helix_ends[ref_seg][0],self.helix_ends[ref_seg][0],
                                                       struct.protein_conformation)<=0:
                                     all_keys = list(a.reference_dict[ref_seg].keys())[:len(modifications['added'][ref_seg][0])+4]
@@ -470,8 +471,8 @@ class HomologyModeling(object):
                     found_alt_end = False
                     for struct in self.similarity_table:
                         if struct!=main_structure:
-                            alt_helix_ends = self.fetch_struct_helix_ends_from_db(struct)
                             try:
+                                alt_helix_ends = self.fetch_struct_helix_ends_from_db(struct)
                                 if parser.gn_comparer(alt_helix_ends[ref_seg][1],self.helix_ends[ref_seg][1],
                                                       struct.protein_conformation)>=0:
                                     all_keys = list(a.reference_dict[ref_seg].keys())[-1*(len(modifications['added'][ref_seg][1])+4):]
@@ -721,7 +722,7 @@ class HomologyModeling(object):
                 else:
                     loop_insertion = loop.insert_ECL2_to_arrays(loop.loop_output_structure, main_pdb_array, loop_template,
                                                                 a.reference_dict, a.template_dict, a.alignment_dict)
-                if loop.model_loop==True:
+                if loop.model_loop==True and loop.new_label!=None:
                     model_loops.append(loop.new_label)
                 main_pdb_array = loop_insertion.main_pdb_array
                 a.reference_dict = loop_insertion.reference_dict
@@ -1283,7 +1284,8 @@ class HomologyModeling(object):
             if parse.gn_indecer(i,'.',2) not in trimmed_residues:
                 trimmed_residues.append(parse.gn_indecer(i,'.',2))
                 
-        print('Rotamer switching: ',datetime.now() - startTime) 
+        print('Rotamer switching: ',datetime.now() - startTime)
+        
         for i in model_loops:
             for j in a.reference_dict[i]:
                 trimmed_residues.append(j.replace('x','.'))
@@ -1296,7 +1298,7 @@ class HomologyModeling(object):
             os.mkdir(path)
         trimmed_res_nums, helix_restraints = self.write_homology_model_pdb(path+self.uniprot_id+"_post.pdb", main_pdb_array, a, 
                                                                            trimmed_residues=trimmed_residues)
-        
+
         self.statistics.add_info('template_source',self.template_source)
 
         # Model with MODELLER
@@ -1552,7 +1554,7 @@ class HomologyModeling(object):
                     try:
                         if alignment.reference_dict[seg_id][key.replace('.','x')] in ['-','x']:
                             counter_num-=1
-                            res_num-=1
+#                            res_num-=1
                     except:
                         pass
                     if key in trimmed_residues:
@@ -1754,6 +1756,8 @@ class HomologyMODELLER(automodel):
         rsr = self.restraints
         for i in self.find_helix_restraints():
             for j, k in self.atom_dict.items():
+                if list(k.items())==[]:
+                    continue
                 if i[0]==list(k.items())[0][1]:
                     rsr.add(secondary_structure.alpha(self.residue_range('{}:'.format(i[0]),'{}:'.format(i[1]+2))))
                     break
@@ -1805,7 +1809,6 @@ class Loops(object):
             else:
                 last_before_gn = orig_before_gns[-1]
             first_after_gn = orig_after_gns[0]
-            print(self.loop_label, last_before_gn, first_after_gn)
             if self.loop_label=='ECL2':
                 try:
                     ref_res = Residue.objects.filter(protein_conformation__protein=self.reference_protein,
@@ -1853,6 +1856,7 @@ class Loops(object):
                                         output[str(id_)] = atoms
                                     return output
                                 except:
+                                    self.aligned = False
                                     continue
                             else:
                                 print('Warning: need to superpose aligned {}'.format(self.loop_label))
