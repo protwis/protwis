@@ -4,6 +4,7 @@ from django.conf import settings
 from django import forms
 from django.db.models import Count, Min, Sum, Avg, Q
 from django.utils.text import slugify
+from django.core.cache import cache
 
 from interaction.models import *
 from interaction.forms import PDBform
@@ -1196,33 +1197,41 @@ def pdb(request):
 
 def GProtein(request):
 
-    context = OrderedDict()
-    i=0
+    name_of_cache = 'gprotein_statistics'
 
-    gproteins = ProteinGProtein.objects.all().prefetch_related('proteingproteinpair_set')
-    slugs = ['001','002','004','005']
-    slug_translate = {'001':"ClassA", '002':"ClassB1",'004':"ClassC", '005':"ClassF"}
-    selectivitydata = {}
-    for slug in slugs:
-        jsondata = {}
-        for gp in gproteins:
-            # ps = gp.proteingproteinpair_set.all()
-            ps = gp.proteingproteinpair_set.filter(protein__family__slug__startswith=slug)
+    context = cache.get(name_of_cache)
 
-            if ps:
-                jsondata[str(gp)] = []
-                for p in ps:
-                    if str(p.protein.entry_name).split('_')[0].upper() not in selectivitydata:
-                        selectivitydata[str(p.protein.entry_name).split('_')[0].upper()] = []
-                    selectivitydata[str(p.protein.entry_name).split('_')[0].upper()].append(str(gp))
-                    # print(p.protein.family.parent.parent.parent)
-                    jsondata[str(gp)].append(str(p.protein.entry_name)+'\n')
+    if context==None:
 
-                jsondata[str(gp)] = ''.join(jsondata[str(gp)])
+        context = OrderedDict()
+        i=0
 
-        context[slug_translate[slug]] = jsondata
+        gproteins = ProteinGProtein.objects.all().prefetch_related('proteingproteinpair_set')
+        slugs = ['001','002','004','005']
+        slug_translate = {'001':"ClassA", '002':"ClassB1",'004':"ClassC", '005':"ClassF"}
+        selectivitydata = {}
+        for slug in slugs:
+            jsondata = {}
+            for gp in gproteins:
+                # ps = gp.proteingproteinpair_set.all()
+                ps = gp.proteingproteinpair_set.filter(protein__family__slug__startswith=slug)
 
-    context["selectivitydata"] = selectivitydata
+                if ps:
+                    jsondata[str(gp)] = []
+                    for p in ps:
+                        if str(p.protein.entry_name).split('_')[0].upper() not in selectivitydata:
+                            selectivitydata[str(p.protein.entry_name).split('_')[0].upper()] = []
+                        selectivitydata[str(p.protein.entry_name).split('_')[0].upper()].append(str(gp))
+                        # print(p.protein.family.parent.parent.parent)
+                        jsondata[str(gp)].append(str(p.protein.entry_name)+'\n')
+
+                    jsondata[str(gp)] = ''.join(jsondata[str(gp)])
+
+            context[slug_translate[slug]] = jsondata
+
+        context["selectivitydata"] = selectivitydata
+
+        cache.set(name_of_cache, context, 60*60*24*2) #two days timeout on cache
 
     return render(request, 'interaction/gprotein.html', context)
 
