@@ -113,7 +113,7 @@ class Command(BaseCommand):
                     temprow.append(cell_value)
                 temp.append(temprow)
                 #if curr_row>10: break
-            return temp
+        return temp
 
     def analyse_rows(self,rows):
         temp = []
