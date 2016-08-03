@@ -457,8 +457,12 @@ class Alignment:
 
                         # append the residue to the matrix
                         if r.generic_number:
+                            # s.append([pos, r.display_generic_number.label, r.amino_acid,
+                            #   r.display_generic_number.scheme.short_name, r.sequence_number])
+
                             s.append([pos, r.display_generic_number.label, r.amino_acid,
-                                r.display_generic_number.scheme.short_name, r.sequence_number])
+                                r.display_generic_number.scheme.short_name, r.sequence_number, r.generic_number.label])
+
 
                             # update generic residue object dict
                             if pos not in self.generic_number_objs:

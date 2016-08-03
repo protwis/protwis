@@ -1218,8 +1218,6 @@ def GProtein(request):
 
             jsondata[str(gp)] = ''.join(jsondata[str(gp)])
 
-    print(selectivitydata)
-
     context["gdata"] = jsondata
     context["selectivitydata"] = selectivitydata
 
