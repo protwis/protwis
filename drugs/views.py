@@ -19,6 +19,11 @@ def get_spaced_colors(n):
     return ['#'+i for i in colors] # HEX colors
     # return [(int(i[:2], 16), int(i[2:4], 16), int(i[4:], 16)) for i in colors] # RGB colors
 
+def striphtml(data):
+    p = re.compile(r'<.*?>')
+    return p.sub('', data)
+
+
 def drugstatistics(request):
 
     # ===== drugtargets =====
@@ -27,25 +32,21 @@ def drugstatistics(request):
     list_of_hec_colors = get_spaced_colors(len(drugtargets_raw))
     drugtargets = []
     for i, drugtarget in enumerate(drugtargets_raw):
-        drugtarget['label'] = drugtarget['entry_name']
+        drugtarget['label'] = drugtarget['entry_name'].replace("_human","").upper()
         # drugtarget['color'] = str(list_of_hec_colors[i])
         del drugtarget['entry_name']
         drugtargets.append(drugtarget)
-        if i >= 25:
-            break
 
     # ===== drugfamilies =====
     drugfamilies_raw = Protein.objects.filter().filter(drugs__status='approved').values('family_id__parent__name').annotate(value=Count('family_id__parent__name')).order_by('-value')
 
-    list_of_hec_colors = get_spaced_colors(27)
+    list_of_hec_colors = get_spaced_colors(len(drugfamilies_raw))
     drugfamilies = []
     for i, drugfamily in enumerate(drugfamilies_raw):
-        drugfamily['label'] = drugfamily['family_id__parent__name']
+        drugfamily['label'] = striphtml(drugfamily['family_id__parent__name']).replace(" receptors","")
         drugfamily['color'] = str(list_of_hec_colors[i])
         del drugfamily['family_id__parent__name']
         drugfamilies.append(drugfamily)
-        if i >= 25:
-            break
 
     # ===== drugclas =====
     drugclasses_raw = Protein.objects.filter().filter(drugs__status='approved').values('family_id__parent__parent__parent__name').annotate(value=Count('family_id__parent__parent__parent__name')).order_by('-value')
@@ -57,8 +58,6 @@ def drugstatistics(request):
         drugclas['color'] = str(list_of_hec_colors[i+1])
         del drugclas['family_id__parent__parent__parent__name']
         drugclasses.append(drugclas)
-        if i >= 25:
-            break
 
     # ===== drugtypes =====
     drugtypes_raw = Drugs.objects.values('drugtype').filter(status='approved').annotate(value=Count('drugtype')).order_by('value')
@@ -81,10 +80,25 @@ def drugstatistics(request):
         drugindication['color'] = str(list_of_hec_colors[i])
         del drugindication['indication']
         drugindications.append(drugindication)
-        if i >= 25:
-            break
 
-    return render(request, 'drugstatistics.html', {'drugtypes':drugtypes, 'drugindications':drugindications, 'drugtargets':drugtargets, 'drugfamilies':drugfamilies, 'drugclasses':drugclasses})
+    # ===== drugtimes =====
+    drugtime_raw = Drugs.objects.values('approval').filter(status='approved').annotate(y=Count('approval')).order_by('approval')
+    drugtimes = []
+    running_total = 0
+    for i, time in enumerate(drugtime_raw):
+        if time['approval']!='-':
+            time['x'] = int(time['approval'])
+            time['y'] = int(time['y']) + running_total
+            del time['approval']
+            running_total = int(time['y'])
+
+            if time['x'] % 2 == 0:
+	            drugtimes.append(time)
+
+    print(drugtimes)
+    drugs_over_time = [{"values": drugtimes, "yAxis": "1", "key": "GPCRs"}]
+
+    return render(request, 'drugstatistics.html', {'drugtypes':drugtypes, 'drugindications':drugindications, 'drugtargets':drugtargets, 'drugfamilies':drugfamilies, 'drugclasses':drugclasses, 'drugs_over_time':drugs_over_time})
 
 def drugbrowser(request):
     # Get drugdata from here somehow
@@ -123,7 +137,7 @@ def drugbrowser(request):
 
             # jsondata = {'name':drugname, 'target': ', '.join(set(targets)), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
             # context.append(jsondata)
-        cache.set(name_of_cache, context, 60*60*24*2) #two days timeout on cache
+        cache.set(name_of_cache, context, 60*60*24*2) # two days timeout on cache
 
     return render(request, 'drugbrowser.html', {'drugdata':context})
 
