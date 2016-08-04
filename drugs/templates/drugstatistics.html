@@ -2,80 +2,9 @@
 {% load staticfiles %}
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
 <style>
-.node circle {
-  /*fill: #fff;*/
-  /*stroke: DarkGreen;*/
-  /*fill: DarkGreen;*/
-  stroke: #000000 ;
-  stroke-width: .3px;
-}
-
-.node {
-  font: 8px sans-serif;
-}
-
-.link {
-  fill: none;
-  stroke: #eee;
-  stroke-width: 1px;
-}
-
-.node text {
-  font: 8px sans-serif;
-}
-
-.links {
-  fill: none;
-  stroke: #000;
-}
-
-.link-extensions {
-  fill: none;
-  stroke: #000;
-  stroke-opacity: .25;
-}
-
-
-body {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  margin: 0;
-}
-
-/*#show-length {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-}*/
-
-.links {
-  fill: none;
-  stroke: #000;
-}
-
-.link-extensions {
-  fill: none;
-  stroke: #000;
-  stroke-opacity: .25;
-}
-
-.labels {
-  font: 14px Palatino;
-  font-weight: bold;
-}
-
-.link--active {
-  stroke: #000 !important;
-  stroke-width: 3.5px;
-}
-
-.link-extension--active {
-  stroke-opacity: .6;
-}
-
-.label--active {
-  font-weight: bold;
+.nv-x text{
+font-size: 10px;
 }
 </style>
 {% endblock %}
@@ -88,9 +17,15 @@ body {
 <div id="pie_targets"></div>
 <div id="pie_types"></div>
 <div id="pie_disease"></div>
-
+<br>
+<br>
  <div id="unique" class="chart_container" style="display: none;">
         <div id="unique_year"><svg id="unique_cryst" style="width:1050;height:500px;"></svg></div>
+<br>
+<br>
+<br>
+<br>
+<br>
 {% endblock %}
 {% block addon_js %}
 <!-- http://d3pie.org/#generator-result -->
@@ -128,13 +63,14 @@ body {
         var datum = {{drugs_over_time|safe}};
         var chart = nv.models.multiBarChart()
             .reduceXTicks(false)
-            .stacked(true)
-            // .margin({ top: 30, right: 60, bottom: 20, left: 60 })
+            .stacked(false)
+            .margin({ top: 30, right: 60, bottom: 20, left: 60 })
             .color(d3.scale.category20().range());
         chart.yAxis
             .tickFormat(d3.format(',f'))
             ._ticks(nv.utils.calcTicksY(400 / 36, datum));
-
+        // chart.xAxis
+        //     .rotateLabels(-45)
 
         var yAxis2 = nv.models.axis()
             .scale(chart.yScale())
@@ -150,7 +86,7 @@ body {
             .call(chart);
         d3.select('#unique_year svg').selectAll('g.nv-wrap.nv-multiBarWithLegend').append("g")
             .attr("class", "nv-y nv-axis")
-            .attr("transform", "translate(965, 0)")
+            .attr("transform", "translate(940, 0)")
             .call(yAxis2);
     });
 
@@ -206,7 +142,7 @@ body {
     $(document).ready(function () {
         $('#unique.chart_type').css("fill", '#000000');
         $('#unique.chart_container').css("display", '');
-        draw('1');
+        // draw('1');
 
     });
 };
