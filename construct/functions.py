@@ -260,27 +260,50 @@ def fetch_pdb_info(pdbname,protein):
         d['modifications2'] = 'None'
         print('failed pdbe_mod')
 
-    #http://www.ebi.ac.uk/pdbe/api/pdb/entry/mutated_AA_or_NA/2RH1
-    ## mutated AA
-    ### got conflicts, engerineered mutation and expression tag examples
-    cache_dir = ['pdbe', 'mutated_AA_or_NA']
-    url = 'http://www.ebi.ac.uk/pdbe/api/pdb/entry/mutated_AA_or_NA/$index'
-    pdbe_mut = fetch_from_web_api(url, pdbname, cache_dir)
+    #http://www.ebi.ac.uk/pdbe/api/pdb/entry/ligand_monomers/2RH1
+    cache_dir = ['pdbe', 'ligands']
+    url = 'http://www.ebi.ac.uk/pdbe/api/pdb/entry/ligand_monomers/$index'
+    pdbe_ligands = fetch_from_web_api(url, pdbname, cache_dir)
     d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
-    
-    if pdbe_mut: #success
-        r = pdbe_mut[pdbname.lower()]
-        d['mutations_pdbe'] = []
-        for mut in r:
-            mut_from = mut['mutation_details']['from']
-            mut_to = mut['mutation_details']['to']
-            mut_type = mut['mutation_details']['type']
-            construct_seq_number = mut['residue_number']
-            wt_seq_number = mut['author_residue_number']
-            t = {'wt':mut_from,'mut':mut_to,'type':mut_type,'c_seq_nr':construct_seq_number,'pos':wt_seq_number}
-            d['mutations_pdbe'].append(t)
+    # print(Template(url).substitute(index=quote(str(pdbname), safe='')))
+    if pdbe_ligands: #success
+        d['ligands'] = {}
+        for name,pdb in pdbe_ligands.items():
+            for ligand in pdb:
+                if ligand['chem_comp_id'] not in d['ligands']:
+                    d['ligands'][ligand['chem_comp_id']] = {'comp_name':ligand['chem_comp_name'], 'number_of_entries':1}
+                else:
+                    d['ligands'][ligand['chem_comp_id']]['number_of_entries'] += 1
+        print(d['ligands'])
+   
     else:
-        print('failed pdbe_mut')
+        d['ligands'] = 'None'
+        print('failed pdbe_ligands')
+
+
+    ## NOT NEED - FETCH MUT FROM XML 
+    
+    # #http://www.ebi.ac.uk/pdbe/api/pdb/entry/mutated_AA_or_NA/2RH1
+    # ## mutated AA
+    # ### got conflicts, engerineered mutation and expression tag examples
+    # cache_dir = ['pdbe', 'mutated_AA_or_NA']
+    # url = 'http://www.ebi.ac.uk/pdbe/api/pdb/entry/mutated_AA_or_NA/$index'
+    # pdbe_mut = fetch_from_web_api(url, pdbname, cache_dir)
+    # d['links'].append(Template(url).substitute(index=quote(str(pdbname), safe='')))
+    
+    # if pdbe_mut: #success
+    #     r = pdbe_mut[pdbname.lower()]
+    #     d['mutations_pdbe'] = []
+    #     for mut in r:
+    #         mut_from = mut['mutation_details']['from']
+    #         mut_to = mut['mutation_details']['to']
+    #         mut_type = mut['mutation_details']['type']
+    #         construct_seq_number = mut['residue_number']
+    #         wt_seq_number = mut['author_residue_number']
+    #         t = {'wt':mut_from,'mut':mut_to,'type':mut_type,'c_seq_nr':construct_seq_number,'pos':wt_seq_number}
+    #         d['mutations_pdbe'].append(t)
+    # else:
+    #     print('failed pdbe_mut')
 
 
     #http://www.rcsb.org/pdb/rest/das/pdb_uniprot_mapping/alignment?query=2RH1

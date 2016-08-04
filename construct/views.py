@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView, View
 from django.http import HttpResponse
+from django.views.decorators.cache import cache_page
 
 from common.diagrams_gpcr import DrawSnakePlot
 
@@ -110,7 +111,8 @@ class ConstructBrowser(TemplateView):
         context = super(ConstructBrowser, self).get_context_data(**kwargs)
         try:
             cons = Construct.objects.all().prefetch_related(
-                "crystal","mutations","purification")
+                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions", "modifications", "deletions", "crystallization__chemical_lists",
+                "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
             context['constructs'] = []
             for c in cons:
                 c.schematics = c.schematic()
