@@ -83,27 +83,30 @@ def drugstatistics(request):
 
     # ===== drugtimes =====
     drugtime_raw = Drugs.objects.values('approval').filter(status='approved').annotate(y=Count('approval')).order_by('approval')
+
     drugtimes = []
     running_total = 0
-    for i, time in enumerate(drugtime_raw):
-        if time['approval']!='-':
-            time['x'] = int(time['approval'])
-            time['y'] = int(time['y']) + running_total
-            del time['approval']
-            running_total = int(time['y'])
 
-            if time['x'] % 2 == 0:
-	            drugtimes.append(time)
+    for i, time in enumerate(range(1942,2017,1)):
+        if str(time) in [i['approval'] for i in drugtime_raw]:
+            y = [i['y'] for i in drugtime_raw if i['approval']==str(time)][0] + running_total
+            x = time
+            running_total = y
+        else:
+            x = time
+            y = running_total
+        if time % 2 == 0:
+            drugtimes.append({'x':x,'y':y})
 
-    print(drugtimes)
-    drugs_over_time = [{"values": drugtimes, "yAxis": "1", "key": "GPCRs"}]
+    drugs_over_time = [{"values": drugtimes, "yAxis": "1", "key": "GPCRs"}, {'values': [{'y': 2, 'x': '1942'}, {'x': '1944', 'y': 2}, {'y': 6, 'x': '1946'}, {'y': 9, 'x': '1948'}, {'y': 18, 'x': '1950'}, {'y': 30, 'x': '1952'}, {'y': 55, 'x': '1954'}, {'y': 72, 'x': '1956'}, {'y': 98, 'x': '1958'}, {'y': 131, 'x': '1960'}, {'y': 153, 'x': '1962'}, {'y': 171, 'x': '1964'}, {'y': 188, 'x': '1966'}, {'y': 205, 'x': '1968'}, {'y': 224, 'x': '1970'}, {'y': 242, 'x': '1972'}, {'y': 265, 'x': '1974'}, {'y': 300, 'x': '1976'}, {'y': 340, 'x': '1978'}, {'y': 361, 'x': '1980'}, {'y': 410, 'x': '1982'}, {'y': 442, 'x': '1984'}, {'y': 499, 'x': '1986'}, {'y': 542, 'x': '1988'}, {'y': 583, 'x': '1990'}, {'y': 639, 'x': '1992'}, {'y': 686, 'x': '1994'}, {'y': 779, 'x': '1996'}, {'y': 847, 'x': '1998'}, {'y': 909, 'x': '2000'}, {'y': 948, 'x': '2002'}, {'y': 1003, 'x': '2004'}, {'y': 1041, 'x': '2006'}, {'y': 1078, 'x': '2008'}, {'y': 1115, 'x': '2010'}, {'y': 1177, 'x': '2012'}, {'y': 1239, 'x': '2014'}, {'y': 1286, 'x': '2016'}], 'key': 'All FDA drugs', 'yAxis': '1'}]
+
 
     return render(request, 'drugstatistics.html', {'drugtypes':drugtypes, 'drugindications':drugindications, 'drugtargets':drugtargets, 'drugfamilies':drugfamilies, 'drugclasses':drugclasses, 'drugs_over_time':drugs_over_time})
 
 def drugbrowser(request):
     # Get drugdata from here somehow
 
-    name_of_cache = 'drug_browser'
+    name_of_cache = 'drug_browser2'
 
     context = cache.get(name_of_cache)
 
@@ -137,7 +140,7 @@ def drugbrowser(request):
 
             # jsondata = {'name':drugname, 'target': ', '.join(set(targets)), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
             # context.append(jsondata)
-        cache.set(name_of_cache, context, 60*60*24*2) # two days timeout on cache
+        cache.set(name_of_cache, context, 60*60*24*1) # two days timeout on cache
 
     return render(request, 'drugbrowser.html', {'drugdata':context})
 
