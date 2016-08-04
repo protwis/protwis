@@ -49,8 +49,6 @@
 
 {% block addon_js %}
     <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
-    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
     <script src="{% static 'home/js/selection.js' %}"> </script>
     <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
     <script src="{% static 'home/js/select2.js' %}"> </script>
@@ -61,13 +59,18 @@
         $(document).ready(function () {
             // 'use strict';
 
-            var oTable;
-            oTable = $('#constructs').DataTable({
+            // var oTable;
+            var oTable = $('#constructs').DataTable({
                 'scrollX': true,
                 'paging': false,
                 'autoWidth': true,
             });
+
+            var prev_ids = Array()
+
+            console.log(oTable);
             $("#constructs_div").show();
+
 
             yadcf.init(oTable,
                 [
@@ -136,6 +139,35 @@
                 $('.alt').parent().parent().toggleClass('alt_selected');
             });
 
+            $("#remove_sel").click(function () { 
+                var oTable = $('#constructs').dataTable();
+                $('input:checkbox:checked').each(function () {
+                    if ( $(this).is(':visible') ) {
+                       id = $(this).attr('id');
+
+                       if (id) {
+                           oTable.fnDeleteRow("#"+id, null, false);
+                       }
+                    }
+                });
+               oTable.fnDraw();
+                update_tables();
+            });
+
+            $("#remove_non_sel").click(function () { 
+                var oTable = $('#constructs').dataTable();
+                $('input:checkbox:not(:checked)').each(function () {
+                    if ( $(this).is(':visible') ) {
+                       id = $(this).attr('id');
+                       if (id) {
+                           oTable.fnDeleteRow("#"+id, null, false);
+                       }
+                   }
+                });
+               oTable.fnDraw();
+                update_tables();
+            });
+
             function update_tables() {
 
                 $('#wt_schematics > tbody  > tr').each(function() {
@@ -145,23 +177,31 @@
                     $(this).hide();
                 });
                 i = 0;
+                ids = Array();
                 $('#constructs > tbody  > tr').each(function() {
                     id = $(this).attr('id');
+                    ids.push(id);
                     $("#wt_sche_"+id).show();
                     $("#wt_sche_"+id).find('td:eq(1)').attr('data-text',i);
                     $("#con_sche_"+id).show();
                     $("#con_sche_"+id).find('td:eq(1)').attr('data-text',i);
                     i++;
                 });
-                header_height = $("#constructs_div").find("thead").innerHeight();
-                console.log('height',header_height);
-                if (header_height>0) {
-                    $(".spacer").height(header_height+14);
+
+
+                if (JSON.stringify(ids)!=JSON.stringify(prev_ids)) {
+                    console.log("new ids!");
+                    header_height = $("#constructs_div").find("thead").innerHeight();
+                    console.log('height',header_height);
+                    if (header_height>0) {
+                        $(".spacer").height(header_height+14);
+                    }
+                    $("#wt_schematics").trigger("destroy");
+                    $("#constructs_schematics").trigger("destroy");
+                    $("#wt_schematics").tablesorter( {sortList: [[1,0]],textExtraction: 'basic'} ); 
+                    $("#constructs_schematics").tablesorter( {sortList: [[1,0]],textExtraction: 'basic'} ); 
                 }
-                $("#wt_schematics").trigger("destroy");
-                $("#constructs_schematics").trigger("destroy");
-                $("#wt_schematics").tablesorter( {sortList: [[1,0]],textExtraction: 'basic'} ); 
-                $("#constructs_schematics").tablesorter( {sortList: [[1,0]],textExtraction: 'basic'} ); 
+                prev_ids = ids;
             };
 
             $('#show_browser').click(function() {
@@ -206,6 +246,19 @@
             $('[data-toggle="tooltip"]').tooltip({ container: 'body' })
             $('.table_tooltip').tooltip({ container: 'body', html: true, placement: "top"})
 
+            $('input:checkbox').change(function() {
+                   id = $(this).attr('id');
+                if($(this).is(":checked")) {
+                   $("#constructs #"+id).prop('checked', true);
+                   $("#wt_schematics #"+id).prop('checked', true);
+                   $("#constructs_schematics_div #"+id).prop('checked', true);
+                } else {
+                   $("#constructs #"+id).prop('checked', false);
+                   $("#wt_schematics #"+id).prop('checked', false);
+                   $("#constructs_schematics_div #"+id).prop('checked', false);
+                }    
+            });
+
 
         });
     </script> 
@@ -219,6 +272,8 @@
     <button id='show_browser'>Browser</button>
     <button id='show_wt'>WT schematic</button>
     <button id='show_construct'>Construct schematic</button>
+    <button id='remove_sel'>Remove Selected</button>
+    <button id='remove_non_sel'>Remove Non-selected</button>
     </div>
     <div id='filters'>
     <div><span style='width: 160px;display: inline-block;'>Class:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container3"></span></div>
@@ -273,7 +328,7 @@
             <tbody>
             {% for construct in constructs %}
                     <tr id="{{ construct.pk }}">
-                    <td><input class="alt" type="checkbox"></td>
+                    <td><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
                     <td><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
                     <td><span>{{ construct.protein.name|safe }}</span></td>
                     <td><span>{{ construct.protein.family.parent.name|safe }}</span></td>
@@ -371,7 +426,7 @@
                     <tbody style='border-top: 1px solid #111;'>
                     {% for construct in constructs %}
                             <tr style='height: 32px' id="wt_sche_{{ construct.pk }}">
-                            <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox"></td>
+                            <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
                             <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
                             {{construct.schematics.schematic_2_wt|safe}}
                         </tr>
@@ -412,7 +467,7 @@
                     <tbody style='border-top: 1px solid #111;'>
                     {% for construct in constructs %}
                             <tr style='height: 32px' id="con_sche_{{ construct.pk }}">
-                            <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox"></td>
+                            <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
                             <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
                             {{construct.schematics.schematic_2_c|safe}}
                         </tr>
