@@ -60,8 +60,8 @@ var tip = d3.tip()
         .style("visibility","visible")
         .offset([0, 0])
         .html(function(d) {
-          if (d.depth === 4) {return d.name + "<br>" + "<span style='color:#43A047'> Trials: " + d.trials + "<br>" + "<span style='color:#d62728'> Approved: " + d.approved + "<br>" + "<span style='color:#00B8D4'>X-tals: " + d.crystal_structure;}
-          else {return d.name + "<br>" + "<span style='color:#43A047'> Trials: " + d.family_sum_trials + "<br>" + "<span style='color:#d62728'> Approved: " + d.family_sum_approved + "<br>" + "<span style='color:#00B8D4'>X-tals: " + d.crystal_sum;}                  
+          if (d.depth === 4) {return d.name.toUpperCase() + "<br>" + "<span style='color:#43A047'> Trials: " + d.trials + "<br>" + "<span style='color:#d62728'> Approved: " + d.approved;}
+          else {return d.name + "<br>" + "<span style='color:#43A047'> Trials: " + d.family_sum_trials + "<br>" + "<span style='color:#d62728'> Approved: " + d.family_sum_approved;}                  
         });
                         
 tip(svg_g.append("g"));
@@ -96,7 +96,7 @@ legendEnter.append("circle")
 legendEnter.append("circle")
            .attr("cy", function(d) { return d; })
            .attr("cx", xlegend)
-           .attr("r", 2)
+           .attr("r", 1.5)
            .style("fill", "black");
 
 legendEnter.append("text")
@@ -137,13 +137,13 @@ node.append("circle")
   // .attr("r", function(d) {if (d.depth === 3) return  d.family_sum_approved})
   .attr("r", function(d) {
   if (d.depth === 3 && d.family_sum_approved >= 1 && d.family_sum_approved <= 5) {return 5.0}
-  else if (d.depth === 3 && d.family_sum_approved > 5 && d.family_sum_approved <= 15) {return 8.0}
-  else if (d.depth === 3 && d.family_sum_approved > 15 && d.family_sum_approved <= 25) {return 15.0}
-  else if (d.depth === 3 && d.family_sum_approved > 25 && d.family_sum_approved <= 50) {return 20.0}
-  else if (d.depth === 3 && d.family_sum_approved > 50 && d.family_sum_approved <= 75) {return 25.0}
-  else if (d.depth === 3 && d.family_sum_approved > 75 && d.family_sum_approved <= 100) {return 30.0}
-  else if (d.depth === 3 && d.family_sum_approved > 100 && d.family_sum_approved <= 150) {return 40.0}
-  else if (d.depth === 3 && d.family_sum_approved > 150 ) {return 50.0}
+  else if (d.depth === 3 && d.family_sum_approved > 5 && d.family_sum_approved <= 10) {return 8.0}
+  else if (d.depth === 3 && d.family_sum_approved > 10 && d.family_sum_approved <= 20) {return 15.0}
+  else if (d.depth === 3 && d.family_sum_approved > 20 && d.family_sum_approved <= 30) {return 20.0}
+  else if (d.depth === 3 && d.family_sum_approved > 30 && d.family_sum_approved <= 40) {return 25.0}
+  else if (d.depth === 3 && d.family_sum_approved > 40 && d.family_sum_approved <= 50) {return 30.0}
+  else if (d.depth === 3 && d.family_sum_approved > 50 && d.family_sum_approved <= 75) {return 40.0}
+  else if (d.depth === 3 && d.family_sum_approved > 75 ) {return 50.0}
   else {return 0.0} ;})
   // .attr("r", 3.0)
 
@@ -155,13 +155,13 @@ node.append("circle")
   // .attr("r", function(d) {if (d.depth === 3) return d.family_sum_trials})
   .attr("r", function(d) {
   if (d.depth === 3 && d.family_sum_trials >= 1 && d.family_sum_trials <= 5) {return 5.0}
-  else if (d.depth === 3 && d.family_sum_trials > 5 && d.family_sum_trials <= 15) {return 8.0}
-  else if (d.depth === 3 && d.family_sum_trials > 15 && d.family_sum_trials <= 25) {return 15.0}
-  else if (d.depth === 3 && d.family_sum_trials > 25 && d.family_sum_trials <= 50) {return 20.0}
-  else if (d.depth === 3 && d.family_sum_trials > 50 && d.family_sum_trials <= 75) {return 25.0}
-  else if (d.depth === 3 && d.family_sum_trials > 75 && d.family_sum_trials <= 100) {return 30.0}
-  else if (d.depth === 3 && d.family_sum_trials > 100 && d.family_sum_trials <= 150) {return 40.0}
-  else if (d.depth === 3 && d.family_sum_trials > 150 ) {return 50.0}
+  else if (d.depth === 3 && d.family_sum_trials > 5 && d.family_sum_trials <= 10) {return 8.0}
+  else if (d.depth === 3 && d.family_sum_trials > 10 && d.family_sum_trials <= 20) {return 15.0}
+  else if (d.depth === 3 && d.family_sum_trials > 20 && d.family_sum_trials <= 30) {return 20.0}
+  else if (d.depth === 3 && d.family_sum_trials > 30 && d.family_sum_trials <= 40) {return 25.0}
+  else if (d.depth === 3 && d.family_sum_trials > 40 && d.family_sum_trials <= 50) {return 30.0}
+  else if (d.depth === 3 && d.family_sum_trials > 50 && d.family_sum_trials <= 75) {return 40.0}
+  else if (d.depth === 3 && d.family_sum_trials > 75 ) {return 50.0}
   else {return 0.0} ;})
   // .attr("r", 3.0)
   .style("fill-opacity", 0.60)
@@ -180,10 +180,15 @@ node.append("text")
   .text(function(d) { if (d.depth==4) { return d.name.toUpperCase() ; } else if (d.depth>0) { return d.name;} else { return ""; } })
   .style("font-size", function(d) { if (d.depth<3) {return "16px"} else if (d.depth==3) {return "14px"} else { return "12px" } })
   .style("font-family", "Palatino")
-  .style("font", function(d) { return d.font })
-  .style("fill", function(d) {
-      if (d.crystal_structure > 0) {return "#00B8D4" }
-      else {return "black"}; })
+  .style("font", function(d) {
+    if (d.depth === 1) {return "16px sans-serif"} 
+    else if (d.depth === 2) {return "15px sans-serif"}
+    else if (d.depth === 3) {return "12px sans-serif"}
+    else if (d.depth === 4) {return "8px sans-serif"}
+    })
+  // .style("fill", function(d) {
+  //     if (d.crystal_structure > 0) {return "#00B8D4" }
+  //     else {return "black"}; })
   .style("font-weight", function(d) {
       if (d.crystal_structure > 0) {return "bold" }
       else {return "padding"}; })
