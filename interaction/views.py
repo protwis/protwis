@@ -5,6 +5,7 @@ from django import forms
 from django.db.models import Count, Min, Sum, Avg, Q
 from django.utils.text import slugify
 from django.core.cache import cache
+from django.views.decorators.cache import cache_page
 
 from interaction.models import *
 from interaction.forms import PDBform
@@ -1195,6 +1196,7 @@ def pdb(request):
                                 content_type='text/plain')
     return response
 
+@cache_page(60*60*24*2) #  2 days in vie caching
 def GProtein(request):
 
     name_of_cache = 'gprotein_statistics'
