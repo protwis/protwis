@@ -26,7 +26,7 @@ def striphtml(data):
     p = re.compile(r'<.*?>')
     return p.sub('', data)
 
-# @cache_page(60*5) #  5 min
+@cache_page(60*5) #  5 min
 def drugstatistics(request):
 
     # ===== drugtargets =====
@@ -110,7 +110,7 @@ def drugstatistics(request):
 def drugbrowser(request):
     # Get drugdata from here somehow
 
-    name_of_cache = 'drug_browser2'
+    name_of_cache = 'drug_browser'
 
     context = cache.get(name_of_cache)
 
@@ -148,7 +148,7 @@ def drugbrowser(request):
 
     return render(request, 'drugbrowser.html', {'drugdata':context})
 
-# @cache_page(60*5) #  5 min
+@cache_page(60*5) #  5 min
 def drugmapping(request):
     context = dict()
 
