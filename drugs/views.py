@@ -3,6 +3,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from django.db.models import Count
 from django.core.cache import cache
+from django.views.decorators.cache import cache_page
 
 from drugs.models import Drugs
 from protein.models import Protein
@@ -23,11 +24,11 @@ def striphtml(data):
     p = re.compile(r'<.*?>')
     return p.sub('', data)
 
-
+# @cache_page(60*5) #  5 min
 def drugstatistics(request):
 
     # ===== drugtargets =====
-    drugtargets_raw = Protein.objects.filter(drugs__status='approved').values('entry_name').annotate(value=Count('entry_name')).order_by('-value')
+    drugtargets_raw = Protein.objects.filter(drugs__status='approved').values('entry_name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value').order_by('-value')
 
     list_of_hec_colors = get_spaced_colors(len(drugtargets_raw))
     drugtargets = []
@@ -38,7 +39,7 @@ def drugstatistics(request):
         drugtargets.append(drugtarget)
 
     # ===== drugfamilies =====
-    drugfamilies_raw = Protein.objects.filter().filter(drugs__status='approved').values('family_id__parent__name').annotate(value=Count('family_id__parent__name')).order_by('-value')
+    drugfamilies_raw = Protein.objects.filter(drugs__status='approved').values('family_id__parent__name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
 
     list_of_hec_colors = get_spaced_colors(len(drugfamilies_raw))
     drugfamilies = []
@@ -49,7 +50,7 @@ def drugstatistics(request):
         drugfamilies.append(drugfamily)
 
     # ===== drugclas =====
-    drugclasses_raw = Protein.objects.filter().filter(drugs__status='approved').values('family_id__parent__parent__parent__name').annotate(value=Count('family_id__parent__parent__parent__name')).order_by('-value')
+    drugclasses_raw = Protein.objects.filter(drugs__status='approved').values('family_id__parent__parent__parent__name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
 
     list_of_hec_colors = get_spaced_colors(len(drugclasses_raw)+1)
     drugclasses = []
@@ -60,9 +61,9 @@ def drugstatistics(request):
         drugclasses.append(drugclas)
 
     # ===== drugtypes =====
-    drugtypes_raw = Drugs.objects.values('drugtype').filter(status='approved').annotate(value=Count('drugtype')).order_by('value')
+    drugtypes_raw = Drugs.objects.values('drugtype').filter(status='approved').annotate(value=Count('name', distinct = True)).order_by('value')
 
-    list_of_hec_colors = get_spaced_colors(len(drugtypes_raw))
+    list_of_hec_colors = get_spaced_colors(len(drugtypes_raw)+5)
     drugtypes = []
     for i, drugtype in enumerate(drugtypes_raw):
         drugtype['label'] = drugtype['drugtype']
@@ -71,7 +72,7 @@ def drugstatistics(request):
         drugtypes.append(drugtype)
 
     # ===== drugindications =====
-    drugindications_raw = Drugs.objects.values('indication').filter(status='approved').annotate(value=Count('indication')).order_by('-value')
+    drugindications_raw = Drugs.objects.values('indication').filter(status='approved').annotate(value=Count('name', distinct = True)).order_by('-value')
 
     list_of_hec_colors = get_spaced_colors(len(drugindications_raw))
     drugindications = []
@@ -82,7 +83,7 @@ def drugstatistics(request):
         drugindications.append(drugindication)
 
     # ===== drugtimes =====
-    drugtime_raw = Drugs.objects.values('approval').filter(status='approved').annotate(y=Count('approval')).order_by('approval')
+    drugtime_raw = Drugs.objects.values('approval').filter(status='approved').annotate(y=Count('name', distinct = True)).order_by('approval')
 
     drugtimes = []
     running_total = 0
@@ -103,6 +104,7 @@ def drugstatistics(request):
 
     return render(request, 'drugstatistics.html', {'drugtypes':drugtypes, 'drugindications':drugindications, 'drugtargets':drugtargets, 'drugfamilies':drugfamilies, 'drugclasses':drugclasses, 'drugs_over_time':drugs_over_time})
 
+@cache_page(60*5) #  5 min
 def drugbrowser(request):
     # Get drugdata from here somehow
 
@@ -144,6 +146,7 @@ def drugbrowser(request):
 
     return render(request, 'drugbrowser.html', {'drugdata':context})
 
+@cache_page(60*5) #  5 min
 def drugmapping(request):
     context = dict()
 

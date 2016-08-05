@@ -1,14 +1,14 @@
 {
   "name": "GPCRome",
   "trials": 0,
-  "crystal_sum": 137,
+  "crystal_sum": 145,
   "children": [
     {
-      "crystal_sum": 123,
+      "crystal_sum": 129,
       "group": 0,
       "name": "Class A (Rhodopsin)",
-      "family_sum_approved": 749,
-      "family_sum_trials": 461,
+      "family_sum_approved": 814,
+      "family_sum_trials": 555,
       "trials": 0,
       "font": "13px sans-serif",
       "establishment": 3,
@@ -16,7 +16,7 @@
         {
           "crystal_sum": 0,
           "name": "Alicarboxylic acid",
-          "family_sum_approved": 0,
+          "family_sum_approved": 4,
           "family_sum_trials": 6,
           "trials": 0,
           "font": "12px sans-serif",
@@ -25,7 +25,7 @@
             {
               "crystal_sum": 0,
               "name": "Hydroxycarboxylic acid",
-              "family_sum_approved": 0,
+              "family_sum_approved": 4,
               "family_sum_trials": 6,
               "trials": 0,
               "font": "12px sans-serif",
@@ -44,16 +44,16 @@
                   "trials": 3,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
-                  "establishment": 7,
-                  "approved": 0
+                  "establishment": 4,
+                  "approved": 2
                 },
                 {
                   "name": "hcar3",
                   "trials": 3,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
-                  "establishment": 7,
-                  "approved": 0
+                  "establishment": 4,
+                  "approved": 2
                 }
               ],
               "approved": 0
@@ -102,10 +102,10 @@
           "approved": 0
         },
         {
-          "crystal_sum": 46,
+          "crystal_sum": 48,
           "name": "Aminergic",
-          "family_sum_approved": 563,
-          "family_sum_trials": 214,
+          "family_sum_approved": 592,
+          "family_sum_trials": 256,
           "trials": 0,
           "font": "12px sans-serif",
           "establishment": 3,
@@ -113,31 +113,31 @@
             {
               "crystal_sum": 4,
               "name": "5-Hydroxytryptamine",
-              "family_sum_approved": 97,
-              "family_sum_trials": 68,
+              "family_sum_approved": 106,
+              "family_sum_trials": 86,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "5ht1a",
-                  "trials": 10,
+                  "trials": 11,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 13
+                  "approved": 16
                 },
                 {
                   "name": "5ht1b",
-                  "trials": 2,
+                  "trials": 4,
                   "crystal_structure": 2,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 10
+                  "approved": 11
                 },
                 {
                   "name": "5ht1d",
-                  "trials": 1,
+                  "trials": 3,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -161,15 +161,15 @@
                 },
                 {
                   "name": "5ht2a",
-                  "trials": 21,
+                  "trials": 26,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 28
+                  "approved": 31
                 },
                 {
                   "name": "5ht2b",
-                  "trials": 10,
+                  "trials": 11,
                   "crystal_structure": 2,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -177,7 +177,7 @@
                 },
                 {
                   "name": "5ht2c",
-                  "trials": 9,
+                  "trials": 10,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -185,7 +185,7 @@
                 },
                 {
                   "name": "5ht4r",
-                  "trials": 5,
+                  "trials": 9,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -209,7 +209,7 @@
                 },
                 {
                   "name": "5ht6r",
-                  "trials": 7,
+                  "trials": 9,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -221,16 +221,16 @@
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 5
+                  "approved": 7
                 }
               ],
               "approved": 0
             },
             {
-              "crystal_sum": 7,
+              "crystal_sum": 9,
               "name": "Acetylcholine (musc.)",
-              "family_sum_approved": 137,
-              "family_sum_trials": 17,
+              "family_sum_approved": 146,
+              "family_sum_trials": 20,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
@@ -238,10 +238,10 @@
                 {
                   "name": "acm1",
                   "trials": 7,
-                  "crystal_structure": 0,
+                  "crystal_structure": 1,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 50
+                  "approved": 51
                 },
                 {
                   "name": "acm2",
@@ -249,23 +249,23 @@
                   "crystal_structure": 3,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 32
+                  "approved": 35
                 },
                 {
                   "name": "acm3",
-                  "trials": 5,
+                  "trials": 8,
                   "crystal_structure": 4,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 25
+                  "approved": 28
                 },
                 {
                   "name": "acm4",
                   "trials": 1,
-                  "crystal_structure": 0,
+                  "crystal_structure": 1,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 16
+                  "approved": 17
                 },
                 {
                   "name": "acm5",
@@ -273,7 +273,7 @@
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 14
+                  "approved": 15
                 }
               ],
               "approved": 0
@@ -281,23 +281,23 @@
             {
               "crystal_sum": 33,
               "name": "Adrenoceptors",
-              "family_sum_approved": 176,
-              "family_sum_trials": 65,
+              "family_sum_approved": 181,
+              "family_sum_trials": 75,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "ada1a",
-                  "trials": 9,
+                  "trials": 11,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 39
+                  "approved": 40
                 },
                 {
                   "name": "ada1b",
-                  "trials": 6,
+                  "trials": 7,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -305,7 +305,7 @@
                 },
                 {
                   "name": "ada1d",
-                  "trials": 5,
+                  "trials": 6,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -313,15 +313,15 @@
                 },
                 {
                   "name": "ada2a",
-                  "trials": 8,
+                  "trials": 9,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 25
+                  "approved": 26
                 },
                 {
                   "name": "ada2b",
-                  "trials": 5,
+                  "trials": 6,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -329,7 +329,7 @@
                 },
                 {
                   "name": "ada2c",
-                  "trials": 5,
+                  "trials": 6,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -345,19 +345,19 @@
                 },
                 {
                   "name": "adrb2",
-                  "trials": 17,
+                  "trials": 18,
                   "crystal_structure": 16,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 23
+                  "approved": 25
                 },
                 {
                   "name": "adrb3",
-                  "trials": 3,
+                  "trials": 5,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 2
+                  "approved": 3
                 }
               ],
               "approved": 0
@@ -365,15 +365,15 @@
             {
               "crystal_sum": 1,
               "name": "Dopamine",
-              "family_sum_approved": 93,
-              "family_sum_trials": 48,
+              "family_sum_approved": 97,
+              "family_sum_trials": 56,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "drd1",
-                  "trials": 7,
+                  "trials": 8,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -381,23 +381,23 @@
                 },
                 {
                   "name": "drd2",
-                  "trials": 24,
+                  "trials": 27,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 44
+                  "approved": 47
                 },
                 {
                   "name": "drd3",
-                  "trials": 9,
+                  "trials": 10,
                   "crystal_structure": 1,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 12
+                  "approved": 13
                 },
                 {
                   "name": "drd4",
-                  "trials": 5,
+                  "trials": 7,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -405,7 +405,7 @@
                 },
                 {
                   "name": "drd5",
-                  "trials": 3,
+                  "trials": 4,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -417,19 +417,19 @@
             {
               "crystal_sum": 1,
               "name": "Histamine",
-              "family_sum_approved": 58,
-              "family_sum_trials": 16,
+              "family_sum_approved": 60,
+              "family_sum_trials": 19,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "hrh1",
-                  "trials": 11,
+                  "trials": 12,
                   "crystal_structure": 1,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 49
+                  "approved": 50
                 },
                 {
                   "name": "hrh2",
@@ -441,15 +441,15 @@
                 },
                 {
                   "name": "hrh3",
-                  "trials": 2,
+                  "trials": 3,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
-                  "establishment": 7,
-                  "approved": 0
+                  "establishment": 4,
+                  "approved": 1
                 },
                 {
                   "name": "hrh4",
-                  "trials": 2,
+                  "trials": 3,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -484,8 +484,8 @@
         {
           "crystal_sum": 6,
           "name": "Lipid",
-          "family_sum_approved": 29,
-          "family_sum_trials": 52,
+          "family_sum_approved": 32,
+          "family_sum_trials": 63,
           "trials": 0,
           "font": "12px sans-serif",
           "establishment": 3,
@@ -494,14 +494,14 @@
               "crystal_sum": 0,
               "name": "Cannabinoid",
               "family_sum_approved": 7,
-              "family_sum_trials": 16,
+              "family_sum_trials": 25,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "cnr1",
-                  "trials": 9,
+                  "trials": 16,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -509,7 +509,7 @@
                 },
                 {
                   "name": "cnr2",
-                  "trials": 7,
+                  "trials": 9,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -522,17 +522,17 @@
               "crystal_sum": 1,
               "name": "Free fatty acid",
               "family_sum_approved": 0,
-              "family_sum_trials": 1,
+              "family_sum_trials": 2,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "ffar1",
-                  "trials": 0,
+                  "trials": 1,
                   "crystal_structure": 1,
                   "font": "8px sans-serif",
-                  "establishment": 2,
+                  "establishment": 7,
                   "approved": 0
                 },
                 {
@@ -574,7 +574,7 @@
               "crystal_sum": 0,
               "name": "GPR18/55/119",
               "family_sum_approved": 0,
-              "family_sum_trials": 4,
+              "family_sum_trials": 5,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
@@ -597,10 +597,10 @@
                 },
                 {
                   "name": "gpr55",
-                  "trials": 0,
+                  "trials": 1,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
-                  "establishment": 2,
+                  "establishment": 7,
                   "approved": 0
                 }
               ],
@@ -801,7 +801,7 @@
             {
               "crystal_sum": 0,
               "name": "Prostanoid",
-              "family_sum_approved": 18,
+              "family_sum_approved": 21,
               "family_sum_trials": 15,
               "trials": 0,
               "font": "12px sans-serif",
@@ -861,7 +861,7 @@
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 3
+                  "approved": 4
                 },
                 {
                   "name": "pi2r",
@@ -869,15 +869,15 @@
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 5
+                  "approved": 6
                 },
                 {
                   "name": "ta2r",
                   "trials": 1,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
-                  "establishment": 7,
-                  "approved": 0
+                  "establishment": 4,
+                  "approved": 1
                 }
               ],
               "approved": 0
@@ -888,7 +888,7 @@
         {
           "crystal_sum": 0,
           "name": "Melatonin",
-          "family_sum_approved": 2,
+          "family_sum_approved": 4,
           "family_sum_trials": 6,
           "trials": 0,
           "font": "12px sans-serif",
@@ -897,7 +897,7 @@
             {
               "crystal_sum": 0,
               "name": "Melatonin",
-              "family_sum_approved": 2,
+              "family_sum_approved": 4,
               "family_sum_trials": 6,
               "trials": 0,
               "font": "12px sans-serif",
@@ -909,7 +909,7 @@
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 1
+                  "approved": 2
                 },
                 {
                   "name": "mtr1b",
@@ -917,7 +917,7 @@
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 1
+                  "approved": 2
                 }
               ],
               "approved": 0
@@ -928,8 +928,8 @@
         {
           "crystal_sum": 19,
           "name": "Nucleotide",
-          "family_sum_approved": 15,
-          "family_sum_trials": 39,
+          "family_sum_approved": 16,
+          "family_sum_trials": 44,
           "trials": 0,
           "font": "12px sans-serif",
           "establishment": 3,
@@ -938,14 +938,14 @@
               "crystal_sum": 14,
               "name": "Adenosine",
               "family_sum_approved": 10,
-              "family_sum_trials": 25,
+              "family_sum_trials": 30,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "aa1r",
-                  "trials": 9,
+                  "trials": 11,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -953,7 +953,7 @@
                 },
                 {
                   "name": "aa2ar",
-                  "trials": 10,
+                  "trials": 13,
                   "crystal_structure": 14,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -981,7 +981,7 @@
             {
               "crystal_sum": 5,
               "name": "P2Y",
-              "family_sum_approved": 5,
+              "family_sum_approved": 6,
               "family_sum_trials": 14,
               "trials": 0,
               "font": "12px sans-serif",
@@ -1033,7 +1033,7 @@
                   "crystal_structure": 3,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 5
+                  "approved": 6
                 },
                 {
                   "name": "p2y13",
@@ -1061,7 +1061,7 @@
           "crystal_sum": 0,
           "name": "Orphan",
           "family_sum_approved": 0,
-          "family_sum_trials": 6,
+          "family_sum_trials": 7,
           "trials": 0,
           "font": "12px sans-serif",
           "establishment": 3,
@@ -1070,7 +1070,7 @@
               "crystal_sum": 0,
               "name": "Class A orphans",
               "family_sum_approved": 0,
-              "family_sum_trials": 6,
+              "family_sum_trials": 7,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
@@ -1605,10 +1605,10 @@
                 },
                 {
                   "name": "mas",
-                  "trials": 0,
+                  "trials": 1,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
-                  "establishment": 2,
+                  "establishment": 7,
                   "approved": 0
                 },
                 {
@@ -1842,10 +1842,10 @@
           "approved": 0
         },
         {
-          "crystal_sum": 16,
+          "crystal_sum": 19,
           "name": "Peptide",
-          "family_sum_approved": 125,
-          "family_sum_trials": 101,
+          "family_sum_approved": 151,
+          "family_sum_trials": 131,
           "trials": 0,
           "font": "12px sans-serif",
           "establishment": 3,
@@ -1854,14 +1854,14 @@
               "crystal_sum": 2,
               "name": "Angiotensin",
               "family_sum_approved": 7,
-              "family_sum_trials": 9,
+              "family_sum_trials": 12,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "agtr1",
-                  "trials": 6,
+                  "trials": 9,
                   "crystal_structure": 2,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -1966,7 +1966,7 @@
               "crystal_sum": 0,
               "name": "Cholecystokinin",
               "family_sum_approved": 2,
-              "family_sum_trials": 1,
+              "family_sum_trials": 2,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
@@ -1981,7 +1981,7 @@
                 },
                 {
                   "name": "gasr",
-                  "trials": 0,
+                  "trials": 1,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -2029,27 +2029,27 @@
             {
               "crystal_sum": 0,
               "name": "Endothelin",
-              "family_sum_approved": 5,
-              "family_sum_trials": 6,
+              "family_sum_approved": 7,
+              "family_sum_trials": 10,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "ednra",
-                  "trials": 6,
+                  "trials": 9,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 4
+                },
+                {
+                  "name": "ednrb",
+                  "trials": 1,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
                   "approved": 3
-                },
-                {
-                  "name": "ednrb",
-                  "trials": 0,
-                  "crystal_structure": 0,
-                  "font": "8px sans-serif",
-                  "establishment": 4,
-                  "approved": 2
                 }
               ],
               "approved": 0
@@ -2130,14 +2130,14 @@
               "crystal_sum": 0,
               "name": "Ghrelin",
               "family_sum_approved": 0,
-              "family_sum_trials": 4,
+              "family_sum_trials": 6,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "ghsr",
-                  "trials": 4,
+                  "trials": 6,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 7,
@@ -2149,19 +2149,19 @@
             {
               "crystal_sum": 0,
               "name": "Gonadotrophin",
-              "family_sum_approved": 15,
-              "family_sum_trials": 9,
+              "family_sum_approved": 14,
+              "family_sum_trials": 10,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "gnrhr",
-                  "trials": 5,
+                  "trials": 6,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 9
+                  "approved": 8
                 },
                 {
                   "name": "gnrr2",
@@ -2225,8 +2225,8 @@
             {
               "crystal_sum": 0,
               "name": "Melanocortin",
-              "family_sum_approved": 2,
-              "family_sum_trials": 12,
+              "family_sum_approved": 3,
+              "family_sum_trials": 13,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
@@ -2237,7 +2237,7 @@
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 2
+                  "approved": 3
                 },
                 {
                   "name": "mc3r",
@@ -2265,7 +2265,7 @@
                 },
                 {
                   "name": "mshr",
-                  "trials": 5,
+                  "trials": 6,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 7,
@@ -2402,7 +2402,7 @@
               "crystal_sum": 0,
               "name": "Neuropeptide Y",
               "family_sum_approved": 0,
-              "family_sum_trials": 4,
+              "family_sum_trials": 6,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
@@ -2425,7 +2425,7 @@
                 },
                 {
                   "name": "npy4r",
-                  "trials": 1,
+                  "trials": 2,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 7,
@@ -2433,10 +2433,10 @@
                 },
                 {
                   "name": "npy5r",
-                  "trials": 0,
+                  "trials": 1,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
-                  "establishment": 2,
+                  "establishment": 7,
                   "approved": 0
                 },
                 {
@@ -2479,10 +2479,10 @@
               "approved": 0
             },
             {
-              "crystal_sum": 7,
+              "crystal_sum": 8,
               "name": "Opioid",
-              "family_sum_approved": 72,
-              "family_sum_trials": 26,
+              "family_sum_approved": 82,
+              "family_sum_trials": 30,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
@@ -2493,23 +2493,23 @@
                   "crystal_structure": 4,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 19
+                  "approved": 23
                 },
                 {
                   "name": "oprk",
-                  "trials": 9,
-                  "crystal_structure": 1,
-                  "font": "8px sans-serif",
-                  "establishment": 4,
-                  "approved": 19
-                },
-                {
-                  "name": "oprm",
                   "trials": 10,
                   "crystal_structure": 1,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 34
+                  "approved": 20
+                },
+                {
+                  "name": "oprm",
+                  "trials": 13,
+                  "crystal_structure": 2,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 39
                 },
                 {
                   "name": "oprx",
@@ -2523,9 +2523,9 @@
               "approved": 0
             },
             {
-              "crystal_sum": 1,
+              "crystal_sum": 3,
               "name": "Orexin",
-              "family_sum_approved": 0,
+              "family_sum_approved": 2,
               "family_sum_trials": 3,
               "trials": 0,
               "font": "12px sans-serif",
@@ -2534,18 +2534,18 @@
                 {
                   "name": "ox1r",
                   "trials": 1,
-                  "crystal_structure": 0,
+                  "crystal_structure": 2,
                   "font": "8px sans-serif",
-                  "establishment": 7,
-                  "approved": 0
+                  "establishment": 4,
+                  "approved": 1
                 },
                 {
                   "name": "ox2r",
                   "trials": 2,
                   "crystal_structure": 1,
                   "font": "8px sans-serif",
-                  "establishment": 7,
-                  "approved": 0
+                  "establishment": 4,
+                  "approved": 1
                 }
               ],
               "approved": 0
@@ -2593,7 +2593,7 @@
             {
               "crystal_sum": 1,
               "name": "Proteinase-activated",
-              "family_sum_approved": 0,
+              "family_sum_approved": 3,
               "family_sum_trials": 3,
               "trials": 0,
               "font": "12px sans-serif",
@@ -2604,8 +2604,8 @@
                   "trials": 1,
                   "crystal_structure": 1,
                   "font": "8px sans-serif",
-                  "establishment": 7,
-                  "approved": 0
+                  "establishment": 4,
+                  "approved": 1
                 },
                 {
                   "name": "par2",
@@ -2620,16 +2620,16 @@
                   "trials": 1,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
-                  "establishment": 7,
-                  "approved": 0
+                  "establishment": 4,
+                  "approved": 1
                 },
                 {
                   "name": "par4",
                   "trials": 1,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
-                  "establishment": 7,
-                  "approved": 0
+                  "establishment": 4,
+                  "approved": 1
                 }
               ],
               "approved": 0
@@ -2681,35 +2681,35 @@
             {
               "crystal_sum": 0,
               "name": "Somatostatin",
-              "family_sum_approved": 7,
-              "family_sum_trials": 7,
+              "family_sum_approved": 11,
+              "family_sum_trials": 10,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "ssr1",
-                  "trials": 1,
+                  "trials": 2,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 2
+                  "approved": 3
                 },
                 {
                   "name": "ssr2",
-                  "trials": 3,
+                  "trials": 4,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 2
+                  "approved": 3
                 },
                 {
                   "name": "ssr3",
                   "trials": 0,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
-                  "establishment": 2,
-                  "approved": 0
+                  "establishment": 4,
+                  "approved": 1
                 },
                 {
                   "name": "ssr4",
@@ -2721,11 +2721,11 @@
                 },
                 {
                   "name": "ssr5",
-                  "trials": 2,
+                  "trials": 3,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 3
+                  "approved": 4
                 }
               ],
               "approved": 0
@@ -2733,19 +2733,19 @@
             {
               "crystal_sum": 0,
               "name": "Tachykinin",
-              "family_sum_approved": 1,
-              "family_sum_trials": 5,
+              "family_sum_approved": 3,
+              "family_sum_trials": 9,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "nk1r",
-                  "trials": 3,
+                  "trials": 6,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 1
+                  "approved": 3
                 },
                 {
                   "name": "nk2r",
@@ -2757,7 +2757,7 @@
                 },
                 {
                   "name": "nk3r",
-                  "trials": 1,
+                  "trials": 2,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 7,
@@ -2817,8 +2817,8 @@
             {
               "crystal_sum": 0,
               "name": "Vasopressin/Oxytocin",
-              "family_sum_approved": 13,
-              "family_sum_trials": 7,
+              "family_sum_approved": 16,
+              "family_sum_trials": 12,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
@@ -2833,27 +2833,27 @@
                 },
                 {
                   "name": "v1ar",
-                  "trials": 2,
+                  "trials": 3,
+                  "crystal_structure": 0,
+                  "font": "8px sans-serif",
+                  "establishment": 4,
+                  "approved": 5
+                },
+                {
+                  "name": "v1br",
+                  "trials": 1,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
                   "approved": 4
                 },
                 {
-                  "name": "v1br",
-                  "trials": 0,
-                  "crystal_structure": 0,
-                  "font": "8px sans-serif",
-                  "establishment": 4,
-                  "approved": 3
-                },
-                {
                   "name": "v2r",
-                  "trials": 3,
+                  "trials": 6,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 5
+                  "approved": 6
                 }
               ],
               "approved": 0
@@ -2865,7 +2865,7 @@
           "crystal_sum": 7,
           "name": "Protein",
           "family_sum_approved": 15,
-          "family_sum_trials": 36,
+          "family_sum_trials": 41,
           "trials": 0,
           "font": "12px sans-serif",
           "establishment": 3,
@@ -2893,8 +2893,8 @@
             {
               "crystal_sum": 7,
               "name": "Chemokine",
-              "family_sum_approved": 3,
-              "family_sum_trials": 29,
+              "family_sum_approved": 2,
+              "family_sum_trials": 34,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
@@ -2957,10 +2957,10 @@
                 },
                 {
                   "name": "ccr3",
-                  "trials": 0,
+                  "trials": 1,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
-                  "establishment": 2,
+                  "establishment": 7,
                   "approved": 0
                 },
                 {
@@ -2973,11 +2973,11 @@
                 },
                 {
                   "name": "ccr5",
-                  "trials": 2,
+                  "trials": 4,
                   "crystal_structure": 1,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 2
+                  "approved": 1
                 },
                 {
                   "name": "ccr6",
@@ -3053,7 +3053,7 @@
                 },
                 {
                   "name": "cxcr4",
-                  "trials": 9,
+                  "trials": 11,
                   "crystal_structure": 6,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -3089,7 +3089,7 @@
             {
               "crystal_sum": 0,
               "name": "Glycoprotein",
-              "family_sum_approved": 12,
+              "family_sum_approved": 13,
               "family_sum_trials": 5,
               "trials": 0,
               "font": "12px sans-serif",
@@ -3101,7 +3101,7 @@
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 5
+                  "approved": 6
                 },
                 {
                   "name": "lshr",
@@ -3154,7 +3154,7 @@
           "approved": 0
         },
         {
-          "crystal_sum": 29,
+          "crystal_sum": 30,
           "name": "Sensory",
           "family_sum_approved": 0,
           "family_sum_trials": 0,
@@ -3163,7 +3163,7 @@
           "establishment": 3,
           "children": [
             {
-              "crystal_sum": 29,
+              "crystal_sum": 30,
               "name": "Opsins",
               "family_sum_approved": 0,
               "family_sum_trials": 0,
@@ -3206,7 +3206,7 @@
                 {
                   "name": "opsd",
                   "trials": 0,
-                  "crystal_structure": 29,
+                  "crystal_structure": 30,
                   "font": "8px sans-serif",
                   "establishment": 2,
                   "approved": 0
@@ -3292,8 +3292,8 @@
       "crystal_sum": 2,
       "group": 1,
       "name": "Class B1 (Secretin)",
-      "family_sum_approved": 26,
-      "family_sum_trials": 43,
+      "family_sum_approved": 29,
+      "family_sum_trials": 59,
       "trials": 0,
       "font": "13px sans-serif",
       "establishment": 3,
@@ -3301,8 +3301,8 @@
         {
           "crystal_sum": 2,
           "name": "Peptide",
-          "family_sum_approved": 26,
-          "family_sum_trials": 43,
+          "family_sum_approved": 29,
+          "family_sum_trials": 59,
           "trials": 0,
           "font": "12px sans-serif",
           "establishment": 3,
@@ -3387,14 +3387,14 @@
               "crystal_sum": 1,
               "name": "Corticotropin",
               "family_sum_approved": 0,
-              "family_sum_trials": 3,
+              "family_sum_trials": 5,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "crfr1",
-                  "trials": 2,
+                  "trials": 3,
                   "crystal_structure": 1,
                   "font": "8px sans-serif",
                   "establishment": 7,
@@ -3402,7 +3402,7 @@
                 },
                 {
                   "name": "crfr2",
-                  "trials": 1,
+                  "trials": 2,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 7,
@@ -3414,8 +3414,8 @@
             {
               "crystal_sum": 1,
               "name": "Glucagon family",
-              "family_sum_approved": 9,
-              "family_sum_trials": 25,
+              "family_sum_approved": 11,
+              "family_sum_trials": 36,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
@@ -3438,15 +3438,15 @@
                 },
                 {
                   "name": "glp1r",
-                  "trials": 16,
+                  "trials": 25,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 3
+                  "approved": 5
                 },
                 {
                   "name": "glp2r",
-                  "trials": 1,
+                  "trials": 2,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -3454,7 +3454,7 @@
                 },
                 {
                   "name": "glr",
-                  "trials": 4,
+                  "trials": 5,
                   "crystal_structure": 1,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -3474,7 +3474,7 @@
             {
               "crystal_sum": 0,
               "name": "Parathyroid",
-              "family_sum_approved": 5,
+              "family_sum_approved": 6,
               "family_sum_trials": 7,
               "trials": 0,
               "font": "12px sans-serif",
@@ -3486,7 +3486,7 @@
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 4
+                  "approved": 5
                 },
                 {
                   "name": "pth2r",
@@ -3503,7 +3503,7 @@
               "crystal_sum": 0,
               "name": "VIP and PACAP",
               "family_sum_approved": 0,
-              "family_sum_trials": 0,
+              "family_sum_trials": 3,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
@@ -3518,18 +3518,18 @@
                 },
                 {
                   "name": "vipr1",
-                  "trials": 0,
+                  "trials": 1,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
-                  "establishment": 2,
+                  "establishment": 7,
                   "approved": 0
                 },
                 {
                   "name": "vipr2",
-                  "trials": 0,
+                  "trials": 2,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
-                  "establishment": 2,
+                  "establishment": 7,
                   "approved": 0
                 }
               ],
@@ -3827,20 +3827,20 @@
       "approved": 0
     },
     {
-      "crystal_sum": 2,
+      "crystal_sum": 4,
       "group": 3,
       "name": "Class C (Glutamate)",
       "family_sum_approved": 12,
-      "family_sum_trials": 36,
+      "family_sum_trials": 40,
       "trials": 0,
       "font": "13px sans-serif",
       "establishment": 3,
       "children": [
         {
-          "crystal_sum": 2,
+          "crystal_sum": 4,
           "name": "Amino acid",
           "family_sum_approved": 11,
-          "family_sum_trials": 31,
+          "family_sum_trials": 34,
           "trials": 0,
           "font": "12px sans-serif",
           "establishment": 3,
@@ -3882,10 +3882,10 @@
               "approved": 0
             },
             {
-              "crystal_sum": 2,
+              "crystal_sum": 4,
               "name": "Metabotropic glutamate",
               "family_sum_approved": 1,
-              "family_sum_trials": 18,
+              "family_sum_trials": 21,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
@@ -3900,7 +3900,7 @@
                 },
                 {
                   "name": "grm2",
-                  "trials": 4,
+                  "trials": 5,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 7,
@@ -3908,7 +3908,7 @@
                 },
                 {
                   "name": "grm3",
-                  "trials": 3,
+                  "trials": 4,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 7,
@@ -3924,8 +3924,8 @@
                 },
                 {
                   "name": "grm5",
-                  "trials": 5,
-                  "crystal_structure": 1,
+                  "trials": 6,
+                  "crystal_structure": 3,
                   "font": "8px sans-serif",
                   "establishment": 4,
                   "approved": 1
@@ -3964,7 +3964,7 @@
           "crystal_sum": 0,
           "name": "Ion",
           "family_sum_approved": 1,
-          "family_sum_trials": 5,
+          "family_sum_trials": 6,
           "trials": 0,
           "font": "12px sans-serif",
           "establishment": 3,
@@ -3973,14 +3973,14 @@
               "crystal_sum": 0,
               "name": "Calcium-sensing",
               "family_sum_approved": 1,
-              "family_sum_trials": 5,
+              "family_sum_trials": 6,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "casr",
-                  "trials": 5,
+                  "trials": 6,
                   "crystal_structure": 0,
                   "font": "8px sans-serif",
                   "establishment": 4,
@@ -4135,8 +4135,8 @@
       "crystal_sum": 10,
       "group": 4,
       "name": "Class F (Frizzled)",
-      "family_sum_approved": 2,
-      "family_sum_trials": 5,
+      "family_sum_approved": 6,
+      "family_sum_trials": 7,
       "trials": 0,
       "font": "13px sans-serif",
       "establishment": 3,
@@ -4144,8 +4144,8 @@
         {
           "crystal_sum": 10,
           "name": "Protein",
-          "family_sum_approved": 2,
-          "family_sum_trials": 5,
+          "family_sum_approved": 6,
+          "family_sum_trials": 7,
           "trials": 0,
           "font": "12px sans-serif",
           "establishment": 3,
@@ -4153,8 +4153,8 @@
             {
               "crystal_sum": 5,
               "name": "Frizzled",
-              "family_sum_approved": 1,
-              "family_sum_trials": 3,
+              "family_sum_approved": 3,
+              "family_sum_trials": 4,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
@@ -4241,11 +4241,11 @@
                 },
                 {
                   "name": "smo",
-                  "trials": 2,
+                  "trials": 3,
                   "crystal_structure": 5,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 1
+                  "approved": 3
                 }
               ],
               "approved": 0
@@ -4253,19 +4253,19 @@
             {
               "crystal_sum": 5,
               "name": "Smoothened",
-              "family_sum_approved": 1,
-              "family_sum_trials": 2,
+              "family_sum_approved": 3,
+              "family_sum_trials": 3,
               "trials": 0,
               "font": "12px sans-serif",
               "establishment": 3,
               "children": [
                 {
                   "name": "smo",
-                  "trials": 2,
+                  "trials": 3,
                   "crystal_structure": 5,
                   "font": "8px sans-serif",
                   "establishment": 4,
-                  "approved": 1
+                  "approved": 3
                 }
               ],
               "approved": 0
@@ -4567,8 +4567,8 @@
       "approved": 0
     }
   ],
-  "family_sum_approved": 789,
-  "family_sum_trials": 545,
+  "family_sum_approved": 861,
+  "family_sum_trials": 661,
   "font": "12px sans-serif",
   "establishment": 2,
   "approved": 0
