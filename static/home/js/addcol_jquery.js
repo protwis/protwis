@@ -12,10 +12,31 @@ $(document).ready(function () {
 addaux('aux_proteins');
 addRow('chem_comp');
 
+// $("#xtals_form").submit(function (e) {
+//   // $("html, body").animate({ scrollTop: $(".error").first() });
+//   ValidateForm(); 
+//   e.preventDefault();
+// // $("#id_name_cont").on("click", function(){    
+// });
+
+$("#btn_s").on("click", function(e){
+//   Submission();
+var result=ValidateForm();
+ ValidateForm(); 
+console.log(result);
+ e.preventDefault();
+});
+
+$(document).on("change", function(){
+  LabelErrors();
+});
+
  $('.datepicker').datepicker({
      inline: true,
     showOtherMonths: true
  });
+
+
 
 $('.numeric').on('keydown',  function(e){
     -1!==$.inArray(e.keyCode,[46,8,9,27,13,110,190])||/65|67|86|88/.test(e.keyCode)&&(!0===e.ctrlKey||!0===e.metaKey)||35<=e.keyCode&&40>=e.keyCode||(e.shiftKey||48>e.keyCode||57<e.keyCode)&&(96>e.keyCode||105<e.keyCode)&&e.preventDefault()});
@@ -68,9 +89,9 @@ $("input.half").on("keyup", function() {
     pl=$(this).nextAll("input.unit").attr('placeholder');
     $(this).nextAll("input.unit").removeAttr('placeholder');
     //$(this).next("input.unit").attr("placeholder", "ratio");
-    $(this).nextAll("input.unit").val('ratio');
-    $(this).nextAll("input.unit").removeClass('error');
-    $(this).nextAll("label.error").hide();
+    $(this).nextAll("input.unit").val('ratio').trigger("change");
+    // $(this).nextAll("input.unit").removeClass('error');
+     // $(this).nextAll("label.error").first().hide();
     $(this).nextAll("input.unit").keydown(function(){
       return false;
     });
@@ -79,29 +100,30 @@ $("input.half").on("keyup", function() {
 
   }
 else{
-  $(this).nextAll("input.unit").val('');
+  $(this).nextAll("input.unit").val('').trigger("change");
    $(this).nextAll("input.unit").attr("placeholder", "unit i.e.:%w/v");  //this doesn't apply to id protein conc_unit, adjust to that
    $(this).nextAll("input.unit").off("keydown");
    if ($(this).hasClass("optional")){
    $(this).nextAll("input.unit").addClass("optional");
+   // $(this).nextAll("label.error").first().show();
    }
 }
 });
 
 //---------------------------------------------------------------------------------------------------
-      $(".aamod_pos_type").on('change', function () {
+      $('.aamod_pos_type').on('change', function () {
         temp_index = $(this).parent().parent().index();     //parent of td is tr
         var aamod_type= ["","single", "pair", "range"];
       for (var k=0; k<aamod_type.length; k+=1){
         var aa=aamod_type[k] ;
           if(this.value === aa){
           if (temp_index>1) {
-                    $(".aa_type.row_id_"+temp_index).val(''); 
-                    $(".aa_type.row_id_"+temp_index).hide(); 
+                    $('.aa_type.row_id_'+temp_index).val(''); 
+                    $('.aa_type.row_id_'+temp_index).hide(); 
                     $('.'+aa+'.row_id_'+temp_index).show(); 
                   } else {
-                    $(".aa_type.row_id_"+temp_index).val(''); 
-                    $(".aa_type.row_id").hide(); 
+                    $('.aa_type.row_id_'+temp_index).val(''); 
+                    $('.aa_type.row_id').hide(); 
                     $('.'+aa+'.row_id').show(); 
                   }
           }
@@ -272,65 +294,6 @@ $('.delcol').on('click', function (){
 
     UpdateIds("#aux_proteins", "#deletions");
 
-   // //udpate the id's  (of all table and originals)
-   //  $('#aux_proteins td').each(function(){
-   //    var my_index=$(this).index();
-   //    $(this).children().each(function(){    
-   //        var out_class=$(this).attr('class').split(' ').pop();
-   //        if (out_class==='col_id'){
-   //        $(this).removeClass(out_class);
-   //        $(this).addClass('col_id');
-   //        }
-   //       else {
-   //        $(this).removeClass(out_class);
-   //        $(this).addClass('col_id_'+my_index);
-   //        }
-   //        if (my_index>1){
-   //        $(this).attr("id", $(this).attr("id").replace(/\d+$/, my_index));
-   //        $(this).attr("name", $(this).attr("name").replace(/\d+$/, my_index));
-   //        }
-   //    });
-   // });  
-   // ///update also the cloned td ids classes etc
-   //   $('#aux_proteins td').each(function(){
-   //     var td_class=$(this).attr('class').split(' ').pop();
-   //      if (td_class.match("^klon")){
-   //        console.log(td_class);
-   //        //$("."+td_class).hide();
-   //        klon_td=$(this).index();
-   //        $("#deletions td").each(function(){
-   //            if ( $(this).hasClass(td_class) ){
-   //              del_row_index=$(this).parent().index();
-   //                var del_class=$(this).attr('class').split(' ').pop();
-   //                $(this).children().each(function(){
-   //                  //now my this is children of del td
-   //                  //tr index  
-   //                  $(this).attr("class", $(this).attr("class").replace(/\bins_del_single.*?\b/g, 'ins_del_single'+klon_td));
-   //                  $(this).attr("class", $(this).attr("class").replace(/\bins_del_start.*?\b/g, 'ins_del_start'+klon_td));
-   //                  $(this).attr("class", $(this).attr("class").replace(/\bins_del_end.*?\b/g, 'ins_del_end'+klon_td));
-   //                  $(this).attr("class", $(this).attr("class").replace(/\bcol_id.*?\b/g, 'col_id_'+klon_td));
-   //                  $(this).attr("class", $(this).attr("class").replace(/\brow_id.*?\b/g, 'row_id_'+del_row_index));
-   //                  $(this).attr("id", $(this).attr("id").replace(/\d+$/, klon_td));
-
-   //                  }); //children
-   //              $(this).attr("class", $(this).attr("class").replace(/\bklon.*?\b/g, 'klon'+klon_td));
-   //              $(this).attr("class", $(this).attr("class").replace(/\bklon.*?\b/g, 'klon'+klon_td));
-   
-   //              //update the tr cloned insertion class
-   //              $(this).parent().each(function(){
-   //                $(this).attr("class", $(this).attr("class").replace(/\bcloned.*?\b/g, 'cloned_insertion'+klon_td));   
-   //                $(this).children().each(function(){
-   //                  if ($(this).is('th')){
-   //                    klon_td_minus=klon_td-1;
-   //                    $(this).text("Del. from Insertion"+klon_td_minus); //update of th
-   //                  }
-   //              });               
-   //              }); 
-   //            }
-   //      }); ///deletions td
-   //        $(this).attr("class", $(this).attr("class").replace(/\bklon.*?\b/g, 'klon'+klon_td));
-   //     }
-   //  });
   }
   else{}
 
