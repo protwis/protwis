@@ -100,7 +100,34 @@ canvas {
     </table>
 </div>
 
-<h2>Interface snake diagram for {{ mapped_protein }}</h2>
+<h2>Interface snake diagram for <a href='/protein/{{ mapped_protein }}'> {{ mapped_protein }} </a> </h2>
+<div class="row">
+    <table width="100%">
+      <tr>
+        <td width="50%" style="border:0px;">
+
+        <div class="row">
+            <div class="col-md-3 text-right text-info">
+                <h4>Primary Transduction</h4>
+            </div>
+            <div class="col-md-6">
+            {{ primary_Gprotein | safe}}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3 text-right text-info">
+                <h4>Secondary Transduction</h4>
+            </div>
+            <div class="col-md-6">
+            {{ secondary_Gprotein | safe}}
+            </div>
+        </div>
+
+        </td>
+      </tr>
+    </table>
+</div>
 <div class="row">
 <div class="col-md-10 text-center">
     {{ snakeplot }}
@@ -116,7 +143,7 @@ canvas {
     <div class="col-md-12">
             <div class="panel-body">
                     <div class='col-md-10'>
-                        <p><strong>{{ mapped_protein }} - G&alpha;s interface </strong> <br> <font style="color: #000; background-color: #1F9439" >Dark-Green</font>: G&alpha;s-interacting residues based on the β2-G&alpha;s complex and electron density map <br> <font style="color: #000; background-color: #E67E22" >Orange</font>: G&alpha;s-interacting residues not conserved in {{ mapped_protein }} <br> <font style="color: #000; background-color: #BDEEC8">Light-Green</font>: Additional G protein accessible residues facing the G protein with a generic number (ICL3 residues can also be accessible) </p>
+                        <p><strong>{{ mapped_protein }} - G&alpha;s interface </strong> <br> <font style="color: #000; background-color: #1F9439" >Dark-Green</font>: G&alpha;s-interacting residues that are conserved based on the β2-G&alpha;s complex and electron density map <br> <font style="color: #000; background-color: #E67E22" >Orange</font>: G&alpha;s-interacting residues not conserved in {{ mapped_protein }} <br> <font style="color: #000; background-color: #BDEEC8">Light-Green</font>: Additional G protein accessible residues facing the G protein with a generic number (ICL3 residues can also be accessible) </p>
                     </div>
                 </div>
             </div>
@@ -127,7 +154,7 @@ canvas {
 <div class="row">
     <div class="col-md-11 text-center">
         {% if residues %}              
-        <div style="padding-top: 0px; font-size: 12px; white-space: nowrap;">
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
             <table width="100%" class="display" id="residues">
 
                 <thead>
@@ -135,7 +162,7 @@ canvas {
                         <th colspan=2 style="text-align:center">Segment</th>
                         <th colspan=2 style="text-align:center">Generic Number</th>
                         <th colspan=2 style="text-align:center">Amino Acid</th>
-                        <th rowspan=2 width ='10%' style="text-align:center">Expected Interaction Type</th>
+                        <th rowspan=2 width ='20%' style="text-align:center">Expected Interaction Type</th>
                     </tr>
                     <tr>
                         <th style="text-align:center">GPCR</th>
