@@ -144,10 +144,17 @@
                                     {% endif %}
                                     ">
                                         {% if r.1 %}
-                                        <div data-toggle="tooltip" data-placement="top" data-html="true"
-                                        title="{{ r.2 }}{{ r.4 }}<br>{{ r.3 }}: {{ r.1 }}">
-                                            {{ r.2 }}
-                                        </div>
+                                            {% if r.3 != 'GPCRdb(A)' %}
+                                                <div data-toggle="tooltip" data-placement="top" data-html="true"
+                                                title="{{ r.2 }}{{ r.4 }}<br>{{ r.3 }}: {{ r.1 }}<br>(GPCRdb(A): {{r.5}})">
+                                                    {{ r.2 }}
+                                                </div>
+                                            {% else %}
+                                                <div data-toggle="tooltip" data-placement="top" data-html="true"
+                                                title="{{ r.2 }}{{ r.4 }}<br>{{ r.3 }}: {{ r.1 }}">
+                                                    {{ r.2 }}
+                                                </div>
+                                            {% endif %}
                                         {% else %}
                                         <div data-toggle="tooltip" data-placement="top" data-html="true"
                                         title="{{ r.2 }}{{ r.4 }}">
