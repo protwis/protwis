@@ -21,7 +21,9 @@
   color: #fff; 
   z-index: 5070;
 }
-
+.center{
+    text-align:center;
+}
 </style>
 {% endblock %}
 {% block content %}
@@ -55,6 +57,56 @@
     </ul>
 </div></p>
 
+<table>
+    <tbody id="tbody"></tbody>
+</table>
+
+<div class="row">    
+        <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+            <table width="100%" class="display table" id="clickdata" align="center">
+                <thead>
+<!--                     <tr>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                    </tr>  -->   
+                    <tr>
+                        <th style="background-color:#98df8a;text-align:center">Drug Name</th>
+                        <th style="background-color:#98df8a;text-align:center">Indication</th>
+                        <th style="background-color:#ffbb78;text-align:center">Status</th>
+                        <th style="background-color:#ffbb78;text-align:center">Year of Approval</th>
+                        <th style="background-color:#ffbb78;text-align:center">Drug Type</th>
+                        <th style="background-color:#ffbb78;text-align:center">Novelty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+<!--                 <tfoot>
+                    <tr>
+                        <th style="text-align:center">Drug Name</th>
+                        <th style="text-align:center">Indication</th>
+                        <th style="text-align:center">Status</th>
+                        <th style="text-align:center">Year of Approval</th>
+                        <th style="text-align:center">Drug Type</th>
+                        <th style="text-align:center">Novelty</th>
+                    </tr>
+                </tfoot> -->
+            </table>
+        </div>
+</div>
+
+<br>
+<br>
+<br>
+<br>
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
 <script src="{% static 'home/js/drugtree.js' %}"></script>
-<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>         
 {% endblock %}
