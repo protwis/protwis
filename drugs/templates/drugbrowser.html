@@ -6,6 +6,7 @@
 {% block content %}
 <h2>Drug Browser</h2>
 <div class="row">
+    <div class="col-md-12 text-center">
         {% if drugdata %}              
         <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
             <table width="100%" class="display table" id="drugdata">
@@ -53,6 +54,7 @@
     {% else %}
         <p> Ooops! There is no data to show here yet. </p>
     {% endif %}
+    </div>
 </div>
 <br>
 
@@ -65,7 +67,7 @@
 <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             var table = $('#drugdata').DataTable({
-                // "scrollX": true,
+                "scrollX": true,
                 // 'scrollY': $(window).height()-300,
                 'bScrollCollapse': true,
                 'paging': true,
