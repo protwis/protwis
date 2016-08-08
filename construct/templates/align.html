@@ -1,0 +1,117 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block addon_css %}
+<link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{% block buttons %}
+<!-- Download button -->
+<div class="btn-group">
+    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+    aria-expanded="false">
+    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu">
+        <li><a href="/alignment/fasta">Alignment (fasta)</a></li>
+        <li><a href="/alignment/csv">Spreadsheet (csv)</a></li>
+    </ul>
+</div>
+{% endblock %}
+<!-- sequence alignment starts -->
+<table>
+    <tr>
+        <!-- static column -->
+        <td>
+            <div class="ali-first-scroll-div"></div>
+            <div class="ali-first-col-div">
+                <table>
+                    <!-- segment line -->
+                    <tr>
+                        <td class="ali-td ali-td-first-col"></td>
+                    </tr>
+                    
+                    <!-- numbering scheme lines -->
+                    <tr>
+                        <td class="ali-td-generic-num ali-td-first-col">GPCRdb gn</td>
+                    </tr>
+
+                    <!-- protein names -->
+                    {% for c in constructs %}
+                    <tr>
+                        <td class="ali-td ali-td-first-col">
+                            <a href='/protein/{{ p.protein.entry_name }}'>
+                                {{ c|safe }}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <!-- numbering scheme lines -->
+                    <tr>
+                        <td class="ali-td-generic-num ali-td-first-col">GPCRdb gn</td>
+                    </tr>
+
+                    {% if a.consensus %}
+                    <!-- consensus sequence -->
+                    <tr>
+                        <td class="ali-td ali-td-first-col ali-td-consensus">
+                            CONSENSUS
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                </table>
+            </div>
+        </td>
+
+        {% block scores %}{% endblock %}
+        
+        <!-- scrollable column -->
+        <td>
+            <div class="ali-scroll-div">
+                <div class="internal-scroll-div">
+                    &nbsp;
+                </div>
+            </div>
+            <div class="ali-main-div">
+                <div class="dynamic-div">
+                    <table>
+
+                        <!-- segment title line -->
+                        <tr>
+                            {% for s, num in segment_length.items %}
+                            <td class="ali-td">&nbsp;</td>
+                            <td class="ali-td ali-td-segment-title" colspan="{{ num.total }}">{{ s }}</td>
+                            {% endfor %}
+                        </tr>
+                        
+                        <!-- generic number lines -->
+                        <tr>
+                            {{gn_list|safe}}
+                        </tr>
+                        
+                        <!-- sequence lines -->
+                        {{alignment_print_sequence|safe}}
+
+
+                        <!-- generic number lines -->
+                        <tr>
+                            {{gn_list|safe}}
+                        </tr>
+
+
+                    </table>
+                </div>
+            </div>
+
+        </td>
+    </tr>
+</table>
+<!-- sequence alignment ends -->
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/alignment.js' %}"></script>
+{% endblock %}
