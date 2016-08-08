@@ -19,6 +19,7 @@ from api.serializers import (ProteinSerializer, ProteinFamilySerializer, Species
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 from common.definitions import *
+from drugs.models import Drugs
 
 import json, os
 from io import StringIO
@@ -725,3 +726,28 @@ class MutantList(generics.ListAPIView):
     def get_queryset(self):
         queryset = MutationRaw.objects.all()
         return queryset.filter(protein=self.kwargs.get('entry_name'))
+
+class DrugList(views.APIView):
+    """
+    Get a list of drugs for a single protein instance by entry name
+    \n/drugs/{proteins}/
+    \n{entry_name} is a protein identifier from Uniprot, e.g. adrb2_human
+    """
+    def get(self, request, entry_name=None):
+
+        drugs = Drugs.objects.filter(target__entry_name=entry_name).distinct()
+
+        druglist = []
+        for drug in drugs:
+            drugname = drug.name
+            drugtype = drug.drugtype
+            status = drug.status
+            approval = drug.approval
+            indication = drug.indication
+            novelty = drug.novelty
+            druglist.append({'name':drugname, 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty})
+
+        return Response(druglist)
+
+
+

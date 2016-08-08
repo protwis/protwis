@@ -41,6 +41,7 @@ class Command(BaseCommand):
             ['build_protein_sets'],
             ['build_consensus_sequences', {'proc': options['proc']}],
             ['build_g_proteins'],
+            ['build_drugs'],
             ['build_residue_sets'],
             ['build_text'],
             ['build_release_notes'],
