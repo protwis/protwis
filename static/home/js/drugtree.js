@@ -81,7 +81,6 @@ var t = $('#clickdata').DataTable({
             'autoWidth': true,
             'bScrollCollapse': true,
             'orderCellsTop': true,
-            "bJQueryUI": true,
             'dom': 'T<"clear">lfrtip',
             "aoColumns": [ 
                         {"sClass": "center"},
@@ -134,7 +133,7 @@ var node = svg_g.selectAll(".node")
     d3.select(this).style("cursor", "default")
   })
   .on("click",  function(d) {
-    url = "http://0.0.0.0:8000/services/drugs/"+d.name+"_human"
+    url = "/services/drugs/"+d.name+"_human"
     var json_obj = JSON.parse(Get(url))
 
     t.clear();

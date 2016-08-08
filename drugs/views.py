@@ -106,7 +106,7 @@ def drugstatistics(request):
 
     return render(request, 'drugstatistics.html', {'drugtypes':drugtypes, 'drugindications':drugindications, 'drugtargets':drugtargets, 'drugfamilies':drugfamilies, 'drugclasses':drugclasses, 'drugs_over_time':drugs_over_time})
 
-@cache_page(60*60*24*1) #  5 min
+# @cache_page(60*60*24*1) #
 def drugbrowser(request):
     # Get drugdata from here somehow
 
