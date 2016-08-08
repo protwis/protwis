@@ -4,6 +4,8 @@ from django.conf import settings
 from django import forms
 from django.db.models import Count, Min, Sum, Avg, Q
 from django.utils.text import slugify
+from django.core.cache import cache
+from django.views.decorators.cache import cache_page
 
 from interaction.models import *
 from interaction.forms import PDBform
@@ -22,7 +24,7 @@ from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
 from common.views import AbsTargetSelection
 from common.alignment import Alignment
-from protein.models import Protein, ProteinFamily, ProteinGProtein
+from protein.models import Protein, ProteinFamily, ProteinGProtein, ProteinGProteinPair
 
 import os
 from os import listdir, devnull, makedirs
@@ -1194,32 +1196,44 @@ def pdb(request):
                                 content_type='text/plain')
     return response
 
+@cache_page(60*60*24*2) #  2 days in vie caching
 def GProtein(request):
 
-    context = OrderedDict()
-    i=0
+    name_of_cache = 'gprotein_statistics'
 
-    # proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('proteingproteinpair_set')
-    gproteins = ProteinGProtein.objects.all().prefetch_related('proteingproteinpair_set')
+    context = cache.get(name_of_cache)
 
-    jsondata = {}
-    selectivitydata = {}
-    for gp in gproteins:
-        ps = gp.proteingproteinpair_set.all()
+    if context==None:
 
-        if ps:
-            jsondata[str(gp)] = []
-            for p in ps:
-                if str(p.protein.entry_name).split('_')[0].upper() not in selectivitydata:
-                    selectivitydata[str(p.protein.entry_name).split('_')[0].upper()] = []
-                selectivitydata[str(p.protein.entry_name).split('_')[0].upper()].append(str(gp))
-                # print(p.protein.family.parent.parent.parent)
-                jsondata[str(gp)].append(str(p.protein.entry_name)+'\n')
+        context = OrderedDict()
+        i=0
 
-            jsondata[str(gp)] = ''.join(jsondata[str(gp)])
+        gproteins = ProteinGProtein.objects.all().prefetch_related('proteingproteinpair_set')
+        slugs = ['001','002','004','005']
+        slug_translate = {'001':"ClassA", '002':"ClassB1",'004':"ClassC", '005':"ClassF"}
+        selectivitydata = {}
+        for slug in slugs:
+            jsondata = {}
+            for gp in gproteins:
+                # ps = gp.proteingproteinpair_set.all()
+                ps = gp.proteingproteinpair_set.filter(protein__family__slug__startswith=slug)
 
-    context["gdata"] = jsondata
-    context["selectivitydata"] = selectivitydata
+                if ps:
+                    jsondata[str(gp)] = []
+                    for p in ps:
+                        if str(p.protein.entry_name).split('_')[0].upper() not in selectivitydata:
+                            selectivitydata[str(p.protein.entry_name).split('_')[0].upper()] = []
+                        selectivitydata[str(p.protein.entry_name).split('_')[0].upper()].append(str(gp))
+                        # print(p.protein.family.parent.parent.parent)
+                        jsondata[str(gp)].append(str(p.protein.entry_name)+'\n')
+
+                    jsondata[str(gp)] = ''.join(jsondata[str(gp)])
+
+            context[slug_translate[slug]] = jsondata
+
+        context["selectivitydata"] = selectivitydata
+
+        cache.set(name_of_cache, context, 60*60*24*2) #two days timeout on cache
 
     return render(request, 'interaction/gprotein.html', context)
 
@@ -1305,4 +1319,15 @@ def Ginterface(request, protein = None):
 
     GS_equivalent_interacting_pos = residuelist.filter(display_generic_number__label__in=interacting_gn).values_list('sequence_number', flat=True)
 
-    return render(request, 'interaction/ginterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn} )
+    gProteinData = ProteinGProteinPair.objects.filter(protein__entry_name=protein)
+
+    primary = []
+    secondary = []
+
+    for entry in gProteinData:
+        if entry.transduction == 'primary':
+            primary.append(entry.g_protein.name.replace("Gs","G<sub>s</sub>").replace("Gi","G<sub>i</sub>").replace("Go","G<sub>o</sub>").replace("G11","G<sub>11</sub>").replace("G12","G<sub>12</sub>").replace("G13","G<sub>13</sub>").replace("Gq","G<sub>q</sub>").replace("G","G&alpha;"))
+        elif entry.transduction == 'secondary':
+            secondary.append(entry.g_protein.name.replace("Gs","G<sub>s</sub>").replace("Gi","G<sub>i</sub>").replace("Go","G<sub>o</sub>").replace("G11","G<sub>11</sub>").replace("G12","G<sub>12</sub>").replace("G13","G<sub>13</sub>").replace("Gq","G<sub>q</sub>").replace("G","G&alpha;"))
+            
+    return render(request, 'interaction/ginterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn, 'primary_Gprotein': '; '.join(set(primary)), 'secondary_Gprotein': '; '.join(set(secondary))} )
