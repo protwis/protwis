@@ -54,6 +54,11 @@ var link = svg_g.selectAll(".link")
 
   .attr("d", diagonal);
 
+function Get(yourUrl){
+  var Httpreq = new XMLHttpRequest(); // a new request
+  Httpreq.open("GET",yourUrl,false);
+  Httpreq.send(null);
+  return Httpreq.responseText;}
 
 var tip = d3.tip()
         .attr('class', 'd3-tip')
@@ -68,14 +73,86 @@ tip(svg_g.append("g"));
 
 // LEGEND
 
+
+var t = $('#clickdata').DataTable({
+            "scrollX": true,
+            // 'scrollY': $(window).height()/5,
+            'paging': false,
+            'autoWidth': true,
+            'bScrollCollapse': true,
+            'orderCellsTop': true,
+            "bJQueryUI": true,
+            'dom': 'T<"clear">lfrtip',
+            "aoColumns": [ 
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"}],
+            // 'aoColumnDefs': [],
+            "order": [[ 2, "asc" ], [ 4, "desc" ]],
+            'tableTools': {
+                "sRowSelect": "multi",
+                "aButtons": []
+            },
+            "language": {
+            "zeroRecords": "No data available in table - please click on a given receptor name to load drug data.",
+            "infoEmpty": "No records available"
+            },
+                initComplete: function () {
+                    $('#clickdata').dataTable().columnFilter()
+                }
+            // ,
+            // initComplete: function () {
+            //     $('#clickdata').dataTable().columnFilter({
+            //         sPlaceHolder: "head:after",
+            //         aoColumns: [
+            //             { type: "text" },
+            //             { type: "text" },
+            //             { type: "select" },
+            //             { type: "select" },
+            //             { type: "select" },
+            //             { type: "select" },
+            //         ]
+            //     });
+            // }
+
+        });
+
 var node = svg_g.selectAll(".node")
   .data(nodes)
 .enter().append("g")
   .attr("class", "node")
   .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
-  .on('mouseover', tip.show)
-  .on('mouseout', tip.hide)
-  .on("click",  tip.show);
+  .on('mouseover', function(d) {
+    tip.show(d)
+    if (d.depth === 4) {d3.select(this).style("cursor", "pointer")}
+  })
+  .on('mouseout', function(d) {
+    tip.hide(d)
+    d3.select(this).style("cursor", "default")
+  })
+  .on("click",  function(d) {
+    url = "http://0.0.0.0:8000/services/drugs/"+d.name+"_human"
+    var json_obj = JSON.parse(Get(url))
+
+    t.clear();
+
+    for (object in json_obj){
+      t.row.add( [
+              json_obj[object]['name'],
+              json_obj[object]['indication'],
+              json_obj[object]['status'],
+              json_obj[object]['approval'],
+              json_obj[object]['drugtype'],
+              json_obj[object]['novelty']
+          ] ).draw( false );
+    }
+
+    t.draw();
+
+    });
 
 var xlegend = 370;
 var ylegend = -520;
