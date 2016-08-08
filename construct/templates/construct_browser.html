@@ -164,7 +164,7 @@
                        }
                    }
                 });
-               oTable.fnDraw();
+                oTable.fnDraw();
                 update_tables();
             });
 
@@ -208,6 +208,8 @@
                 $("#wt_schematics_div").hide();
                 $("#constructs_schematics_div").hide();
                 $("#constructs_div").show();
+                var oTable = $('#constructs').dataTable();
+                oTable.fnDraw();
             });
 
             $('#show_wt').click(function() {
@@ -232,6 +234,31 @@
             $("#OpenFilters").click(function () {
                 $("#filters").toggle();
             });
+
+            $("#align").click(function () {
+
+                ids = Array()
+
+                // $('input:checkbox:not(:checked)').each(function () {
+                $('input:checkbox:checked').each(function () {
+                    if ( $(this).is(':visible') ) {
+                       id = $(this).attr('id');
+
+                       if (id) {
+                            ids.push(id);                       }
+                    }
+                });
+
+                var url = '/construct/align'; 
+                var form = $('<form action="' + url + '" method="post">' +
+                  '<input type="text" name="ids" value=\'' + JSON.stringify(ids) + '\' />' +
+                  '</form>');
+                $('body').append(form);
+                form.submit();
+            });
+
+
+
 
             $('.slider').slider({
               min: 30,
@@ -267,14 +294,13 @@
 {% block content %}
 
     <br />
-    <div>
     <button id='OpenFilters'>Filters</button>
     <button id='show_browser'>Browser</button>
     <button id='show_wt'>WT schematic</button>
     <button id='show_construct'>Construct schematic</button>
     <button id='remove_sel'>Remove Selected</button>
     <button id='remove_non_sel'>Remove Non-selected</button>
-    </div>
+    <button id='align'>Align Selected</button>
     <div id='filters'>
     <div><span style='width: 160px;display: inline-block;'>Class:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container3"></span></div>
     <div><span style='width: 160px;display: inline-block;'>Family:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container2"></span></div>
@@ -401,26 +427,26 @@
             Size: <div class="slider" style='width:100px'></div></div>
         <table width=100% class="display" id="wt_schematics">
                             <thead>
-                <tr class='hidden'>
+                <tr class='hidden2'>
                     <th class="protein-th"></th>
                     <th class="protein-th">Construct name</th>
-                    <th class="protein-th">N-term</th>
-                    <th class="protein-th">TM1</th>
-                    <th class="pdb-th">ICL1 </th>
-                    <th class="pdb-th">TM2</th>
-                    <th class="pdb-th">ECL1</th>
-                    <th class='pdb-th'>TM3</th>
-                    <th class="pdb-th">ICL2</th>
-                    <th class='pdb-th'>TM4</th>
-                    <th class="parts-th">ECL2</th>
-                    <th class="parts-th">TM5</th>
-                    <th class="parts-th">ICL3</th>
-                    <th class="parts-th">TM6</th>
-                    <th class="pub-th">ECL3</th>
-                    <th class="pub-th">TM7</th>
-                    <th class="pub-th">ICL4</th>
-                    <th class="pub-th">H8</th>
-                    <th class="pub-th">C-term</th>
+                    <th class="protein-th">N-term <input class="alt" type="checkbox" id="align_N-term"></th>
+                    <th class="protein-th">TM1 <input class="alt" type="checkbox" id="align_TM1"></th>
+                    <th class="pdb-th">ICL1 <input class="alt" type="checkbox" id="align_ICL1"></th>
+                    <th class="pdb-th">TM2 <input class="alt" type="checkbox" id="align_TM2"></th>
+                    <th class="pdb-th">ECL1 <input class="alt" type="checkbox" id="align_ECL1"></th>
+                    <th class='pdb-th'>TM3 <input class="alt" type="checkbox" id="align_TM3"></th>
+                    <th class="pdb-th">ICL2 <input class="alt" type="checkbox" id="align_ICL2"></th>
+                    <th class='pdb-th'>TM4 <input class="alt" type="checkbox" id="align_TM4"></th>
+                    <th class="parts-th">ECL2 <input class="alt" type="checkbox" id="align_ECL2"></th>
+                    <th class="parts-th">TM5 <input class="alt" type="checkbox" id="align_TM5"></th>
+                    <th class="parts-th">ICL3 <input class="alt" type="checkbox" id="align_ICL3"></th>
+                    <th class="parts-th">TM6 <input class="alt" type="checkbox" id="align_TM6"></th>
+                    <th class="pub-th">ECL3 <input class="alt" type="checkbox" id="align_ECL3"></th>
+                    <th class="pub-th">TM7 <input class="alt" type="checkbox" id="align_TM7"></th>
+                    <th class="pub-th">ICL4 <input class="alt" type="checkbox" id="align_ICL4"></th>
+                    <th class="pub-th">H8 <input class="alt" type="checkbox" id="align_H8"></th>
+                    <th class="pub-th">C-term <input class="alt" type="checkbox" id="align_C-term"></th>
                 </tr>
             </thead>
                     <tbody style='border-top: 1px solid #111;'>
@@ -440,28 +466,28 @@
         </div>
         <table width=100% class="display" id="constructs_schematics">
                     <thead>
-                <tr class='hidden'>
+                <tr class='hidden2'>
                     <th class="protein-th"></th>
                     <th class="protein-th">Construct name</th>
-                    <th class="protein-th">Pre-inserts</th>
-                    <th class="protein-th">N-term</th>
-                    <th class="protein-th">TM1</th>
-                    <th class="pdb-th">ICL1 </th>
-                    <th class="pdb-th">TM2</th>
-                    <th class="pdb-th">ECL1</th>
-                    <th class='pdb-th'>TM3</th>
-                    <th class="pdb-th">ICL2</th>
-                    <th class='pdb-th'>TM4</th>
-                    <th class="parts-th">ECL2</th>
-                    <th class="parts-th">TM5</th>
-                    <th class="parts-th">INSERT</th>
-                    <th class="parts-th">ICL3</th>
-                    <th class="parts-th">TM6</th>
-                    <th class="pub-th">ECL3</th>
-                    <th class="pub-th">TM7</th>
-                    <th class="pub-th">ICL4</th>
-                    <th class="pub-th">H8</th>
-                    <th class="pub-th">C-term</th>
+                    <th class="protein-th">Pre-inserts <input class="alt" type="checkbox" id="align_xx"></th>
+                    <th class="protein-th">N-term <input class="alt" type="checkbox" id="align_xx"></th>
+                    <th class="protein-th">TM1 <input class="alt" type="checkbox" id="align_TM1"></th>
+                    <th class="pdb-th">ICL1 <input class="alt" type="checkbox" id="align_ICL1"></th>
+                    <th class="pdb-th">TM2 <input class="alt" type="checkbox" id="align_TM2"></th>
+                    <th class="pdb-th">ECL1 <input class="alt" type="checkbox" id="align_ECL1"></th>
+                    <th class='pdb-th'>TM3 <input class="alt" type="checkbox" id="align_TM3"></th>
+                    <th class="pdb-th">ICL2 <input class="alt" type="checkbox" id="align_ICL2"></th>
+                    <th class='pdb-th'>TM4 <input class="alt" type="checkbox" id="align_TM4"></th>
+                    <th class="parts-th">ECL2 <input class="alt" type="checkbox" id="align_ECL2"></th>
+                    <th class="parts-th">TM5 <input class="alt" type="checkbox" id="align_TM5"></th>
+                    <th class="parts-th">INSERT <input class="alt" type="checkbox" id="align_xx"></th>
+                    <th class="parts-th">ICL3 <input class="alt" type="checkbox" id="align_ICL3"></th>
+                    <th class="parts-th">TM6 <input class="alt" type="checkbox" id="align_TM6"></th>
+                    <th class="pub-th">ECL3 <input class="alt" type="checkbox" id="align_ECL3"></th>
+                    <th class="pub-th">TM7 <input class="alt" type="checkbox" id="align_TM7"></th>
+                    <th class="pub-th">ICL4 <input class="alt" type="checkbox" id="align_ICL4"></th>
+                    <th class="pub-th">H8 <input class="alt" type="checkbox" id="align_H8"></th>
+                    <th class="pub-th">C-term <input class="alt" type="checkbox" id="align_C-term"></th>
                 </tr>
             </thead>
                     <tbody style='border-top: 1px solid #111;'>
