@@ -1196,7 +1196,7 @@ def pdb(request):
                                 content_type='text/plain')
     return response
 
-# @cache_page(60*60*24*2) #  2 days caching
+@cache_page(60*60*24*2) # 2 days caching
 def GProtein(request):
 
     name_of_cache = 'gprotein_statistics'
