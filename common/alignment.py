@@ -919,7 +919,7 @@ class AlignedReferenceTemplate(Alignment):
         self.structures_data = Structure.objects.filter(
             state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
             template_family, representative='t').order_by('protein_conformation__protein__parent',
-            'resolution').distinct('protein_conformation__protein__parent')
+            'resolution')#.distinct('protein_conformation__protein__parent')
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
   
@@ -942,8 +942,11 @@ class AlignedReferenceTemplate(Alignment):
         similarity_table = OrderedDict()
         for protein in self.proteins:
             try:
-                matches = self.structures_data.filter(protein_conformation__protein__parent__id=protein.protein.id)
-                temp_list.append((list(matches)[0], int(protein.similarity), float(list(matches)[0].resolution), protein))
+                matches = self.structures_data.filter(protein_conformation__protein__parent=protein.protein)
+                for m in matches:
+                    if m.protein_conformation.protein.parent==self.reference_protein.protein and int(protein.similarity)==0:
+                        continue
+                    temp_list.append((m, int(protein.similarity), float(m.resolution), protein))
             except:
                 pass
         sorted_list = sorted(temp_list, key=lambda x: (-x[1],x[2]))
@@ -1070,7 +1073,7 @@ class AlignedReferenceTemplate(Alignment):
                     temp_list2.append((struct, temp_length2, similarity, float(struct.resolution), protein))
         if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
             ECL2_1 = self.order_sim_table(temp_list1, ref_ECL2[0], OrderedDict())
-            ECL2_mid = self.order_sim_table(temp_list_mid, ref_ECL2[1], OrderedDict())
+            ECL2_mid = self.order_sim_table(temp_list_mid, ref_ECL2[1], OrderedDict(), x50_ref)
             ECL2_2 = self.order_sim_table(temp_list2, ref_ECL2[2], OrderedDict())
             self.loop_table = OrderedDict([('ECL2_1',ECL2_1),('ECL2_mid',ECL2_mid),('ECL2_2',ECL2_2)])
             if len(ECL2_mid)==0:
@@ -1081,7 +1084,7 @@ class AlignedReferenceTemplate(Alignment):
                     
     def order_sim_table(self, temp_list, ref_seq, similarity_table, x50_ref=None):
         alt_temps_gn = []
-        if self.segment_labels[0]!='ECL2':
+        if self.segment_labels[0]!='ECL2' or self.segment_labels[0]=='ECL2' and x50_ref==True:
             for entry in temp_list:
                 res_list = [i for i in list(Residue.objects.filter(protein_conformation=entry[0].protein_conformation,
                                                                    protein_segment__slug=self.segment_labels[0]))]
@@ -1111,10 +1114,9 @@ class AlignedReferenceTemplate(Alignment):
     def ECL2_slicer(self, queryset):
         x50 = queryset.get(generic_number__label='45x50').sequence_number
         queryset_l = list(queryset)
-        x50_i = x50-queryset_l[0].sequence_number
-        ECL2_1 = queryset_l[:x50_i]
-        ECL2_mid = queryset_l[x50_i:x50_i+3]
-        ECL2_2 = queryset_l[x50_i+3:]
+        ECL2_1 = [i for i in queryset_l if i.sequence_number<x50]
+        ECL2_mid = [i for i in queryset_l if x50<=i.sequence_number<x50+3]
+        ECL2_2 = [i for i in queryset_l if i.sequence_number>=x50+3]
         if len(ECL2_mid)<3:
             raise AssertionError()
         return[ECL2_1,ECL2_mid,ECL2_2]
