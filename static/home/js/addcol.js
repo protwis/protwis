@@ -527,9 +527,17 @@ function ValidateForm(){
       if ($(this).val() === "" && $("#error-"+blank_select_id).length == 0){
         $(this).after("<label name=error-"+blank_select_name+" id=error-"+blank_select_id+" class='error "+outer_sel_class+"'>*</label>");
       }
-
   });
+}
 
+
+function FieldsRequired(){
+    if ($("label.error:visible").length>0){
+      $("span.required_ind").show(); 
+    }
+    else{
+      $("span.required_ind").hide(); 
+    }
 }
 
 //handle validation error labels 
