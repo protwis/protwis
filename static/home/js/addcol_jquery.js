@@ -12,23 +12,27 @@ $(document).ready(function () {
 addaux('aux_proteins');
 addRow('chem_comp');
 
-// $("#xtals_form").submit(function (e) {
-//   // $("html, body").animate({ scrollTop: $(".error").first() });
-//   ValidateForm(); 
-//   e.preventDefault();
-// // $("#id_name_cont").on("click", function(){    
-// });
+$("#xtals_form").submit(function (e) {
+  // $("html, body").animate({ scrollTop: $(".error").first() });
+  // ValidateForm(); 
+  if ($("label.error:visible").length>0){
+  e.preventDefault();
+  }
+  else{
+    $("#xtals_form").unbind("submit");
+  }
+// $("#id_name_cont").on("click", function(){    
+});
 
-$("#btn_s").on("click", function(e){
+$("#btn_s").on("click", function(){
 //   Submission();
-var result=ValidateForm();
  ValidateForm(); 
-console.log(result);
- e.preventDefault();
+ FieldsRequired();
 });
 
 $(document).on("change", function(){
   LabelErrors();
+  FieldsRequired();
 });
 
  $('.datepicker').datepicker({
