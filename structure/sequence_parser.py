@@ -9,7 +9,8 @@ from Bio import SeqIO, pairwise2
 from Bio.PDB import PDBParser, PPBuilder
 import Bio.PDB.Polypeptide as polypeptide
 
-import enum, os, xlsxwriter
+from collections import OrderedDict
+import os, xlsxwriter
 
 #Number of heavy atoms in each residue
 atom_count = {
@@ -37,7 +38,7 @@ atom_count = {
 
 class ParsedResidue(object):
 
-    def __init__(self, res_name, res_num, gpcrdb=None, segment=None):
+    def __init__(self, res_name, res_num, gpcrdb=None, segment=None, coords='full'):
         
         self.resnum = None
         self.wt_num = res_num
@@ -45,7 +46,7 @@ class ParsedResidue(object):
         self.mutation = None
         self.insertion = None
         self.deletion = False
-        self.coords = ''
+        self.coords = coords
         self.gpcrdb = gpcrdb if gpcrdb else ''
         self.segment = segment
         self.seqres = False
@@ -66,6 +67,9 @@ class ParsedResidue(object):
 
     def set_insertion(self, insertion):
         self.insertion = insertion
+
+    def set_deletion(self, deletion=True):
+        self.deletion = deletion        
 
 
     def set_fusion(self, fusion=True):
@@ -110,8 +114,10 @@ class SequenceParser(object):
         if pdb_file is not None:
             self.pdb_struct = PDBParser(QUIET=True).get_structure('pdb', pdb_file)[0]
             # a list of SeqRecord objects retrived from the pdb SEQRES section
-            self.seqres = list(SeqIO.parse(pdb_file, 'pdb-seqres'))
-
+            try:
+                self.seqres = list(SeqIO.parse(pdb_file, 'pdb-seqres'))
+            except:
+                self.seqres = None
             # SeqRecord id is a pdb_code:chain 
             self.struct_id = self.seqres[0].id.split(':')[0]
 
@@ -130,7 +136,10 @@ class SequenceParser(object):
 
 
         self.parse_pdb(self.pdb_struct)
-
+        #if self.seqres:
+        #    self.map_seqres()
+        
+        self.mark_deletions()
 
 
     def parse_pdb(self, pdb_struct):
@@ -198,23 +207,54 @@ class SequenceParser(object):
 
 
     def get_chain_sequence(self, chain):
-        return "".join([polypeptide.three_to_one(x.resname.replace('HID', 'HIS')) for x in chain if x.resname in self.residue_list])
+        """
+        Returns a sequence string of a given chain.
+        """
+        return "".join([polypeptide.three_to_one(x.resname.replace('HID', 'HIS')) for x in self.residues[chain] if x.resname in self.residue_list])
+
+    def get_peptide_sequence(self, residues):
+        """
+        Returns a sequence string of a given list of Bio.PDB.Residue objects.
+        """
+        return "".join([polypeptide.three_to_one(x.resname.replace('HID', 'HIS')) for x in residues if x.resname in self.residue_list])
     
+    def find_nonredundant_chains(self):
+        """
+        Returns a list of nonidentical chains.
+        """
+        nrc = []
+        if len(self.mapping.keys()) == 1:
+            return self.mapping.keys()
+
+        for r_chain in self.mapping.keys():
+            for chain in self.mapping.keys():
+                if r_chain == chain:
+                    continue
+                if self.mapping[r_chain] != self.mapping[chain]:
+                    nrc.append(r_chain)
+        print(len(nrc))
+        return nrc
+
 
     def map_to_wt_blast(self, chain_id, residues = None, sequence=None, starting_aa = 1, seqres = False):
 
         if residues:
-            seq = self.get_chain_sequence(residues)
+            seq = self.get_peptide_sequence(residues)
         elif sequence:
             seq = sequence
         else:
-            return
+            seq = self.get_chain_sequence(chain_id)
 
         alignments = self.blast.run(seq)
 
         for alignment in alignments:
             if alignment[1].hsps[0].expect > .5 and residues:
                 self.fusions.append((min([x.id[1] for x in residues]), max([x.id[1] for x in residues])))
+                #The case when auxiliary protein is in a separate chain
+                if self.get_chain_sequence(chain_id) == self.get_peptide_sequence(residues):
+                    del self.mapping[chain_id]
+                continue
+
             if self.wt.id != int(alignment[0]):
                 continue
             for hsps in alignment[1].hsps:
@@ -229,8 +269,11 @@ class SequenceParser(object):
         sbjct = hsps.sbjct
         sbjct_counter = hsps.sbjct_start	
         q_counter = hsps.query_start
-
+        print("{}\t{}".format(hsps.sbjct_start, hsps.query_start))
+        print(q)
+        print(sbjct)
         for s, q in zip(sbjct, q):
+            
             if s == q:
                 if seqres:
                     self.mapping[chain_id][sbjct_counter].set_seqres(True)
@@ -239,14 +282,19 @@ class SequenceParser(object):
                 sbjct_counter += 1
                 q_counter += 1
             elif s != '-' and q != '-':
+                print("{}\t{}".format(s,q))
                 self.mapping[chain_id][sbjct_counter].set_pdb_res_num(offset - 1 + q_counter)
                 self.mapping[chain_id][sbjct_counter].set_mutation(q)
                 sbjct_counter += 1
                 q_counter += 1
             elif s == '-' and q != '-':
                 self.mapping[chain_id][offset - 1 + q_counter].set_insertion(q)
+                sbjct_counter += 1
                 q_counter += 1
-
+            elif s != '-' and q == '-':
+                self.mapping[chain_id][sbjct_counter].set_deletion()
+                sbjct_counter += 1
+                q_counter += 1
 
     def map_to_wt_pw(self, chain_id, residues = None, sequence=None, starting_aa = 1):
 
@@ -287,6 +335,98 @@ class SequenceParser(object):
 
         for sr in self.seqres:
             self.map_to_wt_blast(sr.annotations['chain'], sequence=sr.seq, seqres=True)
+
+    def mark_deletions(self):
+        for chain in self.mapping.keys():
+            for num, res in self.mapping[chain].items():
+                if res.resnum is None:
+                    res.set_deletion()
+
+    def get_mapping_dict(self, pdb_keys=False, seqres=False):
+
+        if pdb_keys:
+            return {x: {y: self.mapping[x][y].seqres if seqres else self.mapping[x][y].resnum for y in self.mapping[x].keys()} for x in self.mapping.keys()}
+        else:
+            if seqres:
+                return {x: {y: self.mapping[x][y].resnum if self.mapping[x][y].seqres else '-' for y in self.mapping[x].keys()} for x in self.mapping.keys()}
+            else:
+                return {x: {y: self.mapping[x][y].resnum for y in self.mapping[x].keys()} for x in self.mapping.keys()}
+
+    def get_fusions(self):
+
+        if self.fusions == []:
+            return {}
+        fusion_dict = OrderedDict({"auxiliary": {}})
+        count = 1
+        for fusion in self.fusions:
+            fusion_dict["auxiliary"]["aux{}".format(count)] = OrderedDict({
+                "presence" : 'YES',
+                "type" : "fusion",
+                "start" : fusion[0],
+                "end" : fusion[1]
+                })
+        return fusion_dict
+
+    def get_deletions(self):
+
+        deletions_list = []
+
+        for chain in self.find_nonredundant_chains():
+            deletions = [x for x,y in self.mapping[chain].items() if y.deletion]
+            deletion = deletions.reverse()
+            tmp = []
+            #for num, res in self.mapping[chain].items():
+            #    if res.deletion:
+            #        tmp.append(num)
+            first = 0
+            prev = 0
+            while deletions != []:
+                x = deletions.pop()
+                #print("{}\t{}\t{}".format(x, first, prev))
+                if first == 0:
+                    tmp.append(x)
+                    first = x
+                    continue
+                if prev == 0:
+                    tmp.append(x)
+                    prev = x
+                    continue
+                if abs(x - prev) == 1:
+                    tmp.append(x)
+                    prev = x
+                else:
+                    deletions_list.append(OrderedDict({
+                        "start" : min(tmp),
+                        "end" : max(tmp),
+                        "type" : "single" if len(tmp) == 1 else "range",
+                        "chain" : chain
+                        }))
+                    tmp = [x]
+                    first = x
+                    prev = x
+            deletions_list.append(OrderedDict({
+                        "start" : min(tmp),
+                        "end" : max(tmp),
+                        "type" : "single" if len(tmp) == 1 else "range",
+                        "chain" : chain
+                        }))
+
+        return {"deletions" : deletions_list}
+
+    def get_mutations(self):
+
+        mutations_list = []
+        for chain in self.find_nonredundant_chains():
+            for num, res in self.mapping[chain].items():
+                if res.mutation:
+                    mutations_list.append(OrderedDict({
+                        "wt" : res.name,
+                        "mut" : res.mutation,
+                        "pos (wt)" : num,
+                        "pos (pdb)" : res.resnum,
+                        "chain" : chain
+                        }))
+        return {"mutations" : mutations_list }
 
 
     def get_report(self):
