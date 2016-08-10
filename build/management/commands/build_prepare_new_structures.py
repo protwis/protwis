@@ -74,7 +74,7 @@ class Command(BaseCommand):
             'protein' : prot_name,
             }
 
-        construct_fh = open('{}.yaml'.format(os.sep.join([self.structure_build_data_dir, 'constructs', pdb_code])), 'w')
+        construct_fh = open('auto_{}.yaml'.format(os.sep.join([self.structure_build_data_dir, 'constructs', pdb_code])), 'w')
         yaml.dump(yaml_construct, construct_fh, indent=4)
         construct_fh.close()
 
@@ -91,8 +91,3 @@ class Command(BaseCommand):
             except Exception as e:
                 output[segment.slug] = ['-,-']
         return output
-
-
-    def get_structure_segments(self, pdb_code):
-
-        sp = SequenceParser(os.sep.join([self.pdb_data_dir, "{}.pdb".format(pdb_code)]))
