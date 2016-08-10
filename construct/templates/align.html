@@ -1,25 +1,27 @@
-{% extends "home/base.html" %}
-{% load staticfiles %}
-
-{% block addon_css %}
-<link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
-{% endblock %}
-
 {% block content %}
-{% block buttons %}
-<!-- Download button -->
-<div class="btn-group">
-    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
-    aria-expanded="false">
-    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-    </button>
-    <ul class="dropdown-menu">
-        <li><a href="/alignment/fasta">Alignment (fasta)</a></li>
-        <li><a href="/alignment/csv">Spreadsheet (csv)</a></li>
-    </ul>
-</div>
-{% endblock %}
 <!-- sequence alignment starts -->
+
+Segment selection: 
+<label class="checkbox-inline"><input type="checkbox" value="align_N-term" {% if 'N-term' in segments %}checked{% endif %}>N-term</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_TM1" {% if 'TM1' in segments %}checked{% endif %}>TM1</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_ICL1" {% if 'ICL1' in segments %}checked{% endif %}>ICL1</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_TM2" {% if 'TM2' in segments %}checked{% endif %}>TM2</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_ECL1" {% if 'ECL1' in segments %}checked{% endif %}>ECL1</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_TM3" {% if 'TM3' in segments %}checked{% endif %}>TM3</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_ICL2" {% if 'ICL2' in segments %}checked{% endif %}>ICL2</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_TM4" {% if 'TM4' in segments %}checked{% endif %}>TM4</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_ECL2" {% if 'ECL2' in segments %}checked{% endif %}>ECL2</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_TM5" {% if 'TM5' in segments %}checked{% endif %}>TM5</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_ICL3" {% if 'ICL3' in segments %}checked{% endif %}>ICL3</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_TM6" {% if 'TM6' in segments %}checked{% endif %}>TM6</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_ECL3" {% if 'ECL3' in segments %}checked{% endif %}>ECL3</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_TM7" {% if 'TM7' in segments %}checked{% endif %}>TM7</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_ICL4" {% if 'ICL4' in segments %}checked{% endif %}>ICL4</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_H8" {% if 'H8' in segments %}checked{% endif %}>H8</label>
+<label class="checkbox-inline"><input type="checkbox" value="align_C-term" {% if 'C-term' in segments %}checked{% endif %}>C-term</label>
+<input type='button' value='align' class="btn" id='re-align' onclick='realign()'>
+<input type='hidden' value="{{c_ids}}" id="c_ids">
+
 <table>
     <tr>
         <!-- static column -->
@@ -38,11 +40,11 @@
                     </tr>
 
                     <!-- protein names -->
-                    {% for c in constructs %}
+                    {% for c,p in constructs.items %}
                     <tr>
                         <td class="ali-td ali-td-first-col">
-                            <a href='/protein/{{ p.protein.entry_name }}'>
-                                {{ c|safe }}
+                            <a href='/construct/{{ c|safe }}'>
+                                {{ c|safe }} ({{p}})
                             </a>
                         </td>
                     </tr>
@@ -110,8 +112,4 @@
     </tr>
 </table>
 <!-- sequence alignment ends -->
-{% endblock %}
-
-{% block addon_js %}
-<script src="{% static 'home/js/alignment.js' %}"></script>
 {% endblock %}

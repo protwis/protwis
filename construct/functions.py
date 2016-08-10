@@ -134,7 +134,7 @@ def fetch_pdb_info(pdbname,protein):
                                 seg_uniprot_ids.append(u_id)
                             uniprot_pos = int(node.attrib['dbResNum'])
                             uniprot_aa = node.attrib['dbResName']
-                        elif source=='PDB' and isinstance(node.attrib['dbResNum'], int):
+                        elif source=='PDB' and node.attrib['dbResNum'].isdigit(): #use instead of isinstance(node.attrib['dbResNum'], int):
                             pos = int(node.attrib['dbResNum'])
                             try:
                                 pdb_aa = AA_three[node.attrib['dbResName'].upper()]
