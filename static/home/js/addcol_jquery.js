@@ -32,7 +32,7 @@ $("#btn_s").on("click", function(){
 
 $(document).on("change", function(){
   LabelErrors();
-  FieldsRequired();
+  // FieldsRequired();
 });
 
  $('.datepicker').datepicker({
