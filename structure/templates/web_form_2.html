@@ -202,9 +202,12 @@ input.widen.form-control, select.widen.form-control{
 input.error, select.error {
    border:1px dotted #800000;
 }
-label.error{
+label.error, span.required_ind{
 color:#800000;
 font-family:verdana, Helvetica;font-size: 9pt;
+}
+span.required_ind{
+	margin-left: 20px;
 }
 .searchclear {
 	right:18px;
@@ -596,6 +599,7 @@ select.optional option{
 		<table class="table_1"  id="table_1">
 			<td> 
 				<div id="contr_contact_div" class="contr_contact col-md-12 panel panel-primary">
+					<span id="required_indication" class="hidetext required_ind">Fields marked with * are required.Please fill them out , or select a value from the list</span>
 					<h1>Contributor Contact information</h1><br>
 					<table style="table-layout: fixed" style="width:100%" id="contact_information" >
 						  <tr>
@@ -1273,7 +1277,7 @@ select.optional option{
 				</td>
 			</tr>
 		</table>
-		<input type="submit" class="btn btn-success" value="Save"  id="btn_s"><span id="required_indication" class="hidetext required_ind">Fields marked with * are required.Please fill them out , or select a value from the list</span>
+		<input type="submit" class="btn btn-success" value="Save"  id="btn_s">
 		</div>
 	</div>
 	</form>
