@@ -261,6 +261,9 @@ function addLast(button_id, table_id, row_index){
                   if ($(this).hasClass("chem_enz_remark")){
                     $(this).hide();
                   }
+                  if ($(this).hasClass("other_type_deterg")){
+                    $(this).hide();
+                  }
                   cur_class=$(this).attr('class');
                   cur_id = $(this).attr('id');
                   new_id=cur_id+"_"+cur_index;
@@ -530,10 +533,10 @@ function ValidateForm(){
   });
 }
 
-
 function FieldsRequired(){
     if ($("label.error:visible").length>0){
       $("span.required_ind").show(); 
+      $("html, body").animate({ scrollTop: $(".span").first() });
     }
     else{
       $("span.required_ind").hide(); 
@@ -571,7 +574,6 @@ function LabelErrors(){
     });
 }
 
-
 ////detach prevention 
 // function Submission(){
 //   ValidateForm();
@@ -579,7 +581,7 @@ function LabelErrors(){
 //   console.log(tade);
 // if (tade!=false){
 //     $("#xtals_form").unbind("submit");
-//       // $("html, body").animate({ scrollTop: $(".error").first() });
+//       // 
       
 //     // $("#id_name_cont").on("click", function(){    
 //     }
