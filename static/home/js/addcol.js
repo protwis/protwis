@@ -509,5 +509,78 @@ function Nterm(){
       UpdateIds("#aux_proteins", "#deletions");
     }
 
+function ValidateForm(){
+  $("input:visible:not(.optional)").each(function(){
+    blank_id=$(this).attr("id");
+      if ($(this).val() === "" && !$("#error-"+blank_id).length){
+        blank_id=$(this).attr("id");
+        blank_name=$(this).attr("name");
+        var outer_class=$(this).attr("class").split(' ').pop();
+        $(this).after("<label name=error-"+blank_name+" id=error-"+blank_id+" class='error "+outer_class+"'>*</label>");
+      }
+  });
+// after("<tr><th class='cloned_th"+insertion.index()+"'>Insertion"+actual_index+"</th></tr>");
+  $("select:visible:not(.optional)").each(function(){
+    blank_select_id=$(this).attr("id");
+    blank_select_name=$(this).attr("name");
+    var outer_sel_class=$(this).attr("class").split(' ').pop();
+      if ($(this).val() === "" && $("#error-"+blank_select_id).length == 0){
+        $(this).after("<label name=error-"+blank_select_name+" id=error-"+blank_select_id+" class='error "+outer_sel_class+"'>*</label>");
+      }
+  });
+}
 
 
+function FieldsRequired(){
+    if ($("label.error:visible").length>0){
+      $("span.required_ind").show(); 
+    }
+    else{
+      $("span.required_ind").hide(); 
+    }
+}
+
+//handle validation error labels 
+$('input:not(.optional):not(.unit)').on('keyup', function () {
+    this.value === '' ? $(this).nextAll('label.error').first().show() : $(this).nextAll('label.error').first().hide();
+});
+
+$('input.unit:not(.optional)').on("change",function () {
+    this.value === '' ? $(this).nextAll('label.error').first().show() : $(this).nextAll('label.error').first().hide();
+});
+
+$('select:not(.optional)').on('change', function () {
+    var select_id=$(this).attr("id");
+    this.value === '' ? $("#error-"+select_id).show() : $("#error-"+select_id).hide();
+});
+
+function LabelErrors(){
+//makes sure that "label" messages are shown only when fields are visible
+    $("label.error").each( function(){
+    // if ($(this).is("label")){
+        var original_label= $(this).attr("id");
+        var input_id= original_label.split("-").pop();
+        console.log(input_id);
+       //  var error_id = original.substr(0, original_label.indexOf('-')); 
+       if ($("#"+input_id).is(":visible")){  
+       } 
+        else{
+         $("#"+original_label).hide();
+        }
+      // }
+    });
+}
+
+
+////detach prevention 
+// function Submission(){
+//   ValidateForm();
+//   var tade=ValidateForm();
+//   console.log(tade);
+// if (tade!=false){
+//     $("#xtals_form").unbind("submit");
+//       // $("html, body").animate({ scrollTop: $(".error").first() });
+      
+//     // $("#id_name_cont").on("click", function(){    
+//     }
+// }
