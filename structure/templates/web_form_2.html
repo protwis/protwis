@@ -956,11 +956,12 @@ select.optional option{
 							    		<option value="Disulfide bond">Disulfide bond</option>
 							    		<option value="phosphorylation">Phosphorylation</option>
 							    		<option value="glycosylation">Glycosyltation</option>
+							    		<option value="Disulfide bond">Disulfide bond</option>
 							    		<option value="other">Other</option>
 							    	</select><br>
 							    	<input class="hidetext form-control other_mod widen second_table row_id" id="id_aamod" maxlength="50" name="aamod" type="text" placeholder="please insert" />
 							    </td>
-							    <td><select class="form-control half aamod_pos_type row_id" id="id_aamod_position" name="aamod_position">
+							    <td><select class="form-control  half aamod_pos_type row_id" id="id_aamod_position" name="aamod_position">
 										<option value="">Select</option>
 										<option value="single">Single</option>
 										<option value="pair">Pair</option>
@@ -1272,7 +1273,7 @@ select.optional option{
 				</td>
 			</tr>
 		</table>
-		<input type="submit" class="btn btn-success" value="Save"  id="btn_s">
+		<input type="submit" class="btn btn-success" value="Save"  id="btn_s"><span id="required_indication" class="hidetext required_ind">Fields marked with * are required.Please fill them out , or select a value from the list</span>
 		</div>
 	</div>
 	</form>
