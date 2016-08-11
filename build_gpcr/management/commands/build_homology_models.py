@@ -72,10 +72,11 @@ class Command(BaseBuild):
             structures = Structure.objects.all()
             struct_parent = [i.protein_conformation.protein.parent for i in structures]
             classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species=1, 
-                                            family__slug__istartswith='001')
+                                            family__slug__istartswith='005')
             self.receptor_list = [i.entry_name for i in classA if i not in struct_parent]
-#            print(self.receptor_list)
-#            raise AssertionError()
+            print(self.receptor_list)
+            print(classA)
+            raise AssertionError()
             try:
                 self.prepare_input(options['proc'], self.receptor_list)
             except Exception as msg:
@@ -394,7 +395,8 @@ class HomologyModeling(object):
                                              self.template_source)
                 self.helix_end_mods = helixends.helix_end_mods
                 self.template_source = helixends.template_source
-            self.statistics.add_info('helix_end_mods',helixends.helix_end_mods)
+            
+            self.statistics.add_info('helix_end_mods',self.helix_end_mods)
 #            end_correction = self.correct_helix_ends(self.main_structure, main_pdb_array, alignment, 
 #                                                     self.template_source)
             print('Corrected helix ends: ',datetime.now() - startTime)
@@ -1066,7 +1068,11 @@ class HomologyModeling(object):
 
         # Model with MODELLER
         self.create_PIR_file(a.reference_dict, a.template_dict, path+self.uniprot_id+"_post.pdb")
-        
+#        print(self.main_structure)
+#        pprint.pprint(a.reference_dict)
+#        pprint.pprint(a.template_dict)
+#        pprint.pprint(main_pdb_array)
+#        raise AssertionError()
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
                           self.uniprot_id, 1, "{}_{}_model.pdb".format(self.reference_entry_name,self.state), 
                           atom_dict=trimmed_res_nums, helix_restraints=helix_restraints)
@@ -2004,9 +2010,18 @@ class Loops(object):
                                     len(loop_residues)!=len(ref_loop)):
                                     raise Exception()
                             else:
+                                if len(StructureSegmentModeling.objects.filter(structure=template,
+                                                                               protein_segment__slug=self.loop_label))>0:
+                                    continue
                                 loop_residues = Residue.objects.filter(protein_conformation=template.protein_conformation,
                                                                        sequence_number__in=list(range(b_num+1,a_num)))
-                            print(template)
+                                loop_residues_test = Residue.objects.filter(protein_conformation=template.protein_conformation,
+                                                                            protein_segment__slug=self.loop_label)
+                                p_c = ProteinConformation.objects.get(protein=template.protein_conformation.protein.parent)
+                                loop_residues_test_parent = Residue.objects.filter(protein_conformation=p_c,
+                                                                                   protein_segment__slug=self.loop_label)
+                                if len(loop_residues_test)!=len(loop_residues_test_parent):
+                                    continue
                             before_gns = [x.sequence_number for x in before4]
                             mid_nums = [x.sequence_number for x in loop_residues]
                             after_gns = [x.sequence_number for x in after4]
