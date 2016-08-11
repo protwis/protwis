@@ -459,6 +459,8 @@ def add_construct(d):
     #EXPRESSION
     if 'expression' in d:
         if 'expr_method' in d['expression']:
+            if 'expr_remark' not in d['expression']:
+                d['expression']['expr_remark'] = ''
             construct.expression,created = ExpressionSystem.objects.get_or_create(expression_method=d['expression']['expr_method'],
                                                             host_cell_type=d['expression']['host_cell_type'],
                                                             host_cell=d['expression']['host_cell'],
@@ -508,7 +510,8 @@ def add_construct(d):
 
             c.crystal_type = c_type
             c.crystal_method = c_method
-            c.remarks = d['crystallization']['crystal_remark']
+            if 'crystal_remark' in d['crystallization']:
+                c.remarks = d['crystallization']['crystal_remark']
             c.temp = d['crystallization']['temperature']
 
             if d['crystallization']['ph']=='single_ph':
@@ -549,26 +552,28 @@ def add_construct(d):
                 c.chemical_lists.add(c_list)
 
             #DETERGENT
-            c_list = ChemicalList()
-            list_name,created  = ChemicalListName.objects.get_or_create(name='Detergent')
-            c_list.name = list_name
-            c_list.save()
-            ct, created = ChemicalType.objects.get_or_create(name='detergent')
-            chem, created = Chemical.objects.get_or_create(name=d['crystallization']['detergent'], chemical_type=ct)
-            cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['deterg_conc'], concentration_unit=d['crystallization']['deterg_conc_unit'], chemical=chem)
-            c_list.chemicals.add(cc)
-            c.chemical_lists.add(c_list)
+            if 'detergent' in d['crystallization']:
+                c_list = ChemicalList()
+                list_name,created  = ChemicalListName.objects.get_or_create(name='Detergent')
+                c_list.name = list_name
+                c_list.save()
+                ct, created = ChemicalType.objects.get_or_create(name='detergent')
+                chem, created = Chemical.objects.get_or_create(name=d['crystallization']['detergent'], chemical_type=ct)
+                cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['deterg_conc'], concentration_unit=d['crystallization']['deterg_conc_unit'], chemical=chem)
+                c_list.chemicals.add(cc)
+                c.chemical_lists.add(c_list)
 
             #LIPID
-            c_list = ChemicalList()
-            list_name,created  = ChemicalListName.objects.get_or_create(name='Lipid')
-            c_list.name = list_name
-            c_list.save()
-            ct, created = ChemicalType.objects.get_or_create(name='lipid')
-            chem, created = Chemical.objects.get_or_create(name=d['crystallization']['lipid'], chemical_type=ct)
-            cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['lipid_concentr'], concentration_unit=d['crystallization']['lipid_concentr_unit'], chemical=chem)
-            c_list.chemicals.add(cc)
-            c.chemical_lists.add(c_list)
+            if 'lipid' in d['crystallization']:
+                c_list = ChemicalList()
+                list_name,created  = ChemicalListName.objects.get_or_create(name='Lipid')
+                c_list.name = list_name
+                c_list.save()
+                ct, created = ChemicalType.objects.get_or_create(name='lipid')
+                chem, created = Chemical.objects.get_or_create(name=d['crystallization']['lipid'], chemical_type=ct)
+                cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['lipid_concentr'], concentration_unit=d['crystallization']['lipid_concentr_unit'], chemical=chem)
+                c_list.chemicals.add(cc)
+                c.chemical_lists.add(c_list)
 
 
 
