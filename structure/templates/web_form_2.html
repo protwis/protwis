@@ -411,6 +411,7 @@ select.optional option{
         // console.log(event.target.result);
         var obj = JSON.parse(event.target.result);
         prefill_data(obj);
+ 		ValidateForm(); 
     }
 
     $("#get_json").click(function () 
@@ -419,6 +420,7 @@ select.optional option{
 	    $.getJSON( "/construct/auto_webform/"+slug, function( data ) {
 	  		// console.log(data);
 	  		prefill_data(data);
+ 			ValidateForm(); 
 	  	});
 	});
     
@@ -591,8 +593,8 @@ select.optional option{
 
 {% endblock %}
 {% block content %}	
-	Load a JSON file: <input id="file" type="file" />
-	<input id="fetch_json"><button id="get_json" value="Fetch data">Fetch data</button>
+	Load a JSON file: <input id="file" type="file" class="optional" />
+	<input id="fetch_json"  class="optional"><button id="get_json" value="Fetch data">Fetch data</button>
 	<form id="xtals_form" method="post"  target="_blank" action='/structure/webformdata'>
 		{% csrf_token %}
 		<div id ="tabs">
@@ -960,7 +962,6 @@ select.optional option{
 							    		<option value="Disulfide bond">Disulfide bond</option>
 							    		<option value="phosphorylation">Phosphorylation</option>
 							    		<option value="glycosylation">Glycosyltation</option>
-							    		<option value="Disulfide bond">Disulfide bond</option>
 							    		<option value="other">Other</option>
 							    	</select><br>
 							    	<input class="hidetext form-control other_mod widen second_table row_id" id="id_aamod" maxlength="50" name="aamod" type="text" placeholder="please insert" />

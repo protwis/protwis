@@ -516,10 +516,14 @@ function ValidateForm(){
   $("input:visible:not(.optional)").each(function(){
     blank_id=$(this).attr("id");
       if ($(this).val() === "" && !$("#error-"+blank_id).length){
+        console.log("missing in "+blank_id);
         blank_id=$(this).attr("id");
         blank_name=$(this).attr("name");
+        console.log("nothing in "+blank_id);
         var outer_class=$(this).attr("class").split(' ').pop();
         $(this).after("<label name=error-"+blank_name+" id=error-"+blank_id+" class='error "+outer_class+"'>*</label>");
+      } else if ($(this).val() != "" && $("#error-"+blank_id).length) {
+        $("#error-"+blank_id).remove();
       }
   });
 // after("<tr><th class='cloned_th"+insertion.index()+"'>Insertion"+actual_index+"</th></tr>");

@@ -12,9 +12,14 @@ $(document).ready(function () {
 addaux('aux_proteins');
 addRow('chem_comp');
 
+console.log("bind to submit");
+console.log($("#xtals_form"));
+
 $("#xtals_form").submit(function (e) {
   // $("html, body").animate({ scrollTop: $(".error").first() });
   // ValidateForm(); 
+ ValidateForm(); 
+ FieldsRequired();
   if ($("label.error:visible").length>0){
   e.preventDefault();
   }
