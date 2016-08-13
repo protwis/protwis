@@ -3,7 +3,7 @@ from django.conf import settings
 from residue.models import Residue
 from protein.models import Protein, ProteinSegment
 from structure.models import Structure
-from structure.functions import BlastSearch
+from structure.functions import BlastSearch, BlastSearchOnline
 
 from Bio import SeqIO, pairwise2
 from Bio.PDB import PDBParser, PPBuilder
@@ -95,6 +95,77 @@ class ParsedResidue(object):
     def set_pdb_res_num(self, res_num):
         self.resnum = res_num
 
+class AuxProtein(object):
+    """
+    Class storing the mapping of the fusion/auxiliary protein.
+    """
+
+    residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR", "HIS", "HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
+
+    def __init__(self, residues):
+        
+        self.residues = residues
+        self.seq = self.get_peptide_sequence(self.residues)
+        self.blast_online = BlastSearchOnline()
+
+        self.id = ''
+        self.mapping = {}
+        self.map_aux()
+
+
+    def get_peptide_sequence(self, residues):
+        """
+        Returns a sequence string of a given list of Bio.PDB.Residue objects.
+        """
+        return "".join([polypeptide.three_to_one(x.resname.replace('HID', 'HIS')) for x in residues if x.resname in self.residue_list])
+
+    def map_aux(self):
+
+        alignments = self.blast_online.run(self.seq)
+
+        for alignment in alignments:
+            self.id = alignment[0]
+            for hsps in alignment[1].hsps:
+                self.map_hsps(hsps)
+    
+
+    def map_hsps(self, hsps):
+        """
+        Analyzes the High Similarity Protein Segment.
+        """
+        offset = min([int(x.id[1]) for x in self.residues])
+        q = hsps.query
+        sbjct = hsps.sbjct
+        sbjct_counter = hsps.sbjct_start	
+        q_counter = hsps.query_start
+        for s, q in zip(sbjct, q):
+            if s == q:
+                self.mapping[sbjct_counter] = offset - 1 + q_counter
+                sbjct_counter += 1
+                q_counter += 1
+            elif s != '-' and q != '-':
+                self.mapping[sbjct_counter] = offset - 1 + q_counter
+                sbjct_counter += 1
+                q_counter += 1
+            elif s != '-' and q == '-':
+                sbjct_counter += 1
+            else:
+                sbjct_counter += 1
+                q_counter += 1
+
+    def get_info(self):
+
+        return  OrderedDict({
+                "presence" : 'YES',
+                "type" : "fusion",
+                "uniprot" : self.id,
+                "description" : "",
+                "start" : min(self.mapping.values()),
+                "end" : max(self.mapping.values()),
+                "start (pdb)" : min(self.mapping.keys()),
+                "end (pdb)" : max(self.mapping.keys()),
+                })
+
 
 class SequenceParser(object):
     """
@@ -110,6 +181,7 @@ class SequenceParser(object):
         self.residues = {}
         self.segments = {}
         self.blast = BlastSearch(blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_human_blastdb']))
+        
 
         if pdb_file is not None:
             self.pdb_struct = PDBParser(QUIET=True).get_structure('pdb', pdb_file)[0]
@@ -232,7 +304,6 @@ class SequenceParser(object):
                     continue
                 if self.mapping[r_chain] != self.mapping[chain]:
                     nrc.append(r_chain)
-        print(len(nrc))
         return nrc
 
 
@@ -249,7 +320,7 @@ class SequenceParser(object):
 
         for alignment in alignments:
             if alignment[1].hsps[0].expect > .5 and residues:
-                self.fusions.append((min([x.id[1] for x in residues]), max([x.id[1] for x in residues])))
+                self.fusions.append(AuxProtein(residues))
                 #The case when auxiliary protein is in a separate chain
                 if self.get_chain_sequence(chain_id) == self.get_peptide_sequence(residues):
                     del self.mapping[chain_id]
@@ -269,9 +340,7 @@ class SequenceParser(object):
         sbjct = hsps.sbjct
         sbjct_counter = hsps.sbjct_start	
         q_counter = hsps.query_start
-        print("{}\t{}".format(hsps.sbjct_start, hsps.query_start))
-        print(q)
-        print(sbjct)
+
         for s, q in zip(sbjct, q):
             
             if s == q:
@@ -282,7 +351,6 @@ class SequenceParser(object):
                 sbjct_counter += 1
                 q_counter += 1
             elif s != '-' and q != '-':
-                print("{}\t{}".format(s,q))
                 self.mapping[chain_id][sbjct_counter].set_pdb_res_num(offset - 1 + q_counter)
                 self.mapping[chain_id][sbjct_counter].set_mutation(q)
                 sbjct_counter += 1
@@ -359,12 +427,7 @@ class SequenceParser(object):
         fusion_dict = OrderedDict({"auxiliary": {}})
         count = 1
         for fusion in self.fusions:
-            fusion_dict["auxiliary"]["aux{}".format(count)] = OrderedDict({
-                "presence" : 'YES',
-                "type" : "fusion",
-                "start" : fusion[0],
-                "end" : fusion[1]
-                })
+            fusion_dict["auxiliary"]["aux{}".format(count)] = fusion.get_info()
         return fusion_dict
 
     def get_deletions(self):
