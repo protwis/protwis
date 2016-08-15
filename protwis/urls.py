@@ -1,6 +1,7 @@
-﻿from django.conf.urls import patterns, include, url
+﻿from django.conf.urls import patterns, include, url,handler404, handler500
 from django.contrib import admin
 from django.conf import settings
+from protwis import views
 
 
 urlpatterns = [
@@ -23,6 +24,9 @@ urlpatterns = [
     url(r'^construct/',include('construct.urls')),
     url(r'^sitesearch/',include('sitesearch.urls')),
 ]
+
+handler404 = views.error404
+handler500 = views.error500
 
 if settings.DEBUG:
     import debug_toolbar
