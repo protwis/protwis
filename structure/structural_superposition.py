@@ -160,18 +160,23 @@ class RotamerSuperpose(object):
         @param reference_atoms: list of Atom objects of rotamers to be superposed on \n
         @param template_atoms: list of Atom objects of rotamers to be superposed
     '''
-    def __init__(self, reference_atoms, template_atoms):
+    def __init__(self, reference_atoms, template_atoms, TM_keys=None):
         self.reference_atoms = reference_atoms
         self.template_atoms = template_atoms
         self.backbone_rmsd = None
+        self.TM_keys = TM_keys
 
     def run(self):
         ''' Run the superpositioning. 
         '''
         super_imposer = Superimposer()
         try:
-            ref_backbone_atoms = [atom for atom in self.reference_atoms if atom.get_name() in ['N','CA','C','O']]
-            temp_backbone_atoms = [atom for atom in self.template_atoms if atom.get_name() in ['N','CA','C','O']]
+            if self.TM_keys==None:
+                ref_backbone_atoms = [atom for atom in self.reference_atoms if atom.get_name() in ['N','CA','C','N']]
+                temp_backbone_atoms = [atom for atom in self.template_atoms if atom.get_name() in ['N','CA','C','N']]
+            else:
+                ref_backbone_atoms = [atom for atom in self.reference_atoms if atom.get_name() in ['N','CA','C'] and atom.get_parent().get_full_id()[-1][1] in self.TM_keys]
+                temp_backbone_atoms = [atom for atom in self.template_atoms if atom.get_name() in ['N','CA','C'] and atom.get_parent().get_full_id()[-1][1] in self.TM_keys]
             super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
             super_imposer.apply(self.template_atoms)
             array1, array2 = np.array([0,0,0]), np.array([0,0,0])
@@ -182,7 +187,7 @@ class RotamerSuperpose(object):
             self.backbone_rmsd = np.sqrt(sum(sum(diff**2))/array1[1:].shape[0])
             return self.template_atoms
         except Exception as msg:
-            print("Failed to superpose atoms {} and {}".format(self.reference_atoms, self.template_atoms))
+            print("Failed superimposition:\n{}".format(msg))
 
 #==============================================================================  
 class BulgeConstrictionSuperpose(object):
@@ -320,4 +325,28 @@ class OneSidedSuperpose(BulgeConstrictionSuperpose):
         self.backbone_rmsd = self.calc_backbone_RMSD(ref_backbone_atoms, temp_backbone_atoms)
         return self.rebuild_dictionary(all_template_atoms)
         
-                    
+#============================================================================== 
+class ECL2MidSuperpose(BulgeConstrictionSuperpose):
+    ''' Class to superimpose 45x50-52 in ECL2 based on last residue of TM4, first residue of TM5 and 3x25 in TM3.
+    '''
+
+    def run(self):
+        ''' Run the superpositioning.
+        '''
+        super_imposer = Superimposer()
+        ref_backbone_atoms, temp_backbone_atoms, all_template_atoms = [], [], []
+        for gn, atoms in self.reference_dict.items():
+            for atom in atoms:
+                if atom.get_name() in ['N','CA','C','O']:
+                    ref_backbone_atoms.append(atom)
+        res_count=0
+        for gn, atoms in self.template_dict.items():
+            res_count+=1
+            for atom in atoms:
+                if res_count<4 and atom.get_name() in ['N','CA','C','O']:
+                    temp_backbone_atoms.append(atom)
+                all_template_atoms.append(atom)
+        self.backbone_rmsd = self.calc_backbone_RMSD(ref_backbone_atoms, temp_backbone_atoms)
+        super_imposer.set_atoms(ref_backbone_atoms, temp_backbone_atoms)
+        super_imposer.apply(all_template_atoms)        
+        return self.rebuild_dictionary(all_template_atoms)
