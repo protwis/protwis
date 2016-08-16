@@ -10,6 +10,7 @@ from common.tools import fetch_from_cache, save_to_cache, fetch_from_web_api
 from residue.models import Residue
 from protein.models import Protein
 from ligand.models import Ligand, LigandProperities, LigandRole, LigandType
+from ligand.functions import get_or_make_ligand
 from common.models import WebLink, WebResource, Publication
 
 import json
@@ -90,6 +91,8 @@ class Command(BaseCommand):
                 pass
             elif worksheet.cell_value(0, 0) == "REFERENCE \nDOI or PMID": #new format
                 pass
+            elif worksheet.cell_value(0, 0) == "REFERENCE \nDOI or PMID (original)": #newest format
+                pass
             else: #skip non-matching xls files
                 continue
 
@@ -110,7 +113,7 @@ class Command(BaseCommand):
                     temprow.append(cell_value)
                 temp.append(temprow)
                 #if curr_row>10: break
-            return temp
+        return temp
 
     def analyse_rows(self,rows):
         temp = []
@@ -301,100 +304,7 @@ class Command(BaseCommand):
                             self.logger.error('error with reference ' + str(r['reference']) + ' ' + pub_type)
                             continue #if something off with publication, skip.
 
-                    if r['ligand_type']=='PubChem CID' or r['ligand_type']=='SMILES':
-                        if r['ligand_type']=='PubChem CID':
-                            pubchem_lookup_value = 'cid'
-                        elif r['ligand_type']=='SMILES':
-                            pubchem_lookup_value = 'smiles'
-
-                        try:
-                            web_resource = WebResource.objects.get(slug='pubchem')
-                        except:
-                            # abort if pdb resource is not found
-                            raise Exception('PubChem resource not found, aborting!')
-
-                        if 'ligand_name' in r and r['ligand_name']:
-                            ligand_name = str(r['ligand_name'])
-                        else:
-                            ligand_name = False
-
-                        try:
-                            # if this name is canonical and it has a ligand record already
-                            l = Ligand.objects.get(name=ligand_name, canonical=True,
-                                properities__web_links__web_resource=web_resource,
-                                properities__web_links__index=r['ligand_id'])
-                        except Ligand.DoesNotExist:
-                            try:
-                                # if exists under different name
-                                l_canonical = Ligand.objects.get(properities__web_links__web_resource=web_resource,
-                                    properities__web_links__index=r['ligand_id'], canonical=True)
-                                l, created = Ligand.objects.get_or_create(properities = l_canonical.properities,
-                                    name = ligand_name, canonical = False)
-                                if created:
-                                    self.logger.info('Created ligand {}'.format(l.name))
-                            except Ligand.DoesNotExist:
-                                # fetch ligand from pubchem
-                                default_ligand_type = 'Small molecule'
-                                lt, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
-                                    defaults={'name': default_ligand_type})
-                                l = Ligand()
-                                l = l.load_from_pubchem(pubchem_lookup_value, r['ligand_id'], lt, ligand_name)
-                                if l == None and r['ligand_type']=='SMILES': #insert manually if smiles and unfound in pubchem
-                                    try:
-                                        l = Ligand.objects.get(name=ligand_name, canonical=True,
-                                                                properities__smiles=r['ligand_id'])
-                                    except Ligand.DoesNotExist:
-                                        l = Ligand()
-                                        l.name = ligand_name
-                                        lp = LigandProperities()
-                                        lp.smiles = r['ligand_id']
-                                        lp.ligand_type = lt
-                                        lp.save()
-                                        l.properities = lp
-                                        l.canonical = True #maybe false, but that would break stuff.
-                                        l.ambigious_alias = False
-                                        l.save()
-                                        self.logger.info('Created Ligand {} manually'.format(l.name))
-                        
-                    elif r['ligand_name']:
-                        
-                        # if this name is canonical and it has a ligand record already
-                        if Ligand.objects.filter(name=r['ligand_name'], canonical=True).exists():
-                            l = Ligand.objects.get(name=r['ligand_name'], canonical=True)
-                        
-                        # if this matches an alias that only has "one" parent canonical name - eg distinct
-                        elif Ligand.objects.filter(name=r['ligand_name'], canonical=False,
-                            ambigious_alias=False).exists():
-                            l = Ligand.objects.get(name=r['ligand_name'], canonical=False, ambigious_alias=False)
-                        
-                        # if this matches an alias that only has several canonical parents, must investigate, start
-                        # with empty.
-                        elif Ligand.objects.filter(name=r['ligand_name'], canonical=False,
-                            ambigious_alias=True).exists():
-                            lp = LigandProperities()
-                            lp.save()
-                            l = Ligand()
-                            l.properities = lp
-                            l.name = r['ligand_name']
-                            l.canonical = False
-                            l.ambigious_alias = True
-                            l.save()
-                            l.load_by_name(r['ligand_name'])
-                        
-                        # if neither a canonical or alias exists, create the records. Remember to check for
-                        # canonical / alias status.
-                        else:
-                            lp = LigandProperities()
-                            lp.save()
-                            l = Ligand()
-                            l.properities = lp
-                            l.name = str(r['ligand_name'])
-                            l.canonical = True
-                            l.ambigious_alias = False
-                            l.save()
-                            l.load_by_name(str(r['ligand_name']))
-                    else:
-                        l = None
+                    l = get_or_make_ligand(r['ligand_id'],r['ligand_type'],str(r['ligand_name']))
 
                     if Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=True).exists(): #if this name is canonical and it has a ligand record already
                         l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=True)
