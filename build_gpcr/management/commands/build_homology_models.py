@@ -47,15 +47,6 @@ class Command(BaseBuild):
         parser.add_argument('--hmver', help='Homology modeling version', default=1.0, type=float)
         
     def handle(self, *args, **options):
-#        l = list(Protein.objects.filter(parent__isnull=True, accession__isnull=False))
-#        li = []
-#        for i in l:            
-#            if len(list(Protein.objects.filter(parent=i)))>0:
-#                print(i)
-#                li.append(i)
-#        print(len(li))                
-#        raise AssertionError()
-
         if not os.path.exists('./structure/homology_models/'):
             os.mkdir('./structure/homology_models')
         if not os.path.exists('./structure/PIR/'):
@@ -72,11 +63,8 @@ class Command(BaseBuild):
             structures = Structure.objects.all()
             struct_parent = [i.protein_conformation.protein.parent for i in structures]
             classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species=1, 
-                                            family__slug__istartswith='005')
+                                            family__slug__istartswith='001')
             self.receptor_list = [i.entry_name for i in classA if i not in struct_parent]
-            print(self.receptor_list)
-            print(classA)
-            raise AssertionError()
             try:
                 self.prepare_input(options['proc'], self.receptor_list)
             except Exception as msg:
@@ -110,16 +98,16 @@ class Command(BaseBuild):
             self.run_HomologyModeling(receptor)
     
     def run_HomologyModeling(self, receptor):
-#        try:
-        state = 'Inactive'
-        Homology_model = HomologyModeling(receptor, state, [state], update=self.update, version=self.version)
-        alignment = Homology_model.run_alignment()
-        Homology_model.build_homology_model(alignment)
-        Homology_model.format_final_model()
-        logger.info('Model built for {} {}'.format(receptor, state))
-#        except Exception as msg:
-#            print('Failed to build model {}\n{}'.format(receptor,msg))
-#            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
+        try:
+            state = 'Inactive'
+            Homology_model = HomologyModeling(receptor, state, [state], update=self.update, version=self.version)
+            alignment = Homology_model.run_alignment()
+            Homology_model.build_homology_model(alignment)
+            Homology_model.format_final_model()
+            logger.info('Model built for {} {}'.format(receptor, state))
+        except Exception as msg:
+            print('Failed to build model {}\n{}'.format(receptor,msg))
+            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
 
         
 class HomologyModeling(object):
@@ -390,15 +378,13 @@ class HomologyModeling(object):
                 else:
                     raise Exception()
             except:
-                ('FUDGE')
                 helixends.correct_helix_ends(self.main_structure, main_pdb_array, alignment, 
                                              self.template_source)
                 self.helix_end_mods = helixends.helix_end_mods
                 self.template_source = helixends.template_source
             
             self.statistics.add_info('helix_end_mods',self.helix_end_mods)
-#            end_correction = self.correct_helix_ends(self.main_structure, main_pdb_array, alignment, 
-#                                                     self.template_source)
+
             print('Corrected helix ends: ',datetime.now() - startTime)
             main_pdb_array = helixends.main_pdb_array
             alignment = helixends.alignment
@@ -845,7 +831,6 @@ class HomologyModeling(object):
                 n_count+=1
                 N_r[str(n.sequence_number)] = n.amino_acid
                 N_a[str(n.sequence_number)] = '-'
-#                if n_count>len(N_term)-5:
                 try:
                     N_arr[str(n.sequence_number)] = temp_coo[-1*(len(N_term)-n_count+1)]
                     N_t[str(n.sequence_number)] = list(N_term_temp)[-1*(len(N_term)-n_count+1)].amino_acid
@@ -854,9 +839,6 @@ class HomologyModeling(object):
                 except:
                     N_t[str(n.sequence_number)] = '-'
                     N_arr[str(n.sequence_number)] = '-'
-#                else:
-#                    N_t[str(n.sequence_number)] = '-'
-#                    N_arr[str(n.sequence_number)] = '-'
 
             r_i['N-term'] = N_r
             t_i['N-term'] = N_t
@@ -971,20 +953,6 @@ class HomologyModeling(object):
         except:
             pass
         
-      
-
-        # Correct template_source for incosistencies in position labeling
-#        temp_source = OrderedDict()
-#        for s_seg,t_seg in zip(self.template_source,a.template_dict):
-#            temp_source_seg = OrderedDict()
-#            for s, t in zip(self.template_source[s_seg],a.template_dict[t_seg]):
-#                if s!=t and 'x' in t and t not in temp_source_seg:
-#                    temp_source_seg[t] = self.template_source[s_seg][s]
-#                else:
-#                    temp_source_seg[s] = self.template_source[s_seg][s]
-#            temp_source[s_seg] = temp_source_seg      
-#        self.template_source = temp_source
-        
         # non-conserved residue switching
         if switch_rotamers==True:
             non_cons_switch = self.run_non_conserved_switcher(main_pdb_array,a.reference_dict,a.template_dict,
@@ -1077,7 +1045,7 @@ class HomologyModeling(object):
                           self.uniprot_id, 1, "{}_{}_model.pdb".format(self.reference_entry_name,self.state), 
                           atom_dict=trimmed_res_nums, helix_restraints=helix_restraints)
 
-#        os.remove(path+self.uniprot_id+"_post.pdb")
+        os.remove(path+self.uniprot_id+"_post.pdb")
         
         # stat file
 #        with open('./structure/homology_models/{}_{}/{}.stat.txt'.format(self.reference_entry_name, self.state, 
@@ -1529,10 +1497,10 @@ class HomologyMODELLER(automodel):
                 if list(k.items())==[]:
                     continue
                 if i[0]==list(k.items())[0][1]:
-                    rsr.add(secondary_structure.alpha(self.residue_range('{}:'.format(i[0]),'{}:'.format(i[1]+2))))
+                    rsr.add(secondary_structure.alpha(self.residue_range('{}:'.format(i[0]),'{}:'.format(i[1]+3))))
                     break
                 elif i[1]==list(k.items())[-1][1]:
-                    rsr.add(secondary_structure.alpha(self.residue_range('{}:'.format(i[0]-2),'{}:'.format(i[1]))))
+                    rsr.add(secondary_structure.alpha(self.residue_range('{}:'.format(i[0]-3),'{}:'.format(i[1]))))
                     break
     
     def make(self):
@@ -1629,7 +1597,10 @@ class HelixEndsModeling(HomologyModeling):
         ends = OrderedDict()
         for seg_lab, seg in array.items():
             if seg_lab[0]=='T' or seg_lab=='H8':
-                ends[seg_lab] = [list(seg.keys())[0].replace('.','x'),list(seg.keys())[-1].replace('.','x')]
+                try:
+                    ends[seg_lab] = [list(seg.keys())[0].replace('.','x'),list(seg.keys())[-1].replace('.','x')]
+                except:
+                    pass
         return ends
         
     def correct_helix_ends(self, main_structure, main_pdb_array, a, template_source, separate_H8=None):
