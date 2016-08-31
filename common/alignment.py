@@ -1021,6 +1021,10 @@ class AlignedReferenceTemplate(Alignment):
                         similarity_table[self.main_template_structure] = self.provide_similarity_table[
                                                                                             self.main_template_structure]
                         temp_list.append((struct, len(main_temp_seq), similarity, float(struct.resolution), protein))
+                        
+                    # Allow for partial main loop template
+                    elif list(range(main_temp_seq[0].sequence_number,list(main_temp_seq)[-1].sequence_number+1))!=[i.sequence_number for i in main_temp_seq]:
+                        temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
             else:
                 temp_length, temp_length1, temp_length2 = [],[],[]
                 try:

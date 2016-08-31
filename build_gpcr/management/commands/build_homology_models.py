@@ -98,16 +98,16 @@ class Command(BaseBuild):
             self.run_HomologyModeling(receptor)
     
     def run_HomologyModeling(self, receptor):
-        try:
-            state = 'Inactive'
-            Homology_model = HomologyModeling(receptor, state, [state], update=self.update, version=self.version)
-            alignment = Homology_model.run_alignment()
-            Homology_model.build_homology_model(alignment)
-            Homology_model.format_final_model()
-            logger.info('Model built for {} {}'.format(receptor, state))
-        except Exception as msg:
-            print('Failed to build model {}\n{}'.format(receptor,msg))
-            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
+#        try:
+        state = 'Inactive'
+        Homology_model = HomologyModeling(receptor, state, [state], update=self.update, version=self.version)
+        alignment = Homology_model.run_alignment()
+        Homology_model.build_homology_model(alignment)
+        Homology_model.format_final_model()
+        logger.info('Model built for {} {}'.format(receptor, state))
+#        except Exception as msg:
+#            print('Failed to build model {}\n{}'.format(receptor,msg))
+#            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
 
         
 class HomologyModeling(object):
@@ -305,7 +305,6 @@ class HomologyModeling(object):
                                                  self.template_source, separate_H8=True)
                     main_pdb_array = helixends.main_pdb_array
                     alignment = helixends.alignment
-                    pprint.pprint(helixends.helix_end_mods)
                     self.template_source = helixends.template_source
                     self.helix_end_mods = helixends.helix_end_mods
                     for struct in self.similarity_table_all:
@@ -501,6 +500,7 @@ class HomologyModeling(object):
                 
             self.statistics.add_info('loops', loop_stat)
             self.loops = loop_stat
+#        pprint.pprint(loop_stat)
 #        pprint.pprint(a.reference_dict)
 #        pprint.pprint(a.template_dict)
 #        pprint.pprint(main_pdb_array)
@@ -1582,6 +1582,7 @@ class HelixEndsModeling(HomologyModeling):
                     sa = Residue.objects.get(protein_conformation=j[1].protein_conformation,sequence_number=j[0].start)
                     ends[j[0].protein_segment.slug][0] = ggn(sa.display_generic_number.label)
                 if j[0].end!=0:
+                    print(j[0])
                     while Residue.objects.get(protein_conformation=j[1].protein_conformation,sequence_number=j[0].end).generic_number==None:
                         j[0].end-=1
                     ea = Residue.objects.get(protein_conformation=j[1].protein_conformation,sequence_number=j[0].end)
@@ -1910,16 +1911,30 @@ class Loops(object):
                                                 x50_present = True
                                         except:
                                             pass
-                                    if x50_present==False and len(ref_loop)!=len(loop_res):
-                                        continue
+                                    if self.loop_template_structures[template]!=0:
+                                        if x50_present==False and len(ref_loop)!=len(loop_res):
+                                            continue
+                                        partial = False
+                                    else:
+                                        partial = True
                                     if at_least_one_gn==True:
                                         inter_array = parse.fetch_residues_from_pdb(self.main_structure,loop_res)
                                     else:
                                         inter_array = parse.fetch_residues_from_pdb(self.main_structure,loop_res,
                                                                                     just_nums=True)
                                     self.loop_output_structure = self.main_structure
-                                    for id_, atoms in inter_array.items():
-                                        output[str(id_)] = atoms
+                                    if partial==False:
+                                        for id_, atoms in inter_array.items():
+                                            output[str(id_)] = atoms
+                                    else:
+                                        p_c = ProteinConformation.objects.get(protein=self.main_structure.protein_conformation.protein.parent)
+                                        p_loop_res = Residue.objects.filter(protein_conformation=p_c, 
+                                                                             protein_segment__slug=self.loop_label)
+                                        for num in p_loop_res:
+                                            try:
+                                                output[str(num.sequence_number)] = inter_array[str(num.sequence_number)]
+                                            except:
+                                                output[str(num.sequence_number)] = '-'
                                     return output
                                 except:
                                     self.aligned = False
@@ -2214,7 +2229,6 @@ class Loops(object):
                                 try:
                                     Residue.objects.get(protein_conformation=self.main_structure.protein_conformation, 
                                                         sequence_number=r_id)
-        #### Possible bug
                                     loop_gn = self.loop_label+'|'+str(l_res)
                                 except:
                                     loop_gn = self.loop_label+'?'+str(l_res)
@@ -2251,6 +2265,8 @@ class Loops(object):
                                 except:
                                     loop_gn = ggn(Residue.objects.get(protein_conformation=loop_output_structure.protein_conformation, 
                                                   sequence_number=r_id).display_generic_number.label)
+                                if len(loop_gn.split('x')[0])==1:
+                                    raise Exception()
                             except:
                                 loop_gn = self.loop_label+'|'+str(l_res)
                             try:
@@ -2407,6 +2423,8 @@ class Loops(object):
                         temp_loop[key] = loop_template[key]
                     elif 'gap' in key:
                         temp_loop[self.loop_label+'?'+str(l_res)] = loop_template[key]
+                    elif loop_template[key]=='-':
+                        temp_loop[self.loop_label+'?'+str(l_res)] = loop_template[key]
                     else:
                         temp_loop[self.loop_label+'|'+str(l_res)] = loop_template[key]   
                 if ECL2!=None:
@@ -2435,6 +2453,8 @@ class Loops(object):
                         except:
                             loop_gn = ggn(Residue.objects.get(protein_conformation=loop_output_structure.protein_conformation, 
                                                              sequence_number=key).display_generic_number.label.replace('x','.'))
+                        if len(loop_gn.split('.')[0])==1:
+                            raise Exception()
                         temp_loop[loop_gn] = loop_template[key]
                     except:
                         temp_loop[self.loop_label+'|'+str(l_res)] = loop_template[key]
