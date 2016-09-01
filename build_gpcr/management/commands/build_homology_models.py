@@ -223,6 +223,7 @@ class HomologyModeling(object):
             pdblines = f.readlines()
             out_list = []
             prev_num = None
+            first_hetatm = False
             for line in pdblines:
                 try:
                     if prev_num==None:
@@ -239,7 +240,33 @@ class HomologyModeling(object):
                         out_line = pdb_re.group(1)[:whitespace]+pos_list[i]+pdb_re.group(3)
                     out_list.append(out_line)
                 except:
-                    out_list.append(line)
+                    try:
+                        if line.startswith('TER'):
+                            pdb_re = re.search('(TER\s+\d+\s+\S{3}\s+)(\d+)',line)
+                            out_list.append(pdb_re.group(1)+pos_list[i]+"\n")
+                        else:
+                            raise Exception()
+                    except:
+                        try:
+                            pref_chain = str(self.main_structure.preferred_chain)
+                            if len(pref_chain)>1:
+                                pref_chain = pref_chain[0]
+                            pdb_re = re.search('(HETATM[0-9\sA-Z]{11})([A-Z0-9]{3})(\s+)(\d+)([\s0-9.A-Z]+)',line)
+                            if first_hetatm==False:
+                                prev_hetnum = int(pdb_re.group(4))
+                                out_list.append(pdb_re.group(1)+pdb_re.group(2)+pdb_re.group(3)+str(int(pos_list[i])+1)+pdb_re.group(5))
+                                first_hetatm = True
+                                num = int(pos_list[i])+1
+                            else:
+                                
+                                if int(pdb_re.group(4))!=prev_hetnum:
+                                    out_list.append(pdb_re.group(1)+pdb_re.group(2)+pdb_re.group(3)+str(num+1)+pdb_re.group(5))
+                                    prev_hetnum+=1
+                                    num+=1
+                                else:
+                                    out_list.append(pdb_re.group(1)+pdb_re.group(2)+pdb_re.group(3)+str(num)+pdb_re.group(5))
+                        except:
+                            out_list.append(line)
         with open ('./structure/homology_models/{}_{}/{}_{}_model.pdb'.format(self.reference_entry_name, self.state,
                    self.reference_entry_name,self.state), 'w') as f:
             f.write(''.join(out_list))
@@ -1039,28 +1066,35 @@ class HomologyModeling(object):
         self.statistics.add_info('template_source',self.template_source)
 
         # Adding HETATMs when revising xtal
+        hetatm_count = 0
         if self.reference_protein==self.main_structure.protein_conformation.protein.parent:
-            print('SAME')
             pdb = PDB.PDBList()
             pdb.retrieve_pdb_file(str(self.main_structure),pdir='./')
             with open('./pdb{}.ent'.format(str(self.main_structure).lower()),'r') as f:
                 lines = f.readlines()
             with open(path+self.uniprot_id+"_post.pdb", 'a') as model:
+                hetatm = 1
                 for line in lines:
                     if line.startswith('HETATM'):
                         pref_chain = str(self.main_structure.preferred_chain)
                         if len(pref_chain)>1:
                             pref_chain = pref_chain[0]
                         try:
-                            pdb_re = re.search('(HETATM[0-9\sA-Z]{{15}})({pref})'.format(pref=pref_chain), line)
+                            pdb_re = re.search('(HETATM[0-9\sA-Z]{{11}})([A-Z0-9]{{3}})\s({pref})([0-9]{{4}})'.format(pref=pref_chain), line)
+                            if pdb_re.group(2)!='HOH':
+                                if hetatm!=pdb_re.group(4):
+                                    hetatm_count+=1
+                                    hetatm = pdb_re.group(4)
                             if pdb_re!=None:                                
                                 model.write(line)
                         except:
                             continue
+#                    elif line.startswith('CONECT'):
+#                        model.write(line)
                 model.write('END')
-        raise AssertionError()
+
         # Model with MODELLER
-        self.create_PIR_file(a.reference_dict, a.template_dict, path+self.uniprot_id+"_post.pdb")
+        self.create_PIR_file(a.reference_dict, a.template_dict, path+self.uniprot_id+"_post.pdb", hetatm_count)
 #        print(self.main_structure)
 #        pprint.pprint(a.reference_dict)
 #        pprint.pprint(a.template_dict)
@@ -1372,7 +1406,7 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
                 f.write("END\n")
         return trimmed_resi_nums, helix_restraints
                     
-    def create_PIR_file(self, reference_dict, template_dict, template_file):
+    def create_PIR_file(self, reference_dict, template_dict, template_file, hetatm_count):
         ''' Create PIR file from reference and template alignment (AlignedReferenceAndTemplate).
         
             @param ref_temp_alignment: AlignedReferenceAndTemplate
@@ -1405,6 +1439,9 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
                 else:
                     temp_sequence+=template_dict[temp_seg][temp_res]
                 res_num+=1
+        for i in range(hetatm_count):
+            ref_sequence+='.'
+            temp_sequence+='.'
         with open("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", 'w+') as output_file:
             template="""
 >P1;{temp_file}
