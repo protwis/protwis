@@ -57,7 +57,7 @@ class Command(BaseCommand):
 
         stats = [
             ['Proteins', Protein.objects.filter(sequence_type__slug='wt').count()],
-            ['Human proteins', Protein.objects.filter(sequence_type__slug='wt', species__id=1).count()],
+            ['Human proteins', Protein.objects.filter(sequence_type__slug='wt', species__common_name="Human").count()],
             ['Species', Species.objects.all().count()],
             ['Exp. structures', Structure.objects.all().count()],
             ['Ligands', Ligand.objects.filter(canonical=True).count()],

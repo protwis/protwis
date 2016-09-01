@@ -3,47 +3,67 @@ from django.conf import settings
 from django.db import connection
 from django.utils.text import slugify
 from django.db import IntegrityError
-
+from django.db import transaction
 
 from build.management.commands.base_build import Command as BaseBuild
 from residue.models import Residue
 from residue.functions import *
 from protein.models import Protein, ProteinConformation, ProteinSegment, ProteinFamily
 
+from Bio import pairwise2
+from Bio.SubsMat import MatrixInfo as matlist
+
 import logging
 import os
 import sys
 import re
+import yaml
 from datetime import datetime
+import time
 from collections import OrderedDict
 from itertools import islice
 from urllib.request import urlopen, quote
 import xlrd
 import operator
 import traceback
+import numbers
 
 class Command(BaseBuild):
     help = 'Reads source data and creates annotations'
-    
+
+    def add_arguments(self, parser):
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=1,
+            help='Number of processes to run')
+        
     logger = logging.getLogger(__name__)
 
     # source file directory
     annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Structural_Annotation.xlsx'])
+    xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'xtal_segends.yaml'])
     generic_numbers_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers'])
 
     segments = ProteinSegment.objects.filter(partial=False)
     all_segments = {ps.slug: ps for ps in ProteinSegment.objects.all()}  # all segments dict for faster lookups
     schemes = parse_scheme_tables(generic_numbers_source_dir)
 
+    pconfs = ProteinConformation.objects.all().order_by('protein__family')
+
+    pw_aln_error = ['celr3_mouse','celr3_human','gpr98_human']
 
     def handle(self, *args, **options):
         try:
             self.logger.info('CREATING RESIDUES')
             self.data = self.parse_excel(self.annotation_source_file)
+            self.dump_seg_ends()
 
             # run the function twice (second run for proteins without reference positions)
             # self.prepare_input(options['proc'], self.data["NonXtal_SegEnds_Prot#"])
-            self.prepare_input(4, self.data["NonXtal_SegEnds_Prot#"])
+
+            self.prepare_input(options['proc'], self.pconfs)
 
             self.logger.info('COMPLETED CREATING RESIDUES')
         except Exception as msg:
@@ -97,6 +117,35 @@ class Command(BaseBuild):
 
                 # if curr_row>2: break
         return d
+
+    def dump_seg_ends(self):
+        structures = self.data["Xtal_SegEnds_Prot#"]
+        pdb_info = {}
+        for structure,vals in structures.items():
+            if structure.split("_")[-1] == "wt":
+                continue
+            if structure.split("_")[-1] == "dist":
+                continue
+            #print(structure)
+            pdb_id = structure.split("_")[-1]
+            pdb_info[pdb_id] = {}
+            for key,val in vals.items():
+                if len(key)>3:
+                    continue
+                if not key:
+                    continue
+                if key[-1]!="b" and key[-1]!="e":
+                    continue
+
+                pdb_info[pdb_id][key] = val
+
+        #print(pdb_info)
+        with open(self.xtal_seg_end_file, 'w') as outfile:
+            yaml.dump(pdb_info, outfile)
+        
+            
+
+
 
 
     def generate_bw(self, i, v, aa):
@@ -187,87 +236,349 @@ class Command(BaseBuild):
 
         return a
 
+    def b_and_c_check(self,b_and_c,number,seg):
+        offset = 0
+        bulge = False
+        if seg in b_and_c:
+            for bc in b_and_c[seg]:
+                if len(bc)>2: #bulge
+                    # print(bc[0:2],number,offset)
+                    if int(bc[0:2])<50 and int(number)+offset<int(bc[0:2]): #before x50 and before bulge, do smt
+                        offset += 1 #eg if 5x461, then 5.46 becomes 5x461, 5.45 becomes 5x46
+                    elif int(bc[0:2])<50 and int(number)+offset==int(bc[0:2]): #before x50 and is bulge, do smt
+                        bulge = True # eg if 5x461, then 5.46 becomes 5x461
+                    elif int(bc[0:2])>50 and int(number)+offset>int(bc[0:2])+1: #after x50 and after bulge, do smt
+                        offset -= 1 #eg if 2x551, then 2.56 becomes 2x551, 5.57 becomes 5x56
+                    elif int(bc[0:2])>50 and int(number)+offset==int(bc[0:2])+1: #after x50 and 1 after bulge, do smt
+                        bulge = True # eg if 2x551, then 2.56 becomes 2x551
+
+                else: #2 numbers, it's a constriction
+                    if int(bc[0:2])<50 and int(number)+offset<=int(bc[0:2]): #before x50 and before or equal constrictions, do smt
+                        offset -= 1 #eg if constriction is 7x44, then 7.44 becomes 7x43, 7.43 becomes 7x42
+                    if int(bc[0:2])>50 and int(number)+offset>=int(bc[0:2]): #before x50 and before or equal constrictions, do smt
+                        offset += 1 #eg if constriction is 4x57, then 4.57 becomes 4x58, 4.58 becomes 4x59
+
+        if bulge!=True:
+            gn = str(int(number)+offset)
+        elif int(bc[0:2])<50:
+            gn = str(int(number)+offset)+"1"
+        elif int(bc[0:2])>50:
+            gn = str(int(number)-1+offset)+"1"
+
+        return gn
+
 
     def main_func(self, positions, iteration):
         self.logger.info('CREATING ANNOTATIONS')
         # pconfs
+        # if not positions[1]:
+        #     # proteins = OrderedDict(islice(self.data["NonXtal_SegEnds_Prot#"].items(),positions[0]))
+        #     proteins = list(self.data["NonXtal_SegEnds_Prot#"])[positions[0]:]
+        # else:
+        #     # proteins = OrderedDict(islice(self.data["NonXtal_SegEnds_Prot#"].items(),positions[0],positions[1]))
+        #     proteins = list(self.data["NonXtal_SegEnds_Prot#"])[positions[0]:positions[1]]
+
         if not positions[1]:
-            # proteins = OrderedDict(islice(self.data["NonXtal_SegEnds_Prot#"].items(),positions[0]))
-            proteins = list(self.data["NonXtal_SegEnds_Prot#"])[positions[0]:]
+            pconfs = self.pconfs[positions[0]:]
         else:
-            # proteins = OrderedDict(islice(self.data["NonXtal_SegEnds_Prot#"].items(),positions[0],positions[1]))
-            proteins = list(self.data["NonXtal_SegEnds_Prot#"])[positions[0]:positions[1]]
+            pconfs = self.pconfs[positions[0]:positions[1]]
+
+
+        proteins = list(self.data["NonXtal_SegEnds_Prot#"])
 
         # print(data)
         counter = 0
-        for p in proteins:
-            self.logger.info('DOING {}'.format(p))
-            v = self.data["NonXtal_SegEnds_Prot#"][p]
+        lacking = []
+        # print('total',len(pconfs))
+        for p in pconfs:
+            entry_name = p.protein.entry_name
+            ref_positions = None
             counter += 1
-            if p=='':
+            missing_x50s = []
+            aligned_gn_mismatch_gap = ''
+            human_ortholog = ''
+            self.logger.info('DOING {}'.format(p))
+            # if p.protein.residue_numbering_scheme.slug!='gpcrdbc' or p.protein.species.common_name != "Human":
+            #     continue
+            # if p.protein.species.common_name != "Human":
+            #     continue
+            # if p.protein.entry_name !='opsd_todpa':
+            #     continue
+            # print(p.protein.entry_name)
+            # print(counter,p.protein.entry_name)
+            Residue.objects.filter(protein_conformation=p).delete()
+            if Residue.objects.filter(protein_conformation=p).count() and 1==1:
+                # print(counter,entry_name,"already done")
                 continue
-            # if counter>20:
-            #     break
-            s = self.data["Seqs"][p]['Sequence']
-            b_and_c = {}
-            for entry,gn in self.data["NonXtal_Bulges_Constr_GPCRdb#"][p].items():
-                if len(entry)<3:
+            else:
+                # print(counter,p)
+                if p.protein.species.common_name != "Human" and entry_name not in proteins:
+                    human_ortholog = Protein.objects.filter(family=p.protein.family, species__common_name='Human')
+                    if human_ortholog.exists():
+                        human_ortholog = human_ortholog.get()
+                        if human_ortholog.entry_name not in proteins:
+                            if human_ortholog.entry_name not in lacking:
+                                lacking.append(human_ortholog.entry_name)
+                                print(counter,human_ortholog.entry_name, 'not in excel')
+                        if human_ortholog.entry_name in proteins:
+                            # print(counter,entry_name,'check sequences')
+                            ref_positions, aligned_gn_mismatch_gap = self.compare_human_to_orthologue(human_ortholog, p.protein, self.data["NonXtal_SegEnds_Prot#"][human_ortholog.entry_name],counter)
+                            s = p.protein.sequence
+                            v = self.data["NonXtal_SegEnds_Prot#"][human_ortholog.entry_name]
+                            new_v = {}
+                            # print(v)
+                            failed = None
+                            x50s = ['1x','i1x','2x','e1x','3x','i2x','4x','e2x','5x','6x','7x','8x']
+                            for x50 in x50s:
+                                #1b  1x  1e  i1b i1x i1e 2b  2x  2e  e1b e1x e1e 3b  3x  3e  i2b i2x i2e 4b  4x  4e  e2b e2x e2e 5b  5x  5e  6b  6x  6e  7b  7x  7e  8b  8x  8e
+                                val = v[x50]
+                                if isinstance(val, numbers.Real):
+                                    i = int(val)
+                                    try:
+                                        i_b = int(v[x50[:-1]+"b"])
+                                        length_to_b = i_b-i
+                                        i_e = int(v[x50[:-1]+"e"])
+                                        length_to_e = i_e-i
+                                    except:
+                                        print("Error in annotation",entry_name,human_ortholog.entry_name)
+                                        failed = True
+                                        break
+                                    if i in ref_positions:
+                                        new_v[x50] = ref_positions[i]
+                                        new_v[x50[:-1]+"b"] = ref_positions[i]+length_to_b
+                                        new_v[x50[:-1]+"e"] = ref_positions[i]+length_to_e
+                                    else:
+                                        new_v[x50] = 0
+                                        new_v[x50[:-1]+"b"] = 0
+                                        new_v[x50[:-1]+"e"] = 0
+                                        missing_x50s.append(x50)
+                                        # print(entry_name,"tranlated ",x50," no index in ortholog, skipping for now")
+                                        # failed = True
+                                        # break
+                                else:
+                                    new_v[x50] = 0
+                                    new_v[x50[:-1]+"b"] = 0
+                                    new_v[x50[:-1]+"e"] = 0
+
+                            # print(new_v)
+                            if failed:
+                                continue
+                            v = new_v
+                            #exit()
+                            b_and_c = {}
+                            for entry,gn in self.data["NonXtal_Bulges_Constr_GPCRdb#"][human_ortholog.entry_name].items():
+                                if len(entry)<3:
+                                    continue
+                                if entry[1]=='x' or entry[2]=='x':
+                                    if gn!='' and gn!="":
+                                        seg, number = entry.split("x")
+                                        if seg not in b_and_c:
+                                            b_and_c[seg] = []
+                                        b_and_c[seg].append(number)
+                    else:
+                        pass
+                        # print(counter,entry_name,"not done and no human")
+                    #continue
+                elif entry_name in proteins:
+                    # print(entry_name,"not done but ready")
+                    v = self.data["NonXtal_SegEnds_Prot#"][entry_name]
+                    # if counter>20:
+                    #     break
+                    s = self.data["Seqs"][entry_name]['Sequence']
+                    b_and_c = {}
+                    for entry,gn in self.data["NonXtal_Bulges_Constr_GPCRdb#"][entry_name].items():
+                        if len(entry)<3:
+                            continue
+                        if entry[1]=='x' or entry[2]=='x':
+                            if gn!='' and gn!="":
+                                seg, number = entry.split("x")
+                                if seg not in b_and_c:
+                                    b_and_c[seg] = []
+                                b_and_c[seg].append(number)
+                else: #human but not in proteins
+                    print(entry_name," human but no annotation")
                     continue
-                if entry[1]=='x' or entry[2]=='x':
-                    if gn!='' and gn!="":
-                        seg, number = entry.split("x")
-                        if seg not in b_and_c:
-                            b_and_c[seg] = []
-                        b_and_c[seg].append(number)
+            #continue
+            self.logger.info('Parsed Seq and B&C {}'.format(entry_name))
 
-            self.logger.info('Parsed Seq and B&C {}'.format(p))
+            pconf = p
 
-            if ProteinConformation.objects.filter(protein__entry_name=p).exists():
-                pconf = ProteinConformation.objects.filter(protein__entry_name=p).get()
+            al = []
+            bulk = []
+            bulk_alt = []
 
-                al = []
+            current = time.time()
+            for i,aa in enumerate(s, start=1):
+                res = self.generate_bw(i,v,aa)
+                # print(res)
+                segment = self.all_segments[res['s']]
+                # if i<173 or i>213:
+                #     continue
 
-                for i,aa in enumerate(s):
-                    i += 1 #fix, since first postion is 1
-                    res = self.generate_bw(i,v,aa)
+                ##perform bulges / constriction check! 
+                ## only do this on bw numbers
+                if 'bw' in res['numbers']:
+                    seg, number = res['numbers']['bw'].split(".")
+                    gn = self.b_and_c_check(b_and_c,number,seg)
+                    res['numbers']['generic_number'] = seg+"x"+gn
 
-                    segment = self.all_segments[res['s']]
+                bulk_info = create_or_update_residue(pconf, segment, self.schemes,res,b_and_c)
+                bulk.append(bulk_info[0])
+                bulk_alt.append(bulk_info[1])
 
-                    ##perform bulges / constriction check! 
-                    ## only do this on bw numbers
-                    if 'bw' in res['numbers']:
-                        seg, number = res['numbers']['bw'].split(".")
+                al.append(res)
 
-                        offset = 0
-                        bulge = False
-                        if seg in b_and_c:
-                            for bc in b_and_c[seg]:
-                                if len(bc)>2: #bulge
-                                    # print(bc[0:2],number)
-                                    if int(bc[0:2])<50 and int(number)<int(bc[0:2]): #before x50 and before bulge, do smt
-                                        offset += 1 #eg if 5x461, then 5.46 becomes 5x461, 5.45 becomes 5x46
-                                    elif int(bc[0:2])<50 and int(number)==int(bc[0:2]): #before x50 and is bulge, do smt
-                                        bulge = True # eg if 5x461, then 5.46 becomes 5x461
-                                        gn = str(int(number))+"1"
-                                    elif int(bc[0:2])>50 and int(number)>int(bc[0:2])+1: #after x50 and after bulge, do smt
-                                        offset -= 1 #eg if 2x551, then 2.56 becomes 2x551, 5.57 becomes 5x56
-                                    elif int(bc[0:2])>50 and int(number)==int(bc[0:2])+1: #after x50 and 1 after bulge, do smt
-                                        bulge = True # eg if 2x551, then 2.56 becomes 2x551
-                                        gn = str(int(number)-1)+"1"
+            bulked = Residue.objects.bulk_create(bulk)
+            rs = Residue.objects.filter(protein_conformation=pconf).order_by('sequence_number')
 
-                                else: #2 numbers, it's a constriction
-                                    if int(bc[0:2])<50 and int(number)<=int(bc[0:2]): #before x50 and before or equal constrictions, do smt
-                                        offset -= 1 #eg if constriction is 7x44, then 7.44 becomes 7x43, 7.43 becomes 7x42
-                                    if int(bc[0:2])>50 and int(number)>=int(bc[0:2]): #before x50 and before or equal constrictions, do smt
-                                        offset += 1 #eg if constriction is 4x57, then 4.57 becomes 4x58, 4.58 becomes 4x59
-
-                        if bulge!=True:
-                            gn = str(int(number)+offset)
-
-                        res['numbers']['generic_number'] = seg+"x"+gn
-
-                    create_or_update_residue(pconf, segment, self.schemes,res)
-
-                    al.append(res)
+            ThroughModel = Residue.alternative_generic_numbers.through
+            bulk = []
+            for i,res in enumerate(rs):
+                for alt in bulk_alt[i]:
+                    bulk.append(ThroughModel(residue_id=res.pk, residuegenericnumber_id=alt.pk))
+            ThroughModel.objects.bulk_create(bulk)
+            end = time.time()
+            diff = round(end - current,1)
+            self.logger.info('{} {} residues ({}) {}s alignemt {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
+            # print(p.protein.entry_name,len(rs),"residues","(",human_ortholog,")",diff,"s", "alignment",aligned_gn_mismatch_gap,missing_x50s)
 
         self.logger.info('COMPLETED ANNOTATIONS')
+
+    def compare_human_to_orthologue(self, human, ortholog, annotation,counter):
+
+        v = self.data["NonXtal_SegEnds_Prot#"][human.entry_name]
+        s = self.data["Seqs"][human.entry_name]['Sequence']
+        b_and_c = {}
+        for entry,gn in self.data["NonXtal_Bulges_Constr_GPCRdb#"][human.entry_name].items():
+            if len(entry)<3:
+                continue
+            if entry[1]=='x' or entry[2]=='x':
+                if gn!='' and gn!="":
+                    seg, number = entry.split("x")
+                    if seg not in b_and_c:
+                        b_and_c[seg] = []
+                    b_and_c[seg].append(number)
+
+        al = []
+        for i,aa in enumerate(s, start = 1):
+            # i += 1 #fix, since first postion is 1
+            res = self.generate_bw(i,v,aa)
+
+            segment = self.all_segments[res['s']]
+
+            ##perform bulges / constriction check! 
+            ## only do this on bw numbers
+            if 'bw' in res['numbers']:
+                seg, number = res['numbers']['bw'].split(".")
+                gn = self.b_and_c_check(b_and_c,number,seg)
+
+                res['numbers']['generic_number'] = seg+"x"+gn
+
+            al.append(res)
+
+        matrix = matlist.blosum62
+        gap_open = -10
+        gap_extend = -0.5
+
+        # print(human.sequence)
+        # print(ortholog.sequence)
+
+
+
+        # for i, r in enumerate(a[0].seq, 1):
+        #     print(i,r,a[1][i-1]) #print alignment for sanity check
+        #     # find reference positions
+        #     ref_positions = {}
+        #     ref_positions_in_ali = {}
+        #     for position_generic_number, rp in template_ref_positions.items():
+        #         gaps = 0
+        #         for i, r in enumerate(a[0].seq, 1):
+        #             if r == "-":
+        #                 gaps += 1
+        #             if i-gaps == rp:
+        #                 ref_positions_in_ali[position_generic_number] = i
+        #     for position_generic_number, rp in ref_positions_in_ali.items():
+        #         gaps = 0
+        #         for i, r in enumerate(a[1].seq, 1):
+        #             if r == "-":
+        #                 gaps += 1
+        #             if i == rp:
+        #                 ref_positions[position_generic_number] = i - gaps
+
+        #return ref_positions
+
+       # pw2 = pairwise2.align.localms(human.sequence, ortholog.sequence, 2, 0, -2, -.5)
+
+        if ortholog.entry_name not in self.pw_aln_error and human.entry_name not in self.pw_aln_error:
+            pw2 = pairwise2.align.globalds(human.sequence, ortholog.sequence, matrix, gap_open, gap_extend)
+            aln_human = pw2[0][0]
+            aln_ortholog = pw2[0][1]
+        else:
+            # write sequences to files
+            seq_filename = "/tmp/" + ortholog.entry_name + ".fa"
+            with open(seq_filename, 'w') as seq_file:
+                seq_file.write("> ref\n")
+                seq_file.write(human.sequence + "\n")
+                seq_file.write("> seq\n")
+                seq_file.write(ortholog.sequence + "\n")
+
+            try:
+                ali_filename = "/tmp/out.fa"
+                acmd = ClustalOmegaCommandline(infile=seq_filename, outfile=ali_filename, force=True)
+                stdout, stderr = acmd()
+                pw2 = AlignIO.read(ali_filename, "fasta")
+            except:
+                return False
+
+            aln_human = pw2[0]
+            aln_ortholog = pw2[1]
+
+
+        wt_lookup = {} #used to match WT seq_number to WT residue record
+        pdbseq = {} #used to keep track of pdbseq residue positions vs index in seq
+        ref_positions = {} #WT postions in alignment
+        mapped_seq = {} # index by human residues, with orthologue position (if there)
+
+        gaps = 0
+        unmapped_ref = {}
+        mismatch = 0
+        aligned_gn = 0
+        aligned_gn_mismatch = 0
+        aligned_gn_mismatch_gap = 0
+
+
+        for i, r in enumerate(aln_human, 1): #loop over alignment to create lookups (track pos)
+            # print(i,r,pw2[1][i-1]) #print alignment for sanity check
+            if r!=aln_ortholog[i-1]:
+                mismatch += 1
+            if r == "-":
+                gaps += 1
+            if r != "-":
+                ref_positions[i] = i-gaps
+                if 'bw' in al[i-gaps-1]['numbers']:
+                    aligned_gn += 1
+                    if aln_ortholog[i-1]=='-':
+                        aligned_gn_mismatch_gap +=1
+                    if r!=aln_ortholog[i-1]:
+                        aligned_gn_mismatch += 1
+                        # print(i,r,pw2[0][1][i-1],al[i-gaps-1]['numbers'],'MisMatch')
+                    else:
+                        pass
+                        # print(i,r,pw2[0][1][i-1],al[i-gaps-1]['numbers'])
+            elif r == "-":
+                ref_positions[i] = None
+
+            if aln_ortholog[i-1]=='-':
+                unmapped_ref[i-gaps] = '-'
+
+        gaps = 0
+        for i, r in enumerate(aln_ortholog, 1): #make second lookup
+            if r == "-":
+                gaps += 1
+            if r != "-":
+                if ref_positions[i]:
+                    mapped_seq[ref_positions[i]] = i-gaps
+
+        # print(counter,human.entry_name,ortholog.entry_name,ortholog.species.common_name,aligned_gn,aligned_gn_mismatch,aligned_gn_mismatch_gap)
+
+        return mapped_seq,aligned_gn_mismatch_gap
