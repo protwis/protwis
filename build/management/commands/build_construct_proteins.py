@@ -57,6 +57,7 @@ class Command(BaseBuild):
             self.filenames = options['filename']
 
         try:
+            self.purge_constructs()
             self.logger.info('CREATING CONSTRUCTS')
             self.prepare_input(options['proc'], self.filenames)
             self.logger.info('COMPLETED CREATING CONSTRUCTS')
@@ -341,51 +342,51 @@ class Command(BaseBuild):
                         cy.save()
                     
                     # create residues
-                    prs = Residue.objects.filter(protein_conformation=ppc).prefetch_related(
-                        'protein_conformation__protein', 'protein_segment', 'generic_number',
-                        'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
-                    updated_sequence = ''
-                    for pr in prs:
-                        if pr.sequence_number not in deletions:
-                            r = Residue()
-                            r.protein_conformation = pc
-                            r.generic_number = pr.generic_number
-                            r.display_generic_number = pr.display_generic_number
-                            r.sequence_number = pr.sequence_number
+                    # prs = Residue.objects.filter(protein_conformation=ppc).prefetch_related(
+                    #     'protein_conformation__protein', 'protein_segment', 'generic_number',
+                    #     'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
+                    # updated_sequence = ''
+                    # for pr in prs:
+                    #     if pr.sequence_number not in deletions:
+                    #         r = Residue()
+                    #         r.protein_conformation = pc
+                    #         r.generic_number = pr.generic_number
+                    #         r.display_generic_number = pr.display_generic_number
+                    #         r.sequence_number = pr.sequence_number
 
-                            # check for split segments
-                            if pr.protein_segment.slug in split_segments:
-                                rsns = split_segments[pr.protein_segment.slug]['start']['sequence_number']
-                                rsne = split_segments[pr.protein_segment.slug]['end']['sequence_number']
-                                if r.sequence_number <= rsns:
-                                    r.protein_segment = split_segments[pr.protein_segment.slug]['start']['segment']
-                                elif r.sequence_number >= rsne:
-                                    r.protein_segment = split_segments[pr.protein_segment.slug]['end']['segment']
-                            else:
-                                r.protein_segment = pr.protein_segment
+                    #         # check for split segments
+                    #         if pr.protein_segment.slug in split_segments:
+                    #             rsns = split_segments[pr.protein_segment.slug]['start']['sequence_number']
+                    #             rsne = split_segments[pr.protein_segment.slug]['end']['sequence_number']
+                    #             if r.sequence_number <= rsns:
+                    #                 r.protein_segment = split_segments[pr.protein_segment.slug]['start']['segment']
+                    #             elif r.sequence_number >= rsne:
+                    #                 r.protein_segment = split_segments[pr.protein_segment.slug]['end']['segment']
+                    #         else:
+                    #             r.protein_segment = pr.protein_segment
 
-                            # amino acid, check for mutations
-                            if r.sequence_number in mutations:
-                                if mutations[r.sequence_number]['wt_res'] == pr.amino_acid:
-                                    r.amino_acid = mutations[r.sequence_number]['mut_res']
-                                else:
-                                    self.logger.error('Mutation {} in construct {} does not match wild-type sequence' \
-                                        + ' of {}'.format(mutations[r.sequence_number]['full'], pc.protein.name,
-                                        ppc.protein.entry_name))
-                            else:
-                                r.amino_acid = pr.amino_acid
+                    #         # amino acid, check for mutations
+                    #         if r.sequence_number in mutations:
+                    #             if mutations[r.sequence_number]['wt_res'] == pr.amino_acid:
+                    #                 r.amino_acid = mutations[r.sequence_number]['mut_res']
+                    #             else:
+                    #                 self.logger.error('Mutation {} in construct {} does not match wild-type sequence' \
+                    #                     + ' of {}'.format(mutations[r.sequence_number]['full'], pc.protein.name,
+                    #                     ppc.protein.entry_name))
+                    #         else:
+                    #             r.amino_acid = pr.amino_acid
 
-                            # save amino acid to updated sequence
-                            updated_sequence += r.amino_acid
+                    #         # save amino acid to updated sequence
+                    #         updated_sequence += r.amino_acid
 
-                            # save residue before populating M2M relations
-                            r.save()
+                    #         # save residue before populating M2M relations
+                    #         r.save()
 
-                            # alternative generic numbers
-                            agns = pr.alternative_generic_numbers.all()
-                            for agn in agns:
-                                r.alternative_generic_numbers.add(agn)
+                    #         # alternative generic numbers
+                    #         agns = pr.alternative_generic_numbers.all()
+                    #         for agn in agns:
+                    #             r.alternative_generic_numbers.add(agn)
 
-                    # update sequence
-                    p.sequence = updated_sequence
+                    # # update sequence
+                    # p.sequence = updated_sequence
                     p.save()
