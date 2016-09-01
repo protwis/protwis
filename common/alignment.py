@@ -918,8 +918,15 @@ class AlignedReferenceTemplate(Alignment):
             template_family = self.reference_protein.family.parent.parent.parent
         self.structures_data = Structure.objects.filter(
             state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
-            template_family, representative='t').order_by('protein_conformation__protein__parent',
-            'resolution')#.distinct('protein_conformation__protein__parent')
+            template_family).order_by('protein_conformation__protein__parent',
+            'resolution').exclude(pdb_code__index__in=["2X72","3ZEV","4U14","2Y01","4A4M","4UG2","4WW3","4BEY","4X1H",
+                                                       "4BEZ","2YCX","4XEE","2YCY","4BUO","4XES","4BV0","4BWB","2ZIY",
+                                                       "4DAJ","3AYM","4ZUD","3AYN","4GBR","3C9L","3C9M","3CAP","3EML",
+                                                       "5D5A","5D5B","3KJ6","3NY8","5DGY","5DHG","5DHH","3NYA","5F8U",
+                                                       "3OAX","1F88","1GZM","1HZX","3OE6","1L9H","3OE8","4PXF","2G87",
+                                                       "3OE9","2HPY","2I35","3PDS","2I36","4RWA","2I37","3PWH","4RWD",
+                                                       "2J4Y","3PXO","2PED","2R4R","2R4S","2VT4","3V2W","3VGA"])#.distinct('protein_conformation__protein__parent')
+        
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
   
