@@ -89,9 +89,9 @@ class FragmentSuperpose(object):
         pdb_struct = None
         #checking for file handle or file name to parse
         if self.pdb_file:
-            pdb_struct = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_file)[0]
+            pdb_struct = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_file)[0]
         elif self.pdb_filename:
-            pdb_struct = PDBParser(PERMISSIVE=True).get_structure('ref', self.pdb_filename)[0]
+            pdb_struct = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_filename)[0]
         else:
             return None
 
@@ -134,12 +134,13 @@ class FragmentSuperpose(object):
                 continue
             super_imposer = Superimposer()
             try:
-                fragment_struct = PDBParser(PERMISSIVE=True).get_structure('alt', StringIO(fragment.get_pdbdata()))[0]
+                fragment_struct = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('alt', StringIO(fragment.get_pdbdata()))[0]
                 super_imposer.set_atoms(atom_sel.get_ref_atoms(), atom_sel.get_alt_atoms())
                 super_imposer.apply(fragment_struct)
                 superposed_frags.append([fragment,fragment_struct])
             except Exception as msg:
                 logger.error('Failed to superpose fragment {!s} with structure {!s}\nDebug message: {!s}'.format(fragment, self.pdb_filename, msg))
+        logger.info("Number of superimposed fragments: {}".format(len(superposed_frags)))
         return superposed_frags
 
 
