@@ -982,12 +982,12 @@ class FragmentSuperpositionResults(TemplateView):
             else:
                 superposed_fragments_repr = frag_sp.superpose_fragments(representative=True, use_similar=True, state=request.POST['state'])
                 superposed_fragments = frag_sp.superpose_fragments(use_similar=True)
-        if superposed_fragments == []:
+        if superposed_fragments == []  and superposed_fragments_repr == []:
             self.message = "No fragments were aligned."
         else:
             io = PDBIO()
             out_stream = BytesIO()
-            zipf = zipfile.ZipFile(out_stream, 'a')
+            zipf = zipfile.ZipFile(out_stream, 'a', zipfile.ZIP_DEFLATED)
             for fragment, pdb_data in superposed_fragments:
                 io.set_structure(pdb_data)
                 tmp = StringIO()
