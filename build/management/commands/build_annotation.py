@@ -65,6 +65,15 @@ class Command(BaseBuild):
 
             self.prepare_input(options['proc'], self.pconfs)
 
+            if (self.check_if_residues()):
+                self.prepare_input(1, self.pconfs)
+
+            if (self.check_if_residues()):
+                self.prepare_input(1, self.pconfs)
+
+            if (self.check_if_residues()):
+                self.prepare_input(1, self.pconfs)
+
             self.logger.info('COMPLETED CREATING RESIDUES')
         except Exception as msg:
             print(msg)
@@ -142,11 +151,6 @@ class Command(BaseBuild):
         #print(pdb_info)
         with open(self.xtal_seg_end_file, 'w') as outfile:
             yaml.dump(pdb_info, outfile)
-        
-            
-
-
-
 
     def generate_bw(self, i, v, aa):
         #return dict
@@ -267,6 +271,17 @@ class Command(BaseBuild):
 
         return gn
 
+    def check_if_residues(self):
+        fail = False
+        for p in self.pconfs:
+            if Residue.objects.filter(protein_conformation=p).count():
+                pass
+            else:
+                print("No residues for ",p)
+                self.logger.error('No residues for parent {}'.format(p))
+                fail = True
+        return fail
+
 
     def main_func(self, positions, iteration):
         self.logger.info('CREATING ANNOTATIONS')
@@ -297,7 +312,7 @@ class Command(BaseBuild):
             missing_x50s = []
             aligned_gn_mismatch_gap = ''
             human_ortholog = ''
-            self.logger.info('DOING {}'.format(p))
+            # self.logger.info('DOING {}'.format(p))
             # if p.protein.residue_numbering_scheme.slug!='gpcrdbc' or p.protein.species.common_name != "Human":
             #     continue
             # if p.protein.species.common_name != "Human":
@@ -305,9 +320,10 @@ class Command(BaseBuild):
             # if p.protein.entry_name !='opsd_todpa':
             #     continue
             # print(p.protein.entry_name)
+            # continue
             # print(counter,p.protein.entry_name)
-            Residue.objects.filter(protein_conformation=p).delete()
-            if Residue.objects.filter(protein_conformation=p).count() and 1==1:
+            # Residue.objects.filter(protein_conformation=p).delete()
+            if Residue.objects.filter(protein_conformation=p).count():
                 # print(counter,entry_name,"already done")
                 continue
             else:
@@ -320,6 +336,8 @@ class Command(BaseBuild):
                             if human_ortholog.entry_name not in lacking:
                                 lacking.append(human_ortholog.entry_name)
                                 print(counter,human_ortholog.entry_name, 'not in excel')
+                                self.logger.error('Human ortholog ({}) of {} has no annotation in excel'.format(human_ortholog.entry_name,entry_name))
+                                continue
                         if human_ortholog.entry_name in proteins:
                             # print(counter,entry_name,'check sequences')
                             ref_positions, aligned_gn_mismatch_gap = self.compare_human_to_orthologue(human_ortholog, p.protein, self.data["NonXtal_SegEnds_Prot#"][human_ortholog.entry_name],counter)
@@ -341,6 +359,7 @@ class Command(BaseBuild):
                                         length_to_e = i_e-i
                                     except:
                                         print("Error in annotation",entry_name,human_ortholog.entry_name)
+                                        self.logger.error('Error in annotation {}<->{} ({})'.format(entry_name,human_ortholog.entry_name,val))
                                         failed = True
                                         break
                                     if i in ref_positions:
@@ -397,9 +416,10 @@ class Command(BaseBuild):
                                 b_and_c[seg].append(number)
                 else: #human but not in proteins
                     print(entry_name," human but no annotation")
+                    self.logger.error('{} is human but has no annotation'.format(entry_name))
                     continue
             #continue
-            self.logger.info('Parsed Seq and B&C {}'.format(entry_name))
+            # self.logger.info('Parsed Seq and B&C {}'.format(entry_name))
 
             pconf = p
 
