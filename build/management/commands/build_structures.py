@@ -88,6 +88,9 @@ class Command(BaseBuild):
     for segment in s:
         segments[segment.slug] = segment
 
+    #Must delete all these first for bulk to work
+    PdbData.objects.all().delete()
+
 
     def handle(self, *args, **options):
         # delete any existing structure data
@@ -228,6 +231,7 @@ class Command(BaseBuild):
         pdblines.append('') #add a line to not "run out"
         rotamer_bulk = []
         rotamer_data_bulk = []
+        residues_bulk = []
         for i,line in enumerate(pdblines):
             if line.startswith('ATOM'): 
                 chain = line[21]
@@ -399,12 +403,12 @@ class Command(BaseBuild):
                                 residue.protein_segment = None
 
                             #print('inserted',residue.sequence_number) #sanity check
-                            residue.save()
-
-                            rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
-                            #rotamer_data_bulk.append(PdbData(pdb=temp))
-                            rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
-                            # rotamer_bulk.append(Rotamer(residue=residue, structure=structure, pdbdata=rotamer_data))
+                            # residue.save()
+                            residues_bulk.append(residue)
+                            #rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
+                            rotamer_data_bulk.append(PdbData(pdb=temp))
+                            # rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
+                            #rotamer_bulk.append(Rotamer(residue=residue, structure=structure, pdbdata=rotamer_data))
 
                         temp = "" #start new line for rotamer
                         check = pdblines[i+1][22:26].strip()
@@ -413,8 +417,15 @@ class Command(BaseBuild):
                 chain = line[21]
                 residue_name = line[17:20].title() #use title to get GLY to Gly so it matches
 
-        #bulked = Rotamer.objects.bulk_create(rotamer_bulk)
-        # bulked = PdbData.objects.bulk_create(rotamer_data_bulk)
+        bulked_res = Residue.objects.bulk_create(residues_bulk)
+        bulked_rot = PdbData.objects.bulk_create(rotamer_data_bulk)
+
+        rotamer_bulk = []
+        for i,res in enumerate(bulked_res):
+            rotamer_bulk.append(Rotamer(residue=res, structure=structure, pdbdata=bulked_rot[i]))
+
+        Rotamer.objects.bulk_create(rotamer_bulk)
+        # 
         # for i in bulked:
         #     print(i.pk)
         # print("WT",structure.protein_conformation.protein.parent.entry_name,"length",len(parent_seq),structure.pdb_code.index,'length',len(seq),len(mapped_seq),'mapped res',str(mismatch_seq+match_seq+aa_mismatch),'pos mismatch',mismatch_seq,'aa mismatch',aa_mismatch,'not mapped',not_matched,' mapping off, matched on pos,aa',matched_by_pos,"generic_segment_changes",generic_change)
@@ -945,7 +956,11 @@ class Command(BaseBuild):
                     
                     try:
                         current = time.time()
-                        runcalculation(sd['pdb'],peptide_chain)
+                        mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
+                        if not os.path.isdir(mypath):
+                            #Only run calcs, if not already in temp
+                            runcalculation(sd['pdb'],peptide_chain)
+
                         parsecalculation(sd['pdb'],False)
                         end = time.time()
                         diff = round(end - current,1)
