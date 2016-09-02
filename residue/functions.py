@@ -199,7 +199,7 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, a
             and settings.REFERENCE_POSITIONS[segment.slug] in ref_positions
             and res_num > residues_before 
             and res_num <= residues_after):
-            numbers = format_generic_numbers(protein_conformation.protein.residue_numbering_scheme, schemes,
+            numbers = format_generic_numbers_old(protein_conformation.protein.residue_numbering_scheme, schemes,
                 sequence_number, settings.REFERENCE_POSITIONS[segment.slug],
                 ref_positions[settings.REFERENCE_POSITIONS[segment.slug]], protein_anomalies)
             
@@ -230,9 +230,13 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, a
                             numbers['equivalent'], numbers['generic_number'],
                             protein_conformation.protein.residue_numbering_scheme))
                 except IntegrityError:
-                    gn_equivalent = ResidueGenericNumberEquivalent.objects.get(
-                        default_generic_number=rvalues['generic_number'],
-                        scheme=protein_conformation.protein.residue_numbering_scheme)
+                    try:
+                        print("Get",rvalues['generic_number'],protein_conformation.protein.residue_numbering_scheme,)
+                        gn_equivalent = ResidueGenericNumberEquivalent.objects.get(
+                            default_generic_number=rvalues['generic_number'],
+                            scheme=protein_conformation.protein.residue_numbering_scheme)
+                    except:
+                        print("failed")
             
             # display generic number
             if 'display_generic_number' in numbers:
@@ -281,121 +285,121 @@ def create_or_update_residues_in_segment(protein_conformation, segment, start, a
         logger.info('Created {} residues for {} of {}'.format(created_residues, segment, protein_conformation))
 
 
-# def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, ref_position, ref_residue,
-#     protein_anomalies):
-#     logger = logging.getLogger('build')
+def format_generic_numbers_old(residue_numbering_scheme, schemes, sequence_number, ref_position, ref_residue,
+    protein_anomalies):
+    logger = logging.getLogger('build')
 
-#     # empty dict for return values
-#     numbers = {}
+    # empty dict for return values
+    numbers = {}
 
-#     # generic index
-#     sgn = ref_position.split("x")
-#     segment_index = sgn[0]
-#     ref_generic_index = int(sgn[1])
-#     generic_index = ref_generic_index - (ref_residue - sequence_number)
+    # generic index
+    sgn = ref_position.split("x")
+    segment_index = sgn[0]
+    ref_generic_index = int(sgn[1])
+    generic_index = ref_generic_index - (ref_residue - sequence_number)
 
-#     # get generic numbers in display residue numbering scheme
-#     if ref_position in schemes[residue_numbering_scheme.slug]['table']:
-#         scheme_ref_position = schemes[residue_numbering_scheme.slug]['table'][ref_position]
-#         sgn = scheme_ref_position.split("x")
-#         scheme_ref_generic_index = int(sgn[1])
-#         scheme_generic_index = scheme_ref_generic_index - (ref_residue - sequence_number)
+    # get generic numbers in display residue numbering scheme
+    if ref_position in schemes[residue_numbering_scheme.slug]['table']:
+        scheme_ref_position = schemes[residue_numbering_scheme.slug]['table'][ref_position]
+        sgn = scheme_ref_position.split("x")
+        scheme_ref_generic_index = int(sgn[1])
+        scheme_generic_index = scheme_ref_generic_index - (ref_residue - sequence_number)
 
-#     # order anomalies if there are more than one
-#     # this is important for counting offset
-#     if len(protein_anomalies) > 1:
-#         protein_anomalies.sort(key=lambda x: x.generic_number.label)
+    # order anomalies if there are more than one
+    # this is important for counting offset
+    if len(protein_anomalies) > 1:
+        protein_anomalies.sort(key=lambda x: x.generic_number.label)
     
-#     # offset by anomaly (anomalies before and after the reference position are handled differently)
-#     offset = 0
-#     prime = ''
+    # offset by anomaly (anomalies before and after the reference position are handled differently)
+    offset = 0
+    prime = ''
     
-#     # reverse anomalies if the residue position is before the reference position
-#     # use numbers from the display scheme for this, because the residue may be on the other side of the reference in
-#     # that scheme
-#     if scheme_generic_index < ref_generic_index:
-#         protein_anomalies.reverse()
+    # reverse anomalies if the residue position is before the reference position
+    # use numbers from the display scheme for this, because the residue may be on the other side of the reference in
+    # that scheme
+    if scheme_generic_index < ref_generic_index:
+        protein_anomalies.reverse()
 
-#     for pa in protein_anomalies:
-#         # generic number without the prime for bulges # FIXME GPCR specific
-#         spgn = pa.generic_number.label.split("x")
-#         pa_generic_index = int(spgn[1][:2])
-#         pa_generic_number = spgn[0] + 'x' + spgn[1][:2]
+    for pa in protein_anomalies:
+        # generic number without the prime for bulges # FIXME GPCR specific
+        spgn = pa.generic_number.label.split("x")
+        pa_generic_index = int(spgn[1][:2])
+        pa_generic_number = spgn[0] + 'x' + spgn[1][:2]
 
-#         # get the anomaly generic number in the display residue numbering scheme
-#         if pa_generic_number in schemes[residue_numbering_scheme.slug]['table']:
-#             scheme_pa_generic_number = schemes[residue_numbering_scheme.slug]['table'][pa_generic_number]
-#             scheme_pa_generic_index = int(scheme_pa_generic_number.split("x")[1])
+        # get the anomaly generic number in the display residue numbering scheme
+        if pa_generic_number in schemes[residue_numbering_scheme.slug]['table']:
+            scheme_pa_generic_number = schemes[residue_numbering_scheme.slug]['table'][pa_generic_number]
+            scheme_pa_generic_index = int(scheme_pa_generic_number.split("x")[1])
         
-#         # add prime to bulges
-#         if pa.anomaly_type.slug == 'bulge' and (
-#             (scheme_pa_generic_index < ref_generic_index and scheme_pa_generic_index == (scheme_generic_index+offset)
-#             or (scheme_pa_generic_index > ref_generic_index
-#             and scheme_pa_generic_index == (scheme_generic_index+offset-1)))):
-#             prime = '1'
+        # add prime to bulges
+        if pa.anomaly_type.slug == 'bulge' and (
+            (scheme_pa_generic_index < ref_generic_index and scheme_pa_generic_index == (scheme_generic_index+offset)
+            or (scheme_pa_generic_index > ref_generic_index
+            and scheme_pa_generic_index == (scheme_generic_index+offset-1)))):
+            prime = '1'
 
-#         # offsets
-#         if (scheme_pa_generic_index > ref_generic_index and (scheme_generic_index+offset) > scheme_pa_generic_index and
-#             pa.anomaly_type.slug == 'bulge'):
-#             offset -= 1
-#         elif (scheme_pa_generic_index > ref_generic_index and (scheme_generic_index+offset) >= scheme_pa_generic_index
-#             and pa.anomaly_type.slug == 'constriction'):
-#             offset += 1
-#         elif (scheme_pa_generic_index < ref_generic_index and (scheme_generic_index+offset) < scheme_pa_generic_index
-#             and pa.anomaly_type.slug == 'bulge'):
-#             offset += 1
-#         elif (scheme_pa_generic_index < ref_generic_index and (scheme_generic_index+offset) <= scheme_pa_generic_index
-#             and pa.anomaly_type.slug == 'constriction'):
-#             offset -= 1
+        # offsets
+        if (scheme_pa_generic_index > ref_generic_index and (scheme_generic_index+offset) > scheme_pa_generic_index and
+            pa.anomaly_type.slug == 'bulge'):
+            offset -= 1
+        elif (scheme_pa_generic_index > ref_generic_index and (scheme_generic_index+offset) >= scheme_pa_generic_index
+            and pa.anomaly_type.slug == 'constriction'):
+            offset += 1
+        elif (scheme_pa_generic_index < ref_generic_index and (scheme_generic_index+offset) < scheme_pa_generic_index
+            and pa.anomaly_type.slug == 'bulge'):
+            offset += 1
+        elif (scheme_pa_generic_index < ref_generic_index and (scheme_generic_index+offset) <= scheme_pa_generic_index
+            and pa.anomaly_type.slug == 'constriction'):
+            offset -= 1
 
-#     # structure corrected index (based on anomalies)
-#     structure_corrected_generic_index = generic_index + offset
-#     generic_number = segment_index + "x" + str(generic_index)
-#     structure_corrected_generic_number = segment_index + "x" + str(structure_corrected_generic_index)
+    # structure corrected index (based on anomalies)
+    structure_corrected_generic_index = generic_index + offset
+    generic_number = segment_index + "x" + str(generic_index)
+    structure_corrected_generic_number = segment_index + "x" + str(structure_corrected_generic_index)
     
-#     # does this generic number exists in the reference tables (relevant to non-fully aligned segments)
-#     if structure_corrected_generic_number in schemes[residue_numbering_scheme.slug]['table']:
-#         numbers['generic_number'] = structure_corrected_generic_number + prime
-#     else:
-#         return numbers
+    # does this generic number exists in the reference tables (relevant to non-fully aligned segments)
+    if structure_corrected_generic_number in schemes[residue_numbering_scheme.slug]['table']:
+        numbers['generic_number'] = structure_corrected_generic_number + prime
+    else:
+        return numbers
 
-#     # update generic numbers equivalents
-#     if 'table' in schemes[residue_numbering_scheme.slug]:
-#         if structure_corrected_generic_number in schemes[residue_numbering_scheme.slug]['table']:
-#             equivalent = schemes[residue_numbering_scheme.slug]['table'][structure_corrected_generic_number]
-#             numbers['equivalent'] = equivalent + prime
-#         else:
-#             logger.error('{} equivalent for number {} not found, using {}'.format(residue_numbering_scheme.slug,
-#                 structure_corrected_generic_number, structure_corrected_generic_number))
+    # update generic numbers equivalents
+    if 'table' in schemes[residue_numbering_scheme.slug]:
+        if structure_corrected_generic_number in schemes[residue_numbering_scheme.slug]['table']:
+            equivalent = schemes[residue_numbering_scheme.slug]['table'][structure_corrected_generic_number]
+            numbers['equivalent'] = equivalent + prime
+        else:
+            logger.error('{} equivalent for number {} not found, using {}'.format(residue_numbering_scheme.slug,
+                structure_corrected_generic_number, structure_corrected_generic_number))
 
-#     # alternative schemes
-#     numbers['alternative_generic_numbers'] = {}
-#     for scheme, s in schemes.items():
-#         if 'table' in s:
-#             if 'parent' in s:
-#                 if generic_number in schemes[s['parent']]['table']:
-#                     seq_based_num = schemes[s['parent']]['table'][generic_number]
-#                 else:
-#                     logger.warning('{} equivalent for number {} not found, using {}'.format(s['parent'],
-#                         generic_number, generic_number))
-#                     continue
+    # alternative schemes
+    numbers['alternative_generic_numbers'] = {}
+    for scheme, s in schemes.items():
+        if 'table' in s:
+            if 'parent' in s:
+                if generic_number in schemes[s['parent']]['table']:
+                    seq_based_num = schemes[s['parent']]['table'][generic_number]
+                else:
+                    logger.warning('{} equivalent for number {} not found, using {}'.format(s['parent'],
+                        generic_number, generic_number))
+                    continue
                 
-#                 if structure_corrected_generic_number in s['table']:
-#                     str_based_num = s['table'][structure_corrected_generic_number] + prime
-#                 else:
-#                     logger.warning('{} equivalent for number {} not found, using {}'.format(scheme,
-#                         structure_corrected_generic_number, structure_corrected_generic_number))
-#                     continue
+                if structure_corrected_generic_number in s['table']:
+                    str_based_num = s['table'][structure_corrected_generic_number] + prime
+                else:
+                    logger.warning('{} equivalent for number {} not found, using {}'.format(scheme,
+                        structure_corrected_generic_number, structure_corrected_generic_number))
+                    continue
                 
-#                 split_str_based_num = str_based_num.split('x')
-#                 numbers['alternative_generic_numbers'][scheme] = seq_based_num + 'x' + split_str_based_num[1]
-#             elif generic_number in s['table']:
-#                 numbers['alternative_generic_numbers'][scheme] = s['table'][generic_number]
+                split_str_based_num = str_based_num.split('x')
+                numbers['alternative_generic_numbers'][scheme] = seq_based_num + 'x' + split_str_based_num[1]
+            elif generic_number in s['table']:
+                numbers['alternative_generic_numbers'][scheme] = s['table'][generic_number]
 
-#             if scheme == residue_numbering_scheme.slug:
-#                 numbers['display_generic_number'] = numbers['alternative_generic_numbers'][scheme]
+            if scheme == residue_numbering_scheme.slug:
+                numbers['display_generic_number'] = numbers['alternative_generic_numbers'][scheme]
 
-#     return numbers
+    return numbers
 
 def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, generic_number, bw_number,b_and_c):
     logger = logging.getLogger('build')

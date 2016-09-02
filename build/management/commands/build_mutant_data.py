@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
+from django.db import IntegrityError
 from django.utils.text import slugify
 
 from mutation.models import *
@@ -331,7 +332,12 @@ class Command(BaseCommand):
                         l_ref.ambigious_alias = False
                         l_ref.save()
                         l_ref.load_by_name(r['exp_mu_ligand_ref'])
-                        l_ref.save()
+                        try:
+                            l_ref.save()
+                        except IntegrityError:
+                            l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False)
+                            print("error failing ligand, duplicate?")
+                            # logger.error("FAILED SAVING LIGAND, duplicate?")
                     else:
                         l_ref = None
 

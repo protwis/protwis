@@ -8,7 +8,7 @@ from django.db import transaction
 from build.management.commands.base_build import Command as BaseBuild
 from residue.models import Residue
 from residue.functions import *
-from protein.models import Protein, ProteinConformation, ProteinSegment, ProteinFamily
+from protein.models import Protein, ProteinConformation, ProteinSegment, ProteinFamily, ProteinAnomaly, ProteinAnomalyType
 
 from Bio import pairwise2
 from Bio.SubsMat import MatrixInfo as matlist
@@ -267,6 +267,91 @@ class Command(BaseBuild):
 
         return gn
 
+    def assign_protein_anomalities(self, pconf, b_and_c):
+        # protein anomalies
+        scheme = pconf.protein.residue_numbering_scheme
+        sd = {}
+
+        for seg,values in b_and_c.items():
+            segment = "TM"+seg
+            if seg=='23':
+                segment = "ECL1"
+            for gn in values:
+                if len(gn)>2: #bulge
+                    if 'bulges' not in sd:
+                        sd['bulges'] = {}
+                    if segment not in sd['bulges']:
+                        sd['bulges'][segment] = [seg + "x" + gn]
+                    else:
+                        sd['bulges'][segment].append(seg + "x" + gn)
+                else:
+                    if 'constrictions' not in sd:
+                        sd['constrictions'] = {}
+                    if segment not in sd['constrictions']:
+                        sd['constrictions'][segment] = [seg + "x" + gn]
+                    else:
+                        sd['constrictions'][segment].append(seg + "x" + gn)
+        if 'bulges' in sd and sd['bulges']:
+            pa_slug = 'bulge'
+            try:
+                pab, created = ProteinAnomalyType.objects.get_or_create(slug=pa_slug, defaults={
+                    'name': 'Bulge'})
+                if created:
+                    self.logger.info('Created protein anomaly type {}'.format(pab))
+            except IntegrityError:
+                pab = ProteinAnomalyType.objects.get(slug=pa_slug)
+            
+            for segment, bulges in sd['bulges'].items():
+                for bulge in bulges:
+                    try:
+                        gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge,
+                            scheme=scheme, defaults={'protein_segment': ProteinSegment.objects.get(
+                            slug=segment)})
+                        if created:
+                            self.logger.info('Created generic number {}'.format(gn))
+                    except IntegrityError:
+                        gn =  ResidueGenericNumber.objects.get(label=bulge, scheme=scheme)
+
+                    try:
+                        pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pab,
+                            generic_number=gn)
+                        if created:
+                            self.logger.info('Created protein anomaly {}'.format(pa))
+                    except IntegrityError:
+                        pa, created = ProteinAnomaly.objects.get(anomaly_type=pab, generic_number=gn)
+
+                    pconf.protein_anomalies.add(pa)
+        if 'constrictions' in sd and sd['constrictions']:
+            pa_slug = 'constriction'
+            try:
+                pac, created = ProteinAnomalyType.objects.get_or_create(slug=pa_slug, defaults={
+                    'name': 'Constriction'})
+                if created:
+                    self.logger.info('Created protein anomaly type {}'.format(pac))
+            except IntegrityError:
+                pac = ProteinAnomalyType.objects.get(slug=pa_slug)
+            
+            for segment, constrictions in sd['constrictions'].items():
+                for constriction in constrictions:
+                    try:
+                        gn, created = ResidueGenericNumber.objects.get_or_create(label=constriction,
+                            scheme=scheme, defaults={'protein_segment': ProteinSegment.objects.get(
+                            slug=segment)})
+                        if created:
+                            self.logger.info('Created generic number {}'.format(gn))
+                    except IntegrityError:
+                        gn =  ResidueGenericNumber.objects.get(label=constriction, scheme=scheme)
+
+                    try:
+                        pa, created = ProteinAnomaly.objects.get_or_create(anomaly_type=pac,
+                            generic_number=gn)
+                        if created:
+                            self.logger.info('Created protein anomaly {}'.format(pa))
+                    except IntegrityError:
+                        pa, created = ProteinAnomaly.objects.get(anomaly_type=pac, generic_number=gn)
+
+                    pconf.protein_anomalies.add(pa)
+
 
     def main_func(self, positions, iteration):
         self.logger.info('CREATING ANNOTATIONS')
@@ -400,8 +485,8 @@ class Command(BaseBuild):
                     continue
             #continue
             self.logger.info('Parsed Seq and B&C {}'.format(entry_name))
-
             pconf = p
+            self.assign_protein_anomalities(pconf,b_and_c)
 
             al = []
             bulk = []
