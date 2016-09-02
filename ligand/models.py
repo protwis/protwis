@@ -211,7 +211,11 @@ class Ligand(models.Model):
         if pubchem_name.lower()!=name.lower(): #if not canonical name
             logger.info("Updating canonical flag to Pubchem. PubChem canonical: "+pubchem_name +". DB canonical: "+ name)
             self.canonical = False
-            self.save()
+            try:
+                self.save()
+            except IntegrityError:
+                self = Ligand.objects.get(name=name, canonical=False)
+                logger.error("FAILED SAVING LIGAND, duplicate?")
             canonical_entry = Ligand.objects.filter(name=pubchem_name, properities__inchikey=pubchem_inchikey) #NEED TO CHECK BY INCHI KEY - SOME CANONICAL NAMES HAVE MANY ICHIKEYS (DOXEPIN)
             if canonical_entry.exists():
                 return
