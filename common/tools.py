@@ -55,7 +55,7 @@ def fetch_from_web_api(url, index, cache_dir=False):
     full_url = Template(url).substitute(index=quote(str(index), safe=''))
     logger.info('Fetching {}'.format(full_url))
     tries = 0
-    max_tries = 5
+    max_tries = 2 #used to be 5
     while tries < max_tries:
         if tries > 0:
             logger.warning('Failed fetching {}, retrying'.format(full_url))
