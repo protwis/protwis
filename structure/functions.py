@@ -323,7 +323,7 @@ class BackboneSelector():
         self.alt_atoms = []
         
         self.ref_atoms = self.select_ref_atoms(fragment, ref_pdbio_struct, use_similar)
-        self.alt_atoms = self.select_alt_atoms(PDBParser(PERMISSIVE=True).get_structure('ref', StringIO(str(fragment.rotamer.pdbdata)))[0])
+        self.alt_atoms = self.select_alt_atoms(PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', StringIO(str(fragment.rotamer.pdbdata)))[0])
         
         
     def select_ref_atoms (self, fragment, ref_pdbio_struct, use_similar=False):
