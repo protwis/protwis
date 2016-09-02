@@ -925,7 +925,9 @@ class AlignedReferenceTemplate(Alignment):
                                                        "5D5A","5D5B","3KJ6","3NY8","5DGY","5DHG","5DHH","3NYA","5F8U",
                                                        "3OAX","1F88","1GZM","1HZX","3OE6","1L9H","3OE8","4PXF","2G87",
                                                        "3OE9","2HPY","2I35","3PDS","2I36","4RWA","2I37","3PWH","4RWD",
-                                                       "2J4Y","3PXO","2PED","2R4R","2R4S","2VT4","3V2W","3VGA"])#.distinct('protein_conformation__protein__parent')
+                                                       "2J4Y","3PXO","2PED","2R4R","2R4S","2VT4","3V2W","3VGA",
+                                            # temp exclusion
+                                                       "4BVN","4AMJ","5A8E"])#.distinct('protein_conformation__protein__parent')
         
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])

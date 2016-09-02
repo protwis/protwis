@@ -251,14 +251,13 @@ class HomologyModeling(object):
                             pref_chain = str(self.main_structure.preferred_chain)
                             if len(pref_chain)>1:
                                 pref_chain = pref_chain[0]
-                            pdb_re = re.search('(HETATM[0-9\sA-Z]{11})([A-Z0-9]{3})(\s+)(\d+)([\s0-9.A-Z]+)',line)
+                            pdb_re = re.search('(HETATM[0-9\sA-Z]{11})([A-Z0-9\s]{3})(\s+)(\d+)([\s0-9.A-Z-]+)',line)
                             if first_hetatm==False:
                                 prev_hetnum = int(pdb_re.group(4))
                                 out_list.append(pdb_re.group(1)+pdb_re.group(2)+pdb_re.group(3)+str(int(pos_list[i])+1)+pdb_re.group(5))
                                 first_hetatm = True
                                 num = int(pos_list[i])+1
                             else:
-                                
                                 if int(pdb_re.group(4))!=prev_hetnum:
                                     out_list.append(pdb_re.group(1)+pdb_re.group(2)+pdb_re.group(3)+str(num+1)+pdb_re.group(5))
                                     prev_hetnum+=1
@@ -1067,6 +1066,7 @@ class HomologyModeling(object):
 
         # Adding HETATMs when revising xtal
         hetatm_count = 0
+        water_count = 0
         if self.reference_protein==self.main_structure.protein_conformation.protein.parent:
             pdb = PDB.PDBList()
             pdb.retrieve_pdb_file(str(self.main_structure),pdir='./')
@@ -1080,11 +1080,13 @@ class HomologyModeling(object):
                         if len(pref_chain)>1:
                             pref_chain = pref_chain[0]
                         try:
-                            pdb_re = re.search('(HETATM[0-9\sA-Z]{{11}})([A-Z0-9]{{3}})\s({pref})([0-9]{{4}})'.format(pref=pref_chain), line)
+                            pdb_re = re.search('(HETATM[0-9\sA-Z]{{11}})([A-Z0-9\s]{{3}})\s({pref})([0-9\s]{{4}})'.format(pref=pref_chain), line)
                             if pdb_re.group(2)!='HOH':
                                 if hetatm!=pdb_re.group(4):
                                     hetatm_count+=1
                                     hetatm = pdb_re.group(4)
+                            else:
+                                water_count+=1
                             if pdb_re!=None:                                
                                 model.write(line)
                         except:
@@ -1094,17 +1096,19 @@ class HomologyModeling(object):
                 model.write('END')
 
         # Model with MODELLER
-        self.create_PIR_file(a.reference_dict, a.template_dict, path+self.uniprot_id+"_post.pdb", hetatm_count)
+        self.create_PIR_file(a.reference_dict, a.template_dict, path+self.uniprot_id+"_post.pdb", hetatm_count, water_count)
 #        print(self.main_structure)
 #        pprint.pprint(a.reference_dict)
 #        pprint.pprint(a.template_dict)
 #        pprint.pprint(main_pdb_array)
+#        print(hetatm_count,water_count)
 #        raise AssertionError()
+        
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
                           self.uniprot_id, 1, "{}_{}_model.pdb".format(self.reference_entry_name,self.state), 
                           atom_dict=trimmed_res_nums, helix_restraints=helix_restraints)
 
-        os.remove(path+self.uniprot_id+"_post.pdb")
+#        os.remove(path+self.uniprot_id+"_post.pdb")
         
         # stat file
 #        with open('./structure/homology_models/{}_{}/{}.stat.txt'.format(self.reference_entry_name, self.state, 
@@ -1406,7 +1410,7 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
                 f.write("END\n")
         return trimmed_resi_nums, helix_restraints
                     
-    def create_PIR_file(self, reference_dict, template_dict, template_file, hetatm_count):
+    def create_PIR_file(self, reference_dict, template_dict, template_file, hetatm_count, water_count):
         ''' Create PIR file from reference and template alignment (AlignedReferenceAndTemplate).
         
             @param ref_temp_alignment: AlignedReferenceAndTemplate
@@ -1442,6 +1446,9 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
         for i in range(hetatm_count):
             ref_sequence+='.'
             temp_sequence+='.'
+        for i in range(water_count):
+            ref_sequence+='w'
+            temp_sequence+='w'
         with open("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", 'w+') as output_file:
             template="""
 >P1;{temp_file}
@@ -1475,6 +1482,7 @@ sequence:{uniprot}::::::::
         env = environ(rand_seed=80851) #!!random number generator
         if self.reference_protein==self.main_structure.protein_conformation.protein.parent:
             env.io.hetatm = True
+            env.io.water = True
         if atom_dict==None:
             a = automodel(env, alnfile = pir_file, knowns = template, sequence = reference, 
                           assess_methods=(assess.DOPE))
@@ -2011,6 +2019,7 @@ class Loops(object):
                 except:
                     pass
             if (self.loop_label=='ECL2' and 'ECL2_1' not in self.loop_template_structures) or self.loop_label!='ECL2' or superpose_modded_loop==True:
+                print(self.loop_label,self.loop_template_structures)
                 for template in self.loop_template_structures:
                     output = OrderedDict()
                     try:
@@ -2104,6 +2113,7 @@ class Loops(object):
                                                              sequence_number__in=[b_num,b_num-1,b_num-2,b_num-3])
                             after4 = Residue.objects.filter(protein_conformation=template.protein_conformation, 
                                                              sequence_number__in=[a_num,a_num+1,a_num+2,a_num+3])
+                            print(template)
                             if superpose_modded_loop==True and self.aligned==True:
                                 
                                 loop_residues = Residue.objects.filter(protein_conformation=template.protein_conformation,
@@ -2888,7 +2898,15 @@ class GPCRDBParsingPDB(object):
         gn_array = []
         residue_array = []
         pdb_struct = PDB.PDBParser(QUIET=True).get_structure('structure', io)[0]
-
+        
+        residues = Residue.objects.filter(protein_conformation=structure.protein_conformation)
+        gn_list = []
+        for i in residues:
+            try:
+                gn_list.append(ggn(i.display_generic_number.label).replace('x','.'))
+            except:
+                pass
+        
         assign_gn = as_gn.GenericNumbering(structure=pdb_struct)
         pdb_struct = assign_gn.assign_generic_numbers()
         
@@ -2901,13 +2919,16 @@ class GPCRDBParsingPDB(object):
                         gn = gn+'0'
                     if gn[0]=='-':
                         gn = gn[1:]+'1'
-                    gn_array.append(gn)
-                    residue_array.append(residue.get_list())
+                    if gn in gn_list:
+                        gn_array.append(gn)
+                        residue_array.append(residue.get_list())
+                    else:
+                        raise Exception()
                 else:
-                    gn_array.append(str(residue.get_id()[1]))
-                    residue_array.append(residue.get_list())
+                    raise Exception()
             except:
-                logging.warning("Unable to parse {} in {}".format(residue, structure))
+                gn_array.append(str(residue.get_id()[1]))
+                residue_array.append(residue.get_list())
         output = OrderedDict()
         for num, label in self.segment_coding.items():
             output[label] = OrderedDict()
