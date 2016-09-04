@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.utils.text import slugify
+from django.core.cache import cache
 
 import os
 import yaml
@@ -9,8 +10,12 @@ from urllib.parse import quote
 from urllib.request import urlopen
 from urllib.error import HTTPError
 import json
+import gzip
+from io import BytesIO
 from string import Template
 from Bio import Entrez, Medline
+import xml.etree.ElementTree as etree 
+
 
 
 def save_to_cache(path, file_id, data):
@@ -37,7 +42,7 @@ def create_cache_dirs(path):
         intermediate_path = os.sep.join([intermediate_path, directory])
         os.chmod(intermediate_path, 0o777)
 
-def fetch_from_web_api(url, index, cache_dir=False):
+def fetch_from_web_api(url, index, cache_dir=False, xml=False):
     logger = logging.getLogger('build')
 
     # slugify the index for the cache filename (some indices have symbols not allowed in file names (e.g. /))
@@ -46,7 +51,8 @@ def fetch_from_web_api(url, index, cache_dir=False):
     
     # try fetching from cache
     if cache_dir:
-        d = fetch_from_cache(cache_dir, index_slug)
+        d = cache.get(cache_file_path)
+        # d = fetch_from_cache(cache_dir, index_slug)
         if d:
             logger.info('Fetched {} from cache'.format(cache_file_path))
             return d
@@ -55,14 +61,22 @@ def fetch_from_web_api(url, index, cache_dir=False):
     full_url = Template(url).substitute(index=quote(str(index), safe=''))
     logger.info('Fetching {}'.format(full_url))
     tries = 0
-    max_tries = 2 #used to be 5
+    max_tries = 5
     while tries < max_tries:
         if tries > 0:
             logger.warning('Failed fetching {}, retrying'.format(full_url))
         
         try:
             req = urlopen(full_url)
-            d = json.loads(req.read().decode('UTF-8'))
+            if full_url[-2:]=='gz' and xml:
+                buf = BytesIO( req.read())
+                f = gzip.GzipFile(fileobj=buf)
+                data = f.read()
+                d = etree.fromstring(data)
+            elif xml:
+                d = etree.fromstring(req.read().decode('UTF-8'))
+            else:
+                d = json.loads(req.read().decode('UTF-8'))
         except HTTPError as e:
             tries += 1
             if e.code == 404:
@@ -73,7 +87,8 @@ def fetch_from_web_api(url, index, cache_dir=False):
         else:
             # save to cache
             if cache_dir:
-                save_to_cache(cache_dir, index_slug, d)
+                # save_to_cache(cache_dir, index_slug, d)
+                cache.set(cache_file_path, d, 60*60*24*7) #7 days
                 logger.info('Saved entry for {} in cache'.format(cache_file_path))
             return d
     
