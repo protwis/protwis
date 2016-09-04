@@ -389,17 +389,20 @@ class Command(BaseBuild):
                                 if len(entry)<3:
                                     continue
                                 if entry[1]=='x' or entry[2]=='x':
-                                    if gn!='' and gn!="":
-                                        seg, number = entry.split("x")
-                                        if seg not in b_and_c:
-                                            b_and_c[seg] = []
-                                        b_and_c[seg].append(number)
+                                    if gn!="" and gn!='-':
+                                        if gn==entry:
+                                            seg, number = entry.split("x")
+                                            if seg not in b_and_c:
+                                                b_and_c[seg] = []
+                                            b_and_c[seg].append(number)
+                                        else:
+                                            print('Something off with b_and_c for',human_ortholog.entry_name,'gn',gn,'entry',entry)
                     else:
                         pass
                         # print(counter,entry_name,"not done and no human")
                     #continue
                 elif entry_name in proteins:
-                    # print(entry_name,"not done but ready")
+                    # print(entry_name,"not done but ready")    
                     v = self.data["NonXtal_SegEnds_Prot#"][entry_name]
                     # if counter>20:
                     #     break
@@ -409,13 +412,16 @@ class Command(BaseBuild):
                         if len(entry)<3:
                             continue
                         if entry[1]=='x' or entry[2]=='x':
-                            if gn!='' and gn!="":
-                                seg, number = entry.split("x")
-                                if seg not in b_and_c:
-                                    b_and_c[seg] = []
-                                b_and_c[seg].append(number)
+                            if gn!="" and gn!='-':
+                                if gn==entry:
+                                    seg, number = entry.split("x")
+                                    if seg not in b_and_c:
+                                        b_and_c[seg] = []
+                                    b_and_c[seg].append(number)
+                                else:
+                                    print('Something off with b_and_c for',entry_name,'gn',gn,'entry',entry)
                 else: #human but not in proteins
-                    print(entry_name," human but no annotation")
+                    # print(entry_name," human but no annotation")
                     self.logger.error('{} is human but has no annotation'.format(entry_name))
                     continue
             #continue
