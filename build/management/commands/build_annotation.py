@@ -335,9 +335,9 @@ class Command(BaseBuild):
                         if human_ortholog.entry_name not in proteins:
                             if human_ortholog.entry_name not in lacking:
                                 lacking.append(human_ortholog.entry_name)
-                                print(counter,human_ortholog.entry_name, 'not in excel')
-                                self.logger.error('Human ortholog ({}) of {} has no annotation in excel'.format(human_ortholog.entry_name,entry_name))
-                                continue
+                            print(counter,human_ortholog.entry_name, 'not in excel')
+                            self.logger.error('Human ortholog ({}) of {} has no annotation in excel'.format(human_ortholog.entry_name,entry_name))
+                            continue
                         if human_ortholog.entry_name in proteins:
                             # print(counter,entry_name,'check sequences')
                             ref_positions, aligned_gn_mismatch_gap = self.compare_human_to_orthologue(human_ortholog, p.protein, self.data["NonXtal_SegEnds_Prot#"][human_ortholog.entry_name],counter)
@@ -420,7 +420,8 @@ class Command(BaseBuild):
                     continue
             #continue
             # self.logger.info('Parsed Seq and B&C {}'.format(entry_name))
-
+            # print(counter,entry_name,"make residues")
+            # continue
             pconf = p
 
             al = []
@@ -428,6 +429,10 @@ class Command(BaseBuild):
             bulk_alt = []
 
             current = time.time()
+
+            if len(s)<10:
+                print(counter,entry_name,"Something wrong with sequence")
+
             for i,aa in enumerate(s, start=1):
                 res = self.generate_bw(i,v,aa)
                 # print(res)
@@ -468,6 +473,7 @@ class Command(BaseBuild):
 
         v = self.data["NonXtal_SegEnds_Prot#"][human.entry_name]
         s = self.data["Seqs"][human.entry_name]['Sequence']
+        human_seq = self.data["Seqs"][human.entry_name]['Sequence']
         b_and_c = {}
         for entry,gn in self.data["NonXtal_Bulges_Constr_GPCRdb#"][human.entry_name].items():
             if len(entry)<3:
@@ -529,8 +535,8 @@ class Command(BaseBuild):
 
        # pw2 = pairwise2.align.localms(human.sequence, ortholog.sequence, 2, 0, -2, -.5)
 
-        if ortholog.entry_name not in self.pw_aln_error and human.entry_name not in self.pw_aln_error:
-            pw2 = pairwise2.align.globalds(human.sequence, ortholog.sequence, matrix, gap_open, gap_extend)
+        if ortholog.entry_name not in self.pw_aln_error and human.entry_name not in self.pw_aln_error and 1==2:
+            pw2 = pairwise2.align.globalds(human_seq, ortholog.sequence, matrix, gap_open, gap_extend)
             aln_human = pw2[0][0]
             aln_ortholog = pw2[0][1]
         else:
@@ -538,12 +544,12 @@ class Command(BaseBuild):
             seq_filename = "/tmp/" + ortholog.entry_name + ".fa"
             with open(seq_filename, 'w') as seq_file:
                 seq_file.write("> ref\n")
-                seq_file.write(human.sequence + "\n")
+                seq_file.write(human_seq + "\n")
                 seq_file.write("> seq\n")
                 seq_file.write(ortholog.sequence + "\n")
 
             try:
-                ali_filename = "/tmp/out.fa"
+                ali_filename = "/tmp/"+ortholog.entry_name +"_out.fa"
                 acmd = ClustalOmegaCommandline(infile=seq_filename, outfile=ali_filename, force=True)
                 stdout, stderr = acmd()
                 pw2 = AlignIO.read(ali_filename, "fasta")
@@ -568,23 +574,26 @@ class Command(BaseBuild):
 
 
         for i, r in enumerate(aln_human, 1): #loop over alignment to create lookups (track pos)
-            # print(i,r,pw2[1][i-1]) #print alignment for sanity check
+           #  print(i,r,pw2[1][i-1]) #print alignment for sanity check
             if r!=aln_ortholog[i-1]:
                 mismatch += 1
             if r == "-":
                 gaps += 1
             if r != "-":
                 ref_positions[i] = i-gaps
-                if 'bw' in al[i-gaps-1]['numbers']:
-                    aligned_gn += 1
-                    if aln_ortholog[i-1]=='-':
-                        aligned_gn_mismatch_gap +=1
-                    if r!=aln_ortholog[i-1]:
-                        aligned_gn_mismatch += 1
-                        # print(i,r,pw2[0][1][i-1],al[i-gaps-1]['numbers'],'MisMatch')
-                    else:
-                        pass
-                        # print(i,r,pw2[0][1][i-1],al[i-gaps-1]['numbers'])
+                if len(al)>=(i-gaps):
+                    if 'bw' in al[i-gaps-1]['numbers']:
+                        aligned_gn += 1
+                        if aln_ortholog[i-1]=='-':
+                            aligned_gn_mismatch_gap +=1
+                        if r!=aln_ortholog[i-1]:
+                            aligned_gn_mismatch += 1
+                            # print(i,r,pw2[0][1][i-1],al[i-gaps-1]['numbers'],'MisMatch')
+                        else:
+                            pass
+                            # print(i,r,pw2[0][1][i-1],al[i-gaps-1]['numbers'])
+                else:
+                    print('odd error in alignment',human.entry_name,ortholog.entry_name,len(human_seq),len(al),i-gaps)
             elif r == "-":
                 ref_positions[i] = None
 
