@@ -567,3 +567,41 @@ def format_anomalities(b_and_c,number):
         gn = str(int(number))+"1"
 
     return gn
+
+def ggn(gn):
+    ''' Converts display generic number to generic number.
+    '''
+    return gn.split('.')[0]+'x'+gn.split('x')[1]
+
+def dgn(gn, protein_conformation):
+    ''' Converts generic number to display generic number by trying all possibilities.
+    '''
+    tm, num = gn.split('x')
+    if len(num)==3:
+        num1 = num[:2]
+    else:
+        num1 = num
+    try:
+        n = Residue.objects.get(protein_conformation=protein_conformation, 
+                                display_generic_number__label=tm+'.'+num1+'x'+num)
+    except:
+        p = 1
+        plus = False
+        while plus==False and p<4:
+            try:
+                n = Residue.objects.get(protein_conformation=protein_conformation, 
+                                        display_generic_number__label=tm+'.'+str(int(num1)+p)+'x'+num)
+                plus = True
+            except:
+                p+=1
+        if plus==False:
+            m = -1
+            minus = False
+            while minus==False and m>-4:
+                try:
+                    n = Residue.objects.get(protein_conformation=protein_conformation, 
+                                            display_generic_number__label=tm+'.'+str(int(num1)+m)+'x'+num)
+                    minus = True
+                except:
+                    m-=1
+    return n.display_generic_number.label
