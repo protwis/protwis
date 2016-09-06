@@ -957,9 +957,9 @@ class Command(BaseBuild):
                     try:
                         current = time.time()
                         mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
-                        if not os.path.isdir(mypath):
-                            #Only run calcs, if not already in temp
-                            runcalculation(sd['pdb'],peptide_chain)
+                        # if not os.path.isdir(mypath):
+                        #     #Only run calcs, if not already in temp
+                        runcalculation(sd['pdb'],peptide_chain)
 
                         parsecalculation(sd['pdb'],False)
                         end = time.time()
