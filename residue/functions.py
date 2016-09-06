@@ -460,6 +460,7 @@ def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, g
                     scheme_anomalies.append(str(scheme_pa_generic_index))
                     #print("scheme_pa_generic_index", scheme_pa_generic_index)
                 #print(seq_based_num)
+
                 seq_based_num = seq_based_num.replace("x",".") #fix when lookup fails and it uses x based number
                 scheme_generic_index = seq_based_num.split(".")[1]
                 str_based_num = format_anomalities(scheme_anomalies,scheme_generic_index)
@@ -475,7 +476,8 @@ def format_generic_numbers(residue_numbering_scheme, schemes, sequence_number, g
                 # equivalent = schemes[residue_numbering_scheme.slug]['table'][structure_corrected_generic_number]
                 numbers['equivalent'] = segment_index + "x" + str_based_num
 
-    # print(numbers)
+    # if numbers['generic_number'] in ['5x40','5x41','5x42','5x411','5x461','5x43','5x44','5x45','5x46','5x47','5x48','5x49','5x50']:
+    #     print(numbers)
     return numbers
 
 def align_protein_to_reference(protein, tpl_ref_pos_file_path, ref_protein):
@@ -539,16 +541,20 @@ def generic_number_within_segment_borders(generic_number, list_of_tpl_generic_nu
 def format_anomalities(b_and_c,number):
     offset = 0
     bulge = False
-    for bc in b_and_c:
+
+    bcs = sorted(b_and_c)
+    if int(number)<50:
+        bcs = sorted(bcs, reverse=True)
+    for bc in bcs:
         if len(bc)>2: #bulge
             # print(bc[0:2],number)
             if int(bc[0:2])<50 and int(number)+offset<int(bc[0:2]): #before x50 and before bulge, do smt
                 offset += 1 #eg if 5x461, then 5.46 becomes 5x461, 5.45 becomes 5x46
             elif int(bc[0:2])<50 and int(number)+offset==int(bc[0:2]): #before x50 and is bulge, do smt
                 bulge = True # eg if 5x461, then 5.46 becomes 5x461
-            elif int(bc[0:2])>50 and int(number)+offset>int(bc[0:2])+1: #after x50 and after bulge, do smt
+            elif int(bc[0:2])>=50 and int(number)+offset>int(bc[0:2])+1: #after x50 and after bulge, do smt
                 offset -= 1 #eg if 2x551, then 2.56 becomes 2x551, 5.57 becomes 5x56
-            elif int(bc[0:2])>50 and int(number)+offset==int(bc[0:2])+1: #after x50 and 1 after bulge, do smt
+            elif int(bc[0:2])>=50 and int(number)+offset==int(bc[0:2])+1: #after x50 and 1 after bulge, do smt
                 bulge = True # eg if 2x551, then 2.56 becomes 2x551
 
         else: #2 numbers, it's a constriction
@@ -559,11 +565,11 @@ def format_anomalities(b_and_c,number):
 
     if bulge!=True:
         gn = str(int(number)+offset)
-    elif int(bc[0:2])<50:
+    elif int(number)<50:
         gn = str(int(number)+offset)+"1"
-    elif int(bc[0:2])>50:
+    elif int(number)>=50:
         gn = str(int(number)-1+offset)+"1"
-    elif int(bc[0:2])==50:
+    elif int(number)==50:
         print('BULGE IN x50',number,offset)
         gn = str(int(number))+"1"
 

@@ -68,11 +68,11 @@ class Command(BaseBuild):
             if (self.check_if_residues()):
                 self.prepare_input(1, self.pconfs)
 
-            if (self.check_if_residues()):
-                self.prepare_input(1, self.pconfs)
+            # if (self.check_if_residues()):
+            #     self.prepare_input(1, self.pconfs)
 
-            if (self.check_if_residues()):
-                self.prepare_input(1, self.pconfs)
+            # if (self.check_if_residues()):
+            #     self.prepare_input(1, self.pconfs)
 
             self.logger.info('COMPLETED CREATING RESIDUES')
         except Exception as msg:
@@ -116,7 +116,7 @@ class Command(BaseBuild):
                     # print("no key!")
                     continue
 
-                d[worksheet_name][key] = {}
+                d[worksheet_name][key] = OrderedDict()
                 temprow = {}
                 for curr_cell in range(num_cells):
                     # cell_type = worksheet.cell_type(curr_row, curr_cell)
@@ -225,7 +225,7 @@ class Command(BaseBuild):
             a['s'] = 'TM7'
             a['numbers']['bw'] = '7.'+str(50+i-int(v['7x']))
         elif v['8x']!="-":
-            if i<=int(v['8b']):
+            if i<int(v['8b']):
                 a['s'] = 'ICL4'
             elif i<=int(v['8e']):
                 a['s'] = 'H8'
@@ -244,16 +244,19 @@ class Command(BaseBuild):
         offset = 0
         bulge = False
         if seg in b_and_c:
-            for bc in b_and_c[seg]:
+            bcs = sorted(b_and_c[seg])
+            if int(number)<50:
+                bcs = sorted(bcs, reverse=True)
+            for bc in bcs:
                 if len(bc)>2: #bulge
                     # print(bc[0:2],number,offset)
                     if int(bc[0:2])<50 and int(number)+offset<int(bc[0:2]): #before x50 and before bulge, do smt
                         offset += 1 #eg if 5x461, then 5.46 becomes 5x461, 5.45 becomes 5x46
                     elif int(bc[0:2])<50 and int(number)+offset==int(bc[0:2]): #before x50 and is bulge, do smt
                         bulge = True # eg if 5x461, then 5.46 becomes 5x461
-                    elif int(bc[0:2])>50 and int(number)+offset>int(bc[0:2])+1: #after x50 and after bulge, do smt
+                    elif int(bc[0:2])>=50 and int(number)+offset>int(bc[0:2])+1: #after x50 and after bulge, do smt
                         offset -= 1 #eg if 2x551, then 2.56 becomes 2x551, 5.57 becomes 5x56
-                    elif int(bc[0:2])>50 and int(number)+offset==int(bc[0:2])+1: #after x50 and 1 after bulge, do smt
+                    elif int(bc[0:2])>=50 and int(number)+offset==int(bc[0:2])+1: #after x50 and 1 after bulge, do smt
                         bulge = True # eg if 2x551, then 2.56 becomes 2x551
 
                 else: #2 numbers, it's a constriction
@@ -261,14 +264,14 @@ class Command(BaseBuild):
                         offset -= 1 #eg if constriction is 7x44, then 7.44 becomes 7x43, 7.43 becomes 7x42
                     if int(bc[0:2])>50 and int(number)+offset>=int(bc[0:2]): #before x50 and before or equal constrictions, do smt
                         offset += 1 #eg if constriction is 4x57, then 4.57 becomes 4x58, 4.58 becomes 4x59
-
+        
         if bulge!=True:
             gn = str(int(number)+offset)
-        elif int(bc[0:2])<50:
+        elif int(number)<50:
             gn = str(int(number)+offset)+"1"
-        elif int(bc[0:2])>50:
+        elif int(number)>=50:
             gn = str(int(number)-1+offset)+"1"
-
+        # print(gn,number,offset,bulge)
         return gn
 
     def check_if_residues(self):
@@ -284,7 +287,7 @@ class Command(BaseBuild):
 
 
     def main_func(self, positions, iteration):
-        self.logger.info('CREATING ANNOTATIONS')
+        self.logger.info('STARTING ANNOTATION PROCESS {}'.format(positions))
         # pconfs
         # if not positions[1]:
         #     # proteins = OrderedDict(islice(self.data["NonXtal_SegEnds_Prot#"].items(),positions[0]))
@@ -317,7 +320,7 @@ class Command(BaseBuild):
             #     continue
             # if p.protein.species.common_name != "Human":
             #     continue
-            # if p.protein.entry_name !='opsd_todpa':
+            # if p.protein.entry_name !='aa2ar_human':
             #     continue
             # print(p.protein.entry_name)
             # continue
@@ -390,12 +393,11 @@ class Command(BaseBuild):
                                     continue
                                 if entry[1]=='x' or entry[2]=='x':
                                     if gn!="" and gn!='-':
-                                        if gn==entry:
-                                            seg, number = entry.split("x")
-                                            if seg not in b_and_c:
-                                                b_and_c[seg] = []
-                                            b_and_c[seg].append(number)
-                                        else:
+                                        seg, number = entry.split("x")
+                                        if seg not in b_and_c:
+                                            b_and_c[seg] = []
+                                        b_and_c[seg].append(number)
+                                        if gn!=entry:
                                             print('Something off with b_and_c for',human_ortholog.entry_name,'gn',gn,'entry',entry)
                     else:
                         pass
@@ -413,12 +415,11 @@ class Command(BaseBuild):
                             continue
                         if entry[1]=='x' or entry[2]=='x':
                             if gn!="" and gn!='-':
-                                if gn==entry:
-                                    seg, number = entry.split("x")
-                                    if seg not in b_and_c:
-                                        b_and_c[seg] = []
-                                    b_and_c[seg].append(number)
-                                else:
+                                seg, number = entry.split("x")
+                                if seg not in b_and_c:
+                                    b_and_c[seg] = []
+                                b_and_c[seg].append(number)
+                                if gn!=entry:
                                     print('Something off with b_and_c for',entry_name,'gn',gn,'entry',entry)
                 else: #human but not in proteins
                     # print(entry_name," human but no annotation")
@@ -438,13 +439,11 @@ class Command(BaseBuild):
 
             if len(s)<10:
                 print(counter,entry_name,"Something wrong with sequence")
-
             for i,aa in enumerate(s, start=1):
-                res = self.generate_bw(i,v,aa)
-                # print(res)
-                segment = self.all_segments[res['s']]
-                # if i<173 or i>213:
+                # if i<170 or i>190:
                 #     continue
+                res = self.generate_bw(i,v,aa)
+                segment = self.all_segments[res['s']]
 
                 ##perform bulges / constriction check! 
                 ## only do this on bw numbers
@@ -452,6 +451,9 @@ class Command(BaseBuild):
                     seg, number = res['numbers']['bw'].split(".")
                     gn = self.b_and_c_check(b_and_c,number,seg)
                     res['numbers']['generic_number'] = seg+"x"+gn
+
+
+                # print("\t",res)
 
                 bulk_info = create_or_update_residue(pconf, segment, self.schemes,res,b_and_c)
                 bulk.append(bulk_info[0])
@@ -473,7 +475,7 @@ class Command(BaseBuild):
             self.logger.info('{} {} residues ({}) {}s alignemt {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
             # print(p.protein.entry_name,len(rs),"residues","(",human_ortholog,")",diff,"s", "alignment",aligned_gn_mismatch_gap,missing_x50s)
 
-        self.logger.info('COMPLETED ANNOTATIONS')
+        self.logger.info('COMPLETED ANNOTATIONS PROCESS {}'.format(positions))
 
     def compare_human_to_orthologue(self, human, ortholog, annotation,counter):
 
