@@ -1,9 +1,36 @@
 {% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block addon_css %}
+<link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+<link href="{% static 'home/css/constructannotations.css' %}" rel="stylesheet">    
+    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />    
+
+<style type="text/css">
+        .select2-result-label{
+            font-size:x-small;
+            font-size: 10px;
+        }
+        @media (min-width: 1600px){
+            #content {
+                width: 1570px;
+            }
+        }
+        @media (min-width: 1800px){
+            #content {
+                width: 1770px;
+            }
+        }
+    </style>
+{% endblock %}
 
 {% block content %}
+
+<button id='{{ c.name }}' class='button_edit'>EDIT</button>
+
 <div class="row text-success">
     <div class="text-center">
-        <h2> {{ pc.protein.entry_name }} </h2>
+        <h2> {{ c.protein.entry_name }} </h2>
     </div>
 </div>
 <div class="row">
@@ -12,26 +39,8 @@
     </div>
     <div class="col-md-10">
         <h4><small>
-            {{ pc.protein.name }}
+            {{ c.name }}
         </h4></small>
-    </div>
-</div>
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>MUTATIONS</h4>
-    </div>
-    <div class="col-md-10">
-        <li><h6> WT_res: {{ mut.residue }} </h6></li>
-        <li><h6> MUTATED TO:{{ mut.amino_acid }} </h6> </li> 
-        <li><h6> REASON for MUTATION: {{mut.mutation_type}} </h6></li>
-    </div>
-</div>
-<div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>DELETIONS</h4>
-    </div>
-    <div class="col-md-10">
-        <h4><small>{{ c.deletions }} </small></h4>
     </div>
 </div>
 <div class="row">
@@ -39,7 +48,7 @@
         <h4>ORGANISM</h4>
     </div>
     <div class="col-md-10">
-        <h4><small>{{ pc.protein.species.common_name }} ({{ pc.protein.species.latin_name.strip }})</small></h4>
+        <h4><small>{{ c.protein.species.common_name }} ({{ c.protein.species.latin_name.strip }})</small></h4>
     </div>
 </div>
 <div class="row">
@@ -47,7 +56,7 @@
         <h4>PROTEIN NAME</h4>
     </div>
     <div class="col-md-10">
-        <h4><small>{{ pc.protein.parent }}</small></h4>
+        <h4><small>{{ c.protein }}</small></h4>
     </div>
 </div>
 <div class="row">
@@ -55,24 +64,86 @@
         <h4>SOURCE</h4>
     </div>
     <div class="col-md-10">
-        <h4><small>{{ pc.protein.source.name }}</small></h4>
+        <h4><small>{{ c.protein.source.name }}</small></h4>
     </div>
 </div>
 
 {% include "construct/sequence_viewer.html" %}
+<br>
+{% include "construct/schematic_viewer.html" %}
+<br>
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>DIAGRAMS</h4>
+    </div>
+    <div class="col-md-9" style="text-align:center;">
+    <div style="max-width:870px;display: inline-block;">
+    {{ snake }}
+    </div>
+    </div>
+</div>
 
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>MUTATIONS</h4>
+    </div>
+    <div class="col-md-10">
+            <table class="table table-sm">
+            <tr>
+                <th>Position</th>
+                <th>Wild-type</th>
+                <th>Mutated</th>
+            </tr>
+            {% for mut in c.mutations.all %}
+            <tr>
+                <td>{{ mut.sequence_number }} | {{residues_lookup.mut.sequence_number}}</td>
+                <td>{{ mut.wild_type_amino_acid }}</td>
+                <td>{{ mut.mutated_amino_acid }} </td>
+            </tr>
+            {% endfor %} 
+        </table>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>DELETIONS</h4>
+    </div>
+
+    <div class="col-md-10">
+        {% for del in c.deletions.all %}
+            <li> from {{ del.start }} to {{ del.end }} </li>
+        {% endfor %} 
+        <br>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>MODIFICATIONS</h4>
+    </div>
+
+    <div class="col-md-10">
+        {% for mod in c.modifications.all %}
+            <li> {{ mod.modification }} ({{ mod.position_type }} from {{ mod.pos_start }} to {{ mod.pos_end }})
+            {% if mod.remark != 'NA' %} {{mod.remark}} {% endif %}</li>
+        {% endfor %} 
+        <br>
+    </div>
+</div>
 <div class="row">
     <div class="col-md-2 text-right text-info">
         <h4>AUXILIARY PROTEINS</h4>
     </div>
     <div class="col-md-10">
-        <h4><small> Protein_type: {{ aux.aux_protein_type.name }} </small></h4>
-        <h6> Name: {{ aux.name }} </h6>
-        <h6> Uniprot_id:{{ aux.uniprot_id }} </h6> 
-        <h6> Sequence: {{ aux.sequence }} </h6>
+    {% for aux in c.insertions.all %}
+        <h4><small> Protein_type: {{ aux.insert_type.name }} </small></h4>
+        <h6> Name: {{ aux.insert_type.subtype }} </h6>
+        <h6> Sequence: {{ aux.insert_type.sequence }} </h6>
         <h6> Deletions: {{ aux.deletions }} </h6>
-        <h6> Positions:{{ aux.position }} </h6>
+        <h6> Positions: {{ aux.position }} {{ aux.start }}:{{ aux.end }} </h6>
+        <h6> Presence in Crystal:{{ aux.presence }} </h6>
         <h6> Remarks: {{ aux.remarks }} </h6>
+    {% endfor %} 
+        <br>
     </div>
 </div>
 
@@ -89,10 +160,10 @@
                      <th>Remarks</th>
                  </tr>
                  <tr>
-                     <td>{{ exprsn.expression_method }} </td>
-                     <td>{{ exprsn.host_cell_type }}</td>
-                     <td>{{ exprsn.host_cell }}</td>
-                     <td>NA</td>
+                     <td>{{ c.expression.expression_method }} </td>
+                     <td>{{ c.expression.host_cell_type }}</td>
+                     <td>{{ c.expression.host_cell }}</td>
+                     <td>{{ c.expression.remarks }}</td>
                  </tr>
              </table> 
     </div>
@@ -109,11 +180,11 @@
                 <th>Item</th>
                 <th>Concentration</th>
             </tr>
-            {% for listitem in sol.chemical_list.chemicals.all %}
+            {% for listitem in c.solubilization.chemical_list.chemicals.all %}
             <tr>
                 <td>{{ listitem.chemical.chemical_type.name }} </td>
                 <td>{{ listitem.chemical.name }}</td>
-                <td>{{ listitem.concentration }} </td>
+                <td>{{ listitem.concentration }} {{ listitem.concentration_unit }} </td>
             </tr>
             {% endfor %} 
         </table>
@@ -131,14 +202,14 @@
                 <th>Purification type</th>
                 <th>Description  </th>
             </tr>
-            {% for listitem in purstep.all %}
+            {% for listitem in c.purification.steps.all %}
             <tr>
-                <td> {{ listitem.purification_type.name }}  </td>
+                <td> {{ listitem.name }}  </td>
                 <td> {{ listitem.description }} </td>
             </tr>
              {% endfor %}
         </table>
-        <h4><small>Remarks:{{ pur.remarks }}</small></h4>
+        <h4><small>Remarks:{{ c.purification.remarks }}</small></h4>
     </div>
 </div>
 <div class="row">
@@ -146,31 +217,53 @@
         <h4>CRYSTALLIZATION</h4>
     </div>
     <div class="col-md-10">
-    <h6>TYPE: {{ crystalexp.crystal_type.name }}</h6>
-    <h6>METHOD: {{ crystalexp.method }} </h6>   
-    <h6>SETTINGS: {{ crystalexp.settings }}</h6>
-    <h6>PROTEIN CONCENTRATION: {{ crystalexp.protein_conc }}</h6>
-    <h6>Aqueous_solution_lipid_ratio_LCP:{{ crystalexp.aqueous_solution_lipid_ratio }}</h6>
-    <h6>LCP_bolus_volume: {{ crystalexp.lcp_bolus_volume }} </h6>
-    <h6>Precipitant_solution_volume: {{ crystalexp.precipitant_solution_volume }}</h6>
-    <h6>Temperature: {{ crystalexp.temp }} </h6>
-    <h6>ph : {{ crystalexp.ph }}</h6>
-    <h4><small>Remarks: {{ crystalexp.remarks }} </small></h4>
-    <h4>Chemical list</h4>
+    <h6>METHOD: {{ c.crystallization.crystal_method.name }} </h6>   
+    <h6>TYPE: {{ c.crystallization.crystal_type.name }} ({{ c.crystallization.crystal_type.sub_name }})</h6>
+    <h6>PROTEIN CONCENTRATION: {{ c.crystallization.protein_conc }} {{ c.crystallization.protein_conc_unit }}</h6>
+<!--     <h6>Aqueous_solution_lipid_ratio_LCP:{{ c.crystallization.aqueous_solution_lipid_ratio }}</h6>
+    <h6>LCP_bolus_volume: {{ c.crystallization.lcp_bolus_volume }} </h6>
+    <h6>Precipitant_solution_volume: {{ crystalexp.precipitant_solution_volume }}</h6> -->
+    <h6>Temperature: {{ c.crystallization.temp }} </h6>
+    <h6>ph : {{ c.crystallization.ph_start }}-{{ c.crystallization.ph_end }}</h6>
+    <h4><small>Remarks: {{ c.crystallization.remarks }} </small></h4>
+    <h4>Chemical lists</h4>
     <table style="width:100%">
             <tr>
                 <th>Type</th>
                 <th>Item</th>
                 <th>Concentration</th>
             </tr>
-           {% for listitem in crystalexp.chemical_list.chemicals.all %}
-            <tr>
-                <td>{{ listitem.chemical.chemical_type.name }} </td>
-                <td>{{listitem.chemical.name}}</td>
-                <td>{{ listitem.concentration }} </td>
-            </tr>
+           {% for list in c.crystallization.chemical_lists.all %}
+           <tr><th colspan="3">{{list.name}}</th></tr>
+                {% for listitem in list.chemicals.all %}
+                <tr>
+                    <td>{{ listitem.chemical.chemical_type.name }} </td>
+                    <td>{{listitem.chemical.name}}</td>
+                    <td>{{ listitem.concentration }} {{ listitem.concentration_unit }}</td>
+                </tr>
+                {% endfor %}
             {% endfor %}
         </table>
     </div>
 </div>
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/sequenceviewer.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/diagrams.js' %}"></script>
+<script type="text/javascript" charset="utf-8">
+
+$('.button_edit').click(function() {
+   window.location = "/structure/construct/" + this.id;
+});
+
+
+$(document).ready(function() {
+    annotations_json = '{{annotations|safe}}';
+    construct_annotations('snakeplot')
+    $(".long").show();
+    $(".short").hide();
+    maxmin();
+});
+</script>
 {% endblock %}

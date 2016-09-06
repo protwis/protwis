@@ -11,11 +11,48 @@
 <link href="{% static 'home/css/color_picker.css' %}" rel="stylesheet" media="screen">
 <link href="{% static 'home/css/bootstrap-responsive.css' %}"  rel="stylesheet" media="screen">
 
-
 <script src="{% static 'home/js/jquery.min.js' %}"></script>
+<script src="{% static 'home/js/selection.js' %}"></script>
 
 <script language="Javascript">
 
+    function clear_select_segmentselection(form) {
+
+    ClearSelection('targets')      
+    //Dealing with csrf token
+    function getCookie(c_name) {
+        if (document.cookie.length > 0) {
+            c_start = document.cookie.indexOf(c_name + "=");
+            if (c_start != -1) {
+                c_start = c_start + c_name.length + 1;
+                c_end = document.cookie.indexOf(";", c_start);
+                if (c_end == -1) c_end = document.cookie.length;
+                return unescape(document.cookie.substring(c_start, c_end));
+            }
+        }
+        return "";
+    }
+    $.ajaxSetup({
+        headers: { "X-CSRFToken": getCookie("csrftoken") }
+    });
+    //Actual post
+    var fd = new FormData(form);
+    $.ajax({
+        type: 'POST',
+        url: '/common/targetformread',
+        data: fd,
+        cache: false,
+        processData: false,
+        contentType: false,
+        'success': function (data) {
+            location.href="/alignment/segmentselection";
+            console.log('ready!');
+        },
+    }).fail(function (jqXHR, textStatus, error) {
+        alert("Request failed: " + textStatus + error);
+    });
+    return false;
+}
     $(document).ready(function () {     
 
       var colorDefault = ["#5a9bd4", "#f15a60", "#808080", "#006600"],
@@ -26,7 +63,7 @@
         fontSize     = "16px",
         fontFamily   = "Arial";
 
-        gdata = {{ gdata|safe }};
+        gdata = {{ ClassA|safe }};
 
         $("#name1").val("Gs Family");
         $("#area1").val(gdata['Gs family']);
@@ -94,24 +131,26 @@
           displayStat: displayStat,
           fnClickCallback: function() {
             var value = "";
-            if (this.listnames.length == 1) {
-              value += "Receptors only coupling to ";
-            } else {
-              value += "Receptors binding to ";
-            }
-            for (name in this.listnames) {
-              value += this.listnames[name] + " ";
-            }
-            value += ":\n";
+            // Information for selected venn area:
+            // if (this.listnames.length == 1) {
+            //   value += "Receptors only coupling to ";
+            // } else {
+            //   value += "Receptors binding to ";
+            // }
+            // for (name in this.listnames) {
+            //   value += this.listnames[name] + " ";
+            // }
+            // value += ":\n";
             for (val in this.list) {
               value += this.list[val] + "\n";
             }
-            $("#names").val(value);
+            $("#input-targets").val(value);
           }
         });
       }
       
-      $("#example").click(function() {
+      $("#ClassA").click(function() {
+          gdata = {{ ClassA|safe }}
           $("#name1").val("Gs Family");
           $("#area1").val(gdata['Gs family']);
 
@@ -125,7 +164,75 @@
           $("#area4").val(gdata['G12/G13 family']);
         updateJvenn();
       });
-      
+
+      $("#ClassB1").click(function() {
+          gdata = {{ ClassB1|safe }}
+          $("#name1").val("Gs Family");
+          $("#area1").val(gdata['Gs family']);
+
+          $("#name2").val("Gi/Go family");
+          $("#area2").val(gdata['Gi/Go family']);
+
+          $("#name3").val("Gq/G11 family");
+          $("#area3").val(gdata['Gq/G11 family']);
+
+          $("#name4").val("G12/G13 family");
+          $("#area4").val(gdata['G12/G13 family']);
+        updateJvenn();
+      });
+
+      $("#CrossClass").click(function() {
+          gdataA = {{ ClassA|safe }}
+          gdataB1 = {{ ClassB1|safe }}
+          gdataC = {{ ClassC|safe }}
+          gdataF = {{ ClassF|safe }}
+
+          $("#name1").val("Gs Family");
+          $("#area1").val(gdataA['Gs family']+gdataB1['Gs family']+gdataC['Gs family']+gdataF['Gs family']);
+
+          $("#name2").val("Gi/Go family");
+          $("#area2").val(gdataA['Gi/Go family']+gdataB1['Gi/Go family']+gdataC['Gi/Go family']+gdataF['Gi/Go family']);
+
+          $("#name3").val("Gq/G11 family");
+          $("#area3").val(gdataA['Gq/G11 family']+gdataB1['Gq/G11 family']+gdataC['Gq/G11 family']+gdataF['Gq/G11 family']);
+
+          $("#name4").val("G12/G13 family");
+          $("#area4").val(gdataA['G12/G13 family']+gdataB1['G12/G13 family']+gdataC['G12/G13 family']+gdataF['G12/G13 family']);
+        updateJvenn();
+      });
+
+      $("#ClassC").click(function() {
+          gdata = {{ ClassC|safe }}
+          $("#name1").val("Gs Family");
+          $("#area1").val(gdata['Gs family']);
+
+          $("#name2").val("Gi/Go family");
+          $("#area2").val(gdata['Gi/Go family']);
+
+          $("#name3").val("Gq/G11 family");
+          $("#area3").val(gdata['Gq/G11 family']);
+
+          $("#name4").val("G12/G13 family");
+          $("#area4").val(gdata['G12/G13 family']);
+        updateJvenn();
+      });
+
+      $("#ClassF").click(function() {
+          gdata = {{ ClassF|safe }}
+          $("#name1").val("Gs Family");
+          $("#area1").val(gdata['Gs family']);
+
+          $("#name2").val("Gi/Go family");
+          $("#area2").val(gdata['Gi/Go family']);
+
+          $("#name3").val("Gq/G11 family");
+          $("#area3").val(gdata['Gq/G11 family']);
+
+          $("#name4").val("G12/G13 family");
+          $("#area4").val(gdata['G12/G13 family']);
+        updateJvenn();
+      });
+
       $('[id^="clear"]').click(function() {
         var index = $(this).attr("id").split("_")[1];
         $("#area" + index).val("");
@@ -299,7 +406,11 @@
 
       <p style="clear:both;text-align:center">
         <button id="clear-all" class="btn">Clear all</button>
-        <button id="example" class="btn btn-primary">Class A dataset</button>
+        <button id="ClassA" class="btn btn-primary">Class A</button>
+        <button id="ClassB1" class="btn btn-primary">Class B1 (Secretin)</button>
+        <button id="ClassC" class="btn btn-primary">Class C</button>
+        <button id="ClassF" class="btn btn-primary">Class F</button>
+        <button id="CrossClass" class="btn btn-primary">Cross Class</button>
       </p>
     <div class="row-fluid">
       <div class="span12">
@@ -310,9 +421,13 @@
             </div>
             <div class="row-fluid">
               <div>
-                <p> Click on an area of the venn diagram to display the receptor sets: </p>
-                <textarea readonly id="names" style="width: 87%;" wrap="off" rows="10"></textarea>
+                <p> Click on an area of the venn diagram or a receptor clade on the phylogenetic G-protein selectivity tree to display the respective receptor sets: </p>
               </div>
+              <form id='target-input-form' method="post" enctype="multipart/form-data"> 
+                <textarea name="input-targets" id="input-targets" style="width: 100%;" wrap="off" rows="10"></textarea>
+            </form>
+            <button onclick="clear_select_segmentselection(document.getElementById('target-input-form'))" type="button" class="btn btn-success" style="float: right;"> Make sequence alignment </button>
+<!--             <button onclick="location.href='/alignment/segmentselection'" type="button" class="btn btn-success"> Make sequence alignment </button> -->
             </div>
           </div>
           
@@ -420,7 +535,7 @@
     <div class="col-md-12">
             <div class="panel-body">
                     <div class='col-md-10'>
-                        <p><strong>GPCR selectivity tree.</strong> Concentric circles illustrate the G protein-coupling selectivity of each GPCR: the four dots depict both primary and secondary G protein coupling (from inside to outside: Gs, Gi/o, Gq/11, G12/13). Tree nodes can be highlighted and selected to retrieve clade-specific receptor sets, which can be used in dedicated segment specific sequence alignments.</p>
+                        <p><strong>GPCR selectivity tree.</strong> Concentric circles illustrate the G protein-coupling selectivity of each GPCR: the four dots depict both primary and secondary G protein coupling (from inside to outside: G&alpha;<sub>s</sub>, G&alpha;<sub>i/o</sub>, G&alpha;<sub>q/11</sub>, G&alpha;<sub>12/13</sub>). Tree nodes can be highlighted and selected to retrieve clade-specific receptor sets, which can be used in dedicated segment specific sequence alignments.</p>
                     </div>
                 </div>
             </div>
