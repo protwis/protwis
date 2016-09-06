@@ -8,9 +8,9 @@ from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinSequenceType, ProteinSegment,
 ProteinFusion, ProteinFusionProtein, ProteinSource)
 from residue.models import Residue
-# from construct.models import (ConstructDeletion, ConstructMutation, Expression, ExpressionSystem, Solubilization,
-# ChemicalList, Chemical, ChemicalType, ChemicalConc, Purification, PurificationStep, PurificationStepType,
-# Crystallization, CrystallizationMethodTypes)
+from construct.models import (ConstructDeletion, ConstructMutation, Expression, ExpressionSystem, Solubilization,
+ChemicalList, Chemical, ChemicalType, ChemicalConc, Purification, PurificationStep, PurificationStepType,
+Crystallization, CrystallizationMethodTypes)
 
 import os
 import logging
@@ -154,6 +154,7 @@ class Command(BaseBuild):
                         self.logger.error('Failed creating conformation {} of protein {}'.format(pc.state.name,
                             p.entry_name))
 
+                    ## IGNORE THIS SINCE IT IS NOT USED IN THE END
                     # # process deletions (save in db, and for sequence processing)
                     # deletions = []
                     # if 'deletions' in sd and sd['deletions']:
@@ -341,10 +342,10 @@ class Command(BaseBuild):
                     #         cy.remarks = sd['crystallization']['remarks']
                     #     cy.save()
                     
-                    # create residues
-                    # prs = Residue.objects.filter(protein_conformation=ppc).prefetch_related(
-                    #     'protein_conformation__protein', 'protein_segment', 'generic_number',
-                    #     'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
+                    # # create residues
+                    # # prs = Residue.objects.filter(protein_conformation=ppc).prefetch_related(
+                    # #     'protein_conformation__protein', 'protein_segment', 'generic_number',
+                    # #     'display_generic_number__scheme', 'alternative_generic_numbers__scheme')
                     # updated_sequence = ''
                     # for pr in prs:
                     #     if pr.sequence_number not in deletions:

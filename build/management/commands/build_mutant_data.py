@@ -72,6 +72,7 @@ class Command(BaseCommand):
                 self.logger.error(msg)
         # import the structure data
         try:
+            self.purge_mutants()
             self.create_mutant_data(options['filename'])
         except Exception as msg:
             print(msg)
@@ -269,7 +270,7 @@ class Command(BaseCommand):
                 inserted = 0
                 for r in rows:
                     c += 1
-                    if c%1000==0: 
+                    if c%500==0: 
                         self.logger.info('Parsed '+str(c)+' mutant data entries')
 
                     # publication
@@ -321,6 +322,10 @@ class Command(BaseCommand):
                         l_ref.ambigious_alias = True
                         l_ref.save()
                         l_ref.load_by_name(r['exp_mu_ligand_ref'])
+                        l_ref.save()
+                    elif Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=False).exists(): #amigious_alias not specified
+                        l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False)
+                        l_ref.ambigious_alias = False
                         l_ref.save()
                     elif r['exp_mu_ligand_ref']: #if neither a canonical or alias exists, create the records. Remember to check for canonical / alias status.
                         lp = LigandProperities()
