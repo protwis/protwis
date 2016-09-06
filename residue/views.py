@@ -120,6 +120,7 @@ class ResidueTablesDisplay(TemplateView):
         # default_generic_number or first scheme on the list is the key
         # value is a dictionary of other gn positions and residues from selected proteins 
         data = OrderedDict()
+        print(segments)
         for segment in segments:
             data[segment.slug] = OrderedDict()
             residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins).prefetch_related('protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
@@ -153,9 +154,10 @@ class ResidueTablesDisplay(TemplateView):
                         if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
                             data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
                         data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
-
+        print(data)
         # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
         flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
+        print(flattened_data)
         for s in iter(flattened_data):
             flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
         

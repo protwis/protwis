@@ -284,3 +284,4 @@ class ProteinGProteinPair(models.Model):
 
     class Meta():
         db_table = 'protein_gprotein_pair'
+        

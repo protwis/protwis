@@ -78,7 +78,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
     
      # local protein list
     proteins = []
-
     if receptor_class==None: 
 
         if protein: # if protein static page
@@ -124,11 +123,15 @@ def render_mutations(request, protein = None, family = None, download = None, re
                         proteins.append(fp)
 
             original_segments = []
+            original_positions = []
             segments_ids = []
             for segment in simple_selection.segments:
-                original_segments.append(segment.item)
+                if segment.type=='residue': 
+                    original_positions.append(segment.item.default_generic_number.label)
+                else:
+                    original_segments.append(segment.item)
                 segments_ids.append(segment.item.id)
-
+        print(original_positions)
            #scheme
         used_schemes = {}
         species_list = {}
@@ -151,8 +154,10 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
         used_scheme = max(used_schemes, key=used_schemes.get)
 
-        mutations = MutationExperiment.objects.filter(protein__in=proteins, 
-                                residue__protein_segment__in=original_segments).prefetch_related('residue__display_generic_number',
+        mutations = MutationExperiment.objects.filter(
+                                Q(protein__in=proteins),
+                                Q(residue__protein_segment__in=original_segments) | Q(residue__generic_number__label__in=original_positions)
+                                ).prefetch_related('residue__display_generic_number',
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
                                 'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
                                 'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource')
@@ -189,7 +194,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
             qual = mutation.exp_qual.qual
         else:
             qual = ''
-        mutations_list[mutation.residue.generic_number.label].append([mutation.foldchange,ligand,qual])
+        mutations_list[mutation.residue.generic_number.label].append([mutation.foldchange,ligand.replace('\xe2', "").replace('\'', ""),qual])
         mutations_generic_number[mutation.raw.id] = mutation.residue.generic_number.label
 
     if receptor_class==None: #if not a small lookup
@@ -561,7 +566,7 @@ def coverage(request):
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['name'] = p.entry_name.split("_")[0] #[:10]
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_t'] = 1
 
-
+    coverage3 = copy.deepcopy(coverage)
     print("time 2")
 
 
@@ -740,7 +745,7 @@ def coverage(request):
        # break
     #print(json.dumps(tree))
     print("time 6")
-    context['coverage'] = coverage #coverage
+    context['coverage'] = coverage3 #coverage
     context['tree'] = json.dumps(tree)
     context['tree2'] = json.dumps(tree2)
     print("time 7")

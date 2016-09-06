@@ -1,0 +1,89 @@
+input.form-control, select.form-control {
+    width: 50px;
+    height: 20px;
+    font-size: 9px;
+    padding: 2px 2px;
+}
+input.number_range_filter, input.date_range_filter {
+    width: 20px;
+    font-size: 8px;
+}
+.protein-th {
+    background-color: #98df8a;
+}
+.pdb-th {
+    background-color: #aec7e8;
+}
+.seq-th {
+    background-color: #FFEEA0;
+}
+
+.parts-th {
+    background-color: #ff9896;
+}
+.parts2-th {
+    background-color: #ff9896;
+}
+.parts4-th {
+    background-color: #CC7878;
+}
+.parts1-th {
+    background-color: #E47F8A;
+}
+.parts3-th {
+    background-color: #EB997F;
+}
+.pub-th {
+    background-color: #ffbb78;
+}
+.similarity-th {
+    background-color: gold;
+}
+
+.construct_div {
+    padding-left:3px;
+    padding-right:3px;
+    float:left;
+    position: relative;
+}
+
+/*Annotations*/
+.deletion {
+    background-color: red;
+}
+.modification {
+    background-color: gold;
+}
+.mutation {
+    background-color: orange;
+}
+.insertion {
+    background-color: purple;
+}
+
+.bg-insertion {
+    background-color: #d9b3ff;
+}
+
+.bg-deletion {
+    background-color: red;
+}
+.bg-mutation {
+    background-color: orange;
+}
+#constructs_schematics_div {
+    display: none;
+}
+#wt_schematics_div {
+    display: none;
+}
+#constructs_div {
+    display: none;
+}
+
+.tooltip-inner  {
+
+    white-space:pre; /* you can also try white-space: normal; */
+    max-width:none;
+
+}
