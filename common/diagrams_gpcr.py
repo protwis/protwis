@@ -795,9 +795,11 @@ class DrawSnakePlot(Diagram):
             elif start==0 and rs[i][2]=='':
                 res_after.append(i)
 
-
         startX = self.TBCoords[prevhelix]['intra'][0]+40
         startY =  self.TBCoords[prevhelix]['intra'][1]+40+10*len(res_before)
+        if len(res_before)>10:
+            startY =  self.TBCoords[prevhelix]['intra'][1]+40+20*len(res_before)
+
 
 
         for p,i in list(enumerate(res_helix)):
@@ -846,7 +848,7 @@ class DrawSnakePlot(Diagram):
                 for p2,i2 in list(enumerate(res_before)):
                     where = self.wherebezier([self.TBCoords[prevhelix]['intra'][0],self.TBCoords[prevhelix]['intra'][1]],[self.TBCoords[prevhelix]['intra'][0]-30,y],[x,y],0.001,pos)
                     pos += between_residues
-                    self.output += self.DrawResidue(where[1][0],where[1][1],rs[i2][1], where[1][0], rs[i2][3], self.residue_radius-1,name+" long")
+                    self.output += self.DrawResidue(where[1][0],where[1][1],rs[i2][1], where[1][0], rs[i2][3], self.residue_radius-1,name)
 
 
             if p==len(res_helix)-1: #if end, add to next helix
