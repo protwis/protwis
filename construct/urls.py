@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 from django.conf.urls import patterns, url
 from django.views.decorators.cache import cache_page
+=======
+from django.conf.urls import url
+>>>>>>> 8bcb312ba10202b46ab0de770815973ad244b50c
 
 from construct import views
 

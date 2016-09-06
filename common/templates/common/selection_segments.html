@@ -14,7 +14,7 @@
 {% for ss_cat in ss_cats %}
     <h5>{{ ss_cat.0.title }}</h5>
     {% for s in ss %}
-        {% if s.category = ss_cat.0 %}
+        {% if s.category == ss_cat.0 %}
         <div class="btn-group" role="group">
             <a href="javascript:void(0)" onclick="AddToSelection('segments', '{{ s.category }}', '{{ s.id }}')"
             class="btn btn-primary btn-sm">
