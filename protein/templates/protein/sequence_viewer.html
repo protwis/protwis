@@ -48,7 +48,7 @@
                     </tr>
                     <tr>
                     {% for r in rs %}
-                        {% if forloop.counter = chunk_size %}
+                        {% if forloop.counter == chunk_size %}
                         <td colspan="{{ rs|length }}" class="seqv seqv-number">{{ r.0.sequence_number }}</td>
                         {% endif %}
                     {% endfor %}
