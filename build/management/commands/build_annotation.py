@@ -58,15 +58,17 @@ class Command(BaseBuild):
         try:
             self.logger.info('CREATING RESIDUES')
             self.data = self.parse_excel(self.annotation_source_file)
+
             self.dump_seg_ends()
 
+            # self.analyse_annotation_consistency()
+
             # run the function twice (second run for proteins without reference positions)
-            # self.prepare_input(options['proc'], self.data["NonXtal_SegEnds_Prot#"])
 
             self.prepare_input(options['proc'], self.pconfs)
 
-            if (self.check_if_residues()):
-                self.prepare_input(1, self.pconfs)
+            # if (self.check_if_residues()):
+            #     self.prepare_input(1, self.pconfs)
 
             # if (self.check_if_residues()):
             #     self.prepare_input(1, self.pconfs)
@@ -151,6 +153,76 @@ class Command(BaseBuild):
         #print(pdb_info)
         with open(self.xtal_seg_end_file, 'w') as outfile:
             yaml.dump(pdb_info, outfile)
+
+    def analyse_annotation_consistency(self):
+        NonXtal = self.data["NonXtal_Bulges_Constr_GPCRdb#"]
+        Xtal = self.data["Xtal_Bulges_Constr_GPCRdb#"]
+        output = {}
+        counting_xtal = {}
+        counting_non_xtal = {}
+        for entry_protein,vals in NonXtal.items():
+            anomalies=[]
+            anomalies_xtal=[]
+            for key,val in vals.items():
+                if "x" in val and "_" not in val:
+                    if val.index("x") in [1,2]:
+                        anomalies.append(val)
+            if vals['Xtal Templ'] in Xtal:
+                #print(Xtal[vals['Xtal Templ']])
+                for key,val in Xtal[vals['Xtal Templ']].items():
+                    if "x" in val and "_" not in val:
+                        if val.index("x") in [1,2]:
+                            anomalies_xtal.append(val)
+
+            if entry_protein!=vals['Xtal Templ']:
+                list1 = list(set(anomalies) - set(anomalies_xtal))
+                list2 = list(set(anomalies_xtal) - set(anomalies))
+                if list1 or list2:
+                    for i in list1:
+                        if i not in counting_non_xtal:
+                            counting_non_xtal[i] = 0
+                        counting_non_xtal[i] += 1
+                    for i in list2:
+                        if i not in counting_xtal:
+                            counting_xtal[i] = 0
+                        counting_xtal[i] += 1
+                    #print("ISSUE!")
+                    #print(entry_protein)
+                    #print("NonXtal_anomalies",anomalies,"Xtal_anomalies",anomalies_xtal)
+                    if list1: print(entry_protein,vals['Xtal Templ'],"Present in non-xtal, but not xtal",list1)
+                    if list2: print(entry_protein,vals['Xtal Templ'],"Present in xtal, but not non-xtal",list2)
+
+        print("Overall")
+        print("Present in non-xtal, but not xtal",counting_xtal)
+        print("Present in xtal, but not non-xtal",counting_non_xtal)
+
+        structures = self.data["Xtal_SegEnds_Prot#"]
+        structures_non_xtal = self.data["NonXtal_SegEnds_Prot#"]
+        info = {}
+        for structure,vals in structures.items():
+            if structure.split("_")[-1] == "wt":
+                #print(structure)
+                entry = vals['UniProt']
+                info[entry] = {}
+                for key,val in vals.items():
+                    if len(key)>3:
+                        continue
+                    if not key:
+                        continue
+                    if key[-1]!="b" and key[-1]!="e":
+                        continue
+
+                    info[entry][key] = val
+
+                    if structures_non_xtal[entry][key]!=val:
+                        print("error with ",entry,key,"Xtal sheet:",round(val),"NonXtal sheet:",round(structures_non_xtal[entry][key]))
+                        #print(structures_non_xtal[entry])
+                        #print(vals)
+                #print(structure,info)
+
+        # with open(self.xtal_seg_end_file, 'w') as outfile:
+        #     yaml.dump(pdb_info, outfile)
+
 
     def generate_bw(self, i, v, aa):
         #return dict
@@ -288,13 +360,6 @@ class Command(BaseBuild):
 
     def main_func(self, positions, iteration):
         self.logger.info('STARTING ANNOTATION PROCESS {}'.format(positions))
-        # pconfs
-        # if not positions[1]:
-        #     # proteins = OrderedDict(islice(self.data["NonXtal_SegEnds_Prot#"].items(),positions[0]))
-        #     proteins = list(self.data["NonXtal_SegEnds_Prot#"])[positions[0]:]
-        # else:
-        #     # proteins = OrderedDict(islice(self.data["NonXtal_SegEnds_Prot#"].items(),positions[0],positions[1]))
-        #     proteins = list(self.data["NonXtal_SegEnds_Prot#"])[positions[0]:positions[1]]
 
         if not positions[1]:
             pconfs = self.pconfs[positions[0]:]
@@ -313,7 +378,7 @@ class Command(BaseBuild):
             ref_positions = None
             counter += 1
             missing_x50s = []
-            aligned_gn_mismatch_gap = ''
+            aligned_gn_mismatch_gap = 0
             human_ortholog = ''
             # self.logger.info('DOING {}'.format(p))
             # if p.protein.residue_numbering_scheme.slug!='gpcrdbc' or p.protein.species.common_name != "Human":
@@ -350,6 +415,7 @@ class Command(BaseBuild):
                             # print(v)
                             failed = None
                             x50s = ['1x','i1x','2x','e1x','3x','i2x','4x','e2x','5x','6x','7x','8x']
+                            x50s_must_have = ['1x','2x','3x','4x','5x','6x','7x']
                             for x50 in x50s:
                                 #1b  1x  1e  i1b i1x i1e 2b  2x  2e  e1b e1x e1e 3b  3x  3e  i2b i2x i2e 4b  4x  4e  e2b e2x e2e 5b  5x  5e  6b  6x  6e  7b  7x  7e  8b  8x  8e
                                 val = v[x50]
@@ -367,6 +433,7 @@ class Command(BaseBuild):
                                         break
                                     if i in ref_positions:
                                         new_v[x50] = ref_positions[i]
+                                        ## MAYBE NEED SOME RULES HERE.... 
                                         new_v[x50[:-1]+"b"] = ref_positions[i]+length_to_b
                                         new_v[x50[:-1]+"e"] = ref_positions[i]+length_to_e
                                     else:
@@ -374,9 +441,13 @@ class Command(BaseBuild):
                                         new_v[x50[:-1]+"b"] = 0
                                         new_v[x50[:-1]+"e"] = 0
                                         missing_x50s.append(x50)
-                                        # print(entry_name,"tranlated ",x50," no index in ortholog, skipping for now")
-                                        # failed = True
-                                        # break
+                                        if x50 in x50s_must_have:
+                                            # print(entry_name,"tranlated ",x50," no index in ortholog, deleting pconf and protein")
+                                            self.logger.warning('{} tranlated {} no index in ortholog, deleting pconf and protein'.format(entry_name,x50))
+                                            failed = True
+                                            p.protein.delete()
+                                            p.delete()
+                                            break
                                 else:
                                     new_v[x50] = 0
                                     new_v[x50[:-1]+"b"] = 0
@@ -385,6 +456,11 @@ class Command(BaseBuild):
                             # print(new_v)
                             if failed:
                                 continue
+
+                            if aligned_gn_mismatch_gap>10:
+                                self.logger.warning('{} ({}) lots of misaligned GN {}'.format(entry_name,human_ortholog.entry_name,aligned_gn_mismatch_gap))
+                                # print(entry_name,"(",human_ortholog.entry_name,") lots of misaligned GN",aligned_gn_mismatch_gap)
+
                             v = new_v
                             #exit()
                             b_and_c = {}
@@ -400,9 +476,12 @@ class Command(BaseBuild):
                                         if gn!=entry:
                                             print('Something off with b_and_c for',human_ortholog.entry_name,'gn',gn,'entry',entry)
                     else:
-                        pass
-                        # print(counter,entry_name,"not done and no human")
-                    #continue
+                        # pass
+                        self.logger.warning('{}  has no human template, deleting'.format(entry_name))
+                        p.protein.delete()
+                        p.delete()
+                        failed = True
+                        #continue
                 elif entry_name in proteins:
                     # print(entry_name,"not done but ready")    
                     v = self.data["NonXtal_SegEnds_Prot#"][entry_name]
@@ -473,7 +552,9 @@ class Command(BaseBuild):
             end = time.time()
             diff = round(end - current,1)
             self.logger.info('{} {} residues ({}) {}s alignemt {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
-            # print(p.protein.entry_name,len(rs),"residues","(",human_ortholog,")",diff,"s", "alignment",aligned_gn_mismatch_gap,missing_x50s)
+            if aligned_gn_mismatch_gap>10:
+                #print(p.protein.entry_name,len(rs),"residues","(",human_ortholog,")",diff,"s", " Unaligned generic numbers: ",aligned_gn_mismatch_gap)
+                self.logger.error('{} {} residues ({}) {}s MANY ERRORS IN ALIGNMENT {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
 
         self.logger.info('COMPLETED ANNOTATIONS PROCESS {}'.format(positions))
 

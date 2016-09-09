@@ -35,6 +35,7 @@ class Command(BaseCommand):
             ['build_links'],
             ['build_construct_proteins', {'proc': options['proc']}],
             ['build_structures', {'proc': options['proc']}],
+            ['build_construct_data', {'proc': options['proc']}],
             ['build_mutant_data'],
             # # OLD ['find_protein_templates', {'proc': options['proc']}],
             # # OLD['update_alignments', {'proc': options['proc']}],

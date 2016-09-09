@@ -9,7 +9,7 @@ from structure.models import Structure
 from construct.models import (Construct,Crystallization,CrystallizationLigandConc,ChemicalType,Chemical,ChemicalConc,ChemicalList,
 CrystallizationMethods,CrystallizationTypes,ChemicalListName,ContributorInfo,ConstructMutation,ConstructInsertion,ConstructInsertionType,
 ConstructDeletion,ConstructModification,CrystalInfo,ExpressionSystem,Solubilization,PurificationStep,Purification)
-from construct.functions import add_construct
+from construct.functions import add_construct, fetch_pdb_info
 
 from ligand.models import Ligand, LigandType, LigandRole
 from ligand.functions import get_or_make_ligand
@@ -86,6 +86,18 @@ class Command(BaseCommand):
                 d = json.load(json_file)
 
                 add_construct(d)
+
+        structures = Structure.objects.all()
+
+        for s in structures:
+            pdbname = str(s)
+            print(pdbname)
+            try:
+                protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
+                d = fetch_pdb_info(pdbname,protein)
+                add_construct(d)
+            except:
+                print(pdbname,'failed')
 
 
 
