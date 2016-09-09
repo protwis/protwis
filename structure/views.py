@@ -78,15 +78,16 @@ def StructureDetails(request, pdbname):
     structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name','structure_ligand_pair__pdb_reference','structure_ligand_pair__annotated').filter(structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
     resn_list = ''
 
+    main_ligand = ''
     for structure in structures:
         if structure['structure_ligand_pair__annotated']:
             resn_list += ",\""+structure['structure_ligand_pair__pdb_reference']+"\""
-    print(resn_list)
+            main_ligand = structure['structure_ligand_pair__pdb_reference']
 
     crystal = Structure.objects.get(pdb_code__index=pdbname)
     p = Protein.objects.get(protein=crystal.protein_conformation.protein)
     residues = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
-    return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list})
+    return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list, 'main_ligand': main_ligand})
 
 def ServePdbDiagram(request, pdbname):       
     structure=Structure.objects.filter(pdb_code__index=pdbname) 
