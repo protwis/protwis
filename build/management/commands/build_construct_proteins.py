@@ -8,9 +8,6 @@ from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinSequenceType, ProteinSegment,
 ProteinFusion, ProteinFusionProtein, ProteinSource)
 from residue.models import Residue
-from construct.models import (ConstructDeletion, ConstructMutation, Expression, ExpressionSystem, Solubilization,
-ChemicalList, Chemical, ChemicalType, ChemicalConc, Purification, PurificationStep, PurificationStepType,
-Crystallization, CrystallizationMethodTypes)
 
 import os
 import logging
