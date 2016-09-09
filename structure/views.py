@@ -75,10 +75,10 @@ def StructureDetails(request, pdbname):
     Show structure details
     """
     pdbname = pdbname
-    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name','structure_ligand_pair__pdb_reference','structure_ligand_pair__annotated').filter(structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
+    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name','structure_ligand_pair__pdb_reference','structure_ligand_pair__annotated').filter(structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
     resn_list = ''
 
-    main_ligand = ''
+    main_ligand = 'None'
     for structure in structures:
         if structure['structure_ligand_pair__annotated']:
             resn_list += ",\""+structure['structure_ligand_pair__pdb_reference']+"\""
