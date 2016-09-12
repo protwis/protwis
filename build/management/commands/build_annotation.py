@@ -43,8 +43,27 @@ class Command(BaseBuild):
 
     # source file directory
     annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Structural_Annotation.xlsx'])
-    xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'xtal_segends.yaml'])
     generic_numbers_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers'])
+
+    annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Structural_Annotation.xlsx'])
+
+    non_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends.yaml'])
+    with open(non_xtal_seg_end_file, 'r') as f:
+        non_xtal_seg_end = yaml.load(f)
+
+    all_anomalities_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalities.yaml'])
+    with open(all_anomalities_file, 'r') as f:
+        all_anomalities = yaml.load(f)
+
+    sequence_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml'])
+    with open(sequence_file, 'r') as f:
+        gpcr_sequences = yaml.load(f)
+
+    xtal_anomalities_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_anomalities.yaml'])
+    non_xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends_bw.yaml'])
+    xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends.yaml'])
+    mod_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'mod_xtal_segends.yaml'])
+    xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends_bw.yaml'])
 
     segments = ProteinSegment.objects.filter(partial=False)
     all_segments = {ps.slug: ps for ps in ProteinSegment.objects.all()}  # all segments dict for faster lookups
@@ -57,10 +76,6 @@ class Command(BaseBuild):
     def handle(self, *args, **options):
         try:
             self.logger.info('CREATING RESIDUES')
-            self.data = self.parse_excel(self.annotation_source_file)
-
-            self.dump_seg_ends()
-
             # self.analyse_annotation_consistency()
 
             # run the function twice (second run for proteins without reference positions)
@@ -80,149 +95,6 @@ class Command(BaseBuild):
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
-
-    def parse_excel(self,path):
-        workbook = xlrd.open_workbook(path)
-        worksheets = workbook.sheet_names()
-        d = {}
-        for worksheet_name in worksheets:
-            if worksheet_name in d:
-                print('Error, worksheet with this name already loaded')
-                continue
-
-            d[worksheet_name] = OrderedDict()
-            worksheet = workbook.sheet_by_name(worksheet_name)
-
-            num_rows = worksheet.nrows - 1
-            num_cells = worksheet.ncols - 1
-            curr_row = 0 #skip first, otherwise -1
-
-            headers = []
-            for i in range(num_cells):
-                h = worksheet.cell_value(0, i)
-                if h=="":
-                    #replace header with index if empty
-                    h = "i_"+str(i)
-                if h in headers:
-                    # print('already have ',h)
-                    h += "_"+str(i)
-                # print(h)
-                headers.append(worksheet.cell_value(0, i))
-
-            for curr_row in range(1,num_rows+1):
-                row = worksheet.row(curr_row)
-                key = worksheet.cell_value(curr_row, 0)
-
-                if key=='':
-                    #in case there is no key for whatever reason
-                    # print("no key!")
-                    continue
-
-                d[worksheet_name][key] = OrderedDict()
-                temprow = {}
-                for curr_cell in range(num_cells):
-                    # cell_type = worksheet.cell_type(curr_row, curr_cell)
-                    cell_value = worksheet.cell_value(curr_row, curr_cell)
-                    # temprow.append(cell_value)
-                    d[worksheet_name][key][headers[curr_cell]] = cell_value
-
-                # if curr_row>2: break
-        return d
-
-    def dump_seg_ends(self):
-        structures = self.data["Xtal_SegEnds_Prot#"]
-        pdb_info = {}
-        for structure,vals in structures.items():
-            if structure.split("_")[-1] == "wt":
-                continue
-            if structure.split("_")[-1] == "dist":
-                continue
-            #print(structure)
-            pdb_id = structure.split("_")[-1]
-            pdb_info[pdb_id] = {}
-            for key,val in vals.items():
-                if len(key)>3:
-                    continue
-                if not key:
-                    continue
-                if key[-1]!="b" and key[-1]!="e":
-                    continue
-
-                pdb_info[pdb_id][key] = val
-
-        #print(pdb_info)
-        with open(self.xtal_seg_end_file, 'w') as outfile:
-            yaml.dump(pdb_info, outfile)
-
-    def analyse_annotation_consistency(self):
-        NonXtal = self.data["NonXtal_Bulges_Constr_GPCRdb#"]
-        Xtal = self.data["Xtal_Bulges_Constr_GPCRdb#"]
-        output = {}
-        counting_xtal = {}
-        counting_non_xtal = {}
-        for entry_protein,vals in NonXtal.items():
-            anomalies=[]
-            anomalies_xtal=[]
-            for key,val in vals.items():
-                if "x" in val and "_" not in val:
-                    if val.index("x") in [1,2]:
-                        anomalies.append(val)
-            if vals['Xtal Templ'] in Xtal:
-                #print(Xtal[vals['Xtal Templ']])
-                for key,val in Xtal[vals['Xtal Templ']].items():
-                    if "x" in val and "_" not in val:
-                        if val.index("x") in [1,2]:
-                            anomalies_xtal.append(val)
-
-            if entry_protein!=vals['Xtal Templ']:
-                list1 = list(set(anomalies) - set(anomalies_xtal))
-                list2 = list(set(anomalies_xtal) - set(anomalies))
-                if list1 or list2:
-                    for i in list1:
-                        if i not in counting_non_xtal:
-                            counting_non_xtal[i] = 0
-                        counting_non_xtal[i] += 1
-                    for i in list2:
-                        if i not in counting_xtal:
-                            counting_xtal[i] = 0
-                        counting_xtal[i] += 1
-                    #print("ISSUE!")
-                    #print(entry_protein)
-                    #print("NonXtal_anomalies",anomalies,"Xtal_anomalies",anomalies_xtal)
-                    if list1: print(entry_protein,vals['Xtal Templ'],"Present in non-xtal, but not xtal",list1)
-                    if list2: print(entry_protein,vals['Xtal Templ'],"Present in xtal, but not non-xtal",list2)
-
-        print("Overall")
-        print("Present in non-xtal, but not xtal",counting_xtal)
-        print("Present in xtal, but not non-xtal",counting_non_xtal)
-
-        structures = self.data["Xtal_SegEnds_Prot#"]
-        structures_non_xtal = self.data["NonXtal_SegEnds_Prot#"]
-        info = {}
-        for structure,vals in structures.items():
-            if structure.split("_")[-1] == "wt":
-                #print(structure)
-                entry = vals['UniProt']
-                info[entry] = {}
-                for key,val in vals.items():
-                    if len(key)>3:
-                        continue
-                    if not key:
-                        continue
-                    if key[-1]!="b" and key[-1]!="e":
-                        continue
-
-                    info[entry][key] = val
-
-                    if structures_non_xtal[entry][key]!=val:
-                        print("error with ",entry,key,"Xtal sheet:",round(val),"NonXtal sheet:",round(structures_non_xtal[entry][key]))
-                        #print(structures_non_xtal[entry])
-                        #print(vals)
-                #print(structure,info)
-
-        # with open(self.xtal_seg_end_file, 'w') as outfile:
-        #     yaml.dump(pdb_info, outfile)
-
 
     def generate_bw(self, i, v, aa):
         #return dict
@@ -367,7 +239,7 @@ class Command(BaseBuild):
             pconfs = self.pconfs[positions[0]:positions[1]]
 
 
-        proteins = list(self.data["NonXtal_SegEnds_Prot#"])
+        proteins = list(self.non_xtal_seg_end)
 
         # print(data)
         counter = 0
@@ -408,9 +280,9 @@ class Command(BaseBuild):
                             continue
                         if human_ortholog.entry_name in proteins:
                             # print(counter,entry_name,'check sequences')
-                            ref_positions, aligned_gn_mismatch_gap = self.compare_human_to_orthologue(human_ortholog, p.protein, self.data["NonXtal_SegEnds_Prot#"][human_ortholog.entry_name],counter)
+                            ref_positions, aligned_gn_mismatch_gap = self.compare_human_to_orthologue(human_ortholog, p.protein, self.non_xtal_seg_end[human_ortholog.entry_name],counter)
                             s = p.protein.sequence
-                            v = self.data["NonXtal_SegEnds_Prot#"][human_ortholog.entry_name]
+                            v = self.non_xtal_seg_end[human_ortholog.entry_name]
                             new_v = {}
                             # print(v)
                             failed = None
@@ -464,7 +336,7 @@ class Command(BaseBuild):
                             v = new_v
                             #exit()
                             b_and_c = {}
-                            for entry,gn in self.data["NonXtal_Bulges_Constr_GPCRdb#"][human_ortholog.entry_name].items():
+                            for entry,gn in self.all_anomalities[human_ortholog.entry_name].items():
                                 if len(entry)<3:
                                     continue
                                 if entry[1]=='x' or entry[2]=='x':
@@ -484,12 +356,12 @@ class Command(BaseBuild):
                         #continue
                 elif entry_name in proteins:
                     # print(entry_name,"not done but ready")    
-                    v = self.data["NonXtal_SegEnds_Prot#"][entry_name]
+                    v = self.non_xtal_seg_end[entry_name]
                     # if counter>20:
                     #     break
-                    s = self.data["Seqs"][entry_name]['Sequence']
+                    s = self.gpcr_sequences[entry_name]['Sequence']
                     b_and_c = {}
-                    for entry,gn in self.data["NonXtal_Bulges_Constr_GPCRdb#"][entry_name].items():
+                    for entry,gn in self.all_anomalities[entry_name].items():
                         if len(entry)<3:
                             continue
                         if entry[1]=='x' or entry[2]=='x':
@@ -560,11 +432,11 @@ class Command(BaseBuild):
 
     def compare_human_to_orthologue(self, human, ortholog, annotation,counter):
 
-        v = self.data["NonXtal_SegEnds_Prot#"][human.entry_name]
-        s = self.data["Seqs"][human.entry_name]['Sequence']
-        human_seq = self.data["Seqs"][human.entry_name]['Sequence']
+        v = self.non_xtal_seg_end[human.entry_name]
+        s = self.gpcr_sequences[human.entry_name]['Sequence']
+        human_seq = self.gpcr_sequences[human.entry_name]['Sequence']
         b_and_c = {}
-        for entry,gn in self.data["NonXtal_Bulges_Constr_GPCRdb#"][human.entry_name].items():
+        for entry,gn in self.all_anomalities[human.entry_name].items():
             if len(entry)<3:
                 continue
             if entry[1]=='x' or entry[2]=='x':
