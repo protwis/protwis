@@ -927,10 +927,13 @@ class AlignedReferenceTemplate(Alignment):
 #                                                       "3OAX","1F88","1GZM","1HZX","3OE6","1L9H","3OE8","4PXF","2G87",
 #                                                       "3OE9","2HPY","2I35","3PDS","2I36","4RWA","2I37","3PWH","4RWD",
 #                                                       "2J4Y","3PXO","2PED","2R4R","2R4S","2VT4","3V2W","3VGA","3OE0",
-                                                       "2YCX","3KJ6","2R4R","2R4S",
+                                                       "2YCX","3KJ6","2R4R","2R4S","3NY8","3NYA","5D5A","3OE6","3OE8",
+                                                       "3OE9"])
                                             # temp exclusion
-                                                       "4EIY","2YDV","4UG2","4UHR","3EML","3VG9","3QAK","2YDO","3VGA",
-                                                       "3UZA","3PWH","3REY","3UZC"])#.distinct('protein_conformation__protein__parent')
+#                                                       "3ODU","3OE0"])
+#                                                       "2RH1","4LDE","3NY9","3D4S","3PDS"])
+#                                                       "4EIY","2YDV","4UG2"])#,"4UHR","3EML","3VG9","3QAK","2YDO","3VGA",
+#                                                       "3PWH","3REY","3UZC"])#.distinct('protein_conformation__protein__parent')
         
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])

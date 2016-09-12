@@ -241,8 +241,10 @@ class HomologyModeling(object):
                     whitespace = len(pdb_re.group(2))
                     if len(pos_list[i])-len(pdb_re.group(3))==0:
                         whitespace = whitespace*' '
-                    else:
+                    elif len(pos_list[i])-len(pdb_re.group(3))==1:
                         whitespace = (whitespace-1)*' '
+                    else:
+                        whitespace = (whitespace-2)*' '
                     out_line = pdb_re.group(1)+whitespace+pos_list[i]+pdb_re.group(4)
                     out_list.append(out_line)
                 except:
@@ -337,7 +339,8 @@ class HomologyModeling(object):
             for seg_l, seg in main_pdb_array.items():
                 for gn, res in seg.items():
                     self.update_template_source([gn.replace('.','x')],self.main_structure,seg_l)
-            helixends = HelixEndsModeling(self.similarity_table, self.template_source, self.main_structure)
+            
+            helixends = HelixEndsModeling(self.similarity_table_all, self.template_source, self.main_structure)
             try:
                 if len(main_pdb_array['H8'])==0:# or len(StructureSegment.objects.filter(structure=self.main_structure,protein_segment=16))==0:
                     helixends.correct_helix_ends(self.main_structure, main_pdb_array, alignment, 
@@ -346,7 +349,14 @@ class HomologyModeling(object):
                     alignment = helixends.alignment
                     self.template_source = helixends.template_source
                     self.helix_end_mods = helixends.helix_end_mods
-                    for struct in self.similarity_table_all:
+                    if self.reference_protein.family.slug.startswith('004'):
+                        H8_st = Structure.objects.get(pdb_code__index='4Z34')
+                        alt_simtable = self.similarity_table_all
+                        alt_simtable[H8_st] = 0
+                    else:
+                        alt_simtable = self.similarity_table_all
+                
+                    for struct in alt_simtable:
                         try:
                             gn_list = list(Residue.objects.filter(protein_conformation=struct.protein_conformation, 
                                                                   protein_segment__slug='H8'))
@@ -375,20 +385,33 @@ class HomologyModeling(object):
         #######################
                     gn_num_list = [ggn(i.display_generic_number.label) for i in gn_list if i.display_generic_number!=None]
                     found_match = False                
-                    c = -4
+                    c1 = -4
+                    c2 = None
                     while found_match==False:
-                        refs = list(main_pdb_array['TM7'].keys())[c:]
+                        refs = list(main_pdb_array['TM7'].keys())[c1:c2]
+                        if self.reference_protein.family.slug.startswith('004'):
+                            break
                         try: 
                             for gn in refs:
                                 Residue.objects.get(protein_conformation=struct.protein_conformation, 
-                                                    display_generic_number__label=dgn(gn,struct.protein_conformation))
+                                                    display_generic_number__label=dgn(gn.replace('.','x'),struct.protein_conformation))
+                            found_match=True
                         except:
-                            c-=1
-                        found_match=True
-#                    temps = [ggn(i.display_generic_number.label) for i in list(Residue.objects.filter(protein_conformation=struct.protein_conformation,protein_segment__slug='TM7'))[-4:]]
+                            c1-=1
+                            if c2==None:
+                                c2 = -1
+                            else:
+                                c2-=1
+                            if c1<-10:
+                                break
+                    temps = [ggn(i.display_generic_number.label) for i in list(Residue.objects.filter(protein_conformation=struct.protein_conformation,protein_segment__slug='TM7'))[-4:]]
                     refs = [i.replace('.','x') for i in refs]
+#                    temps = [i.replace('.','x') for i in temps]
                     H8_reference = parse.fetch_residues_from_array(main_pdb_array['TM7'], refs)
-                    H8_template = parse.fetch_residues_from_pdb(struct, refs+gn_num_list)
+                    if self.reference_protein.family.slug.startswith('004'):
+                        H8_template = parse.fetch_residues_from_pdb(struct, temps+gn_num_list)
+                    else:
+                        H8_template = parse.fetch_residues_from_pdb(struct, refs+gn_num_list)
 
                     superpose = sp.OneSidedSuperpose(H8_reference,H8_template,4,1)
                     sup_residues = superpose.run()
@@ -1123,6 +1146,8 @@ class HomologyModeling(object):
         self.main_pdb_array = main_pdb_array
         
         pprint.pprint(self.helix_end_mods)
+#        pprint.pprint(self.similarity_table)
+#        pprint.pprint(self.similarity_table_all)
 #        pprint.pprint(trimmed_res_nums)
 #        print(self.main_structure)
 #        print(self.main_structure.preferred_chain)
@@ -1613,8 +1638,11 @@ class HomologyMODELLER(automodel):
         return selection(selection_out)
     
     def special_restraints(self, aln):
+        pprint.pprint(self.helix_restraints)
+        pprint.pprint(self.atom_dict)
         rsr = self.restraints
         for i in self.find_helix_restraints():
+            print(i)
             chain = self.identify_chain(i[0])            
             for j, k in self.atom_dict.items():
                 if list(k.items())==[]:
@@ -1894,8 +1922,8 @@ class HelixEndsModeling(HomologyModeling):
         self.helix_ends = raw_helix_ends
 
 ######################## temp force add templates
-        t = tests.HomologyModelsTests()
-        self.similarity_table = t.force_add_template_to_table(self.similarity_table, self.main_structure, ['4UHR'])        
+#        t = tests.HomologyModelsTests()
+#        self.similarity_table = t.force_add_template_to_table(self.similarity_table, self.main_structure, ['4UHR'])        
 #################################################
         
         for ref_seg, temp_seg, align_seg in zip(a.reference_dict, a.template_dict, a.alignment_dict):
