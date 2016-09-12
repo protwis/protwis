@@ -36,11 +36,19 @@ class Command(BuildHumanProteins):
             + 'database with all structures')
         parser.add_argument('--purge', action='store_true', dest='purge', default=False,
             help='Purge existing orthologs records')
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=1,
+            help='Number of processes to run')
 
     ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'reference_positions'])
     auto_ref_position_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'auto_reference_positions'])
     construct_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'constructs'])
     uniprot_url = 'http://www.uniprot.org/uniprot/?query={}&columns=id&format=tab'
+
+
 
     def handle(self, *args, **options):
         if options['purge']:
@@ -50,18 +58,20 @@ class Command(BuildHumanProteins):
                 self.logger.error('Could not purge orthologs')
 
         if options['constructs_only']:
-            constructs_only = True
+            self.constructs_only = True
         else:
-            constructs_only = False
+            self.constructs_only = False
         
         
-        self.create_orthologs(constructs_only)
+        # self.create_orthologs(constructs_only)
+        filenames = os.listdir(self.local_uniprot_dir)
+        self.prepare_input(options['proc'], filenames)
         
 
     def purge_orthologs(self):
         Protein.objects.filter(~Q(species__common_name="Human")).delete()
 
-    def create_orthologs(self, constructs_only):
+    def main_func(self, positions, iteration):
         self.logger.info('CREATING OTHER PROTEINS')
         try:
             # go through constructs and finding their entry_names for lookup
@@ -89,7 +99,13 @@ class Command(BuildHumanProteins):
 
             # parse files
             filenames = os.listdir(self.local_uniprot_dir)
-            for source_file in filenames:
+            for i,source_file in enumerate(filenames):
+                if i<positions[0]: #continue if less than start
+                    continue
+                if positions[1]: #if end is non-false
+                    if i>=positions[1]:
+                        #continue if i less than process 
+                        continue
                 source_file_name = os.sep.join([self.local_uniprot_dir, source_file])
                 split_filename = source_file.split(".")
                 accession = split_filename[0]
@@ -104,7 +120,7 @@ class Command(BuildHumanProteins):
                     continue
 
                 # should proteins that are not constructs be skipped?
-                if constructs_only and up['entry_name'] not in construct_entry_names:
+                if self.constructs_only and up['entry_name'] not in construct_entry_names:
                     continue
 
                 # is this an ortholog of a human protein?
