@@ -80,7 +80,7 @@ class Command(BaseBuild):
     filenames = os.listdir(structure_data_dir)
 
     ### USE below to fix seg ends 
-    xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'xtal_segends.yaml'])
+    xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'mod_xtal_segends.yaml'])
     with open(xtal_seg_end_file, 'r') as f:
         xtal_seg_ends = yaml.load(f)
 
