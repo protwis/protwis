@@ -100,15 +100,17 @@ class Command(BaseCommand):
                     #in case there is no key for whatever reason
                     # print("no key!")
                     continue
-
+                # if key in d[worksheet_name]:
+                #     print(key, "already in",worksheet_name)
                 d[worksheet_name][key] = OrderedDict()
                 temprow = {}
                 for curr_cell in range(num_cells):
                     # cell_type = worksheet.cell_type(curr_row, curr_cell)
                     cell_value = worksheet.cell_value(curr_row, curr_cell)
                     # temprow.append(cell_value)
-                    d[worksheet_name][key][headers[curr_cell]] = cell_value
-
+                    if headers[curr_cell] not in d[worksheet_name][key]:
+                        #do not overwrite
+                        d[worksheet_name][key][headers[curr_cell]] = cell_value
                 # if curr_row>2: break
         return d
     def analyse_annotation_consistency(self):
@@ -158,10 +160,11 @@ class Command(BaseCommand):
         info = {}
         for structure,vals in structures.items():
             if structure.split("_")[-1] == "wt":
-                #print(structure)
+                # print(structure)
                 entry = vals['UniProt']
                 info[entry] = {}
                 for key,val in vals.items():
+                    # print(val,key)
                     if len(key)>3:
                         continue
                     if not key:
@@ -173,8 +176,8 @@ class Command(BaseCommand):
 
                     if structures_non_xtal[entry][key]!=val:
                         print("error with ",entry,key,"Xtal sheet:",val,"NonXtal sheet:",structures_non_xtal[entry][key])
-                        #print(structures_non_xtal[entry])
-                        #print(vals)
+                        print(structures_non_xtal[entry])
+                        print(vals)
                 #print(structure,info)
 
         # with open(self.xtal_seg_end_file, 'w') as outfile:
@@ -212,8 +215,6 @@ class Command(BaseCommand):
                 if key[-1]!="b" and key[-1]!="e":
                     continue
                 pdb_info_all[entry][key] = val
-
-
 
         data = self.data["Xtal_SegEnds_BW#"]
         Xtal_SegEnds_BW = {}
@@ -281,8 +282,6 @@ class Command(BaseCommand):
                 if not key:
                     continue
                 Seqs[entry][key] = val
-
-
 
 
         pdb_info = OrderedDict(sorted(pdb_info.items())) 

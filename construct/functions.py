@@ -19,6 +19,7 @@ import json
 import datetime
 from collections import OrderedDict
 import pickle
+import logging
 
 AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
      'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N', 
@@ -30,6 +31,7 @@ AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
 
 
 def fetch_pdb_info(pdbname,protein):
+    logger = logging.getLogger('build')
     #d = {}
     d = OrderedDict()
     d['construct_crystal'] = {}
@@ -128,7 +130,8 @@ def fetch_pdb_info(pdbname,protein):
                                     receptor_chain = chain
                                 elif msg_1==0:
                                     msg_1 = 1
-                                    print('\t', pdbname.lower(),'receptor in many chains?!',chain,receptor_chain)
+                                    # print('\t', pdbname.lower(),'receptor in many chains?!',chain,receptor_chain)
+                                    logger.warning('{} has receptor in many chains {} {}'.format(pdbname.lower(),chain,receptor_chain))
                                 insert_position = 'Within Receptor'
                             if u_id not in seg_uniprot_ids:
                                 seg_uniprot_ids.append(u_id)
@@ -184,7 +187,8 @@ def fetch_pdb_info(pdbname,protein):
                     continue #do not add segments without information
                 d['auxiliary']['aux'+str(len(d['auxiliary']))] = {'type':'auto','subtype':subtype,'presence':'YES','position':insert_position, 'start':insert_start}
             elif receptor == False:
-                print('\t',pdbname.lower(),'Protein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
+                # print('\t',pdbname.lower(),'Protein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
+                logger.warning('{} Protein in structure, but not part of receptor chain {} {}'.format(pdbname.lower(),seg_uniprot_ids,chain))
         d['deletions'] = []
         for k, g in groupby(enumerate(pos_in_wt), lambda x:x[0]-x[1]):
             group = list(map(itemgetter(1), g))
