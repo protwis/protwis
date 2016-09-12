@@ -80,7 +80,6 @@ class Command(BaseCommand):
         for filename in filenames:
             if filename[-4:]!='json':
                 continue
-            print(filename)
             filepath = os.sep.join([self.construct_data_dir, filename])
             with open(filepath) as json_file:
                 d = json.load(json_file)
@@ -91,7 +90,6 @@ class Command(BaseCommand):
 
         for s in structures:
             pdbname = str(s)
-            print(pdbname)
             try:
                 protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
                 d = fetch_pdb_info(pdbname,protein)
