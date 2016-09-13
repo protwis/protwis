@@ -128,7 +128,7 @@ def fetch_pdb_info(pdbname,protein):
                                     receptor_chain = chain
                                 elif msg_1==0:
                                     msg_1 = 1
-                                    print('\treceptor in many chains?!',chain,receptor_chain)
+                                    print('\t', pdbname.lower(),'receptor in many chains?!',chain,receptor_chain)
                                 insert_position = 'Within Receptor'
                             if u_id not in seg_uniprot_ids:
                                 seg_uniprot_ids.append(u_id)
@@ -184,7 +184,7 @@ def fetch_pdb_info(pdbname,protein):
                     continue #do not add segments without information
                 d['auxiliary']['aux'+str(len(d['auxiliary']))] = {'type':'auto','subtype':subtype,'presence':'YES','position':insert_position, 'start':insert_start}
             elif receptor == False:
-                print('\tProtein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
+                print('\t',pdbname.lower(),'Protein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
         d['deletions'] = []
         for k, g in groupby(enumerate(pos_in_wt), lambda x:x[0]-x[1]):
             group = list(map(itemgetter(1), g))
@@ -274,7 +274,7 @@ def fetch_pdb_info(pdbname,protein):
                     d['ligands'][ligand['chem_comp_id']] = {'comp_name':ligand['chem_comp_name'], 'number_of_entries':1}
                 else:
                     d['ligands'][ligand['chem_comp_id']]['number_of_entries'] += 1
-        print(d['ligands'])
+        # print(d['ligands'])
    
     else:
         d['ligands'] = 'None'

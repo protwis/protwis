@@ -43,8 +43,27 @@ class Command(BaseBuild):
 
     # source file directory
     annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Structural_Annotation.xlsx'])
-    xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'xtal_segends.yaml'])
     generic_numbers_source_dir = os.sep.join([settings.DATA_DIR, 'residue_data', 'generic_numbers'])
+
+    annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Structural_Annotation.xlsx'])
+
+    non_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends.yaml'])
+    with open(non_xtal_seg_end_file, 'r') as f:
+        non_xtal_seg_end = yaml.load(f)
+
+    all_anomalities_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalities.yaml'])
+    with open(all_anomalities_file, 'r') as f:
+        all_anomalities = yaml.load(f)
+
+    sequence_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml'])
+    with open(sequence_file, 'r') as f:
+        gpcr_sequences = yaml.load(f)
+
+    xtal_anomalities_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_anomalities.yaml'])
+    non_xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'non_xtal_segends_bw.yaml'])
+    xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends.yaml'])
+    mod_xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'mod_xtal_segends.yaml'])
+    xtal_seg_end_bw_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends_bw.yaml'])
 
     segments = ProteinSegment.objects.filter(partial=False)
     all_segments = {ps.slug: ps for ps in ProteinSegment.objects.all()}  # all segments dict for faster lookups
@@ -57,16 +76,14 @@ class Command(BaseBuild):
     def handle(self, *args, **options):
         try:
             self.logger.info('CREATING RESIDUES')
-            self.data = self.parse_excel(self.annotation_source_file)
-            self.dump_seg_ends()
+            # self.analyse_annotation_consistency()
 
             # run the function twice (second run for proteins without reference positions)
-            # self.prepare_input(options['proc'], self.data["NonXtal_SegEnds_Prot#"])
 
             self.prepare_input(options['proc'], self.pconfs)
 
-            if (self.check_if_residues()):
-                self.prepare_input(1, self.pconfs)
+            # if (self.check_if_residues()):
+            #     self.prepare_input(1, self.pconfs)
 
             # if (self.check_if_residues()):
             #     self.prepare_input(1, self.pconfs)
@@ -78,79 +95,6 @@ class Command(BaseBuild):
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
-
-    def parse_excel(self,path):
-        workbook = xlrd.open_workbook(path)
-        worksheets = workbook.sheet_names()
-        d = {}
-        for worksheet_name in worksheets:
-            if worksheet_name in d:
-                print('Error, worksheet with this name already loaded')
-                continue
-
-            d[worksheet_name] = OrderedDict()
-            worksheet = workbook.sheet_by_name(worksheet_name)
-
-            num_rows = worksheet.nrows - 1
-            num_cells = worksheet.ncols - 1
-            curr_row = 0 #skip first, otherwise -1
-
-            headers = []
-            for i in range(num_cells):
-                h = worksheet.cell_value(0, i)
-                if h=="":
-                    #replace header with index if empty
-                    h = "i_"+str(i)
-                if h in headers:
-                    # print('already have ',h)
-                    h += "_"+str(i)
-                # print(h)
-                headers.append(worksheet.cell_value(0, i))
-
-            for curr_row in range(1,num_rows+1):
-                row = worksheet.row(curr_row)
-                key = worksheet.cell_value(curr_row, 0)
-
-                if key=='':
-                    #in case there is no key for whatever reason
-                    # print("no key!")
-                    continue
-
-                d[worksheet_name][key] = OrderedDict()
-                temprow = {}
-                for curr_cell in range(num_cells):
-                    # cell_type = worksheet.cell_type(curr_row, curr_cell)
-                    cell_value = worksheet.cell_value(curr_row, curr_cell)
-                    # temprow.append(cell_value)
-                    d[worksheet_name][key][headers[curr_cell]] = cell_value
-
-                # if curr_row>2: break
-        return d
-
-    def dump_seg_ends(self):
-        structures = self.data["Xtal_SegEnds_Prot#"]
-        pdb_info = {}
-        for structure,vals in structures.items():
-            if structure.split("_")[-1] == "wt":
-                continue
-            if structure.split("_")[-1] == "dist":
-                continue
-            #print(structure)
-            pdb_id = structure.split("_")[-1]
-            pdb_info[pdb_id] = {}
-            for key,val in vals.items():
-                if len(key)>3:
-                    continue
-                if not key:
-                    continue
-                if key[-1]!="b" and key[-1]!="e":
-                    continue
-
-                pdb_info[pdb_id][key] = val
-
-        #print(pdb_info)
-        with open(self.xtal_seg_end_file, 'w') as outfile:
-            yaml.dump(pdb_info, outfile)
 
     def generate_bw(self, i, v, aa):
         #return dict
@@ -288,13 +232,6 @@ class Command(BaseBuild):
 
     def main_func(self, positions, iteration):
         self.logger.info('STARTING ANNOTATION PROCESS {}'.format(positions))
-        # pconfs
-        # if not positions[1]:
-        #     # proteins = OrderedDict(islice(self.data["NonXtal_SegEnds_Prot#"].items(),positions[0]))
-        #     proteins = list(self.data["NonXtal_SegEnds_Prot#"])[positions[0]:]
-        # else:
-        #     # proteins = OrderedDict(islice(self.data["NonXtal_SegEnds_Prot#"].items(),positions[0],positions[1]))
-        #     proteins = list(self.data["NonXtal_SegEnds_Prot#"])[positions[0]:positions[1]]
 
         if not positions[1]:
             pconfs = self.pconfs[positions[0]:]
@@ -302,7 +239,7 @@ class Command(BaseBuild):
             pconfs = self.pconfs[positions[0]:positions[1]]
 
 
-        proteins = list(self.data["NonXtal_SegEnds_Prot#"])
+        proteins = list(self.non_xtal_seg_end)
 
         # print(data)
         counter = 0
@@ -313,7 +250,7 @@ class Command(BaseBuild):
             ref_positions = None
             counter += 1
             missing_x50s = []
-            aligned_gn_mismatch_gap = ''
+            aligned_gn_mismatch_gap = 0
             human_ortholog = ''
             # self.logger.info('DOING {}'.format(p))
             # if p.protein.residue_numbering_scheme.slug!='gpcrdbc' or p.protein.species.common_name != "Human":
@@ -343,13 +280,14 @@ class Command(BaseBuild):
                             continue
                         if human_ortholog.entry_name in proteins:
                             # print(counter,entry_name,'check sequences')
-                            ref_positions, aligned_gn_mismatch_gap = self.compare_human_to_orthologue(human_ortholog, p.protein, self.data["NonXtal_SegEnds_Prot#"][human_ortholog.entry_name],counter)
+                            ref_positions, aligned_gn_mismatch_gap = self.compare_human_to_orthologue(human_ortholog, p.protein, self.non_xtal_seg_end[human_ortholog.entry_name],counter)
                             s = p.protein.sequence
-                            v = self.data["NonXtal_SegEnds_Prot#"][human_ortholog.entry_name]
+                            v = self.non_xtal_seg_end[human_ortholog.entry_name]
                             new_v = {}
                             # print(v)
                             failed = None
                             x50s = ['1x','i1x','2x','e1x','3x','i2x','4x','e2x','5x','6x','7x','8x']
+                            x50s_must_have = ['1x','2x','3x','4x','5x','6x','7x']
                             for x50 in x50s:
                                 #1b  1x  1e  i1b i1x i1e 2b  2x  2e  e1b e1x e1e 3b  3x  3e  i2b i2x i2e 4b  4x  4e  e2b e2x e2e 5b  5x  5e  6b  6x  6e  7b  7x  7e  8b  8x  8e
                                 val = v[x50]
@@ -367,6 +305,7 @@ class Command(BaseBuild):
                                         break
                                     if i in ref_positions:
                                         new_v[x50] = ref_positions[i]
+                                        ## MAYBE NEED SOME RULES HERE.... 
                                         new_v[x50[:-1]+"b"] = ref_positions[i]+length_to_b
                                         new_v[x50[:-1]+"e"] = ref_positions[i]+length_to_e
                                     else:
@@ -374,9 +313,13 @@ class Command(BaseBuild):
                                         new_v[x50[:-1]+"b"] = 0
                                         new_v[x50[:-1]+"e"] = 0
                                         missing_x50s.append(x50)
-                                        # print(entry_name,"tranlated ",x50," no index in ortholog, skipping for now")
-                                        # failed = True
-                                        # break
+                                        if x50 in x50s_must_have:
+                                            # print(entry_name,"tranlated ",x50," no index in ortholog, deleting pconf and protein")
+                                            self.logger.warning('{} tranlated {} no index in ortholog, deleting pconf and protein'.format(entry_name,x50))
+                                            failed = True
+                                            p.protein.delete()
+                                            p.delete()
+                                            break
                                 else:
                                     new_v[x50] = 0
                                     new_v[x50[:-1]+"b"] = 0
@@ -385,10 +328,15 @@ class Command(BaseBuild):
                             # print(new_v)
                             if failed:
                                 continue
+
+                            if aligned_gn_mismatch_gap>10:
+                                self.logger.warning('{} ({}) lots of misaligned GN {}'.format(entry_name,human_ortholog.entry_name,aligned_gn_mismatch_gap))
+                                # print(entry_name,"(",human_ortholog.entry_name,") lots of misaligned GN",aligned_gn_mismatch_gap)
+
                             v = new_v
                             #exit()
                             b_and_c = {}
-                            for entry,gn in self.data["NonXtal_Bulges_Constr_GPCRdb#"][human_ortholog.entry_name].items():
+                            for entry,gn in self.all_anomalities[human_ortholog.entry_name].items():
                                 if len(entry)<3:
                                     continue
                                 if entry[1]=='x' or entry[2]=='x':
@@ -400,17 +348,20 @@ class Command(BaseBuild):
                                         if gn!=entry:
                                             print('Something off with b_and_c for',human_ortholog.entry_name,'gn',gn,'entry',entry)
                     else:
-                        pass
-                        # print(counter,entry_name,"not done and no human")
-                    #continue
+                        # pass
+                        self.logger.warning('{}  has no human template, deleting'.format(entry_name))
+                        p.protein.delete()
+                        p.delete()
+                        failed = True
+                        #continue
                 elif entry_name in proteins:
                     # print(entry_name,"not done but ready")    
-                    v = self.data["NonXtal_SegEnds_Prot#"][entry_name]
+                    v = self.non_xtal_seg_end[entry_name]
                     # if counter>20:
                     #     break
-                    s = self.data["Seqs"][entry_name]['Sequence']
+                    s = self.gpcr_sequences[entry_name]['Sequence']
                     b_and_c = {}
-                    for entry,gn in self.data["NonXtal_Bulges_Constr_GPCRdb#"][entry_name].items():
+                    for entry,gn in self.all_anomalities[entry_name].items():
                         if len(entry)<3:
                             continue
                         if entry[1]=='x' or entry[2]=='x':
@@ -473,17 +424,19 @@ class Command(BaseBuild):
             end = time.time()
             diff = round(end - current,1)
             self.logger.info('{} {} residues ({}) {}s alignemt {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
-            # print(p.protein.entry_name,len(rs),"residues","(",human_ortholog,")",diff,"s", "alignment",aligned_gn_mismatch_gap,missing_x50s)
+            if aligned_gn_mismatch_gap>10:
+                #print(p.protein.entry_name,len(rs),"residues","(",human_ortholog,")",diff,"s", " Unaligned generic numbers: ",aligned_gn_mismatch_gap)
+                self.logger.error('{} {} residues ({}) {}s MANY ERRORS IN ALIGNMENT {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
 
         self.logger.info('COMPLETED ANNOTATIONS PROCESS {}'.format(positions))
 
     def compare_human_to_orthologue(self, human, ortholog, annotation,counter):
 
-        v = self.data["NonXtal_SegEnds_Prot#"][human.entry_name]
-        s = self.data["Seqs"][human.entry_name]['Sequence']
-        human_seq = self.data["Seqs"][human.entry_name]['Sequence']
+        v = self.non_xtal_seg_end[human.entry_name]
+        s = self.gpcr_sequences[human.entry_name]['Sequence']
+        human_seq = self.gpcr_sequences[human.entry_name]['Sequence']
         b_and_c = {}
-        for entry,gn in self.data["NonXtal_Bulges_Constr_GPCRdb#"][human.entry_name].items():
+        for entry,gn in self.all_anomalities[human.entry_name].items():
             if len(entry)<3:
                 continue
             if entry[1]=='x' or entry[2]=='x':
