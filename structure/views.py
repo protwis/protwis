@@ -13,6 +13,8 @@ from structure.structural_superposition import ProteinSuperpose,FragmentSuperpos
 from structure.forms import *
 from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
 from protein.models import Protein, ProteinFamily
+from construct.models import Construct
+from construct.functions import convert_ordered_to_disordered_annotation,add_construct
 from common.views import AbsSegmentSelection,AbsReferenceSelection
 from common.selection import Selection, SelectionItem
 from common.extensions import MultiFileField
@@ -24,6 +26,7 @@ import time
 import zipfile
 import math
 import json
+import ast
 from copy import deepcopy
 from io import StringIO, BytesIO
 from collections import OrderedDict
@@ -72,18 +75,19 @@ def StructureDetails(request, pdbname):
     Show structure details
     """
     pdbname = pdbname
-    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name','structure_ligand_pair__pdb_reference','structure_ligand_pair__annotated').filter(structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
+    structures = ResidueFragmentInteraction.objects.values('structure_ligand_pair__ligand__name','structure_ligand_pair__pdb_reference','structure_ligand_pair__annotated').filter(structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).annotate(numRes = Count('pk', distinct = True)).order_by('-numRes')
     resn_list = ''
 
+    main_ligand = 'None'
     for structure in structures:
         if structure['structure_ligand_pair__annotated']:
             resn_list += ",\""+structure['structure_ligand_pair__pdb_reference']+"\""
-    print(resn_list)
+            main_ligand = structure['structure_ligand_pair__pdb_reference']
 
     crystal = Structure.objects.get(pdb_code__index=pdbname)
     p = Protein.objects.get(protein=crystal.protein_conformation.protein)
     residues = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
-    return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list})
+    return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list, 'main_ligand': main_ligand})
 
 def ServePdbDiagram(request, pdbname):       
     structure=Structure.objects.filter(pdb_code__index=pdbname) 
@@ -1371,8 +1375,22 @@ def webform(request):
     context = {'form':form}
     return render(request, 'web_form.html',context)
    
-def webform_two(request):
-    return render(request, 'web_form_2.html')
+def webform_two(request, slug=None):
+    context = {}
+    if slug:
+        c = Construct.objects.filter(name=slug).get()
+        # print(c.json)
+        # test = ast.literal_eval(c.json)
+        # print(test)
+        json_data = json.loads(c.json)
+        if 'raw_data' not in json_data:
+            json_data = convert_ordered_to_disordered_annotation(json_data)
+        else:
+            if 'csrfmiddlewaretoken' in json_data['raw_data']:
+                del json_data['raw_data']['csrfmiddlewaretoken'] #remove to prevent errors
+                
+        context = {'edit':json.dumps(json_data)}
+    return render(request, 'web_form_2.html',context)
 
 def webformdata(request) :
 
@@ -1449,9 +1467,12 @@ def webformdata(request) :
                     data.pop('protein_type'+pos_id, None)
                     data.pop('presence'+pos_id, None)
 
-            if key.startswith(('tag', 'fusion_prot', 'signal', 'linker_seq','prot_cleavage' )):
+            if key.startswith(('tag', 'fusion_prot', 'signal', 'linker_seq','prot_cleavage', 'other_prot_cleavage' )):
                 temp = key.split('_')
-                if len(temp)==3:
+                if len(temp)==4:
+                    pos_id = "_"+temp[3]
+                    aux_id=pos_id.replace('_','')
+                elif len(temp)==3:
                     pos_id = "_"+temp[2]
                     aux_id=pos_id.replace('_','')
                 elif len(temp)==2 and temp[1].isdigit():
@@ -1469,9 +1490,9 @@ def webformdata(request) :
                     data.pop('protein_type'+pos_id, None)
                     data.pop('presence'+pos_id, None)
 
-                if value=='Other':
-                    auxiliary['aux'+aux_id]['other'] = data['other_'+auxiliary['aux'+aux_id]['type']+pos_id]
-                    data.pop('other_'+auxiliary['aux'+aux_id]['type']+pos_id,None)
+                # if value=='Other':
+                #     auxiliary['aux'+aux_id]['other'] = data['other_'+auxiliary['aux'+aux_id]['type']+pos_id]
+                #     data.pop('other_'+auxiliary['aux'+aux_id]['type']+pos_id,None)
 
                 auxiliary['aux'+aux_id]['subtype'] = value
                 data.pop(key, None)
@@ -1548,9 +1569,11 @@ def webformdata(request) :
                            ('modifications', modifications), ('expression', expression), ('solubilization',solubilization),
                            ('crystallization',crystallization),  ('unparsed',data),  ('raw_data',raw_data), ('error', error), ('error_msg',error_msg)] )
 
+    add_construct(context)
+
     if error==0:
         dump_dir = '/protwis/construct_dump'
-        dump_dir = '/web/sites/files/construct_data' #for sites
+        # dump_dir = '/web/sites/files/construct_data' #for sites
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
         ts = int(time.time())
@@ -1590,7 +1613,7 @@ def webformdata(request) :
 
 def webform_download(request,slug):
     dump_dir = '/protwis/construct_dump'
-    dump_dir = '/web/sites/files/construct_data' #for sites
+    # dump_dir = '/web/sites/files/construct_data' #for sites
     file = dump_dir+"/"+str(slug)+".json"
     out_stream = open(file,"rb").read()
     response = HttpResponse(content_type="application/json")
