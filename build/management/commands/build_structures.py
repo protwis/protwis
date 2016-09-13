@@ -12,6 +12,7 @@ from common.models import WebLink, WebResource, Publication
 from structure.models import (Structure, StructureType, StructureSegment, StructureStabilizingAgent,PdbData,
     Rotamer, StructureSegmentModeling, StructureCoordinates, StructureCoordinatesDescription, StructureEngineering,
     StructureEngineeringDescription, Fragment)
+from construct.functions import *
 #from structure.functions import BlastSearch
 from Bio.PDB import PDBParser,PPBuilder
 from Bio import pairwise2
@@ -79,7 +80,7 @@ class Command(BaseBuild):
     filenames = os.listdir(structure_data_dir)
 
     ### USE below to fix seg ends 
-    xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'xtal_segends.yaml'])
+    xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'mod_xtal_segends.yaml'])
     with open(xtal_seg_end_file, 'r') as f:
         xtal_seg_ends = yaml.load(f)
 
@@ -166,7 +167,7 @@ class Command(BaseBuild):
                 pdbseq[chain][pos] = [i,AA[residue.resname]]
                 i += 1
 
-        parent_seq = str(structure.protein_conformation.protein.parent.sequence)
+        parent_seq_protein = str(structure.protein_conformation.protein.parent.sequence)
         # print(structure.protein_conformation.protein.parent.entry_name)
         rs = Residue.objects.filter(protein_conformation__protein=structure.protein_conformation.protein.parent).prefetch_related('display_generic_number','generic_number','protein_segment')
 
@@ -178,8 +179,13 @@ class Command(BaseBuild):
             self.logger.info('No SEG ENDS info for {}'.format(structure.pdb_code.index))
 
 
+        parent_seq = ""
         for r in rs: #required to match WT position to a record (for duplication of GN values)
             wt_lookup[r.sequence_number] = r
+            parent_seq += r.amino_acid
+
+        if parent_seq != parent_seq_protein:
+            print('Residues sequence differ from sequence in protein',structure.protein_conformation.protein.parent.entry_name,structure.pdb_code.index)
 
         if len(wt_lookup)==0:
             print("No residues for",structure.protein_conformation.protein.parent.entry_name)
@@ -252,7 +258,7 @@ class Command(BaseBuild):
                             residue.amino_acid = AA[residue_name.upper()]
                             residue.protein_conformation = protein_conformation
 
-                            #print(residue.sequence_number,residue.amino_acid) #sanity check
+                            # print(residue.sequence_number,residue.amino_acid) #sanity check
                             try:
                                 seq_num_pos = pdbseq[chain][residue.sequence_number][0]
                             except:
@@ -306,7 +312,7 @@ class Command(BaseBuild):
                                         residue.generic_number = None
                                         #print('no GN')
                                     residue.protein_segment = wt_r.protein_segment
-
+                                    # print('aa ',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                     if len(seg_ends):
                                         if residue.protein_segment.slug=='TM1':
                                             if seg_ends['1b']!='-' and seg_ends['1e']!='-':
@@ -970,5 +976,22 @@ class Command(BaseBuild):
                         print(msg)
                         print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
                         self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
+
+                    try:
+                        current = time.time()
+                        #protein = Protein.objects.filter(entry_name=s.protein_conformation).get()
+                        d = fetch_pdb_info(sd['pdb'],con)
+                        #delete before adding new
+                        #Construct.objects.filter(name=d['construct_crystal']['pdb_name']).delete()
+                        add_construct(d)
+                        end = time.time()
+                        diff = round(end - current,1)
+                        self.logger.info('construction calculations done for {}. {} seconds.'.format(
+                                    s.protein_conformation.protein.entry_name, diff))
+                    except Exception as msg:
+                        print(msg)
+                        print('ERROR WITH CONSTRUCT FETCH {}'.format(sd['pdb']))
+                        self.logger.error('ERROR WITH CONSTRUCT FETCH for {}'.format(sd['pdb']))
+
 
                     # print('{} done'.format(sd['pdb']))

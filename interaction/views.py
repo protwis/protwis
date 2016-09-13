@@ -130,10 +130,13 @@ def StructureDetails(request, pdbname):
         structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes=Count('pk', distinct=True)).order_by('-numRes')
     resn_list = ''
 
+
+    main_ligand = "none"
     for structure in structures:
         if structure['structure_ligand_pair__annotated']:
             resn_list += ",\"" + \
                 structure['structure_ligand_pair__pdb_reference'] + "\""
+            main_ligand = structure['structure_ligand_pair__pdb_reference'] 
     print(resn_list)
 
 
@@ -144,14 +147,18 @@ def StructureDetails(request, pdbname):
     residuelist = Residue.objects.filter(protein_conformation__protein=p).prefetch_related('protein_segment','display_generic_number','generic_number')
     lookup = {}
 
+    residues_lookup = {}
     for r in residuelist:
         if r.generic_number:
             lookup[r.generic_number.label] = r.sequence_number
+            residues_lookup[r.sequence_number] = r.amino_acid +str(r.sequence_number)+ " "+ r.generic_number.label
 
     residues = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').order_by('rotamer__residue__sequence_number')
     residues_browser = []
     ligands = []
+    display_res = []
+    main_ligand_full = "None"
     residue_table_list = []
     for residue in residues:
         key = residue.interaction_type.name
@@ -173,11 +180,17 @@ def StructureDetails(request, pdbname):
         else:
             display = ''
         ligand = residue.structure_ligand_pair.ligand.name
+        display_res.append(str(pos))
         residues_browser.append({'type': key, 'aa': aa, 'ligand': ligand,
                                  'pos': pos, 'wt_pos': wt_pos, 'gpcrdb': display, 'segment': segment})
+        if pos not in residues_lookup:
+            residues_lookup[pos] = aa + str(pos) + " " +display + " interaction " + key
+        else:
+            residues_lookup[pos] += " interaction " + key
         if ligand not in ligands:
             ligands.append(ligand)
-
+            main_ligand_full = ligand
+    display_res = ' or '.join(display_res)
     # RESIDUE TABLE
     segments = ProteinSegment.objects.all().filter().prefetch_related()
 
@@ -261,8 +274,8 @@ def StructureDetails(request, pdbname):
                 residuelist, p.get_protein_class(), str(p), nobuttons=1)
 
     return render(request, 'interaction/structure.html', {'pdbname': pdbname, 'structures': structures,
-                                                          'crystal': crystal, 'protein': p, 'helixbox' : HelixBox, 'snakeplot': SnakePlot, 'residues': residues_browser, 'annotated_resn':
-                                                          resn_list, 'ligands': ligands, 'data': context['data'],
+                                                          'crystal': crystal, 'protein': p, 'helixbox' : HelixBox, 'snakeplot': SnakePlot, 'residues': residues_browser, 'residues_lookup': residues_lookup, 'display_res': display_res, 'annotated_resn':
+                                                          resn_list, 'ligands': ligands,'main_ligand' : main_ligand,'main_ligand_full' : main_ligand_full, 'data': context['data'],
                                                           'header': context['header'], 'segments': context['segments'],
                                                           'number_of_schemes': len(numbering_schemes)})
 
