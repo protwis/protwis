@@ -73,28 +73,48 @@ class Command(BaseBuild):
 
     pw_aln_error = ['celr3_mouse','celr3_human','gpr98_human']
 
+    track_rf_annotations = {}
+
     def handle(self, *args, **options):
         try:
             self.logger.info('CREATING RESIDUES')
-            # self.analyse_annotation_consistency()
-
-            # run the function twice (second run for proteins without reference positions)
 
             self.prepare_input(options['proc'], self.pconfs)
 
             # if (self.check_if_residues()):
             #     self.prepare_input(1, self.pconfs)
 
-            # if (self.check_if_residues()):
-            #     self.prepare_input(1, self.pconfs)
-
-            # if (self.check_if_residues()):
-            #     self.prepare_input(1, self.pconfs)
+            # self.main_func([0, False],0)
+            # self.analyse_rf_annotations()
 
             self.logger.info('COMPLETED CREATING RESIDUES')
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
+
+    def analyse_rf_annotations(self):
+        ## THIS ONLY WORKS IF NOT RUNNING IN PARALLIZED
+        self.track_rf_annotations = OrderedDict(sorted(self.track_rf_annotations.items()))
+        match = 0
+        unmatch = 0
+        for rf, vals in self.track_rf_annotations.items():
+            if len(vals['anomalities'])>1:
+                unmatch += 1
+                print(vals['name'],rf,"templs:",len(vals['templs']),"anomalities",len(vals['anomalities']))
+                # print("templs:",vals['templs'])
+                #print("anomalities",vals['anomalities'])
+                common = set.intersection(*map(set,vals['anomalities']))
+                non_common = []
+                print("Common:",common)
+                for l in vals['anomalities']:
+                    for v in l:
+                        if v not in common:
+                            if v not in non_common:
+                                non_common.append(v)
+                print("Non-Common:",non_common)
+            else:
+                match += 1
+        print("Match RF",match,"Unmatch RF",unmatch)
 
     def generate_bw(self, i, v, aa):
         #return dict
@@ -361,6 +381,7 @@ class Command(BaseBuild):
                     #     break
                     s = self.gpcr_sequences[entry_name]['Sequence']
                     b_and_c = {}
+                    b_and_c_mod = []
                     for entry,gn in self.all_anomalities[entry_name].items():
                         if len(entry)<3:
                             continue
@@ -370,6 +391,7 @@ class Command(BaseBuild):
                                 if seg not in b_and_c:
                                     b_and_c[seg] = []
                                 b_and_c[seg].append(number)
+                                b_and_c_mod.append(entry)
                                 if gn!=entry:
                                     print('Something off with b_and_c for',entry_name,'gn',gn,'entry',entry)
                 else: #human but not in proteins
@@ -380,6 +402,14 @@ class Command(BaseBuild):
             # self.logger.info('Parsed Seq and B&C {}'.format(entry_name))
             # print(counter,entry_name,"make residues")
             # continue
+
+            # if p.protein.family.parent.slug not in self.track_rf_annotations:
+            #     self.track_rf_annotations[p.protein.family.parent.slug] = {'templs': [], 'anomalities' : [], 'name' : p.protein.family.parent.name}
+            # if v['Xtal Templ'] not in self.track_rf_annotations[p.protein.family.parent.slug]['templs']:
+            #     self.track_rf_annotations[p.protein.family.parent.slug]['templs'].append(v['Xtal Templ'])
+            # if b_and_c_mod not in self.track_rf_annotations[p.protein.family.parent.slug]['anomalities']:
+            #     self.track_rf_annotations[p.protein.family.parent.slug]['anomalities'].append(b_and_c_mod)
+
             pconf = p
 
             al = []
