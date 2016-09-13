@@ -52,6 +52,10 @@ class Publication(models.Model):
     class Meta():
         db_table = 'publication'
 
+
+    #http://www.ncbi.nlm.nih.gov/pubmed/?term=10.1124%2Fmol.107.040097&report=xml&format=text
+    # use NCBI instead to correct year published (journal year)
+
     def update_from_doi(self, doi):
         logger = logging.getLogger('build')
 

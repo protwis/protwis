@@ -1,0 +1,113 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+{% endblock %}
+{% block content %}
+<h2>Drug Browser</h2>
+<div class="row">
+    <div class="col-md-12 text-center">
+        {% if drugdata %}              
+        <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+            <table width="100%" class="display table" id="drugdata">
+
+                <thead>
+                    <tr>
+                        <th style="background-color:#98df8a;text-align:center">Drug Name</th>
+                        <th style="background-color:#98df8a;text-align:center">Indication</th>
+                        <th style="background-color:#aec7e8;text-align:center">Target</th>
+                        <th style="background-color:#aec7e8;text-align:center">Class</th>
+                        <th style="background-color:#aec7e8;text-align:center">Family</th>
+                        <th style="background-color:#ffbb78;text-align:center">Status</th>
+                        <th style="background-color:#ffbb78;text-align:center">Year of Approval</th>
+                        <th style="background-color:#ffbb78;text-align:center">Drug Type</th>
+                        <th style="background-color:#ffbb78;text-align:center">Novelty</th>
+                    </tr>
+                    <tr>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in drugdata %}
+                <tr>
+                <td style="text-align:center">{{row.name|safe}}</td>
+                <td style="text-align:center">{{row.indication|safe}}</td>
+                <td style="text-align:center"> <a href='/protein/{{row.target|safe}} '> {{row.target|safe}} </a </td>
+                <td style="text-align:center">{{row.class|safe}}</td>
+                <td style="text-align:center">{{row.family|safe}}</td>
+                <td style="text-align:center">{{row.status|safe}}</td>
+                <td style="text-align:center">{{row.approval|safe}}</td>
+                <td style="text-align:center">{{row.drugtype|safe}}</td>
+                <td style="text-align:center">{{row.novelty|safe}}</td>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p> Ooops! There is no data to show here yet. </p>
+    {% endif %}
+    </div>
+</div>
+<br>
+
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+   
+<script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            var table = $('#drugdata').DataTable({
+                "scrollX": true,
+                // 'scrollY': $(window).height()-300,
+                'bScrollCollapse': true,
+                'paging': true,
+                "lengthMenu": [[25, 50, 100, -1], [25, 50, 100, "All"]],
+                'orderCellsTop': true,
+                'autoWidth': true,
+                'dom': 'T<"clear">lfrtip',
+                'order': [[6, "desc"]], // order by date
+                "aoColumns": [ 
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"}],
+                'tableTools': {
+                    "sRowSelect": "multi",
+                    "aButtons": []
+                },
+                initComplete: function () {
+                    $('#drugdata').dataTable().columnFilter({
+                        'sPlaceHolder': "head:after",
+                        'aoColumns': [
+                            { type: "text" },
+                            { type: "text" },
+                            { type: "text" },
+                            { type: "select" },
+                            { type: "select" }, // Family
+                            { type: "select" },
+                            { type: "select" },
+                            { type: "select" },
+                            { type: "select" },
+                        ]
+                    });
+                }
+
+            });
+        });
+    </script> 
+{% endblock %}
