@@ -871,12 +871,17 @@ class AlignedReferenceTemplate(Alignment):
                              provide_similarity_table=None, main_pdb_array=None, provide_alignment=None):
         self.logger = logging.getLogger('homology_modeling')
         self.segment_labels = segments
-        self.reference_protein = Protein.objects.get(entry_name=reference_protein)
+        if len(str(reference_protein))==4:
+            self.reference_protein = Protein.objects.get(entry_name=reference_protein.parent)
+            self.revise_xtal = str(reference_protein)
+        else:
+            self.reference_protein = Protein.objects.get(entry_name=reference_protein)
+            self.revise_xtal = None
         self.provide_alignment = provide_alignment
         if provide_main_template_structure==None and provide_similarity_table==None:
             self.query_states = query_states
             self.order_by = order_by
-            self.load_reference_protein(reference_protein)
+            self.load_reference_protein(self.reference_protein)
             self.load_proteins_by_structure()
             self.load_segments(ProteinSegment.objects.filter(slug__in=segments))
             self.build_alignment()
@@ -919,16 +924,21 @@ class AlignedReferenceTemplate(Alignment):
         self.structures_data = Structure.objects.filter(
             state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
             template_family).order_by('protein_conformation__protein__parent',
-            'resolution').exclude(pdb_code__index__in=[
-#                                                       "2X72","3ZEV","4U14","2Y01","4A4M","4UG2","4WW3","4BEY","4X1H",
-#                                                       "4BEZ","2YCX","4XEE","2YCY","4BUO","4XES","4BV0","4BWB","2ZIY",
-#                                                       "4DAJ","3AYM","4ZUD","3AYN","4GBR","3C9L","3C9M","3CAP","3EML",
-#                                                       "5D5A","5D5B","3KJ6","3NY8","5DGY","5DHG","5DHH","3NYA","5F8U",
-#                                                       "3OAX","1F88","1GZM","1HZX","3OE6","1L9H","3OE8","4PXF","2G87",
-#                                                       "3OE9","2HPY","2I35","3PDS","2I36","4RWA","2I37","3PWH","4RWD",
-#                                                       "2J4Y","3PXO","2PED","2R4R","2R4S","2VT4","3V2W","3VGA","3OE0",
-                                                       "2YCX","3KJ6","2R4R","2R4S","3NY8","3NYA","5D5A","3OE6","3OE8",
-                                                       "3OE9"])
+            'resolution').filter(pdb_code__index__in=["4IAQ","4IAR","4IB4","4NC3","2YDO","2YDV","3QAK","3REY","3RFM",
+                                                      "3UZA","3UZC","4EIY","4UHR","5G53","3VG9","5CXV","3UON","4MQS",
+                                                      "4MQT","4U15","4U16","5DSG","2Y00","2Y02","2Y03","2Y04","2YCW",
+                                                      "2YCZ","3ZPQ","3ZPR","4AMI","4AMJ","4BVN","4GPO","5A8E","2RH1",
+                                                      "3D4S","3NY9","3P0G","3SN6","4LDE","4LDL","4LDO","4QKX","4YAY",
+                                                      "4MBS","3ODU","3OE0","4RWS","3PBL","4PHU","3RZE","4Z34","4Z35",
+                                                      "4Z36","4BOU","4GRV","4N6H","4EJ4","4DJH","4DKL","5C1M","4EA3",
+                                                      "1U19","3DQB","3PQR","4J4Q","4ZWJ","2Z73","4ZJ8","4ZJC","4S0V",
+                                                      "5GLI","5GLH","4XNV","4XNW","4NTJ","4PXZ","4PY0","3VW7","3V2Y",
+                                                      "4XT1","4K5Y","4Z9G","4L6R","5EE7","4OR2","4OO9","5CGC","5CGD",
+                                                      "4JKV","4N4W","4O9R","4QIM","4QIN"])
+                   
+                            #exclude(pdb_code__index__in=[
+#                                                       "2YCX","3KJ6","2R4R","2R4S","3NY8","3NYA","5D5A","3OE6","3OE8",
+#                                                       "3OE9"])
                                             # temp exclusion
 #                                                       "3ODU","3OE0"])
 #                                                       "2RH1","4LDE","3NY9","3D4S","3PDS"])
@@ -965,6 +975,16 @@ class AlignedReferenceTemplate(Alignment):
             except:
                 pass
         sorted_list = sorted(temp_list, key=lambda x: (-x[1],x[2]))
+        if self.revise_xtal!=None:
+            temp_list = []
+            for i in sorted_list:
+                if self.revise_xtal==i[0].pdb_code.index.lower():
+                    temp_list.append(i)
+                    break
+            for i in sorted_list:
+                if self.revise_xtal!=i[0].pdb_code.index.lower():
+                    temp_list.append(i)
+            sorted_list = temp_list
         for i in sorted_list:
             similarity_table[i[0]] = i[1]
             self.ordered_proteins.append(i[3])
@@ -1013,9 +1033,9 @@ class AlignedReferenceTemplate(Alignment):
                 ref_ECL2 = None
                 
 #################### temp force adding prev excluded structs to loop selection
-        import structure.homology_models_tests as tests
-        t = tests.HomologyModelsTests()
-        self.provide_similarity_table = t.force_add_template_to_table(self.provide_similarity_table, self.main_template_structure, ['4EIY'])
+#        import structure.homology_models_tests as tests
+#        t = tests.HomologyModelsTests()
+#        self.provide_similarity_table = t.force_add_template_to_table(self.provide_similarity_table, self.main_template_structure, ['4EIY'])
 ################################################
                 
         for struct, similarity in self.provide_similarity_table.items():
@@ -1127,6 +1147,16 @@ class AlignedReferenceTemplate(Alignment):
         sorted_list_gn = sorted(alt_temps_gn, key=lambda x: (-x[2],x[3]))
         sorted_list = sorted(alt_temps, key=lambda x: (-x[2],x[3]))
         combined = sorted_list_gn+sorted_list
+        if self.revise_xtal!=None:
+            temp_list = []
+            for i in combined:
+                if self.revise_xtal==i[0].pdb_code.index.lower():
+                    temp_list.append(i)
+                    break
+            for i in combined:
+                if self.revise_xtal!=i[0].pdb_code.index.lower():
+                    temp_list.append(i)
+            combined = temp_list
         for i in combined:
             similarity_table[i[0]] = i[2]
         try:
