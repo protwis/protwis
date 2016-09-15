@@ -26,6 +26,7 @@ class MutationExperiment(models.Model):
 
     #links
     refs = models.ForeignKey('common.Publication', null=True) #Change to a common model?
+    review = models.ForeignKey('common.Publication', null=True, related_name='review') #Change to a common model?
     protein = models.ForeignKey('protein.Protein')
     residue = models.ForeignKey('residue.Residue')
     mutation = models.ForeignKey('Mutation')
@@ -55,6 +56,19 @@ class MutationExperiment(models.Model):
             #print(self.refs.authors.split(','))
             mainauthor = self.refs.authors.split(',')[0]
             return mainauthor + " et al ("+str(self.refs.year)+")"
+
+    def review_citation(self):
+
+        if self.review.year:
+            try:
+                mainauthor = ast.literal_eval(self.review.authors)[0]
+                return mainauthor + " et al ("+str(self.review.year)+")"
+            except:
+                #print(self.refs.authors.split(','))
+                mainauthor = self.review.authors.split(',')[0]
+                return mainauthor + " et al ("+str(self.review.year)+")"
+        else:   
+            return self.review.web_link.index
         #return  " et al ("+str(self.refs.year)+")"
 
     def getCalculation(self):
@@ -113,6 +127,7 @@ class MutationRaw(models.Model):
 
 
     reference = models.CharField(max_length=100)
+    review = models.CharField(max_length=100, null=True)
     protein = models.CharField(max_length=100)
     mutation_pos = models.SmallIntegerField()
     mutation_from = models.CharField(max_length=1)
