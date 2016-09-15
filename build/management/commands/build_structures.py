@@ -121,12 +121,12 @@ class Command(BaseBuild):
     def purge_structures(self):
         Structure.objects.all().delete()
 
-    def create_rotamers(self, structure, pdb_path):
+    def create_rotamers(self, structure, pdb_path,d):
         wt_lookup = {} #used to match WT seq_number to WT residue record
         pdbseq = {} #used to keep track of pdbseq residue positions vs index in seq
         ref_positions = {} #WT postions in alignment
         mapped_seq = {} # index in contruct, tuple of AA and WT [position,AA]
-
+        debug = False
         preferred_chain = structure.preferred_chain
 
         if len(preferred_chain.split(','))>1: #if A,B
@@ -140,6 +140,39 @@ class Command(BaseBuild):
      'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V'}
 
 
+        entry_name = d['construct_crystal']['uniprot']
+
+        # print(d['xml_segments'])
+        # print(d['deletions'])
+        deletions = []
+        ## Remove WT ranges that arent in xtal (no need to try to map them)
+        #print(d)
+        if 'deletions' in d:
+            for del_range in d['deletions']:
+                for i in range(del_range['start'],del_range['end']+1):
+                    deletions.append(i)
+            #print("Annotation missing WT residues",d['deletions'])
+
+
+        removed = []
+        ## Remove segments that arent receptor (tags, fusion etc)
+        if 'xml_segments' in d:
+            for seg in d['xml_segments']:
+                #print(seg)
+                if seg[1]:
+                    if seg[1][0]!=entry_name:
+                        if seg[0].split("_")[1]==preferred_chain:
+                            #print(seg[2],seg[3]+1)
+                            #for i in range(seg[2],seg[3]+1):
+                            # print(seg)
+                            for i in seg[6]:    
+                                removed.append(i)
+
+        if len(deletions)>len(d['wt_seq'])*0.9:
+            #if too many deltions
+            removed = []
+            deletions = []
+
         s = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', pdb_path)[0]
         chain = s[preferred_chain] #select only one chain (avoid n-mer receptors)
         ppb=PPBuilder()
@@ -147,15 +180,41 @@ class Command(BaseBuild):
         i = 1
 
         check_1000 = 0
+        prev_id = 0
+        bigjump = False
         for pp in ppb.build_peptides(chain): #remove >1000 pos (fusion protein / gprotein)
-            for res in pp:
+            for i,res in enumerate(pp,1 ):
                 id = res.id
-                if id[1]<600: 
-                    check_1000 += 1
-                    #need check_1000 to catch structures where they lie in 1000s (4LDE, 4LDL, 4LDO, 4N4W, 4QKX)
-                if id[1]>1000 and check_1000>200: 
+                residue_id = res.get_full_id()
+                # print(i,id[1],AA[res.resname])
+                if id[1] in removed:
                     chain.detach_child(id)
-
+                    # print("removed")
+                    continue
+                # if id[1]<600: 
+                #     check_1000 += 1
+                #     #need check_1000 to catch structures where they lie in 1000s (4LDE, 4LDL, 4LDO, 4N4W, 4QKX)
+                # if structure.pdb_code.index in ["4RWD","3SN6","4L6R"] and id[1]>1000:
+                #     last_valid = 0
+                #     bigjump = True
+                #     removed.append(id[1])
+                # if (id[1]-prev_id)>100 and check_1000>150:
+                #     last_valid = prev_id
+                #     bigjump = True
+                # if bigjump:
+                #     if (id[1]-last_valid)<100 or (id[1]<1000 and (id[1]-last_valid)<300 ):
+                #         bigjump = False
+                # if (id[1]>1000 or bigjump) and check_1000>150 and not (structure.pdb_code.index=="4PHU" and id[1]>2000): 
+                #     chain.detach_child(id)
+                #     #print("removing",id)
+                #     removed.append(id[1])
+                prev_id = id[1]
+        ranges = []
+        for k, g in groupby(enumerate(removed), lambda x:x[0]-x[1]):
+            group = list(map(itemgetter(1), g))
+            ranges.append((group[0], group[-1]))
+        if debug: print("Removed XTAL positions due to not being WT receptor",ranges)
+        i = 1
         for pp in ppb.build_peptides(chain): 
             seq += str(pp.get_sequence()) #get seq from fasta (only chain A)
             for residue in pp:
@@ -178,21 +237,21 @@ class Command(BaseBuild):
             # print('No SEG ENDS info for {}'.format(structure.pdb_code.index))
             self.logger.info('No SEG ENDS info for {}'.format(structure.pdb_code.index))
 
-
         parent_seq = ""
-        for r in rs: #required to match WT position to a record (for duplication of GN values)
-            wt_lookup[r.sequence_number] = r
+        for i,r in enumerate(rs.exclude(sequence_number__in = deletions),1): #required to match WT position to a record (for duplication of GN values)
+            # wt_lookup[r.sequence_number] = r
+            wt_lookup[i] = r
             parent_seq += r.amino_acid
 
-        if parent_seq != parent_seq_protein:
-            print('Residues sequence differ from sequence in protein',structure.protein_conformation.protein.parent.entry_name,structure.pdb_code.index)
+        # if parent_seq != parent_seq_protein:
+        #     print('Residues sequence differ from sequence in protein',structure.protein_conformation.protein.parent.entry_name,structure.pdb_code.index)
 
         if len(wt_lookup)==0:
             print("No residues for",structure.protein_conformation.protein.parent.entry_name)
             return None
 
         #align WT with structure seq -- make gaps penalties big, so to avoid too much overfitting
-        pw2 = pairwise2.align.localms(parent_seq, seq, 2, -4, -4, -.1)
+        pw2 = pairwise2.align.localms(parent_seq, seq, 5, -4, -5, -2)
 
         gaps = 0
         unmapped_ref = {}
@@ -210,11 +269,14 @@ class Command(BaseBuild):
 
         gaps = 0
         for i, r in enumerate(pw2[0][1], 1): #make second lookup
+            #print(i,r,pw2[0][0][i-1]) #print alignment for sanity check
             if r == "-":
                 gaps += 1
             if r != "-":
                 mapped_seq[i-gaps] = [r,ref_positions[i]]
-
+                # if r!=pw2[0][0][i-1]:
+                #     print('aa mismatch')
+        # print("seg res not mapped",gaps)
 
         pdb = structure.pdb_data.pdb
         protein_conformation=structure.protein_conformation
@@ -239,6 +301,7 @@ class Command(BaseBuild):
         rotamer_data_bulk = []
         residues_bulk = []
         for i,line in enumerate(pdblines):
+            # print(line)
             if line.startswith('ATOM'): 
                 chain = line[21]
                 if preferred_chain and chain!=preferred_chain: #If perferred is defined and is not the same as the current line, then skip
@@ -252,24 +315,27 @@ class Command(BaseBuild):
                     else: #if this is a new residue
                         #print(pdb.splitlines()[i+1][22:26].strip(),check)
                         temp += line + "\n"
-                        if int(check.strip())<2000:
+                        #(int(check.strip())<2000 or structure.pdb_code.index=="4PHU") and 
+                        if int(check.strip()) not in removed:
+                            #print(line)
                             residue = Residue()
                             residue.sequence_number = int(check.strip())
                             residue.amino_acid = AA[residue_name.upper()]
                             residue.protein_conformation = protein_conformation
 
-                            # print(residue.sequence_number,residue.amino_acid) #sanity check
                             try:
                                 seq_num_pos = pdbseq[chain][residue.sequence_number][0]
                             except:
-                                #print('failed residue',pdb_path,residue.sequence_number)
+                                # print('failed residue',pdb_path,residue.sequence_number)
                                 temp = "" #start new line for rotamer
                                 check = pdblines[i+1][22:26].strip()
                                 continue
+                            # print('hi',seq_num_pos,residue.sequence_number)
                             if seq_num_pos in mapped_seq:
+                                # print(int(check.strip()),seq_num_pos) #sanity check
                                 if mapped_seq[seq_num_pos][1][0]==None:
-                                    #print('no match found') #sanity check
-                                    #print(residue.sequence_number,residue.amino_acid) #sanity check
+                                    # print('no match found') #sanity check
+                                    # print(residue.sequence_number,residue.amino_acid) #sanity check
                                     residue.display_generic_number = None
                                     residue.generic_number = None
                                     residue.protein_segment = None
@@ -280,7 +346,7 @@ class Command(BaseBuild):
                                         if wt_lookup[residue.sequence_number].amino_acid==residue.amino_acid:
                                             if residue.sequence_number in unmapped_ref: #WT was not mapped, so could be it
                                                # print(residue.sequence_number,residue.amino_acid) #sanity check
-                                                #print('wrongly matched, better match on pos+aa',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
+                                                # print('wrongly matched, better match on pos+aa',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                                 wt_r = wt_lookup[residue.sequence_number]
                                                 matched_by_pos +=1
                                                 match_seq += 1
@@ -295,11 +361,18 @@ class Command(BaseBuild):
                                             aa_mismatch += 1
                                     elif residue.sequence_number!=wt_r.sequence_number:
                                         #print('WT pos not same pos, mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
+                                        if residue.sequence_number in unmapped_ref:
+                                            #print('residue.sequence_number',residue.sequence_number,'not mapped though')
+                                            if residue.amino_acid == wt_lookup[residue.sequence_number].amino_acid:
+                                                #print('they are same amino acid!')
+                                                wt_r = wt_lookup[residue.sequence_number]
+                                                mismatch_seq -= 1
                                         mismatch_seq += 1
                                         ### REPLACE seq number with WT to fix odd PDB annotation. FIXME kinda dangerous, but best way to ensure consistent GN numbering
                                         residue.sequence_number = wt_r.sequence_number
+
                                     if residue.amino_acid!=wt_r.amino_acid:
-                                        #print('aa mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
+                                        if debug: print('aa mismatch',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                         aa_mismatch += 1
 
                                     else:
@@ -312,26 +385,38 @@ class Command(BaseBuild):
                                         residue.generic_number = None
                                         #print('no GN')
                                     residue.protein_segment = wt_r.protein_segment
-                                    # print('aa ',residue.sequence_number,residue.amino_acid,wt_r.sequence_number,wt_r.amino_acid)
                                     if len(seg_ends):
                                         if residue.protein_segment.slug=='TM1':
                                             if seg_ends['1b']!='-' and seg_ends['1e']!='-':
                                                 if residue.sequence_number<seg_ends['1b']:
                                                     residue.protein_segment = self.segments['N-term']
+                                                    residue.display_generic_number = None
+                                                    residue.generic_number = None
                                                 elif residue.sequence_number>seg_ends['1e']:
                                                     residue.protein_segment = self.segments['ICL1']
+                                                    residue.display_generic_number = None
+                                                    residue.generic_number = None
                                         elif residue.protein_segment.slug=='ICL1':
                                             if seg_ends['i1b']!='-' and seg_ends['i1e']!='-':
                                                 if residue.sequence_number<seg_ends['i1b'] and residue.sequence_number<=seg_ends['1e']:
                                                     residue.protein_segment = self.segments['TM1']
                                                 elif residue.sequence_number>seg_ends['i1e']:
                                                     residue.protein_segment = self.segments['TM2']
+                                            else:  
+                                                if residue.sequence_number<=seg_ends['1e']:
+                                                    residue.protein_segment = self.segments['TM1']
+                                                elif residue.sequence_number>=seg_ends['2b']:
+                                                    residue.protein_segment = self.segments['TM2']
                                         elif residue.protein_segment.slug=='TM2':
                                             if seg_ends['2b']!='-' and seg_ends['2e']!='-':
                                                 if residue.sequence_number<seg_ends['2b']:
                                                     residue.protein_segment = self.segments['ICL1']
+                                                    residue.display_generic_number = None
+                                                    residue.generic_number = None
                                                 elif residue.sequence_number>seg_ends['2e']:
                                                     residue.protein_segment = self.segments['ECL1']
+                                                    residue.display_generic_number = None
+                                                    residue.generic_number = None
                                         elif residue.protein_segment.slug=='ECL1':
                                             if seg_ends['e1b']!='-' and seg_ends['e1e']!='-' and seg_ends['2e']!='-':
                                                 if residue.sequence_number<seg_ends['e1b'] and residue.sequence_number<=seg_ends['2e']:
@@ -342,50 +427,104 @@ class Command(BaseBuild):
                                             if seg_ends['3b']!='-' and seg_ends['3e']!='-':
                                                 if residue.sequence_number<seg_ends['3b']:
                                                     residue.protein_segment = self.segments['ECL1']
+                                                    residue.display_generic_number = None
+                                                    residue.generic_number = None
                                                 elif residue.sequence_number>seg_ends['3e']:
                                                     residue.protein_segment = self.segments['ICL2']
+                                                    residue.display_generic_number = None
+                                                    residue.generic_number = None
                                         elif residue.protein_segment.slug=='ICL2':
                                             if seg_ends['i2b']!='-' and seg_ends['i2e']!='-':
                                                 if residue.sequence_number<seg_ends['i2b']:
                                                     residue.protein_segment = self.segments['TM3']
                                                 elif residue.sequence_number>seg_ends['i2e'] and residue.sequence_number>=seg_ends['4b']:
                                                     residue.protein_segment = self.segments['TM4']
+                                            else:  
+                                                if residue.sequence_number<=seg_ends['3e']:
+                                                    residue.protein_segment = self.segments['TM3']
+                                                elif residue.sequence_number>=seg_ends['4b']:
+                                                    residue.protein_segment = self.segments['TM4']
                                         elif residue.protein_segment.slug=='TM4':
                                             if seg_ends['4b']!='-' and seg_ends['4e']!='-':
                                                 if residue.sequence_number<seg_ends['4b']:
                                                     residue.protein_segment = self.segments['ICL2']
+                                                    residue.display_generic_number = None
+                                                    residue.generic_number = None
                                                 elif residue.sequence_number>seg_ends['4e']:
                                                     residue.protein_segment = self.segments['ECL2']
+                                                    residue.display_generic_number = None
+                                                    residue.generic_number = None
                                         elif residue.protein_segment.slug=='ECL2':
                                             if seg_ends['e2b']!='-' and seg_ends['e2e']!='-' and seg_ends['4e']!='-':
                                                 if residue.sequence_number<seg_ends['e2b'] and residue.sequence_number<=seg_ends['4e']:
                                                     residue.protein_segment = self.segments['TM4']
                                                 elif residue.sequence_number>seg_ends['e2e'] and residue.sequence_number>=seg_ends['5b']:
                                                     residue.protein_segment = self.segments['TM5']
+                                            else:  
+                                                if residue.sequence_number<=seg_ends['4e']:
+                                                    residue.protein_segment = self.segments['TM4']
+                                                elif residue.sequence_number>=seg_ends['5b']:
+                                                    residue.protein_segment = self.segments['TM5']
                                         elif residue.protein_segment.slug=='TM5':
                                             if seg_ends['5b']!='-' and seg_ends['5e']!='-':
                                                 if residue.sequence_number<seg_ends['5b']:
                                                     residue.protein_segment = self.segments['ECL2']
+                                                    residue.display_generic_number = None
+                                                    residue.generic_number = None
                                                 elif residue.sequence_number>seg_ends['5e']:
                                                     residue.protein_segment = self.segments['ICL3']
+                                                    residue.display_generic_number = None
+                                                    residue.generic_number = None
+                                        elif residue.protein_segment.slug=='ICL3':
+                                            if residue.sequence_number<=seg_ends['5e']:
+                                                residue.protein_segment = self.segments['TM5']
+                                            elif residue.sequence_number>=seg_ends['6b']:
+                                                residue.protein_segment = self.segments['TM6']
                                         elif residue.protein_segment.slug=='TM6':
                                             if seg_ends['6b']!='-' and seg_ends['6e']!='-':
                                                 if residue.sequence_number<seg_ends['6b']:
                                                     residue.protein_segment = self.segments['ICL3']
+                                                    residue.display_generic_number = None
+                                                    residue.generic_number = None
                                                 elif residue.sequence_number>seg_ends['6e']:
                                                     residue.protein_segment = self.segments['ECL3']
+                                                    residue.display_generic_number = None
+                                                    residue.generic_number = None
                                         elif residue.protein_segment.slug=='TM7':
                                             if seg_ends['7b']!='-' and seg_ends['7e']!='-':
                                                 if residue.sequence_number<seg_ends['7b']:
                                                     residue.protein_segment = self.segments['ECL3']
+                                                    residue.display_generic_number = None
+                                                    residue.generic_number = None
                                                 elif residue.sequence_number>seg_ends['7e']:
-                                                    residue.protein_segment = self.segments['ICL4']
+                                                    if seg_ends['8b']!='-':
+                                                        if residue.sequence_number<seg_ends['8b']:
+                                                            residue.protein_segment = self.segments['ICL4']
+                                                            residue.display_generic_number = None
+                                                            residue.generic_number = None
+                                                    else:
+                                                        residue.protein_segment = self.segments['C-term']
+                                                        residue.display_generic_number = None
+                                                        residue.generic_number = None
                                         elif residue.protein_segment.slug=='H8':
                                             if seg_ends['8b']!='-' and seg_ends['8e']!='-':
                                                 if residue.sequence_number<seg_ends['8b']:
                                                     residue.protein_segment = self.segments['ICL4']
+                                                    residue.display_generic_number = None
+                                                    residue.generic_number = None
                                                 elif residue.sequence_number>seg_ends['8e']:
                                                     residue.protein_segment = self.segments['C-term']
+                                                    residue.display_generic_number = None
+                                                    residue.generic_number = None
+                                            else:
+                                                residue.protein_segment = self.segments['C-term']
+                                                residue.display_generic_number = None
+                                                residue.generic_number = None
+                                        elif residue.protein_segment.slug=='C-term':
+                                            if seg_ends['8e']!='-':
+                                                if residue.sequence_number<=seg_ends['8e']:
+                                                    residue.protein_segment = self.segments['H8']
+
 
                                         residue.sequence_number = int(check.strip())
                                         #HAVE TO RESET SO IT FITS FOR INTERACTION SCRIPT
@@ -395,12 +534,14 @@ class Command(BaseBuild):
                                             residue.generic_number = None
                                             generic_change += 1
                                             # print(residue.protein_segment.slug[0:2])
-                                            if residue.protein_segment.slug[0:2]=="TM":
-                                                print(structure.protein_conformation.protein.entry_name,residue.amino_acid,residue.sequence_number, wt_r.sequence_number,residue.protein_segment,wt_r.protein_segment)
+                                            if residue.protein_segment.slug[0:2]=="TM" or 1==1:
+                                                if debug: print(structure.protein_conformation.protein.entry_name,residue.amino_acid,"XTAL POS",residue.sequence_number, "WT POS",wt_r.sequence_number,"XTAL:",residue.protein_segment,"WT:",wt_r.protein_segment)
 
                                                 # FIX ME
                                                 # self.logger.info('No SEG ENDS info for {}'.format(structure.protein_conformation.protein.entry_name,residue.amino_acid,residue.sequence_number, wt_r.sequence_number,residue.protein_segment,wt_r.protein_segment))
                                                 pass
+
+                                    # print(residue.sequence_number, "(",int(check.strip()),")",residue.amino_acid,residue.protein_segment,wt_r.amino_acid,wt_r.sequence_number) #sanity check
 
                             else:
                                 #print('wierd error') #sanity check
@@ -408,13 +549,19 @@ class Command(BaseBuild):
                                 residue.generic_number = None
                                 residue.protein_segment = None
 
-                            #print('inserted',residue.sequence_number) #sanity check
-                            # residue.save()
-                            residues_bulk.append(residue)
-                            #rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
-                            rotamer_data_bulk.append(PdbData(pdb=temp))
-                            # rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
-                            #rotamer_bulk.append(Rotamer(residue=residue, structure=structure, pdbdata=rotamer_data))
+
+
+                            # print('aa ',residue.sequence_number,residue.amino_acid,residue.display_generic_number, residue.protein_segment)
+                            if residue.protein_segment==None:
+                                pass
+                            else:
+                                #print('inserted',residue.sequence_number) #sanity check
+                                # residue.save()
+                                residues_bulk.append(residue)
+                                #rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
+                                rotamer_data_bulk.append(PdbData(pdb=temp))
+                                # rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
+                                #rotamer_bulk.append(Rotamer(residue=residue, structure=structure, pdbdata=rotamer_data))
 
                         temp = "" #start new line for rotamer
                         check = pdblines[i+1][22:26].strip()
@@ -422,6 +569,74 @@ class Command(BaseBuild):
                     check = pdblines[i+1][22:26].strip()
                 chain = line[21]
                 residue_name = line[17:20].title() #use title to get GLY to Gly so it matches
+
+        ns = settings.DEFAULT_NUMBERING_SCHEME
+        ns_obj = ResidueNumberingScheme.objects.get(slug=ns)
+        scheme = structure.protein_conformation.protein.residue_numbering_scheme
+        segments_present = []
+        for res in residues_bulk:
+            if res.protein_segment:
+                if res.protein_segment.category == "helix":
+                    if res.protein_segment.slug not in segments_present:
+                        segments_present.append(res.protein_segment.slug)
+                    if res.generic_number==None:
+                        if (res.protein_segment==prev_segment):
+                            gn_split = prev_gn.split("x")
+                            new_gn = gn_split[0]+"x"+str(int(gn_split[1])+1)
+
+                            display_split=prev_display.split("x")
+                            seq_split = display_split[0].split(".")
+
+                            new_display = seq_split[0]+"."+str(int(seq_split[1])+1)+"x"+str(int(display_split[1])+1)
+
+                            if debug: print("Added Generic Number for",res.sequence_number,": GN",new_gn," Display",new_display)
+
+                            gn, created = ResidueGenericNumber.objects.get_or_create(
+                                    scheme=ns_obj, label=new_gn, protein_segment=res.protein_segment)
+                            display_gn, created = ResidueGenericNumber.objects.get_or_create(
+                                    scheme=scheme, label=new_display, protein_segment=res.protein_segment)
+
+                            res.generic_number = gn
+                            res.display_generic_number = display_gn
+
+                            prev_gn = new_gn
+                            prev_display = new_display
+                            prev_segment = res.protein_segment
+                    else:
+                        prev_gn = res.generic_number.label
+                        prev_display = res.display_generic_number.label
+                        prev_segment = res.protein_segment
+
+        for res in reversed(residues_bulk):
+            if res.protein_segment:
+                if res.protein_segment.category == "helix":
+                    if res.generic_number==None:
+                        if (res.protein_segment==prev_segment):
+                            gn_split = prev_gn.split("x")
+                            new_gn = gn_split[0]+"x"+str(int(gn_split[1])-1)
+
+                            display_split=prev_display.split("x")
+                            seq_split = display_split[0].split(".")
+
+                            new_display = seq_split[0]+"."+str(int(seq_split[1])-1)+"x"+str(int(display_split[1])-1)
+
+                            if debug: print("Added Generic Number for",res.sequence_number,": GN",new_gn," Display",new_display)
+
+                            gn, created = ResidueGenericNumber.objects.get_or_create(
+                                    scheme=ns_obj, label=new_gn, protein_segment=res.protein_segment)
+                            display_gn, created = ResidueGenericNumber.objects.get_or_create(
+                                    scheme=scheme, label=new_display, protein_segment=res.protein_segment)
+
+                            res.generic_number = gn
+                            res.display_generic_number = display_gn
+
+                            prev_gn = new_gn
+                            prev_display = new_display
+                            prev_segment = res.protein_segment
+                    else:
+                        prev_gn = res.generic_number.label
+                        prev_display = res.display_generic_number.label
+                        prev_segment = res.protein_segment
 
         bulked_res = Residue.objects.bulk_create(residues_bulk)
         bulked_rot = PdbData.objects.bulk_create(rotamer_data_bulk)
@@ -434,7 +649,11 @@ class Command(BaseBuild):
         # 
         # for i in bulked:
         #     print(i.pk)
-        # print("WT",structure.protein_conformation.protein.parent.entry_name,"length",len(parent_seq),structure.pdb_code.index,'length',len(seq),len(mapped_seq),'mapped res',str(mismatch_seq+match_seq+aa_mismatch),'pos mismatch',mismatch_seq,'aa mismatch',aa_mismatch,'not mapped',not_matched,' mapping off, matched on pos,aa',matched_by_pos,"generic_segment_changes",generic_change)
+        if debug: print("WT",structure.protein_conformation.protein.parent.entry_name,"length",len(parent_seq),structure.pdb_code.index,'length',len(seq),len(mapped_seq),'mapped res',str(mismatch_seq+match_seq+aa_mismatch),'pos mismatch',mismatch_seq,'aa mismatch',aa_mismatch,'not mapped',not_matched,' mapping off, matched on pos,aa',matched_by_pos,"generic_segment_changes",generic_change)
+        if (len(segments_present)<8 and 'H8' in segments_present) or len(segments_present)<7:
+            print("Present helices:",segments_present)
+            print("MISSING HELICES?!")
+        if debug: print("===============**================")
         return None
 
     def main_func(self, positions, iteration):
@@ -946,11 +1165,27 @@ class Command(BaseBuild):
 
                     # save structure
                     s.save()
+                    d = {}
+                    try:
+                        current = time.time()
+                        #protein = Protein.objects.filter(entry_name=s.protein_conformation).get()
+                        d = fetch_pdb_info(sd['pdb'],con)
+                        #delete before adding new
+                        #Construct.objects.filter(name=d['construct_crystal']['pdb_name']).delete()
+                        add_construct(d)
+                        end = time.time()
+                        diff = round(end - current,1)
+                        self.logger.info('construction calculations done for {}. {} seconds.'.format(
+                                    s.protein_conformation.protein.entry_name, diff))
+                    except Exception as msg:
+                        print(msg)
+                        print('ERROR WITH CONSTRUCT FETCH {}'.format(sd['pdb']))
+                        self.logger.error('ERROR WITH CONSTRUCT FETCH for {}'.format(sd['pdb']))
 
                 
                     try:
                         current = time.time()
-                        self.create_rotamers(s,pdb_path)
+                        self.create_rotamers(s,pdb_path,d)
                         end = time.time()
                         diff = round(end - current,1)
                         self.logger.info('Create resides/rotamers done for {}. {} seconds.'.format(
@@ -977,21 +1212,7 @@ class Command(BaseBuild):
                         print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
                         self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
 
-                    # try:
-                    #     current = time.time()
-                    #     #protein = Protein.objects.filter(entry_name=s.protein_conformation).get()
-                    #     d = fetch_pdb_info(sd['pdb'],con)
-                    #     #delete before adding new
-                    #     #Construct.objects.filter(name=d['construct_crystal']['pdb_name']).delete()
-                    #     add_construct(d)
-                    #     end = time.time()
-                    #     diff = round(end - current,1)
-                    #     self.logger.info('construction calculations done for {}. {} seconds.'.format(
-                    #                 s.protein_conformation.protein.entry_name, diff))
-                    # except Exception as msg:
-                    #     print(msg)
-                    #     print('ERROR WITH CONSTRUCT FETCH {}'.format(sd['pdb']))
-                    #     self.logger.error('ERROR WITH CONSTRUCT FETCH for {}'.format(sd['pdb']))
+
 
 
                     # print('{} done'.format(sd['pdb']))

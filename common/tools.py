@@ -69,12 +69,18 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False):
         try:
             req = urlopen(full_url)
             if full_url[-2:]=='gz' and xml:
-                buf = BytesIO( req.read())
-                f = gzip.GzipFile(fileobj=buf)
-                data = f.read()
-                d = etree.fromstring(data)
+                try:
+                    buf = BytesIO( req.read())
+                    f = gzip.GzipFile(fileobj=buf)
+                    data = f.read()
+                    d = etree.fromstring(data)
+                except:
+                    return False
             elif xml:
-                d = etree.fromstring(req.read().decode('UTF-8'))
+                try:
+                    d = etree.fromstring(req.read().decode('UTF-8'))
+                except:
+                    return False
             else:
                 d = json.loads(req.read().decode('UTF-8'))
         except HTTPError as e:
