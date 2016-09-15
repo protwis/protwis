@@ -88,6 +88,9 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False):
             if e.code == 404:
                 logger.warning('Failed fetching {}, 404 - does not exist'.format(full_url))
                 tries = max_tries #skip more tries
+            elif e.code == 400:
+                logger.warning('Failed fetching {}, 400 - does not exist'.format(full_url))
+                tries = max_tries #skip more tries
             else:
                 time.sleep(2)
         else:

@@ -160,7 +160,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
                                 ).prefetch_related('residue__display_generic_number',
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
                                 'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
-                                'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource')
+                                'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource')
 
     else:
         print(gn,receptor_class,aa)
@@ -173,7 +173,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
                                 residue__generic_number__label=gn, residue__amino_acid=aa).prefetch_related('residue__generic_number',
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
                                 'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
-                                'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource')
+                                'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource')
 
 
      
@@ -336,7 +336,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
             else:
                 values['generic'] = ''
             data.append(values)
-        headers = ['reference', 'protein', 'mutation_pos', 'generic', 'mutation_from', 'mutation_to', 
+        headers = ['reference','review', 'protein', 'mutation_pos', 'generic', 'mutation_from', 'mutation_to', 
         'ligand_name', 'ligand_idtype', 'ligand_id', 'ligand_class',
         'exp_type', 'exp_func',  'exp_wt_value',  'exp_wt_unit','exp_mu_effect_sign', 'exp_mu_effect_type', 'exp_mu_effect_value', 
         'exp_mu_effect_qual', 'exp_mu_effect_ligand_prop',  'exp_mu_ligand_ref', 'opt_type', 'opt_wt',

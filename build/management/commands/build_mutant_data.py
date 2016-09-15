@@ -127,6 +127,7 @@ class Command(BaseCommand):
                 continue
 
             d['reference'] = r[0]
+            d['review'] = r[1]
             d['protein'] = r[2].replace("__","_").lower()
             d['mutation_pos'] = r[3]
             d['mutation_from'] = r[4]
@@ -168,6 +169,7 @@ class Command(BaseCommand):
     def insert_raw(self,r):
         obj, created = MutationRaw.objects.get_or_create(
         reference=r['reference'], 
+        review=r['review'], 
         protein=r['protein'], 
         mutation_pos=r['mutation_pos'], 
         mutation_from=r['mutation_from'], 
@@ -232,6 +234,7 @@ class Command(BaseCommand):
                     for r in rows:
                         d = {}
                         d['reference'] = r['pubmed']
+                        d['review'] = ''
                         d['protein'] = r['entry_name'].replace("__","_").lower()
                         d['mutation_pos'] = r['seq']
                         d['mutation_from'] = r['from_res']
@@ -270,13 +273,15 @@ class Command(BaseCommand):
                 inserted = 0
                 for r in rows:
                     c += 1
-                    if c%500==0: 
+                    if c%100==0: 
                         self.logger.info('Parsed '+str(c)+' mutant data entries')
 
                     # publication
                     try: #fix if it thinks it's float.
                         float(r['reference'])
                         r['reference'] = str(int(r['reference']))
+                        float(r['review'])
+                        r['review'] = str(int(r['review']))
                     except ValueError:
                         pass
 
@@ -305,6 +310,34 @@ class Command(BaseCommand):
                         except:
                             self.logger.error('error with reference ' + str(r['reference']) + ' ' + pub_type)
                             continue #if something off with publication, skip.
+
+                    # print(r['review'],r['reference'])
+                    if r['review'].isdigit(): #assume pubmed
+                        pub_type = 'pubmed'
+                    else: #assume doi
+                        pub_type = 'doi'
+
+                    # print(r['review'],pub_type)
+                    try:
+                        pub_review = Publication.objects.get(web_link__index=r['review'], web_link__web_resource__slug=pub_type)
+                    except Publication.DoesNotExist:
+                        pub_review = Publication()
+                        try:
+                            pub_review.web_link = WebLink.objects.get(index=r['review'], web_resource__slug=pub_type)
+                        except WebLink.DoesNotExist:
+                            wl = WebLink.objects.create(index=r['review'],
+                                web_resource = WebResource.objects.get(slug=pub_type))
+                            pub_review.web_link = wl
+
+                        if pub_type == 'doi':
+                            pub_review.update_from_doi(doi=r['review'])
+                        elif pub_type == 'pubmed':
+                            pub_review.update_from_pubmed_data(index=r['review'])
+                        # try:
+                        pub_review.save()
+                        # except:
+                        #     self.logger.error('error with reference ' + str(r['review']) + ' ' + pub_type)
+                        continue #if something off with publication, skip.
 
                     l = get_or_make_ligand(r['ligand_id'],r['ligand_type'],str(r['ligand_name']))
 
@@ -401,10 +434,7 @@ class Command(BaseCommand):
                         exp_opt_id = None
 
                     mutation, created =  Mutation.objects.get_or_create(amino_acid=r['mutation_to'],protein=protein, residue=res)
-
-                    
                     logtypes = ['pEC50','pIC50','pK']
-                    
                     
                     foldchange = 0
                     typefold = ''
@@ -428,6 +458,7 @@ class Command(BaseCommand):
                     raw_experiment = self.insert_raw(r)
                     obj, created = MutationExperiment.objects.get_or_create(
                     refs=pub, 
+                    review=pub_review, 
                     protein=protein, 
                     residue=res, 
                     ligand=l, 
