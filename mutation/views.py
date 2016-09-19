@@ -160,7 +160,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
                                 ).prefetch_related('residue__display_generic_number',
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
                                 'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
-                                'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource')
+                                'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource','protein','mutation__protein')
 
     else:
         print(gn,receptor_class,aa)
@@ -173,7 +173,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
                                 residue__generic_number__label=gn, residue__amino_acid=aa).prefetch_related('residue__generic_number',
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
                                 'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
-                                'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource')
+                                'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource','protein','mutation__protein')
 
 
 
@@ -182,6 +182,8 @@ def render_mutations(request, protein = None, family = None, download = None, re
     mutations_display_generic_number = {}
     mutations_class_generic_number = {}
     context = {}
+
+    gn_lookup = {}
 
     residue_table_list = []
     for mutation in mutations:
@@ -197,7 +199,11 @@ def render_mutations(request, protein = None, family = None, download = None, re
         else:
             qual = ''
         mutations_list[mutation.residue.generic_number.label].append([mutation.foldchange,ligand.replace('\xe2', "").replace('\'', ""),qual])
-        class_gn = ResidueGenericNumberEquivalent.objects.filter(default_generic_number = mutation.residue.generic_number, scheme__slug = used_scheme).get()
+        if mutation.residue.generic_number not in gn_lookup:
+            class_gn = ResidueGenericNumberEquivalent.objects.filter(default_generic_number = mutation.residue.generic_number, scheme__slug = used_scheme).get()
+            gn_lookup[mutation.residue.generic_number] = class_gn
+        else:
+            class_gn = gn_lookup[mutation.residue.generic_number]
         mutations_generic_number[mutation.raw.id] = mutation.residue.generic_number.label
         mutations_display_generic_number[mutation.raw.id] = mutation.residue.display_generic_number.label
         mutations_class_generic_number[mutation.raw.id] = class_gn.label
@@ -207,7 +213,8 @@ def render_mutations(request, protein = None, family = None, download = None, re
         a = Alignment()
 
         a.load_proteins(proteins)
-        segments = ProteinSegment.objects.all().filter().prefetch_related()
+        excluded_segment = ['C-term','N-term']
+        segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment).prefetch_related()
         a.load_segments(segments) #get all segments to make correct diagrams
 
         # build the alignment data matrix

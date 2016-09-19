@@ -8,11 +8,11 @@ class Mutation(models.Model):
     protein = models.ForeignKey('protein.Protein')
     residue = models.ForeignKey('residue.Residue', null=True) #If auxilliary it will be null
     mutation_type = models.ForeignKey('MutationType', null=True)
-
     amino_acid = models.CharField(max_length=1) #amino acid one-letter
 
     class Meta():
         db_table = 'mutation'
+        unique_together = ('protein','residue','amino_acid')
 
 
 class MutationType(models.Model):
@@ -49,13 +49,17 @@ class MutationExperiment(models.Model):
 
     def citation(self):
 
-        try:
-            mainauthor = ast.literal_eval(self.refs.authors)[0]
-            return mainauthor + " et al ("+str(self.refs.year)+")"
-        except:
-            #print(self.refs.authors.split(','))
-            mainauthor = self.refs.authors.split(',')[0]
-            return mainauthor + " et al ("+str(self.refs.year)+")"
+        if self.refs.authors:
+            try:
+                mainauthor = ast.literal_eval(self.refs.authors)[0]
+                return mainauthor + " et al ("+str(self.refs.year)+")"
+            except:
+                # print(self.refs.authors)
+                # print(self.refs.authors.split(','))
+                mainauthor = self.refs.authors.split(',')[0]
+                return mainauthor + " et al ("+str(self.refs.year)+")"
+        else:
+            return "N/A"
 
     def review_citation(self):
 
