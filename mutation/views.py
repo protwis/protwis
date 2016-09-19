@@ -11,7 +11,7 @@ from common.views import AbsSegmentSelection
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common import definitions
 
-from residue.models import Residue,ResidueNumberingScheme
+from residue.models import Residue,ResidueNumberingScheme, ResidueGenericNumberEquivalent
 from residue.views import ResidueTablesDisplay
 from protein.models import Protein,ProteinSegment,ProteinFamily
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction
@@ -180,6 +180,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
     mutations_list = {}
     mutations_generic_number = {}
     mutations_display_generic_number = {}
+    mutations_class_generic_number = {}
     context = {}
 
     residue_table_list = []
@@ -196,8 +197,10 @@ def render_mutations(request, protein = None, family = None, download = None, re
         else:
             qual = ''
         mutations_list[mutation.residue.generic_number.label].append([mutation.foldchange,ligand.replace('\xe2', "").replace('\'', ""),qual])
+        class_gn = ResidueGenericNumberEquivalent.objects.filter(default_generic_number = mutation.residue.generic_number, scheme__slug = used_scheme).get()
         mutations_generic_number[mutation.raw.id] = mutation.residue.generic_number.label
         mutations_display_generic_number[mutation.raw.id] = mutation.residue.display_generic_number.label
+        mutations_class_generic_number[mutation.raw.id] = class_gn.label
 
     if receptor_class==None: #if not a small lookup
         # create an alignment object
@@ -330,11 +333,13 @@ def render_mutations(request, protein = None, family = None, download = None, re
         for r in rawmutations:
             headers = []
             values = {}
-            for field, val in r:
-                headers.append(field)
-                values[field] = val
-            if values['id'] in mutations_display_generic_number:
-                values['generic'] = mutations_display_generic_number[values['id']]
+            values = r.__dict__ #print(r.__dict__)
+            # for field, val in r:
+            #     headers.append(field)
+            #     values[field] = val
+            # print(values)
+            if values['id'] in mutations_class_generic_number:
+                values['generic'] = mutations_class_generic_number[values['id']]
             else:
                 values['generic'] = ''
             data.append(values)

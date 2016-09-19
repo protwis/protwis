@@ -77,7 +77,6 @@ class Command(BaseCommand):
                 self.logger.error(msg)
         # import the structure data
         try:
-            self.purge_mutants()
             self.create_mutant_data(options['filename'])
         except Exception as msg:
             print(msg)
@@ -176,7 +175,7 @@ class Command(BaseCommand):
 
 
     def insert_raw(self,r):
-        obj, created = MutationRaw.objects.get_or_create(
+        obj = MutationRaw(
         reference=r['reference'],
         review=r['review'],
         protein=r['protein'],
@@ -231,6 +230,7 @@ class Command(BaseCommand):
         for source_file in filenames:
             source_file_path = os.sep.join([self.structure_data_dir, source_file])
             bulk_m = []
+            bulk_r = []
             current_sheet = time.time()
             if os.path.isfile(source_file_path) and source_file[0] != '.':
                 self.logger.info('Reading file {}'.format(source_file_path))
@@ -496,7 +496,7 @@ class Command(BaseCommand):
                             if foldchange<1: foldchange = -round((1/foldchange),3);
 
 
-                    #raw_experiment = self.insert_raw(r)
+                    raw_experiment = self.insert_raw(r)
                     bulk = MutationExperiment(
                     refs=pub,
                     review=pub_review,
@@ -505,7 +505,7 @@ class Command(BaseCommand):
                     ligand=l,
                     ligand_role=l_role,
                     ligand_ref = l_ref,
-                    raw = None, #raw_experiment,
+                    #raw = raw_experiment, #raw_experiment, OR None
                     optional = exp_opt_id,
                     exp_type=exp_type_id,
                     exp_func=exp_func_id,
@@ -520,6 +520,7 @@ class Command(BaseCommand):
                     foldchange = foldchange
                     )
                     # mut_id = obj.id
+                    bulk_r.append(raw_experiment)
                     bulk_m.append(bulk)
                     inserted += 1
                     end = time.time()
@@ -529,6 +530,10 @@ class Command(BaseCommand):
                 self.logger.info('Parsed '+str(c)+' mutant data entries. Skipped '+str(skipped))
 
             current = time.time()
+
+            raws = MutationRaw.objects.bulk_create(bulk_r)
+            for i,me in enumerate(bulk_m):
+                me.raw = raws[i]
             MutationExperiment.objects.bulk_create(bulk_m)
             end = time.time()
             diff = round(end - current,2)
