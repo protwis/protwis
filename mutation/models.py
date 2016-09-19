@@ -59,16 +59,19 @@ class MutationExperiment(models.Model):
 
     def review_citation(self):
 
-        if self.review.year:
-            try:
-                mainauthor = ast.literal_eval(self.review.authors)[0]
-                return mainauthor + " et al ("+str(self.review.year)+")"
-            except:
-                #print(self.refs.authors.split(','))
-                mainauthor = self.review.authors.split(',')[0]
-                return mainauthor + " et al ("+str(self.review.year)+")"
+        if self.review:
+            if self.review.year:
+                try:
+                    mainauthor = ast.literal_eval(self.review.authors)[0]
+                    return mainauthor + " et al ("+str(self.review.year)+")"
+                except:
+                    #print(self.refs.authors.split(','))
+                    mainauthor = self.review.authors.split(',')[0]
+                    return mainauthor + " et al ("+str(self.review.year)+")"
+            else:
+                return self.review.web_link.index
         else:
-            return self.review.web_link.index
+            return ''
         #return  " et al ("+str(self.refs.year)+")"
 
     def getCalculation(self):
@@ -169,7 +172,7 @@ class MutationRaw(models.Model):
         db_table = 'mutation_raw'
 
     def __iter__(self):
-        for field_name in self._meta.get_all_field_names():
+        for field_name in self._meta.get_fields():
             try:
                 value = getattr(self, field_name)
             except:
