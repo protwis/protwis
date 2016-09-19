@@ -932,10 +932,10 @@ class AlignedReferenceTemplate(Alignment):
                                                       "4MBS","3ODU","3OE0","4RWS","3PBL","4PHU","3RZE","4Z34","4Z35",
                                                       "4Z36","4BOU","4GRV","4N6H","4EJ4","4DJH","4DKL","5C1M","4EA3",
                                                       "1U19","3DQB","3PQR","4J4Q","4ZWJ","2Z73","4ZJ8","4ZJC","4S0V",
-                                                      "5GLI","5GLH","4XNV","4XNW","4NTJ","4PXZ","4PY0","3VW7","3V2Y",
+                                                      "4XNV","4XNW","4NTJ","4PXZ","4PY0","3VW7","3V2Y",
                                                       "4XT1","4K5Y","4Z9G","4L6R","5EE7","4OR2","4OO9","5CGC","5CGD",
                                                       "4JKV","4N4W","4O9R","4QIM","4QIN"])
-                   
+                   #"4S0V","5GLI","5GLH"
                             #exclude(pdb_code__index__in=[
 #                                                       "2YCX","3KJ6","2R4R","2R4S","3NY8","3NYA","5D5A","3OE6","3OE8",
 #                                                       "3OE9"])

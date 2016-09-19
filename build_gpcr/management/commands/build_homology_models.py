@@ -102,7 +102,7 @@ class Command(BaseBuild):
     def run_HomologyModeling(self, receptor):
         try:
             state = 'Inactive'
-            Homology_model = HomologyModeling(receptor, state, [state], update=self.update, version=self.version)
+            Homology_model = HomologyModeling(receptor, state, [state,"Active"], update=self.update, version=self.version)
             alignment = Homology_model.run_alignment()
             Homology_model.build_homology_model(alignment)
             Homology_model.format_final_model()
@@ -382,7 +382,7 @@ class HomologyModeling(object):
                             template_dict[i] = H8_alignment.template_dict['H8'][i]
                             alignment_dict[i] = H8_alignment.alignment_dict['H8'][i]
         ###################                            
-                    
+
         ######### change values
                     alignment.reference_dict['H8'] = reference_dict
                     alignment.template_dict['H8'] = template_dict
@@ -804,7 +804,7 @@ class HomologyModeling(object):
                         pass
             except:
                 pass
-  
+
         if pdb_db_inconsistencies!=[]:
             for incons in pdb_db_inconsistencies:
                 seg = self.segment_coding[int(list(incons.keys())[0][0])]
@@ -1580,10 +1580,17 @@ sequence:{uniprot}::::::::
         path = "./structure/homology_models/{}_{}".format(self.reference_entry_name,self.state)
         if not os.path.exists(path):
             os.mkdir(path)
-        a.make()   
+#        try:
+        a.make()
+#        except Exception as msg:
+#            print(msg)
         
         # Get a list of all successfully built models from a.outputs
         ok_models = [x for x in a.outputs if x['failure'] is None]
+        if len(ok_models)==0:
+            os.rename("./"+template, "./structure/homology_models/{}_{}/".format(self.reference_entry_name,
+                                                                                 self.state)+output_file_name)
+            return 0
 
         # Rank the models by DOPE score
         key = 'DOPE score'
@@ -1667,10 +1674,10 @@ class HomologyMODELLER(automodel):
                 if list(k.items())==[]:
                     continue
                 if i[0]==list(k.items())[0][1]:
-                    rsr.add(secondary_structure.alpha(self.residue_range('{}:{}'.format(i[0],chain),'{}:{}'.format(i[1]+3,chain))))
+                    rsr.add(secondary_structure.alpha(self.residue_range('{}:{}'.format(i[0],chain),'{}:{}'.format(i[1]+4,chain))))
                     break
                 elif i[1]==list(k.items())[-1][1]:
-                    rsr.add(secondary_structure.alpha(self.residue_range('{}:{}'.format(i[0]-3,chain),'{}:{}'.format(i[1],chain))))
+                    rsr.add(secondary_structure.alpha(self.residue_range('{}:{}'.format(i[0]-4,chain),'{}:{}'.format(i[1],chain))))
                     break
     
     def make(self):
@@ -1928,6 +1935,7 @@ class HelixEndsModeling(HomologyModeling):
                                    int(raw_helix_ends[raw_seg][1].split('x')[1])+1):
                         a.template_dict[raw_seg]['8x{}'.format(str(i))]='x'
                         a.alignment_dict[raw_seg]['8x{}'.format(str(i))]='x'
+                    e_dif = 0
             if e_dif>0:
                 e_gn = Residue.objects.get(protein_conformation=protein_conf, 
                                            display_generic_number__label=dgn(raw_helix_ends[raw_seg][1],
@@ -1938,6 +1946,10 @@ class HelixEndsModeling(HomologyModeling):
                 for gn in gns:
                     a.template_dict[raw_seg][gn]='x'
                     a.alignment_dict[raw_seg][gn]='x'
+                    try:
+                        a.reference_dict[raw_seg][gn]
+                    except:
+                        a.reference_dict[raw_seg][gn]='x'
         self.helix_ends = raw_helix_ends
 
 ######################## temp force add templates
@@ -2495,7 +2507,21 @@ class Loops(object):
                         temp_temp_dict[self.loop_label+'_cont'] = temp_loop_seg
                         temp_aligned_dict[self.loop_label+'_cont'] = aligned_loop_seg
                     else:
+                        print(ref_residues)
+                        print(input_residues)
                         l_res=1
+                        missing_indeces = []
+                        if len(template_dict[self.loop_label])!=len(input_residues):
+                            for i in input_residues:
+                                try:
+                                    template_dict[self.loop_label][i.replace('.','x')]
+                                except:
+                                    missing_indeces.append([i,input_residues.index(i)])
+                            if missing_indeces[0][1]==0:
+                                pass
+                                ############## TO BE FIXED
+                            else:
+                                ref_residues.append('-')
                         try:
                             ref_loop_seg[self.loop_label+'?'+'1'] = ref_residues[0].amino_acid
                         except:
