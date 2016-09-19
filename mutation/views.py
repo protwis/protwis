@@ -71,14 +71,14 @@ class SegmentSelection(AbsSegmentSelection):
         },
     }
 
-def render_mutations(request, protein = None, family = None, download = None, receptor_class = None, gn = None, aa = None, **response_kwargs):  
+def render_mutations(request, protein = None, family = None, download = None, receptor_class = None, gn = None, aa = None, **response_kwargs):
 
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    
+
      # local protein list
     proteins = []
-    if receptor_class==None: 
+    if receptor_class==None:
 
         if protein: # if protein static page
 
@@ -110,7 +110,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
                     protein_source_list = []
                     for protein_source in simple_selection.annotation:
                         protein_source_list.append(protein_source.item)
-                        
+
                     if species_list:
                         family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
                             species__in=(species_list),
@@ -126,7 +126,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
             original_positions = []
             segments_ids = []
             for segment in simple_selection.segments:
-                if segment.type=='residue': 
+                if segment.type=='residue':
                     original_positions.append(segment.item.default_generic_number.label)
                 else:
                     original_segments.append(segment.item)
@@ -169,16 +169,17 @@ def render_mutations(request, protein = None, family = None, download = None, re
         SnakePlot = ''
         numbering_schemes = ''
         mutations_pos_list = []
-        mutations = MutationExperiment.objects.filter(protein__family__slug__startswith=receptor_class, 
+        mutations = MutationExperiment.objects.filter(protein__family__slug__startswith=receptor_class,
                                 residue__generic_number__label=gn, residue__amino_acid=aa).prefetch_related('residue__generic_number',
                                 'residue__protein_segment','residue__generic_number','exp_func','exp_qual',
                                 'exp_measure', 'exp_type', 'ligand_role', 'ligand','refs','raw',
                                 'ligand__properities', 'refs__web_link', 'refs__web_link__web_resource', 'review__web_link__web_resource')
 
 
-     
+
     mutations_list = {}
     mutations_generic_number = {}
+    mutations_display_generic_number = {}
     context = {}
 
     residue_table_list = []
@@ -196,6 +197,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
             qual = ''
         mutations_list[mutation.residue.generic_number.label].append([mutation.foldchange,ligand.replace('\xe2', "").replace('\'', ""),qual])
         mutations_generic_number[mutation.raw.id] = mutation.residue.generic_number.label
+        mutations_display_generic_number[mutation.raw.id] = mutation.residue.display_generic_number.label
 
     if receptor_class==None: #if not a small lookup
         # create an alignment object
@@ -220,12 +222,12 @@ def render_mutations(request, protein = None, family = None, download = None, re
         for aa in a.full_consensus:
             # for aa,v in a.full_consensus[seg].items():
             r = Residue()
-            r.sequence_number =  aa.sequence_number #FIXME is this certain to be correct that the position in consensus is seq position? 
+            r.sequence_number =  aa.sequence_number #FIXME is this certain to be correct that the position in consensus is seq position?
             #print(aa,aa.family_generic_number,aa.generic_number)
             if aa.family_generic_number and aa.family_generic_number in a.generic_number_objs:
                 r.generic_number = a.generic_number_objs[aa.family_generic_number] #FIXME
                 if aa.family_generic_number in mutations_list:
-                    if r.sequence_number not in mutations_pos_list: 
+                    if r.sequence_number not in mutations_pos_list:
                         mutations_pos_list[r.sequence_number] = []
                     mutations_pos_list[r.sequence_number].append(mutations_list[aa.family_generic_number])
                 r.segment_slug = aa.segment_slug
@@ -237,13 +239,13 @@ def render_mutations(request, protein = None, family = None, download = None, re
             r.frequency = aa.frequency #Grab consensus information
             residue_list.append(r)
 
-            count += 1         
+            count += 1
 
         protein_ids = list(set([x.id for x in proteins]))
         HelixBox = DrawHelixBox(a.full_consensus,'Class A',str(protein_ids), nobuttons = 1)
         SnakePlot = DrawSnakePlot(a.full_consensus,'Class A',str(protein_ids), nobuttons = 1)
 
-        
+
         numbering_schemes_selection = ['gpcrdba','gpcrdbb','gpcrdbc','gpcrdbf'] #there is a residue_numbering_scheme attribute on the protein model, so it's easy to find out
         numbering_schemes_selection = list(used_schemes.keys())
         numbering_schemes_selection = ['gpcrdb'] + numbering_schemes_selection #always use A for reference
@@ -259,13 +261,13 @@ def render_mutations(request, protein = None, family = None, download = None, re
     # prepare the dictionary
     # each helix has a dictionary of positions
     # default_generic_number or first scheme on the list is the key
-    # value is a dictionary of other gn positions and residues from selected proteins 
+    # value is a dictionary of other gn positions and residues from selected proteins
     if len(protein_ids)<100 and not download and receptor_class==None: #too many to make meaningful residuetable / not run when download
         data = OrderedDict()
         for segment in segments:
             data[segment.slug] = OrderedDict()
-            residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins, 
-                                            generic_number__in=residue_table_list).prefetch_related('protein_conformation__protein', 
+            residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins,
+                                            generic_number__in=residue_table_list).prefetch_related('protein_conformation__protein',
                                             'protein_conformation__state', 'protein_segment',
                                             'generic_number','display_generic_number','generic_number__scheme', 'alternative_generic_numbers__scheme')
             for scheme in numbering_schemes:
@@ -304,7 +306,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
         flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
         for s in iter(flattened_data):
             flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
-        
+
         if len(species_list)>1:
             context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
         else:
@@ -323,7 +325,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
     if download:
         raws = mutations.values('raw')
         rawmutations = MutationRaw.objects.filter(pk__in = raws).all()
-        
+
         data = []
         for r in rawmutations:
             headers = []
@@ -331,16 +333,16 @@ def render_mutations(request, protein = None, family = None, download = None, re
             for field, val in r:
                 headers.append(field)
                 values[field] = val
-            if values['id'] in mutations_generic_number:
-                values['generic'] = mutations_generic_number[values['id']]
+            if values['id'] in mutations_display_generic_number:
+                values['generic'] = mutations_display_generic_number[values['id']]
             else:
                 values['generic'] = ''
             data.append(values)
-        headers = ['reference','review', 'protein', 'mutation_pos', 'generic', 'mutation_from', 'mutation_to', 
+        headers = ['reference','review', 'protein', 'mutation_pos', 'generic', 'mutation_from', 'mutation_to',
         'ligand_name', 'ligand_idtype', 'ligand_id', 'ligand_class',
-        'exp_type', 'exp_func',  'exp_wt_value',  'exp_wt_unit','exp_mu_effect_sign', 'exp_mu_effect_type', 'exp_mu_effect_value', 
+        'exp_type', 'exp_func',  'exp_wt_value',  'exp_wt_unit','exp_mu_effect_sign', 'exp_mu_effect_type', 'exp_mu_effect_value',
         'exp_mu_effect_qual', 'exp_mu_effect_ligand_prop',  'exp_mu_ligand_ref', 'opt_type', 'opt_wt',
-        'opt_mu', 'opt_sign', 'opt_percentage', 'opt_qual','opt_agonist', 'added_date'                
+        'opt_mu', 'opt_sign', 'opt_percentage', 'opt_qual','opt_agonist', 'added_date'
          ] #'added_by',
 
         #EXCEL SOLUTION
@@ -367,8 +369,8 @@ def render_mutations(request, protein = None, family = None, download = None, re
         response['Content-Disposition'] = 'attachment; filename=GPCRdb_mutant_data.xlsx' #% 'mutations'
         return response
 
-    else:        
-        return render(request, 'mutation/list.html', {'mutations': mutations, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'data':context['data'], 
+    else:
+        return render(request, 'mutation/list.html', {'mutations': mutations, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'data':context['data'],
             'header':context['header'], 'longest_name':context['longest_name'], 'segments':context['segments'], 'number_of_schemes':len(numbering_schemes), 'mutations_pos_list' : json.dumps(mutations_pos_list), 'protein_ids':str(protein_ids)})
 
 # Create your views here.
@@ -481,9 +483,9 @@ def showcalculationPDB(request):
         else:
             print('pdb code entered')
 
-        context = calculate(request) 
-        
-        #print(context['residues'])   
+        context = calculate(request)
+
+        #print(context['residues'])
         matrix = definitions.DESIGN_SUBSTITUTION_MATRIX
         newresidues = []
         for r in context['residues']:
@@ -501,7 +503,7 @@ def showcalculationPDB(request):
             if r['aa'] in matrix[scoretype]:
                 possible_subs = matrix[scoretype][r['aa']][0]
                 possible_rea = matrix[scoretype][r['aa']][1]
-            
+
             i = 0
             s = ''
             for p in possible_subs:
@@ -532,18 +534,18 @@ def coverage(request):
     coverage = OrderedDict()
 
     temp = OrderedDict([
-                        ('name',''), 
+                        ('name',''),
                         ('interactions', 0),
-                        ('receptor_i', 0) , 
+                        ('receptor_i', 0) ,
                         ('mutations' , 0),
-                        ('receptor_m', 0), 
+                        ('receptor_m', 0),
                         ('mutations_an' , 0),
-                        ('receptor_m_an', 0), 
-                        ('receptor_t',0), 
-                        ('children', OrderedDict()) , 
-                        ('fraction_i',0), 
-                        ('fraction_m',0), 
-                        ('fraction_m_an',0)  
+                        ('receptor_m_an', 0),
+                        ('receptor_t',0),
+                        ('children', OrderedDict()) ,
+                        ('fraction_i',0),
+                        ('fraction_m',0),
+                        ('fraction_m_an',0)
                         ])
 
     for p in class_proteins:
@@ -615,7 +617,7 @@ def coverage(request):
         # FOR ALEX
         # print(dump_interactions)
         # with open('interactions_dump.csv', 'w', newline='') as myfile:
-        #     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)    
+        #     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
         #     wr.writerows(dump_interactions)
         total_r = 0
         total_r_un = 0 #unannotated
@@ -791,7 +793,7 @@ def pocket(request):
             generic[gn] = copy.deepcopy(score_copy)
         if receptor not in generic[gn]['interaction']:
             generic[gn]['interaction'][receptor] = {}
-        
+
         if ligand not in generic[gn]['interaction'][receptor]:
             generic[gn]['interaction'][receptor][ligand] = {}
         if interaction_type=='acc':
@@ -888,11 +890,11 @@ def showcalculation(request):
     lookup_with_pos = {}
     lookup_pos = {}
     for r in residues:
-        if r.generic_number: 
+        if r.generic_number:
             lookup[r.generic_number.label] = r.amino_acid
             lookup_with_pos[r.generic_number.label] = r.amino_acid+str(r.sequence_number)
             lookup_pos[r.generic_number.label] = str(r.sequence_number)
-            
+
     gpcr_class = family
     class_interactions = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__protein_conformation__protein__family__slug__startswith=gpcr_class.slug, structure_ligand_pair__annotated=True).prefetch_related(
@@ -1046,7 +1048,7 @@ def showcalculation(request):
             class_p.append(p)
     for m in class_mutations:
         entry_name = m.protein.entry_name
-        if (int(m.foldchange)!=0 or m.exp_qual): 
+        if (int(m.foldchange)!=0 or m.exp_qual):
             p = m.protein
             if p not in class_p:
                 class_p.append(p)
@@ -1072,7 +1074,7 @@ def showcalculation(request):
     # print('alignment 1')
 
 
-    #Consider caching result! Would be by protein since it compares protein to whole class. 
+    #Consider caching result! Would be by protein since it compares protein to whole class.
     json_generic = '/tmp/'+str(context['proteins'][0])+'_generic.json'
     json_alternative = '/tmp/'+str(context['proteins'][0])+'_alternative.json'
     json_similarity_list = '/tmp/'+str(context['proteins'][0])+'_similarity_list.json'
@@ -1120,7 +1122,7 @@ def showcalculation(request):
     level = 0
 
     empty_result = {'homology':{0:0, 1:0, 2:0, 3:0},'interaction': {0:[], 1:[], 2:[]}, 'mutant': {0:[], 1:[], 2:[] }, 'closestinteraction' : { 'similarity' : 0},
-                'interactions': { }, 
+                'interactions': { },
                 'bestmutation':{ 'species' : '', 'similarity' : 0, 'foldchange' : 0, 'qual' : '', 'allmut' : [], 'counts':OrderedDict(), 'counts_close':{}, 'bigdecrease_distinct':0,'bigdecrease':0,'decrease':0,'bigincrease':0,'nonsignificant':0,'nodata':0}}
 
 
@@ -1188,7 +1190,7 @@ def showcalculation(request):
                             results[generic]['homology'][3] += 1
                         else:
                             print("error",family_id,family_level_ids)
-                        
+
                         if similarity_list[entry_name][1]>results[generic]['closestinteraction']['similarity']:
                             results[generic]['closestinteraction']['species'] = entry_name
                             results[generic]['closestinteraction']['similarity'] = similarity_list[entry_name][1]
@@ -1223,7 +1225,7 @@ def showcalculation(request):
                                 else:
                                     print("error",family_id,family_level_ids)
                                 results[generic]['interactions'][interaction_type_class] = [{ 'species' : entry_name, 'similarity' : similarity_list[entry_name][1], 'pdbcode' : pdbcode, 'ligand' : ligand,'smiles': smiles}]
-                                
+
                                 results[generic]['closestinteraction']['species'] = entry_name
                                 results[generic]['closestinteraction']['similarity'] = similarity_list[entry_name][1]
                                 results[generic]['closestinteraction']['type'] = interaction_type
@@ -1259,7 +1261,7 @@ def showcalculation(request):
                 qual = m.exp_qual.qual +" "+m.exp_qual.prop
             else:
                 qual = ''
-            #only select positions where interaction data is present and mutant has real data 
+            #only select positions where interaction data is present and mutant has real data
             if generic in lookup: # or similarity_list[entry_name][1]>60 (or is closely related.)
                 if generic not in distinct_species:
                     distinct_species[generic] = []
@@ -1355,7 +1357,7 @@ def showcalculation(request):
                     elif similarity_list[entry_name][1]>60:
                         results[generic]['bestmutation']['counts_close'][m.mutation.amino_acid] = 1
 
-           
+
                 mutant_lookup[generic] = []
         else:
             pass
@@ -1437,7 +1439,7 @@ def showcalculation(request):
         #Find alternatives for position (useful for specificity investigation)
         temp = 0
         if res in alternative_aa:
-            for aalist in alternative_aa[res].items(): 
+            for aalist in alternative_aa[res].items():
                 if aalist[0] !=summary[res]['aa']:
                     for p in aalist[1]:
                         if similarity_list[p][1]>60: #close enough to suggest
@@ -1455,7 +1457,7 @@ def showcalculation(request):
         #     summary[res]['score_text'] += '# cons span: '+str(summary[res]['conservation'][4]/10)+'<br>'
 
         scores = {'hyd':0,'aromatic':0,'polar':0,'unknown':0} #dict to keep track of scores to select subs.
-        
+
         secondary_interaction = ''
         if 'type_class' in summary[res]['closestinteraction']:
             temp = 0
@@ -1497,11 +1499,11 @@ def showcalculation(request):
                 summary[res]['interest_score'] += min((len(distinct_species_i)-1)*5,temp) #can't add more than the actual closest interaction
                 summary[res]['score_text'] += '# supporting interactions: '+str(min((len(distinct_species)-1)*5,temp))+'<br>'
                 summary[res]['freq'] += len(distinct_species_i)
-        
+
             #summary[res]['freq_r'] += list(set(distinct_species_i) - set(summary[res]['freq_r']))
 
         summary[res]['freq_r'] = sorted(summary[res]['freq_r'])
-        
+
         #print(len(summary[res]['freq_r']),summary[res]['freq_r'])
 
         summary[res]['freq'] = len(summary[res]['freq_r'])
@@ -1584,7 +1586,7 @@ def showcalculation(request):
                                                 summary[res]['existing_mutants_family'] += "<br>"+m[0]+"=>"+m[1]+" "+m[2]
                                                 #summary[res]['existing_mutants_family'] += 1
                 else: #if no aa in that type (ODD!) allow wildtype
-                    wildcard_interaction = 1 
+                    wildcard_interaction = 1
 
             else:
                 print('error',interaction_type,summary[res]['aa'])
@@ -1661,7 +1663,7 @@ def ajax(request, slug, **response_kwargs):
     if '[' in slug:
         x = ast.literal_eval(urllib.parse.unquote(slug))
         mutations = MutationExperiment.objects.filter(protein__pk__in=x).order_by('residue__sequence_number').prefetch_related('residue')
-        
+
         mutations_list = {}
         mutations_generic_number = {}
         residue_table_list = []
@@ -1777,7 +1779,7 @@ def importmutation(request):
             # residue_id = Residue()
             # residue_id.protein = protein_id
             # residue_id.sequence_number = r['mutation_pos']
-            # residue_id.amino_acid = r['mutation_from']  
+            # residue_id.amino_acid = r['mutation_from']
             # residue_id.save()
 
         obj, created = MutationLigandClass.objects.get_or_create(classname=r['ligand_class'])
@@ -1808,53 +1810,53 @@ def importmutation(request):
         mutation_id = obj
 
 
-        
+
         logtypes = ['pEC50','pIC50','pK']
-        
-        
+
+
         foldchange = 0
         typefold = ''
         if r['exp_mu_effect_type']=='Activity/affinity' and r['exp_wt_value']!=0:
-                    
+
             if re.match("(" + ")|(".join(logtypes) + ")", r['exp_type']):  #-log values!
                 foldchange = round(math.pow(10,-r['exp_mu_value_raw'])/pow(10,-r['exp_wt_value']),3);
                 typefold = r['exp_type']+"_log"
             else:
                 foldchange = round(r['exp_mu_value_raw']/r['exp_wt_value'],3);
                 typefold = r['exp_type']+"_not_log"
-            
-            
+
+
             if foldchange<1 and foldchange!=0:
                 foldchange = -round((1/foldchange),3)
             elif r['exp_mu_effect_type'] =='Fold effect (mut/wt)':
                 foldchange = round(r['exp_mu_value_raw'],3);
                 if foldchange<1: foldchange = -round((1/foldchange),3);
-        
+
 
         obj, created = MutationExperiment.objects.get_or_create(
-        refs=ref_id, 
-        protein=protein_id, 
-        residue=residue_id, #MISSING 
-        ligand=lig_id, 
-        ligand_class=ligclass_id, 
+        refs=ref_id,
+        protein=protein_id,
+        residue=residue_id, #MISSING
+        ligand=lig_id,
+        ligand_class=ligclass_id,
         ligand_ref = ligref_id,
         raw = raw_id,
         optional = exp_opt_id,
-        exp_type=exp_type_id, 
-        exp_func=exp_func_id, 
+        exp_type=exp_type_id,
+        exp_func=exp_func_id,
         exp_measure = exp_measure_id,
         exp_qual = exp_qual_id,
 
-        mutation=mutation_id, 
+        mutation=mutation_id,
         wt_value=r['exp_wt_value'], #
-        wt_unit=r['exp_wt_unit'], 
+        wt_unit=r['exp_wt_unit'],
 
         mu_value = r['exp_mu_value_raw'],
-        mu_sign = r['exp_mu_effect_sign'], 
+        mu_sign = r['exp_mu_effect_sign'],
         foldchange = foldchange
         #foldchange = 1
 
-        #added_by='munk', 
+        #added_by='munk',
         #added_date=datetime.now()
         )
         #print(foldchange)
