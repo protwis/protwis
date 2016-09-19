@@ -61,12 +61,12 @@ class Command(BuildHumanProteins):
             self.constructs_only = True
         else:
             self.constructs_only = False
-        
-        
+
+
         # self.create_orthologs(constructs_only)
         filenames = os.listdir(self.local_uniprot_dir)
         self.prepare_input(options['proc'], filenames)
-        
+
 
     def purge_orthologs(self):
         Protein.objects.filter(~Q(species__common_name="Human")).delete()
@@ -104,7 +104,7 @@ class Command(BuildHumanProteins):
                     continue
                 if positions[1]: #if end is non-false
                     if i>=positions[1]:
-                        #continue if i less than process 
+                        #continue if i less than process
                         continue
                 source_file_name = os.sep.join([self.local_uniprot_dir, source_file])
                 split_filename = source_file.split(".")
@@ -132,7 +132,7 @@ class Command(BuildHumanProteins):
                     continue
                 except Protein.DoesNotExist:
                     p = None
-                    
+
                     # get human ortholog using gene name
                     for gene in up['genes']:
                         try:
@@ -145,7 +145,7 @@ class Command(BuildHumanProteins):
                         except Gene.DoesNotExist:
                             self.logger.info("No gene found for {}".format(gene))
                             continue
-                    
+
                     # if gene name not found, try using entry name
                     if not p:
                         split_entry_name = up['entry_name'].split('_')
@@ -169,6 +169,7 @@ class Command(BuildHumanProteins):
                         try:
                             p = Protein.objects.get(pk=blast_out[0][0])
                         except Protein.DoesNotExist:
+                            print('Template protein for {} not found'.format(up['entry_name']))
                             self.logger.error('Template protein for {} not found'.format(up['entry_name']))
 
                 # skip if no ortholog is found FIXME use a profile to find a good template
@@ -188,7 +189,7 @@ class Command(BuildHumanProteins):
                 #             # use a non human sequence
                 #             template_ref_position_file_path = os.sep.join([self.auto_ref_position_source_dir,
                 #             p.entry_name + '.yaml'])
-                        
+
                 #         ref_positions = align_protein_to_reference(up, template_ref_position_file_path, p)
 
                 #         # write reference positions to a file
@@ -214,7 +215,7 @@ class Command(BuildHumanProteins):
                         name='Unclassified', defaults={'slug': family_slug})
                     if created:
                         self.logger.info('Created protein family {}'.format(unclassified_family))
-                    
+
                     num_families = ProteinFamily.objects.filter(parent=unclassified_family).count()
                     family_slug = unclassified_family.slug + "_" + str(num_families + 1).zfill(3)
                     pf, created = ProteinFamily.objects.get_or_create(parent=unclassified_family, name=up['genes'][0],

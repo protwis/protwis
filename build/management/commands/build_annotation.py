@@ -38,7 +38,7 @@ class Command(BaseBuild):
             dest='proc',
             default=1,
             help='Number of processes to run')
-        
+
     logger = logging.getLogger(__name__)
 
     # source file directory
@@ -228,7 +228,7 @@ class Command(BaseBuild):
                         offset -= 1 #eg if constriction is 7x44, then 7.44 becomes 7x43, 7.43 becomes 7x42
                     if int(bc[0:2])>50 and int(number)+offset>=int(bc[0:2]): #before x50 and before or equal constrictions, do smt
                         offset += 1 #eg if constriction is 4x57, then 4.57 becomes 4x58, 4.58 becomes 4x59
-        
+
         if bulge!=True:
             gn = str(int(number)+offset)
         elif int(number)<50:
@@ -325,7 +325,7 @@ class Command(BaseBuild):
                                         break
                                     if i in ref_positions:
                                         new_v[x50] = ref_positions[i]
-                                        ## MAYBE NEED SOME RULES HERE.... 
+                                        ## MAYBE NEED SOME RULES HERE....
                                         new_v[x50[:-1]+"b"] = ref_positions[i]+length_to_b
                                         new_v[x50[:-1]+"e"] = ref_positions[i]+length_to_e
                                     else:
@@ -335,7 +335,7 @@ class Command(BaseBuild):
                                         missing_x50s.append(x50)
                                         if x50 in x50s_must_have:
                                             # print(entry_name,"tranlated ",x50," no index in ortholog, deleting pconf and protein")
-                                            self.logger.warning('{} tranlated {} no index in ortholog, deleting pconf and protein'.format(entry_name,x50))
+                                            self.logger.info('{} tranlated {} no index in ortholog, deleting pconf and protein'.format(entry_name,x50))
                                             failed = True
                                             p.protein.delete()
                                             p.delete()
@@ -349,8 +349,8 @@ class Command(BaseBuild):
                             if failed:
                                 continue
 
-                            if aligned_gn_mismatch_gap>10:
-                                self.logger.warning('{} ({}) lots of misaligned GN {}'.format(entry_name,human_ortholog.entry_name,aligned_gn_mismatch_gap))
+                            # if aligned_gn_mismatch_gap>20:
+                            #     self.logger.warning('{} ({}) lots of misaligned GN {}'.format(entry_name,human_ortholog.entry_name,aligned_gn_mismatch_gap))
                                 # print(entry_name,"(",human_ortholog.entry_name,") lots of misaligned GN",aligned_gn_mismatch_gap)
 
                             v = new_v
@@ -375,7 +375,7 @@ class Command(BaseBuild):
                         failed = True
                         #continue
                 elif entry_name in proteins:
-                    # print(entry_name,"not done but ready")    
+                    # print(entry_name,"not done but ready")
                     v = self.non_xtal_seg_end[entry_name]
                     # if counter>20:
                     #     break
@@ -426,7 +426,7 @@ class Command(BaseBuild):
                 res = self.generate_bw(i,v,aa)
                 segment = self.all_segments[res['s']]
 
-                ##perform bulges / constriction check! 
+                ##perform bulges / constriction check!
                 ## only do this on bw numbers
                 if 'bw' in res['numbers']:
                     seg, number = res['numbers']['bw'].split(".")
@@ -454,7 +454,7 @@ class Command(BaseBuild):
             end = time.time()
             diff = round(end - current,1)
             self.logger.info('{} {} residues ({}) {}s alignemt {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
-            if aligned_gn_mismatch_gap>10:
+            if aligned_gn_mismatch_gap>20:
                 #print(p.protein.entry_name,len(rs),"residues","(",human_ortholog,")",diff,"s", " Unaligned generic numbers: ",aligned_gn_mismatch_gap)
                 self.logger.error('{} {} residues ({}) {}s MANY ERRORS IN ALIGNMENT {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
 
@@ -483,7 +483,7 @@ class Command(BaseBuild):
 
             segment = self.all_segments[res['s']]
 
-            ##perform bulges / constriction check! 
+            ##perform bulges / constriction check!
             ## only do this on bw numbers
             if 'bw' in res['numbers']:
                 seg, number = res['numbers']['bw'].split(".")

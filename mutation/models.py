@@ -5,7 +5,7 @@ import ast
 
 # Create your models here.
 class Mutation(models.Model):
-    protein = models.ForeignKey('protein.Protein') 
+    protein = models.ForeignKey('protein.Protein')
     residue = models.ForeignKey('residue.Residue', null=True) #If auxilliary it will be null
     mutation_type = models.ForeignKey('MutationType', null=True)
 
@@ -33,7 +33,7 @@ class MutationExperiment(models.Model):
     ligand = models.ForeignKey('ligand.Ligand', null=True, related_name='ligand') #Change to a ligand model?
     ligand_role = models.ForeignKey('ligand.LigandRole', null=True) #Change to a ligand model?
     ligand_ref = models.ForeignKey('ligand.Ligand', null=True, related_name='reference_ligand') #Change to a ligand model?
-    raw = models.ForeignKey('MutationRaw')
+    raw = models.ForeignKey('MutationRaw', null=True)
     optional = models.ForeignKey('MutationOptional', null=True)
     exp_type = models.ForeignKey('MutationExperimentalType', null=True)
     exp_func= models.ForeignKey('MutationFunc', null=True)
@@ -67,7 +67,7 @@ class MutationExperiment(models.Model):
                 #print(self.refs.authors.split(','))
                 mainauthor = self.review.authors.split(',')[0]
                 return mainauthor + " et al ("+str(self.review.year)+")"
-        else:   
+        else:
             return self.review.web_link.index
         #return  " et al ("+str(self.refs.year)+")"
 
@@ -78,7 +78,7 @@ class MutationExperiment(models.Model):
         else:
             temp = "No information"
         # if ($this->mut_effect_qual_id!=0) {
-        #     $temp .= "\n".$this->mut_effect_qual->effect_qual. " ". $this->mut_effect_qual->effect_prop;    
+        #     $temp .= "\n".$this->mut_effect_qual->effect_qual. " ". $this->mut_effect_qual->effect_prop;
 
         # }
         return temp
@@ -87,23 +87,23 @@ class MutationExperiment(models.Model):
         if self.foldchange!=0:
             temp = self.foldchange
             sign = ''
-            if self.mu_sign!="=": 
+            if self.mu_sign!="=":
                 sign = self.mu_sign
-            if temp>1: 
+            if temp>1:
                 temp =  "<font color='red'>"+sign + str(temp) + "↓</font>"
             elif temp<1:
                 temp =  "<font color='green'>"+sign + str(-temp) + "↑</font>"
             if self.exp_qual:
-                temp = self.exp_qual.qual +  " " +  self.exp_qual.prop  
+                temp = self.exp_qual.qual +  " " +  self.exp_qual.prop
 
         elif self.exp_qual: #only display those with qual_id
-            temp = self.exp_qual.qual +  " " + self.exp_qual.prop 
+            temp = self.exp_qual.qual +  " " + self.exp_qual.prop
         else:
             temp = "N/A"
         return temp
-    
-    
-    
+
+
+
     class Meta():
         db_table = 'mutation_experiment'
 
@@ -217,7 +217,7 @@ class MutationLigandClass(models.Model):
     class Meta():
         db_table = 'mutation_ligand_class'
 
-        
+
 class MutationLigandRef(models.Model):
 
     reference = models.CharField(max_length=100)

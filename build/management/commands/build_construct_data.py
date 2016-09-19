@@ -38,7 +38,7 @@ class Command(BaseCommand):
             filenames = options['filename']
         else:
             filenames = False
-        
+
         try:
             # self.purge_construct_data()
             self.create_construct_data(filenames)
@@ -86,16 +86,16 @@ class Command(BaseCommand):
 
                 add_construct(d)
 
-        # structures = Structure.objects.all()
+        structures = Structure.objects.all()
 
-        # for s in structures:
-        #     pdbname = str(s)
-        #     try:
-        #         protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
-        #         d = fetch_pdb_info(pdbname,protein)
-        #         add_construct(d)
-        #     except:
-        #         print(pdbname,'failed')
+        for s in structures:
+            pdbname = str(s)
+            try:
+                protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
+                d = fetch_pdb_info(pdbname,protein)
+                add_construct(d)
+            except:
+                print(pdbname,'failed')
 
 
 
