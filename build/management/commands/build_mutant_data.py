@@ -4,6 +4,8 @@ from django.db import connection
 from django.db import IntegrityError
 from django.utils.text import slugify
 
+
+from build.management.commands.base_build import Command as BaseBuild
 from mutation.models import *
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
@@ -44,10 +46,16 @@ def represent_ordereddict(dumper, data):
 
     return yaml.nodes.MappingNode(u'tag:yaml.org,2002:map', value)
 
-class Command(BaseCommand):
+class Command(BaseBuild):
     help = 'Reads source data and creates pdb structure records'
 
     def add_arguments(self, parser):
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=1,
+            help='Number of processes to run')
         parser.add_argument('-f', '--filename',
             action='append',
             dest='filename',
@@ -66,6 +74,7 @@ class Command(BaseCommand):
     publication_cache = {}
     ligand_cache = {}
     ref_ligand_cache = {}
+    data = []
 
     def handle(self, *args, **options):
         # delete any existing structure data
@@ -77,7 +86,12 @@ class Command(BaseCommand):
                 self.logger.error(msg)
         # import the structure data
         try:
-            self.create_mutant_data(options['filename'])
+            #self.create_mutant_data(options['filename'])
+            self.logger.info('CREATING MUTANT DATA')
+            self.prepare_all_data(options['filename'])
+            self.prepare_input(options['proc'], self.data)
+            self.logger.info('COMPLETED CREATING MUTANTS')
+
         except Exception as msg:
             print(msg)
             traceback.print_exc()
@@ -121,13 +135,13 @@ class Command(BaseCommand):
                 #if curr_row>10: break
         return temp
 
-    def analyse_rows(self,rows):
+    def analyse_rows(self,rows,source_file):
         temp = []
-        for r in rows:
+        for i,r in enumerate(rows,1):
             d = {}
             if r[6]!='':
                 # if multi mutant group skip it
-                self.logger.info('Skipped row due to being a multi group')
+                self.logger.info('Skipped row due to being a multi group ',source_file + "_" + str(i))
                 continue
 
             d['reference'] = r[0]
@@ -159,6 +173,7 @@ class Command(BaseCommand):
             d['opt_percentage'] = float(r[24]) if r[24] else 0
             d['opt_qual'] = r[25]
             d['opt_agonist'] = r[26]
+            d['source_file'] = source_file + "_" + str(i)
 
 
             if len(d['mutation_to'])>1 or len(d['mutation_from'])>1: #if something is off with amino acid
@@ -215,34 +230,23 @@ class Command(BaseCommand):
     def load_mutant_from_yaml(self,filename):
         pass
 
+    def prepare_all_data(self, filenames):
 
-
-    def create_mutant_data(self, filenames):
-        self.logger.info('CREATING MUTANT DATA')
-
-        # what files should be parsed?
         if not filenames:
             filenames = os.listdir(self.structure_data_dir)
-
-        missing_proteins = {}
-        mutants_for_proteins = {}
-
         for source_file in filenames:
             source_file_path = os.sep.join([self.structure_data_dir, source_file])
-            bulk_m = []
-            bulk_r = []
-            current_sheet = time.time()
             if os.path.isfile(source_file_path) and source_file[0] != '.':
                 self.logger.info('Reading file {}'.format(source_file_path))
                 # read the yaml file
-
+                rows = []
                 if source_file[-4:]=='xlsx' or source_file[-3:]=='xls':
                     rows = self.loaddatafromexcel(source_file_path)
-                    rows = self.analyse_rows(rows)
+                    rows = self.analyse_rows(rows,source_file)
                 elif source_file[-4:]=='yaml':
                     rows = yaml.load(open(source_file_path, 'r'))
                     temp = []
-                    for r in rows:
+                    for i,r in enumerate(rows):
                         d = {}
                         d['reference'] = r['pubmed']
                         d['review'] = ''
@@ -271,6 +275,7 @@ class Command(BaseCommand):
                         d['opt_percentage'] = 0
                         d['opt_qual'] = ''
                         d['opt_agonist'] = ''
+                        d['source_file'] = source_file + "_" + str(i)
                         if len(d['mutation_to'])>1 or len(d['mutation_from'])>1: #if something is off with amino acid
                             continue
                         temp.append(d)
@@ -279,268 +284,289 @@ class Command(BaseCommand):
                     self.logger.info('unknown format'.source_file)
                     continue
 
-                c = 0
-                skipped = 0
-                inserted = 0
-                for r in rows:
-                    # print(source_file,c)
-                    self.logger.info('File '+str(source_file)+' number '+str(c))
-                    current = time.time()
-                    c += 1
-                    if c%100==0:
-                        self.logger.info('Parsed '+str(c)+' mutant data entries')
+                self.data += rows
+        print(len(self.data)," total data points")
 
-                    # publication
-                    try: #fix if it thinks it's float.
-                        float(r['reference'])
-                        r['reference'] = str(int(r['reference']))
-                        float(r['review'])
-                        r['review'] = str(int(r['review']))
-                    except ValueError:
-                        pass
-
-                    if r['reference'].isdigit(): #assume pubmed
-                        pub_type = 'pubmed'
-                    else: #assume doi
-                        pub_type = 'doi'
-
-                    if r['reference'] not in self.publication_cache:
-                        try:
-                            pub = Publication.objects.get(web_link__index=r['reference'], web_link__web_resource__slug=pub_type)
-                        except Publication.DoesNotExist:
-                            pub = Publication()
-                            try:
-                                pub.web_link = WebLink.objects.get(index=r['reference'], web_resource__slug=pub_type)
-                            except WebLink.DoesNotExist:
-                                wl = WebLink.objects.create(index=r['reference'],
-                                    web_resource = WebResource.objects.get(slug=pub_type))
-                                pub.web_link = wl
-
-                            if pub_type == 'doi':
-                                pub.update_from_doi(doi=r['reference'])
-                            elif pub_type == 'pubmed':
-                                pub.update_from_pubmed_data(index=r['reference'])
-                            try:
-                                pub.save()
-                            except:
-                                self.logger.error('error with reference ' + str(r['reference']) + ' ' + pub_type)
-                                continue #if something off with publication, skip.
-                        self.publication_cache[r['reference']] = pub
-                    else:
-                        pub = self.publication_cache[r['reference']]
-
-                    # print(r['review'],r['reference'])
-                    if r['review'].isdigit(): #assume pubmed
-                        pub_type = 'pubmed'
-                    else: #assume doi
-                        pub_type = 'doi'
-
-                    # print(r['review'],pub_type)
-                    if r['review']:
-                        if r['review'] not in self.publication_cache:
-                            try:
-                                pub_review = Publication.objects.get(web_link__index=r['review'], web_link__web_resource__slug=pub_type)
-                            except Publication.DoesNotExist:
-                                pub_review = Publication()
-                                try:
-                                    pub_review.web_link = WebLink.objects.get(index=r['review'], web_resource__slug=pub_type)
-                                except WebLink.DoesNotExist:
-                                    wl = WebLink.objects.create(index=r['review'],
-                                        web_resource = WebResource.objects.get(slug=pub_type))
-                                    pub_review.web_link = wl
-
-                                if pub_type == 'doi':
-                                    pub_review.update_from_doi(doi=r['review'])
-                                elif pub_type == 'pubmed':
-                                    pub_review.update_from_pubmed_data(index=r['review'])
-                                try:
-                                    pub_review.save()
-                                except:
-                                    self.logger.error('error with reference ' + str(r['review']) + ' ' + pub_type)
-                                    continue #if something off with publication, skip.
-                                self.publication_cache[r['reference']] = pub_review
-                            else:
-                                pub_review = self.publication_cache[r['reference']]
-                    else:
-                        pub_review = None
-
-                    l = None
-                    if str(r['ligand_name']) in self.ligand_cache:
-                        if r['ligand_id'] in self.ligand_cache[str(r['ligand_name'])]:
-                            l = self.ligand_cache[str(r['ligand_name'])][r['ligand_id']]
-                    else:
-                        self.ligand_cache[str(r['ligand_name'])] = {}
-
-                    if not l:
-                        l = get_or_make_ligand(r['ligand_id'],r['ligand_type'],str(r['ligand_name']))
-                        self.ligand_cache[str(r['ligand_name'])][r['ligand_id']] = l
+    #def create_mutant_data(self, filenames):
+    def main_func(self, positions, iteration):
+        # filenames
+        if not positions[1]:
+            rows = self.data[positions[0]:]
+        else:
+            rows = self.data[positions[0]:positions[1]]
 
 
-                    l_ref = None
-                    if str(r['exp_mu_ligand_ref']) in self.ref_ligand_cache:
-                        l_ref = self.ref_ligand_cache[str(r['exp_mu_ligand_ref'])]
-                    else:
-                        if Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=True).exists(): #if this name is canonical and it has a ligand record already
-                            l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=True)
-                        elif Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=False, ambigious_alias=False).exists(): #if this matches an alias that only has "one" parent canonical name - eg distinct
-                            l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False, ambigious_alias=False)
-                        elif Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=False, ambigious_alias=True).exists(): #if this matches an alias that only has several canonical parents, must investigate, start with empty.
-                            lp = LigandProperities()
-                            lp.save()
-                            l_ref = Ligand()
-                            l_ref.properities = lp
-                            l_ref.name = r['exp_mu_ligand_ref']
-                            l_ref.canonical = False
-                            l_ref.ambigious_alias = True
-                            l_ref.save()
-                            l_ref.load_by_name(r['exp_mu_ligand_ref'])
-                            l_ref.save()
-                        elif Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=False).exists(): #amigious_alias not specified
-                            l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False)
-                            l_ref.ambigious_alias = False
-                            l_ref.save()
-                        elif r['exp_mu_ligand_ref']: #if neither a canonical or alias exists, create the records. Remember to check for canonical / alias status.
-                            lp = LigandProperities()
-                            lp.save()
-                            l_ref = Ligand()
-                            l_ref.properities = lp
-                            l_ref.name = r['exp_mu_ligand_ref']
-                            l_ref.canonical = True
-                            l_ref.ambigious_alias = False
-                            l_ref.save()
-                            l_ref.load_by_name(r['exp_mu_ligand_ref'])
-                            try:
-                                l_ref.save()
-                            except IntegrityError:
-                                l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False)
-                                print("error failing ligand, duplicate?")
-                                # logger.error("FAILED SAVING LIGAND, duplicate?")
-                        else:
-                            l_ref = None
-                        self.ref_ligand_cache[str(r['exp_mu_ligand_ref'])] = l_ref
+        missing_proteins = {}
+        mutants_for_proteins = {}
 
+        c = 0
+        skipped = 0
+        inserted = 0
+        bulk_m = []
+        bulk_r = []
+        current_sheet = time.time()
 
-                    protein_id = 0
-                    residue_id = 0
-
-                    protein=Protein.objects.filter(entry_name=r['protein'])
-                    if protein.exists():
-                        protein=protein.get()
-                        if r['protein'] in mutants_for_proteins:
-                            mutants_for_proteins[r['protein']] += 1
-                        else:
-                            mutants_for_proteins[r['protein']] = 1
-
-                    else:
-                        skipped += 1
-                        if r['protein'] in missing_proteins:
-                            missing_proteins[r['protein']] += 1
-                        else:
-                            missing_proteins[r['protein']] = 1
-                            self.logger.error('Skipped due to no protein '+ r['protein'])
-                        continue
-
-                    res=Residue.objects.filter(protein_conformation__protein=protein,amino_acid=r['mutation_from'],sequence_number=r['mutation_pos']) #FIXME MAKE AA CHECK
-                    if res.exists():
-                        res=res.get()
-                    else:
-                        self.logger.error('Skipped due to no residue or mismatch AA ' + r['protein'] + ' pos:'+str(r['mutation_pos']) + ' AA:'+r['mutation_from'])
-                        skipped += 1
-                        continue
-
-                    if r['ligand_class']:
-                        l_role, created = LigandRole.objects.get_or_create(name=r['ligand_class'],
-                            defaults={'slug': slugify(r['ligand_class'])[:50]}) # FIXME this should not be needed
-                    else:
-                        l_role = None
-
-                    if r['exp_type']:
-                        exp_type_id, created = MutationExperimentalType.objects.get_or_create(type=r['exp_type'])
-                    else:
-                        exp_type_id = None
-
-                    if r['exp_func']:
-                        exp_func_id, created = MutationFunc.objects.get_or_create(func=r['exp_func'])
-                    else:
-                        exp_func_id = None
-
-                    if r['exp_mu_effect_ligand_prop'] or r['exp_mu_effect_qual']:
-                        exp_qual_id, created = MutationQual.objects.get_or_create(qual=r['exp_mu_effect_qual'], prop=r['exp_mu_effect_ligand_prop'])
-                    else:
-                        exp_qual_id = None
-
-                    if r['opt_type'] or r['opt_wt'] or r['opt_mu'] or r['opt_sign'] or r['opt_percentage'] or r['opt_qual'] or r['opt_agonist']:
-                        exp_opt_id, created =  MutationOptional.objects.get_or_create(type=r['opt_type'], wt=r['opt_wt'], mu=r['opt_mu'], sign=r['opt_sign'], percentage=r['opt_percentage'], qual=r['opt_qual'], agonist=r['opt_agonist'])
-                    else:
-                        exp_opt_id = None
-
-                    mutation, created =  Mutation.objects.get_or_create(amino_acid=r['mutation_to'],protein=protein, residue=res)
-                    logtypes = ['pEC50','pIC50','pK']
-
-                    foldchange = 0
-                    typefold = ''
-                    if r['exp_wt_value']!=0 and r['exp_mu_value_raw']!=0: #fix for new format
-
-                        if re.match("(" + ")|(".join(logtypes) + ")", r['exp_type']):  #-log values!
-                            foldchange = round(math.pow(10,-r['exp_mu_value_raw'])/pow(10,-r['exp_wt_value']),3);
-                            typefold = r['exp_type']+"_log"
-                        else:
-                            foldchange = round(r['exp_mu_value_raw']/r['exp_wt_value'],3);
-                            typefold = r['exp_type']+"_not_log"
-
-
-                        if foldchange<1 and foldchange!=0:
-                            foldchange = -round((1/foldchange),3)
-                    elif r['fold_effect']!=0:
-                            foldchange = round(r['fold_effect'],3);
-                            if foldchange<1: foldchange = -round((1/foldchange),3);
-
-
-                    raw_experiment = self.insert_raw(r)
-                    bulk = MutationExperiment(
-                    refs=pub,
-                    review=pub_review,
-                    protein=protein,
-                    residue=res,
-                    ligand=l,
-                    ligand_role=l_role,
-                    ligand_ref = l_ref,
-                    #raw = raw_experiment, #raw_experiment, OR None
-                    optional = exp_opt_id,
-                    exp_type=exp_type_id,
-                    exp_func=exp_func_id,
-                    exp_qual = exp_qual_id,
-
-                    mutation=mutation,
-                    wt_value=r['exp_wt_value'], #
-                    wt_unit=r['exp_wt_unit'],
-
-                    mu_value = r['exp_mu_value_raw'],
-                    mu_sign = r['exp_mu_effect_sign'],
-                    foldchange = foldchange
-                    )
-                    # mut_id = obj.id
-                    bulk_r.append(raw_experiment)
-                    bulk_m.append(bulk)
-                    inserted += 1
-                    end = time.time()
-                    diff = round(end - current,2)
-                    #print(diff)
-
-                self.logger.info('Parsed '+str(c)+' mutant data entries. Skipped '+str(skipped))
-
+        for r in rows:
+            # print(source_file,c)
+            # PRINT IF ERRORS OCCUR
+            # self.logger.info('File '+str(r['source_file'])+' number '+str(c))
             current = time.time()
+            c += 1
+            # if c%100==0:
+            #     self.logger.info('Parsed '+str(c)+' mutant data entries')
 
-            raws = MutationRaw.objects.bulk_create(bulk_r)
-            for i,me in enumerate(bulk_m):
-                me.raw = raws[i]
-            MutationExperiment.objects.bulk_create(bulk_m)
+            # publication
+            try: #fix if it thinks it's float.
+                float(r['reference'])
+                r['reference'] = str(int(r['reference']))
+                float(r['review'])
+                r['review'] = str(int(r['review']))
+            except ValueError:
+                pass
+
+            if r['reference'].isdigit(): #assume pubmed
+                pub_type = 'pubmed'
+            else: #assume doi
+                pub_type = 'doi'
+
+            if r['reference'] not in self.publication_cache:
+                try:
+                    pub = Publication.objects.get(web_link__index=r['reference'], web_link__web_resource__slug=pub_type)
+                except Publication.DoesNotExist:
+                    pub = Publication()
+                    try:
+                        pub.web_link = WebLink.objects.get(index=r['reference'], web_resource__slug=pub_type)
+                    except WebLink.DoesNotExist:
+                        wl = WebLink.objects.create(index=r['reference'],
+                            web_resource = WebResource.objects.get(slug=pub_type))
+                        pub.web_link = wl
+
+                    if pub_type == 'doi':
+                        pub.update_from_doi(doi=r['reference'])
+                    elif pub_type == 'pubmed':
+                        pub.update_from_pubmed_data(index=r['reference'])
+                    try:
+                        pub.save()
+                    except:
+                        self.logger.error('error with reference ' + str(r['reference']) + ' ' + pub_type)
+                        continue #if something off with publication, skip.
+                self.publication_cache[r['reference']] = pub
+            else:
+                pub = self.publication_cache[r['reference']]
+
+            # print(r['review'],r['reference'])
+            if r['review'].isdigit(): #assume pubmed
+                pub_type = 'pubmed'
+            else: #assume doi
+                pub_type = 'doi'
+
+            # print(r['review'],pub_type)
+            if r['review']:
+                if r['review'] not in self.publication_cache:
+                    try:
+                        pub_review = Publication.objects.get(web_link__index=r['review'], web_link__web_resource__slug=pub_type)
+                    except Publication.DoesNotExist:
+                        pub_review = Publication()
+                        try:
+                            pub_review.web_link = WebLink.objects.get(index=r['review'], web_resource__slug=pub_type)
+                        except WebLink.DoesNotExist:
+                            wl = WebLink.objects.create(index=r['review'],
+                                web_resource = WebResource.objects.get(slug=pub_type))
+                            pub_review.web_link = wl
+
+                        if pub_type == 'doi':
+                            pub_review.update_from_doi(doi=r['review'])
+                        elif pub_type == 'pubmed':
+                            pub_review.update_from_pubmed_data(index=r['review'])
+                        try:
+                            pub_review.save()
+                        except:
+                            self.logger.error('error with review ' + str(r['review']) + ' ' + pub_type)
+                            continue #if something off with publication, skip.
+                        self.publication_cache[r['review']] = pub_review
+                else:
+                    pub_review = self.publication_cache[r['review']]
+            else:
+                pub_review = None
+
+            l = None
+            if str(r['ligand_name']) in self.ligand_cache:
+                if r['ligand_id'] in self.ligand_cache[str(r['ligand_name'])]:
+                    l = self.ligand_cache[str(r['ligand_name'])][r['ligand_id']]
+            else:
+                self.ligand_cache[str(r['ligand_name'])] = {}
+
+            if not l:
+                l = get_or_make_ligand(r['ligand_id'],r['ligand_type'],str(r['ligand_name']))
+                self.ligand_cache[str(r['ligand_name'])][r['ligand_id']] = l
+
+
+            l_ref = None
+            if str(r['exp_mu_ligand_ref']) in self.ref_ligand_cache:
+                l_ref = self.ref_ligand_cache[str(r['exp_mu_ligand_ref'])]
+            else:
+                if Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=True).exists(): #if this name is canonical and it has a ligand record already
+                    l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=True)
+                elif Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=False, ambigious_alias=False).exists(): #if this matches an alias that only has "one" parent canonical name - eg distinct
+                    l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False, ambigious_alias=False)
+                elif Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=False, ambigious_alias=True).exists(): #if this matches an alias that only has several canonical parents, must investigate, start with empty.
+                    lp = LigandProperities()
+                    lp.save()
+                    l_ref = Ligand()
+                    l_ref.properities = lp
+                    l_ref.name = r['exp_mu_ligand_ref']
+                    l_ref.canonical = False
+                    l_ref.ambigious_alias = True
+                    l_ref.save()
+                    l_ref.load_by_name(r['exp_mu_ligand_ref'])
+                    l_ref.save()
+                elif Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=False).exists(): #amigious_alias not specified
+                    l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False)
+                    l_ref.ambigious_alias = False
+                    l_ref.save()
+                elif r['exp_mu_ligand_ref']: #if neither a canonical or alias exists, create the records. Remember to check for canonical / alias status.
+                    lp = LigandProperities()
+                    lp.save()
+                    l_ref = Ligand()
+                    l_ref.properities = lp
+                    l_ref.name = r['exp_mu_ligand_ref']
+                    l_ref.canonical = True
+                    l_ref.ambigious_alias = False
+                    l_ref.save()
+                    l_ref.load_by_name(r['exp_mu_ligand_ref'])
+                    try:
+                        l_ref.save()
+                    except IntegrityError:
+                        l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False)
+                        print("error failing ligand, duplicate?")
+                        # logger.error("FAILED SAVING LIGAND, duplicate?")
+                else:
+                    l_ref = None
+                self.ref_ligand_cache[str(r['exp_mu_ligand_ref'])] = l_ref
+
+
+            protein_id = 0
+            residue_id = 0
+
+            protein=Protein.objects.filter(entry_name=r['protein'])
+            if protein.exists():
+                protein=protein.get()
+                if r['protein'] in mutants_for_proteins:
+                    mutants_for_proteins[r['protein']] += 1
+                else:
+                    mutants_for_proteins[r['protein']] = 1
+
+            else:
+                skipped += 1
+                if r['protein'] in missing_proteins:
+                    missing_proteins[r['protein']] += 1
+                else:
+                    missing_proteins[r['protein']] = 1
+                    self.logger.error('Skipped due to no protein '+ r['protein'])
+                continue
+
+            res=Residue.objects.filter(protein_conformation__protein=protein,amino_acid=r['mutation_from'],sequence_number=r['mutation_pos']) #FIXME MAKE AA CHECK
+            if res.exists():
+                res=res.get()
+            else:
+                self.logger.error('Skipped due to no residue or mismatch AA ' + r['protein'] + ' pos:'+str(r['mutation_pos']) + ' AA:'+r['mutation_from'])
+                skipped += 1
+                continue
+
+            if r['ligand_class']:
+                l_role, created = LigandRole.objects.get_or_create(name=r['ligand_class'],
+                    defaults={'slug': slugify(r['ligand_class'])[:50]}) # FIXME this should not be needed
+            else:
+                l_role = None
+
+            if r['exp_type']:
+                exp_type_id, created = MutationExperimentalType.objects.get_or_create(type=r['exp_type'])
+            else:
+                exp_type_id = None
+
+            if r['exp_func']:
+                exp_func_id, created = MutationFunc.objects.get_or_create(func=r['exp_func'])
+            else:
+                exp_func_id = None
+
+            if r['exp_mu_effect_ligand_prop'] or r['exp_mu_effect_qual']:
+                exp_qual_id, created = MutationQual.objects.get_or_create(qual=r['exp_mu_effect_qual'], prop=r['exp_mu_effect_ligand_prop'])
+            else:
+                exp_qual_id = None
+
+            if r['opt_type'] or r['opt_wt'] or r['opt_mu'] or r['opt_sign'] or r['opt_percentage'] or r['opt_qual'] or r['opt_agonist']:
+                exp_opt_id, created =  MutationOptional.objects.get_or_create(type=r['opt_type'], wt=r['opt_wt'], mu=r['opt_mu'], sign=r['opt_sign'], percentage=r['opt_percentage'], qual=r['opt_qual'], agonist=r['opt_agonist'])
+            else:
+                exp_opt_id = None
+
+            try:
+                mutation, created =  Mutation.objects.get_or_create(amino_acid=r['mutation_to'],protein=protein, residue=res)
+            except IntegrityError:
+                mutation = Mutation.objects.get(amino_acid=r['mutation_to'],protein=protein, residue=res)
+            logtypes = ['pEC50','pIC50','pK']
+
+            foldchange = 0
+            typefold = ''
+            if r['exp_wt_value']!=0 and r['exp_mu_value_raw']!=0: #fix for new format
+
+                if re.match("(" + ")|(".join(logtypes) + ")", r['exp_type']):  #-log values!
+                    foldchange = round(math.pow(10,-r['exp_mu_value_raw'])/pow(10,-r['exp_wt_value']),3);
+                    typefold = r['exp_type']+"_log"
+                else:
+                    foldchange = round(r['exp_mu_value_raw']/r['exp_wt_value'],3);
+                    typefold = r['exp_type']+"_not_log"
+
+
+                if foldchange<1 and foldchange!=0:
+                    foldchange = -round((1/foldchange),3)
+            elif r['fold_effect']!=0:
+                    foldchange = round(r['fold_effect'],3);
+                    if foldchange<1: foldchange = -round((1/foldchange),3);
+
+
+            raw_experiment = self.insert_raw(r)
+            bulk = MutationExperiment(
+            refs=pub,
+            review=pub_review,
+            protein=protein,
+            residue=res,
+            ligand=l,
+            ligand_role=l_role,
+            ligand_ref = l_ref,
+            #raw = raw_experiment, #raw_experiment, OR None
+            optional = exp_opt_id,
+            exp_type=exp_type_id,
+            exp_func=exp_func_id,
+            exp_qual = exp_qual_id,
+
+            mutation=mutation,
+            wt_value=r['exp_wt_value'], #
+            wt_unit=r['exp_wt_unit'],
+
+            mu_value = r['exp_mu_value_raw'],
+            mu_sign = r['exp_mu_effect_sign'],
+            foldchange = foldchange
+            )
+            # mut_id = obj.id
+            bulk_r.append(raw_experiment)
+            bulk_m.append(bulk)
+            inserted += 1
             end = time.time()
             diff = round(end - current,2)
-            current_sheet
-            diff_2 = round(end - current_sheet,2)
-            print(source_file,"overall",diff_2,"bulk",diff,len(bulk_m),"skipped",str(skipped))
-        sorted_missing_proteins = sorted(missing_proteins.items(), key=operator.itemgetter(1),reverse=True)
-        sorted_mutants_for_proteins = sorted(mutants_for_proteins.items(), key=operator.itemgetter(1),reverse=True)
+            #print(diff)
 
-        self.logger.info('COMPLETED CREATING MUTANTS')
+        self.logger.info('Parsed '+str(c)+' mutant data entries. Skipped '+str(skipped))
+
+        current = time.time()
+
+        raws = MutationRaw.objects.bulk_create(bulk_r)
+        for i,me in enumerate(bulk_m):
+            me.raw = raws[i]
+        MutationExperiment.objects.bulk_create(bulk_m)
+        end = time.time()
+        diff = round(end - current,2)
+        current_sheet
+        diff_2 = round(end - current_sheet,2)
+        print("overall",diff_2,"bulk",diff,len(bulk_m),"skipped",str(skipped))
+        # sorted_missing_proteins = sorted(missing_proteins.items(), key=operator.itemgetter(1),reverse=True)
+        # sorted_mutants_for_proteins = sorted(mutants_for_proteins.items(), key=operator.itemgetter(1),reverse=True)
