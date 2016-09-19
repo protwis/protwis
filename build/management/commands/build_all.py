@@ -27,15 +27,16 @@ class Command(BaseCommand):
         commands = [
             ['build_common'],
             ['build_human_proteins'],
+            ['build_blast_database'],
             ['build_other_proteins', {'constructs_only': options['test'] ,'proc': options['proc']}], # build only constructs in test mode
             ['build_annotation', {'proc': options['proc']}],
             # OLD['build_human_residues', {'proc': options['proc']}],
             # OLD['build_other_residues', {'proc': options['proc']}],
             ['build_blast_database'],
             ['build_links'],
-            ['build_construct_proteins', {'proc': options['proc']}],
+            ['build_construct_proteins'], #, {'proc': options['proc']}
             ['build_structures', {'proc': options['proc']}],
-            ['build_construct_data', {'proc': options['proc']}],
+            ['build_construct_data'], #, {'proc': options['proc']}
             ['build_mutant_data'],
             # OLD ['find_protein_templates', {'proc': options['proc']}],
             # OLD['update_alignments', {'proc': options['proc']}],
