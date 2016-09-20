@@ -17,6 +17,7 @@ from Bio import Entrez, Medline
 import xml.etree.ElementTree as etree 
 
 
+
 def save_to_cache(path, file_id, data):
     create_cache_dirs(path)
     cache_dir_path = os.sep.join([settings.BUILD_CACHE_DIR] + path)
@@ -68,18 +69,27 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False):
         try:
             req = urlopen(full_url)
             if full_url[-2:]=='gz' and xml:
-                buf = BytesIO( req.read())
-                f = gzip.GzipFile(fileobj=buf)
-                data = f.read()
-                d = etree.fromstring(data)
+                try:
+                    buf = BytesIO( req.read())
+                    f = gzip.GzipFile(fileobj=buf)
+                    data = f.read()
+                    d = etree.fromstring(data)
+                except:
+                    return False
             elif xml:
-                d = etree.fromstring(req.read().decode('UTF-8'))
+                try:
+                    d = etree.fromstring(req.read().decode('UTF-8'))
+                except:
+                    return False
             else:
                 d = json.loads(req.read().decode('UTF-8'))
         except HTTPError as e:
             tries += 1
             if e.code == 404:
                 logger.warning('Failed fetching {}, 404 - does not exist'.format(full_url))
+                tries = max_tries #skip more tries
+            elif e.code == 400:
+                logger.warning('Failed fetching {}, 400 - does not exist'.format(full_url))
                 tries = max_tries #skip more tries
             else:
                 time.sleep(2)

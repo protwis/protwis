@@ -566,16 +566,27 @@ def create_block(chunk):
 
     temp = """<div class="construct_div" style="">
             <table class='schematic-block'><tr>"""
-    for r in chunk:
-
+    blank = 0
+    blank_max = 20
+    for i,r in enumerate(chunk):
         if r[3]:
+            if r[3][1]=='insertion' and i>19:
+                continue #pass to prevent too many
+
+            if blank: 
+                temp += """<td class="seqv seqv-segment no-wrap" colspan="{}">&nbsp;</td>""".format(str(blank))
+                blank = 0
             temp += """<td class="seqv seqv-segment no-wrap {}">
                         <div data-toggle="tooltip" data-placement="top" data-html="true"
                         title="{}">&nbsp;</div></td>""".format(r[3][1],r[3][2])
+            blank_max = blank_max-i
         else:
-            temp += """<td class="seqv seqv-segment no-wrap">
-                        &nbsp;
-                        </td>"""
+            blank += 1
+            if blank > blank_max: 
+                blank = blank_max
+
+    if blank: 
+        temp += """<td class="seqv seqv-segment no-wrap" colspan="{}">&nbsp;</td>""".format(str(blank))
     temp += """</tr><tr>"""
     for r in chunk:
         if not r[1] and r[2] and 2==3:
@@ -600,7 +611,10 @@ def create_block(chunk):
             else:
                 text = "&nbsp;"
 
-            temp += """<td class="seqv seqv-segment no-wrap {}">{}</td>""".format(extra,text)
+            if r[1]:
+                temp += """<td class="seqv seqv-segment no-wrap {}" colspan=20>{}</td>""".format(extra,text)
+            elif r[0]==None and r[3] and r[3][1]!='insertion':
+                temp += """<td class="seqv seqv-segment no-wrap {}" colspan=1>{}</td>""".format(extra,text)
 
     temp += "</tr></table></div>"
     return temp

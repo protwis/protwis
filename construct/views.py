@@ -116,10 +116,18 @@ class ConstructBrowser(TemplateView):
             cons = Construct.objects.all().prefetch_related(
                 "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions", "modifications", "deletions", "crystallization__chemical_lists",
                 "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
-            context['constructs'] = []
-            for c in cons:
-                c.schematics = c.schematic()
-                context['constructs'].append(c)
+            
+            context['constructs'] = cache.get('construct_browser')
+            if context['constructs']==None:
+                context['constructs'] = []
+                for c in cons:
+                    c.schematics = c.schematic()
+                    context['constructs'].append(c)
+
+                cache.set('construct_browser', context['constructs'], 60*60*24*2) #two days
+            else:
+                print('construct_browser used cache')
+
         except Construct.DoesNotExist as e:
             pass
 
@@ -157,6 +165,7 @@ def align(request):
         'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
         'generic_number__scheme', 'display_generic_number__scheme')
     else:
+        s_ids = ['N-term','TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','ECL2','TM5','ICL3','TM6','ECL3','TM7','ICL4','H8','C-term']
         rs = Residue.objects.filter(protein_conformation__protein__in=proteins).prefetch_related(
         'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
         'generic_number__scheme', 'display_generic_number__scheme')
@@ -168,6 +177,9 @@ def align(request):
     distinct_segments = []
     overview = OrderedDict()
     segment_length = OrderedDict()
+    for s in s_ids:
+        overview[s] = OrderedDict()
+        segment_length[s] = {'aligned':0, 'before':0,'after':0,'total':0}
 
     protein_lookup = {}
     print('build stuff')
@@ -176,8 +188,6 @@ def align(request):
     protein = ''
 
     track_unaligned = {}
-
-
 
     #Find all possible generic numbers, to ensure gaps
     for r in rs.order_by('protein_conformation__id','sequence_number'):
@@ -200,9 +210,6 @@ def align(request):
         if segment not in distinct_segments:
             distinct_segments.append(segment)
             overview[segment] = OrderedDict()
-            segment_length[segment] = {'aligned':0, 'before':0,'after':0,'total':0}
-
-
 
         if r.generic_number:   
             no_encountered_gn = False
@@ -259,14 +266,20 @@ def align(request):
         alignment_print_sequence += '<tr>'
         for seg,gns in alignment[c].items():
 
+            if p not in track_unaligned:
+                track_unaligned[p] = {seg: {'before':[],'after':[]}}
+
+            if p not in protein_lookup:
+                protein_lookup[p] = {}
+
             if seg not in track_unaligned[p]:
                 track_unaligned[p][seg] = {'before':[],'after':[]}
 
-            alignment_print_sequence += """<td class="ali-td ali-residue res-color-X">&nbsp;</td>"""
+            alignment_print_sequence += """<td class="ali-td ali-residue res-color-_">&nbsp;</td>"""
 
             if seg!='C-term':
                 for _ in range(segment_length[seg]['before']-len(track_unaligned[p][seg]['before'])):
-                    alignment_print_sequence += """<td class="ali-td ali-residue res-color-X">
+                    alignment_print_sequence += """<td class="ali-td ali-residue res-color-">
                                                     -</td>"""
 
             for aa in track_unaligned[p][seg]['before']:
@@ -307,17 +320,17 @@ def align(request):
                                                 title="{}{}{}">{}</div></td>""".format(annotation,aa['aa'],aa['pos'],annotation_text,aa['aa'])
 
             for _ in range(segment_length[seg]['after']-len(track_unaligned[p][seg]['after'])):
-                alignment_print_sequence += """<td class="ali-td ali-residue res-color-X">
+                alignment_print_sequence += """<td class="ali-td ali-residue res-color-">
                                                 -</td>"""
             if seg=='C-term':
                 for _ in range(segment_length[seg]['before']-len(track_unaligned[p][seg]['before'])):
-                    alignment_print_sequence += """<td class="ali-td ali-residue res-color-X">
+                    alignment_print_sequence += """<td class="ali-td ali-residue res-color-">
                                                     -</td>"""
 
         alignment_print_sequence += '</tr>'
 
     print('done',len(alignment_print_sequence))
-    context = {'constructs': constructs,'alignment_print_sequence': alignment_print_sequence, 'segment_length' : segment_length, 'gn_list' : gn_list} #, 'alignment_print_sequence': alignment_print_sequence
+    context = {'constructs': constructs,'alignment_print_sequence': alignment_print_sequence, 'segment_length' : segment_length, 'gn_list' : gn_list, 'segments': s_ids, 'c_ids': json.dumps(c_ids)} #, 'alignment_print_sequence': alignment_print_sequence
 
     return render(request,'align.html',context)
 

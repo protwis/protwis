@@ -86,7 +86,7 @@ class Command(BuildHumanProteins):
         for family in families:
             # get proteins in this family
             proteins = Protein.objects.filter(family__slug__startswith=family.slug, sequence_type__slug='wt',
-                species__id=1).prefetch_related('species', 'residue_numbering_scheme')
+                species__common_name="Human").prefetch_related('species', 'residue_numbering_scheme')
 
             if proteins.count() <= 1:
                 continue

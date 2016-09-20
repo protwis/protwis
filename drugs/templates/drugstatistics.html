@@ -152,7 +152,7 @@ bar.append("rect")
   .attr("height", height)
   .attr("fill",  function(d) { return (color(d.value)) } )
   .on("mouseover", function(d) {
-      tooltip.text(d.text + " receptors: "+ d.value + "<br>" + "<span style='color:#43A047'> wf")
+      tooltip.text(d.text + " receptors: "+ d.value + " (" + (d.value/total_time).toFixed(2)*100 + "%)")
       tooltip.style("visibility", "visible")
   })
   .on("mousemove", function() {

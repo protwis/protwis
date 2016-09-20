@@ -202,9 +202,12 @@ input.widen.form-control, select.widen.form-control{
 input.error, select.error {
    border:1px dotted #800000;
 }
-label.error{
+label.error, span.required_ind{
 color:#800000;
 font-family:verdana, Helvetica;font-size: 9pt;
+}
+span.required_ind{
+	margin-left: 20px;
 }
 .searchclear {
 	right:18px;
@@ -408,6 +411,7 @@ select.optional option{
         // console.log(event.target.result);
         var obj = JSON.parse(event.target.result);
         prefill_data(obj);
+ 		ValidateForm(); 
     }
 
     $("#get_json").click(function () 
@@ -416,6 +420,7 @@ select.optional option{
 	    $.getJSON( "/construct/auto_webform/"+slug, function( data ) {
 	  		// console.log(data);
 	  		prefill_data(data);
+ 			ValidateForm(); 
 	  	});
 	});
     
@@ -588,14 +593,15 @@ select.optional option{
 
 {% endblock %}
 {% block content %}	
-	Load a JSON file: <input id="file" type="file" />
-	<input id="fetch_json"><button id="get_json" value="Fetch data">Fetch data</button>
+	Load a JSON file: <input id="file" type="file" class="optional" />
+	<input id="fetch_json"  class="optional"><button id="get_json" value="Fetch data">Fetch data</button>
 	<form id="xtals_form" method="post"  target="_blank" action='/structure/webformdata'>
 		{% csrf_token %}
 		<div id ="tabs">
 		<table class="table_1"  id="table_1">
 			<td> 
 				<div id="contr_contact_div" class="contr_contact col-md-12 panel panel-primary">
+					<span id="required_indication" class="hidetext required_ind">Fields marked with * are required.Please fill them out , or select a value from the list</span>
 					<h1>Contributor Contact information</h1><br>
 					<table style="table-layout: fixed" style="width:100%" id="contact_information" >
 						  <tr>
@@ -960,7 +966,7 @@ select.optional option{
 							    	</select><br>
 							    	<input class="hidetext form-control other_mod widen second_table row_id" id="id_aamod" maxlength="50" name="aamod" type="text" placeholder="please insert" />
 							    </td>
-							    <td><select class="form-control half aamod_pos_type row_id" id="id_aamod_position" name="aamod_position">
+							    <td><select class="form-control  half aamod_pos_type row_id" id="id_aamod_position" name="aamod_position">
 										<option value="">Select</option>
 										<option value="single">Single</option>
 										<option value="pair">Pair</option>

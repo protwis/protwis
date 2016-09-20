@@ -130,10 +130,13 @@ def StructureDetails(request, pdbname):
         structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes=Count('pk', distinct=True)).order_by('-numRes')
     resn_list = ''
 
+
+    main_ligand = "none"
     for structure in structures:
         if structure['structure_ligand_pair__annotated']:
             resn_list += ",\"" + \
                 structure['structure_ligand_pair__pdb_reference'] + "\""
+            main_ligand = structure['structure_ligand_pair__pdb_reference']
     print(resn_list)
 
 
@@ -144,14 +147,18 @@ def StructureDetails(request, pdbname):
     residuelist = Residue.objects.filter(protein_conformation__protein=p).prefetch_related('protein_segment','display_generic_number','generic_number')
     lookup = {}
 
+    residues_lookup = {}
     for r in residuelist:
         if r.generic_number:
             lookup[r.generic_number.label] = r.sequence_number
+            residues_lookup[r.sequence_number] = r.amino_acid +str(r.sequence_number)+ " "+ r.generic_number.label
 
     residues = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').order_by('rotamer__residue__sequence_number')
     residues_browser = []
     ligands = []
+    display_res = []
+    main_ligand_full = "None"
     residue_table_list = []
     for residue in residues:
         key = residue.interaction_type.name
@@ -173,11 +180,17 @@ def StructureDetails(request, pdbname):
         else:
             display = ''
         ligand = residue.structure_ligand_pair.ligand.name
+        display_res.append(str(pos))
         residues_browser.append({'type': key, 'aa': aa, 'ligand': ligand,
                                  'pos': pos, 'wt_pos': wt_pos, 'gpcrdb': display, 'segment': segment})
+        if pos not in residues_lookup:
+            residues_lookup[pos] = aa + str(pos) + " " +display + " interaction " + key
+        else:
+            residues_lookup[pos] += " interaction " + key
         if ligand not in ligands:
             ligands.append(ligand)
-
+            main_ligand_full = ligand
+    display_res = ' or '.join(display_res)
     # RESIDUE TABLE
     segments = ProteinSegment.objects.all().filter().prefetch_related()
 
@@ -261,8 +274,8 @@ def StructureDetails(request, pdbname):
                 residuelist, p.get_protein_class(), str(p), nobuttons=1)
 
     return render(request, 'interaction/structure.html', {'pdbname': pdbname, 'structures': structures,
-                                                          'crystal': crystal, 'protein': p, 'helixbox' : HelixBox, 'snakeplot': SnakePlot, 'residues': residues_browser, 'annotated_resn':
-                                                          resn_list, 'ligands': ligands, 'data': context['data'],
+                                                          'crystal': crystal, 'protein': p, 'helixbox' : HelixBox, 'snakeplot': SnakePlot, 'residues': residues_browser, 'residues_lookup': residues_lookup, 'display_res': display_res, 'annotated_resn':
+                                                          resn_list, 'ligands': ligands,'main_ligand' : main_ligand,'main_ligand_full' : main_ligand_full, 'data': context['data'],
                                                           'header': context['header'], 'segments': context['segments'],
                                                           'number_of_schemes': len(numbering_schemes)})
 
@@ -494,7 +507,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                     quit()
 
                 structureligandinteraction = StructureLigandInteraction.objects.filter(
-                    pdb_reference=temp[1], structure=structure, annotated=True) #, pdb_file=None 
+                    pdb_reference=temp[1], structure=structure, annotated=True) #, pdb_file=None
                 if structureligandinteraction.exists():  # if the annotated exists
                     annotated_found = 1
                     annotated = 1
@@ -552,6 +565,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                 ResidueFragmentInteraction.objects.filter(structure_ligand_pair=structureligandinteraction).delete()
 
                 for interaction in output['interactions']:
+                    # print(interaction)
                     aa = interaction[0]
                     aa, pos, chain = regexaa(aa)
                     residue = check_residue(protein, pos, aa)
@@ -560,7 +574,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                     fragment, rotamer = extract_fragment_rotamer(
                                     f, residue, structure, ligand)
 
-                    #print(interaction[2],interaction[3],interaction[4],interaction[5])
+                    # print(interaction[2],interaction[3],interaction[4],interaction[5])
                     if fragment!=None:
                         interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(
                                         slug=interaction[2], name=interaction[3], type=interaction[4], direction=interaction[5])
@@ -920,7 +934,7 @@ def calculate(request, redirect=None):
 
                 # convert identified interactions to residue features and add them to the session
                 # numbers in lists represent the interaction "hierarchy", i.e. if a residue has more than one
-                # interaction, 
+                # interaction,
                 interaction_name_dict = {
                     'polar_double_neg_protein': [1, 'neg'],
                     'polar_double_pos_protein': [1, 'neg'],
@@ -948,7 +962,7 @@ def calculate(request, redirect=None):
                                 if (not feature
                                     or interaction_name_dict[interaction][0] < interaction_name_dict[feature][0]):
                                     feature = interaction
-                        
+
                         if not feature:
                             continue
 
@@ -1303,7 +1317,7 @@ def Ginterface(request, protein = None):
     for interaction in residues_browser:
         interacting_gn.append(interaction['gpcrdb'])
         gs_b2_interaction_type_long = (next((item['type'] for item in residues_browser if item['gpcrdb'] == interaction['gpcrdb']), None))
-        
+
         interacting_aa = residuelist.filter(display_generic_number__label__in=[interaction['gpcrdb']]).values_list('amino_acid', flat=True)
 
         if interacting_aa:
@@ -1312,7 +1326,7 @@ def Ginterface(request, protein = None):
             interaction['pos'] = pos
 
             feature = names_aa[gs_b2_interaction_type_long]
-            
+
             if interacting_aa[0] not in exchange_table[feature]:
                 GS_none_equivalent_interacting_pos.append(pos)
                 GS_none_equivalent_interacting_gn.append(interaction['gpcrdb'])
@@ -1329,5 +1343,5 @@ def Ginterface(request, protein = None):
             primary.append(entry.g_protein.name.replace("Gs","G<sub>s</sub>").replace("Gi","G<sub>i</sub>").replace("Go","G<sub>o</sub>").replace("G11","G<sub>11</sub>").replace("G12","G<sub>12</sub>").replace("G13","G<sub>13</sub>").replace("Gq","G<sub>q</sub>").replace("G","G&alpha;"))
         elif entry.transduction == 'secondary':
             secondary.append(entry.g_protein.name.replace("Gs","G<sub>s</sub>").replace("Gi","G<sub>i</sub>").replace("Go","G<sub>o</sub>").replace("G11","G<sub>11</sub>").replace("G12","G<sub>12</sub>").replace("G13","G<sub>13</sub>").replace("Gq","G<sub>q</sub>").replace("G","G&alpha;"))
-            
+
     return render(request, 'interaction/ginterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn, 'primary_Gprotein': '; '.join(set(primary)), 'secondary_Gprotein': '; '.join(set(secondary))} )
