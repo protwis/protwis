@@ -33,7 +33,7 @@
                         <td class="seqv seqv-segment no-wrap
                         {% if r.0.protein_segment.id|divisibleby:2 %}
                          bg-success
-                        {% else %} 
+                        {% else %}
                          bg-info
                         {% endif %}"
                         {% if r.1 %}
@@ -71,7 +71,7 @@
                     </tr>
                     <tr>
                     {% for r in rs %}
-                        {% if forloop.counter = chunk_size %}
+                        {% if forloop.counter == chunk_size %}
                         <td colspan="{{ rs|length }}" class="seqv seqv-number">{{ r.0.sequence_number }}</td>
                         {% endif %}
                     {% endfor %}
@@ -101,7 +101,7 @@
                     </tr>
                     <tr>
                     {% for r in rs %}
-                        {% if r.3.1 = 'deletion' or r.3.1 = 'insertion' %}
+                        {% if r.3.1 == 'deletion' or r.3.1 == 'insertion' %}
                             {% if not r.2 %}
                                 <td class="seqv seqv-segment no-wrap bg-{{r.3.1}}"
                                 {% if r.1 %}
@@ -120,7 +120,7 @@
                             <td class="seqv seqv-segment no-wrap
                             {% if r.0.protein_segment.id|divisibleby:2 %}
                              bg-success
-                            {% else %} 
+                            {% else %}
                              bg-info
                             {% endif %}"
                             {% if r.1 %}
@@ -139,15 +139,15 @@
                     </tr>
                     <tr>
                     {% for r in rs %}
-                        {% if r.3.1 = 'deletion' or r.3.1 = 'insertion' %}
-                        <td class="seqv seqv-sequence no-wrap bg-{{r.3.1}}">                           
+                        {% if r.3.1 == 'deletion' or r.3.1 == 'insertion' %}
+                        <td class="seqv seqv-sequence no-wrap bg-{{r.3.1}}">
                             <div data-toggle="tooltip" data-placement="top" data-html="true"
                                 title="">
                                 &nbsp;
                                 </div>
                             </td>
                         {% else %}
-                                {% if r.3.1 = 'mutation' %}
+                                {% if r.3.1 == 'mutation' %}
                                 <td class="seqv seqv-sequence bg-{{r.3.1}}">
                                 {% else %}
                                 <td class="seqv seqv-sequence">
@@ -168,8 +168,8 @@
                     </tr>
                     <tr>
                     {% for r in rs %}
-                        {% if forloop.counter = chunk_size and r.3.1 != 'deletion' or forloop.counter = rs|length  %}
-                            {% if r.3.1 = 'insertion' %}
+                        {% if forloop.counter == chunk_size and r.3.1 != 'deletion' or forloop.counter == rs|length  %}
+                            {% if r.3.1 == 'insertion' %}
                             <td colspan="{{ rs|length }}" class="seqv seqv-number"> &nbsp;</td>
                             {% else %}
                             <td colspan="{{ rs|length }}" class="seqv seqv-number">{{ r.0.sequence_number }}</td>
@@ -185,5 +185,3 @@
     <div class="col-md-5 text-right text-info">
     </div>
 </div>
-
-
