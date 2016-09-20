@@ -9,12 +9,11 @@ font-size: 10px;
 body {
   background-color:#ffffff; 
 }
-#stacked text {
+#targetdistribution text {
   fill: #000;
   font: 14px open sans;
 }
-#stacked {
-  /*border:0.5px solid #000; */
+#targetdistribution {
   background-color: #fff;
 }
 
@@ -23,16 +22,14 @@ body {
 {% block content %}
 
 <h1 style="font-family: open sans">GPCRs as drug targets:</h1>
-<svg id="stacked"></svg>
+<div>
+  <svg id="targetdistribution"></svg>
+</div>
 <br>
-<br>
-<br>
-<br>
-<br>
-<h2 align="center" style="font-family: open sans">Disease associations GPCRs</h2>
-<div class="row" style="position: relative; left: 70%">
+<h2 align="center" style="font-family: open sans;position: relative; bottom:-50px;">Disease associations GPCRs</h2>
+<div class="row" style="position: relative; left: 65%; bottom:-50px;">
   <div class="col-xs-12">
-<select onchange="updateBubbles(this.value)" class="selectpicker" data-style="btn-primary">
+<select onchange="updateBubbles(this.value)" multiple class="form-control input-lg" size="3">
   <option selected="selected" value="not_targeted">Not targeted</option>
   <option value="established">Established targets</option>
   <option value="not_established">Not established targets</option>
@@ -40,11 +37,10 @@ body {
   </div>
 </div>
 <div id="bubbles"></div>
-<br>
 
-<div class="row" style="position: relative; left: 70%">
+<div class="row" style="position: relative; left: 75%; bottom:-100px;">
   <div class="col-xs-12">
-<select onchange="updateClasses(this.value)">
+<select onchange="updateClasses(this.value)" multiple class="form-control input-lg" size="2">
   <option value="trials">In clinical trials</option>
   <option selected="selected" value="approved">Approved</option>
 </select>
@@ -52,9 +48,9 @@ body {
 </div>
 <div id="pie_classes" onload="updatetypes('approved')"></div>
 
-<div class="row" style="position: relative; left: 70%">
+<div class="row" style="position: relative; left: 75%; bottom:-100px;">
   <div class="col-xs-12">
-<select onchange="updatefamilies(this.value)" class="selectpicker" data-style="btn-primary">
+<select onchange="updatefamilies(this.value)" multiple class="form-control input-lg" size="2">
   <option value="trials">In clinical trials</option>
   <option selected="selected" value="approved">Approved</option>
 </select>
@@ -62,9 +58,9 @@ body {
 </div>
 <div id="pie_families"></div>
 
-<div class="row" style="position: relative; left: 70%">
+<div class="row" style="position: relative; left: 75%; bottom:-100px;">
   <div class="col-xs-12">
-<select onchange="updatetargets(this.value)" class="selectpicker" data-style="btn-primary">
+<select onchange="updatetargets(this.value)" multiple class="form-control input-lg" size="2">
   <option value="trials">In clinical trials</option>
   <option selected="selected" value="approved">Approved</option>
 </select>
@@ -72,9 +68,9 @@ body {
 </div>
 <div id="pie_targets"></div>
 
-<div class="row" style="position: relative; left: 70%">
+<div class="row" style="position: relative; left: 75%; bottom:-100px;">
   <div class="col-xs-12">
-<select onchange="updateTypes(this.value)" class="selectpicker" data-style="btn-primary">
+<select onchange="updateTypes(this.value)" multiple class="form-control input-lg" size="4">
   <option value="trials">In clinical trials</option>
   <option selected="selected" value="approved">Approved</option>
   <option value="not_estab">Not established targets</option>
@@ -84,9 +80,9 @@ body {
 </div>
 <div id="pie_types"></div>
 
-<div class="row" style="position: relative; left: 70%">
+<div class="row" style="position: relative; left: 75%; bottom:-100px;">
   <div class="col-xs-12">
-<select onchange="updatediseases(this.value)" class="selectpicker" data-style="btn-primary">
+<select onchange="updatediseases(this.value)" multiple class="form-control input-lg" size="2">
   <option value="trials">In clinical trials</option>
   <option selected="selected" value="approved">Approved</option>
 </select>
@@ -122,18 +118,22 @@ var width = "90%",
 
 var total_time = 402;
 var bar_x = 0;
-var chart = d3.select("#stacked")
+var chart = d3.select("#targetdistribution")
   .attr("width", width)
   .attr("height", height);
   bar_x = 200;
   //var chart_width = chart.style("width").replace("px", "");
-var chart_width = parseInt(d3.select("#stacked").style("width"));
+var chart_width = parseInt(d3.select("#targetdistribution").style("width"));
 
 var color = d3.scale.ordinal()
   .domain(["New York", "San Francisco", "Austin"])
   .range(["#de5d5e", "#83be86" , "#c4c4c4"]);
 
-var tooltip = d3.select("#bubbles")
+var bar = chart.selectAll("g")
+  .data(dataset)
+  .enter().append("g");
+
+var tooltip = d3.select("body")
   .append("div")
   .style("position", "absolute")
   .style("z-index", "10")
@@ -145,9 +145,6 @@ var tooltip = d3.select("#bubbles")
   .style("font", "12px sans-serif")
   .text("tooltip");
 
-var bar = chart.selectAll("g")
-  .data(dataset)
-  .enter().append("g");
 bar.append("rect")
   .attr("width", function(d) { return ((d.value/total_time)*100) + "%"; } )
   .attr("rx", 10) // rounded corners
@@ -155,7 +152,6 @@ bar.append("rect")
     var prev_perc = perc_so_far;
     var this_perc = 100*(d.value/total_time);
     perc_so_far = perc_so_far + this_perc;
-    // console.log("perc_so_far:" + perc_so_far + "; this_perc:" + this_perc + "; prev_perc:" + prev_perc + ";");
     return prev_perc + "%";
   })
   .attr("height", height)
@@ -175,7 +171,6 @@ bar.append("text")
     var prev_perc = perc_so_far;
     var this_perc = 100*(d.value/total_time);
     perc_so_far = perc_so_far + this_perc;
-    // console.log("perc_so_far:" + perc_so_far + "; this_perc:" + this_perc + "; prev_perc:" + prev_perc + ";");
     return prev_perc + this_perc/4 + "%";
   })
   .attr("y", 11)
@@ -187,7 +182,7 @@ bar.append("text")
 d3.select(window).on('resize', resize);
 
 function resize () {
-  var width = parseInt(d3.select("#stacked").style("width"));
+  var width = parseInt(d3.select("#targetdistribution").style("width"));
 }
 
 </script>
@@ -287,7 +282,6 @@ function drawBubbleChart(root){
 updateBubbles('not_targeted')
 
 function updateBubbles(request) {
-  console.log(request)
 
   if (request == 'not_targeted') {
     dataframe = [['arthritis', 1.63, 20], ['Normosmic congenital hypogonadotropic hypogonadism', 2.0, 12], ['ulcerative colitis', 1.2, 22], ['Usher syndrome', 1.0, 31], ['Blue cone monochromatism', 2.0, 16], ['red-green color blindness', 2.0, 15], ['Progressive cone dystrophy', 2.0, 13], ['chronic inflammatory demyelinating polyradiculoneuropathy', 2.8, 9], ['asthma', 1.0, 26], ['Li-Fraumeni syndrome', 1.11, 23], ['Lethal congenital contracture syndrome', 1.0, 24], ['age-related macular degeneration', 1.0, 30], ['red color blindness', 1.0, 32], ['relapsing-remitting multiple sclerosis', 4.0, 3], ['inflammatory bowel disease', 3.72, 6], ['heart failure', 1.87, 19], ['Retinal dystrophy', 3.0, 8], ['chronic progressive multiple sclerosis', 3.58, 7], ['autoimmune disease', 4.9, 0], ['Bilateral polymicrogyria', 1.0, 29], ['exudative vitreoretinopathy', 1.0, 34], ['Cone rod dystrophy', 1.0, 33], ['Congenital stationary night blindness', 2.0, 14], ['Retinitis pigmentosa', 1.0, 27], ['ciliopathy', 1.0, 28], ['rheumatoid arthritis', 1.63, 21], ['multiple sclerosis', 4.0, 4], ['Kallmann syndrome', 2.0, 18]];
