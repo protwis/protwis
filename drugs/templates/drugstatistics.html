@@ -29,7 +29,16 @@ body {
 <br>
 <br>
 <br>
-<h2 align="center" style="font-family: open sans">Disease associations of untargeted GPCRs</h2>
+<h2 align="center" style="font-family: open sans">Disease associations GPCRs</h2>
+<div class="row" style="position: relative; left: 70%">
+  <div class="col-xs-12">
+<select onchange="updateBubbles(this.value)" class="selectpicker" data-style="btn-primary">
+  <option selected="selected" value="not_targeted">Not targeted</option>
+  <option value="established">Established targets</option>
+  <option value="not_established">Not established targets</option>
+</select>
+  </div>
+</div>
 <div id="bubbles"></div>
 <br>
 
@@ -185,6 +194,7 @@ function resize () {
 
 <script>
 function drawBubbleChart(root){
+
     var diameter = 960,
         format = d3.format(",d");
 
@@ -273,28 +283,53 @@ function drawBubbleChart(root){
 
 }
 
-// Not yet Targeted
-var dataframe = [['arthritis', 1.63, 20], ['Normosmic congenital hypogonadotropic hypogonadism', 2.0, 12], ['ulcerative colitis', 1.2, 22], ['Usher syndrome', 1.0, 31], ['Blue cone monochromatism', 2.0, 16], ['red-green color blindness', 2.0, 15], ['Progressive cone dystrophy', 2.0, 13], ['chronic inflammatory demyelinating polyradiculoneuropathy', 2.8, 9], ['asthma', 1.0, 26], ['Li-Fraumeni syndrome', 1.11, 23], ['Lethal congenital contracture syndrome', 1.0, 24], ['age-related macular degeneration', 1.0, 30], ['red color blindness', 1.0, 32], ['relapsing-remitting multiple sclerosis', 4.0, 3], ['inflammatory bowel disease', 3.72, 6], ['heart failure', 1.87, 19], ['Retinal dystrophy', 3.0, 8], ['chronic progressive multiple sclerosis', 3.58, 7], ['autoimmune disease', 4.9, 0], ['Bilateral polymicrogyria', 1.0, 29], ['exudative vitreoretinopathy', 1.0, 34], ['Cone rod dystrophy', 1.0, 33], ['Congenital stationary night blindness', 2.0, 14], ['Retinitis pigmentosa', 1.0, 27], ['ciliopathy', 1.0, 28], ['rheumatoid arthritis', 1.63, 21], ['multiple sclerosis', 4.0, 4], ['Kallmann syndrome', 2.0, 18]];
 
-// Build a "tree" from each of the data rows 
-// Each leaf in the tree has a name, value and group
-var root =  {};
-  root.name = "Interactions";
-  root.children = new Array();
-  for (i=0;i<dataframe.length;i++){
-    var item = {};
-    item.name = dataframe[i][0];
-    item.value = Number(dataframe[i][1]);
-    item.group = dataframe[i][2];
-    root.children.push(item);
-  }    
-  drawBubbleChart(root);
+updateBubbles('not_targeted')
+
+function updateBubbles(request) {
+  console.log(request)
+
+  if (request == 'not_targeted') {
+    dataframe = [['arthritis', 1.63, 20], ['Normosmic congenital hypogonadotropic hypogonadism', 2.0, 12], ['ulcerative colitis', 1.2, 22], ['Usher syndrome', 1.0, 31], ['Blue cone monochromatism', 2.0, 16], ['red-green color blindness', 2.0, 15], ['Progressive cone dystrophy', 2.0, 13], ['chronic inflammatory demyelinating polyradiculoneuropathy', 2.8, 9], ['asthma', 1.0, 26], ['Li-Fraumeni syndrome', 1.11, 23], ['Lethal congenital contracture syndrome', 1.0, 24], ['age-related macular degeneration', 1.0, 30], ['red color blindness', 1.0, 32], ['relapsing-remitting multiple sclerosis', 4.0, 3], ['inflammatory bowel disease', 3.72, 6], ['heart failure', 1.87, 19], ['Retinal dystrophy', 3.0, 8], ['chronic progressive multiple sclerosis', 3.58, 7], ['autoimmune disease', 4.9, 0], ['Bilateral polymicrogyria', 1.0, 29], ['exudative vitreoretinopathy', 1.0, 34], ['Cone rod dystrophy', 1.0, 33], ['Congenital stationary night blindness', 2.0, 14], ['Retinitis pigmentosa', 1.0, 27], ['ciliopathy', 1.0, 28], ['rheumatoid arthritis', 1.63, 21], ['multiple sclerosis', 4.0, 4], ['Kallmann syndrome', 2.0, 18]];
+  }
+  else if (request == 'not_established') {
+    dataframe = [['asthma', 1.96, 10], ['Familial melanoma', 1.0, 30], ['Genetic obesity', 1.0, 23], ['body mass index', 1.55, 15], ['autoimmune disease', 2.42, 4], ['Congenital hypogonadotropic hypogonadism', 1.0, 34], ['obesity', 2.79, 13], ['Congenital stationary night blindness', 1.0, 26], ['schizophrenia', 1.94, 12], ['Autosomal recessive cerebellar ataxia', 1.0, 24], ['Normosmic congenital hypogonadotropic hypogonadism', 1.0, 21], ['Autosomal recessive congenital cerebellar ataxia',  1.0,  20], ['breast carcinoma', 1.29, 18], ['typeI diabetes mellitus', 1.52, 17], ['Woolly hair', 1.0, 28], ['diabetes mellitus', 1.52, 16], ['inflammatory bowel disease', 1.99, 8], ['mental or behavioural disorder', 1.95, 11], ['Growth hormone excess', 1.0, 19], ['Retinal dystrophy', 1.0, 29], ["Crohn's disease", 1.0, 33], ['body height', 1.98, 9], ['liver disease', 1.0, 32], ['sexual dysfunction', 2.7, 3]];
+  }
+  else if (request == 'established') {
+    dataframe = [['asthma', 16.0, 14], ['obstructive lung disease', 16.0, 13], ['heart disease', 12.67, 24], ['post-operative sign or symptom', 11.63, 31], ['obesity', 12.73, 23], ['insomnia', 11.33, 32], ['hypertension', 19.7, 7], ['alcohol dependence', 14.37, 18], ['Nasal obstruction', 11.0, 34], ['attention deficit hyperactivity disorder', 14.0, 20], ['drug dependence', 12.37, 26], ['cirrhosis of liver', 13.08, 22], ['kidney disease', 14.02, 19], ['pain', 18.99, 8], ['mental or behavioural disorder', 20.84, 6], ['glaucoma', 12.0, 29], ['unipolar depression', 18.82, 9], ['diabetes mellitus', 27.2, 2], ['heart failure', 17.15, 11], ['allergic rhinitis', 12.0, 28], ['post-traumatic stress disorder', 15.0, 17], ['atrial fibrillation', 12.27, 27], ['coronary artery disease', 11.7, 30], ['liver disease', 15.4, 16], ['typeII diabetes mellitus', 13.17, 21], ['hemorrhage', 17.97, 10], ["Parkinson's disease", 25.97, 4], ['septic shock', 11.31, 33], ['migraine disorder', 21.52, 5], ['pregnancy', 15.7, 15]];
+  }
+  else {
+    dataframe = []
+  }
+
+  updaterbubbles(dataframe)
+}
+
+function updaterbubbles(dataframe) {
+
+  $("#bubbles").html("");
+
+  // Build a "tree" from each of the data rows 
+  // Each leaf in the tree has a name, value and group
+  var root =  {};
+    root.name = "Interactions";
+    root.children = new Array();
+    for (i=0;i<dataframe.length;i++){
+      var item = {};
+      item.name = dataframe[i][0];
+      item.value = Number(dataframe[i][1]);
+      item.group = dataframe[i][2];
+      root.children.push(item);
+    }    
+    drawBubbleChart(root);
+}
+
 </script>
 
 <script>
 
  window.onload = function () {
-    //Unique crystals/year
+
     nv.addGraph(function () {
         var datum = {{drugs_over_time|safe}};
         var chart = nv.models.multiBarChart()
@@ -320,34 +355,36 @@ var root =  {};
             .datum(datum)
             .transition().duration(500)
             .call(chart);
-        d3.select('#unique_year svg').selectAll('g.nv-wrap.nv-multiBarWithLegend').append("g")
-            .attr("class", "nv-y nv-axis")
-            .attr("transform", "translate(940, 0)")
-            .call(yAxis2);
+
+        // d3.select('#unique_year svg').selectAll('g.nv-wrap.nv-multiBarWithLegend').append("g")
+        //     .attr("class", "nv-y nv-axis")
+        //     .attr("transform", "translate(940, 0)")
+        //     .call(yAxis2);
     });
 
-    $(".chart_type").click(function () {
-        Clear_all()
-        // $(this).css("fill", '#000000');
-        point = $('#' + $(this).attr('id')).find('svg')
-        $(point).css("visibility", 'hidden');
-        $('#'+$(this).attr('id') + '.chart_container').css("display", '');
-    });
+    // $(".chart_type").click(function () {
+    //     Clear_all()
+    //     // $(this).css("fill", '#000000');
+    //     point = $('#' + $(this).attr('id')).find('svg')
+    //     $(point).css("visibility", 'hidden');
+    //     $('#'+$(this).attr('id') + '.chart_container').css("display", '');
+    // });
 
-    function Clear_all() {
-        $('#charts').find(".chart_type").each(function (index) {
-            $(this).css("fill", '');
-        });
-        $('#charts').find(".chart_container").each(function (index) {
-            $(this).css("display", 'none');
-        });
-    };
-    function Clear_phylo(){
-        $('#phylos').find(".Class_phylo").each(function (index) {
-            $(this).css("fill", '');
-            $('#'+$(this).attr('id')+".container").css("display", 'none');
-        });
-    };   
+    // function Clear_all() {
+    //     $('#charts').find(".chart_type").each(function (index) {
+    //         $(this).css("fill", '');
+    //     });
+    //     $('#charts').find(".chart_container").each(function (index) {
+    //         $(this).css("display", 'none');
+    //     });
+    // };
+
+    // function Clear_phylo(){
+    //     $('#phylos').find(".Class_phylo").each(function (index) {
+    //         $(this).css("fill", '');
+    //         $('#'+$(this).attr('id')+".container").css("display", 'none');
+    //     });
+    // };   
  
     $(document).ready(function () {
         $('#unique.chart_type').css("fill", '#000000');
@@ -367,7 +404,7 @@ function updateTypes(request) {
   text = "Approved and distinct drugs"
   
   if (request == 'trials') {
-    text = "Clinical trials agent"
+    text = "Clinical trials agents"
     series = {{drugtypes_trials|safe}}
   }
   else if (request == 'estab') {
@@ -484,7 +521,7 @@ function updateClasses(request) {
   text = "Approved and distinct drugs"
   
   if (request == 'trials') {
-    text = "Clinical trials agent"
+    text = "Clinical trials agents"
     series = {{drugClasses_trials|safe}}
     updaterclasses(series,text)
   }
@@ -595,7 +632,7 @@ function updatefamilies(request) {
   text = "Approved and distinct drugs"
   
   if (request == 'trials') {
-    text = "Clinical trials agent"
+    text = "Clinical trials agents"
     series = {{drugfamilies_trials|safe}}
     updaterfamilies(series,text)
   }
@@ -706,7 +743,7 @@ function updatediseases(request) {
   text = "Approved and distinct drugs"
   
   if (request == 'trials') {
-    var text = "Clinical trials agent"
+    var text = "Clinical trials agents"
     var series = {{drugindications_trials|safe}}
     updaterdiseases(series,text)
   }
@@ -816,7 +853,7 @@ function updatetargets(request) {
   text = "Approved and distinct drugs"
   
   if (request == 'trials') {
-    var text = "Clinical trials agent"
+    var text = "Clinical trials agents"
     var series = {{drugtargets_trials|safe}}
     updatertargets(series,text)
   }
