@@ -3,6 +3,7 @@ from django.template import loader, Context
 from django.db.models import Count, Min, Sum, Avg, Q
 from django.http import HttpResponse
 from django.conf import settings
+from django.core.cache import cache
 from mutation.functions import *
 from mutation.models import *
 
@@ -13,7 +14,7 @@ from common import definitions
 
 from residue.models import Residue,ResidueNumberingScheme, ResidueGenericNumberEquivalent
 from residue.views import ResidueTablesDisplay
-from protein.models import Protein,ProteinSegment,ProteinFamily
+from protein.models import Protein,ProteinSegment,ProteinFamily,ProteinConformation
 from interaction.models import ResidueFragmentInteraction, StructureLigandInteraction
 from interaction.views import calculate
 from interaction.forms import PDBform
@@ -78,6 +79,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
      # local protein list
     proteins = []
+    alignment_proteins = []
     if receptor_class==None:
 
         if protein: # if protein static page
@@ -131,12 +133,13 @@ def render_mutations(request, protein = None, family = None, download = None, re
                 else:
                     original_segments.append(segment.item)
                 segments_ids.append(segment.item.id)
-        print(original_positions)
            #scheme
         used_schemes = {}
         species_list = {}
         longest_name = 0
         for protein in proteins:
+            if protein.species.common_name=='Human':
+                alignment_proteins.append(protein)
             if protein.residue_numbering_scheme.slug not in used_schemes:
                 used_schemes[protein.residue_numbering_scheme.slug] = 0
             used_schemes[protein.residue_numbering_scheme.slug] += 1
@@ -208,20 +211,37 @@ def render_mutations(request, protein = None, family = None, download = None, re
         mutations_display_generic_number[mutation.raw.id] = mutation.residue.display_generic_number.label
         mutations_class_generic_number[mutation.raw.id] = class_gn.label
 
-    if receptor_class==None: #if not a small lookup
+    if receptor_class==None and not download: #if not a small lookup
         # create an alignment object
-        a = Alignment()
+        #print(proteins)
+        #alignment_proteins = Protein.objects.filter(protein__in=proteins)
+        print(len(alignment_proteins),len(proteins))
+        protein_hash = hash(tuple(sorted(ProteinConformation.objects.filter(protein__in=alignment_proteins).values_list('id',flat=True))))
 
-        a.load_proteins(proteins)
         excluded_segment = ['C-term','N-term']
+        excluded_segment = []
         segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment).prefetch_related()
-        a.load_segments(segments) #get all segments to make correct diagrams
+        segment_hash = hash(tuple(sorted(segments.values_list('id',flat=True))))
 
-        # build the alignment data matrix
-        a.build_alignment()
+        print(protein_hash,segment_hash)
+        consensus = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&consensus")
+        generic_number_objs = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&generic_number_objs")
+        if generic_number_objs == None or consensus == None:
+            a = Alignment()
 
-        # calculate consensus sequence + amino acid and feature frequency
-        a.calculate_statistics()
+            a.load_proteins(alignment_proteins)
+
+            a.load_segments(segments) #get all segments to make correct diagrams
+
+            # build the alignment data matrix
+            a.build_alignment()
+
+            # calculate consensus sequence + amino acid and feature frequency
+            a.calculate_statistics()
+            consensus = a.full_consensus
+            generic_number_objs = a.generic_number_objs
+            cache.set(str(protein_hash)+"&"+str(segment_hash)+"&consensus",consensus)
+            cache.set(str(protein_hash)+"&"+str(segment_hash)+"&generic_number_objs",generic_number_objs)
 
         residue_list = []
         generic_numbers = []
@@ -229,13 +249,13 @@ def render_mutations(request, protein = None, family = None, download = None, re
         count = 1 #build sequence_number
 
         mutations_pos_list = {}
-        for aa in a.full_consensus:
+        for aa in consensus:
             # for aa,v in a.full_consensus[seg].items():
             r = Residue()
             r.sequence_number =  aa.sequence_number #FIXME is this certain to be correct that the position in consensus is seq position?
             #print(aa,aa.family_generic_number,aa.generic_number)
-            if aa.family_generic_number and aa.family_generic_number in a.generic_number_objs:
-                r.generic_number = a.generic_number_objs[aa.family_generic_number] #FIXME
+            if aa.family_generic_number and aa.family_generic_number in generic_number_objs:
+                r.generic_number = generic_number_objs[aa.family_generic_number] #FIXME
                 if aa.family_generic_number in mutations_list:
                     if r.sequence_number not in mutations_pos_list:
                         mutations_pos_list[r.sequence_number] = []
@@ -252,8 +272,8 @@ def render_mutations(request, protein = None, family = None, download = None, re
             count += 1
 
         protein_ids = list(set([x.id for x in proteins]))
-        HelixBox = DrawHelixBox(a.full_consensus,'Class A',str(protein_ids), nobuttons = 1)
-        SnakePlot = DrawSnakePlot(a.full_consensus,'Class A',str(protein_ids), nobuttons = 1)
+        HelixBox = DrawHelixBox(consensus,'Class A',str(protein_ids), nobuttons = 1)
+        SnakePlot = DrawSnakePlot(consensus,'Class A',str(protein_ids), nobuttons = 1)
 
 
         numbering_schemes_selection = ['gpcrdba','gpcrdbb','gpcrdbc','gpcrdbf'] #there is a residue_numbering_scheme attribute on the protein model, so it's easy to find out
@@ -272,65 +292,65 @@ def render_mutations(request, protein = None, family = None, download = None, re
     # each helix has a dictionary of positions
     # default_generic_number or first scheme on the list is the key
     # value is a dictionary of other gn positions and residues from selected proteins
-    if len(protein_ids)<100 and not download and receptor_class==None: #too many to make meaningful residuetable / not run when download
-        data = OrderedDict()
-        for segment in segments:
-            data[segment.slug] = OrderedDict()
-            residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins,
-                                            generic_number__in=residue_table_list).prefetch_related('protein_conformation__protein',
-                                            'protein_conformation__state', 'protein_segment',
-                                            'generic_number','display_generic_number','generic_number__scheme', 'alternative_generic_numbers__scheme')
-            for scheme in numbering_schemes:
-                if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
-                    for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
-                        data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
-                elif scheme == default_scheme:
-                    for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
-                        data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+        if len(protein_ids)<20 and receptor_class==None: #too many to make meaningful residuetable / not run when download
+            data = OrderedDict()
+            for segment in segments:
+                data[segment.slug] = OrderedDict()
+                residues = Residue.objects.filter(protein_segment=segment, protein_conformation__protein__in=proteins,
+                                                generic_number__in=residue_table_list).prefetch_related('protein_conformation__protein',
+                                                'protein_conformation__state', 'protein_segment',
+                                                'generic_number','display_generic_number','generic_number__scheme', 'alternative_generic_numbers__scheme')
+                for scheme in numbering_schemes:
+                    if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                        for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                            data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
+                    elif scheme == default_scheme:
+                        for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                            data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
 
-            for residue in residues:
-                alternatives = residue.alternative_generic_numbers.all()
-                pos = residue.generic_number
-                for alternative in alternatives:
-                    if alternative.scheme not in numbering_schemes:
-                        continue
-                    scheme = alternative.scheme
-                    if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
-                        pos = residue.generic_number
-                        if scheme == pos.scheme:
-                            data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+                for residue in residues:
+                    alternatives = residue.alternative_generic_numbers.all()
+                    pos = residue.generic_number
+                    for alternative in alternatives:
+                        if alternative.scheme not in numbering_schemes:
+                            continue
+                        scheme = alternative.scheme
+                        if default_scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
+                            pos = residue.generic_number
+                            if scheme == pos.scheme:
+                                data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
+                            else:
+                                if scheme.slug not in data[segment.slug][pos.label].keys():
+                                    data[segment.slug][pos.label][scheme.slug] = alternative.label
+                                if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
+                                    data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
+                                data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
                         else:
                             if scheme.slug not in data[segment.slug][pos.label].keys():
                                 data[segment.slug][pos.label][scheme.slug] = alternative.label
                             if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
                                 data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
                             data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
-                    else:
-                        if scheme.slug not in data[segment.slug][pos.label].keys():
-                            data[segment.slug][pos.label][scheme.slug] = alternative.label
-                        if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
-                            data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
-                        data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
 
-        # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
-        flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
-        for s in iter(flattened_data):
-            flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
+            # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
+            flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
+            for s in iter(flattened_data):
+                flattened_data[s] = [[data[s][x][y.slug] for y in numbering_schemes]+data[s][x]['seq'] for x in sorted(data[s])]
 
-        if len(species_list)>1:
-            context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
+            if len(species_list)>1:
+                context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name+" "+species_list[x.species.common_name] for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
+            else:
+                context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
+            context['segments'] = [x.slug for x in segments if len(data[x.slug])]
+            context['data'] = flattened_data
+            context['number_of_schemes'] = len(numbering_schemes)
+            context['longest_name'] = {'div' : longest_name*2, 'height': longest_name*2+75}
         else:
-            context['header'] = zip([x.short_name for x in numbering_schemes] + [x.name for x in proteins], [x.name for x in numbering_schemes] + [x.name for x in proteins],[x.name for x in numbering_schemes] + [x.entry_name for x in proteins])
-        context['segments'] = [x.slug for x in segments if len(data[x.slug])]
-        context['data'] = flattened_data
-        context['number_of_schemes'] = len(numbering_schemes)
-        context['longest_name'] = {'div' : longest_name*2, 'height': longest_name*2+75}
-    else:
-        context['data'] = ''
-        context['header'] = ''
-        context['segments'] = ''
-        context['number_of_schemes'] = ''
-        context['longest_name'] = {'div' : 0, 'height': 0}
+            context['data'] = ''
+            context['header'] = ''
+            context['segments'] = ''
+            context['number_of_schemes'] = ''
+            context['longest_name'] = {'div' : 0, 'height': 0}
 
     if download:
         raws = mutations.values('raw')
