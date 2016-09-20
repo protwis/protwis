@@ -4,6 +4,7 @@ from django.db.models import Count, Min, Sum, Avg, Q
 from django.http import HttpResponse
 from django.conf import settings
 from django.core.cache import cache
+from django.views.decorators.cache import cache_page
 from mutation.functions import *
 from mutation.models import *
 
@@ -548,6 +549,8 @@ def showcalculationPDB(request):
 
         return render(request, 'mutation/designpdb.html', context)
 
+
+@cache_page(60 * 60 * 24 *7)
 def coverage(request):
 
     context = {}
