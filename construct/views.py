@@ -19,6 +19,7 @@ from collections import OrderedDict
 
 
 # Create your views here.
+@cache_page(60 * 60 * 24)
 def detail(request, slug):
 
     # get constructs
@@ -116,7 +117,7 @@ class ConstructBrowser(TemplateView):
             cons = Construct.objects.all().prefetch_related(
                 "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions", "modifications", "deletions", "crystallization__chemical_lists",
                 "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
-            
+
             context['constructs'] = cache.get('construct_browser')
             if context['constructs']==None:
                 context['constructs'] = []
@@ -169,7 +170,7 @@ def align(request):
         rs = Residue.objects.filter(protein_conformation__protein__in=proteins).prefetch_related(
         'protein_conformation__protein', 'protein_conformation__state', 'protein_segment',
         'generic_number__scheme', 'display_generic_number__scheme')
-        
+
     print("residues",len(rs))
 
     distinct_gn = []
@@ -211,7 +212,7 @@ def align(request):
             distinct_segments.append(segment)
             overview[segment] = OrderedDict()
 
-        if r.generic_number:   
+        if r.generic_number:
             no_encountered_gn = False
             gn = r.generic_number.label
             protein_lookup[protein][gn] = {'aa':r.amino_acid,'pos':r.sequence_number}
@@ -224,10 +225,10 @@ def align(request):
         else:
             if no_encountered_gn:
                 track_unaligned[protein][segment]['before'].append({'aa':r.amino_acid,'pos':r.sequence_number})
-                length_before += 1 
+                length_before += 1
             else:
                 track_unaligned[protein][segment]['after'].append({'aa':r.amino_acid,'pos':r.sequence_number})
-                length_after += 1 
+                length_after += 1
 
         if len(overview[segment])>segment_length[segment]['aligned']:
             segment_length[segment]['aligned'] = len(overview[segment])
@@ -333,5 +334,3 @@ def align(request):
     context = {'constructs': constructs,'alignment_print_sequence': alignment_print_sequence, 'segment_length' : segment_length, 'gn_list' : gn_list, 'segments': s_ids, 'c_ids': json.dumps(c_ids)} #, 'alignment_print_sequence': alignment_print_sequence
 
     return render(request,'align.html',context)
-
-
