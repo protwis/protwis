@@ -1,15 +1,16 @@
 from django.shortcuts import render
 from django.conf import settings
+from django.views.decorators.cache import cache_page
 
 from news.models import News
 from common.models import ReleaseNotes, ReleaseStatistics
 
-
+@cache_page(60 * 60 * 24)
 def index(request):
     request.session.flush()
 
     context = {}
-    
+
     # title of the page
     context['site_title'] = settings.SITE_TITLE
     context['documentation_url'] = settings.DOCUMENTATION_URL
