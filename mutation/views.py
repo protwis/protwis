@@ -215,7 +215,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
         # create an alignment object
         #print(proteins)
         #alignment_proteins = Protein.objects.filter(protein__in=proteins)
-        print(len(alignment_proteins),len(proteins))
         protein_hash = hash(tuple(sorted(ProteinConformation.objects.filter(protein__in=alignment_proteins).values_list('id',flat=True))))
 
         excluded_segment = ['C-term','N-term']
@@ -223,7 +222,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
         segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment).prefetch_related()
         segment_hash = hash(tuple(sorted(segments.values_list('id',flat=True))))
 
-        print(protein_hash,segment_hash)
         consensus = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&consensus")
         generic_number_objs = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&generic_number_objs")
         if generic_number_objs == None or consensus == None:
@@ -300,12 +298,13 @@ def render_mutations(request, protein = None, family = None, download = None, re
                                                 generic_number__in=residue_table_list).prefetch_related('protein_conformation__protein',
                                                 'protein_conformation__state', 'protein_segment',
                                                 'generic_number','display_generic_number','generic_number__scheme', 'alternative_generic_numbers__scheme')
+                pos_list = residues.values_list('generic_number__label',flat=True)
                 for scheme in numbering_schemes:
                     if scheme == default_scheme and scheme.slug == settings.DEFAULT_NUMBERING_SCHEME:
-                        for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                        for pos in pos_list:
                             data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
                     elif scheme == default_scheme:
-                        for pos in list(set([x.generic_number.label for x in residues if x.protein_segment == segment])):
+                        for pos in pos_list:
                             data[segment.slug][pos] = {scheme.slug : pos, 'seq' : ['-']*len(proteins)}
 
                 for residue in residues:
