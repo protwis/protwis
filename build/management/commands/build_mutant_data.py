@@ -141,7 +141,7 @@ class Command(BaseBuild):
             d = {}
             if r[6]!='':
                 # if multi mutant group skip it
-                self.logger.info('Skipped row due to being a multi group ',source_file + "_" + str(i))
+                self.logger.info('Skipped row due to being a multi group ' + source_file + "_" + str(i))
                 continue
 
             d['reference'] = r[0]
