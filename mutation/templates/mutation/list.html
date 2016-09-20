@@ -74,6 +74,7 @@ input.form-control {
                             { type: "select" }, //Exp type
                             { type: "text" }, //ligand
                             { type: "text" }, //reference
+                            { type: "text" }, //review
                         ]
                     });
                 }
@@ -113,6 +114,7 @@ input.form-control {
                         <th>Exp Type</th>
                         <th>Ligand</th>
                         <th>Reference</th>
+                        <th>Review</th>
                     </tr>
                     <tr>
                         <th></th>
@@ -124,8 +126,10 @@ input.form-control {
                         <th></th>
                         <th></th>
                         <th></th>
+                        <th></th>
                     </tr>
                     <tr>
+                        <th></th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -148,6 +152,7 @@ input.form-control {
                         <th>Exp Type</th>
                         <th>Ligand</th>
                         <th>Reference</th>
+                        <th>Review</th>
                     </tr>
                 </tfoot>
                 {% for mutation in mutations.select_related.all %}
@@ -166,6 +171,8 @@ input.form-control {
                <!--  <td>{{mutation.ligand_class.classname}}</td> -->
                 <td>
                 <a class="citation-tooltip" target="_blank" href="{{mutation.refs.web_link}}" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="{{mutation.refs.title}}" data-placement="left" >{{mutation.citation}}</a></td>
+                <td>
+                <a class="citation-tooltip" target="_blank" href="{{mutation.review.web_link}}" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="{{mutation.review.title}}" data-placement="left" >{{mutation.review_citation}}</a></td>
                 </tr>
                 {% endfor %}
             </table>

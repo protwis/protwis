@@ -2,7 +2,7 @@
 <p>Scheme: <select class="form-control" id="numberingschemeselect"
 onchange="ExpandSegment('{{ segment_id }}', '{{ position_type }}', this.value)">
 {% for rns in schemes %}
-    <option {% if rns.slug = scheme.slug %} selected{% endif %} value="{{ rns.slug }}">
+    <option {% if rns.slug == scheme.slug %} selected{% endif %} value="{{ rns.slug }}">
         {{ rns.name }}
     </option>
 {% endfor %}

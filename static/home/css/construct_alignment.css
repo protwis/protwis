@@ -117,7 +117,7 @@
 {
     overflow-x: auto;
     overflow-y: hidden;
-    width: 920px;
+    width: 1200px;
 }
 .ali-scroll-div, .ali-first-scroll-div
 {
@@ -219,12 +219,12 @@
     background-color: #18FF0B;
     color: #000000;
 }
-.res-color-- {
-    background-color: #FFFFFF;
+.res-color- {
+    background-color: #EDEDED;
     color: #000000;
 }
 .res-color-_ {
-    background-color: #EDEDED;
+    background-color: #FFFFFF;
     color: #000000;
 }
 
@@ -282,4 +282,13 @@
 }
 .res-cons-10 {
     background-color: #00ff00;
+}
+
+.tablesorter thead th {
+    padding: 10px 18px;
+    border-bottom: 1px solid #111;
+    text-align: center;
+}
+.tablesorter tbody td {
+    border-bottom: 1px solid #ddd;
 }

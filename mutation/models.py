@@ -5,14 +5,14 @@ import ast
 
 # Create your models here.
 class Mutation(models.Model):
-    protein = models.ForeignKey('protein.Protein') 
+    protein = models.ForeignKey('protein.Protein')
     residue = models.ForeignKey('residue.Residue', null=True) #If auxilliary it will be null
     mutation_type = models.ForeignKey('MutationType', null=True)
-
     amino_acid = models.CharField(max_length=1) #amino acid one-letter
 
     class Meta():
         db_table = 'mutation'
+        unique_together = ('protein','residue','amino_acid')
 
 
 class MutationType(models.Model):
@@ -26,13 +26,14 @@ class MutationExperiment(models.Model):
 
     #links
     refs = models.ForeignKey('common.Publication', null=True) #Change to a common model?
+    review = models.ForeignKey('common.Publication', null=True, related_name='review') #Change to a common model?
     protein = models.ForeignKey('protein.Protein')
     residue = models.ForeignKey('residue.Residue')
     mutation = models.ForeignKey('Mutation')
     ligand = models.ForeignKey('ligand.Ligand', null=True, related_name='ligand') #Change to a ligand model?
     ligand_role = models.ForeignKey('ligand.LigandRole', null=True) #Change to a ligand model?
     ligand_ref = models.ForeignKey('ligand.Ligand', null=True, related_name='reference_ligand') #Change to a ligand model?
-    raw = models.ForeignKey('MutationRaw')
+    raw = models.ForeignKey('MutationRaw', null=True)
     optional = models.ForeignKey('MutationOptional', null=True)
     exp_type = models.ForeignKey('MutationExperimentalType', null=True)
     exp_func= models.ForeignKey('MutationFunc', null=True)
@@ -48,13 +49,33 @@ class MutationExperiment(models.Model):
 
     def citation(self):
 
-        try:
-            mainauthor = ast.literal_eval(self.refs.authors)[0]
-            return mainauthor + " et al ("+str(self.refs.year)+")"
-        except:
-            #print(self.refs.authors.split(','))
-            mainauthor = self.refs.authors.split(',')[0]
-            return mainauthor + " et al ("+str(self.refs.year)+")"
+        if self.refs.authors:
+            try:
+                mainauthor = ast.literal_eval(self.refs.authors)[0]
+                return mainauthor + " et al ("+str(self.refs.year)+")"
+            except:
+                # print(self.refs.authors)
+                # print(self.refs.authors.split(','))
+                mainauthor = self.refs.authors.split(',')[0]
+                return mainauthor + " et al ("+str(self.refs.year)+")"
+        else:
+            return "N/A"
+
+    def review_citation(self):
+
+        if self.review:
+            if self.review.year:
+                try:
+                    mainauthor = ast.literal_eval(self.review.authors)[0]
+                    return mainauthor + " et al ("+str(self.review.year)+")"
+                except:
+                    #print(self.refs.authors.split(','))
+                    mainauthor = self.review.authors.split(',')[0]
+                    return mainauthor + " et al ("+str(self.review.year)+")"
+            else:
+                return self.review.web_link.index
+        else:
+            return ''
         #return  " et al ("+str(self.refs.year)+")"
 
     def getCalculation(self):
@@ -64,7 +85,7 @@ class MutationExperiment(models.Model):
         else:
             temp = "No information"
         # if ($this->mut_effect_qual_id!=0) {
-        #     $temp .= "\n".$this->mut_effect_qual->effect_qual. " ". $this->mut_effect_qual->effect_prop;    
+        #     $temp .= "\n".$this->mut_effect_qual->effect_qual. " ". $this->mut_effect_qual->effect_prop;
 
         # }
         return temp
@@ -73,23 +94,23 @@ class MutationExperiment(models.Model):
         if self.foldchange!=0:
             temp = self.foldchange
             sign = ''
-            if self.mu_sign!="=": 
+            if self.mu_sign!="=":
                 sign = self.mu_sign
-            if temp>1: 
+            if temp>1:
                 temp =  "<font color='red'>"+sign + str(temp) + "↓</font>"
             elif temp<1:
                 temp =  "<font color='green'>"+sign + str(-temp) + "↑</font>"
             if self.exp_qual:
-                temp = self.exp_qual.qual +  " " +  self.exp_qual.prop  
+                temp = self.exp_qual.qual +  " " +  self.exp_qual.prop
 
         elif self.exp_qual: #only display those with qual_id
-            temp = self.exp_qual.qual +  " " + self.exp_qual.prop 
+            temp = self.exp_qual.qual +  " " + self.exp_qual.prop
         else:
             temp = "N/A"
         return temp
-    
-    
-    
+
+
+
     class Meta():
         db_table = 'mutation_experiment'
 
@@ -113,6 +134,7 @@ class MutationRaw(models.Model):
 
 
     reference = models.CharField(max_length=100)
+    review = models.CharField(max_length=100, null=True)
     protein = models.CharField(max_length=100)
     mutation_pos = models.SmallIntegerField()
     mutation_from = models.CharField(max_length=1)
@@ -154,7 +176,7 @@ class MutationRaw(models.Model):
         db_table = 'mutation_raw'
 
     def __iter__(self):
-        for field_name in self._meta.get_all_field_names():
+        for field_name in self._meta.get_fields():
             try:
                 value = getattr(self, field_name)
             except:
@@ -202,7 +224,7 @@ class MutationLigandClass(models.Model):
     class Meta():
         db_table = 'mutation_ligand_class'
 
-        
+
 class MutationLigandRef(models.Model):
 
     reference = models.CharField(max_length=100)

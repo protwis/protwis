@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework import views, generics, viewsets
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, FileUploadParser
+from rest_framework.renderers import JSONRenderer
 from django.template.loader import render_to_string
 from django.db.models import Q
 from django.conf import settings
@@ -692,6 +693,31 @@ class StructureAssignGenericNumbers(views.APIView):
         print(len(out_stream.getvalue()))
         # filename="{}_GPCRdb.pdb".format(root)
         return Response(out_stream.getvalue())
+
+
+class StructureSequenceParser(views.APIView):
+    """
+    Analyze the uploaded pdb structure listing auxiliary proteins, mutations, deletions and insertions. 
+    \n/structure/structure/parse_pdb\n
+    e.g. 
+    curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/services/structure/parse_pdb
+    """
+    parser_classes = (FileUploadParser,)
+    renderer_classes =(JSONRenderer)
+
+    def post(self, request):
+
+        root, ext = os.path.splitext(request.FILES['pdb_file'].name)
+        header = parse_pdb_header(request.FILES['pdb_file'])
+        parser = SequenceParser(request.FILES['pdb_file'])
+
+        json_data = OrderedDict()
+        json_data["header"] = header
+        json_data.update(parser.get_fusions())
+        json_data.update(parser.get_mutations())
+        json_data.update(parser.get_deletions())
+
+        return Response(json_data)
 
 
 class StructureLigandInteractions(generics.ListAPIView):

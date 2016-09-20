@@ -94,10 +94,13 @@ canvas {
         <h4>RECEPTOR PDB</h4>
     </div>
     <div class="col-md-9">
-    <div style="height: 400px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='pdb/{{pdbname}}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test"{{ annotated_resn}}]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
+    <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
+    <div> <button id=fullscreen>Full Screen</button></div>
+
+<!--     <div style="height: 400px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='pdb/{{pdbname}}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test"{{ annotated_resn}}]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
          <a href="pdb/{{pdbname}}">Download PDB file</a>
          
-    </div>
+    </div> -->
 </div>
 
 <div class="row">
@@ -109,7 +112,51 @@ canvas {
     </div>
 </div>
 
-
 {% endblock %}
 {% block addon_js %}
+    <script src="{% static 'home/js/ngl.js' %}"> </script>
+        <script>
+        // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Molecular_representations
+        // http://arose.github.io/ngl/api/Stage.html
+        // http://arose.github.io/ngl/js/examples.js
+        // http://arose.github.io/ngl/
+        document.addEventListener( "DOMContentLoaded", function(){
+            stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
+            var schemeId = NGL.ColorMakerRegistry.addSelectionScheme( [
+                [ "red", "64-74 or 134-154 or 222-254 or 310-310 or 322-326" ],
+                [ "green", "311-322" ],
+                [ "yellow", "40-63 or 75-95 or 112-133 or 155-173 or 202-221 or 255-277 or 289-309" ],
+                [ "blue", "1-39 or 96-112 or 174-201 or 278-288" ],
+                [ "white", "*" ]
+            ], "Transmembrane 3dqb" );
+
+            var mySelectionScheme = NGL.ColorMakerRegistry.addSelectionScheme( [
+                [ "red" , "{{ main_ligand|safe}}" ]
+            ] );
+            //var stringBlob = new Blob( [ "pdb/{{pdbname}}" ], { type: 'text/plain'} );
+            // stage.loadFile( "http://localhost:8000/structure/pdb/{{pdbname}}", { ext: "pdb" } );
+            // NGL.autoLoad( "http://files.rcsb.org/download/5IOS.cif" );
+            //stage.loadFile( "http://files.rcsb.org/download/{{pdbname}}.pdb", { ext: "pdb" } );
+            stage.loadFile( "pdb/{{pdbname}}", { ext: "pdb" }  ).then( function( o ){
+                o.addRepresentation( "cartoon");  // pass schemeId here ,{ color: schemeId } 
+                o.centerView();
+                o.addRepresentation("licorice", { sele: "{{ main_ligand}} and hetero " } );
+                // o.addRepresentation("ball+stick", { sele: "{{ main_ligand}}", scale: 3, aspectRatio: 1.5 } );
+                {% if main_ligand != "None" %}
+                o.addRepresentation("surface", { sele: "{{ main_ligand}}", opacity: 0.4,
+                                                 useWorker: false } );
+                {% endif %}
+                // o.addRepresentation("hyperball", { sele: "{{ main_ligand}}" } );
+                o.addRepresentation( "label", {
+                    sele: "{{ main_ligand}} and hetero and .C1",
+                    color: "white", scale: 4.0, labelType: "resname"
+                } );
+
+            } );
+            //stage.loadFile( "rcsb://1crn.mmtf", { defaultRepresentation: true } );
+        } );
+        $( "#fullscreen" ).click(function() {
+            stage.toggleFullscreen();
+        });
+    </script>
 {% endblock %}

@@ -60,7 +60,7 @@ urlpatterns = [
         name='structuretemplate-partial'),
     url(r'structure/assign_generic_numbers$', views.StructureAssignGenericNumbers.as_view(),
         name='assign_generic_numbers'),
-
+    url(r'structure/parse_pdb$', views.StructureSequenceParser.as_view(), name='sequence_parser'),
     url(r'^species/$', views.SpeciesList.as_view(), name='species-list'),
     url(r'^species/(?P<latin_name>[^/]+)/$', views.SpeciesDetail.as_view(), name='species-detail'),
     url(r'^mutants/(?P<entry_name>[^/].+)/$', views.MutantList.as_view(), name='mutants'),
