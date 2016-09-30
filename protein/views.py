@@ -28,6 +28,7 @@ class BrowseSelection(AbsBrowseSelection):
 @cache_page(60 * 60 * 24)
 def detail(request, slug):
     # get protein
+    slug = slug.lower()
     p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
 
     # get family list
