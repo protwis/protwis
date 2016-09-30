@@ -4,6 +4,8 @@ from django.conf import settings
 from common.models import WebResource, WebLink
 from protein.models import Protein, ProteinGProtein,ProteinGProteinPair
 
+import pandas as pd
+
 from optparse import make_option
 import logging
 import csv
@@ -93,3 +95,15 @@ class Command(BaseCommand):
 
 
         self.logger.info('COMPLETED CREATING G PROTEINS')
+
+    def add_g_proteins(self, filenames= False):
+
+
+
+
+
+
+
+
+
+

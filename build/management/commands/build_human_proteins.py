@@ -5,12 +5,17 @@ from django.db import IntegrityError
 
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
-        ProteinSequenceType, Species, Gene, ProteinSource)
-from residue.models import ResidueNumberingScheme
+        ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
+
+from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residue)
 
 import shlex
 import os
 from urllib.request import urlopen
+
+import pandas as pd
+import numpy  as np
+import math
 
 
 class Command(BaseBuild):
@@ -19,6 +24,8 @@ class Command(BaseBuild):
     protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'proteins_and_families.txt'])
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
+
+    gprotein_data_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'PDB_UNIPROT_ENSEMBLE_ALL.txt'])
 
     def handle(self, *args, **options):
         # use a smaller protein file if in test mode
@@ -39,6 +46,323 @@ class Command(BaseBuild):
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
+
+        #add gproteins from cgn db
+        try:
+            self.cgn_create_proteins_and_families()
+
+            #delete added g-proteins
+            #self.purge_cgn_proteins()
+        except Exception as msg:
+            print(msg)
+            self.logger.error(msg)
+
+        #add residues from cgn db
+        try:
+            self.update_protein_conformation()
+
+        except Exception as msg:
+            print(msg)
+            self.logger.error(msg)
+
+
+    def purge_cgn_proteins(self):
+        try:
+            Protein.objects.filter(prot_type='purge').delete()
+        except:
+            self.logger.info('Protein to delete not found')
+
+    def add_cgn_residues(self, residue_generic_numbers_list):
+
+        #gproteins list (lower case)
+        gprotein_list=['gnaz_human','gnat3_human', 'gnat2_human', 'gnat1_human', 'gnas2_human', 'gnaq_human', 'gnao_human', 'gnal_human', 'gnai3_human', 'gnai2_human','gnai1_human', 'gna15_human', 'gna14_human', 'gna12_human', 'gna11_human']
+        i=0
+
+        for gp in gprotein_list:
+            gprotein_list[i] = gp.upper()
+            i=i+1
+
+        #Parsing pdb uniprot file for residues
+        self.logger.info('Start parsing PDB_UNIPROT_ENSEMBLE_ALL')
+        self.logger.info('Parsing file ' + self.gprotein_data_file)
+        residue_data =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
+        residue_data = residue_data.loc[residue_data['Uniprot_ID'].isin(gprotein_list)]
+
+
+        for index, row in residue_data.iterrows():
+            #fetch protein for protein conformation
+            pr, c= Protein.objects.get_or_create(entry_name=row['Uniprot_ID'].lower())
+
+            #fetch protein conformation
+            pc, c= ProteinConformation.objects.get_or_create(protein_id=pr)
+
+            #fetch residue generic number
+            rgn, c= ResidueGenericNumber.objects.get_or_create(label=row['CGN'])
+
+            #fetch protein segment id
+            ps, c= ProteinSegment.objects.get_or_create(slug=row['CGN'].split(".")[1])
+
+            try:
+                Residue.objects.get_or_create(sequence_number=row['Position'], protein_conformation=pc, amino_acid=row['Residue'], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
+                self.logger.info("Residues added to db")
+
+            except:
+                self.logger.error("Failed to add residues")
+            
+
+
+    def update_protein_conformation(self):
+        gprotein_list=['gnaz_human','gnat3_human', 'gnat2_human', 'gnat1_human', 'gnas2_human', 'gnaq_human', 'gnao_human', 'gnal_human', 'gnai3_human', 'gnai2_human','gnai1_human', 'gna15_human', 'gna14_human', 'gna12_human', 'gna11_human']
+        state = ProteinState.objects.get(slug='active')
+
+        #add new cgn protein conformations
+        for g in gprotein_list:
+            gp = Protein.objects.get(entry_name=g)
+
+            try:
+                pc, created= ProteinConformation.objects.get_or_create(protein=gp, state=state, template_structure=None)
+                self.logger.info('Created protein conformation')
+            except:
+                self.logger.error('Failed to create protein conformation')
+
+        self.update_genericresiduenumber_and_proteinsegments()
+
+
+    def update_genericresiduenumber_and_proteinsegments(self):
+
+        gprotein_list=['gnaz_human','gnat3_human', 'gnat2_human', 'gnat1_human', 'gnas2_human', 'gnaq_human', 'gnao_human', 'gnal_human', 'gnai3_human', 'gnai2_human','gnai1_human', 'gna15_human', 'gna14_human', 'gna12_human', 'gna11_human']
+        i=0
+
+        for gp in gprotein_list:
+            gprotein_list[i] = gp.upper()
+            i=i+1
+
+        #Parsing pdb uniprot file for generic residue numbers
+        self.logger.info('Start parsing PDB_UNIPROT_ENSEMBLE_ALL')
+        self.logger.info('Parsing file ' + self.gprotein_data_file)
+        residue_data =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
+
+        #filtering for human gproteins using list above
+        residue_data = residue_data.loc[residue_data['Uniprot_ID'].isin(gprotein_list)]
+        residue_generic_numbers= residue_data['CGN']
+
+        #add protein segment entries:
+
+        segments =[]
+        cgns = residue_data['CGN'].unique()
+
+        for s in cgns:
+            segments.append(s.split(".")[1])
+
+
+        #Commit protein segments in db
+
+        #purge line
+        #ProteinSegment.objects.filter(slug=np.unique(segments)).delete()
+
+        for s in np.unique(segments):
+
+            if(s.startswith('s') or s.startswith('S')):
+                category = 'sheet'
+            else:
+                category = 'helix'
+
+            try:
+                ProteinSegment.objects.get_or_create(slug=s, name=s, category=category, fully_aligned=True)
+                self.logger.info('Created protein segment')
+
+            except:
+                self.logger.error('Failed to create protein segment')
+
+        #Residue numbering scheme is the same for all added residue generic numbers (CGN)
+
+        cgn_scheme = ResidueNumberingScheme.objects.get(slug='cgn')
+
+        #purge line
+        ResidueGenericNumber.objects.filter(scheme_id=12).delete()
+
+        for rgn in residue_generic_numbers.unique():
+
+            ps, c= ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1])
+
+            try:
+                res_gen_num, created= ResidueGenericNumber.objects.get_or_create(label=rgn, scheme=cgn_scheme, protein_segment=ps)
+                self.logger.info('Created generic residue number')
+
+            except:
+                self.logger.error('Failed creating generic residue number')
+
+
+        self.add_cgn_residues(residue_generic_numbers)
+
+
+    def cgn_add_proteins(self):
+
+        self.logger.info('Start parsing PDB_UNIPROT_ENSEMBLE_ALL')
+        self.logger.info('Parsing file ' + self.gprotein_data_file)
+
+        #parsing file for accessions
+        df =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
+        prot_type = 'purge'
+        pfm = ProteinFamily()
+
+        #Human proteins from CGN with families as keys: http://www.mrc-lmb.cam.ac.uk/CGN/about.html
+        cgn_dict = {}
+        cgn_dict['G-Protein']=['Gs', 'Gi', 'Gq', 'G12']
+        cgn_dict['100_000_001']=['GNAS2_HUMAN', 'GNAL_HUMAN']
+        cgn_dict['100_000_003']=['GNAQ_HUMAN', 'GNA11_HUMAN', 'GNA14_HUMAN', 'GNA15_HUMAN']
+        cgn_dict['100_000_002']=['GNAI2_HUMAN', 'GNAI1_HUMAN', 'GNAI3_HUMAN', 'GNAT2_HUMAN', 'GNAT1_HUMAN', 'GNAT3_HUMAN', 'GNAZ_HUMAN', 'GNAO_HUMAN' ]
+        cgn_dict['100_000_004']=['GNA12_HUMAN', 'GNA13_HUMAN']
+
+        #list of all 16 proteins
+        cgn_proteins_list=[]
+        for k in cgn_dict.keys():
+            for p in cgn_dict[k]:
+                if p.endswith('_HUMAN'):
+                    cgn_proteins_list.append(p)
+
+        #print(cgn_proteins_list)
+
+        #GNA13_HUMAN missing from cambridge file
+        accessions= df.loc[df['Uniprot_ID'].isin(cgn_proteins_list)]
+        accessions= accessions['Uniprot_ACC'].unique()
+
+        #Create new residue numbering scheme
+        self.create_cgn_rns()
+
+        #purging one cgn entry
+        #ResidueNumberingScheme.objects.filter(name='cgn').delete()
+
+        rns = ResidueNumberingScheme.objects.get(slug='cgn')
+
+        for a in accessions:
+            up = self.parse_uniprot_file(a)
+
+            #Fetch Protein Family for gproteins
+            for k in cgn_dict.keys():
+                name=up['entry_name'].upper()
+
+                if name in cgn_dict[k]:
+                    pfm = ProteinFamily.objects.get(slug=k)
+
+            #Create new Protein
+            self.cgn_creat_gproteins(pfm, rns, a, up, 'purge')
+
+
+
+    def cgn_creat_gproteins(self, family, residue_numbering_scheme, accession, uniprot, prot_type):
+
+        # get/create protein source
+        try:
+            source, created = ProteinSource.objects.get_or_create(name=uniprot['source'],
+                defaults={'name': uniprot['source']})
+            if created:
+                self.logger.info('Created protein source ' + source.name)
+        except IntegrityError:
+            source = ProteinSource.objects.get(name=uniprot['source'])
+
+        # get/create species
+        try:
+            species, created = Species.objects.get_or_create(latin_name=uniprot['species_latin_name'],
+                defaults={
+                'common_name': uniprot['species_common_name'],
+                })
+            if created:
+                self.logger.info('Created species ' + species.latin_name)
+        except IntegrityError:
+            species = Species.objects.get(latin_name=uniprot['species_latin_name'])
+
+        # get/create protein sequence type
+        # Wild-type for all sequences from source file
+        try:
+            sequence_type, created = ProteinSequenceType.objects.get_or_create(slug='wt',
+                defaults={
+                'slug': 'wt',
+                'name': 'Wild-type',
+                })
+            if created:
+                self.logger.info('Created protein sequence type Wild-type')
+        except:
+                self.logger.error('Failed creating protein sequence type Wild-type')
+
+        # create protein
+        p = Protein()
+        p.family = family
+        p.species = species
+        p.source = source
+        p.residue_numbering_scheme = residue_numbering_scheme
+        p.sequence_type = sequence_type
+        if accession:
+            p.accession = accession
+        p.entry_name = uniprot['entry_name'].lower()
+        p.name = uniprot['names'][0]
+        p.prot_type = 'purge'
+        p.sequence = uniprot['sequence']
+
+        try:
+            p.save()
+            self.logger.info('Created protein {}'.format(p.entry_name))
+        except:
+            self.logger.error('Failed creating protein {}'.format(p.entry_name))
+
+
+    def cgn_parent_protein_family(self):
+
+        pf_cgn, created_pf = ProteinFamily.objects.get_or_create(slug='100', defaults={
+            'name': 'G-Protein'})
+
+        pff_cgn = ProteinFamily.objects.get(slug='100', name='G-Protein')
+        pf1_cgn = ProteinFamily.objects.get_or_create(slug='100_000', name='No Ligands', parent=pff_cgn)
+
+    def create_cgn_rns(self):
+        rns_cgn, created= ResidueNumberingScheme.objects.get_or_create(slug='cgn', short_name='CGN', defaults={
+            'name': 'Common G-alpha numbering scheme'})
+
+    
+    def cgn_create_proteins_and_families(self):
+
+        #Creating single entries in "protein_family' table
+        self.cgn_parent_protein_family()
+
+        #Human proteins from CGN: http://www.mrc-lmb.cam.ac.uk/CGN/about.html
+        cgn_dict = {}
+
+        levels = ['2', '3']
+        keys = ['Gprotein', 'Gs', 'Gi', 'Gq', 'G12', '000']
+        slug1='100'
+        slug3= ''
+        i=1
+
+        cgn_dict['Gprotein']=['000']
+        cgn_dict['000']=['Gs', 'Gi', 'Gq', 'G12']
+        
+        #Protein families to be added
+        #Key of dictionary is level in hierarchy
+        cgn_dict['1']=['Gprotein']
+        cgn_dict['2']=['000']
+        cgn_dict['3']=['Gs', 'Gi', 'Gq', 'G12']
+
+        #Protein lines not to be added to Protein families
+        cgn_dict['4']=['GNAS2', 'GNAL', 'GNAI1', 'GNAI1', 'GNAI3', 'GNAT2', 'GNAT1', 'GNAT3', 'GNAO', 'GNAZ', 'GNAQ', 'GNA11', 'GNA14', 'GNA15', 'GNA12', 'GNA13']
+
+        for entry in cgn_dict['000']:
+
+            name = entry
+
+            slug2= '_000'
+            slug3= '_00' + str(i)
+
+            slug = slug1 + slug2 + slug3
+
+            slug3 = ''
+            i = i+1
+
+            pff_cgn = ProteinFamily.objects.get(slug='100_000')
+
+            new_pf, created = ProteinFamily.objects.get_or_create(slug=slug, name=entry, parent=pff_cgn)
+
+        #function to create necessary arguments to add protein entry
+        self.cgn_add_proteins()
 
     def create_parent_protein_family(self):
         pf = ProteinFamily.objects.get_or_create(slug='000', defaults={
@@ -297,6 +621,7 @@ class Command(BaseBuild):
         up = {}
         up['genes'] = []
         up['names'] = []
+
         read_sequence = False
         remote = False
 
