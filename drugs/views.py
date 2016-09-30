@@ -26,7 +26,7 @@ def striphtml(data):
     p = re.compile(r'<.*?>')
     return p.sub('', data)
 
-@cache_page(60*60*24*1) #  1 day
+# @cache_page(60*60*24*1) #  1 day
 def drugstatistics(request):
 
     # ===== drugtargets =====
@@ -177,11 +177,11 @@ def drugstatistics(request):
 
     return render(request, 'drugstatistics.html', {'drugtypes_approved':drugtypes_approved,'drugtypes_trials':drugtypes_trials, 'drugtypes_estab':drugtypes_estab, 'drugtypes_not_estab':drugtypes_not_estab,'drugindications_approved':drugindications_approved, 'drugindications_trials':drugindications_trials, 'drugtargets_approved':drugtargets_approved, 'drugtargets_trials':drugtargets_trials, 'drugfamilies_approved':drugfamilies_approved, 'drugfamilies_trials':drugfamilies_trials, 'drugClasses_approved':drugClasses_approved, 'drugClasses_trials':drugClasses_trials, 'drugs_over_time':drugs_over_time})
 
-@cache_page(60*60*24*1) # 1 day
+# @cache_page(60*60*24*1) # 1 day
 def drugbrowser(request):
     # Get drugdata from here somehow
 
-    name_of_cache = 'drug_browser'
+    name_of_cache = 'drug_browse3'
 
     context = cache.get(name_of_cache)
 
@@ -215,11 +215,11 @@ def drugbrowser(request):
 
             # jsondata = {'name':drugname, 'target': ', '.join(set(targets)), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
             # context.append(jsondata)
-        cache.set(name_of_cache, context, 60*60*24*1) # two days timeout on cache
+        # cache.set(name_of_cache, context, 60*60*24*1) # two days timeout on cache
 
     return render(request, 'drugbrowser.html', {'drugdata':context})
 
-@cache_page(60*60*24*1) #  1 day
+# @cache_page(60*60*24*1) #  1 day
 def drugmapping(request):
     context = dict()
 
