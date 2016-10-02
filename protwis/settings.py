@@ -49,6 +49,7 @@ INSTALLED_APPS = (
     'build_' + SITE_NAME,
     'construct',
     'tools',
+    'drugs',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -112,6 +113,7 @@ TEMPLATES = [
                 'django.template.context_processors.static',
                 'django.template.context_processors.tz',
                 'django.contrib.messages.context_processors.messages',
+                'protwis.context_processors.google_analytics'
             ],
         },
     },

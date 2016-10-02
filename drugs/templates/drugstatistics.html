@@ -1,0 +1,953 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<style>
+.nv-x text{
+font-size: 10px;
+}
+body {
+  background-color:#ffffff; 
+}
+#targetdistribution text {
+  fill: #000;
+  font: 14px open sans;
+}
+#targetdistribution {
+  background-color: #fff;
+}
+
+</style>
+{% endblock %}
+{% block content %}
+
+<h1 style="font-family: open sans">GPCRs as drug targets:</h1>
+<div>
+  <svg id="targetdistribution"></svg>
+</div>
+<br>
+<h2 align="center" style="font-family: open sans;position: relative; bottom:-50px;">Disease associations GPCRs</h2>
+<div class="row" style="position: relative; left: 65%; bottom:-50px;">
+  <div class="col-xs-12">
+<select onchange="updateBubbles(this.value)" multiple class="form-control input-lg" size="3">
+  <option selected="selected" value="not_targeted">Not targeted</option>
+  <option value="established">Established targets</option>
+  <option value="not_established">Not established targets</option>
+</select>
+  </div>
+</div>
+<div id="bubbles"></div>
+
+<div class="row" style="position: relative; left: 75%; bottom:-100px;">
+  <div class="col-xs-12">
+<select onchange="updateClasses(this.value)" multiple class="form-control input-lg" size="2">
+  <option value="trials">In clinical trials</option>
+  <option selected="selected" value="approved">Approved</option>
+</select>
+  </div>
+</div>
+<div id="pie_classes" onload="updatetypes('approved')"></div>
+
+<div class="row" style="position: relative; left: 75%; bottom:-100px;">
+  <div class="col-xs-12">
+<select onchange="updatefamilies(this.value)" multiple class="form-control input-lg" size="2">
+  <option value="trials">In clinical trials</option>
+  <option selected="selected" value="approved">Approved</option>
+</select>
+  </div>
+</div>
+<div id="pie_families"></div>
+
+<div class="row" style="position: relative; left: 75%; bottom:-100px;">
+  <div class="col-xs-12">
+<select onchange="updatetargets(this.value)" multiple class="form-control input-lg" size="2">
+  <option value="trials">In clinical trials</option>
+  <option selected="selected" value="approved">Approved</option>
+</select>
+  </div>
+</div>
+<div id="pie_targets"></div>
+
+<div class="row" style="position: relative; left: 75%; bottom:-100px;">
+  <div class="col-xs-12">
+<select onchange="updateTypes(this.value)" multiple class="form-control input-lg" size="4">
+  <option value="trials">In clinical trials</option>
+  <option selected="selected" value="approved">Approved</option>
+  <option value="not_estab">Not established targets</option>
+  <option value="estab">Established targets</option>
+</select>
+  </div>
+</div>
+<div id="pie_types"></div>
+
+<div class="row" style="position: relative; left: 75%; bottom:-100px;">
+  <div class="col-xs-12">
+<select onchange="updatediseases(this.value)" multiple class="form-control input-lg" size="2">
+  <option value="trials">In clinical trials</option>
+  <option selected="selected" value="approved">Approved</option>
+</select>
+  </div>
+</div>
+<div id="pie_disease"></div>
+
+<br>
+<br>
+ <div id="unique" class="chart_container" style="display: none;">
+        <div id="unique_year"><svg id="unique_cryst" style="width:1050;height:500px;"></svg></div>
+<br>
+<br>
+<br>
+<br>
+<br>
+{% endblock %}
+{% block addon_js %}
+<!-- http://d3pie.org/#generator-result -->
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3pie.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+
+<script>
+var dataset =  [{text:"Established", value: 100},
+                {text:"Not established", value: 65},
+                {text:"Not targeted", value: 237}];
+// data.sort(function(a, b){return a-b});
+//data.sort(d3.descending());
+var width = "90%",
+    height = 50,
+  perc_so_far = 0;
+
+var total_time = 402;
+var bar_x = 0;
+var chart = d3.select("#targetdistribution")
+  .attr("width", width)
+  .attr("height", height);
+  bar_x = 200;
+  //var chart_width = chart.style("width").replace("px", "");
+var chart_width = parseInt(d3.select("#targetdistribution").style("width"));
+
+var color = d3.scale.ordinal()
+  .domain(["New York", "San Francisco", "Austin"])
+  .range(["#de5d5e", "#83be86" , "#c4c4c4"]);
+
+var bar = chart.selectAll("g")
+  .data(dataset)
+  .enter().append("g");
+
+var tooltip = d3.select("body")
+  .append("div")
+  .style("position", "absolute")
+  .style("z-index", "10")
+  .style("visibility", "hidden")
+  .style("color", "white")
+  .style("padding", "8px")
+  .style("background-color", "rgba(0, 0, 0, 0.75)")
+  .style("border-radius", "6px")
+  .style("font", "12px sans-serif")
+  .text("tooltip");
+
+bar.append("rect")
+  .attr("width", function(d) { return ((d.value/total_time)*100) + "%"; } )
+  .attr("rx", 10) // rounded corners
+  .attr("x", function(d) {
+    var prev_perc = perc_so_far;
+    var this_perc = 100*(d.value/total_time);
+    perc_so_far = perc_so_far + this_perc;
+    return prev_perc + "%";
+  })
+  .attr("height", height)
+  .attr("fill",  function(d) { return (color(d.value)) } )
+  .on("mouseover", function(d) {
+      tooltip.text(d.text + " receptors: "+ d.value + " (" + (d.value/total_time).toFixed(2)*100 + "%)")
+      tooltip.style("visibility", "visible")
+  })
+  .on("mousemove", function() {
+    return tooltip.style("top", (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");
+  })
+  .on("mouseout", function(){return tooltip.style("visibility", "hidden")});
+
+perc_so_far = 0;
+bar.append("text")
+  .attr("x", function(d) {
+    var prev_perc = perc_so_far;
+    var this_perc = 100*(d.value/total_time);
+    perc_so_far = perc_so_far + this_perc;
+    return prev_perc + this_perc/4 + "%";
+  })
+  .attr("y", 11)
+  .attr("dy", "1.35em")
+  // .attr("text-anchor", "end")
+  .data(dataset)
+  .text(function(d) { return d.text; });
+    
+d3.select(window).on('resize', resize);
+
+function resize () {
+  var width = parseInt(d3.select("#targetdistribution").style("width"));
+}
+
+</script>
+
+<script>
+function drawBubbleChart(root){
+
+    var diameter = 960,
+        format = d3.format(",d");
+
+    var color = d3.scale.category20();
+    
+    // Create a bubble layout based on the tree of objects. 
+    // This adds properties x,y,r to each of our leaf objects
+    // indicating where to draw them (x,y), and how big to draw them (r).
+    var bubble = d3.layout.pack().sort(null).size([960,960]).padding(1.5);
+
+    var svg = d3.select("#bubbles")
+                .append("svg")
+                .attr("width",960)
+                .attr("height", 960)
+                .attr("align","center")
+                .attr("class","bubble");
+    
+    var tooltip = d3.select("#bubbles")
+      .append("div")
+      .style("position", "absolute")
+      .style("z-index", "10")
+      .style("visibility", "hidden")
+      .style("color", "white")
+      .style("padding", "8px")
+      .style("background-color", "rgba(0, 0, 0, 0.75)")
+      .style("border-radius", "6px")
+      .style("font", "12px sans-serif")
+      .text("tooltip");
+
+    var node = svg.selectAll(".node")
+                  .data(bubble.nodes(root)
+                  .filter(function(d){ return !d.children;}))
+                  .enter()
+                  .append("g")
+                  .attr("class","node")
+                  .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+   node.append("circle")
+       .attr("r", function(d) { return d.r; })
+       .style("fill", function(d) { return color(d.group)  })
+       .on("mouseover", function(d) {
+              tooltip.text(d.name + ": " + d.value.toFixed(2));
+              tooltip.style("visibility", "visible");
+      })
+       .on("mousemove", function() {
+          return tooltip.style("top", (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");
+      })
+       .on("mouseout", function(){return tooltip.style("visibility", "hidden");});;
+  
+  function wrap(text, width) {
+        text.each(function () {
+            var text = d3.select(this),
+                words = text.text().split(/\s+/).reverse(),
+                word,
+                line = [],
+                lineNumber = 0,
+                lineHeight = 1, // ems
+                y = text.attr("y")-((words.length+1)*4),
+                dy = parseFloat(text.attr("dy")),
+                tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
+            while (word = words.pop()) {
+                line.push(word);
+                tspan.text(line.join(" "));
+                if (tspan.node().getComputedTextLength() > width) {
+                    line.pop();
+                    tspan.text(line.join(" "));
+                    line = [word];
+                    tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+                }
+            }
+        });
+    }
+
+   node.append("text")
+       .attr("dy", ".35em")
+       .attr("y", -15)  
+       .style("text-anchor", "middle")
+       .style({
+        "fill":"black", 
+        "font-family":"Helvetica Neue, Helvetica, Arial, san-serif",
+        "font-size": "13px"
+        })
+       .text(function(d) {
+              return d.name;
+        }).call(wrap,0);
+
+}
+
+
+updateBubbles('not_targeted')
+
+function updateBubbles(request) {
+
+  if (request == 'not_targeted') {
+    dataframe = [['arthritis', 1.63, 20], ['Normosmic congenital hypogonadotropic hypogonadism', 2.0, 12], ['ulcerative colitis', 1.2, 22], ['Usher syndrome', 1.0, 31], ['Blue cone monochromatism', 2.0, 16], ['red-green color blindness', 2.0, 15], ['Progressive cone dystrophy', 2.0, 13], ['chronic inflammatory demyelinating polyradiculoneuropathy', 2.8, 9], ['asthma', 1.0, 26], ['Li-Fraumeni syndrome', 1.11, 23], ['Lethal congenital contracture syndrome', 1.0, 24], ['age-related macular degeneration', 1.0, 30], ['red color blindness', 1.0, 32], ['relapsing-remitting multiple sclerosis', 4.0, 3], ['inflammatory bowel disease', 3.72, 6], ['heart failure', 1.87, 19], ['Retinal dystrophy', 3.0, 8], ['chronic progressive multiple sclerosis', 3.58, 7], ['autoimmune disease', 4.9, 0], ['Bilateral polymicrogyria', 1.0, 29], ['exudative vitreoretinopathy', 1.0, 34], ['Cone rod dystrophy', 1.0, 33], ['Congenital stationary night blindness', 2.0, 14], ['Retinitis pigmentosa', 1.0, 27], ['ciliopathy', 1.0, 28], ['rheumatoid arthritis', 1.63, 21], ['multiple sclerosis', 4.0, 4], ['Kallmann syndrome', 2.0, 18]];
+  }
+  else if (request == 'not_established') {
+    dataframe = [['asthma', 1.96, 10], ['Familial melanoma', 1.0, 30], ['Genetic obesity', 1.0, 23], ['body mass index', 1.55, 15], ['autoimmune disease', 2.42, 4], ['Congenital hypogonadotropic hypogonadism', 1.0, 34], ['obesity', 2.79, 13], ['Congenital stationary night blindness', 1.0, 26], ['schizophrenia', 1.94, 12], ['Autosomal recessive cerebellar ataxia', 1.0, 24], ['Normosmic congenital hypogonadotropic hypogonadism', 1.0, 21], ['Autosomal recessive congenital cerebellar ataxia',  1.0,  20], ['breast carcinoma', 1.29, 18], ['typeI diabetes mellitus', 1.52, 17], ['Woolly hair', 1.0, 28], ['diabetes mellitus', 1.52, 16], ['inflammatory bowel disease', 1.99, 8], ['mental or behavioural disorder', 1.95, 11], ['Growth hormone excess', 1.0, 19], ['Retinal dystrophy', 1.0, 29], ["Crohn's disease", 1.0, 33], ['body height', 1.98, 9], ['liver disease', 1.0, 32], ['sexual dysfunction', 2.7, 3]];
+  }
+  else if (request == 'established') {
+    dataframe = [['asthma', 16.0, 14], ['obstructive lung disease', 16.0, 13], ['heart disease', 12.67, 24], ['post-operative sign or symptom', 11.63, 31], ['obesity', 12.73, 23], ['insomnia', 11.33, 32], ['hypertension', 19.7, 7], ['alcohol dependence', 14.37, 18], ['Nasal obstruction', 11.0, 34], ['attention deficit hyperactivity disorder', 14.0, 20], ['drug dependence', 12.37, 26], ['cirrhosis of liver', 13.08, 22], ['kidney disease', 14.02, 19], ['pain', 18.99, 8], ['mental or behavioural disorder', 20.84, 6], ['glaucoma', 12.0, 29], ['unipolar depression', 18.82, 9], ['diabetes mellitus', 27.2, 2], ['heart failure', 17.15, 11], ['allergic rhinitis', 12.0, 28], ['post-traumatic stress disorder', 15.0, 17], ['atrial fibrillation', 12.27, 27], ['coronary artery disease', 11.7, 30], ['liver disease', 15.4, 16], ['typeII diabetes mellitus', 13.17, 21], ['hemorrhage', 17.97, 10], ["Parkinson's disease", 25.97, 4], ['septic shock', 11.31, 33], ['migraine disorder', 21.52, 5], ['pregnancy', 15.7, 15]];
+  }
+  else {
+    dataframe = []
+  }
+
+  updaterbubbles(dataframe)
+}
+
+function updaterbubbles(dataframe) {
+
+  $("#bubbles").html("");
+
+  // Build a "tree" from each of the data rows 
+  // Each leaf in the tree has a name, value and group
+  var root =  {};
+    root.name = "Interactions";
+    root.children = new Array();
+    for (i=0;i<dataframe.length;i++){
+      var item = {};
+      item.name = dataframe[i][0];
+      item.value = Number(dataframe[i][1]);
+      item.group = dataframe[i][2];
+      root.children.push(item);
+    }    
+    drawBubbleChart(root);
+}
+
+</script>
+
+<script>
+
+ window.onload = function () {
+
+    nv.addGraph(function () {
+        var datum = {{drugs_over_time|safe}};
+        var chart = nv.models.multiBarChart()
+            .reduceXTicks(false)
+            .stacked(false)
+            .margin({ top: 30, right: 60, bottom: 20, left: 60 })
+            .color(d3.scale.category20().range());
+        chart.yAxis
+            .tickFormat(d3.format(',f'))
+            ._ticks(nv.utils.calcTicksY(400 / 36, datum));
+        // chart.xAxis
+        //     .rotateLabels(-45)
+
+        var yAxis2 = nv.models.axis()
+            .scale(chart.yScale())
+            .showMaxMin(false)
+            .tickFormat(d3.format(',f'))
+            ._ticks(nv.utils.calcTicksY(400 / 36, datum))
+            .tickPadding(0)
+            .orient("right");
+
+        d3.select('#unique_year svg')
+            .datum(datum)
+            .transition().duration(500)
+            .call(chart);
+
+        // d3.select('#unique_year svg').selectAll('g.nv-wrap.nv-multiBarWithLegend').append("g")
+        //     .attr("class", "nv-y nv-axis")
+        //     .attr("transform", "translate(940, 0)")
+        //     .call(yAxis2);
+    });
+
+    // $(".chart_type").click(function () {
+    //     Clear_all()
+    //     // $(this).css("fill", '#000000');
+    //     point = $('#' + $(this).attr('id')).find('svg')
+    //     $(point).css("visibility", 'hidden');
+    //     $('#'+$(this).attr('id') + '.chart_container').css("display", '');
+    // });
+
+    // function Clear_all() {
+    //     $('#charts').find(".chart_type").each(function (index) {
+    //         $(this).css("fill", '');
+    //     });
+    //     $('#charts').find(".chart_container").each(function (index) {
+    //         $(this).css("display", 'none');
+    //     });
+    // };
+
+    // function Clear_phylo(){
+    //     $('#phylos').find(".Class_phylo").each(function (index) {
+    //         $(this).css("fill", '');
+    //         $('#'+$(this).attr('id')+".container").css("display", 'none');
+    //     });
+    // };   
+ 
+    $(document).ready(function () {
+        $('#unique.chart_type').css("fill", '#000000');
+        $('#unique.chart_container').css("display", '');
+        // draw('1');
+
+    });
+};
+</script>
+
+
+<script>
+updateTypes('approved')
+function updateTypes(request) {
+
+  var series = {{drugtypes_approved|safe}}
+  text = "Approved and distinct drugs"
+  
+  if (request == 'trials') {
+    text = "Clinical trials agents"
+    series = {{drugtypes_trials|safe}}
+  }
+  else if (request == 'estab') {
+    text = "Agents targeting established targets"
+    series = {{drugtypes_estab|safe}}
+  }
+  else if (request == 'not_estab') {
+    text = "Agents targeting not established targets"
+    series = {{drugtypes_not_estab|safe}}
+  }
+  updatertypes(series,text)
+}
+
+function updatertypes(series,text) {
+
+  $("#pie_types").html("");
+
+  var pie = new d3pie("pie_types", {
+    "header": {
+      "title": {
+        "text": "Drugtypes",
+        "fontSize": 32,
+        "font": "open sans"
+      },
+      "subtitle": {
+        "text": " ",
+        "color": "#999999",
+        "fontSize": 12,
+        "font": "open sans"
+      },
+      "titleSubtitlePadding": 25
+    },
+    "footer": {
+      "text": text,
+      "color": "#999999",
+      "fontSize": 10,
+      "font": "open sans",
+      "location": "center"
+    },
+    "size": {
+      "canvasHeight": 600,
+      "canvasWidth": 1100,
+      "pieInnerRadius": "50%",
+      "pieOuterRadius": "100%"
+    },
+    "data": {
+      "sortOrder": "value-asc",
+      "smallSegmentGrouping": {
+        "enabled": true,
+        "value": 0.2
+      },
+      "content": series
+      // {{drugtypes|safe}} 
+    },
+    "labels": {
+      "outer": {
+        "pieDistance": 21
+      },
+      "inner": {
+        "hideWhenLessThanPercentage": 3
+      },
+      "mainLabel": {
+        "fontSize": 12
+      },
+      "percentage": {
+        "color": "#ffffff",
+        "fontSize": 12
+      },
+      "value": {
+        "color": "#adadad",
+        "fontSize": 12
+      },
+      "lines": {
+        "enabled": true,
+        "style": "straight"
+      },
+      "truncation": {
+        "enabled": true
+      }
+    },
+    "tooltips": {
+      "enabled": true,
+      "type": "placeholder",
+      "string": "{label}: {value}, {percentage}%",
+      "styles": {
+        "fadeInSpeed": 0,
+        "backgroundOpacity": 0.71,
+        "borderRadius": 10,
+        "fontSize": 15
+      }
+    },
+    "effects": {
+      "load": {
+        "speed": 800
+      },
+      "pullOutSegmentOnClick": {
+        "effect": "linear",
+        "speed": 400,
+        "size": 14
+      }
+    },
+    "misc": {
+      "gradient": {
+        "enabled": true,
+        "percentage": 65
+      }
+    }
+  });
+} 
+
+updateClasses('approved')
+function updateClasses(request) {
+  var series = {{drugClasses_approved|safe}}
+  text = "Approved and distinct drugs"
+  
+  if (request == 'trials') {
+    text = "Clinical trials agents"
+    series = {{drugClasses_trials|safe}}
+    updaterclasses(series,text)
+  }
+  updaterclasses(series,text)
+
+}
+
+function updaterclasses(series,text) {
+
+  $("#pie_classes").html(""); 
+
+  var pie = new d3pie("pie_classes", {
+    "header": {
+      "title": {
+        "text": "Class targets",
+        "fontSize": 32,
+        "font": "open sans"
+      },
+      "subtitle": {
+        "text": " ",
+        "color": "#999999",
+        "fontSize": 12,
+        "font": "open sans"
+      },
+      "titleSubtitlePadding": 25
+    },
+    "footer": {
+      "text": text,
+      "color": "#999999",
+      "fontSize": 10,
+      "font": "open sans",
+      "location": "center"
+    },
+    "size": {
+      "canvasHeight": 600,
+      "canvasWidth": 1100,
+      "pieInnerRadius": "50%",
+      "pieOuterRadius": "100%"
+    },
+    "data": {
+      "sortOrder": "value-desc",
+      "smallSegmentGrouping": {
+        "enabled": false,
+        "value": 1
+      },
+      "content": series
+    },
+    "labels": {
+      "outer": {
+        "pieDistance": 21
+      },
+      "inner": {
+        "hideWhenLessThanPercentage": 3
+      },
+      "mainLabel": {
+        "fontSize": 12
+      },
+      "percentage": {
+        "color": "#ffffff",
+        "fontSize": 12
+      },
+      "value": {
+        "color": "#adadad",
+        "fontSize": 12
+      },
+      "lines": {
+        "enabled": true,
+        "style": "straight"
+      },
+      "truncation": {
+        "enabled": true
+      }
+    },
+    "tooltips": {
+      "enabled": true,
+      "type": "placeholder",
+      "string": "{label}: {value}, {percentage}%",
+      "styles": {
+        "fadeInSpeed": 0,
+        "backgroundOpacity": 0.71,
+        "borderRadius": 10,
+        "fontSize": 15
+      }
+    },
+    "effects": {
+      "load": {
+        "speed": 800
+      },
+      "pullOutSegmentOnClick": {
+        "effect": "linear",
+        "speed": 400,
+        "size": 14
+      }
+    },
+    "misc": {
+      "gradient": {
+        "enabled": true,
+        "percentage": 65
+      }
+    }
+  });
+}
+
+updatefamilies('approved')
+function updatefamilies(request) {
+
+  var series = {{drugfamilies_approved|safe}}
+  text = "Approved and distinct drugs"
+  
+  if (request == 'trials') {
+    text = "Clinical trials agents"
+    series = {{drugfamilies_trials|safe}}
+    updaterfamilies(series,text)
+  }
+  updaterfamilies(series,text)
+
+}
+
+function updaterfamilies(series,text) {
+
+  $("#pie_families").html(""); 
+
+  var pie = new d3pie("pie_families", {
+    "header": {
+      "title": {
+        "text": "Receptor family targets",
+        "fontSize": 32,
+        "font": "open sans"
+      },
+      "subtitle": {
+        "text": " ",
+        "color": "#999999",
+        "fontSize": 12,
+        "font": "open sans"
+      },
+      "titleSubtitlePadding": 25
+    },
+    "footer": {
+      "text": text,
+      "color": "#999999",
+      "fontSize": 10,
+      "font": "open sans",
+      "location": "center"
+    },
+    "size": {
+      "canvasHeight": 600,
+      "canvasWidth": 1100,
+      "pieInnerRadius": "50%",
+      "pieOuterRadius": "100%"
+    },
+    "data": {
+      "sortOrder": "value-asc",
+      "smallSegmentGrouping": {
+        "enabled": true,
+        "value": 3.0
+      },
+      "content": series
+    },
+    "labels": {
+      "outer": {
+        "pieDistance": 21
+      },
+      "inner": {
+        "hideWhenLessThanPercentage": 3
+      },
+      "mainLabel": {
+        "fontSize": 12
+      },
+      "percentage": {
+        "color": "#ffffff",
+        "fontSize": 12
+      },
+      "value": {
+        "color": "#ffffff",
+        "fontSize": 12
+      },
+      "lines": {
+        "enabled": true,
+        "style": "straight"
+      },
+      "truncation": {
+        "enabled": true
+      }
+    },
+    "tooltips": {
+      "enabled": true,
+      "type": "placeholder",
+      "string": "{label}: {value}, {percentage}%",
+      "styles": {
+        "fadeInSpeed": 0,
+        "backgroundOpacity": 0.71,
+        "borderRadius": 10,
+        "fontSize": 15
+      }
+    },
+    "effects": {
+      "load": {
+        "speed": 800
+      },
+      "pullOutSegmentOnClick": {
+        "effect": "linear",
+        "speed": 400,
+        "size": 14
+      }
+    },
+    "misc": {
+      "gradient": {
+        "enabled": true,
+        "percentage": 65
+      }
+    }
+  });
+}
+
+updatediseases('approved')
+function updatediseases(request) {
+
+  var series = {{drugindications_approved|safe}}
+  text = "Approved and distinct drugs"
+  
+  if (request == 'trials') {
+    var text = "Clinical trials agents"
+    var series = {{drugindications_trials|safe}}
+    updaterdiseases(series,text)
+  }
+  updaterdiseases(series,text)
+}
+
+function updaterdiseases(series,text) {
+
+  $("#pie_disease").html("");
+
+var pie = new d3pie("pie_disease", {
+  "header": {
+    "title": {
+      "text": "Disease indications",
+      "fontSize": 32,
+      "font": "open sans"
+    },
+    "subtitle": {
+      "text": " ",
+      "color": "#999999",
+      "fontSize": 12,
+      "font": "open sans"
+    },
+    "titleSubtitlePadding": 25
+  },
+  "footer": {
+    "text": text,
+    "color": "#999999",
+    "fontSize": 10,
+    "font": "open sans",
+    "location": "center"
+  },
+  "size": {
+    "canvasHeight": 600,
+    "canvasWidth": 1100,
+    "pieInnerRadius": "50%",
+    "pieOuterRadius": "100%"
+  },
+  "data": {
+    "sortOrder": "value-asc",
+    "smallSegmentGrouping": {
+      "enabled": true,
+      "value": 1
+    },
+    "content": series
+  },
+  "labels": {
+    "outer": {
+      "pieDistance": 21
+    },
+    "inner": {
+      "hideWhenLessThanPercentage": 3
+    },
+    "mainLabel": {
+      "fontSize": 12
+    },
+    "percentage": {
+      "color": "#ffffff",
+      "fontSize": 12
+    },
+    "value": {
+      "color": "#adadad",
+      "fontSize": 12
+    },
+    "lines": {
+      "enabled": true,
+      "style": "straight"
+    },
+    "truncation": {
+      "enabled": true
+    }
+  },
+  "tooltips": {
+    "enabled": true,
+    "type": "placeholder",
+    "string": "{label}: {value}, {percentage}%",
+    "styles": {
+      "fadeInSpeed": 0,
+      "backgroundOpacity": 0.71,
+      "borderRadius": 10,
+      "fontSize": 15
+    }
+  },
+  "effects": {
+    "load": {
+      "speed": 800
+    },
+    "pullOutSegmentOnClick": {
+      "effect": "linear",
+      "speed": 400,
+      "size": 14
+    }
+  },
+  "misc": {
+    "gradient": {
+      "enabled": true,
+      "percentage": 65
+    }
+  }
+});
+}
+
+updatetargets('approved')
+function updatetargets(request) {
+
+  var series = {{drugtargets_approved|safe}}
+  text = "Approved and distinct drugs"
+  
+  if (request == 'trials') {
+    var text = "Clinical trials agents"
+    var series = {{drugtargets_trials|safe}}
+    updatertargets(series,text)
+  }
+  updatertargets(series,text)
+}
+
+function updatertargets(series,text) {
+
+  $("#pie_targets").html("");
+
+var pie = new d3pie("pie_targets", {
+  "header": {
+    "title": {
+      "text": "Receptor targets",
+      "fontSize": 32,
+      "font": "open sans"
+    },
+    "subtitle": {
+      "text": " ",
+      "color": "#999999",
+      "fontSize": 12,
+      "font": "open sans"
+    },
+    "titleSubtitlePadding": 25
+  },
+  "footer": {
+    "text": text,
+    "color": "#999999",
+    "fontSize": 10,
+    "font": "open sans",
+    "location": "center"
+  },
+  "size": {
+    "canvasHeight": 600,
+    "canvasWidth": 1100,
+    "pieInnerRadius": "50%",
+    "pieOuterRadius": "100%"
+  },
+  "data": {
+    "sortOrder": "value-asc",
+    "smallSegmentGrouping": {
+      "enabled": true,
+      "value": 1
+    },
+    "content": series
+  },
+  "labels": {
+    "outer": {
+      "pieDistance": 21
+    },
+    "inner": {
+      "hideWhenLessThanPercentage": 3
+    },
+    "mainLabel": {
+      "fontSize": 12
+    },
+    "percentage": {
+      "color": "#ffffff",
+      "fontSize": 12
+    },
+    "value": {
+      "color": "#adadad",
+      "fontSize": 12
+    },
+    "lines": {
+      "enabled": true,
+      "style": "straight"
+    },
+    "truncation": {
+      "enabled": true
+    }
+  },
+  "tooltips": {
+    "enabled": true,
+    "type": "placeholder",
+    "string": "{label}: {value}, {percentage}%",
+    "styles": {
+      "fadeInSpeed": 0,
+      "backgroundOpacity": 0.71,
+      "borderRadius": 10,
+      "fontSize": 15
+    }
+  },
+  "effects": {
+    "load": {
+      "speed": 800
+    },
+    "pullOutSegmentOnClick": {
+      "effect": "linear",
+      "speed": 400,
+      "size": 14
+    }
+  },
+  "misc": {
+    "gradient": {
+      "enabled": true,
+      "percentage": 65
+    }
+  }
+});
+}
+</script>
+{% endblock %}

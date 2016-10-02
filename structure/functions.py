@@ -1,4 +1,4 @@
-﻿from Bio.Blast import NCBIXML
+﻿from Bio.Blast import NCBIXML, NCBIWWW
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import Select
 import Bio.PDB.Polypeptide as polypeptide
@@ -17,6 +17,7 @@ import sys
 import tempfile
 import logging
 import math
+import urllib
 
 logger = logging.getLogger("protwis")
 
@@ -64,6 +65,40 @@ class BlastSearch(object):
                 logger.debug("Looping over alignments, current hit: {}".format(aln.hit_id))
                 output.append((aln.hit_id, aln))
         return output
+#==============================================================================
+
+class BlastSearchOnline(object):
+
+    def __init__(self, blast_program='blastp', db='swissprot', top_results=1):
+        self.blast_program = blast_program
+        self.db = db
+        self.top_results = top_results
+        pass
+
+    def run(self, input_seq):
+        output = []
+
+        result = NCBIXML.read(NCBIWWW.qblast(self.blast_program, self.db, input_seq, auto_format='xml'))
+        for aln in result.alignments[:self.top_results]:         
+            logger.debug("Looping over alignments, current hit: {}".format(aln.hit_id))
+            output.append((aln.hit_id, aln))
+        return output
+
+    def get_uniprot_entry_name (self, up_id):
+
+        #get the 'entry name' field for given uniprot id
+        #'entry name' is a protein id in gpcrdb
+        url = "http://www.uniprot.org/uniprot/?query=accession:%s&columns=entry name&format=tab" %up_id
+
+        #used urllib, urllib2 throws an error here for some reason
+        try:
+            response = urllib.urlopen(url)
+            page = response.readlines()
+            return page[1].strip().lower()
+
+        except urllib.HTTPError as error:
+            print(error)
+            return ''
 
 #==============================================================================
 
