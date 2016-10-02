@@ -9,7 +9,7 @@ from Bio import SeqIO, pairwise2
 from Bio.PDB import PDBParser, PPBuilder, parse_pdb_header
 
 
-import logging
+import logging, json, os
 
 class Command(BaseCommand):
 
@@ -21,15 +21,17 @@ class Command(BaseCommand):
         parser.add_argument('pdb_file')
 
     def handle(self, *args, **options):
+        root, ext = os.path.splitext(os.path.basename(options['pdb_file']))
         print("Working on file {}".format(options['pdb_file']))
         header = parse_pdb_header(options['pdb_file'])
-        print(header['compound'])
         sp = SequenceParser(options['pdb_file'])
-        c = list(sp.mapping.keys())[0]
-        poly = sp.get_chain_peptides(c)
-        for peptide in poly:
-            print("Start: {} Stop: {} Len: {}".format(peptide[0].id[1], peptide[-1].id[1], len(peptide)))
-            sp.map_to_wt_blast(c, peptide, None, int(peptide[0].id[1]))
-        sp.map_seqres()
-        sp.save_excel_report("test.xlsx")
-        #sp.get_report()
+        print(sp.get_fusions())
+        print(sp.get_mutations())
+        print(sp.get_deletions())
+        json_data = {}
+        json_data["header"] = header
+        json_data.update(sp.get_fusions())
+        json_data.update(sp.get_mutations())
+        json_data.update(sp.get_deletions())
+        json.dump(json_data, open(os.sep.join([settings.DATA_DIR, "{}_auto.json".format(root)]), 'w'), indent=4, separators=(',', ': '))
+        #json.dump(json_data, open("test.json", 'w'), indent=4, separators=(',', ': '))

@@ -2,6 +2,8 @@ from django.shortcuts import get_object_or_404, render
 from django.views import generic
 from django.http import HttpResponse
 from django.db.models import Q
+from django.core.cache import cache
+from django.views.decorators.cache import cache_page
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene,ProteinGProteinPair
 from residue.models import Residue
@@ -21,10 +23,12 @@ class BrowseSelection(AbsBrowseSelection):
         + ' the right.'
     docs = 'receptors.html'
     target_input=False
-        
 
+
+@cache_page(60 * 60 * 24)
 def detail(request, slug):
     # get protein
+    slug = slug.lower()
     p = Protein.objects.prefetch_related('web_links__web_resource').get(entry_name=slug, sequence_type__slug='wt')
 
     # get family list
@@ -55,7 +59,7 @@ def detail(request, slug):
         'protein_segment', 'generic_number', 'display_generic_number')
 
     mutations = MutationExperiment.objects.filter(protein=p)
-    
+
     # process residues and return them in chunks of 10
     # this is done for easier scaling on smaller screens
     chunk_size = 10
@@ -67,22 +71,22 @@ def detail(request, slug):
     for i, r in enumerate(residues):
         # title of segment to be written out for the first residue in each segment
         segment_title = False
-        
+
         # keep track of last residues segment (for marking borders)
         if r.protein_segment.slug != last_segment:
             last_segment = r.protein_segment.slug
             border = True
-        
+
         # if on a border, is there room to write out the title? If not, write title in next chunk
         if i == 0 or (border and len(last_segment) <= (chunk_size - i % chunk_size)):
             segment_title = True
             border = False
             title_cell_skip += len(last_segment) # skip cells following title (which has colspan > 1)
-        
+
         if i and i % chunk_size == 0:
             r_chunks.append(r_buffer)
             r_buffer = []
-        
+
         r_buffer.append((r, segment_title, title_cell_skip))
 
         # update cell skip counter
@@ -117,7 +121,7 @@ def SelectionAutocomplete(request):
         protein_source_list = []
         for protein_source in selection.annotation:
             protein_source_list.append(protein_source.item)
-        
+
         # find proteins
         ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q),
             species__in=(species_list),
@@ -157,7 +161,7 @@ def SelectionAutocomplete(request):
                 pf_json['type'] = 'family'
                 pf_json['category'] = 'Target families'
                 results.append(pf_json)
-        
+
         data = json.dumps(results)
     else:
         data = 'fail'

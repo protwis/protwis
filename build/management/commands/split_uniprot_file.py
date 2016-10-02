@@ -29,7 +29,8 @@ class Command(BaseCommand):
             if os.path.isfile(filename):
                 self.separate(filename)
         else:
-            self.logger.error('No filename specified, aborting')
+            self.separate(os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot_all_proteins.txt']))
+            # self.logger.error('No filename specified, aborting')
 
     def separate(self, input_filename):
         with open(input_filename) as input_file:

@@ -123,7 +123,7 @@ class Command(BaseBuild):
                         level_family_counter = created_family['level_family_counter']
                     else:
                         continue
-                
+
                 ###########
                 # protein
                 ###########
@@ -204,8 +204,8 @@ class Command(BaseBuild):
         try:
             p.save()
             self.logger.info('Created protein {}'.format(p.entry_name))
-        except:
-            self.logger.error('Failed creating protein {}'.format(p.entry_name))
+        except Exception as e:
+            self.logger.error('Failed creating protein {} {}'.format(p.entry_name, str(e)))
 
         # protein conformations
         try:
@@ -238,7 +238,7 @@ class Command(BaseBuild):
                     self.logger.info('Created gene ' + g.name + ' for protein ' + p.name)
             except IntegrityError:
                 g = Gene.objects.get(name=gene, species=species, position=i)
-            
+
             if g:
                 g.proteins.add(p)
 
@@ -256,14 +256,14 @@ class Command(BaseBuild):
             except ProteinFamily.DoesNotExist:
                 self.logger.error('Parent family of ' + family_name + ' not found, skipping')
                 return False
-        
+
         # does this family already exists in db?
         try:
             pf = ProteinFamily.objects.get(name=family_name, parent=ppf)
         except ProteinFamily.DoesNotExist:
             # increment the family counter for the current indent level
             level_family_counter[indent] += 1
-            
+
             # protein family slug
             family_slug = []
             for level in level_family_counter:
@@ -278,7 +278,7 @@ class Command(BaseBuild):
             try:
                 pf.save()
                 parent_family[indent] = pf.id
-                
+
                 self.logger.info('Created protein family ' + family_name)
             except:
                 self.logger.error('Failed creating protein family' + family_name)
@@ -315,7 +315,7 @@ class Command(BaseBuild):
                 remote = True
                 self.logger.info('Reading remote file ' + remote_file_path)
                 local_file = open(local_file_path, 'w')
-            
+
             for raw_line in uf:
                 # line format
                 if remote:
@@ -326,11 +326,11 @@ class Command(BaseBuild):
                 # write to local file if appropriate
                 if local_file:
                     local_file.write(line)
-                
+
                 # end of file
                 if line.startswith('//'):
-                    break		
-                
+                    break
+
                 # entry name and review status
                 if line.startswith('ID'):
                     split_id_line = line.split()
@@ -340,7 +340,7 @@ class Command(BaseBuild):
                         up['source'] = 'TREMBL'
                     elif review_status == 'Reviewed':
                         up['source'] = 'SWISSPROT'
-                
+
                 # species
                 elif line.startswith('OS') and not os_read:
                     species_full = line[2:].strip().strip('.')

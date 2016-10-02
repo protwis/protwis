@@ -40,11 +40,11 @@ class WebLink(models.Model):
 
 class Publication(models.Model):
     web_link = models.ForeignKey('common.WebLink', null=True)
-    journal = models.ForeignKey('PublicationJournal')
-    title = models.TextField()
-    authors = models.TextField()
-    year = models.IntegerField()
-    reference = models.TextField()
+    journal = models.ForeignKey('PublicationJournal', null=True)
+    title = models.TextField(null=True)
+    authors = models.TextField(null=True)
+    year = models.IntegerField(null=True)
+    reference = models.TextField(null=True)
 
     def __str__(self):
         return "{!s} ({!s})".format(self.journal, self.year)
@@ -52,9 +52,12 @@ class Publication(models.Model):
     class Meta():
         db_table = 'publication'
 
+
+    #http://www.ncbi.nlm.nih.gov/pubmed/?term=10.1124%2Fmol.107.040097&report=xml&format=text
+    # use NCBI instead to correct year published (journal year)
+
     def update_from_doi(self, doi):
         logger = logging.getLogger('build')
-
         # should entrez be tried as a backup?
         try_entrez_on_fail = False
         
@@ -105,6 +108,7 @@ class Publication(models.Model):
                 logger.warning('Processing data from CrossRef for {} failed: {}'.format(doi, msg))
                 try_entrez_on_fail = False
         else:
+            print("Publication not on crossref",doi)
             try_entrez_on_fail = False
 
         if try_entrez_on_fail:
