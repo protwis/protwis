@@ -26,63 +26,134 @@ def striphtml(data):
     p = re.compile(r'<.*?>')
     return p.sub('', data)
 
-@cache_page(60*60*24*1) #  5 min
+@cache_page(60*60*24*1) #  1 day
 def drugstatistics(request):
 
     # ===== drugtargets =====
-    drugtargets_raw = Protein.objects.filter(drugs__status='approved').values('entry_name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
+    drugtargets_raw_approved = Protein.objects.filter(drugs__status='approved').values('entry_name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
 
-    list_of_hec_colors = get_spaced_colors(len(drugtargets_raw))
-    drugtargets = []
-    for i, drugtarget in enumerate(drugtargets_raw):
+    list_of_hec_colors = get_spaced_colors(len(drugtargets_raw_approved))
+    drugtargets_approved = []
+    for i, drugtarget in enumerate(drugtargets_raw_approved):
         drugtarget['label'] = drugtarget['entry_name'].replace("_human","").upper()
         # drugtarget['color'] = str(list_of_hec_colors[i])
         del drugtarget['entry_name']
-        drugtargets.append(drugtarget)
+        drugtargets_approved.append(drugtarget)
+
+    drugtargets_raw_trials = Protein.objects.filter(drugs__status='in trial').values('entry_name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
+
+    list_of_hec_colors = get_spaced_colors(len(drugtargets_raw_trials))
+    drugtargets_trials = []
+    for i, drugtarget in enumerate(drugtargets_raw_trials):
+        drugtarget['label'] = drugtarget['entry_name'].replace("_human","").upper()
+        # drugtarget['color'] = str(list_of_hec_colors[i])
+        del drugtarget['entry_name']
+        drugtargets_trials.append(drugtarget)
 
     # ===== drugfamilies =====
-    drugfamilies_raw = Protein.objects.filter(drugs__status='approved').values('family_id__parent__name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
+    drugfamilies_raw_approved = Protein.objects.filter(drugs__status='approved').values('family_id__parent__name').annotate(value=Count('drugs__name', distinct = True))
 
-    list_of_hec_colors = get_spaced_colors(len(drugfamilies_raw))
-    drugfamilies = []
-    for i, drugfamily in enumerate(drugfamilies_raw):
+    list_of_hec_colors = get_spaced_colors(len(drugfamilies_raw_approved))
+    drugfamilies_approved = []
+    for i, drugfamily in enumerate(drugfamilies_raw_approved):
         drugfamily['label'] = striphtml(drugfamily['family_id__parent__name']).replace(" receptors","")
         drugfamily['color'] = str(list_of_hec_colors[i])
         del drugfamily['family_id__parent__name']
-        drugfamilies.append(drugfamily)
+        drugfamilies_approved.append(drugfamily)
+
+    drugfamilies_raw_trials = Protein.objects.exclude(drugs__status='approved').values('family_id__parent__name').annotate(value=Count('drugs__name', distinct = True))
+
+    list_of_hec_colors = get_spaced_colors(len(drugfamilies_raw_trials))
+    drugfamilies_trials = []
+    for i, drugfamily in enumerate(drugfamilies_raw_trials):
+        drugfamily['label'] = striphtml(drugfamily['family_id__parent__name']).replace(" receptors","")
+        drugfamily['color'] = str(list_of_hec_colors[i])
+        del drugfamily['family_id__parent__name']
+        drugfamilies_trials.append(drugfamily)
 
     # ===== drugclas =====
-    drugclasses_raw = Protein.objects.filter(drugs__status='approved').values('family_id__parent__parent__parent__name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
+    drugclasses_raw_approved = Protein.objects.filter(drugs__status='approved').values('family_id__parent__parent__parent__name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
 
-    list_of_hec_colors = get_spaced_colors(len(drugclasses_raw)+1)
-    drugclasses = []
-    for i, drugclas in enumerate(drugclasses_raw):
+    list_of_hec_colors = get_spaced_colors(len(drugclasses_raw_approved)+1)
+    drugClasses_approved = []
+    for i, drugclas in enumerate(drugclasses_raw_approved):
         drugclas['label'] = drugclas['family_id__parent__parent__parent__name']
         drugclas['color'] = str(list_of_hec_colors[i+1])
         del drugclas['family_id__parent__parent__parent__name']
-        drugclasses.append(drugclas)
+        drugClasses_approved.append(drugclas)
+
+    drugclasses_raw_trials = Protein.objects.filter(drugs__status='in trial').values('family_id__parent__parent__parent__name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
+
+    list_of_hec_colors = get_spaced_colors(len(drugclasses_raw_trials)+1)
+    drugClasses_trials = []
+    for i, drugclas in enumerate(drugclasses_raw_trials):
+        drugclas['label'] = drugclas['family_id__parent__parent__parent__name']
+        drugclas['color'] = str(list_of_hec_colors[i+1])
+        del drugclas['family_id__parent__parent__parent__name']
+        drugClasses_trials.append(drugclas)
 
     # ===== drugtypes =====
-    drugtypes_raw = Drugs.objects.values('drugtype').filter(status='approved').annotate(value=Count('name', distinct = True)).order_by('value')
+    drugtypes_raw_approved = Drugs.objects.values('drugtype').filter(status='approved').annotate(value=Count('name', distinct = True)).order_by('value')
 
-    list_of_hec_colors = get_spaced_colors(len(drugtypes_raw)+5)
-    drugtypes = []
-    for i, drugtype in enumerate(drugtypes_raw):
+    list_of_hec_colors = get_spaced_colors(len(drugtypes_raw_approved)+5)
+    drugtypes_approved = []
+    for i, drugtype in enumerate(drugtypes_raw_approved):
         drugtype['label'] = drugtype['drugtype']
         drugtype['color'] = str(list_of_hec_colors[i])
         del drugtype['drugtype']
-        drugtypes.append(drugtype)
+        drugtypes_approved.append(drugtype)
+
+    drugtypes_raw_trials = Drugs.objects.values('drugtype').exclude(status='approved').annotate(value=Count('name', distinct = True)).order_by('value')
+
+    list_of_hec_colors = get_spaced_colors(len(drugtypes_raw_trials)+5)
+    drugtypes_trials = []
+    for i, drugtype in enumerate(drugtypes_raw_trials):
+        drugtype['label'] = drugtype['drugtype']
+        drugtype['color'] = str(list_of_hec_colors[i])
+        del drugtype['drugtype']
+        drugtypes_trials.append(drugtype)
+
+    drugtypes_raw_not_estab = Drugs.objects.values('drugtype').filter(novelty='not established').annotate(value=Count('name', distinct = True)).order_by('value')
+
+    list_of_hec_colors = get_spaced_colors(len(drugtypes_raw_not_estab)+5)
+    drugtypes_not_estab = []
+    for i, drugtype in enumerate(drugtypes_raw_not_estab):
+        drugtype['label'] = drugtype['drugtype']
+        drugtype['color'] = str(list_of_hec_colors[i])
+        del drugtype['drugtype']
+        drugtypes_not_estab.append(drugtype)
+
+    drugtypes_raw_estab = Drugs.objects.values('drugtype').filter(novelty='established').annotate(value=Count('name', distinct = True)).order_by('value')
+
+    list_of_hec_colors = get_spaced_colors(len(drugtypes_raw_estab)+5)
+    drugtypes_estab = []
+    for i, drugtype in enumerate(drugtypes_raw_estab):
+        drugtype['label'] = drugtype['drugtype']
+        drugtype['color'] = str(list_of_hec_colors[i])
+        del drugtype['drugtype']
+        drugtypes_estab.append(drugtype)
+
 
     # ===== drugindications =====
-    drugindications_raw = Drugs.objects.values('indication').filter(status='approved').annotate(value=Count('name', distinct = True)).order_by('-value')
+    drugindications_raw_approved = Drugs.objects.values('indication').filter(status='approved').annotate(value=Count('name', distinct = True)).order_by('-value')
 
-    list_of_hec_colors = get_spaced_colors(len(drugindications_raw))
-    drugindications = []
-    for i, drugindication in enumerate(drugindications_raw):
+    list_of_hec_colors = get_spaced_colors(len(drugindications_raw_approved))
+    drugindications_approved = []
+    for i, drugindication in enumerate(drugindications_raw_approved):
         drugindication['label'] = drugindication['indication']
         drugindication['color'] = str(list_of_hec_colors[i])
         del drugindication['indication']
-        drugindications.append(drugindication)
+        drugindications_approved.append(drugindication)
+
+    drugindications_raw_trials = Drugs.objects.values('indication').exclude(status='approved').annotate(value=Count('name', distinct = True)).order_by('-value')
+
+    list_of_hec_colors = get_spaced_colors(len(drugindications_raw_trials))
+    drugindications_trials = []
+    for i, drugindication in enumerate(drugindications_raw_trials):
+        drugindication['label'] = drugindication['indication']
+        drugindication['color'] = str(list_of_hec_colors[i])
+        del drugindication['indication']
+        drugindications_trials.append(drugindication)
 
     # ===== drugtimes =====
     drugtime_raw = Drugs.objects.values('approval').filter(status='approved').annotate(y=Count('name', distinct = True)).order_by('approval')
@@ -104,9 +175,9 @@ def drugstatistics(request):
     drugs_over_time = [{"values": drugtimes, "yAxis": "1", "key": "GPCRs"}, {'values': [{'y': 2, 'x': '1942'}, {'x': '1944', 'y': 2}, {'y': 6, 'x': '1946'}, {'y': 9, 'x': '1948'}, {'y': 18, 'x': '1950'}, {'y': 30, 'x': '1952'}, {'y': 55, 'x': '1954'}, {'y': 72, 'x': '1956'}, {'y': 98, 'x': '1958'}, {'y': 131, 'x': '1960'}, {'y': 153, 'x': '1962'}, {'y': 171, 'x': '1964'}, {'y': 188, 'x': '1966'}, {'y': 205, 'x': '1968'}, {'y': 224, 'x': '1970'}, {'y': 242, 'x': '1972'}, {'y': 265, 'x': '1974'}, {'y': 300, 'x': '1976'}, {'y': 340, 'x': '1978'}, {'y': 361, 'x': '1980'}, {'y': 410, 'x': '1982'}, {'y': 442, 'x': '1984'}, {'y': 499, 'x': '1986'}, {'y': 542, 'x': '1988'}, {'y': 583, 'x': '1990'}, {'y': 639, 'x': '1992'}, {'y': 686, 'x': '1994'}, {'y': 779, 'x': '1996'}, {'y': 847, 'x': '1998'}, {'y': 909, 'x': '2000'}, {'y': 948, 'x': '2002'}, {'y': 1003, 'x': '2004'}, {'y': 1041, 'x': '2006'}, {'y': 1078, 'x': '2008'}, {'y': 1115, 'x': '2010'}, {'y': 1177, 'x': '2012'}, {'y': 1239, 'x': '2014'}, {'y': 1286, 'x': '2016'}], 'key': 'All FDA drugs', 'yAxis': '1'}]
 
 
-    return render(request, 'drugstatistics.html', {'drugtypes':drugtypes, 'drugindications':drugindications, 'drugtargets':drugtargets, 'drugfamilies':drugfamilies, 'drugclasses':drugclasses, 'drugs_over_time':drugs_over_time})
+    return render(request, 'drugstatistics.html', {'drugtypes_approved':drugtypes_approved,'drugtypes_trials':drugtypes_trials, 'drugtypes_estab':drugtypes_estab, 'drugtypes_not_estab':drugtypes_not_estab,'drugindications_approved':drugindications_approved, 'drugindications_trials':drugindications_trials, 'drugtargets_approved':drugtargets_approved, 'drugtargets_trials':drugtargets_trials, 'drugfamilies_approved':drugfamilies_approved, 'drugfamilies_trials':drugfamilies_trials, 'drugClasses_approved':drugClasses_approved, 'drugClasses_trials':drugClasses_trials, 'drugs_over_time':drugs_over_time})
 
-# @cache_page(60*60*24*1) #
+@cache_page(60*60*24*1) # 1 day
 def drugbrowser(request):
     # Get drugdata from here somehow
 
@@ -148,7 +219,7 @@ def drugbrowser(request):
 
     return render(request, 'drugbrowser.html', {'drugdata':context})
 
-@cache_page(60*60*24*1) #  5 min
+@cache_page(60*60*24*1) #  1 day
 def drugmapping(request):
     context = dict()
 
