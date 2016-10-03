@@ -2,8 +2,8 @@
 from django.conf import settings
 from django.views.generic import TemplateView
 
-from common.views import AbsTargetSelection
-from common.views import AbsSegmentSelection
+from common.views import AbsTargetSelection, AbsTargetSelectionGproteins
+from common.views import AbsSegmentSelection, AbsSegmentSelectionGproteins
 from common.views import AbsMiscSelection
 from structure.functions import BlastSearch
 from protein.models import Protein
@@ -32,10 +32,45 @@ class TargetSelection(AbsTargetSelection):
         },
     }
 
+class TargetSelectionGprotein(AbsTargetSelectionGproteins):
+    step = 1
+    number_of_steps = 2
+    psets = False
+    docs = 'sequences.html#structure-based-alignments'
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Continue to next step',
+            'url': '/alignment/segmentselectiongprot',
+            'color': 'success',
+        },
+    }
 
 class SegmentSelection(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
+    docs = 'sequences.html#structure-based-alignments'
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', True),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Show alignment',
+            'url': '/alignment/render',
+            'color': 'success',
+        },
+    }
+
+class SegmentSelectionGprotein(AbsSegmentSelectionGproteins):
+    step = 2
+    number_of_steps = 2
+    psets = False
     docs = 'sequences.html#structure-based-alignments'
     selection_boxes = OrderedDict([
         ('reference', False),
