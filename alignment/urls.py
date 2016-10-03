@@ -6,7 +6,9 @@ from alignment import views
 
 
 urlpatterns = [
-    url(r'^targetselection', cache_page(60*60*24*7)(views.TargetSelection.as_view()), name='targetselection'),
+    url(r'^targetselection', (views.TargetSelection.as_view()), name='targetselection'),
+    url(r'^gproteinselection', (views.TargetSelectionGprotein.as_view()), name='targetselectiongprot'),
+    url(r'^segmentselectiongprot', views.SegmentSelectionGprotein.as_view(), name='segmentselectiongprot'),
     url(r'^segmentselection', views.SegmentSelection.as_view(), name='segmentselection'),
     url(r'^render/(?P<slug>[^/]+)/$', views.render_family_alignment, name='render-family'),
     url(r'^render', views.render_alignment, name='render'),
