@@ -136,7 +136,7 @@ def StructureDetails(request, pdbname):
         if structure['structure_ligand_pair__annotated']:
             resn_list += ",\"" + \
                 structure['structure_ligand_pair__pdb_reference'] + "\""
-            main_ligand = structure['structure_ligand_pair__pdb_reference'] 
+            main_ligand = structure['structure_ligand_pair__pdb_reference']
     print(resn_list)
 
 
@@ -507,7 +507,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                     quit()
 
                 structureligandinteraction = StructureLigandInteraction.objects.filter(
-                    pdb_reference=temp[1], structure=structure, annotated=True) #, pdb_file=None 
+                    pdb_reference=temp[1], structure=structure, annotated=True) #, pdb_file=None
                 if structureligandinteraction.exists():  # if the annotated exists
                     annotated_found = 1
                     annotated = 1
@@ -565,6 +565,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                 ResidueFragmentInteraction.objects.filter(structure_ligand_pair=structureligandinteraction).delete()
 
                 for interaction in output['interactions']:
+                    # print(interaction)
                     aa = interaction[0]
                     aa, pos, chain = regexaa(aa)
                     residue = check_residue(protein, pos, aa)
@@ -573,7 +574,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                     fragment, rotamer = extract_fragment_rotamer(
                                     f, residue, structure, ligand)
 
-                    #print(interaction[2],interaction[3],interaction[4],interaction[5])
+                    # print(interaction[2],interaction[3],interaction[4],interaction[5])
                     if fragment!=None:
                         interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(
                                         slug=interaction[2], name=interaction[3], type=interaction[4], direction=interaction[5])
@@ -933,7 +934,7 @@ def calculate(request, redirect=None):
 
                 # convert identified interactions to residue features and add them to the session
                 # numbers in lists represent the interaction "hierarchy", i.e. if a residue has more than one
-                # interaction, 
+                # interaction,
                 interaction_name_dict = {
                     'polar_double_neg_protein': [1, 'neg'],
                     'polar_double_pos_protein': [1, 'neg'],
@@ -961,7 +962,7 @@ def calculate(request, redirect=None):
                                 if (not feature
                                     or interaction_name_dict[interaction][0] < interaction_name_dict[feature][0]):
                                     feature = interaction
-                        
+
                         if not feature:
                             continue
 
@@ -1209,7 +1210,7 @@ def pdb(request):
                                 content_type='text/plain')
     return response
 
-# @cache_page(60*60*24*2) #  2 days caching
+@cache_page(60*60*24*2) # 2 days caching
 def GProtein(request):
 
     name_of_cache = 'gprotein_statistics'
@@ -1316,7 +1317,7 @@ def Ginterface(request, protein = None):
     for interaction in residues_browser:
         interacting_gn.append(interaction['gpcrdb'])
         gs_b2_interaction_type_long = (next((item['type'] for item in residues_browser if item['gpcrdb'] == interaction['gpcrdb']), None))
-        
+
         interacting_aa = residuelist.filter(display_generic_number__label__in=[interaction['gpcrdb']]).values_list('amino_acid', flat=True)
 
         if interacting_aa:
@@ -1325,7 +1326,7 @@ def Ginterface(request, protein = None):
             interaction['pos'] = pos
 
             feature = names_aa[gs_b2_interaction_type_long]
-            
+
             if interacting_aa[0] not in exchange_table[feature]:
                 GS_none_equivalent_interacting_pos.append(pos)
                 GS_none_equivalent_interacting_gn.append(interaction['gpcrdb'])
@@ -1342,5 +1343,5 @@ def Ginterface(request, protein = None):
             primary.append(entry.g_protein.name.replace("Gs","G<sub>s</sub>").replace("Gi","G<sub>i</sub>").replace("Go","G<sub>o</sub>").replace("G11","G<sub>11</sub>").replace("G12","G<sub>12</sub>").replace("G13","G<sub>13</sub>").replace("Gq","G<sub>q</sub>").replace("G","G&alpha;"))
         elif entry.transduction == 'secondary':
             secondary.append(entry.g_protein.name.replace("Gs","G<sub>s</sub>").replace("Gi","G<sub>i</sub>").replace("Go","G<sub>o</sub>").replace("G11","G<sub>11</sub>").replace("G12","G<sub>12</sub>").replace("G13","G<sub>13</sub>").replace("Gq","G<sub>q</sub>").replace("G","G&alpha;"))
-            
+
     return render(request, 'interaction/ginterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn, 'primary_Gprotein': '; '.join(set(primary)), 'secondary_Gprotein': '; '.join(set(secondary))} )

@@ -97,10 +97,11 @@ class Command(BaseBuild):
                             state__slug=settings.DEFAULT_PROTEIN_STATE)
                     except ProteinConformation.DoesNotExist:
                         # abort if parent protein is not found
+                        print('Parent protein {} for construct {} not found, aborting!'.format(
+                            sd['protein'], sd['name']))
                         self.logger.error('Parent protein {} for construct {} not found, aborting!'.format(
                             sd['protein'], sd['name']))
                         continue
-
                     # sequence type
                     try:
                         sequence_type, created = ProteinSequenceType.objects.get_or_create(slug='mod',
@@ -148,6 +149,7 @@ class Command(BaseBuild):
                         pc.save()
                         self.logger.info('Created conformation {} of protein {}'.format(pc.state.name, p.name))
                     except:
+                        print('Failed creating conformation {} of protein {}'.format(pc.state.name,p.entry_name))
                         self.logger.error('Failed creating conformation {} of protein {}'.format(pc.state.name,
                             p.entry_name))
 
@@ -241,7 +243,7 @@ class Command(BaseBuild):
 
                     # # create expression records
                     # if 'expression_sys' in sd and sd['expression_sys']:
-                    #     ce = Expression()           
+                    #     ce = Expression()
                     #     ce.construct = pc
                     #     ce.expression_system, created = ExpressionSystem.objects.get_or_create(
                     #         expression_method = sd['expression_sys']['expression_method'],
@@ -250,14 +252,14 @@ class Command(BaseBuild):
                     #     if 'remarks' in sd:
                     #        ce.remarks = sd['expression_sys']['remarks']
                     #     ce.save()
-                    
+
                     # # create solubilization records
                     # if ('solubilization' in sd and sd['solubilization'] and 'steps' in sd['solubilization']
                     #     and sd['solubilization']['steps']):
                     #     so = Solubilization()
                     #     so.construct = pc
                     #     cl = ChemicalList.objects.create()
-                    #     so.chemical_list = cl 
+                    #     so.chemical_list = cl
 
                     #     for step in sd['solubilization']['steps']:
                     #         if 'type' in step and 'item' in step and'concentration' in step:
@@ -270,21 +272,21 @@ class Command(BaseBuild):
                     #             cc.concentration = step['concentration']
                     #             cc.chemical = chem    # since ChemicalConc has a ForeignKey to Chemical
                     #             cc.save()
-                    #             cl.chemicals.add(cc)                          
+                    #             cl.chemicals.add(cc)
                     #         else:
                     #             self.logger.error('Solubilization step incorrectly defined for {}'.format(p))
 
                     #     if 'remarks' in sd['solubilization']:
                     #         so.remarks = sd['solubilization']['remarks']
                     #     so.save()
-                    
+
                     # # create  purification records
                     # if 'purification' in sd and sd['purification'] and sd['purification']['steps']:
                     #     pu = Purification()
                     #     pu.construct = pc
                     #     if 'remarks' in sd['purification']:
                     #         pu.remarks = sd['purification']['remarks']
-                    #     pu.save() 
+                    #     pu.save()
                     #     for step in sd['purification']['steps']:
                     #         if 'type' in step and 'description' in step:
                     #             pust = PurificationStep()
@@ -292,16 +294,16 @@ class Command(BaseBuild):
                     #             pust.purification = pu
                     #             pust.purification_type, created = PurificationStepType.objects.get_or_create(
                     #                 name = step['type'] ) # 2 values returned by get_or_create
-                    #             if created: 
+                    #             if created:
                     #                 self.logger.info('Created purification step type {}'.format(
                     #                     pust.purification_type))
                     #             pust.save()
 
                     #         else:
                     #             self.logger.error('Purification step incorrectly defined for {}'.format(p))
-                    
+
                     # # create crystallization records
-                    # if 'crystallization' in sd and sd['crystallization']: 
+                    # if 'crystallization' in sd and sd['crystallization']:
                     #     cy = Crystallization()
                     #     cy.construct = pc
                     #     cyt = CrystallizationMethodTypes.objects.create()
@@ -315,7 +317,7 @@ class Command(BaseBuild):
                     #     for step in sd['crystallization']['chemicallist']:
                     #         if 'type' in step and 'item' in step and'concentration' in step:
                     #             chem = Chemical()
-                    #             chem.chemical_type,  created = ChemicalType.objects.get_or_create(name = step['type']) 
+                    #             chem.chemical_type,  created = ChemicalType.objects.get_or_create(name = step['type'])
 
                     #             chem.name =  step['item']
                     #             chem.save()
@@ -324,21 +326,21 @@ class Command(BaseBuild):
                     #             cc.chemical = chem    # since ChemicalConc has a ForeignKey to Chemical
                     #             cc.save()
 
-                    #             cl.chemicals.add(cc)                          
+                    #             cl.chemicals.add(cc)
                     #         else:
-                    #             self.logger.error('Crystallization step incorrectly defined for {}'.format(p))                        
+                    #             self.logger.error('Crystallization step incorrectly defined for {}'.format(p))
 
                     #     cy.aqueous_solution_lipid_ratio = sd['crystallization']['aqueous_solution_lipid_ratio_LCP']
                     #     cy.lcp_bolus_volume = sd['crystallization']['LCP_bolus_volume']
                     #     cy.precipitant_solution_volume = sd['crystallization']['precipitant_solution_volume']
                     #     cy.temp = sd['crystallization']['temperature']
-                    #     cy.ph = sd['crystallization']['ph']  
+                    #     cy.ph = sd['crystallization']['ph']
 
 
                     #     if 'remarks' in sd['crystallization']:
                     #         cy.remarks = sd['crystallization']['remarks']
                     #     cy.save()
-                    
+
                     # # create residues
                     # # prs = Residue.objects.filter(protein_conformation=ppc).prefetch_related(
                     # #     'protein_conformation__protein', 'protein_segment', 'generic_number',
@@ -387,4 +389,5 @@ class Command(BaseBuild):
 
                     # # update sequence
                     # p.sequence = updated_sequence
+                    # print(ppc.protein.entry_name)
                     p.save()

@@ -176,7 +176,8 @@
                 update_tables();
             });
 
-            function update_tables(tables = "both") {
+            function update_tables(tables) {
+                if (typeof(tables)==='undefined') a = "both";
                 console.log('update_tables');
                 // $('#wt_schematics > tbody  > tr').each(function() {
                 //     $(this).hide();
@@ -661,5 +662,3 @@
 <div style="padding-top: 0px; white-space: nowrap;" id="align_div">
 </div>
 {% endblock %}
-
-

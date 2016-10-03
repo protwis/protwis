@@ -19,6 +19,7 @@ import json
 import datetime
 from collections import OrderedDict
 import pickle
+import logging
 
 AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
      'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N', 
@@ -30,6 +31,7 @@ AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
 
 
 def fetch_pdb_info(pdbname,protein):
+    logger = logging.getLogger('build')
     #d = {}
     d = OrderedDict()
     d['construct_crystal'] = {}
@@ -111,6 +113,7 @@ def fetch_pdb_info(pdbname,protein):
             receptor = False
             u_id_source = 'N/A'
             chain = elem.attrib['segId'].split('_')[1]
+            seg_resid_list = []
             # print(chain,'chain')
             for res in elem[0]: #first element is residuelist
                 u_id = 'N/A'
@@ -128,7 +131,8 @@ def fetch_pdb_info(pdbname,protein):
                                     receptor_chain = chain
                                 elif msg_1==0:
                                     msg_1 = 1
-                                    print('\t', pdbname.lower(),'receptor in many chains?!',chain,receptor_chain)
+                                    # print('\t', pdbname.lower(),'receptor in many chains?!',chain,receptor_chain)
+                                    logger.warning('{} has receptor in many chains {} {}'.format(pdbname.lower(),chain,receptor_chain))
                                 insert_position = 'Within Receptor'
                             if u_id not in seg_uniprot_ids:
                                 seg_uniprot_ids.append(u_id)
@@ -142,6 +146,7 @@ def fetch_pdb_info(pdbname,protein):
                                 pdb_aa = "X"
                             if receptor:
                                 receptor_seq_ids.append(pos)
+                            seg_resid_list.append(pos)
                             if pos>max_pos: max_pos = pos
                             if pos<min_pos: min_pos = pos
                     elif pdb_aa and node.tag == '{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}residueDetail':
@@ -175,7 +180,7 @@ def fetch_pdb_info(pdbname,protein):
                 for elm in insert_info.findall('.//{http://uniprot.org/uniprot}recommendedName'):
                     seg_uniprot_ids[0] = elm.find('{http://uniprot.org/uniprot}fullName').text
 
-            d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position])
+            d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list])
             if receptor == False and receptor_chain==chain: #not receptor, but is in same chain
                 if len(seg_uniprot_ids):
                     subtype =seg_uniprot_ids[0]
@@ -184,7 +189,8 @@ def fetch_pdb_info(pdbname,protein):
                     continue #do not add segments without information
                 d['auxiliary']['aux'+str(len(d['auxiliary']))] = {'type':'auto','subtype':subtype,'presence':'YES','position':insert_position, 'start':insert_start}
             elif receptor == False:
-                print('\t',pdbname.lower(),'Protein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
+                # print('\t',pdbname.lower(),'Protein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
+                logger.warning('{} Protein in structure, but not part of receptor chain {} {}'.format(pdbname.lower(),seg_uniprot_ids,chain))
         d['deletions'] = []
         for k, g in groupby(enumerate(pos_in_wt), lambda x:x[0]-x[1]):
             group = list(map(itemgetter(1), g))
@@ -196,7 +202,8 @@ def fetch_pdb_info(pdbname,protein):
             d['not_observed'].append((group[0], group[-1]))
 
     else:
-        print('failed sifts')
+        pass
+        # print('failed sifts')
 
     #http://www.ebi.ac.uk/pdbe/api/pdb/entry/experiment/2RH1
     ## experiment data
@@ -211,7 +218,8 @@ def fetch_pdb_info(pdbname,protein):
         d['r_factor'] = r.get('r_factor')
         d['experimental_method'] = r.get('experimental_method')
     else:
-        print('failed pdbe')
+        pass
+        # print('failed pdbe')
 
     # #http://www.ebi.ac.uk/pdbe/api/pdb/entry/modified_AA_or_NA/2RH1
     # ## modified AA (empty on 2RH1)
@@ -258,7 +266,7 @@ def fetch_pdb_info(pdbname,protein):
    
     else:
         d['modifications2'] = 'None'
-        print('failed pdbe_mod')
+        # print('failed pdbe_mod')
 
     #http://www.ebi.ac.uk/pdbe/api/pdb/entry/ligand_monomers/2RH1
     cache_dir = ['pdbe', 'ligands']
@@ -278,7 +286,7 @@ def fetch_pdb_info(pdbname,protein):
    
     else:
         d['ligands'] = 'None'
-        print('failed pdbe_ligands')
+        # print('failed pdbe_ligands')
 
 
     ## NOT NEED - FETCH MUT FROM XML 
@@ -374,7 +382,8 @@ def fetch_pdb_info(pdbname,protein):
 
 
     else:
-        print('failed uniprot_map')
+        pass
+        # print('failed uniprot_map')
 
     return d
 
