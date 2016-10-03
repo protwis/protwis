@@ -1308,7 +1308,7 @@ def Ginterface(request, protein = None):
 
     interacting_gn = []
 
-    accessible_pos = residuelist.filter(display_generic_number__label__in=accessible_gn).values_list('sequence_number', flat=True)
+    accessible_pos = list(residuelist.filter(display_generic_number__label__in=accessible_gn).values_list('sequence_number', flat=True))
 
     # Which of the Gs interacting_pos are conserved?
     GS_none_equivalent_interacting_pos = []
@@ -1331,7 +1331,7 @@ def Ginterface(request, protein = None):
                 GS_none_equivalent_interacting_pos.append(pos)
                 GS_none_equivalent_interacting_gn.append(interaction['gpcrdb'])
 
-    GS_equivalent_interacting_pos = residuelist.filter(display_generic_number__label__in=interacting_gn).values_list('sequence_number', flat=True)
+    GS_equivalent_interacting_pos = list(residuelist.filter(display_generic_number__label__in=interacting_gn).values_list('sequence_number', flat=True))
 
     gProteinData = ProteinGProteinPair.objects.filter(protein__entry_name=protein)
 
@@ -1343,5 +1343,6 @@ def Ginterface(request, protein = None):
             primary.append(entry.g_protein.name.replace("Gs","G<sub>s</sub>").replace("Gi","G<sub>i</sub>").replace("Go","G<sub>o</sub>").replace("G11","G<sub>11</sub>").replace("G12","G<sub>12</sub>").replace("G13","G<sub>13</sub>").replace("Gq","G<sub>q</sub>").replace("G","G&alpha;"))
         elif entry.transduction == 'secondary':
             secondary.append(entry.g_protein.name.replace("Gs","G<sub>s</sub>").replace("Gi","G<sub>i</sub>").replace("Go","G<sub>o</sub>").replace("G11","G<sub>11</sub>").replace("G12","G<sub>12</sub>").replace("G13","G<sub>13</sub>").replace("Gq","G<sub>q</sub>").replace("G","G&alpha;"))
+
 
     return render(request, 'interaction/ginterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn, 'primary_Gprotein': '; '.join(set(primary)), 'secondary_Gprotein': '; '.join(set(secondary))} )
