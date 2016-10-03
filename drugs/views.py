@@ -228,7 +228,7 @@ def drugmapping(request):
     for f in families:
         lookup[f.slug] = f.name.replace("receptors","").replace(" receptor","").replace(" hormone","").replace("/neuropeptide","/").replace(" (G protein-coupled)","").replace(" factor","").replace(" (LPA)","").replace(" (S1P)","").replace("GPR18, GPR55 and GPR119","GPR18/55/119").replace("-releasing","").replace(" peptide","").replace(" and oxytocin","/Oxytocin").replace("Adhesion class orphans","Adhesion orphans").replace("muscarinic","musc.").replace("-concentrating","-conc.")
 
-    class_proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('family').order_by('family__slug')
+    class_proteins = Protein.objects.filter(family__slug__startswith="00",source__name='SWISSPROT').prefetch_related('family').order_by('family__slug')
     
     temp = OrderedDict([
                     ('name',''), 
