@@ -100,19 +100,19 @@ class Command(BaseBuild):
             self.run_HomologyModeling(receptor)
     
     def run_HomologyModeling(self, receptor):
-        try:
-            state = 'Inactive'
-            Homology_model = HomologyModeling(receptor, state, [state,"Active"], update=self.update, version=self.version)
-            alignment = Homology_model.run_alignment()
-            Homology_model.build_homology_model(alignment)
-            Homology_model.format_final_model()
-            logger.info('Model built for {} {}'.format(receptor, state))
-        except Exception as msg:
-            print('Failed to build model {}\n{}'.format(receptor,msg))
-            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
-            t = tests.HomologyModelsTests()
-            if 'Number of residues in the alignment and  pdb files are different' in str(msg):
-                t.pdb_alignment_mismatch(Homology_model.alignment,Homology_model.main_pdb_array)
+#        try:
+        state = 'Inactive'
+        Homology_model = HomologyModeling(receptor, state, [state,"Active"], update=self.update, version=self.version)
+        alignment = Homology_model.run_alignment()
+        Homology_model.build_homology_model(alignment)
+        Homology_model.format_final_model()
+        logger.info('Model built for {} {}'.format(receptor, state))
+#        except Exception as msg:
+#            print('Failed to build model {}\n{}'.format(receptor,msg))
+#            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
+#            t = tests.HomologyModelsTests()
+#            if 'Number of residues in the alignment and  pdb files are different' in str(msg):
+#                t.pdb_alignment_mismatch(Homology_model.alignment,Homology_model.main_pdb_array)
 
         
 class HomologyModeling(object):
@@ -264,7 +264,7 @@ class HomologyModeling(object):
                             pref_chain = str(self.main_structure.preferred_chain)
                             if len(pref_chain)>1:
                                 pref_chain = pref_chain[0]
-                            pdb_re = re.search('(HETATM[0-9\sA-Z]{11})([A-Z0-9\s]{3})([\sAB]+)(\d+)([\s0-9.A-Z-]+)',line)
+                            pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sAB]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
                             whitespace2 = len(pdb_re.group(3))*' '
                             if first_hetatm==False:
                                 prev_hetnum = int(pdb_re.group(4))
@@ -1137,7 +1137,7 @@ class HomologyModeling(object):
                         if len(pref_chain)>1:
                             pref_chain = pref_chain[0]
                         try:
-                            pdb_re = re.search('(HETATM[0-9\sA-Z]{{11}})([A-Z0-9\s]{{3}})\s({pref})([0-9\s]{{4}})'.format(pref=pref_chain), line)
+                            pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})\s({pref})([0-9\s]{{4}})'.format(apo="'",pref=pref_chain), line)
                             if pdb_re.group(2)!='HOH':
                                 if hetatm!=pdb_re.group(4):
                                     hetatm_count+=1
@@ -2142,13 +2142,14 @@ class Loops(object):
                     r_x50 = ref_res.get(display_generic_number__label='45.50x50').sequence_number
                 except:
                     pass
+            print(self.loop_label, self.loop_template_structures)
             if (self.loop_label=='ECL2' and 'ECL2_1' not in self.loop_template_structures) or self.loop_label!='ECL2' or superpose_modded_loop==True:
                 for template in self.loop_template_structures:
                     output = OrderedDict()
                     try:
                         if (template==self.main_structure or template=='aligned') and superpose_modded_loop==False:
                             if self.helix_end_mods!=None and (len(self.helix_end_mods['removed'][prev_seg][1])==0 and
-                                len(self.helix_end_mods['removed'][next_seg][0])==0):
+                                                              len(self.helix_end_mods['removed'][next_seg][0])==0):
                                 if template=='aligned':
                                     self.aligned = True
                                 else:
@@ -2158,6 +2159,7 @@ class Loops(object):
                                     if l_res==False:
                                         raise Exception()
                                     loop_res = [r.sequence_number for r in l_res[1]]
+                                    print(loop_res)
                                     at_least_one_gn = False
                                     x50_present = False
                                     for i in ref_loop:
@@ -2507,21 +2509,22 @@ class Loops(object):
                         temp_temp_dict[self.loop_label+'_cont'] = temp_loop_seg
                         temp_aligned_dict[self.loop_label+'_cont'] = aligned_loop_seg
                     else:
-                        print(ref_residues)
-                        print(input_residues)
                         l_res=1
                         missing_indeces = []
-                        if len(template_dict[self.loop_label])!=len(input_residues):
-                            for i in input_residues:
-                                try:
-                                    template_dict[self.loop_label][i.replace('.','x')]
-                                except:
-                                    missing_indeces.append([i,input_residues.index(i)])
-                            if missing_indeces[0][1]==0:
-                                pass
-                                ############## TO BE FIXED
-                            else:
-                                ref_residues.append('-')
+                        try:
+                            if len(template_dict[self.loop_label])!=len(input_residues):
+                                for i in input_residues:
+                                    try:
+                                        template_dict[self.loop_label][i.replace('.','x')]
+                                    except:
+                                        missing_indeces.append([i,input_residues.index(i)])
+                                if missing_indeces[0][1]==0:
+                                    pass
+                                    ############## TO BE FIXED
+                                else:
+                                    ref_residues.append('-')
+                        except:
+                            pass
                         try:
                             ref_loop_seg[self.loop_label+'?'+'1'] = ref_residues[0].amino_acid
                         except:
@@ -2677,10 +2680,13 @@ class Loops(object):
         l_p_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
         parent_res = list(Residue.objects.filter(protein_conformation=l_p_conf,
                                                  protein_segment__slug=loop_label))
-        l_res_gn = [i.generic_number.label for i in l_res if i.generic_number!=None]
-        parent_res_gn = [i.generic_number.label for i in parent_res if i.generic_number!=None]
+        parent_seq_nums = [i.sequence_number for i in parent_res]
+        l_res_gn = [ggn(i.display_generic_number.label) for i in l_res if i.generic_number!=None]
+        parent_res_gn = [ggn(i.display_generic_number.label) for i in parent_res if i.generic_number!=None]
         if l_res_gn!=parent_res_gn:
             return False
+        elif len(l_res)!=len(parent_res) and l_res_gn==parent_res_gn:
+            return True, [i for i in l_res if i.sequence_number in parent_seq_nums]
         else:
             return True, l_res
                 
