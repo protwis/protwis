@@ -156,6 +156,9 @@ class Command(BaseBuild):
         #print(d)
         if 'deletions' in d:
             for del_range in d['deletions']:
+                if del_range['start']==146 and structure.pdb_code.index=='4K5Y':
+                    #Manual fix for faulty 4K5Y annotation
+                    continue
                 for i in range(del_range['start'],del_range['end']+1):
                     deletions.append(i)
             #print("Annotation missing WT residues",d['deletions'])
