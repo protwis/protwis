@@ -228,7 +228,7 @@ def drugmapping(request):
     for f in families:
         lookup[f.slug] = f.name.replace("receptors","").replace(" receptor","").replace(" hormone","").replace("/neuropeptide","/").replace(" (G protein-coupled)","").replace(" factor","").replace(" (LPA)","").replace(" (S1P)","").replace("GPR18, GPR55 and GPR119","GPR18/55/119").replace("-releasing","").replace(" peptide","").replace(" and oxytocin","/Oxytocin").replace("Adhesion class orphans","Adhesion orphans").replace("muscarinic","musc.").replace("-concentrating","-conc.")
 
-    class_proteins = Protein.objects.filter(family__slug__startswith="00",source__name='SWISSPROT').prefetch_related('family').order_by('family__slug')
+    class_proteins = Protein.objects.filter(family__slug__startswith="00",source__name='SWISSPROT', species_id=1).prefetch_related('family').order_by('family__slug')
     
     temp = OrderedDict([
                     ('name',''), 
@@ -256,7 +256,7 @@ def drugmapping(request):
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]] = deepcopy(temp)
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['name'] = lookup[fid[0]+"_"+fid[1]+"_"+fid[2]][:28]
         if fid[3] not in coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children']:
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]] = deepcopy(temp)
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]] = deepcopy(temp)   
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['name'] = p.entry_name.split("_")[0] #[:10]
     
     # # POULATE WITH DATA
