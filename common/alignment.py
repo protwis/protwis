@@ -932,10 +932,10 @@ class AlignedReferenceTemplate(Alignment):
                                                       "4MBS","3ODU","3OE0","4RWS","3PBL","4PHU","3RZE","4Z34","4Z35",
                                                       "4Z36","4BOU","4GRV","4N6H","4EJ4","4DJH","4DKL","5C1M","4EA3",
                                                       "1U19","3DQB","3PQR","4J4Q","4ZWJ","2Z73","4ZJ8","4ZJC","4S0V",
-                                                      "4XNV","4XNW","4NTJ","4PXZ","4PY0","3VW7","3V2Y",
+                                                      "4XNV","4XNW","4NTJ","4PXZ","4PY0","3VW7","3V2Y","1GZM","3NY8",
+                                                      "3NYA","3PDS","4ZUD","4RWD",
                                                       "4XT1","4K5Y","4Z9G","4L6R","5EE7","4OR2","4OO9","5CGC","5CGD",
                                                       "4JKV","4N4W","4O9R","4QIM","4QIN"])
-                   #"4S0V","5GLI","5GLH"
                             #exclude(pdb_code__index__in=[
 #                                                       "2YCX","3KJ6","2R4R","2R4S","3NY8","3NYA","5D5A","3OE6","3OE8",
 #                                                       "3OE9"])
@@ -1043,9 +1043,13 @@ class AlignedReferenceTemplate(Alignment):
             if protein==self.main_template_protein:
                 main_temp_seq = Residue.objects.filter(protein_conformation=struct.protein_conformation, 
                                          protein_segment__slug=self.segment_labels[0])
+                parent = ProteinConformation.objects.get(protein=struct.protein_conformation.protein.parent)
+                main_temp_parent = Residue.objects.filter(protein_conformation=parent, 
+                                         protein_segment__slug=self.segment_labels[0])
                 try:
                     if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
                         main_temp_ECL2 = self.ECL2_slicer(main_temp_seq)
+                        main_parent_ECL2 = self.ECL2_slicer(main_temp_parent)
                         rota = [x for x in Rotamer.objects.filter(structure=struct, residue__in=main_temp_ECL2[1]) if x.pdbdata.pdb.startswith('COMPND')==False]
                         if len(rota)==3:
                             temp_list_mid.append((struct, 3, similarity, float(struct.resolution), protein))  
@@ -1056,6 +1060,14 @@ class AlignedReferenceTemplate(Alignment):
                             temp_list1.append((struct, len(main_temp_ECL2[0]), similarity, float(struct.resolution),protein))
                         elif len(ref_ECL2[0])!=len(main_temp_ECL2[0]) and len(ref_ECL2[2])==len(main_temp_ECL2[2]):
                             temp_list2.append((struct, len(main_temp_ECL2[2]), similarity, float(struct.resolution),protein))
+
+                        if [i.sequence_number for i in main_temp_ECL2[0]]!=[i.sequence_number for i in main_parent_ECL2[0]]:
+                            if len(main_parent_ECL2[0])-len(main_temp_ECL2[0])<4:
+                                temp_list1.append((struct, len(ref_ECL2[0]), 0, float(struct.resolution), protein))
+                        if [i.sequence_number for i in main_temp_ECL2[2]]!=[i.sequence_number for i in main_parent_ECL2[2]]:
+                            if len(main_parent_ECL2[2])-len(main_temp_ECL2[2])<4:
+                                print(struct,"TWO")
+                                temp_list2.append((struct, len(ref_ECL2[2]), 0, float(struct.resolution), protein))
                     else:
                         raise Exception()
                 except:
@@ -1067,9 +1079,8 @@ class AlignedReferenceTemplate(Alignment):
                         temp_list.append((struct, len(main_temp_seq), similarity, float(struct.resolution), protein))
                         
                     # Allow for partial main loop template
-                    elif list(range(main_temp_seq[0].sequence_number,list(main_temp_seq)[-1].sequence_number+1))!=[i.sequence_number for i in main_temp_seq]:
-                        if self.reference_protein==self.main_template_protein:
-                            temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
+                    elif [i.sequence_number for i in main_temp_seq]!=[i.sequence_number for i in main_temp_parent]:
+                        temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
             else:
                 temp_length, temp_length1, temp_length2 = [],[],[]
                 try:
@@ -1180,7 +1191,7 @@ class AlignedReferenceTemplate(Alignment):
             raise AssertionError()
         return[ECL2_1,ECL2_mid,ECL2_2]
                 
-    def enhance_alignment(self, reference, template):
+    def enhance_alignment(self, reference, template, keep_all=False):
         ''' Creates an alignment between reference and main_template where matching residues are depicted with the 
             one-letter residue code, mismatches with '.', gaps with '-', gaps due to shorter sequences with 'x'.
         '''
@@ -1243,29 +1254,30 @@ class AlignedReferenceTemplate(Alignment):
                 self.template_dict[ref_seglab] = temp_segment_dict
                 self.alignment_dict[ref_seglab] = align_segment_dict
 
-        for r_seglab, t_seglab, a_seglab in zip(self.reference_dict,self.template_dict,self.alignment_dict):
-            if r_seglab in ['ICL1','ECL1','ICL2']:
-                if len(list(self.reference_dict[r_seglab].keys()))==0:
-                    well_aligned = False
-                else:
-                    well_aligned = True
-                    if (self.code_dict[r_seglab] not in self.reference_dict[r_seglab] 
-                        or self.code_dict[r_seglab] not in self.template_dict[t_seglab]):
+        if keep_all==False:
+            for r_seglab, t_seglab, a_seglab in zip(self.reference_dict,self.template_dict,self.alignment_dict):
+                if r_seglab in ['ICL1','ECL1','ICL2']:
+                    if len(list(self.reference_dict[r_seglab].keys()))==0:
                         well_aligned = False
-                    x50_present = False
-                    for i in self.reference_dict[r_seglab]:
-                        if 'x50' in i and self.reference_dict[r_seglab][i]!='-':
-                            x50_present = True
-                            break
-                    if x50_present==False:
-                        well_aligned = False
-                    if well_aligned==False:
-                        del self.reference_dict[r_seglab]
-                        del self.template_dict[t_seglab]
-                        del self.alignment_dict[a_seglab]
-            elif r_seglab=='ECL2':
-                del self.reference_dict[r_seglab]
-                del self.template_dict[t_seglab]
-                del self.alignment_dict[a_seglab]
+                    else:
+                        well_aligned = True
+                        if (self.code_dict[r_seglab] not in self.reference_dict[r_seglab] 
+                            or self.code_dict[r_seglab] not in self.template_dict[t_seglab]):
+                            well_aligned = False
+                        x50_present = False
+                        for i in self.reference_dict[r_seglab]:
+                            if 'x50' in i and self.reference_dict[r_seglab][i]!='-':
+                                x50_present = True
+                                break
+                        if x50_present==False:
+                            well_aligned = False
+                        if well_aligned==False:
+                            del self.reference_dict[r_seglab]
+                            del self.template_dict[t_seglab]
+                            del self.alignment_dict[a_seglab]
+                elif r_seglab=='ECL2':
+                    del self.reference_dict[r_seglab]
+                    del self.template_dict[t_seglab]
+                    del self.alignment_dict[a_seglab]
 
         return self
