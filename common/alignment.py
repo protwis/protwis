@@ -936,15 +936,7 @@ class AlignedReferenceTemplate(Alignment):
                                                       "3NYA","3PDS","4ZUD","4RWD",
                                                       "4XT1","4K5Y","4Z9G","4L6R","5EE7","4OR2","4OO9","5CGC","5CGD",
                                                       "4JKV","4N4W","4O9R","4QIM","4QIN"])
-                            #exclude(pdb_code__index__in=[
-#                                                       "2YCX","3KJ6","2R4R","2R4S","3NY8","3NYA","5D5A","3OE6","3OE8",
-#                                                       "3OE9"])
-                                            # temp exclusion
-#                                                       "3ODU","3OE0"])
-#                                                       "2RH1","4LDE","3NY9","3D4S","3PDS"])
-#                                                       "4EIY","2YDV","4UG2"])#,"4UHR","3EML","3VG9","3QAK","2YDO","3VGA",
-#                                                       "3PWH","3REY","3UZC"])#.distinct('protein_conformation__protein__parent')
-        
+       
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
   
@@ -1031,12 +1023,6 @@ class AlignedReferenceTemplate(Alignment):
                 ref_ECL2 = self.ECL2_slicer(ref_seq)
             except:
                 ref_ECL2 = None
-                
-#################### temp force adding prev excluded structs to loop selection
-#        import structure.homology_models_tests as tests
-#        t = tests.HomologyModelsTests()
-#        self.provide_similarity_table = t.force_add_template_to_table(self.provide_similarity_table, self.main_template_structure, ['4EIY'])
-################################################
                 
         for struct, similarity in self.provide_similarity_table.items():
             protein = struct.protein_conformation.protein.parent
