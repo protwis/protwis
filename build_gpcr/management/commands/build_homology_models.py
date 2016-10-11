@@ -531,14 +531,14 @@ class HomologyModeling(object):
                     a.reference_dict[label] = al.reference_dict[label]
                     a.template_dict[label] = al.template_dict[label]
                     a.alignment_dict[label] = al.alignment_dict[label]
-                
+                    
                 if label=='ECL2' and (loop.partialECL2_1==True or loop.partialECL2_2==True):
                     al = AlignedReferenceTemplate()
                     al.enhance_alignment(a.ordered_proteins[0],a.ordered_proteins[1],keep_all=True)
                     a.reference_dict[label] = al.reference_dict[label]
                     a.template_dict[label] = al.template_dict[label]
                     a.alignment_dict[label] = al.alignment_dict[label]
-                    
+                
                 if type(loop.loop_output_structure)!=type([]):
                     loop_insertion = loop.insert_loop_to_arrays(loop.loop_output_structure, main_pdb_array, loop_template, 
                                                                 a.reference_dict, a.template_dict, a.alignment_dict)
@@ -1646,7 +1646,6 @@ class HomologyMODELLER(automodel):
         for seg_id, segment in self.atom_dict.items():
             for gn, atom in segment.items():
                 chain = self.identify_chain(atom)
-                print(gn, atom, chain)
                 selection_out.append(self.residues[str(atom)+':{}'.format(chain)])
         return selection(selection_out)
     
@@ -2184,7 +2183,6 @@ class Loops(object):
                                         for id_, atoms in inter_array.items():
                                             output[str(id_)] = atoms
                                     else:
-                                        pprint.pprint(inter_array)
                                         p_c = ProteinConformation.objects.get(protein=self.main_structure.protein_conformation.protein.parent)
                                         p_loop_res = Residue.objects.filter(protein_conformation=p_c, 
                                                                              protein_segment__slug=self.loop_label)
@@ -2614,11 +2612,11 @@ class Loops(object):
     def insert_ECL2_to_arrays(self, loop_output_structure, main_pdb_array, loop_template, reference_dict, 
                               template_dict, alignment_dict, partialECL2_1=False, partialECL2_2=False):
         temp_array = OrderedDict()
-        if partialECL2_1==True or partialECL2_2==True:
-            parent = ProteinConformation.objects.get(protein=loop_output_structure[1].protein_conformation.protein.parent)
-            seq = list(Residue.objects.filter(protein_conformation=parent, protein_segment__slug='ECL2'))
-            x50 = [i for i in seq if i.generic_number!=None and i.generic_number.label=='45x50'][0]
-            x50_i = seq.index(x50)
+#        if partialECL2_1==True or partialECL2_2==True:
+        parent = ProteinConformation.objects.get(protein=loop_output_structure[1].protein_conformation.protein.parent)
+        seq = list(Residue.objects.filter(protein_conformation=parent, protein_segment__slug='ECL2'))
+        x50 = [i for i in seq if i.generic_number!=None and i.generic_number.label=='45x50'][0]
+        x50_i = seq.index(x50)
         # first part
         if loop_output_structure[0]!=None:
             if loop_output_structure[0]==self.main_structure:
@@ -2735,7 +2733,7 @@ class Loops(object):
             if self.segment_order.index(self.loop_label)-self.segment_order.index(seg_label[:4])==1:
                 temp_array[seg_label] = gns
                 l_res = 0
-                if x50_i!=None:
+                if self.partialECL2_1==True:
                     for key in list(template_dict['ECL2'])[:x50_i]:
                         l_res+=1
                         if key in loop_template:
