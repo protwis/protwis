@@ -1047,10 +1047,11 @@ class AlignedReferenceTemplate(Alignment):
                         elif len(ref_ECL2[0])!=len(main_temp_ECL2[0]) and len(ref_ECL2[2])==len(main_temp_ECL2[2]):
                             temp_list2.append((struct, len(main_temp_ECL2[2]), similarity, float(struct.resolution),protein))
 
-                        if [i.sequence_number for i in main_temp_ECL2[0]]!=[i.sequence_number for i in main_parent_ECL2[0]]:
+                        # Allow for partial main loop template
+                        if len(ref_ECL2[0])>=len(main_parent_ECL2[0]) and [i.sequence_number for i in main_temp_ECL2[0]]!=[i.sequence_number for i in main_parent_ECL2[0]]:
                             if len(main_parent_ECL2[0])-len(main_temp_ECL2[0])<4:
                                 temp_list1.append((struct, len(ref_ECL2[0]), 0, float(struct.resolution), protein))
-                        if [i.sequence_number for i in main_temp_ECL2[2]]!=[i.sequence_number for i in main_parent_ECL2[2]]:
+                        if len(ref_ECL2[2])>=len(main_parent_ECL2[2]) and [i.sequence_number for i in main_temp_ECL2[2]]!=[i.sequence_number for i in main_parent_ECL2[2]]:
                             if len(main_parent_ECL2[2])-len(main_temp_ECL2[2])<4:
                                 temp_list2.append((struct, len(ref_ECL2[2]), 0, float(struct.resolution), protein))
                     else:
@@ -1064,7 +1065,7 @@ class AlignedReferenceTemplate(Alignment):
                         temp_list.append((struct, len(main_temp_seq), similarity, float(struct.resolution), protein))
                         
                     # Allow for partial main loop template
-                    elif [i.sequence_number for i in main_temp_seq]!=[i.sequence_number for i in main_temp_parent]:
+                    elif len(ref_seq)>=len(main_temp_parent) and [i.sequence_number for i in main_temp_seq]!=[i.sequence_number for i in main_temp_parent]:
                         temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
             else:
                 temp_length, temp_length1, temp_length2 = [],[],[]
@@ -1116,6 +1117,7 @@ class AlignedReferenceTemplate(Alignment):
                 if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
                     temp_list1.append((struct, temp_length1, similarity, float(struct.resolution), protein))
                     temp_list2.append((struct, temp_length2, similarity, float(struct.resolution), protein))
+        
         if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
             ECL2_1 = self.order_sim_table(temp_list1, ref_ECL2[0], OrderedDict())
             ECL2_mid = self.order_sim_table(temp_list_mid, ref_ECL2[1], OrderedDict(), x50_ref)
