@@ -2,18 +2,18 @@
 from django.conf import settings
 from django.views.generic import TemplateView
 
-from common.views import AbsTargetSelection, AbsTargetSelectionGproteins
-from common.views import AbsSegmentSelection, AbsSegmentSelectionGproteins
+from common.views import AbsTargetSelection
+from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
 from structure.functions import BlastSearch
-from protein.models import Protein
+
 # from common.alignment_SITE_NAME import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
-from protein.models import Protein, ProteinSegment
+from protein.models import Protein, ProteinSegment,ProteinFamily, ProteinSet
+from residue.models import ResiduePositionSet
 
 import inspect, os
 from collections import OrderedDict
-
 
 class TargetSelection(AbsTargetSelection):
     step = 1
@@ -32,11 +32,13 @@ class TargetSelection(AbsTargetSelection):
         },
     }
 
-class TargetSelectionGprotein(AbsTargetSelectionGproteins):
+class TargetSelectionGprotein(AbsTargetSelection):
     step = 1
     number_of_steps = 2
     psets = False
+    filters = False
     docs = 'sequences.html#structure-based-alignments'
+
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -49,6 +51,16 @@ class TargetSelectionGprotein(AbsTargetSelectionGproteins):
             'color': 'success',
         },
     }
+    try:
+        ppf = ProteinFamily.objects.get(slug="100_000")
+        pfs = ProteinFamily.objects.filter(parent=ppf.id)
+        ps = Protein.objects.filter(family=ppf)
+        tree_indent_level = []
+        action = 'expand'
+        # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+        del ppf
+    except Exception as e:
+        pass
 
 class SegmentSelection(AbsSegmentSelection):
     step = 2
@@ -67,11 +79,13 @@ class SegmentSelection(AbsSegmentSelection):
         },
     }
 
-class SegmentSelectionGprotein(AbsSegmentSelectionGproteins):
+class SegmentSelectionGprotein(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
-    psets = False
     docs = 'sequences.html#structure-based-alignments'
+    
+    template_name = 'common/segmentselection.html'
+
     selection_boxes = OrderedDict([
         ('reference', False),
         ('targets', True),
@@ -84,6 +98,12 @@ class SegmentSelectionGprotein(AbsSegmentSelectionGproteins):
             'color': 'success',
         },
     }
+
+    position_type = 'gprotein'
+    rsets = ResiduePositionSet.objects.filter(name="gprotein").prefetch_related('residue_position')
+
+    ss = ProteinSegment.objects.filter(name__regex = r'^[a-zA-Z0-9]{1,5}$', partial=False).prefetch_related('generic_numbers')
+    ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
 
 class BlastSearchInput(AbsMiscSelection):

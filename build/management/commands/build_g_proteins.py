@@ -386,7 +386,7 @@ class Command(BaseCommand):
         if accession:
             p.accession = accession
         p.entry_name = uniprot['entry_name'].lower()
-        p.name = uniprot['names'][0]
+        p.name = uniprot['names'][0].split('Guanine nucleotide-binding protein ')[1]
         p.sequence = uniprot['sequence']
 
         try:

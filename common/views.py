@@ -2,6 +2,7 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.conf import settings
+from django.db.models import Case, When
 
 from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
@@ -120,106 +121,6 @@ class AbsTargetSelection(TemplateView):
                 context[a[0]] = a[1]
         return context
 
-class AbsTargetSelectionGproteins(TemplateView):
-    """An abstract class for the target selection page used in many apps. To use it in another app, create a class 
-    based view for that app that extends this class"""
-    template_name = 'common/targetselection.html'
-
-    type_of_selection = 'targets'
-    step = 1
-    number_of_steps = 2
-    title = 'SELECT TARGETS'
-    description = 'Select targets by searching or browsing in the middle column. You can select entire target' \
-        + ' families or individual targets.\n\nYou can also enter the list of UNIPROT names of the targets (one per line) and click "Add targets" button to add those.\n\nSelected targets will appear in the right column, where you can edit' \
-        + ' the list.\n\nOnce you have selected all your targets, click the green button.'
-    documentation_url = settings.DOCUMENTATION_URL
-    docs = False
-    filters = False
-    target_input = True
-    default_species = 'Human'
-    default_slug = '100_000'
-    numbering_schemes = False
-    search = True
-    family_tree = True
-    redirect_on_select = False
-    buttons = {
-        'continue': {
-            'label': 'Continue to next step',
-            'url': '#',
-            'color': 'success',
-        },
-    }
-    # OrderedDict to preserve the order of the boxes
-    selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', False),
-    ])
-
-    # proteins and families
-    #try - except block prevents manage.py from crashing - circular dependencies between protein - common 
-    try:
-        ppf = ProteinFamily.objects.get(slug=default_slug)
-        pfs = ProteinFamily.objects.filter(parent=ppf.id)
-        ps = Protein.objects.filter(family=ppf)
-        psets = ProteinSet.objects.all().prefetch_related('proteins')
-        tree_indent_level = []
-        action = 'expand'
-        # remove the parent family (for all other families than the root of the tree, the parent should be shown)
-        del ppf
-    except Exception as e:
-        pass
-
-    # species
-    sps = Species.objects.all()
-
-    # numbering schemes
-    gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME)
-
-    def get_context_data(self, **kwargs):
-        """get context from parent class (really only relevant for children of this class, as TemplateView does
-        not have any context variables)"""
-        context = super().get_context_data(**kwargs)
-
-        # get selection from session and add to context
-        # get simple selection from session
-        simple_selection = self.request.session.get('selection', False)
-        
-        # create full selection and import simple selection (if it exists)
-        selection = Selection()
-
-        # on the first page of a workflow, clear the selection (or dont' import from the session)
-        if self.step is not 1:
-            if simple_selection:
-                selection.importer(simple_selection)
-
-        # default species selection
-        if self.default_species:
-            sp = Species.objects.get(common_name=self.default_species)
-            o = SelectionItem('species', sp)
-            selection.species = [o]
-
-        # update session
-        simple_selection = selection.exporter()
-        self.request.session['selection'] = simple_selection
-
-        context['selection'] = {}
-        for selection_box, include in self.selection_boxes.items():
-            if include:
-                context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
-
-        if self.filters:
-            context['selection']['species'] = selection.species
-
-        # get attributes of this class and add them to the context
-        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
-        for a in attributes:
-            if not(a[0].startswith('__') and a[0].endswith('__')):
-                context[a[0]] = a[1]
-        for i in context:
-            print(i, context[i])
-        return context
-
 class AbsReferenceSelection(AbsTargetSelection):
     type_of_selection = 'reference'
     step = 1
@@ -313,82 +214,6 @@ class AbsSegmentSelection(TemplateView):
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
-        return context
-
-class AbsSegmentSelectionGproteins(TemplateView):
-    """An abstract class for the segment selection page used in many apps. To use it in another app, create a class 
-    based view for that app that extends this class"""
-    template_name = 'common/segmentselection.html'
-
-    step = 2
-    number_of_steps = 2
-    title = 'SELECT SEQUENCE SEGMENTS'
-    description = 'Select sequence segments in the middle column. You can expand helices and select individual' \
-        + ' residues by clicking on the down arrows next to each helix.\n\nSelected segments will appear in the' \
-        + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
-        + ' button.'
-    documentation_url = settings.DOCUMENTATION_URL
-    docs = False
-    segment_list = True
-    structure_upload = False
-    upload_form = PDBform()
-    position_type = 'residue'
-    buttons = {
-        'continue': {
-            'label': 'Show alignment',
-            'url': '/alignment/render',
-            'color': 'success',
-        },
-    }
-    # OrderedDict to preserve the order of the boxes
-    selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', True),
-    ])
-
-    try:
-        rsets = ResiduePositionSet.objects.all().prefetch_related('residue_position')
-    except Exception as e:
-        pass
-    # print(ResidueGenericNumber.objects.filter(scheme_id__slug="cgn"))
-    # print(ProteinSegment.objects.filter(residue_generic_number__label="G.h1ha.09"))
-
-    ss = ProteinSegment.objects.filter(name__regex = r'^[a-zA-Z0-9]{1,5}$', partial=False).prefetch_related('generic_numbers')
-    ss_cats = ss.values_list('category').order_by('category').distinct('category')
-    action = 'expand'
-
-    amino_acid_groups = definitions.AMINO_ACID_GROUPS
-    amino_acid_group_names = definitions.AMINO_ACID_GROUP_NAMES
-
-    def get_context_data(self, **kwargs):
-        """get context from parent class (really only relevant for child classes of this class, as TemplateView does
-        not have any context variables)"""
-        context = super().get_context_data(**kwargs)
-
-        # get selection from session and add to context
-        # get simple selection from session
-        simple_selection = self.request.session.get('selection', False)
-
-        # create full selection and import simple selection (if it exists)
-        selection = Selection()
-        if simple_selection:
-            selection.importer(simple_selection)
-
-        # context['selection'] = selection
-        context['selection'] = {}
-        context['selection']['site_residue_groups'] = selection.site_residue_groups
-        context['selection']['active_site_residue_group'] = selection.active_site_residue_group
-        for selection_box, include in self.selection_boxes.items():
-            if include:
-                context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
-
-        # get attributes of this class and add them to the context
-        attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
-        for a in attributes:
-            if not(a[0].startswith('__') and a[0].endswith('__')):
-                context[a[0]] = a[1]
-
         return context
 
 class AbsMiscSelection(TemplateView):
@@ -602,7 +427,6 @@ def SelectRange(request):
             if range_start < float(resn.label.replace('x','.')) < range_end:
                 o.append(resn)
 
-
 def SelectFullSequence(request):
     """Adds all segments to the selection"""
     selection_type = request.GET['selection_type']
@@ -616,7 +440,17 @@ def SelectFullSequence(request):
         selection.importer(simple_selection)
 
     # get all segments
-    segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False)
+    if "protein_type" in request.GET:
+        gsegments = definitions.G_PROTEIN_SEGMENTS
+
+        preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(gsegments['Full'])])
+        segments = ProteinSegment.objects.filter(slug__in = gsegments['Full'], partial=False).order_by(preserved)
+
+
+    else:
+        segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False)
+
+
     for segment in segments:
         selection_object = SelectionItem(segment.category, segment)
         # add the selected item to the selection
@@ -659,7 +493,15 @@ def SelectAlignableSegments(request):
         selection.importer(simple_selection)
 
     # get all segments
-    segments = ProteinSegment.objects.filter(partial=False, slug__startswith='TM')
+        # get all segments
+    if "protein_type" in request.GET:
+        gsegments = definitions.G_PROTEIN_SEGMENTS
+
+        preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(gsegments['Structured'])])
+        segments = ProteinSegment.objects.filter(slug__in = gsegments['Structured'], partial=False).order_by(preserved)
+    else:
+        segments = ProteinSegment.objects.filter(partial=False, slug__startswith='TM')
+
     for segment in segments:
         selection_object = SelectionItem(segment.category, segment)
         # add the selected item to the selection
@@ -965,7 +807,10 @@ def ExpandSegment(request):
     simple_selection = request.session.get('selection', False)
 
     # find the relevant numbering scheme (based on target selection)
-    if numbering_scheme_slug == 'false':
+    cgn = False
+    if numbering_scheme_slug == 'cgn':
+        cgn = True
+    elif numbering_scheme_slug == 'false':
         if simple_selection.reference:
             first_item = simple_selection.reference[0]
         else:
@@ -977,16 +822,28 @@ def ExpandSegment(request):
             numbering_scheme = first_item.item.residue_numbering_scheme
     else:
         numbering_scheme = ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)
-    
-    # fetch the generic numbers
-    context = {}
-    context['generic_numbers'] = ResidueGenericNumberEquivalent.objects.filter(
-        default_generic_number__protein_segment__id=segment_id,
-        scheme=numbering_scheme).order_by('label')
-    context['position_type'] = position_type
-    context['scheme'] = numbering_scheme
-    context['schemes'] = ResidueNumberingScheme.objects.filter(parent__isnull=False)
-    context['segment_id'] = segment_id
+
+    if cgn ==True:
+        # fetch the generic numbers for CGN differently
+        context = {}
+        context['generic_numbers'] = ResidueGenericNumber.objects.filter(
+            protein_segment__id=segment_id,
+            scheme=12).order_by('label')
+        context['position_type'] = position_type
+        context['scheme'] = ResidueNumberingScheme.objects.filter(slug='cgn')
+        context['schemes'] = ResidueNumberingScheme.objects.filter(slug='cgn')
+        context['segment_id'] = segment_id
+    else:
+        # fetch the generic numbers
+        context = {}
+        context['generic_numbers'] = ResidueGenericNumberEquivalent.objects.filter(
+            default_generic_number__protein_segment__id=segment_id,
+            scheme=numbering_scheme).order_by('label')
+        context['position_type'] = position_type
+        context['scheme'] = numbering_scheme
+        context['schemes'] = ResidueNumberingScheme.objects.filter(parent__isnull=False)
+        context['segment_id'] = segment_id
+        print(context['scheme'], context['schemes'])
     
     return render(request, 'common/segment_generic_numbers.html', context)
 
