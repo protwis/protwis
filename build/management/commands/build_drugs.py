@@ -53,7 +53,7 @@ class Command(BaseCommand):
 
             filepath = os.sep.join([self.drugdata_data_dir, filename])
 
-            data = pd.read_csv(filepath, header=0)
+            data = pd.read_csv(filepath, header=0, encoding = "ISO-8859-1")
 
             for index, row in enumerate(data.iterrows()):
                 drugname = data[index:index+1]['Drug Name'].values[0]

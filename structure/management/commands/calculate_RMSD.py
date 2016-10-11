@@ -88,7 +88,10 @@ class Validation():
                 else:
                     chain = p[usable_chains[0]].get_id()
             except:
-                chain = p[' '].get_id()
+                try:
+                    chain = p[' '].get_id()
+                except:
+                    chain = p['A'].get_id()
             pdb_array1, pdb_array2 = OrderedDict(), OrderedDict()
             for residue in p[chain]:
                 if residue.get_full_id()[3][0]!=' ':

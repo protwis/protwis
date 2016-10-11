@@ -136,6 +136,8 @@ var node = svg_g.selectAll(".node")
     url = "/services/drugs/"+d.name+"_human"
     var json_obj = JSON.parse(Get(url))
 
+    var tableCap = document.getElementById("caption");
+    tableCap.innerHTML = "<h5>Drug details for: <a href='/protein/"+d.name+"_human'>"+d.name.toUpperCase()+"</h5>" ;
     t.clear();
 
     for (object in json_obj){
