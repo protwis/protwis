@@ -4,6 +4,8 @@ from django.views.generic import TemplateView, View
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.db.models import Count, Q, Prefetch
 from django import forms
+from django.core.cache import cache
+from django.views.decorators.cache import cache_page
 
 from protein.models import Gene, ProteinSegment
 from structure.models import Structure
@@ -89,8 +91,8 @@ def StructureDetails(request, pdbname):
     residues = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
     return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list, 'main_ligand': main_ligand})
 
-def ServePdbDiagram(request, pdbname):       
-    structure=Structure.objects.filter(pdb_code__index=pdbname) 
+def ServePdbDiagram(request, pdbname):
+    structure=Structure.objects.filter(pdb_code__index=pdbname)
     if structure.exists():
         structure=structure.get()
     else:
@@ -102,8 +104,8 @@ def ServePdbDiagram(request, pdbname):
     response = HttpResponse(structure.pdb_data.pdb, content_type='text/plain')
     return response
 
-    
-def ServePdbLigandDiagram(request,pdbname,ligand):      
+
+def ServePdbLigandDiagram(request,pdbname,ligand):
     pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(Q(ligand__properities__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
     response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
     return response
@@ -142,7 +144,7 @@ class StructureStatistics(TemplateView):
                 classes.append(cname)
 
         # classes = [x.protein_conformation.protein.get_protein_class() for x in unique_structs]
-        
+
         tmp = OrderedDict()
         for x in sorted(list(set(classes))):
             tmp[x] = classes.count(x)
@@ -186,7 +188,7 @@ class StructureStatistics(TemplateView):
                         count += 1
                 data[family].append(count)
         for family in families:
-            series.append({"values": 
+            series.append({"values":
                 [{
                     'x': years[i],
                     'y': j
@@ -217,7 +219,7 @@ class StructureStatistics(TemplateView):
                 else:
                     data[family].append(count)
         for family in families:
-            series.append({"values": 
+            series.append({"values":
                 [{
                     'x': years[i],
                     'y': j
@@ -247,14 +249,14 @@ class StructureStatistics(TemplateView):
             else:
                 reso_count.append(len([x for x in structures if bracket-step < x.resolution <= bracket]))
                 bracket_labels.append('{:.1f}-{:.1f}'.format(brackets[idx-1],bracket))
-        
+
         return json.dumps([{"values": [{
                     'x': bracket_labels[i],
                     'y': j
                     } for i, j in enumerate(reso_count)],
                 "key": 'Resolution coverage',
                 "yAxis": "1"}])
-         
+
     def get_diagram_coverage(self):
         """
         Prepare data for coverage diagram.
@@ -270,18 +272,18 @@ class StructureStatistics(TemplateView):
         coverage = OrderedDict()
 
         temp = OrderedDict([
-                            ('name',''), 
+                            ('name',''),
                             ('interactions', 0),
-                            ('receptor_i', 0) , 
+                            ('receptor_i', 0) ,
                             ('mutations' , 0),
-                            ('receptor_m', 0), 
+                            ('receptor_m', 0),
                             ('mutations_an' , 0),
-                            ('receptor_m_an', 0), 
-                            ('receptor_t',0), 
-                            ('children', OrderedDict()) , 
-                            ('fraction_i',0), 
-                            ('fraction_m',0), 
-                            ('fraction_m_an',0)  
+                            ('receptor_m_an', 0),
+                            ('receptor_t',0),
+                            ('children', OrderedDict()) ,
+                            ('fraction_i',0),
+                            ('fraction_m',0),
+                            ('fraction_m_an',0)
                             ])
 
         for p in class_proteins:
@@ -387,7 +389,7 @@ class StructureStatistics(TemplateView):
 
         return json.dumps(tree)
 
-            
+
 
 
 
@@ -396,7 +398,7 @@ class GenericNumberingIndex(TemplateView):
     Starting page of generic numbering assignment workflow.
     """
     template_name = 'common_structural_tools.html'
-    
+
     #Left panel
     step = 1
     number_of_steps = 2
@@ -407,7 +409,7 @@ class GenericNumberingIndex(TemplateView):
     Upload a pdb file to be annotated with generic numbers from GPCRdb.
 
     The numbers can be visualized in molecular viewers such as PyMOL, with scripts available with the output files.
-    
+
     Once you have selected all your targets, click the green button.
     """
 
@@ -514,7 +516,7 @@ class GenericNumberingSelection(AbsSegmentSelection):
 
 
     def get_context_data(self, **kwargs):
-        
+
         context = super(GenericNumberingSelection, self).get_context_data(**kwargs)
 
         simple_selection = self.request.session.get('selection', False)
@@ -576,7 +578,7 @@ class GenericNumberingDownload(View):
 #========================Superposition of structures===========================
 #Class for starting page of superposition workflow
 class SuperpositionWorkflowIndex(TemplateView):
-    
+
     template_name = "common_structural_tools.html"
 
     #Left panel
@@ -694,7 +696,7 @@ class SuperpositionWorkflowSelection(AbsSegmentSelection):
             request.session['ref_file'] = request.FILES['ref_file']
         if 'alt_files' in request.FILES:
             request.session['alt_files'] = request.FILES.getlist('alt_files')
-        
+
         context = super(SuperpositionWorkflowSelection, self).get_context_data(**kwargs)
         context['selection'] = {}
         for selection_box, include in self.selection_boxes.items():
@@ -762,7 +764,7 @@ class SuperpositionWorkflowResults(TemplateView):
     def get_context_data (self, **kwargs):
 
         context = super(SuperpositionWorkflowResults, self).get_context_data(**kwargs)
-        
+
         simple_selection = self.request.session.get('selection', False)
         selection = Selection()
         if simple_selection:
@@ -784,7 +786,7 @@ class SuperpositionWorkflowResults(TemplateView):
         if len(out_structs) == 0:
             self.success = False
         elif len(out_structs) >= 1:
-            io = PDBIO()            
+            io = PDBIO()
             self.request.session['alt_structs'] = {}
             for alt_struct, alt_file_name in zip(out_structs, alt_file_names):
                 tmp = StringIO()
@@ -793,7 +795,7 @@ class SuperpositionWorkflowResults(TemplateView):
                 self.request.session['alt_structs'][alt_file_name] = tmp
 
             self.success = True
-        
+
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
@@ -811,7 +813,7 @@ class SuperpositionWorkflowDownload(View):
         if self.kwargs['substructure'] == 'select':
             return HttpResponseRedirect('/structure/superposition_workflow_selection')
 
-        io = PDBIO()            
+        io = PDBIO()
         out_stream = BytesIO()
         zipf = zipfile.ZipFile(out_stream, 'w')
         simple_selection = self.request.session.get('selection', False)
@@ -905,13 +907,13 @@ class FragmentSuperpositionIndex(TemplateView):
 
     documentation_url = settings.DOCUMENTATION_URL
     docs = 'sites.html#pharmacophore-generation'
-    
+
     title = "SUPERPOSE FRAGMENTS OF CRYSTAL STRUCTURES"
     description = """
     The tool implements a fragment-based pharmacophore method, as published in <a href='http://www.ncbi.nlm.nih.gov/pubmed/25286328'>Fidom K, et al (2015)</a>. Interacting ligand moiety - residue pairs extracted from selected crystal structures of GPCRs are superposed onto the input pdb file based on gpcrdb generic residue numbers. Resulting aligned ligand fragments can be used for placement of pharmacophore features.
 
     Upload a pdb file you want to superpose the interacting moiety - residue pairs.
-    
+
     Once you have selected all your targets, click the green button.
         """
 
@@ -970,7 +972,7 @@ class FragmentSuperpositionResults(TemplateView):
     #Buttons - none
 
     def post (self, request, *args, **kwargs):
-        
+
         frag_sp = FragmentSuperpose(StringIO(request.FILES['pdb_file'].file.read().decode('UTF-8', 'ignore')),request.FILES['pdb_file'].name)
         superposed_fragments = []
         superposed_fragments_repr = []
@@ -1021,14 +1023,14 @@ class FragmentSuperpositionResults(TemplateView):
                 context[a[0]] = a[1]
 
         return render(request, self.template_name, context)
-       
+
 
 #==============================================================================
 class TemplateTargetSelection(AbsReferenceSelection):
     """
-    Starting point for template selection workflow. Target selection. 
+    Starting point for template selection workflow. Target selection.
     """
-    
+
     type_of_selection = 'reference'
     # Left panel
     description = 'Select a reference target by searching or browsing in the middle column.' \
@@ -1088,7 +1090,7 @@ class TemplateSegmentSelection(AbsSegmentSelection):
     # OrderedDict to preserve the order of the boxes
     selection_boxes = OrderedDict([('reference', True),
         ('targets', False),
-        ('segments', True),])    
+        ('segments', True),])
 
 
 
@@ -1106,15 +1108,15 @@ class TemplateBrowser(TemplateView):
 
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)
-        
+
         # make an alignment
         a = Alignment()
         a.ignore_alternative_residue_numbering_schemes = True
 
         # load the selected reference into the alignment
         a.load_reference_protein_from_selection(simple_selection)
-        
-        # fetch 
+
+        # fetch
         qs = Structure.objects.all().select_related(
             "pdb_code__web_resource",
             "protein_conformation__protein__species",
@@ -1130,15 +1132,15 @@ class TemplateBrowser(TemplateView):
         qsd = {}
         for st in qs:
             qsd[st.protein_conformation.protein.id] = st
-        
+
         # add proteins to the alignment
         a.load_proteins([x.protein_conformation.protein for x in qs])
-        
+
         if simple_selection.segments != []:
             a.load_segments_from_selection(simple_selection)
         else:
             a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1', 'TM2', 'TM3', 'TM4','TM5','TM6', 'TM7']))
-        
+
         a.build_alignment()
         a.calculate_similarity()
 
@@ -1166,7 +1168,7 @@ class PDBClean(TemplateView):
         pref = True
         water = False
         hets = False
-        
+
         if 'pref_chain' not in request.POST.keys():
             pref = False
         if 'water' in request.POST.keys():
@@ -1209,7 +1211,7 @@ class PDBClean(TemplateView):
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
         return render(request, self.template_name, context)
-        
+
 
     def get_context_data (self, **kwargs):
 
@@ -1285,7 +1287,7 @@ class PDBDownload(View):
     """
     Serve the PDB (sub)structures depending on user's choice.
     """
-    
+
     def get(self, request, *args, **kwargs):
 
         if self.kwargs['substructure'] == 'select':
@@ -1344,7 +1346,7 @@ def ConvertStructuresToProteins(request):
 
 
 def ServePdbOutfile (request, outfile, replacement_tag):
-    
+
     root, ext = os.path.splitext(outfile)
     out_stream = request.session['outfile'][outfile]
     response = HttpResponse(content_type="chemical/x-pdb")
@@ -1355,7 +1357,7 @@ def ServePdbOutfile (request, outfile, replacement_tag):
 
 
 def ServeZipOutfile (request, outfile):
-    
+
     out_stream = request.session['outfile'][outfile]
     response = HttpResponse(content_type="application/zip")
     response['Content-Disposition'] = 'attachment; filename="{}"'.format(outfile)
@@ -1374,7 +1376,7 @@ def webform(request):
     form = construct_form()
     context = {'form':form}
     return render(request, 'web_form.html',context)
-   
+
 def webform_two(request, slug=None):
     context = {}
     if slug:
@@ -1388,7 +1390,7 @@ def webform_two(request, slug=None):
         else:
             if 'csrfmiddlewaretoken' in json_data['raw_data']:
                 del json_data['raw_data']['csrfmiddlewaretoken'] #remove to prevent errors
-                
+
         context = {'edit':json.dumps(json_data)}
     return render(request, 'web_form_2.html',context)
 
@@ -1397,7 +1399,7 @@ def webformdata(request) :
     data = request.POST
     raw_data = deepcopy(data)
     purge_keys = ('Please Select','aamod_position','wt_aa','mut_aa','insert_pos_type','protein_type','deletion','csrfmiddlewaretoken')
-    data = dict((k, v) for k, v in data.items() if v!='' and v!='Please Select') #remove empty 
+    data = dict((k, v) for k, v in data.items() if v!='' and v!='Please Select') #remove empty
     deletions = []
     mutations = []
     contact_info= OrderedDict()
@@ -1443,7 +1445,7 @@ def webformdata(request) :
                 data.pop('wt_aa'+pos_id, None)
                 data.pop('mut_aa'+pos_id, None)
 
-            if key.startswith(('date','name_cont', 'pi_name', 
+            if key.startswith(('date','name_cont', 'pi_name',
                 'pi_address','address','url','pi_email' )):
                 contact_info[key]=value
                 data.pop(key, None)
@@ -1589,22 +1591,22 @@ def webformdata(request) :
         msg['Subject'] = 'GPCRdb: New webform data'
         msg['From'] = 'gpcrdb@gmail.com'
         msg['Reply-to'] = 'gpcrdb@gmail.com'
-         
+
         msg.preamble = 'Multipart massage.\n'
-         
+
         part = MIMEText("Hi, please find the attached file")
         msg.attach(part)
-         
+
         part = MIMEApplication(open(str(dump_dir+"/"+str(ts)+"_"+construct_crystal['pdb']+".json"),"rb").read())
         part.add_header('Content-Disposition', 'attachment', filename=str(dump_dir+"/"+str(ts)+"_"+construct_crystal['pdb']+".json"))
         msg.attach(part)
-         
+
 
         server = smtplib.SMTP("smtp.gmail.com:587")
         server.ehlo()
         server.starttls()
         server.login("gpcrdb@gmail.com", "gpcrdb2016")
-         
+
         server.sendmail(msg['From'], emaillist , msg.as_string())
 
         context['filename'] = str(ts)+"_"+construct_crystal['pdb']
@@ -1620,6 +1622,3 @@ def webform_download(request,slug):
     response['Content-Disposition'] = 'attachment; filename="{}"'.format(file)
     response.write(out_stream)
     return response
-
-
-

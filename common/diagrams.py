@@ -3,7 +3,7 @@ import string, time, math, random
 
 def uniqid(prefix='', more_entropy=False):
     m = time.time()
-    uniqid = '%8x%05x' %(math.floor(m),(m-math.floor(m))*1000000)
+    uniqid = '%8x%05x' %(int(math.floor(m)),int((m-math.floor(m))*1000000))
     if more_entropy:
         valid_chars = list(set(string.hexdigits.lower()))
         entropy_string = ''
@@ -32,7 +32,7 @@ class Diagram:
             <text x='0' y='-23' text-anchor='middle' font-family='Arial' font-size='12' fill='black'></text>
             </g>""".format(self.type)
         output= ""
-        
+
         return output
 
     def drawColorPanel(self):
@@ -67,7 +67,7 @@ class Diagram:
                                     'Y': ['#18FF0B', '#000000'],'W': ['#0BCF00', '#000000'],
                                     'H': ['#0093DD', '#000000'],'P': ['#CC0099', '#FDFF7B'],
                                     'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
-                                    '-': ['#FFFFFF', '#000000']    
+                                    '-': ['#FFFFFF', '#000000']
                                     }
         fillcolors = [['#CCCCCC', '#000000']]
         for key,value in presetColors.items():
@@ -88,7 +88,7 @@ class Diagram:
         # colors += "<input type=\"text\" value=\"#00AABB\" class=\"\" size=8 />"
         # colors += "</span>"
 
-            
+
         output = ("<br>Pick color:" +
             colors +
             "</div>")
@@ -107,7 +107,7 @@ class Diagram:
 
         return boxstyle+ output
 
-    #Draws a ring of a helical wheel  
+    #Draws a ring of a helical wheel
     def DrawResidue(self, x,y,aa,residue_number,label,radius, resclass = '',cfill="white", precolor = False):
         id = residue_number
         idtext = str(id) + 't'
@@ -120,7 +120,7 @@ class Diagram:
         #     tfill = isset(_SESSION['color_pattern'][iidtext]) ? _SESSION['color_pattern'][iidtext] : 'black'
         # }
         output =  """
-            <circle class='{} rcircle' cx='{}' cy='{}' r='{}' stroke='black' stroke-width='2' fill='{}' 
+            <circle class='{} rcircle' cx='{}' cy='{}' r='{}' stroke='black' stroke-width='2' fill='{}'
             fill-opacity='1' id='{}' title='{}' original_title='{}'/>
             <text x='{}' y='{}' text-anchor='middle' font-family='helvetica' font-size='16' fill=''
             id='{}' class='rtext {}' title='{}' original_title='{}'> {} </text>
@@ -167,12 +167,12 @@ class Diagram:
         p = p0
         while pos <= 1:
 
-            
-            if p3==False: 
+
+            if p3==False:
                 xy = self.bezier(p0,p1,p2,pos)
-            elif p4==False: 
+            elif p4==False:
                 xy = self.bezier_high(p0,p1,p2,p3,pos)
-            elif p4!=False: 
+            elif p4!=False:
                 xy = self.bezier_high2(p0,p1,p2,p3,p4,pos)
 
             length += math.sqrt( (xy[0]-p[0])**2 + (xy[1]-p[1])**2 )
@@ -190,7 +190,7 @@ class Diagram:
         xy = [0,0]
 
         if stop<0:
-            if p3==False: 
+            if p3==False:
                 stop = self.lengthbezier(p0,p1,p2,step)+stop
             elif p4==False:
                 stop = self.lengthbezier(p0,p1,p2,step,p3)+stop
@@ -202,7 +202,7 @@ class Diagram:
             if length>stop: #stop if it reached the length along the line
                 break
 
-            if p3==False: 
+            if p3==False:
                 xy = self.bezier(p0,p1,p2,pos)
             elif p4==False:
                 xy = self.bezier_high(p0,p1,p2,p3,pos)
@@ -247,13 +247,13 @@ class Diagram:
                 m = -1/m
             else:
                 return {"x":0, "y":pixels_to_move}
-        
+
         # a^2+b^2=c^2 where a=x and b=mx
         # x^2+mx^2=c^2 (the b of y=mx+b can be omitted as the y-intercept is zero)
         c = pixels_to_move
         x = sqrt( pow(c,2)/(1+pow(m,2)) )
         y = m*x
-        
+
         return {"x":x*xDir, "y":y*yDir}
 
     #Draws the full backbone representation for one (box) helix
@@ -264,7 +264,7 @@ class Diagram:
         numSides = 4
 
         # start at residue position 1
-        cur_res = 1   
+        cur_res = 1
 
         # loop through residues and draw backbone
         output = ""
@@ -272,12 +272,12 @@ class Diagram:
         for i in range(1,len(coordinates)+1):
             cur_res = i
 
-            # find next residue 
+            # find next residue
             next_res = cur_res-1
             if next_res<1:
                 next_res = 19
-            
-            # find prev residue 
+
+            # find prev residue
             prev_res = cur_res+1;
             if prev_res>len(coordinates):
                 prev_res = 2
@@ -288,7 +288,7 @@ class Diagram:
                 wheel_next_res = len(coordinates)
             elif wheel_next_res < 1:
                 wheel_next_res += len(coordinates)-1
-            
+
             # line thickness
             thickness = 6*((i/len(coordinates)/1.2))
             thicknessNext = 6*(((i+1)/len(coordinates)/1.2))
@@ -297,7 +297,7 @@ class Diagram:
             # find residue base points
             cur_points = self.ResiduePoints(cur_res, thickness, coordinates)
             next_points = self.ResiduePoints(next_res, thicknessNext, coordinates)
-            prev_points = self.ResiduePoints(prev_res, thicknessPrev, coordinates) 
+            prev_points = self.ResiduePoints(prev_res, thicknessPrev, coordinates)
 
             # lines
             cur_in = self.LineEquation(cur_points[1], cur_points[2])
@@ -319,7 +319,7 @@ class Diagram:
                 move_in = self.MoveAlongLine(40,cur_in['m'],False,cur_in['x'],cur_in['y']);
                 p4 = {'x':p1['x']+move_in['x'], 'y':p1['y']+move_in['y']}
                 p5 = {'x':p6['x']+move_in['x'], 'y':p6['y']+move_in['y']}
-            
+
             # draw line
             points = [p2,p1,p6,p5,p4,p3]
             points_txt = ""
@@ -340,10 +340,10 @@ class Diagram:
 
             lineFill = "white"
 
-            # add SVG to output 
+            # add SVG to output
             output += "<polyline stroke='black' stroke-width='0.5' points='"+points_txt+"' fill='"+lineFill+"'/>"
 
-        return output; 
+        return output;
 
     def LineIntercept(self,m1, b1, m2, b2):
         # line intercept
@@ -389,32 +389,32 @@ class Diagram:
             wheel_next_res = len(coordinates)
         elif wheel_next_res < 1:
             wheel_next_res += len(coordinates)-1
-        
+
         # point orientation
-        if (coordinates[cur_res]['y'] >= coordinates[wheel_next_res]['y'] and coordinates[cur_res]['x'] > 
+        if (coordinates[cur_res]['y'] >= coordinates[wheel_next_res]['y'] and coordinates[cur_res]['x'] >
             coordinates[wheel_next_res]['x']):
             # SW
             ori['x'] = -1
             ori['y'] = -1
-        
-        elif (coordinates[cur_res]['y'] > coordinates[wheel_next_res]['y'] and coordinates[cur_res]['x'] < 
+
+        elif (coordinates[cur_res]['y'] > coordinates[wheel_next_res]['y'] and coordinates[cur_res]['x'] <
             coordinates[wheel_next_res]['x']):
             # NW
             ori['x'] = 1
             ori['y'] = 1
-        
-        elif (coordinates[cur_res]['y'] < coordinates[wheel_next_res]['y'] and coordinates[cur_res]['x'] > 
+
+        elif (coordinates[cur_res]['y'] < coordinates[wheel_next_res]['y'] and coordinates[cur_res]['x'] >
             coordinates[wheel_next_res]['x']):
             # SE
             ori['x'] = -1
             ori['y'] = -1
-        
-        elif (coordinates[cur_res]['y'] <= coordinates[wheel_next_res]['y'] and coordinates[cur_res]['x'] < 
+
+        elif (coordinates[cur_res]['y'] <= coordinates[wheel_next_res]['y'] and coordinates[cur_res]['x'] <
             coordinates[wheel_next_res]['x']):
             # NE
             ori['x'] = 1
             ori['y'] = 1
-        
+
 
         # slope of line from current residue to reference residue
         m = (coordinates[ref_res]['y']-coordinates[cur_res]['y'])/(coordinates[ref_res]['x']-
@@ -422,7 +422,7 @@ class Diagram:
 
         # calculate coordinates of perpendicular line
         per_move = self.MoveAlongLine(thickness/2,m,True); # move thickness/2 pixels along a perpendicular line
-            
+
         # define points
         points = [0];
         points.append({'x':coordinates[cur_res]['x']+per_move['x']*ori['x'], 'y':coordinates[cur_res]['y']+

@@ -16,14 +16,14 @@ class Protein(models.Model):
     accession = models.CharField(max_length=100, db_index=True, null=True)
     name = models.CharField(max_length=200)
     sequence = models.TextField()
-    
-    
+
+
     def __str__(self):
         if not self.entry_name:
             return self.name
         else:
             return self.entry_name
-    
+
     class Meta():
         db_table = 'protein'
 
@@ -91,6 +91,7 @@ class Gene(models.Model):
 
     class Meta():
         ordering = ('position', )
+        unique_together = ('name', 'species','position')
         db_table = 'gene'
 
 
@@ -101,7 +102,7 @@ class Species(models.Model):
     def __str__(self):
         return self.latin_name
 
-    class Meta():     
+    class Meta():
         db_table = 'species'
 
 
@@ -284,4 +285,3 @@ class ProteinGProteinPair(models.Model):
 
     class Meta():
         db_table = 'protein_gprotein_pair'
-        
