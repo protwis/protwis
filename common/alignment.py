@@ -1066,7 +1066,6 @@ class AlignedReferenceTemplate(Alignment):
                                 temp_list1.append((struct, len(ref_ECL2[0]), 0, float(struct.resolution), protein))
                         if [i.sequence_number for i in main_temp_ECL2[2]]!=[i.sequence_number for i in main_parent_ECL2[2]]:
                             if len(main_parent_ECL2[2])-len(main_temp_ECL2[2])<4:
-                                print(struct,"TWO")
                                 temp_list2.append((struct, len(ref_ECL2[2]), 0, float(struct.resolution), protein))
                     else:
                         raise Exception()

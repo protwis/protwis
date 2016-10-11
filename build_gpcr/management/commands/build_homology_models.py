@@ -542,7 +542,7 @@ class HomologyModeling(object):
                     a.template_dict[label] = al.template_dict[label]
                     a.alignment_dict[label] = al.alignment_dict[label]
                 
-                if label=='ECL2' and loop.partialECL2_2==True:
+                if label=='ECL2' and (loop.partialECL2_1==True or loop.partialECL2_2==True):
                     al = AlignedReferenceTemplate()
                     al.enhance_alignment(a.ordered_proteins[0],a.ordered_proteins[1],keep_all=True)
                     a.reference_dict[label] = al.reference_dict[label]
@@ -2352,7 +2352,14 @@ class Loops(object):
                                 no_first_temp=False
                                 break
                             except:
-                                continue
+                                try:
+                                    partial_seq1 = Residue.objects.filter(protein_conformation=second_temp.protein_conformation, sequence_number__in=list(range(list(main_temp_seq)[0].sequence_number,x50)))
+                                    partial_seq1_nums = [i.sequence_number for i in partial_seq1]
+                                    ECL2_1 = parse.fetch_residues_from_pdb(first_temp, partial_seq1_nums)
+                                    no_first_temp=False
+                                    self.partialECL2_1 = True
+                                except:
+                                    continue
                         else:
                             try:
                                 b_num = Residue.objects.get(protein_conformation=first_temp.protein_conformation,
@@ -2484,7 +2491,7 @@ class Loops(object):
                     loop_template = temporary_dict
             except:
                 pass
-            self.main_pdb_array = self.cont_loop_insert_to_pdb(main_pdb_array, loop_template)
+            self.main_pdb_array = self.cont_loop_insert_to_pdb(main_pdb_array, template_dict, loop_template)
         else:
             self.main_pdb_array = main_pdb_array
         if loop_template!=None:
@@ -2633,7 +2640,8 @@ class Loops(object):
         # first part
         if loop_output_structure[0]!=None:
             if loop_output_structure[0]==self.main_structure:
-                temp_array = self.cont_loop_insert_to_pdb(main_pdb_array, loop_template['ECL2_1'], ECL2='')
+                temp_array = self.cont_loop_insert_to_pdb(main_pdb_array, template_dict, loop_template['ECL2_1'], 
+                                                          ECL2='', x50_i=x50_i)
             else:
                 temp_array = self.discont_loop_insert_to_pdb(main_pdb_array, loop_template['ECL2_1'], 
                                                              loop_output_structure, ECL2='')
@@ -2739,22 +2747,30 @@ class Loops(object):
         else:
             return True, l_res
                 
-    def cont_loop_insert_to_pdb(self, main_pdb_array, loop_template, ECL2=None):
+    def cont_loop_insert_to_pdb(self, main_pdb_array, template_dict, loop_template, ECL2=None, x50_i=None):
         temp_array, temp_loop = OrderedDict(), OrderedDict()
         for seg_label, gns in main_pdb_array.items():
             if self.segment_order.index(self.loop_label)-self.segment_order.index(seg_label[:4])==1:
                 temp_array[seg_label] = gns
                 l_res = 0
-                for key in loop_template:
-                    l_res+=1
-                    if '.' in key:
-                        temp_loop[key] = loop_template[key]
-                    elif 'gap' in key:
-                        temp_loop[self.loop_label+'?'+str(l_res)] = loop_template[key]
-                    elif loop_template[key]=='-':
-                        temp_loop[self.loop_label+'?'+str(l_res)] = loop_template[key]
-                    else:
-                        temp_loop[self.loop_label+'|'+str(l_res)] = loop_template[key]   
+                if x50_i!=None:
+                    for key in list(template_dict['ECL2'])[:x50_i]:
+                        l_res+=1
+                        if key in loop_template:
+                            temp_loop[self.loop_label+'|'+str(l_res)] = loop_template[key]
+                        else:
+                            temp_loop[self.loop_label+'?'+str(l_res)] = '-'
+                else:
+                    for key in loop_template:
+                        l_res+=1
+                        if '.' in key:
+                            temp_loop[key] = loop_template[key]
+                        elif 'gap' in key:
+                            temp_loop[self.loop_label+'?'+str(l_res)] = loop_template[key]
+                        elif loop_template[key]=='-':
+                            temp_loop[self.loop_label+'?'+str(l_res)] = loop_template[key]
+                        else:
+                            temp_loop[self.loop_label+'|'+str(l_res)] = loop_template[key]   
                 if ECL2!=None:
                     temp_array[self.loop_label] = temp_loop
                 else:                             
