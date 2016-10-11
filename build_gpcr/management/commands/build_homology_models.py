@@ -65,7 +65,7 @@ class Command(BaseBuild):
             struct_parent = [i.protein_conformation.protein.parent for i in structures]
             classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
                                             family__slug__istartswith='001')
-            self.receptor_list = [i.entry_name for i in classA if i not in struct_parent][:5]
+            self.receptor_list = [i.entry_name for i in classA if i not in struct_parent]
             print(self.receptor_list)
             try:
                 self.prepare_input(options['proc'], self.receptor_list)
