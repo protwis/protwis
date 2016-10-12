@@ -26,7 +26,7 @@ def striphtml(data):
     p = re.compile(r'<.*?>')
     return p.sub('', data)
 
-@cache_page(60*60*24*1) #  1 day
+# @cache_page(60*60*24*1) #  1 day
 def drugstatistics(request):
 
     # ===== drugtargets =====
@@ -177,11 +177,11 @@ def drugstatistics(request):
 
     return render(request, 'drugstatistics.html', {'drugtypes_approved':drugtypes_approved,'drugtypes_trials':drugtypes_trials, 'drugtypes_estab':drugtypes_estab, 'drugtypes_not_estab':drugtypes_not_estab,'drugindications_approved':drugindications_approved, 'drugindications_trials':drugindications_trials, 'drugtargets_approved':drugtargets_approved, 'drugtargets_trials':drugtargets_trials, 'drugfamilies_approved':drugfamilies_approved, 'drugfamilies_trials':drugfamilies_trials, 'drugClasses_approved':drugClasses_approved, 'drugClasses_trials':drugClasses_trials, 'drugs_over_time':drugs_over_time})
 
-@cache_page(60*60*24*1) # 1 day
+# @cache_page(60*60*24*1) # 1 day
 def drugbrowser(request):
     # Get drugdata from here somehow
 
-    name_of_cache = 'drug_browser'
+    name_of_cache = 'drug_browse3'
 
     context = cache.get(name_of_cache)
 
@@ -215,11 +215,11 @@ def drugbrowser(request):
 
             # jsondata = {'name':drugname, 'target': ', '.join(set(targets)), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
             # context.append(jsondata)
-        cache.set(name_of_cache, context, 60*60*24*1) # two days timeout on cache
+        # cache.set(name_of_cache, context, 60*60*24*1) # two days timeout on cache
 
     return render(request, 'drugbrowser.html', {'drugdata':context})
 
-@cache_page(60*60*24*1) #  1 day
+# @cache_page(60*60*24*1) #  1 day
 def drugmapping(request):
     context = dict()
 
@@ -228,7 +228,7 @@ def drugmapping(request):
     for f in families:
         lookup[f.slug] = f.name.replace("receptors","").replace(" receptor","").replace(" hormone","").replace("/neuropeptide","/").replace(" (G protein-coupled)","").replace(" factor","").replace(" (LPA)","").replace(" (S1P)","").replace("GPR18, GPR55 and GPR119","GPR18/55/119").replace("-releasing","").replace(" peptide","").replace(" and oxytocin","/Oxytocin").replace("Adhesion class orphans","Adhesion orphans").replace("muscarinic","musc.").replace("-concentrating","-conc.")
 
-    class_proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('family').order_by('family__slug')
+    class_proteins = Protein.objects.filter(family__slug__startswith="00",source__name='SWISSPROT', species_id=1).prefetch_related('family').order_by('family__slug')
     
     temp = OrderedDict([
                     ('name',''), 
@@ -256,7 +256,7 @@ def drugmapping(request):
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]] = deepcopy(temp)
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['name'] = lookup[fid[0]+"_"+fid[1]+"_"+fid[2]][:28]
         if fid[3] not in coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children']:
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]] = deepcopy(temp)
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]] = deepcopy(temp)   
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['name'] = p.entry_name.split("_")[0] #[:10]
     
     # # POULATE WITH DATA

@@ -215,71 +215,72 @@ canvas {
 
 {% endblock %}
 {% block addon_js %}
-<script src="{% static 'home/js/diagrams.js' %}"></script>
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
 <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
-    <script type="text/javascript" charset="utf-8">
-        $(document).ready(function() {
+<script src="{% static 'home/js/diagrams.js' %}"></script>
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
 
-            function gprotein_sets() {
-                plotid = 'snakeplot'
-                interacting_equivalent = {{ interacting_equivalent|safe }};
-                interacting_none_equivalent = {{ interacting_none_equivalent|safe }};
-                accessible = {{ accessible|safe }};
+        function gprotein_sets() {
+            plotid = 'snakeplot'
+            interacting_equivalent = {{ interacting_equivalent|safe }};
+            interacting_none_equivalent = {{ interacting_none_equivalent|safe }};
+            accessible = {{ accessible|safe }};
 
-                   $.each( accessible, function( index, val ) {
-                      key = val;
-                      extra = "\n - \nG protein accessible" ;
-                      $('#'+plotid).find("#"+key).css("fill", "#BDEEC8");
-                      $('#'+plotid).find("#"+key).next().css("fill", "#000");
-                      $('#'+plotid).find("#"+key).css("stroke-width", "3px");
-                      original_title = $('#'+plotid).find("#"+key).attr('original_title')
-                      $('#'+plotid).find("#"+key).attr('title',original_title+extra);
-                      $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+               $.each( accessible, function( index, val ) {
+                  key = val;
+                  extra = "\n - \nG protein accessible" ;
+                  $('#'+plotid).find("#"+key).css("fill", "#BDEEC8");
+                  $('#'+plotid).find("#"+key).next().css("fill", "#000");
+                  $('#'+plotid).find("#"+key).css("stroke-width", "3px");
+                  original_title = $('#'+plotid).find("#"+key).attr('original_title')
+                  $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                  $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
 
-                  });
+              });
 
-                    $.each( interacting_equivalent, function( index, val ) {
-                      key = val;
-                      extra = "\n - \nG protein interacting" ;
-                      $('#'+plotid).find("#"+key).css("fill", "#1F9439");
-                      $('#'+plotid).find("#"+key).css("stroke-width", "3px");
-                      // $('#'+plotid).find("#"+key).css("stroke-dasharray", "5, 2");
-                      $('#'+plotid).find("#"+key).next().css("fill", "#000");
-                      original_title = $('#'+plotid).find("#"+key).attr('original_title')
-                      $('#'+plotid).find("#"+key).attr('title',original_title+extra);
-                      $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+                $.each( interacting_equivalent, function( index, val ) {
+                  key = val;
+                  extra = "\n - \nG protein interacting" ;
+                  $('#'+plotid).find("#"+key).css("fill", "#1F9439");
+                  $('#'+plotid).find("#"+key).css("stroke-width", "3px");
+                  // $('#'+plotid).find("#"+key).css("stroke-dasharray", "5, 2");
+                  $('#'+plotid).find("#"+key).next().css("fill", "#000");
+                  original_title = $('#'+plotid).find("#"+key).attr('original_title')
+                  $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                  $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
 
-                  });
+              });
 
-                    $.each( interacting_none_equivalent, function( index, val ) {
-                      key = val;
-                      extra = "\n - \nG protein interaction not conserved" ;
-                      $('#'+plotid).find("#"+key).css("fill", "#E67E22");
-                      $('#'+plotid).find("#"+key).css("stroke-width", "3px");
-                      // $('#'+plotid).find("#"+key).css("stroke-dasharray", "5, 2");
-                      $('#'+plotid).find("#"+key).next().css("fill", "#000");
-                      original_title = $('#'+plotid).find("#"+key).attr('original_title')
-                      $('#'+plotid).find("#"+key).attr('title',original_title+extra);
-                      $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+                $.each( interacting_none_equivalent, function( index, val ) {
+                  key = val;
+                  extra = "\n - \nG protein interaction not conserved" ;
+                  $('#'+plotid).find("#"+key).css("fill", "#E67E22");
+                  $('#'+plotid).find("#"+key).css("stroke-width", "3px");
+                  // $('#'+plotid).find("#"+key).css("stroke-dasharray", "5, 2");
+                  $('#'+plotid).find("#"+key).next().css("fill", "#000");
+                  original_title = $('#'+plotid).find("#"+key).attr('original_title')
+                  $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                  $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
 
-                  });
+              });
 
-                $("circle").tooltip('fixTitle');
-                $("text").tooltip('fixTitle');
-            }
+            $("circle").tooltip('fixTitle');
+            $("text").tooltip('fixTitle');
+        }
 
-            gprotein_sets()
 
-            // Force shown loops
-            $(".short").hide();
-            $(".long").show();
-            maxmin();
+        // Force shown loops
+        $(".short").hide();
+        $(".long").show();
+        maxmin();
 
-            });
-    </script>
+        gprotein_sets()
+
+        });
+</script>
 
 <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
