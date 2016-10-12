@@ -107,8 +107,6 @@ def SelectionAutocomplete(request):
         q = request.GET.get('term')
         type_of_selection = request.GET.get('type_of_selection')
         referer = request.META.get('HTTP_REFERER')
-
-        print(referer)
         
         if 'gproteinselection' in str(referer):
             exclusion_slug = '00'
