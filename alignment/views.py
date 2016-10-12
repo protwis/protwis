@@ -37,6 +37,7 @@ class TargetSelectionGprotein(AbsTargetSelection):
     number_of_steps = 2
     psets = False
     filters = False
+    type_of_selection = 'gproteins'
     docs = 'sequences.html#structure-based-alignments'
 
     selection_boxes = OrderedDict([
