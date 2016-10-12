@@ -50,6 +50,7 @@ INSTALLED_APPS = (
     'construct',
     'tools',
     'drugs',
+    'signprot',
 )
 
 MIDDLEWARE_CLASSES = (

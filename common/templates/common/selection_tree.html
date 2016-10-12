@@ -12,7 +12,7 @@
             <span class="glyphicon glyphicon-folder-open"></span>
         {% endif %}
     </a>
-    {% if type_of_selection == 'browse' %}
+    {% if type_of_selection == 'browse' or type_of_selection == 'browse_gprot'%}
     <a href="javascript:void(0)" onclick="AddToSelection('targets', 'family', '{{ ppf.id }}');
         toggleButtonClass('selection-button');
         setTimeout(function(){window.location = '/family/{{ ppf.slug }}';}, 200);" class="target-selection">
@@ -21,7 +21,7 @@
         class="target-selection">
     {% endif %}
         {{ ppf.name|safe }}
-    {% if type_of_selection == 'targets' or type_of_selection == 'browse' %}
+    {% if type_of_selection == 'targets' or type_of_selection == 'browse' or type_of_selection == 'browse_gprot'%}
     </a>
     {% endif %}
     <br />
@@ -42,13 +42,13 @@
     <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ pf.id }}')"
         class="target-selection">
     {% endif %}
-    {% if type_of_selection == 'browse' %}
+    {% if type_of_selection == 'browse' or type_of_selection == 'browse_gprot' %}
     <a href="javascript:void(0)" onclick="AddToSelection('targets', 'family', '{{ pf.id }}');
         toggleButtonClass('selection-button');
         setTimeout(function(){window.location = '/family/{{ pf.slug }}';}, 200);" class="target-selection">
     {% endif %}
         {{ pf.name|safe }}
-    {% if type_of_selection == 'targets' or type_of_selection == 'browse' %}
+    {% if type_of_selection == 'targets' or type_of_selection == 'browse' or type_of_selection == 'browse_gprot' %}
     </a>
     {% endif %}
     <br />
@@ -72,6 +72,10 @@
 <a href="javascript:void(0)" onclick="AddToSelection('targets', 'protein', '{{ p.id }}');
     toggleButtonClass('selection-button');
     setTimeout(function(){window.location = '/protein/{{ p.entry_name }}';}, 200);" class="target-selection">
+    {% elif type_of_selection == 'browse_gprot' %}
+<a href="javascript:void(0)" onclick="AddToSelection('targets', 'protein', '{{ p.id }}');
+    toggleButtonClass('selection-button');
+    setTimeout(function(){window.location = '/signprot/{{ p.entry_name }}';}, 200);" class="target-selection">
     {% elif type_of_selection == 'ginterface' %}
 <a href="javascript:void(0)" onclick="AddToSelection('targets', 'protein', '{{ p.id }}');
     toggleButtonClass('selection-button');
