@@ -12,10 +12,11 @@ class ProteinSerializer(serializers.ModelSerializer):
     species = serializers.StringRelatedField(read_only=True)
     source = serializers.StringRelatedField(read_only=True)
     residue_numbering_scheme = serializers.SlugRelatedField(read_only=True, slug_field='short_name')
+    genes = serializers.StringRelatedField(many=True)
     class Meta:
         model = Protein
         fields = ('entry_name', 'name', 'accession', 'family', 'species', 'source', 'residue_numbering_scheme',
-            'sequence')
+            'sequence','genes')
 
 
 class ProteinFromConformationSerializer(serializers.ModelSerializer):
