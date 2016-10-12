@@ -1,0 +1,130 @@
+{% extends "common/selection.html" %}
+{% load staticfiles %}
+
+{% block addon_js %}
+    <script>
+
+        var type_of_selection = '{{ type_of_selection }}';
+        var redirect_url = '{{ buttons.continue.url }}'
+        var redirect_on_select = '{{ redirect_on_select }}'
+
+
+    $(document).ready(function() {
+        $(function(){
+          // bind change event to select
+          $('#preloaded_xtals').on('change', function () {
+            var url = window.location.href;
+
+            if (url.substr(-1) == '/') url = url.substr(0, url.length - 2);
+
+            url = url.split('/');
+            url.pop();
+            url = url.join('/')+"/interaction/"+$(this).val(); // get selected value
+            if (url) { // require a URL
+                window.location = url; // redirect
+            }
+
+            toggleButtonClass('selection-button');
+            $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>"+$(this).val());
+            return false;
+          });
+        });
+    }); 
+
+        function submitupload() {
+            $("#errormsg").remove();
+            // var pdbid = $('#form').find('input#id_pdbname').val() ;
+            // var filename = $('input[type=file]').val().split('\\').pop();
+              // if (pdbid) {
+              //   $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>PDB code: "+pdbid);
+              //   document.getElementById("form").submit();
+              // } else if (filename) {
+              //   $("#selection-targets").html("<p><span class='selection-heading-text'>Selected targets</span></p>File: "+filename);
+              //   document.getElementById("form").submit();
+              // } else 
+              if ($(".target-selection").length) {
+                var url = window.location.href;
+
+                if (url.substr(-1) == '/') url = url.substr(0, url.length - 2);
+
+                url = url.split('/');
+                url.pop();
+                url = url.join('/')+"/tool"; // get selected value
+                if (url) { // require a URL
+                    window.location = url; // redirect
+                }
+                //toggleButtonClass('selection-button');
+                return false
+                //document.getElementById("form").submit();
+              } else {
+                $("#form").parent('div').parent('div').parent('div').after('<div id="errormsg" class="col-md-12 panel panel-primary">' +
+                    '<div class="panel-body">' +
+                    'Please make a selection' +
+                    '</div>' +
+                    '</div>');
+                toggleButtonClass('selection-button');
+              }
+        };
+    </script>
+    <script src="{% static 'home/js/selection.js' %}"></script>
+    <script src="{% static 'home/js/selection-autocomplete.js' %}"></script>
+    <script src="{% static 'home/js/selection-filters.js' %}"></script>
+
+{% endblock %}
+
+{% block middle_column %}
+
+            {% if filters %}
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Filter</h4>
+                    <div id="filters-species">
+                    {% include 'common/selection_filters_species.html' %}
+                    </div>
+                    <br \>
+                    <div id="filters-annotation">
+                    {% include 'common/selection_filters_annotation.html' %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Search</h4>
+                    <div>
+                        <input id="selection-autocomplete" class="form-control" size="15">
+                    </div>
+                </div>
+            </div>
+
+
+<!--             <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Select from interactions pre-calculated</h4>
+                    <div>
+                    <select id='preloaded_xtals'>
+                    <option>Select from list</option>
+                    {% for structure in structures %}
+                        <option value="{{structure.structure_ligand_pair__structure__pdb_code__index}}">{{structure.structure_ligand_pair__structure__pdb_code__index}} ({{structure.structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name}}) </option>
+                    {% endfor %}
+                    </select>
+                    </div>
+                </div>
+            </div>
+ -->
+<!--             <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>Run a new calculation</h4>
+                    <div>
+                        Enter a PDB code to analyse:
+                            <form action="calculate" id="form" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                            <label for="pdbname">PDB code</label>
+                            {{ form.pdbname }} <br> or 
+                            <p>{{ form.file.label_tag }}  </p> {{ form.file }}
+                        </form>
+                    </div>
+                </div>
+            </div> -->
+{% endblock %}

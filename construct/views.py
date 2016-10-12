@@ -5,12 +5,14 @@ from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 
 from common.diagrams_gpcr import DrawSnakePlot
-
+from common.views import AbsTargetSelection
 from construct.models import *
 from construct.functions import *
 from protein.models import Protein, ProteinConformation
 from structure.models import Structure
 from mutation.models import Mutation
+from construct.tool import *
+
 
 from datetime import datetime
 import json
@@ -132,6 +134,50 @@ class ConstructBrowser(TemplateView):
         except Construct.DoesNotExist as e:
             pass
 
+        return context
+
+class design(AbsTargetSelection):
+
+    # Left panel
+    step = 1
+    number_of_steps = 1
+    # docs = 'generic_numbering.html'  # FIXME
+
+    # description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
+    #     + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \
+    #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
+    #     + ' have selected all your receptors, click the green button.'
+
+    description = 'Get construct suggestions based on published constructs.'
+
+    # Middle section
+    numbering_schemes = False
+    filters = False
+    search = True
+    title = "Select a receptor"
+
+    template_name = 'designselection.html'
+
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+
+    # Buttons
+    buttons = {
+        'continue': {
+            'label': 'Show results',
+            'onclick': 'submitupload()',
+            'color': 'success',
+            #'url': 'calculate/'
+        }
+    }
+
+    redirect_on_select = False
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         return context
 
 @csrf_exempt #jquery send post, so no csrf
