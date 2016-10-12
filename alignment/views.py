@@ -83,6 +83,10 @@ class SegmentSelectionGprotein(AbsSegmentSelection):
     step = 2
     number_of_steps = 2
     docs = 'sequences.html#structure-based-alignments'
+    description = 'Select sequence segments in the middle column for G proteins. You can expand every structural element and select individual' \
+        + ' residues by clicking on the down arrows next to each helix, sheet or loop.\n\n You can select the full sequence or show all structured regions at the same time.\n\nSelected segments will appear in the' \
+        + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
+        + ' button.'
     
     template_name = 'common/segmentselection.html'
 
