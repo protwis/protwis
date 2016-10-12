@@ -9,7 +9,7 @@ from common.models import WebResource, WebLink
 from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
 
-from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residue)
+from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residue, ResidueGenericNumberEquivalent)
 
 import pandas as pd
 
@@ -52,20 +52,18 @@ class Command(BaseCommand):
             print(msg)
             self.logger.error(msg)
 
-        #add gproteins from cgn db
-        try:
-            self.purge_cgn_residues()
+        # add gproteins from cgn db
+        # try:
+            # self.purge_cgn_residues()
             # self.purge_cgn_protein_segments()
-            self.cgn_create_proteins_and_families()
+            # self.cgn_create_proteins_and_families()
             # self.purge_cgn_proteins()
-            #delete added g-proteins
-
             
-        except Exception as msg:
-            print(msg)
-            self.logger.error(msg)
+        # except Exception as msg:
+        #     print(msg)
+        #     self.logger.error(msg)
 
-        #add residues from cgn db
+        # add residues from cgn db
         try:
             self.update_protein_conformation()
         except Exception as msg:
@@ -189,6 +187,14 @@ class Command(BaseCommand):
 
             except:
                 self.logger.error("Failed to add residues")
+
+            # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
+            try:
+                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme_id=12)
+                self.logger.info("Residues added to ResidueGenericNumberEquivalent")
+
+            except:
+                self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
             
 
 

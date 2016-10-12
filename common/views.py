@@ -270,7 +270,7 @@ def AddToSelection(request):
     selection_type = request.GET['selection_type']
     selection_subtype = request.GET['selection_subtype']
     selection_id = request.GET['selection_id']
-    
+
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
     
@@ -305,7 +305,7 @@ def AddToSelection(request):
             try:
                 o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
             except:
-                o.append(ResidueGenericNumber.objects.get(id=selection_id))
+                o.append(ResidueGenericNumberEquivalent.objects.get(default_generic_number_id=selection_id))
         elif selection_subtype == 'residue_position_set':
             selection_subtype = 'residue'
             rset = ResiduePositionSet.objects.get(pk=selection_id)
