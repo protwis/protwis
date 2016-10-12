@@ -30,9 +30,25 @@ from collections import OrderedDict
 # FIXME add
 # getMutations
 # numberPDBfile
+import coreapi
+from urllib.parse import urlparse
+from urllib.parse import urljoin
+from rest_framework import renderers, response, schemas
+from rest_framework.decorators import api_view, renderer_classes
+from rest_framework import response, schemas
+from rest_framework.routers import DefaultRouter
+from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
 
-def index(request):
-    return render(request, 'api/index.html', {'site_title': settings.SITE_TITLE})
+router = DefaultRouter(
+    schema_title='GPCRdb API',
+    schema_renderers=[OpenAPIRenderer, SwaggerUIRenderer, renderers.CoreJSONRenderer]
+)
+
+@api_view()
+@renderer_classes([SwaggerUIRenderer, OpenAPIRenderer, renderers.CoreJSONRenderer])
+def schema_view(request):
+    generator = schemas.SchemaGenerator(title='GPCRdb API')
+    return response.Response(generator.get_schema(request=request))
 
 class ProteinDetail(generics.RetrieveAPIView):
     """
