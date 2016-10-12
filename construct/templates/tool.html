@@ -1,0 +1,448 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block content %}
+  <style>
+  .ui-menu { width: 200px; }
+  .ui-widget-header { padding: 0.2em; }
+  </style>
+
+<h2> Construct Tool </h2>
+<p>
+Target: {{target.entry_name}}
+</p>
+
+<div id="dialog" title="Reset">
+  <p>You sure you want to reset this construct?</p>
+</div>
+
+<button onclick='$( "#dialog" ).dialog( "open" )''>Reset</button>
+
+<div class="row">
+  <div class="col-sm-2">
+    
+    <ul id="n_menu">
+      <li class='nterm'><div>N-Term</div>
+        <ul>
+        </ul>
+      </li>
+    </ul>
+
+    <ul id="c_menu">
+      <li class='cterm'><div>C-Term</div>
+        <ul>
+        </ul>
+      </li>
+    </ul>
+
+    <ul id="i_menu">
+      <li class='icl3'><div>ICL3</div>
+        <ul>
+        </ul>
+      </li>
+    </ul>
+
+    <ul id="m_menu">
+      <li class='common'><div>Common mutations</div>
+        <ul>
+        </ul>
+      </li>
+    </ul>
+
+    <ul id="g_menu">
+      <li class='glyco'><div>Glycosylation</div>
+        <ul>
+        </ul>
+      </li>
+    </ul>
+
+  </div>
+  <div class="col-sm-7">
+  {{ target.get_snake_plot_no_buttons }}
+  </div>
+  <div class="col-sm-3">
+    <div id="overview">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+    <script src="{% static 'home/js/diagrams.js' %}"></script> 
+    <script type="text/javascript" charset="utf-8">
+
+        var modifications = new Array;
+
+    function resetAll() {
+      modifications = new Array;
+      resetModifications();
+      modifications_overview();
+    }
+
+    function resetModifications() {
+
+      $('#snakeplot').find("circle").each(function( index ){
+            //console.log( index + ": " + $( this ).text() );
+            aa =  $(this).next().text();
+            //console.log( index + ": " + aa );
+            $(this).css("fill", 'white');
+            $(this).next().css("fill", 'black');
+          });
+
+    }
+
+    function nterm_tm1(elem) {
+      n_val = $(elem).attr("value");
+      from = $(elem).attr("from");
+      until = {{residues.Nterm|length}}-n_val;
+
+      console.log(n_val+" "+until);
+
+      range = new Array;
+      for (var i = 1; 1 > 0 ? i <= until : i > until; i += 1) {
+        console.log(i);
+          range.push(i);
+      }
+
+
+      modi = {method: "n-term", type: "deletion", from: from, range: range};
+      modifications.push(modi);
+      overlay_modifications();
+      modifications_overview();
+    }
+
+    function cterm(elem) {
+      n_val = $(elem).attr("value");
+      from = $(elem).attr("from");
+      start = {{residues.Cterm.0.sequence_number}}-n_val;
+      {% with residues.Cterm|last as last %}
+       end =   {{ last.sequence_number }};
+      {% endwith %}
+
+      console.log(start+" "+end);
+
+      range = new Array;
+      for (var i = start; 1 > 0 ? i <= end : i > end; i += 1) {
+        console.log(i);
+          range.push(i);
+      }
+
+
+      modi = {method: "c-term", type: "deletion", from: from, range: range};
+      modifications.push(modi);
+      overlay_modifications();
+      modifications_overview();
+    }
+
+    function icl3(elem) {
+      from = $(elem).attr("from");
+
+      end = {{residues_gn.6x50.sequence_number}}-$(elem).attr("tm6");
+      start = {{residues_gn.5x50.sequence_number}}-(-$(elem).attr("tm5"));
+      console.log(start+" "+end);
+
+      range = new Array;
+      for (var i = start; 1 > 0 ? i < end : i > end; i += 1) {
+        console.log(i);
+          range.push(i);
+      }
+
+
+      modi = {method: "ICL3", type: "deletion", from: from, range: range};
+      modifications.push(modi);
+      overlay_modifications();
+      modifications_overview();
+    }
+
+
+    function mut(elem) {
+      gn = $(elem).attr("gn");
+      pos = $(elem).attr("pos");
+      to = $(elem).attr("to");
+      wt = $(elem).attr("wt");
+
+      origin = $(elem).parent().parent().parent().find('.origin').html();
+
+      console.log(origin);
+
+      range = new Array;
+      range.push(pos);
+
+
+      modi = {method: wt+pos+to+" "+gn, type: "mutation", to: to, range: range, info: "Based on "+origin};
+      modifications.push(modi);
+      overlay_modifications();
+      modifications_overview();
+    }
+
+    function glyco(elem) {
+      pos = $(elem).attr("pos");
+      to = $(elem).attr("to");
+      wt = $(elem).attr("wt");
+      to2 = $(elem).attr("to2");
+      wt2 = $(elem).attr("wt2");
+
+      origin = $(elem).attr("motif");
+
+      console.log(origin);
+
+      range = new Array;
+      range.push(pos);
+      modi = {method: wt+pos+to + " Glycosylation", type: "mutation", to: to, range: range, info: "Based on "+origin};
+      modifications.push(modi);
+
+      if (to2) {
+      range = new Array;
+      pos2 = parseInt(parseInt(pos)+1)
+      range.push(pos2);
+      modi = {method: wt2+pos2+to2 + " Glycosylation", type: "mutation", to: to2, range: range, info: "Based on "+origin};
+      modifications.push(modi);
+      }
+
+      overlay_modifications();
+      modifications_overview();
+    }
+
+    function modifications_overview() {
+
+      $("#overview").html("");
+
+      $.each(modifications, function(key,val) {
+
+        type = val['type'];
+        range = val['range'];
+        method = val['method'];
+
+        if (val['info']) {
+          info = "<p>"+val['info']+"</p>";
+        } else {
+          info = "";
+        }
+
+        row =  "<h3>"+method+" ("+type+")</h3>" +
+            "<div>" +
+            "  <p>"+range+"</p>" +
+            info +
+            "  <button onclick='remove_mod(this)' mod_id="+key+">Remove</button>" +
+            "</div>"
+
+        $("#overview").append(row);
+
+      }) 
+      $( "#overview" ).accordion( "refresh" );
+      $( "#overview" ).accordion({
+        collapsible: true,
+        active: false,
+      });
+
+    }
+
+    function remove_mod(elem) {
+      id = $(elem).attr("mod_id");
+      console.log('remove id'+id)
+      //delete modifications[id];
+      modifications.splice(id, 1);
+      resetModifications();
+      overlay_modifications();
+      modifications_overview();
+
+    }
+
+    function overlay_modifications() {
+
+      $.each(modifications, function(key,val) {
+
+        type = val['type'];
+        range = val['range'];
+
+        $.each(range, function(i, ii){
+
+          color_residue(ii,type);
+
+        })
+
+
+      })
+
+    }
+
+    function color_residue(pos, type) {
+
+     if (type == 'deletion') {
+        bg = 'red';
+        fill = 'white';
+     } else if (type == 'mutation') {
+        bg = 'yellow';
+        fill = 'red';
+     }
+
+     $('[id='+pos+']').css("fill", bg);
+     $('[id='+pos+']').next().css("fill", fill);
+
+
+    }
+
+  // Make snake plot big
+  $(document).ready(function() {
+
+    $( "#overview" ).accordion({
+      collapsible: true,
+      active: false,
+    });
+
+        $( "#dialog" ).dialog({
+      autoOpen: false,
+      show: {
+        effect: "blind",
+        duration: 200
+      },
+      hide: {
+        effect: "explode",
+        duration: 200
+      },
+      buttons: {
+        "Reset": function() {
+          $( this ).dialog( "close" );
+          resetAll();
+        },
+        Cancel: function() {
+          $( this ).dialog( "close" );
+        }
+      }
+    });
+
+
+
+        $(".long").show();
+        $(".short").hide();
+        maxmin();
+
+      $( function() {
+            $( "#n_menu" ).menu();
+            $( "#c_menu" ).menu();
+            $( "#i_menu" ).menu();
+            $( "#m_menu" ).menu({
+              items: "> :not(.ui-widget-header)"
+            });
+            $( "#g_menu" ).menu();
+      } );
+
+
+      // http://localhost:8000/construct/tool/json/nterm/adrb2_human/
+      $.getJSON( "/construct/tool/json/nterm/{{target.entry_name}}/", function( data ) {
+          var items = [];
+          $.each( data, function( key, val ) {
+            temp = "<li id='" + key + "'><div>" + key + " ("+Object.keys(val).length+")</div><ul>";
+
+            $.each( val, function( protein, val2 ) {
+              temp += "<li id='" + protein + "'><div>" + protein + "</div><ul>";
+              $.each( val2, function( pdb, value ) {
+                  temp += "<li id='"+pdb+"'><div>"+pdb+"</div><ul><li><div> Range:"+value[0]+":"+value[1]+"</div></li><li><div onclick='nterm_tm1(this)' value='"+value[2]+"' from='"+pdb+"'>From TM1:"+value[2]+"</div></li></ul></li>";
+              });
+              temp += "</ul></li>";
+            });
+
+            temp += "</ul></li>";
+            items.push( temp );
+          });
+          result = items.join( "" );
+          $(".nterm").find("ul").html(result);
+          $( "#n_menu" ).menu( "refresh" );
+        });
+
+      // http://localhost:8000/construct/tool/json/cterm/adrb2_human/
+      $.getJSON( "/construct/tool/json/cterm/{{target.entry_name}}/", function( data ) {
+          var items = [];
+          $.each( data, function( key, val ) {
+            temp = "<li id='" + key + "'><div>" + key + " ("+Object.keys(val).length+")</div><ul>";
+
+            $.each( val, function( protein, val2 ) {
+              temp += "<li id='" + protein + "'><div>" + protein + "</div><ul>";
+              $.each( val2, function( pdb, value ) {
+                temp += "<li id='"+pdb+"'><div>"+pdb+"</div><ul><li><div onclick='cterm(this)' value='"+value[2]+"' from='"+pdb+"'>From C-term start:"+value[2]+"</div></li></ul></li>";
+              });
+              temp += "</ul></li>";
+            });
+
+            temp += "</ul></li>";
+            items.push( temp );
+          });
+          result = items.join( "" );
+          $(".cterm").find("ul").html(result);
+          $( "#c_menu" ).menu( "refresh" );
+        });
+
+      // http://localhost:8000/construct/tool/json/icl3/adrb2_human/
+      $.getJSON( "/construct/tool/json/icl3/{{target.entry_name}}/", function( data ) {
+          var items = [];
+          $.each( data, function( key, val ) {
+            temp = "<li id='" + key + "'><div>" + key + " ("+Object.keys(val).length+")</div><ul>";
+
+            $.each( val, function( protein, val2 ) {
+              temp += "<li id='" + protein + "'><div>" + protein + "</div><ul>";
+              $.each( val2, function( pdb, value ) {
+                  temp += "<li id='"+pdb+"'><div>"+pdb+"</div><ul><li><div onclick='icl3(this)' tm5='"+value[0]+"'  tm6='"+value[1]+"' from='"+pdb+"'>TM5:"+value[0]+" TM6:"+value[1]+"</div></li></ul></li>";
+              });
+              temp += "</ul></li>";
+            });
+
+            temp += "</ul></li>";
+            items.push( temp );
+          });
+          result = items.join( "" );
+          $(".icl3").find("ul").html(result);
+          $( "#i_menu" ).menu( "refresh" );
+        });
+
+      // http://localhost:8000/construct/tool/json/cterm/adrb2_human/
+      $.getJSON( "/construct/tool/json/mutations/{{target.entry_name}}/", function( data ) {
+          var items = [];
+          $.each( data, function( gn, val ) {
+            temp = "<li id='" + gn + "'><div>" + gn + " ("+val['hits']+" occurences)</div><ul>";
+
+            temp += "<li><div>"+gn+" in {{target.entry_name}} is "+val['wt'][0]+"</div></li>";
+            console.log(val['mutation']);
+            $.each( val['proteins'], function( key, value ) {
+                temp += "<li id='"+key+"'><div class='origin'>"+value+" ("+val['mutation'][key][0]+"=>"+val['mutation'][key][1]+")</div><ul><li><div onclick='mut(this)' pos='"+val['wt'][1]+"' gn='"+gn+"' wt='"+val['wt'][0]+"' from='"+val['wt'][0]+"' to='"+val['mutation'][key][1]+"' > Mutate "+val['wt'][0]+val['wt'][1]+val['mutation'][key][1]+"</div></li></ul></li>";
+            });
+
+            temp += "</ul></li>";
+            items.push( temp );
+          });
+          result = items.join( "" );
+          $(".common").find("ul").html(result);
+          $( "#m_menu" ).menu( "refresh" );
+        });
+
+            // http://localhost:8000/construct/tool/json/cterm/adrb2_human/
+      $.getJSON( "/construct/tool/json/glyco/{{target.entry_name}}/", function( data ) {
+          var items = [];
+          $.each( data, function( type, val ) {
+            temp = "<li id='" + type + "'><div>" + type + " ("+Object.keys(val).length+" hits)</div><ul>";
+            $.each( val, function( key, value ) {
+                if (type == 'mammalian') {
+                temp += "<li id='"+key+"'><div class='origin'>"+value[4][0]+value[0]+value[1]+" & "+value[4][1]+parseInt(value[0]+1)+value[3]+" ("+value[5]+")</div><ul><li><div onclick='glyco(this)' motif='"+value[4]+"' pos='"+value[0]+"' wt='"+value[4][0]+"' from='"+value[4][0]+"' to='"+value[1]+"' to2='"+value[3]+"' wt2='"+value[4][1]+"'> Mutate "+value[4][0]+value[0]+value[1]+" & "+value[4][1]+parseInt(value[0]+1)+value[3]+"</div></li></ul></li>";
+                } else {
+                temp += "<li id='"+key+"'><div class='origin'>"+value[4][0]+value[0]+value[1]+" ("+value[5]+")</div><ul><li><div onclick='glyco(this)' motif='"+value[4]+"' pos='"+value[0]+"' wt='"+value[4][0]+"' from='"+value[4][0]+"' to='"+value[1]+"' > Mutate "+value[4][0]+value[0]+value[1]+"</div></li></ul></li>";
+                }
+            });
+
+            temp += "</ul></li>";
+            items.push( temp );
+          });
+          result = items.join( "" );
+          $(".glyco").find("ul").html(result);
+          $( "#g_menu" ).menu( "refresh" );
+        });
+        
+
+    });
+</script>
+{% endblock %}
