@@ -94,6 +94,9 @@ MEDIA_ROOT = '/protwis/media/protwis'
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH' : False,
+}
 
 # Templates
 
