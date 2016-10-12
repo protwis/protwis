@@ -74,7 +74,7 @@ class AbsTargetSelection(TemplateView):
     gprots = ProteinGProtein.objects.all()
 
     # numbering schemes
-    gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME)
+    gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug='cgn')
 
     def get_context_data(self, **kwargs):
         """get context from parent class (really only relevant for children of this class, as TemplateView does
@@ -862,7 +862,7 @@ def SelectionSchemesPredefined(request):
     if simple_selection:
         selection.importer(simple_selection)
     
-    all_gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME)
+    all_gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug='cgn')
     gns = False
     if numbering_schemes == 'All':
         print(len(selection.numbering_schemes), all_gns.count())
@@ -894,7 +894,7 @@ def SelectionSchemesPredefined(request):
 def SelectionSchemesToggle(request):
     """Updates the selected numbering schemes arbitrary selections"""
     numbering_scheme_id = request.GET['numbering_scheme_id']
-    gns = ResidueNumberingScheme.objects.filter(pk=numbering_scheme_id)
+    gns = ResidueNumberingScheme.objects.filter(pk=numbering_scheme_id).exclude(slug='cgn')
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
@@ -919,7 +919,7 @@ def SelectionSchemesToggle(request):
 
     # add all species objects to context (for comparison to selected species)
     context = selection.dict('numbering_schemes')
-    context['gns'] = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME)
+    context['gns'] = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug='cgn')
     
     return render(request, 'common/selection_filters_numbering_schemes.html', context)
 
