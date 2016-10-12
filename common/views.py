@@ -302,7 +302,10 @@ def AddToSelection(request):
     
     elif selection_type == 'segments':
         if selection_subtype == 'residue':
-            o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
+            try:
+                o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
+            except:
+                o.append(ResidueGenericNumber.objects.get(id=selection_id))
         elif selection_subtype == 'residue_position_set':
             selection_subtype = 'residue'
             rset = ResiduePositionSet.objects.get(pk=selection_id)
