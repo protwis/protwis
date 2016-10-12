@@ -2,6 +2,7 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.conf import settings
+from django.db.models import Case, When
 
 from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
@@ -33,6 +34,7 @@ class AbsTargetSelection(TemplateView):
     filters = True
     target_input = True
     default_species = 'Human'
+    default_slug = '000'
     numbering_schemes = False
     search = True
     family_tree = True
@@ -54,7 +56,7 @@ class AbsTargetSelection(TemplateView):
     # proteins and families
     #try - except block prevents manage.py from crashing - circular dependencies between protein - common 
     try:
-        ppf = ProteinFamily.objects.get(slug='000')
+        ppf = ProteinFamily.objects.get(slug=default_slug)
         pfs = ProteinFamily.objects.filter(parent=ppf.id)
         ps = Protein.objects.filter(family=ppf)
         psets = ProteinSet.objects.all().prefetch_related('proteins')
@@ -176,8 +178,9 @@ class AbsSegmentSelection(TemplateView):
     try:
         rsets = ResiduePositionSet.objects.all().prefetch_related('residue_position')
     except Exception as e:
-        pass    
-    ss = ProteinSegment.objects.filter(partial=False).prefetch_related('generic_numbers')
+        pass
+
+    ss = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False).prefetch_related('generic_numbers') 
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
     action = 'expand'
 
@@ -299,7 +302,10 @@ def AddToSelection(request):
     
     elif selection_type == 'segments':
         if selection_subtype == 'residue':
-            o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
+            try:
+                o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
+            except:
+                o.append(ResidueGenericNumber.objects.get(id=selection_id))
         elif selection_subtype == 'residue_position_set':
             selection_subtype = 'residue'
             rset = ResiduePositionSet.objects.get(pk=selection_id)
@@ -424,7 +430,6 @@ def SelectRange(request):
             if range_start < float(resn.label.replace('x','.')) < range_end:
                 o.append(resn)
 
-
 def SelectFullSequence(request):
     """Adds all segments to the selection"""
     selection_type = request.GET['selection_type']
@@ -438,7 +443,17 @@ def SelectFullSequence(request):
         selection.importer(simple_selection)
 
     # get all segments
-    segments = ProteinSegment.objects.filter(partial=False)
+    if "protein_type" in request.GET:
+        gsegments = definitions.G_PROTEIN_SEGMENTS
+
+        preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(gsegments['Full'])])
+        segments = ProteinSegment.objects.filter(slug__in = gsegments['Full'], partial=False).order_by(preserved)
+
+
+    else:
+        segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False)
+
+
     for segment in segments:
         selection_object = SelectionItem(segment.category, segment)
         # add the selected item to the selection
@@ -481,7 +496,15 @@ def SelectAlignableSegments(request):
         selection.importer(simple_selection)
 
     # get all segments
-    segments = ProteinSegment.objects.filter(partial=False, slug__startswith='TM')
+        # get all segments
+    if "protein_type" in request.GET:
+        gsegments = definitions.G_PROTEIN_SEGMENTS
+
+        preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(gsegments['Structured'])])
+        segments = ProteinSegment.objects.filter(slug__in = gsegments['Structured'], partial=False).order_by(preserved)
+    else:
+        segments = ProteinSegment.objects.filter(partial=False, slug__startswith='TM')
+
     for segment in segments:
         selection_object = SelectionItem(segment.category, segment)
         # add the selected item to the selection
@@ -787,7 +810,10 @@ def ExpandSegment(request):
     simple_selection = request.session.get('selection', False)
 
     # find the relevant numbering scheme (based on target selection)
-    if numbering_scheme_slug == 'false':
+    cgn = False
+    if numbering_scheme_slug == 'cgn':
+        cgn = True
+    elif numbering_scheme_slug == 'false':
         if simple_selection.reference:
             first_item = simple_selection.reference[0]
         else:
@@ -799,16 +825,28 @@ def ExpandSegment(request):
             numbering_scheme = first_item.item.residue_numbering_scheme
     else:
         numbering_scheme = ResidueNumberingScheme.objects.get(slug=numbering_scheme_slug)
-    
-    # fetch the generic numbers
-    context = {}
-    context['generic_numbers'] = ResidueGenericNumberEquivalent.objects.filter(
-        default_generic_number__protein_segment__id=segment_id,
-        scheme=numbering_scheme).order_by('label')
-    context['position_type'] = position_type
-    context['scheme'] = numbering_scheme
-    context['schemes'] = ResidueNumberingScheme.objects.filter(parent__isnull=False)
-    context['segment_id'] = segment_id
+
+    if cgn ==True:
+        # fetch the generic numbers for CGN differently
+        context = {}
+        context['generic_numbers'] = ResidueGenericNumber.objects.filter(
+            protein_segment__id=segment_id,
+            scheme=12).order_by('label')
+        context['position_type'] = position_type
+        context['scheme'] = ResidueNumberingScheme.objects.filter(slug='cgn')
+        context['schemes'] = ResidueNumberingScheme.objects.filter(slug='cgn')
+        context['segment_id'] = segment_id
+    else:
+        # fetch the generic numbers
+        context = {}
+        context['generic_numbers'] = ResidueGenericNumberEquivalent.objects.filter(
+            default_generic_number__protein_segment__id=segment_id,
+            scheme=numbering_scheme).order_by('label')
+        context['position_type'] = position_type
+        context['scheme'] = numbering_scheme
+        context['schemes'] = ResidueNumberingScheme.objects.filter(parent__isnull=False)
+        context['segment_id'] = segment_id
+        print(context['scheme'], context['schemes'])
     
     return render(request, 'common/segment_generic_numbers.html', context)
 
