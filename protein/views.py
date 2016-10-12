@@ -101,9 +101,17 @@ def detail(request, slug):
     return render(request, 'protein/protein_detail.html', context)
 
 def SelectionAutocomplete(request):
+
+
     if request.is_ajax():
         q = request.GET.get('term')
         type_of_selection = request.GET.get('type_of_selection')
+        
+        if type_of_selection == 'gproteins':
+            exclusion_slug = '00'
+        else:
+            exclusion_slug = '100'
+
         results = []
 
         # session
@@ -125,7 +133,7 @@ def SelectionAutocomplete(request):
         # find proteins
         ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q),
             species__in=(species_list),
-            source__in=(protein_source_list))[:10]
+            source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug)[:10]
         for p in ps:
             p_json = {}
             p_json['id'] = p.id
@@ -138,7 +146,7 @@ def SelectionAutocomplete(request):
         # find protein aliases
         pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
             protein__species__in=(species_list),
-            protein__source__in=(protein_source_list))[:10]
+            protein__source__in=(protein_source_list)).exclude(protein__family__slug__startswith=exclusion_slug)[:10]
         for pa in pas:
             pa_json = {}
             pa_json['id'] = pa.protein.id
@@ -150,9 +158,9 @@ def SelectionAutocomplete(request):
                 results.append(pa_json)
 
         # protein families
-        if type_of_selection == 'targets' or type_of_selection == 'browse':
+        if type_of_selection == 'targets' or type_of_selection == 'browse' or type_of_selection == 'gproteins':
             # find protein families
-            pfs = ProteinFamily.objects.filter(name__icontains=q).exclude(slug='000')[:10]
+            pfs = ProteinFamily.objects.filter(name__icontains=q).exclude(slug='000').exclude(slug__startswith=exclusion_slug)[:10]
             for pf in pfs:
                 pf_json = {}
                 pf_json['id'] = pf.id
