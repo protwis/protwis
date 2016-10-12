@@ -106,8 +106,11 @@ def SelectionAutocomplete(request):
     if request.is_ajax():
         q = request.GET.get('term')
         type_of_selection = request.GET.get('type_of_selection')
+        referer = request.META.get('HTTP_REFERER')
+
+        print(referer)
         
-        if type_of_selection == 'gproteins':
+        if 'gproteinselection' in str(referer):
             exclusion_slug = '00'
         else:
             exclusion_slug = '100'
