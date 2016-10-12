@@ -32,7 +32,7 @@ $(function() {
             $( '#selection-autocomplete' ).val('');
             
             // redirect if select a target/family to browse
-            if (type_of_selection == 'browse') {
+            if (type_of_selection == 'browse' || type_of_selection == 'browse_gprot') {
                 AddToSelection('targets', ui.item['type'], ui.item['id']);
                 toggleButtonClass('selection-button'); // loading effect on button
                 setTimeout(function(){window.location = '/' + ui.item['type'] + '/' + ui.item['slug'];}, 200);
@@ -41,10 +41,7 @@ $(function() {
                 //custom for ginterface
                 AddToSelection('targets', ui.item['type'], ui.item['id']);
                 toggleButtonClass('selection-button'); // loading effect on button
-                setTimeout(function(){window.location = '/interaction/ginterface/' + ui.item['slug'];}, 200);
-            } else if (type_of_selection == 'gproteins') {
-                //custom for ginterface
-                AddToSelection(type_of_selection, ui.item['type'], ui.item['id']);             
+                setTimeout(function(){window.location = '/interaction/ginterface/' + ui.item['slug'];}, 200);         
             } else {
                 // add to selection
                 AddToSelection(type_of_selection, ui.item['type'], ui.item['id']);                
