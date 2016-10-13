@@ -4,7 +4,8 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinGProtein, ProteinGProteinPair
-from residue.models import Residue
+from residue.models import Residue, ResiduePositionSet
+
 from structure.models import Structure
 from mutation.models import MutationExperiment
 from common.selection import Selection
@@ -14,6 +15,7 @@ from common import definitions
 from collections import OrderedDict
 from common.views import AbsTargetSelection
 
+import json
 # Create your views here.
 class BrowseSelection(AbsTargetSelection):
     step = 1
@@ -181,6 +183,25 @@ def Ginterface(request, protein = None):
 
     return render(request, 'signprot/ginterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn, 'primary_Gprotein': '; '.join(set(primary)), 'secondary_Gprotein': '; '.join(set(secondary))} )
 
+def ajax(request, slug, **response_kwargs):
+
+    rsets = ResiduePositionSet.objects.get(name="Gprotein Barcode")
+    # residues = Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label)
+
+    jsondata = {}
+    positions = []
+    for residue in rsets.residue_position.all():
+        try:
+            pos = str(list(Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label))[0])
+        except:
+            print("Protein has no residue position at", residue.label)
+        a = pos[1:]
+        jsondata[a] = [5,"Test",residue.label]
+
+    jsondata = json.dumps(jsondata)
+    response_kwargs['content_type'] = 'application/json'
+
+    return HttpResponse(jsondata, **response_kwargs)
 
 def signprotdetail(request, slug):
     # get protein
