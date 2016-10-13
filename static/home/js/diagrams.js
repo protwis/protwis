@@ -494,6 +494,45 @@
                         });
                     }
 
+                    function ajaxBarcode(plotid,protein) {
+
+                      resetColors(plotid);
+
+                        $.getJSON( '/signprot/ajax/'+protein+'/', function( data ) {
+                          $.each( data, function( key, val ) {
+
+                            var flags = [], falgsAA = [], output = [], outputAA = [], l = val.length, i;
+                            for( i=0; i<l; i++) {
+                                if( flags[val[i][1]]) continue;
+                                flags[val[i][1]] = true;
+                                output.push(val[i][1]);
+                            }
+                            for( i=0; i<l; i++) {
+                                if( flags[val[i][0]]) continue;
+                                flags[val[i][0]] = true;
+                                outputAA.push(val[i][0]);
+                            }
+                             
+                             extra = "\n" + String("Barcode position");
+
+
+                             $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
+                             $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+
+                             original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+
+                             $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+                          });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
+    
+                        });
+                    }
+
                     function ajaxInteractionsPos(plotid) {
 
                       resetColors(plotid);
