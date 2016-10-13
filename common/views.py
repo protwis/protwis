@@ -39,6 +39,7 @@ class AbsTargetSelection(TemplateView):
     search = True
     family_tree = True
     redirect_on_select = False
+    filter_gprotein = False
     buttons = {
         'continue': {
             'label': 'Continue to next step',
@@ -176,7 +177,7 @@ class AbsSegmentSelection(TemplateView):
     ])
 
     try:
-        rsets = ResiduePositionSet.objects.all().prefetch_related('residue_position')
+        rsets = ResiduePositionSet.objects.exclude(name="Gprotein Barcode").prefetch_related('residue_position')
     except Exception as e:
         pass
 
@@ -302,10 +303,7 @@ def AddToSelection(request):
     
     elif selection_type == 'segments':
         if selection_subtype == 'residue':
-            try:
-                o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
-            except:
-                o.append(ResidueGenericNumberEquivalent.objects.get(default_generic_number_id=selection_id))
+            o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
         elif selection_subtype == 'residue_position_set':
             selection_subtype = 'residue'
             rset = ResiduePositionSet.objects.get(pk=selection_id)
@@ -830,9 +828,9 @@ def ExpandSegment(request):
     if cgn ==True:
         # fetch the generic numbers for CGN differently
         context = {}
-        context['generic_numbers'] = ResidueGenericNumber.objects.filter(
-            protein_segment__id=segment_id,
-            scheme=12).order_by('label')
+        context['generic_numbers'] = ResidueGenericNumberEquivalent.objects.filter(
+            default_generic_number__protein_segment__id=segment_id,
+            scheme__slug='cgn').order_by('label')
         context['position_type'] = position_type
         context['scheme'] = ResidueNumberingScheme.objects.filter(slug='cgn')
         context['schemes'] = ResidueNumberingScheme.objects.filter(slug='cgn')

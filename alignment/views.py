@@ -37,6 +37,8 @@ class TargetSelectionGprotein(AbsTargetSelection):
     number_of_steps = 2
     psets = False
     filters = True
+    filter_gprotein = True
+
     docs = 'sequences.html#structure-based-alignments'
 
     selection_boxes = OrderedDict([
@@ -104,7 +106,7 @@ class SegmentSelectionGprotein(AbsSegmentSelection):
     }
 
     position_type = 'gprotein'
-    rsets = ResiduePositionSet.objects.filter(name="barcode").prefetch_related('residue_position')
+    rsets = ResiduePositionSet.objects.filter(name="Gprotein Barcode").prefetch_related('residue_position')
 
     ss = ProteinSegment.objects.filter(name__regex = r'^[a-zA-Z0-9]{1,5}$', partial=False).prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')

@@ -38,16 +38,26 @@
                         <td class="ali-td-generic-num ali-td-first-col">{{ ns.1 }}</td>
                     </tr>
                     {% endfor %}
-
+                    
                     <!-- protein names -->
                     {% for p in a.proteins %}
-                    <tr>
-                        <td class="ali-td ali-td-first-col">
-                            <a href='/protein/{{ p.protein.entry_name }}'>
-                                [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
-                            </a>
-                        </td>
-                    </tr>
+                        {% if 'Common G-alpha numbering scheme' in a.numbering_schemes.0 %}
+                            <tr>
+                                <td class="ali-td ali-td-first-col">
+                                    <a href='/signprot/{{ p.protein.entry_name }}'>
+                                        [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                                    </a>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td class="ali-td ali-td-first-col">
+                                    <a href='/protein/{{ p.protein.entry_name }}'>
+                                        [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endif %}
                     {% endfor %}
 
                     <!-- numbering scheme lines -->
