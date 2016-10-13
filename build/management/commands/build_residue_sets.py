@@ -11,10 +11,24 @@ class Command(BaseCommand):
 
     logger = logging.getLogger(__name__)
 
+    def purge_residue_sets_(self):
+        try:
+            ResiduePositionSet.objects.all().delete()
+        except Exception as msg:
+            print(msg)
+            self.logger.warning('Existing data cannot be deleted')
+
     def handle(self, *args, **options):
         functions = [
             'create_residue_sets',
         ]
+
+        try:
+            self.purge_residue_sets_()
+            
+        except Exception as msg:
+            print(msg)
+            self.logger.error(msg)
 
         # execute functions
         for f in functions:
@@ -24,11 +38,13 @@ class Command(BaseCommand):
                 print(msg)
                 self.logger.error(msg)
 
+
     def create_residue_sets(self):
         self.logger.info('CREATING RESIDUE SETS')
 
         residue_sets = {
             'Signalling protein pocket': ['gpcrdba', ['3x50', '3x53', '3x54', '3x55', '34x50', '34x51', '34x53', '34x54', '5x64', '5x67', '5x68', '5x71', '5x74','6x29', '6x36', '7x55', '8x48', '8x49']],
+            'Gprotein Barcode': ['cgn', ['G.hns1.02','G.hns1.03','G.S1.02','G.S3.01','G.S3.03','G.H4.26','G.H4.27','G.h4s6.03','G.h4s6.20','G.H5.11','G.H5.12','G.H5.13','G.H5.15','G.H5.16','G.H5.17','G.H5.19','G.H5.20','G.H5.23','G.H5.24','G.H5.25','G.H5.26']]
                         }
         for set_name in residue_sets.keys():
             residues = []
