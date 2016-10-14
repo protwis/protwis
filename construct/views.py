@@ -183,6 +183,8 @@ class ConstructStatistics(TemplateView):
 
         mutation_list = OrderedDict()
         mutation_type = OrderedDict()
+        mutation_wt = OrderedDict()
+        mutation_mut = OrderedDict()
         for mutation in mutations:
             wt = mutation[0].wild_type_amino_acid
             mut = mutation[0].mutated_amino_acid
@@ -200,6 +202,23 @@ class ConstructStatistics(TemplateView):
                 mutation_type[p_class][wt+"=>"+mut]['proteins'].append(entry_name)
                 mutation_type[p_class][wt+"=>"+mut]['hits'] += 1
 
+
+            if p_class not in mutation_wt:
+                mutation_wt[p_class] = OrderedDict()
+            if wt not in mutation_wt[p_class]:
+                mutation_wt[p_class][wt] = {'hits':0, 'proteins':[]}
+            if entry_name not in mutation_wt[p_class][wt]['proteins']:
+                mutation_wt[p_class][wt]['proteins'].append(entry_name)
+                mutation_wt[p_class][wt]['hits'] += 1
+
+            if p_class not in mutation_mut:
+                mutation_mut[p_class] = OrderedDict()
+            if mut not in mutation_mut[p_class]:
+                mutation_mut[p_class][mut] = {'hits':0, 'proteins':[]}
+            if entry_name not in mutation_mut[p_class][mut]['proteins']:
+                mutation_mut[p_class][mut]['proteins'].append(entry_name)
+                mutation_mut[p_class][mut]['hits'] += 1
+
             if entry_name not in rs_lookup:
                 continue
             if pos not in rs_lookup[entry_name]:
@@ -208,11 +227,8 @@ class ConstructStatistics(TemplateView):
 
             if p_class not in mutation_list:
                 mutation_list[p_class] = OrderedDict()
-
             if gn not in mutation_list[p_class]:
                 mutation_list[p_class][gn] = {'proteins':[], 'hits':0, 'mutation':[]}
-
-
             if entry_name not in mutation_list[p_class][gn]['proteins']:
                 mutation_list[p_class][gn]['proteins'].append(entry_name)
                 mutation_list[p_class][gn]['hits'] += 1  
@@ -231,8 +247,16 @@ class ConstructStatistics(TemplateView):
         for p_class, values in mutation_type.items():
             mutation_type[p_class] = OrderedDict(sorted(values.items(), key=lambda x: x[1]['hits'],reverse=True))
 
+        for p_class, values in mutation_wt.items():
+            mutation_wt[p_class] = OrderedDict(sorted(values.items(), key=lambda x: x[1]['hits'],reverse=True))
+
+        for p_class, values in mutation_mut.items():
+            mutation_mut[p_class] = OrderedDict(sorted(values.items(), key=lambda x: x[1]['hits'],reverse=True))
+
         context['mutation_list'] = mutation_list
         context['mutation_type'] = mutation_type
+        context['mutation_wt'] = mutation_wt
+        context['mutation_mut'] = mutation_mut
 
         for c in cons:
             pass
