@@ -6,6 +6,9 @@ from residue.models import Residue
 from mutation.models import Mutation
 
 from construct.schematics import generate_schematic
+from common.diagrams_gpcr import DrawSnakePlot
+
+import pickle
 
 class Construct(models.Model): 
     #overall class 
@@ -24,28 +27,64 @@ class Construct(models.Model):
     crystallization = models.ForeignKey('Crystallization', null=True)  #method description if present
     crystal = models.ForeignKey('CrystalInfo', null=True) #might not exist, if failed
     structure = models.ForeignKey('structure.Structure', null=True) #might not exist, if failed
+    schematics = models.BinaryField(null=True)
+    snakecache = models.BinaryField(null=True)
 
     #Back up of original entry
     json = models.TextField(null=True)
 
+    def fusion(self):
+        list_of_none_fusion = ['Expression tag','Linker','Not_Observed','Engineered mutation','','Conflict','Insertion','S-arrestin']
+        list_of_comfirmed_fusion = ['C8TP59','Q0SXH8','Q9V2J8','Soluble cytochrome b562','Endolysin','Rubredoxin','Lysozyme']
+        #ODD Rubredoxin
+        #Q9V2J8 GlgA glycogen synthase  auto_4ZJ8
+        #C8TP59  Cytochrome b562
+        # Q0SXH8 Cytochrome b(562)
+        result = []
+        position = None
+        for insert in self.insertions.all():
+            if insert.insert_type.subtype in list_of_none_fusion:
+                continue
+            if insert.insert_type.name!='fusion' and insert.insert_type.name!='auto':
+                continue
+            #print(insert.insert_type.name, insert.insert_type.subtype)
+            #print(insert.position, self.name)
+            confirmed = False
+            if insert.insert_type.name=='fusion' or insert.insert_type.subtype in list_of_comfirmed_fusion:
+                confirmed = True
+                if insert.position.startswith('N-term'):
+                    position = 'nterm'
+                else:
+                    position = 'icl3'
+            result.append([confirmed,insert.insert_type.name, insert.insert_type.subtype,insert.position])
+        return position,result
+
     def schematic(self):
         ## Use cache if possible
-        temp = cache.get(self.name+'_schematics')
+        temp = self.schematics
         if temp==None:
-            print(self.name+'_schematics no cache')
-            try:
-                temp = cache.set(self.name+'_schematics', generate_schematic(self), 60*60*24*2) #two days
-                temp = cache.get(self.name+'_schematics')
-            except:
-                temp = {}
+            # print(self.name+'_schematics no cache')
+            temp = generate_schematic(self)
+            self.schematics = pickle.dumps(temp)
+            self.save()
         else:
-            print(self.name+'_schematics used cache')
-            # temp = cache.set(self.name+'_schematics', generate_schematic(self), 60*60*24*2) #two days
-
-        # temp = generate_schematic(self) #override
+            # print(self.name+'_schematics used cache')
+            temp = pickle.loads(temp)
         return temp
 
-
+    def snake(self):
+        ## Use cache if possible
+        temp = self.snakecache
+        if temp==None:
+            # print(self.name+'_snake no cache')
+            residues = Residue.objects.filter(protein_conformation__protein=self.protein).order_by('sequence_number').prefetch_related(
+                'protein_segment', 'generic_number', 'display_generic_number')
+            temp = DrawSnakePlot(residues,self.protein.get_protein_class(),str(self.protein),nobuttons = True)
+            self.snakecache = pickle.dumps(temp)
+            self.save()
+        else:
+            temp = pickle.loads(temp)
+        return temp
 
 class CrystalInfo(models.Model):
     resolution = models.DecimalField(max_digits=5, decimal_places=3) #probably want more values
@@ -69,7 +108,7 @@ class ConstructMutation(models.Model):
     mutated_amino_acid = models.CharField(max_length=1)
 
     def __str__(self):
-        return '{} {}{}'.format(self.wild_type_amino_acid, self.sequence_number,
+        return '{}{}{}'.format(self.wild_type_amino_acid, self.sequence_number,
             self.mutated_amino_acid)
 
     class Meta():

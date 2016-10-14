@@ -1,0 +1,93 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block addon_css %}
+
+{% endblock %}
+
+{% block content %}
+
+<h2> Construct Statistics</h2>
+
+<br>
+N-TERM (non fused)
+<table width="100%">
+{% for class, values in truncations.nterm.items %}
+<tr><td colspan="2">{{class}}</td></tr>
+{% for position, proteins in values.items %}
+<tr><td>{{position}}</td><td>{{proteins|length}}</td><td>{{proteins|join:", "}}</td></tr>
+{% endfor %}
+{% endfor %}
+</table>
+
+<br>
+N-TERM (fused)
+<table width="100%">
+{% for class, values in truncations.nterm_fusion.items %}
+<tr><td colspan="2">{{class}}</td></tr>
+{% for position, proteins in values.items %}
+<tr><td>{{position}}</td><td>{{proteins|length}}</td><td>{{proteins|join:", "}}</td></tr>
+{% endfor %}
+{% endfor %}
+</table>
+
+<br>
+C-TERM
+<table width="100%">
+{% for class, values in truncations.cterm.items %}
+<tr><td colspan="2">{{class}}</td></tr>
+{% for position, proteins in values.items %}
+<tr><td>{{position}}</td><td>{{proteins|length}}</td><td>{{proteins|join:", "}}</td></tr>
+{% endfor %}
+{% endfor %}
+</table>
+
+
+<br>
+ICL3 (non fused)
+<table width="100%">
+{% for class, values in truncations.icl3.items %}
+<tr><td colspan="2">{{class}}</td></tr>
+{% for position, proteins in values.items %}
+<tr><td>{{position}}</td><td>{{proteins|length}}</td><td>{{proteins|join:", "}}</td></tr>
+{% endfor %}
+{% endfor %}
+</table>
+
+
+<br>
+ICL3 (fused)
+<table width="100%">
+{% for class, values in truncations.icl3_fusion.items %}
+<tr><td colspan="2">{{class}}</td></tr>
+{% for position, proteins in values.items %}
+<tr><td>{{position}}</td><td>{{proteins|length}}</td><td>{{proteins|join:", "}}</td></tr>
+{% endfor %}
+{% endfor %}
+</table>
+
+<br>
+MUTATION HOTSPOTS
+<table width="100%">
+{% for class, vals in mutation_list.items %}
+<tr><td colspan="2">{{class}}</td></tr>
+{% for gn, values in vals.items %}
+<tr><td>{{gn}}</td><td>{{values.hits}}</td><td>{{values.proteins|join:", "}}</td></tr>
+{% endfor %}
+{% endfor %}
+</table>
+
+<br>
+MUTATION TYPES
+<table width="100%">
+{% for class, vals in mutation_type.items %}
+<tr><td colspan="2">{{class}}</td></tr>
+{% for gn, values in vals.items %}
+<tr><td>{{gn}}</td><td>{{values.hits}}</td><td>{{values.proteins|join:", "}}</td></tr>
+{% endfor %}
+{% endfor %}
+</table>
+{% endblock %}
+{% block addon_js %}
+
+{% endblock %}
