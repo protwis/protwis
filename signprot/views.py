@@ -10,6 +10,7 @@ from structure.models import Structure
 from mutation.models import MutationExperiment
 from common.selection import Selection
 from common.diagrams_gpcr import DrawSnakePlot
+from common.diagrams_gprotein import DrawGproteinPlot
 
 from common import definitions
 from collections import OrderedDict
@@ -21,7 +22,9 @@ class BrowseSelection(AbsTargetSelection):
     step = 1
     number_of_steps = 1
     psets = False
-    filters = False
+    filters = True
+    filter_gprotein = True
+
     type_of_selection = 'browse_gprot'
 
     description = 'Select a G protein or family by searching or browsing in the right column.'
@@ -123,6 +126,11 @@ def Ginterface(request, protein = None):
     SnakePlot = DrawSnakePlot(
                 residuelist, "Class A (Rhodopsin)", protein, nobuttons=1)
 
+    # TEST
+    gprotein_residues = Residue.objects.filter(protein_conformation__protein__entry_name='gnaz_human').prefetch_related('protein_segment','display_generic_number','generic_number')
+    gproteinplot = DrawGproteinPlot(
+                gprotein_residues, "Gprotein", protein)
+
     crystal = Structure.objects.get(pdb_code__index="3SN6")
     aa_names = definitions.AMINO_ACID_GROUP_NAMES
     names_aa = dict(zip(aa_names.values(),aa_names.keys()))
@@ -181,7 +189,7 @@ def Ginterface(request, protein = None):
             secondary.append(entry.g_protein.name.replace("Gs","G<sub>s</sub>").replace("Gi","G<sub>i</sub>").replace("Go","G<sub>o</sub>").replace("G11","G<sub>11</sub>").replace("G12","G<sub>12</sub>").replace("G13","G<sub>13</sub>").replace("Gq","G<sub>q</sub>").replace("G","G&alpha;"))
 
 
-    return render(request, 'signprot/ginterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn, 'primary_Gprotein': '; '.join(set(primary)), 'secondary_Gprotein': '; '.join(set(secondary))} )
+    return render(request, 'signprot/ginterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'gproteinplot': gproteinplot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn, 'primary_Gprotein': '; '.join(set(primary)), 'secondary_Gprotein': '; '.join(set(secondary))} )
 
 def ajax(request, slug, **response_kwargs):
 
