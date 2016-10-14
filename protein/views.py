@@ -102,13 +102,12 @@ def detail(request, slug):
 
 def SelectionAutocomplete(request):
 
-
     if request.is_ajax():
         q = request.GET.get('term')
         type_of_selection = request.GET.get('type_of_selection')
         referer = request.META.get('HTTP_REFERER')
         
-        if 'gproteinselection' in str(referer) or 'signprot' in str(referer):
+        if 'gproteinselection' in str(referer) or 'signprot' in str(referer) and not 'ginterface' in str(referer):
             exclusion_slug = '00'
         else:
             exclusion_slug = '100'
