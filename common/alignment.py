@@ -1039,12 +1039,9 @@ class AlignedReferenceTemplate(Alignment):
                         rota = [x for x in Rotamer.objects.filter(structure=struct, residue__in=main_temp_ECL2[1]) if x.pdbdata.pdb.startswith('COMPND')==False]
                         if len(rota)==3:
                             temp_list_mid.append((struct, 3, similarity, float(struct.resolution), protein))  
-                        if len(ref_ECL2[0])==len(main_temp_ECL2[0]) and len(ref_ECL2[2])==len(main_temp_ECL2[2]):
+                        if len(ref_ECL2[0])==len(main_temp_ECL2[0]) and len(main_temp_ECL2[0])==len(main_parent_ECL2[0]):
                             temp_list1.append((struct, len(main_temp_ECL2[0]), similarity, float(struct.resolution),protein))
-                            temp_list2.append((struct, len(main_temp_ECL2[2]), similarity, float(struct.resolution),protein))
-                        elif len(ref_ECL2[0])==len(main_temp_ECL2[0]) and len(ref_ECL2[2])!=len(main_temp_ECL2[2]):
-                            temp_list1.append((struct, len(main_temp_ECL2[0]), similarity, float(struct.resolution),protein))
-                        elif len(ref_ECL2[0])!=len(main_temp_ECL2[0]) and len(ref_ECL2[2])==len(main_temp_ECL2[2]):
+                        if len(ref_ECL2[0])!=len(main_temp_ECL2[0]) and len(main_temp_ECL2[2])==len(main_parent_ECL2[2]):
                             temp_list2.append((struct, len(main_temp_ECL2[2]), similarity, float(struct.resolution),protein))
 
                         # Allow for partial main loop template
@@ -1059,13 +1056,15 @@ class AlignedReferenceTemplate(Alignment):
                 except:
                     if len(main_temp_seq)==0:
                         continue
-                    if len(ref_seq)==len(main_temp_seq) or self.segment_labels[0] in self.provide_alignment.reference_dict:
+                    if ((len(ref_seq)==len(main_temp_seq) and len(main_temp_seq)==len(main_temp_parent)) or 
+                        self.segment_labels[0] in self.provide_alignment.reference_dict):
                         similarity_table[self.main_template_structure] = self.provide_similarity_table[
                                                                                             self.main_template_structure]
                         temp_list.append((struct, len(main_temp_seq), similarity, float(struct.resolution), protein))
                         
                     # Allow for partial main loop template
-                    elif len(ref_seq)>=len(main_temp_parent) and [i.sequence_number for i in main_temp_seq]!=[i.sequence_number for i in main_temp_parent]:
+                    elif (len(ref_seq)>=len(main_temp_parent) and len(main_temp_parent)>len(main_temp_seq) and 
+                          [i.sequence_number for i in main_temp_seq]!=[i.sequence_number for i in main_temp_parent]):
                         temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
             else:
                 temp_length, temp_length1, temp_length2 = [],[],[]

@@ -4,7 +4,7 @@ from collections import OrderedDict
 
 class HomologyModelsTests(object):
     
-    def pdb_alignment_mismatch(self, alignment, main_pdb_array):
+    def pdb_alignment_mismatch(self, alignment, main_pdb_array, main_structure):
         lengths_1, lengths_2 = OrderedDict(), OrderedDict()
         missing_from_alignment, missing_from_pdb = [], []
         for i in alignment.template_dict:
@@ -21,6 +21,7 @@ class HomologyModelsTests(object):
                     alignment.template_dict[i][j.replace('.','x')]
                 except:
                     missing_from_alignment.append(j)
+        print('Main structure: ', main_structure)
         print('Alignment: ', lengths_1)
         print('PDB:       ', lengths_2)
         print('Missing from Alignment:')
