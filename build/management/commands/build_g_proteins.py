@@ -68,9 +68,8 @@ class Command(BaseCommand):
 
         #add residues from cgn db
         try:
-            print("first call with passed list")
             human_and_orths = self.cgn_add_proteins()
-            print("****", human_and_orths)
+
             self.update_protein_conformation(human_and_orths)
         except Exception as msg:
             print(msg)
@@ -152,14 +151,6 @@ class Command(BaseCommand):
 
     def add_cgn_residues(self, gprotein_list):
 
-        #gproteins list (lower case)
-        #gprotein_list=['gnaz_human','gnat3_human', 'gnat2_human', 'gnat1_human', 'gnas2_human', 'gnaq_human', 'gnao_human', 'gnal_human', 'gnai3_human', 'gnai2_human','gnai1_human', 'gna15_human', 'gna14_human', 'gna12_human', 'gna11_human', 'gna13_human']
-        
-        i=0
-
-        print("residues start:")
-
-
         #Parsing pdb uniprot file for residues
         self.logger.info('Start parsing PDB_UNIPROT_ENSEMBLE_ALL')
         self.logger.info('Parsing file ' + self.gprotein_data_file)
@@ -211,7 +202,6 @@ class Command(BaseCommand):
 
         #add new cgn protein conformations
         for g in gprotein_list:
-            print(g)
             gp = Protein.objects.get(accession=g)
 
             try:
@@ -247,7 +237,6 @@ class Command(BaseCommand):
 
         for s in cgns:
             segments.append(s.split(".")[1])
-
 
         #Commit protein segments in db
 
@@ -351,7 +340,7 @@ class Command(BaseCommand):
             #Create new Protein
             self.cgn_creat_gproteins(pfm, rns, a, up)
 
-                ###################ORTHOLOGS###############
+        ###################ORTHOLOGS###############
         orthologs_pairs =[]
         orthologs =[]
 
@@ -362,15 +351,12 @@ class Command(BaseCommand):
         for gp in cgn_proteins_list:
             for p in allprots:
                 if str(p).startswith(gp.split('_')[0]):
-                    orthologs_p@airs.append((str(p), gp))
+                    orthologs_pairs.append((str(p), gp))
                     orthologs.append(str(p))
-
-        #print(orthologs)
 
         accessions_orth= df.loc[df['Uniprot_ID'].isin(orthologs)]
         accessions_orth= accessions_orth['Uniprot_ACC'].unique()
 
-        #print(accessions_orth)
 
         for a in accessions_orth:
             up = self.parse_uniprot_file(a)
@@ -483,13 +469,6 @@ class Command(BaseCommand):
                 pcgn = Protein.objects.get(entry_name=uniprot['entry_name'].lower())
                 g.proteins.add(pcgn)
 
-        #protein web_links:
-
-
-
-
-
-
     def cgn_parent_protein_family(self):
 
         pf_cgn, created_pf = ProteinFamily.objects.get_or_create(slug='100', defaults={
@@ -504,7 +483,6 @@ class Command(BaseCommand):
         rns_cgn, created= ResidueNumberingScheme.objects.get_or_create(slug='cgn', short_name='CGN', defaults={
             'name': 'Common G-alpha numbering scheme'})
 
-    
     def cgn_create_proteins_and_families(self):
 
         #Creating single entries in "protein_family' table
@@ -653,10 +631,3 @@ class Command(BaseCommand):
             local_file.close()
 
         return up
-
-
-
-
-
-
-
