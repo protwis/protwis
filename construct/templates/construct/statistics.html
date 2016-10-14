@@ -87,6 +87,29 @@ MUTATION TYPES
 {% endfor %}
 {% endfor %}
 </table>
+
+<br>
+MUTATION TYPES (only WT aa)
+<table width="100%">
+{% for class, vals in mutation_wt.items %}
+<tr><td colspan="2">{{class}}</td></tr>
+{% for gn, values in vals.items %}
+<tr><td>{{gn}}</td><td>{{values.hits}}</td><td>{{values.proteins|join:", "}}</td></tr>
+{% endfor %}
+{% endfor %}
+</table>
+
+
+<br>
+MUTATION TYPES (only mutated aa)
+<table width="100%">
+{% for class, vals in mutation_mut.items %}
+<tr><td colspan="2">{{class}}</td></tr>
+{% for gn, values in vals.items %}
+<tr><td>{{gn}}</td><td>{{values.hits}}</td><td>{{values.proteins|join:", "}}</td></tr>
+{% endfor %}
+{% endfor %}
+</table>
 {% endblock %}
 {% block addon_js %}
 
