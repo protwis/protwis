@@ -81,6 +81,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
      # local protein list
     proteins = []
     alignment_proteins = []
+    original_positions = []
     if receptor_class==None:
 
         if protein: # if protein static page
