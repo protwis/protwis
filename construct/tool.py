@@ -55,6 +55,17 @@ def tool(request):
 
     return render(request,'tool.html',context)
 
+def json_fusion(request, slug, **response_kwargs):
+
+    level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
+    #proteins = Construct.objects.all().values_list('protein', flat = True)
+    cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions')
+
+    jsondata = "glyco"
+    jsondata = json.dumps(jsondata)
+    response_kwargs['content_type'] = 'application/json'
+    return HttpResponse(jsondata, **response_kwargs)
+
 def json_glyco(request, slug, **response_kwargs):
 
 
