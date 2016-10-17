@@ -365,7 +365,7 @@ def fetch_all_pdb(request):
 
     context = {'failed':failed}
 
-    return render(request,'all.html',context)
+    return render(request,'pdb_all.html',context)
 
 def fetch_pdb(request, slug):
 
