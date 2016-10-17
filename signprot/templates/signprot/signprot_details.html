@@ -34,8 +34,46 @@
     <div class="col-md-2 text-right text-info">
         <h4>DIAGRAMS</h4>
     </div>
+    <div class="col-md-10" style="height:500px">
+    <p><b>H5 Domain:</b></p>
+    {{ p.get_gprotein_plot }}
+    <p><div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+        aria-haspopup="true" aria-expanded="false">
+        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+        <li>
+            <a href="javascript:saveSvgAsPng(document.getElementById('GproteinPlot'), 'plot_{{ p.entry_name }}.png',
+            {scale: 3});">PNG</a>
+        </li>
+        <li>
+            <a href="javascript:saveSvgAsJpg(document.getElementById('GproteinPlot'), 'plot_{{ p.entry_name }}.jpg',
+            {scale: 3});">JPG</a>
+        </li>
+        <li>
+            <a href="javascript:saveSvgAsTiff(document.getElementById('GproteinPlot'), 'plot_{{ p.entry_name }}.tiff',
+            {scale: 3});">TIFF</a>
+            </a>
+        </li>
+        <li>
+        <a id=snake_svg_link href-lang="image/svg+xml" href="" download="plot_{{ p.entry_name }}">SVG</a>
+        </li>
+        </ul>
+    </div></p>
+    </div>
 </div>
-
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 <div class="row">
     <div class="col-md-2 text-right text-info">
         <h4>MUTATIONS</h4>
@@ -45,7 +83,7 @@
     </div>
 </div>
 
-<div class="row">
+<!-- <div class="row">
     <div class="col-md-2 text-right text-info">
         <h4>STRUCTURES</h4>
     </div>
@@ -56,9 +94,13 @@
         No structures available
         {% endfor %}
     </div>
-</div>
+</div> -->
+
 {% endblock %}
 
 {% block addon_js %}
 <script src="{% static 'home/js/sequenceviewer.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/diagrams.js' %}"></script>
+<script src="{% static 'home/js/color_picker.js' %}"></script>
 {% endblock %}
