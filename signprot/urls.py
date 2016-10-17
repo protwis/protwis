@@ -9,4 +9,5 @@ urlpatterns = [
     url(r'^ginterface[/]?$', views.TargetSelection.as_view(), name='targetselection'),
     url(r'^ajax/(?P<slug>[-\w]+)/$', views.ajax, name='ajax'),
     url(r'^(?P<slug>[-\w]+)/$', views.signprotdetail, name='signprotdetail'),
+    url(r'^structure/(?P<pdbname>[-\w]+)/$', views.StructureInfo, name='StructureInfo'),
 ]

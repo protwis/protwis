@@ -12,6 +12,8 @@ from common.selection import Selection
 from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
 
+from signprot.models import SignprotStructure
+
 from common import definitions
 from collections import OrderedDict
 from common.views import AbsTargetSelection
@@ -211,6 +213,17 @@ def ajax(request, slug, **response_kwargs):
 
     return HttpResponse(jsondata, **response_kwargs)
 
+def StructureInfo(request, pdbname):
+    """
+    Show structure details
+    """
+    protein = Protein.objects.get(signprotstructure__PDB_code=pdbname)
+
+    crystal = SignprotStructure.objects.get(PDB_code=pdbname)
+
+    return render(request,'signprot/structure_info.html',{'pdbname': pdbname, 'protein': protein, 'crystal': crystal})
+
+
 def signprotdetail(request, slug):
     # get protein
 
@@ -225,9 +238,6 @@ def signprotdetail(request, slug):
         pf = pf.parent
     families.reverse()
 
-    # get default conformation
-    pc = ProteinConformation.objects.get(protein=p)
-
     # get protein aliases
     aliases = ProteinAlias.objects.filter(protein=p).values_list('name', flat=True)
 
@@ -236,15 +246,18 @@ def signprotdetail(request, slug):
     gene = genes[0]
     alt_genes = genes[1:]
 
-    # get structures of this protein
-    structures = Structure.objects.filter(protein_conformation__protein__parent=p).order_by('-representative',
-        'resolution')
+    # get structures of this signal protein
+    structures = SignprotStructure.objects.filter(origin=p)
+
+    # mutations
+    mutations = MutationExperiment.objects.filter(protein=p)
+
 
     # get residues
+    pc = ProteinConformation.objects.get(protein=p)
+
     residues = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related(
         'protein_segment', 'generic_number', 'display_generic_number')
-
-    mutations = MutationExperiment.objects.filter(protein=p)
 
     # process residues and return them in chunks of 10
     # this is done for easier scaling on smaller screens
