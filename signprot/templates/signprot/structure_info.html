@@ -1,0 +1,99 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<style>
+canvas {
+    border:2px solid #888888;
+}
+</style>
+
+ <script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script> 
+<div class="row text-success">
+<div class="text-center">
+        <h2>{{ protein.name|safe }}</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>PROTEIN Family</h4>
+    </div>
+    <div class="col-md-9">
+    {{ protein.family.name|safe }}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>RECEPTOR</h4>
+    </div>
+    <div class="col-md-9">
+    <a href="../../{{ protein.entry_name }}">{{ protein.name|safe }}</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>PDB CODE</h4>
+    </div>
+    <div class="col-md-9">
+    {{ crystal.PDB_code|safe }}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>SPECIES</h4>
+    </div>
+    <div class="col-md-9">
+    {{ protein.species.latin_name }}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>RESOLUTION</h4>
+    </div>
+    <div class="col-md-9">
+    {{ crystal.resolution|safe}}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 text-right text-info">
+        <h4>RECEPTOR PDB</h4>
+    </div>
+    <div class="col-md-9">
+    <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
+    <div> <button id=fullscreen>Full Screen</button></div>
+
+<!--     <div style="height: 400px; width: 500px; position: relative;" class='viewer_3Dmoljs'  data-backgroundcolor='0xffffff' data-href='pdb/{{pdbname}}' data-type='pdb' data-backgroundcolor='0xffffff' data-labelres2='fontSize:12;opacity:.2;color:black' data-select1='{"hetflag":false}'  data-style1='{"cartoon":{"color":"spectrum"}}' data-select2='{"resn":["test"{{ annotated_resn}}]}' data-style2='{"stick":{"colorscheme":"greenCarbon"}}'></div> 
+         <a href="pdb/{{pdbname}}">Download PDB file</a>
+         
+    </div> -->
+</div>
+
+{% endblock %}
+{% block addon_js %}
+    <script src="{% static 'home/js/ngl.js' %}"> </script>
+        <script>
+        // http://proteinformatics.charite.de/ngl/doc/#User_manual/Usage/Molecular_representations
+        // http://arose.github.io/ngl/api/Stage.html
+        // http://arose.github.io/ngl/js/examples.js
+        // http://arose.github.io/ngl/
+        document.addEventListener( "DOMContentLoaded", function(){
+            stage = new NGL.Stage( "viewport", { backgroundColor: "white" } );
+
+            //var stringBlob = new Blob( [ "pdb/{{pdbname}}" ], { type: 'text/plain'} );
+            // stage.loadFile( "http://localhost:8000/structure/pdb/{{pdbname}}", { ext: "pdb" } );
+            // NGL.autoLoad( "http://files.rcsb.org/download/5IOS.cif" );
+            //stage.loadFile( "http://files.rcsb.org/download/{{pdbname}}.pdb", { ext: "pdb" } );
+            stage.loadFile( "rcsb://{{pdbname}}", { defaultRepresentation: true } );
+            //stage.loadFile( "rcsb://1crn.mmtf", { defaultRepresentation: true } );
+        } );
+        $( "#fullscreen" ).click(function() {
+            stage.toggleFullscreen();
+        });
+    </script>
+{% endblock %}

@@ -11,6 +11,7 @@ from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, Protei
 
 from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residue, ResidueGenericNumberEquivalent)
 
+from signprot.models import SignprotStructure
 import pandas as pd
 
 from optparse import make_option
@@ -469,6 +470,25 @@ class Command(BaseCommand):
                 pcgn = Protein.objects.get(entry_name=uniprot['entry_name'].lower())
                 g.proteins.add(pcgn)
 
+        # structures
+        for i, structure in enumerate(uniprot['structures']):
+            try:
+                res = structure[1]
+                if res == '-':
+                    res = 0
+    
+                structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res)
+                if created:
+                    self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
+            except IntegrityError:
+                self.logger.error('Failed creating structure ' + structure.PDB_code + ' for protein ' + p.name)
+
+            if g:
+                pcgn = Protein.objects.get(entry_name=uniprot['entry_name'].lower())
+                structure.origin.add(pcgn)
+                structure.save()
+
+
     def cgn_parent_protein_family(self):
 
         pf_cgn, created_pf = ProteinFamily.objects.get_or_create(slug='100', defaults={
@@ -538,6 +558,7 @@ class Command(BaseCommand):
         up = {}
         up['genes'] = []
         up['names'] = []
+        up['structures'] = []  
 
         read_sequence = False
         remote = False
@@ -611,6 +632,11 @@ class Command(BaseCommand):
                             for gene_name in split_segment:
                                 split_gene_name = gene_name.split('{')
                                 up['genes'].append(split_gene_name[0].strip())
+
+                # structures
+                elif line.startswith('DR') and 'PDB' in line and not 'sum' in line:
+                    split_gn_line = line.split(';')
+                    up['structures'].append([split_gn_line[1].lstrip(),split_gn_line[3].lstrip().split(" A")[0]])
 
                 # sequence
                 elif line.startswith('SQ'):
