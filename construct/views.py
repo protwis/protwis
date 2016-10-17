@@ -350,6 +350,7 @@ def fetch_all_pdb(request):
     for s in structures:
         pdbname = str(s)
         print(pdbname)
+        failed = []
         try:
             protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
             d = fetch_pdb_info(pdbname,protein)
@@ -359,17 +360,12 @@ def fetch_all_pdb(request):
             add_construct(d)
         except:
             print(pdbname,'failed')
+            failed.append(pdbname)
 
 
-    # d = fetch_pdb_info(slug,protein)
+    context = {'failed':failed}
 
-    # #delete before adding new
-    # Construct.objects.filter(name=d['construct_crystal']['pdb_name']).delete()
-    # add_construct(d)  
-
-    context = {'d':d}
-
-    return render(request,'pdb_fetch.html',context)
+    return render(request,'all.html',context)
 
 def fetch_pdb(request, slug):
 
