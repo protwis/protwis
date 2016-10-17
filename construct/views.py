@@ -263,6 +263,86 @@ class ConstructStatistics(TemplateView):
 
         return context
 
+class ConstructMutations(TemplateView):
+    """
+    Fetching construct data for browser
+    """
+
+    template_name = "construct/mutations.html"
+
+    def get_context_data (self, **kwargs):
+
+        context = super(ConstructMutations, self).get_context_data(**kwargs)
+        cons = Construct.objects.all().prefetch_related(
+            "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
+            "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
+
+        #PREPARE DATA
+        proteins = Construct.objects.all().values_list('protein', flat = True)
+
+        #GRAB RESIDUES for mutations
+        mutations = []
+        positions = []
+        proteins = []
+        class_names = {}
+        for c in cons:
+            p = c.protein
+            entry_name = p.entry_name
+            p_class = p.family.slug.split('_')[0]
+            pdb = c.crystal.pdb_code
+            for mutation in c.mutations.all():
+                if p.entry_name not in proteins:
+                    proteins.append(entry_name)
+                mutations.append((mutation,entry_name,pdb,p_class,c.name))
+                if mutation.sequence_number not in positions:
+                    positions.append(mutation.sequence_number)
+        rs = Residue.objects.filter(protein_conformation__protein__entry_name__in=proteins, sequence_number__in=positions).prefetch_related('generic_number','protein_conformation__protein','protein_segment')
+
+        rs_lookup = {}
+        gns = []
+        for r in rs:
+            entry_name = r.protein_conformation.protein.entry_name
+            pos = r.sequence_number
+            segment = r.protein_segment.slug
+            if entry_name not in rs_lookup:
+                rs_lookup[entry_name] = {}
+            if pos not in rs_lookup[entry_name]:
+                rs_lookup[entry_name][pos] = r
+
+        mutation_list = []
+        for mutation in mutations:
+            wt = mutation[0].wild_type_amino_acid
+            mut = mutation[0].mutated_amino_acid
+            entry_name = mutation[1]
+            pdb = mutation[2]
+            cname = mutation[4]
+            pos = mutation[0].sequence_number
+            p_class = mutation[3]
+            if p_class not in class_names:
+                class_names[p_class] = p.family.parent.parent.parent.name
+            p_class_name = class_names[p_class]
+            p_class = class_names[p_class]
+
+
+            if entry_name not in rs_lookup:
+                continue
+            if pos not in rs_lookup[entry_name]:
+                continue
+            segment = rs_lookup[entry_name][pos].protein_segment.slug
+            if rs_lookup[entry_name][pos].generic_number:
+                gn = rs_lookup[entry_name][pos].generic_number.label
+            else:
+                gn = ''
+
+
+            mutation_list.append({'entry_name':entry_name,'pdb':pdb,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class})
+
+
+        context['mutation_list'] = mutation_list
+        print(mutation_list)
+
+        return context
+
 def fetch_all_pdb(request):
 
     structures = Structure.objects.all()

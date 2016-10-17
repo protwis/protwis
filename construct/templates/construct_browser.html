@@ -587,6 +587,7 @@
                 <tr class='hidden2'>
                     <th class="protein-th"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
                     <th class="protein-th">Construct name</th>
+                    <th class="protein-th">Protein</th>
                     <th class="protein-th">N-term<br><input class="alt_seg" type="checkbox" id="align_N-term"></th>
                     <th class="protein-th">TM1<br><input class="alt_seg" type="checkbox" id="align_TM1"></th>
                     <th class="pdb-th">ICL1<br><input class="alt_seg" type="checkbox" id="align_ICL1"></th>
@@ -611,6 +612,7 @@
                             <tr style='height: 32px' id="wt_sche_{{ construct.pk }}">
                             <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
                             <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
+                            <td style='padding: 8px 10px;'>{{ construct.protein.name|safe }}</td>
                             {{construct.schematics.schematic_2_wt|safe}}
                         </tr>
                     {% endfor %}
@@ -626,6 +628,7 @@
                 <tr class='hidden2'>
                     <th class="protein-th"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
                     <th class="protein-th">Construct name</th>
+                    <th class="protein-th">Protein</th>
                     <th class="protein-th">Pre-inserts<br><input class="alt_seg" type="checkbox" id="align_xx"></th>
                     <th class="protein-th">N-term<br><input class="alt_seg" type="checkbox" id="align_xx"></th>
                     <th class="protein-th">TM1<br><input class="alt_seg" type="checkbox" id="align_TM1"></th>
@@ -652,6 +655,7 @@
                             <tr style='height: 32px' id="con_sche_{{ construct.pk }}">
                             <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
                             <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
+                            <td style='padding: 8px 10px;'>{{ construct.protein.name|safe }}</td>
                             {{construct.schematics.schematic_2_c|safe}}
                         </tr>
                     {% endfor %}
