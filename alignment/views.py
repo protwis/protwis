@@ -1,6 +1,7 @@
 ﻿from django.shortcuts import render
 from django.conf import settings
 from django.views.generic import TemplateView
+from django.db.models import Case, When
 
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
@@ -14,6 +15,8 @@ from residue.models import ResiduePositionSet
 
 import inspect, os
 from collections import OrderedDict
+
+from common import definitions
 
 class TargetSelection(AbsTargetSelection):
     step = 1
@@ -180,8 +183,16 @@ def render_family_alignment(request, slug):
 
     # fetch proteins and segments
     proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt')
-    segments = ProteinSegment.objects.filter(partial=False)
-    
+
+    if slug.startswith('100'):
+
+        gsegments = definitions.G_PROTEIN_SEGMENTS
+
+        preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(gsegments['Full'])])
+        segments = ProteinSegment.objects.filter(slug__in = gsegments['Full'], partial=False).order_by(preserved)
+    else:
+        segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False)
+
     # load data into the alignment
     a.load_proteins(proteins)
     a.load_segments(segments)

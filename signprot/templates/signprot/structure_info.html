@@ -20,7 +20,7 @@ canvas {
         <h4>PROTEIN Family</h4>
     </div>
     <div class="col-md-9">
-    {{ protein.family.name|safe }}
+    <a href="../../family/{{ protein.family.slug }}">{{ protein.family.name|safe }}</a>
     </div>
 </div>
 

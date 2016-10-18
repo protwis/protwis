@@ -111,7 +111,11 @@ canvas {
                 <h4>Primary Transduction</h4>
             </div>
             <div class="col-md-6">
-            {{ primary_Gprotein | safe}}
+            {% for pg in primary_Gprotein %}
+            <p><a href='/signprot/family/{{ pg.1 }}'> {{ pg.0 | safe}} </a></p>
+            {% empty %}
+            No primary transduction reported
+            {% endfor %}           
             </div>
         </div>
 
@@ -120,7 +124,11 @@ canvas {
                 <h4>Secondary Transduction</h4>
             </div>
             <div class="col-md-6">
-            {{ secondary_Gprotein | safe}}
+            {% for sg in secondary_Gprotein %}
+            <p><a href='/signprot/family/{{ sg.1 }}'> {{ sg.0 | safe}} </a></p>
+            {% empty %}
+            No secondary transduction reported
+            {% endfor %}      
             </div>
         </div>
 
