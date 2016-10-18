@@ -107,6 +107,12 @@ class Command(BaseBuild):
             alignment = Homology_model.run_alignment()
             Homology_model.build_homology_model(alignment)
             Homology_model.format_final_model()
+            if Homology_model.main_structure.pdb_code.index=='4PHU':
+                for r in Homology_model.changes_on_db:
+                    res = Residue.objects.get(protein_conformation=Homology_model.main_structure.protein_conformation, 
+                                              sequence_number=r)
+                    res.sequence_number = int('2'+str(res.sequence_number))
+                    res.save()
             logger.info('Model built for {} {}'.format(receptor, state))
         except Exception as msg:
             print('Error: Failed to build model {} (main structure: {})\n{}'.format(receptor,
@@ -143,6 +149,7 @@ class HomologyModeling(object):
         self.main_template_preferred_chain = ''
         self.loop_template_table = OrderedDict()
         self.loops = OrderedDict()
+        self.changes_on_db = []
         if len(self.reference_entry_name)==4:
             self.prot_conf = ProteinConformation.objects.get(protein=self.reference_protein.parent)
             self.uniprot_id = self.reference_protein.parent.accession
@@ -321,6 +328,7 @@ class HomologyModeling(object):
             query_states=self.query_states
         alignment = AlignedReferenceTemplate()
         alignment.run_hommod_alignment(self.reference_protein, segments, query_states, order_by)
+        self.changes_on_db = alignment.changes_on_db
         main_pdb_array = OrderedDict()
         if core_alignment==True:
             print('Alignment: ',datetime.now() - startTime)
@@ -1936,7 +1944,7 @@ class HelixEndsModeling(HomologyModeling):
                                    int(raw_helix_ends[raw_seg][1].split('x')[1])+1):
                         a.template_dict[raw_seg]['8x{}'.format(str(i))]='x'
                         a.alignment_dict[raw_seg]['8x{}'.format(str(i))]='x'
-                    e_dif = 0
+                    e_dif = 0            
             if e_dif>0:
                 e_gn = Residue.objects.get(protein_conformation=protein_conf, 
                                            display_generic_number__label=dgn(raw_helix_ends[raw_seg][1],

@@ -866,6 +866,7 @@ class AlignedReferenceTemplate(Alignment):
         self.template_dict = OrderedDict()
         self.alignment_dict = OrderedDict()
         self.code_dict = {'ICL1':'12x50','ECL1':'23x50','ICL2':'34x50'}
+        self.changes_on_db = []
         
     def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
                              provide_similarity_table=None, main_pdb_array=None, provide_alignment=None):
@@ -947,6 +948,13 @@ class AlignedReferenceTemplate(Alignment):
             for st in self.similarity_table:
                 if st.protein_conformation.protein.parent==self.ordered_proteins[1].protein:
                     self.main_template_protein = self.ordered_proteins[1]
+                    if st.pdb_code.index=='4PHU':
+                        resis = Residue.objects.filter(protein_conformation=st.protein_conformation, 
+                                                       sequence_number__gte=2000)
+                        for r in resis:
+                            r.sequence_number = int(str(r.sequence_number)[1:])
+                            r.save()
+                            self.changes_on_db.append(r.sequence_number)
                     return st
         except:
             pass
