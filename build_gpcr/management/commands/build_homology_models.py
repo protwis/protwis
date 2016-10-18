@@ -251,8 +251,10 @@ class HomologyModeling(object):
                         whitespace = whitespace*' '
                     elif len(pos_list[i])-len(pdb_re.group(3))==1:
                         whitespace = (whitespace-1)*' '
-                    else:
+                    elif len(pos_list[i])-len(pdb_re.group(3))==2:
                         whitespace = (whitespace-2)*' '
+                    else:
+                        whitespace = (whitespace-3)*' '
                     out_line = pdb_re.group(1)+whitespace+pos_list[i]+pdb_re.group(4)
                     out_list.append(out_line)
                 except:
@@ -1155,10 +1157,7 @@ class HomologyModeling(object):
                         except:
                             continue
                 model.write('END')
-#        pprint.pprint(a.reference_dict)
-#        pprint.pprint(a.template_dict)
-#        pprint.pprint(main_pdb_array)
-#        raise AssertionError()
+
         # Model with MODELLER
         self.create_PIR_file(a.reference_dict, a.template_dict, path+self.uniprot_id+"_post.pdb", hetatm_count, water_count)
         
