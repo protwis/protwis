@@ -1,10 +1,10 @@
 from django.conf.urls import include, url
-from rest_framework import routers
-
 from api import views
 
+
 urlpatterns = [
-    url(r'^reference/', include('rest_framework.urls')),
+    url(r'^', include(views.router.urls, namespace='services')),
+    url(r'^reference/', views.schema_view),
     url(r'^protein/accession/(?P<accession>[^/].+)/$', views.ProteinByAccessionDetail.as_view(),
         name='proteinbyaccession'),
     url(r'^protein/(?P<entry_name>[^/].+)/$', views.ProteinDetail.as_view(), name='protein-detail'),
