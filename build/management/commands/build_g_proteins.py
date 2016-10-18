@@ -79,6 +79,7 @@ class Command(BaseCommand):
     def purge_data(self):
         try:
             ProteinGProteinPair.objects.filter().delete()
+            ProteinGProtein.all().delete()
             ProteinAlias.objects.filter(protein__family__slug__startswith='100').delete()
         except:
             self.logger.warning('Existing data cannot be deleted')
@@ -132,7 +133,7 @@ class Command(BaseCommand):
                         if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
                             continue
                         g = ProteinGProtein.objects.get_or_create(name=gp, slug = translation[gp])[0]
-                        gpair = ProteinGProteinPair(protein=p,g_protein=g,transduction='primary')
+                        gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary')
                         gpair.save()
 
                     for gp in secondary:
@@ -141,7 +142,7 @@ class Command(BaseCommand):
                         if gp in primary: #sip those that were already primary
                              continue 
                         g = ProteinGProtein.objects.get_or_create(name=gp, slug = translation[gp])[0]
-                        gpair = ProteinGProteinPair(protein=p,g_protein=g,transduction='secondary')
+                        gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary')
                         gpair.save()
 
 
