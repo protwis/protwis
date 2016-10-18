@@ -1152,7 +1152,10 @@ class HomologyModeling(object):
                         except:
                             continue
                 model.write('END')
-
+#        pprint.pprint(a.reference_dict)
+#        pprint.pprint(a.template_dict)
+#        pprint.pprint(main_pdb_array)
+#        raise AssertionError()
         # Model with MODELLER
         self.create_PIR_file(a.reference_dict, a.template_dict, path+self.uniprot_id+"_post.pdb", hetatm_count, water_count)
         
@@ -1243,7 +1246,7 @@ class HomologyModeling(object):
             self.upload_to_db(sections, rot_table)
 
         print('MODELLER build: ',datetime.now() - startTime)
-#        pprint.pprint(self.statistics)
+        pprint.pprint(self.statistics)
         print('################################')
         return self
     
@@ -2658,10 +2661,11 @@ class Loops(object):
                 loop_keys = list(loop_template['ECL2_2'].keys())[1:-1]
                 temp_array['ECL2'][self.loop_label+'?'+str(l_res+1)] = 'x'
                 l_res+=1
-                for key in loop_keys:
-                    l_res+=1
-                    temp_array['ECL2'][self.loop_label+'|'+str(l_res)] = loop_template['ECL2_2'][key]
-                temp_array['ECL2'][self.loop_label+'?'+str(l_res+1)] = 'x'
+                if len(loop_keys)>1:
+                    for key in loop_keys:
+                        l_res+=1
+                        temp_array['ECL2'][self.loop_label+'|'+str(l_res)] = loop_template['ECL2_2'][key]
+                    temp_array['ECL2'][self.loop_label+'?'+str(l_res+1)] = 'x'
         else:
             for key, res in loop_template['ECL2_2'].items():
                 l_res+=1
