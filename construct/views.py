@@ -5,12 +5,14 @@ from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 
 from common.diagrams_gpcr import DrawSnakePlot
-
+from common.views import AbsTargetSelection
 from construct.models import *
 from construct.functions import *
 from protein.models import Protein, ProteinConformation
 from structure.models import Structure
 from mutation.models import Mutation
+from construct.tool import *
+
 
 from datetime import datetime
 import json
@@ -37,17 +39,309 @@ def detail(request, slug):
 
     schematics = c.schematic()
 
-    snake = cache.get(c.name+'_snake')
-    if snake==None:
-        print(c.name+'_snake no cache')
-        snake = cache.set(c.name+'_snake', DrawSnakePlot(residues,c.protein.get_protein_class(),str(c.protein),nobuttons = True), 60*60*24*2) #two days
-        snake = cache.get(c.name+'_snake')
-    else:
-        print(c.name+'_snake used cache')
+    snake = c.snake()
+
+    # snake = cache.get(c.name+'_snake')
+    # snake= None
+    # if snake==None:
+    #     print(c.name+'_snake no cache')
+    #     snake = cache.set(c.name+'_snake', DrawSnakePlot(residues,c.protein.get_protein_class(),str(c.protein),nobuttons = True), 60*60*24*2) #two days
+    #     snake = cache.get(c.name+'_snake')
+    # else:
+    #     print(c.name+'_snake used cache')
 
     chunk_size = 10
     context = {'c':c, 'chunk_size': chunk_size, 'snake': snake, 'annotations': json.dumps(schematics['annotations']), 'schematics': schematics, 'residues_lookup': residues_lookup}
     return render(request,'construct/construct_detail.html',context)
+
+class ConstructStatistics(TemplateView):
+    """
+    Fetching construct data for browser
+    """
+
+    template_name = "construct/statistics.html"
+
+    def get_context_data (self, **kwargs):
+
+        context = super(ConstructStatistics, self).get_context_data(**kwargs)
+        cons = Construct.objects.all().prefetch_related(
+            "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
+            "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
+
+        #PREPARE DATA
+        proteins = Construct.objects.all().values_list('protein', flat = True)
+        pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__generic_number__label__in=['1x50','8x50','5x50','6x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
+        #print(pconfs)
+        x50s = {}
+        for pc in pconfs:
+            if pc[0] not in x50s:
+                x50s[pc[0]] = {}
+            x50s[pc[0]][pc[2]] = pc[1]
+
+        #GRAB RESIDUES for mutations
+        mutations = []
+        positions = []
+        proteins = []
+        for c in cons:
+            p = c.protein
+            entry_name = p.entry_name
+            p_class = p.family.slug.split('_')[0]
+            pdb = c.crystal.pdb_code
+            for mutation in c.mutations.all():
+                if p.entry_name not in proteins:
+                    proteins.append(entry_name)
+                mutations.append((mutation,entry_name,pdb,p_class))
+                if mutation.sequence_number not in positions:
+                    positions.append(mutation.sequence_number)
+        rs = Residue.objects.filter(protein_conformation__protein__entry_name__in=proteins, sequence_number__in=positions).prefetch_related('generic_number','protein_conformation__protein')
+
+        rs_lookup = {}
+        gns = []
+        for r in rs:
+            if not r.generic_number:
+                continue #skip non GN
+            entry_name = r.protein_conformation.protein.entry_name
+            pos = r.sequence_number
+            if entry_name not in rs_lookup:
+                rs_lookup[entry_name] = {}
+            if pos not in rs_lookup[entry_name]:
+                rs_lookup[entry_name][pos] = r
+
+        truncations = {}
+        truncations['nterm'] = {}
+        truncations['nterm_fusion'] = {}
+        truncations['cterm'] = {}
+        truncations['icl3'] = {}
+        truncations['icl3_fusion'] = {}
+        class_names = {}
+        for c in cons:
+            p = c.protein
+            entry_name = p.entry_name
+            p_class = p.family.slug.split('_')[0]
+            if p_class not in class_names:
+                class_names[p_class] = p.family.parent.parent.parent.name
+            p_class_name = class_names[p_class]
+            fusion_n = False
+            fusion_icl3 = False
+
+            fusion_position, fusions = c.fusion()
+
+            for deletion in c.deletions.all():
+                if deletion.end <= x50s[entry_name]['1x50']:
+                    bw = "1."+str(50-x50s[entry_name]['1x50']+deletion.end)
+                    #bw = bw + " " + str(x50s[entry_name]['1x50']-deletion.end)
+
+                    position = 'nterm'
+                    if fusion_position=='nterm':
+                        position = 'nterm_fusion'
+
+                    if p_class_name not in truncations[position]:
+                        truncations[position][p_class_name] = {}
+                    if bw not in truncations[position][p_class_name]:
+                        truncations[position][p_class_name][bw] = []
+                    if entry_name not in truncations[position][p_class_name][bw]:
+                        truncations[position][p_class_name][bw].append(entry_name)
+                if deletion.start >= x50s[entry_name]['8x50']:
+                    bw = x50s[entry_name]['8x50']-deletion.start
+                    bw = "8."+str(50-x50s[entry_name]['8x50']+deletion.start)
+                    if p_class_name not in truncations['cterm']:
+                        truncations['cterm'][p_class_name] = {}
+                    if bw not in truncations['cterm'][p_class_name]:
+                        truncations['cterm'][p_class_name][bw] = []
+                    if entry_name not in truncations['cterm'][p_class_name][bw]:
+                        truncations['cterm'][p_class_name][bw].append(entry_name)
+                if deletion.start > x50s[entry_name]['5x50'] and deletion.start < x50s[entry_name]['6x50']:
+                    bw = x50s[entry_name]['5x50']-deletion.start
+                    bw = "5."+str(50-x50s[entry_name]['5x50']+deletion.start)
+                    bw2 = "6."+str(50-x50s[entry_name]['6x50']+deletion.end)
+                    bw_combine = bw+"-"+bw2
+                    position = 'icl3'
+                    if fusion_position=='icl3':
+                        position = 'icl3_fusion'
+                    if p_class_name not in truncations[position]:
+                        truncations[position][p_class_name] = {}
+                    if bw_combine not in truncations[position][p_class_name]:
+                        truncations[position][p_class_name][bw_combine] = []
+                    if entry_name not in truncations[position][p_class_name][bw_combine]:
+                        truncations[position][p_class_name][bw_combine].append(entry_name)
+        #print(truncations)
+        #truncations = OrderedDict(truncations)
+        ordered_truncations = OrderedDict()
+        for segment, s_vals in sorted(truncations.items()):
+            #print(segment)
+            ordered_truncations[segment] = OrderedDict()
+            for p_class, c_vals in sorted(s_vals.items()):
+                #print(p_class) 
+                ordered_truncations[segment][p_class] = OrderedDict()
+                for pos, p_vals in sorted(c_vals.items(),key=lambda x: (len(x[1]),x[0]), reverse=True):
+                    #print(pos, len(p_vals))
+                    ordered_truncations[segment][p_class][pos] = p_vals
+
+        #truncations =  OrderedDict(sorted(truncations.items(), key=lambda x: x[1]['hits'],reverse=True))
+        #print(ordered_truncations)
+        context['truncations'] = ordered_truncations
+
+        mutation_list = OrderedDict()
+        mutation_type = OrderedDict()
+        mutation_wt = OrderedDict()
+        mutation_mut = OrderedDict()
+        for mutation in mutations:
+            wt = mutation[0].wild_type_amino_acid
+            mut = mutation[0].mutated_amino_acid
+            entry_name = mutation[1]
+            pos = mutation[0].sequence_number
+            p_class = mutation[3]
+            p_class = class_names[p_class]
+
+
+            if p_class not in mutation_type:
+                mutation_type[p_class] = OrderedDict()
+            if wt+"=>"+mut not in mutation_type[p_class]:
+                mutation_type[p_class][wt+"=>"+mut] = {'hits':0, 'proteins':[]}
+            if entry_name not in mutation_type[p_class][wt+"=>"+mut]['proteins']:
+                mutation_type[p_class][wt+"=>"+mut]['proteins'].append(entry_name)
+                mutation_type[p_class][wt+"=>"+mut]['hits'] += 1
+
+
+            if p_class not in mutation_wt:
+                mutation_wt[p_class] = OrderedDict()
+            if wt not in mutation_wt[p_class]:
+                mutation_wt[p_class][wt] = {'hits':0, 'proteins':[]}
+            if entry_name not in mutation_wt[p_class][wt]['proteins']:
+                mutation_wt[p_class][wt]['proteins'].append(entry_name)
+                mutation_wt[p_class][wt]['hits'] += 1
+
+            if p_class not in mutation_mut:
+                mutation_mut[p_class] = OrderedDict()
+            if mut not in mutation_mut[p_class]:
+                mutation_mut[p_class][mut] = {'hits':0, 'proteins':[]}
+            if entry_name not in mutation_mut[p_class][mut]['proteins']:
+                mutation_mut[p_class][mut]['proteins'].append(entry_name)
+                mutation_mut[p_class][mut]['hits'] += 1
+
+            if entry_name not in rs_lookup:
+                continue
+            if pos not in rs_lookup[entry_name]:
+                continue
+            gn = rs_lookup[entry_name][pos].generic_number.label
+
+            if p_class not in mutation_list:
+                mutation_list[p_class] = OrderedDict()
+            if gn not in mutation_list[p_class]:
+                mutation_list[p_class][gn] = {'proteins':[], 'hits':0, 'mutation':[]}
+            if entry_name not in mutation_list[p_class][gn]['proteins']:
+                mutation_list[p_class][gn]['proteins'].append(entry_name)
+                mutation_list[p_class][gn]['hits'] += 1  
+                mutation_list[p_class][gn]['mutation'].append((mutation[0].wild_type_amino_acid,mutation[0].mutated_amino_acid))
+
+
+
+        for p_class, values in mutation_list.items():
+            for gn, vals in values.items():
+                if vals['hits']<2:
+                    pass
+                    #values.pop(gn, None)
+            mutation_list[p_class] = OrderedDict(sorted(values.items(), key=lambda x: x[1]['hits'],reverse=True))
+            #mutation_list = OrderedDict(sorted(mutation_list.items(), key=lambda x: x[1]['hits'],reverse=True))
+
+        for p_class, values in mutation_type.items():
+            mutation_type[p_class] = OrderedDict(sorted(values.items(), key=lambda x: x[1]['hits'],reverse=True))
+
+        for p_class, values in mutation_wt.items():
+            mutation_wt[p_class] = OrderedDict(sorted(values.items(), key=lambda x: x[1]['hits'],reverse=True))
+
+        for p_class, values in mutation_mut.items():
+            mutation_mut[p_class] = OrderedDict(sorted(values.items(), key=lambda x: x[1]['hits'],reverse=True))
+
+        context['mutation_list'] = mutation_list
+        context['mutation_type'] = mutation_type
+        context['mutation_wt'] = mutation_wt
+        context['mutation_mut'] = mutation_mut
+
+        for c in cons:
+            pass
+
+        return context
+
+class ConstructMutations(TemplateView):
+    """
+    Fetching construct data for browser
+    """
+
+    template_name = "construct/mutations.html"
+
+    def get_context_data (self, **kwargs):
+
+        context = super(ConstructMutations, self).get_context_data(**kwargs)
+        cons = Construct.objects.all().prefetch_related(
+            "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
+            "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
+
+        #PREPARE DATA
+        proteins = Construct.objects.all().values_list('protein', flat = True)
+
+        #GRAB RESIDUES for mutations
+        mutations = []
+        positions = []
+        proteins = []
+        class_names = {}
+        for c in cons:
+            p = c.protein
+            entry_name = p.entry_name
+            p_class = p.family.slug.split('_')[0]
+            pdb = c.crystal.pdb_code
+            for mutation in c.mutations.all():
+                if p.entry_name not in proteins:
+                    proteins.append(entry_name)
+                mutations.append((mutation,entry_name,pdb,p_class,c.name))
+                if mutation.sequence_number not in positions:
+                    positions.append(mutation.sequence_number)
+        rs = Residue.objects.filter(protein_conformation__protein__entry_name__in=proteins, sequence_number__in=positions).prefetch_related('generic_number','protein_conformation__protein','protein_segment')
+
+        rs_lookup = {}
+        gns = []
+        for r in rs:
+            entry_name = r.protein_conformation.protein.entry_name
+            pos = r.sequence_number
+            segment = r.protein_segment.slug
+            if entry_name not in rs_lookup:
+                rs_lookup[entry_name] = {}
+            if pos not in rs_lookup[entry_name]:
+                rs_lookup[entry_name][pos] = r
+
+        mutation_list = []
+        for mutation in mutations:
+            wt = mutation[0].wild_type_amino_acid
+            mut = mutation[0].mutated_amino_acid
+            entry_name = mutation[1]
+            pdb = mutation[2]
+            cname = mutation[4]
+            pos = mutation[0].sequence_number
+            p_class = mutation[3]
+            if p_class not in class_names:
+                class_names[p_class] = p.family.parent.parent.parent.name
+            p_class_name = class_names[p_class]
+            p_class = class_names[p_class]
+
+
+            if entry_name not in rs_lookup:
+                continue
+            if pos not in rs_lookup[entry_name]:
+                continue
+            segment = rs_lookup[entry_name][pos].protein_segment.slug
+            if rs_lookup[entry_name][pos].generic_number:
+                gn = rs_lookup[entry_name][pos].generic_number.label
+            else:
+                gn = ''
+
+
+            mutation_list.append({'entry_name':entry_name,'pdb':pdb,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class})
+
+
+        context['mutation_list'] = mutation_list
+        print(mutation_list)
+
+        return context
 
 def fetch_all_pdb(request):
 
@@ -56,6 +350,7 @@ def fetch_all_pdb(request):
     for s in structures:
         pdbname = str(s)
         print(pdbname)
+        failed = []
         try:
             protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
             d = fetch_pdb_info(pdbname,protein)
@@ -65,17 +360,12 @@ def fetch_all_pdb(request):
             add_construct(d)
         except:
             print(pdbname,'failed')
+            failed.append(pdbname)
 
 
-    # d = fetch_pdb_info(slug,protein)
+    context = {'failed':failed}
 
-    # #delete before adding new
-    # Construct.objects.filter(name=d['construct_crystal']['pdb_name']).delete()
-    # add_construct(d)
-
-    context = {'d':d}
-
-    return render(request,'pdb_fetch.html',context)
+    return render(request,'pdb_all.html',context)
 
 def fetch_pdb(request, slug):
 
@@ -87,6 +377,9 @@ def fetch_pdb(request, slug):
     print(d['construct_crystal']['pdb_name'])
     Construct.objects.filter(name__iexact=d['construct_crystal']['pdb_name']).delete()
     add_construct(d)
+
+    cache.delete(d['construct_crystal']['pdb_name']+'_schematics')
+    cache.delete(d['construct_crystal']['pdb_name']+'_snake')
     context = {'d':d}
 
     return render(request,'pdb_fetch.html',context)
@@ -115,23 +408,67 @@ class ConstructBrowser(TemplateView):
         context = super(ConstructBrowser, self).get_context_data(**kwargs)
         try:
             cons = Construct.objects.all().prefetch_related(
-                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions", "modifications", "deletions", "crystallization__chemical_lists",
+                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
                 "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
 
-            context['constructs'] = cache.get('construct_browser')
-            if context['constructs']==None:
-                context['constructs'] = []
-                for c in cons:
-                    c.schematics = c.schematic()
-                    context['constructs'].append(c)
+            #context['constructs'] = cache.get('construct_browser')
+            #if context['constructs']==None:
+            context['constructs'] = []
+            for c in cons:
+                c.schematics = c.schematic()
+                context['constructs'].append(c)
 
-                cache.set('construct_browser', context['constructs'], 60*60*24*2) #two days
-            else:
-                print('construct_browser used cache')
+            #cache.set('construct_browser', context['constructs'], 60*60*24*2) #two days
+            # else:
+            #     print('construct_browser used cache')
 
         except Construct.DoesNotExist as e:
             pass
 
+        return context
+
+class design(AbsTargetSelection):
+
+    # Left panel
+    step = 1
+    number_of_steps = 1
+    # docs = 'generic_numbering.html'  # FIXME
+
+    # description = 'Select receptors to index by searching or browsing in the middle column. You can select entire' \
+    #     + ' receptor families and/or individual receptors.\n\nSelected receptors will appear in the right column,' \
+    #     + ' where you can edit the list.\n\nSelect which numbering schemes to use in the middle column.\n\nOnce you' \
+    #     + ' have selected all your receptors, click the green button.'
+
+    description = 'Get construct suggestions based on published constructs.'
+
+    # Middle section
+    numbering_schemes = False
+    filters = False
+    search = True
+    title = "Select a receptor"
+
+    template_name = 'designselection.html'
+
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+
+    # Buttons
+    buttons = {
+        'continue': {
+            'label': 'Show results',
+            'onclick': 'submitupload()',
+            'color': 'success',
+            #'url': 'calculate/'
+        }
+    }
+
+    redirect_on_select = False
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         return context
 
 @csrf_exempt #jquery send post, so no csrf
