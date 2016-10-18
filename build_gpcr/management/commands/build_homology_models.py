@@ -1097,6 +1097,9 @@ class HomologyModeling(object):
             if parse.gn_indecer(i,'.',2) not in trimmed_residues:
                 trimmed_residues.append(parse.gn_indecer(i,'.',2))
                 
+        if self.reference_entry_name.startswith('taar') and str(self.main_structure)=='4IAR':
+            trimmed_residues.append('5.36')
+                
         print('Rotamer switching: ',datetime.now() - startTime)
         
         for i in model_loops:
