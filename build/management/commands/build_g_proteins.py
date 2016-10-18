@@ -79,6 +79,7 @@ class Command(BaseCommand):
     def purge_data(self):
         try:
             ProteinGProteinPair.objects.filter().delete()
+            ProteinAlias.objects.filter(protein__family__slug__startswith='100').delete()
         except:
             self.logger.warning('Existing data cannot be deleted')
 
@@ -91,6 +92,9 @@ class Command(BaseCommand):
     def create_g_proteins(self, filenames=False):
         self.logger.info('CREATING GPROTEINS')
         self.purge_data()
+
+        translation = {'Gs family':'100_000_001', 'Gi/Go family':'100_000_002', 'Gq/G11 family':'100_000_003','G12/G13 family':'100_000_004',}
+
         # read source files
         if not filenames:
             filenames = [fn for fn in os.listdir(self.gprotein_data_dir) if fn.endswith('.csv')]
@@ -127,7 +131,7 @@ class Command(BaseCommand):
                     for gp in primary:
                         if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
                             continue
-                        g = ProteinGProtein.objects.get_or_create(name=gp, sequence = '')[0]
+                        g = ProteinGProtein.objects.get_or_create(name=gp, slug = translation[gp])[0]
                         gpair = ProteinGProteinPair(protein=p,g_protein=g,transduction='primary')
                         gpair.save()
 
@@ -136,13 +140,12 @@ class Command(BaseCommand):
                             continue
                         if gp in primary: #sip those that were already primary
                              continue 
-                        g = ProteinGProtein.objects.get_or_create(name=gp, sequence = '')[0]
+                        g = ProteinGProtein.objects.get_or_create(name=gp, slug = translation[gp])[0]
                         gpair = ProteinGProteinPair(protein=p,g_protein=g,transduction='secondary')
                         gpair.save()
 
 
         self.logger.info('COMPLETED CREATING G PROTEINS')
-
 
     def purge_cgn_proteins(self):
         try:
@@ -195,8 +198,6 @@ class Command(BaseCommand):
             except:
                 self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
             
-
-
     def update_protein_conformation(self, gprotein_list):
         #gprotein_list=['gnaz_human','gnat3_human', 'gnat2_human', 'gnat1_human', 'gnas2_human', 'gnaq_human', 'gnao_human', 'gnal_human', 'gnai3_human', 'gnai2_human','gnai1_human', 'gna15_human', 'gna14_human', 'gna12_human', 'gna11_human', 'gna13_human']
         state = ProteinState.objects.get(slug='active')
@@ -212,7 +213,6 @@ class Command(BaseCommand):
                 self.logger.error('Failed to create protein conformation')
 
         self.update_genericresiduenumber_and_proteinsegments(gprotein_list)
-
 
     def update_genericresiduenumber_and_proteinsegments(self, gprotein_list):
 
@@ -287,7 +287,6 @@ class Command(BaseCommand):
 
 
         self.add_cgn_residues(gprotein_list)
-
 
     def cgn_add_proteins(self):
 
@@ -385,7 +384,6 @@ class Command(BaseCommand):
         accessions_all = list(accessions_orth) + list(accessions)
 
         return list(accessions_all)
-
 
     def cgn_creat_gproteins(self, family, residue_numbering_scheme, accession, uniprot):
 
@@ -488,7 +486,6 @@ class Command(BaseCommand):
                 structure.origin.add(pcgn)
                 structure.save()
 
-
     def cgn_parent_protein_family(self):
 
         pf_cgn, created_pf = ProteinFamily.objects.get_or_create(slug='100', defaults={
@@ -548,7 +545,6 @@ class Command(BaseCommand):
 
         #function to create necessary arguments to add protein entry
         self.cgn_add_proteins()
-
 
     def parse_uniprot_file(self, accession):
         filename = accession + '.txt'

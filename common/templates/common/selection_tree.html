@@ -42,10 +42,14 @@
     <a href="javascript:void(0)" onclick="AddToSelection('{{ type_of_selection }}', 'family', '{{ pf.id }}')"
         class="target-selection">
     {% endif %}
-    {% if type_of_selection == 'browse' or type_of_selection == 'browse_gprot' %}
+    {% if type_of_selection == 'browse' %}
     <a href="javascript:void(0)" onclick="AddToSelection('targets', 'family', '{{ pf.id }}');
         toggleButtonClass('selection-button');
         setTimeout(function(){window.location = '/family/{{ pf.slug }}';}, 200);" class="target-selection">
+    {% elif type_of_selection == 'browse_gprot' %}
+        <a href="javascript:void(0)" onclick="AddToSelection('targets', 'family', '{{ pf.id }}');
+        toggleButtonClass('selection-button');
+        setTimeout(function(){window.location = '/signprot/family/{{ pf.slug }}';}, 200);" class="target-selection">
     {% endif %}
         {{ pf.name|safe }}
     {% if type_of_selection == 'targets' or type_of_selection == 'browse' or type_of_selection == 'browse_gprot' %}

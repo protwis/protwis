@@ -276,7 +276,7 @@ class ProteinConformationTemplateStructure(models.Model):
 class ProteinGProtein(models.Model):
     proteins = models.ManyToManyField('Protein', through='ProteinGProteinPair')
     name = models.CharField(max_length=100, unique=True)
-    sequence = models.TextField(null=True)
+    slug = models.SlugField(max_length=20, unique=True)
 
     def __str__(self):
         return self.name
