@@ -70,8 +70,8 @@ $('.videoLink').click(function(e) {
 
     $("#fp-modal").remove();
     $("body").append("<div id=\"fp-modal\"></div>");
-    
-    mp4 = $(this).attr('mp4')
+
+    mp4 = $(this).attr('mp4');
     flowplayer("#fp-modal", {
     // ratio: 9/16,
     // overlay plugin using bootstrap modal vendor
@@ -85,6 +85,14 @@ $('.videoLink').click(function(e) {
     });
     $("#fp-modal").click();
 });
+
+$('.refLink').click(function(e){
+    e.preventDefault();
+    url = $(this).attr('url');
+    window.open(url);
+});
+
+$('.refLink').tooltip();
 </script>
     <!-- Include custom ajax functions -->
     {% block addon_js %}{% endblock %}
