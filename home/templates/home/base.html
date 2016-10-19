@@ -17,6 +17,9 @@
     <!-- Custom styles -->
     <link href="{% static 'home/css/style.css' %}" rel="stylesheet">
 
+    <!-- flowplayer skin -->
+    <link rel="stylesheet" href="{% static 'flowplayer/flowplayer.css' %}">
+ 
     <!-- Additional CSS -->
     {% block addon_css %}{% endblock %}
 
@@ -47,11 +50,42 @@
     <script src="{% static 'bootstrap/js/bootstrap.js' %}"></script>
     <script src="{% static 'bootstrap/js/bootstrap-submenu.js' %}"></script>
     <script src="{% static 'home/js/navbar-autocomplete.js' %}"></script>
+
+    <!-- 3. flowplayer -->
+    <script src="{% static 'flowplayer/flowplayer.min.js' %}"></script>
+    <!-- the overlay plugin -->
+    <script src="{% static 'flowplayer/flowplayer.overlay.min.js' %}"></script>
+    <!-- the bootstrap vendor overlay wrapper -->
+    <script src="{% static 'flowplayer/flowplayer.overlay.bootstrap.js' %}"></script>
+
     <script type="text/javascript">
         $(document).ready(function () {
             $('[data-submenu]').submenupicker();
         });
     </script>
+    <script>
+
+$('.videoLink').click(function(e) {
+    e.preventDefault();
+
+    $("#fp-modal").remove();
+    $("body").append("<div id=\"fp-modal\"></div>");
+    
+    mp4 = $(this).attr('mp4')
+    flowplayer("#fp-modal", {
+    // ratio: 9/16,
+    // overlay plugin using bootstrap modal vendor
+    overlay: {
+        trigger: "#fp-modal",
+        vendor: "bootstrap",
+        title: mp4,
+        size: "lg"
+    },
+    clip: { sources: [ { type: "video/mp4", src:  mp4 } ] }
+    });
+    $("#fp-modal").click();
+});
+</script>
     <!-- Include custom ajax functions -->
     {% block addon_js %}{% endblock %}
   </body>

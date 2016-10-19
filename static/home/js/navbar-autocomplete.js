@@ -21,8 +21,9 @@ $.widget( "custom.catcomplete", $.ui.autocomplete, {
   });
 
 $(function() {
-    type_of_selection = 'test';
-    $("#navbar-autocomplete").catcomplete({
+    type_of_selection = 'navbar';
+    redirect_on_select =''
+    $("#nav-selection-autocomplete").catcomplete({
         source: "/protein/autocomplete?type_of_selection=" + type_of_selection,
         minLength: 2,
         autoFocus: true,
@@ -30,29 +31,11 @@ $(function() {
         create: function(event, ui) { this.focus();return false; },
         focus: function(event, ui) { return false; },
         select: function(event, ui) {
-            $( '#navbar-autocomplete' ).val('');
-            
+            $( '#selection-autocomplete' ).val('');
+            console.log(ui.item['id'],ui.item['type'],ui.item['label']);
+            redirect_url = '/protein/'+ui.item['slug'];
             // redirect if select a target/family to browse
-            if (type_of_selection == 'browse' || type_of_selection == 'browse_gprot') {
-                AddToSelection('targets', ui.item['type'], ui.item['id']);
-                toggleButtonClass('selection-button'); // loading effect on button
-                setTimeout(function(){window.location = '/' + ui.item['type'] + '/' + ui.item['slug'];}, 200);
-            
-            } else if (type_of_selection == 'ginterface') {
-                //custom for ginterface
-                AddToSelection('targets', ui.item['type'], ui.item['id']);
-                toggleButtonClass('selection-button'); // loading effect on button
-                setTimeout(function(){window.location = '/signprot/ginterface/' + ui.item['slug'];}, 200);         
-            } else {
-                // add to selection
-                AddToSelection(type_of_selection, ui.item['type'], ui.item['id']);                
-                // redirect the user if only one target can be selected
-                if (type_of_selection == 'reference' && redirect_on_select == 'True') {
-                    toggleButtonClass('selection-button'); // loading effect on button
-                    setTimeout(function(){window.location = redirect_url;}, 200);
-                }
-            }
-
+            setTimeout(function(){window.location = redirect_url;}, 1);
             return false;
         }
     }).data("custom-catcomplete")._renderItem = function (ul, item) {
