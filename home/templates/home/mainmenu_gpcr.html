@@ -99,7 +99,6 @@
                         
                         <li><a href="/alignment/blastsearch">Similarity search-BLAST</a></li>
                         <li><a href="/similaritymatrix/targetselection">Similarity matrix</a></li>
-                        <li><a href="/sitesearch/targetselection">Site search - manual</a></li>
                     </ul>
                 </li>
 
@@ -117,11 +116,29 @@
                 <li><a href="/structure/superposition_workflow_index/true">Structure superposition</a></li>
                 <li><a href="/structure/generic_numbering_index">PDB file residue numbering</a></li>
                 <li><a href="/structure/template_selection">Template selection</a></li>
-                <li><a href="/sitesearch/targetselectionpdb">Site search from PDB complex
+                
+
+                <li class="divider"></li>
+                <!-- Structure Sites -->
+                <li class="nav-header disabled text-left"><a>Structure sites
+                <button 
+                url='http://dx.doi.org/10.1016/j.tips.2014.11.001' 
+                class="refLink pull-right btn btn-xs btn-default"
+                 data-toggle="tooltip" data-placement="right" title="Trends Pharmacol Sci">
+                          <span class="glyphicon glyphicon-book"></span>
+                </button>
+                </a></li>
+                <li class="dropdown-submenu">
+                  <a tabindex="0" href="#">Site search</a>
+                  <ul class="dropdown-menu">
+                    <li><a href="/sitesearch/targetselectionpdb">Site search from PDB complex
                     <button  mp4="http://files.gpcrdb.org/video/interactions2.mp4" type="button" class="videoLink pull-right btn btn-xs btn-default">
                           <span class="glyphicon glyphicon-film"></span>
                     </button>
-                </a></li>
+                    </a></li>
+                    <li><a href="/sitesearch/targetselection">Site search - manual</a></li>
+                  </ul>
+                </li>
 
                 <li class="divider"></li>
                 <!-- Residues -->
@@ -133,8 +150,13 @@
                           <span class="glyphicon glyphicon-book"></span>
                 </button>
                 </a></li>
-                <li><a href="/residue/residuetable">Residue tables</a></li>
-                <li><a href="/structure/generic_numbering_index">PDB file residue numbering</a></li>
+                <li class="dropdown-submenu">
+                  <a tabindex="0" href="#">Generic residue numbers</a>
+                  <ul class="dropdown-menu">
+                    <li><a href="/residue/residuetable">Residue tables</a></li>
+                    <li><a href="/structure/generic_numbering_index">PDB file residue numbering</a></li>
+                  </ul>
+                </li>
 
                 <li class="divider"></li>
                 <li class="nav-header disabled text-left"><a>Mutations
@@ -146,21 +168,21 @@
                 </button></a></li>
 
                 <li><a href="/construct/mutations">Construct mutations</a></li>
-                        <li class="dropdown-submenu">
-                          <a tabindex="0" href="#">Ligand binding site mutations</a>
-                          <ul class="dropdown-menu">
+                <li class="dropdown-submenu">
+                  <a tabindex="0" href="#">Ligand binding site mutations</a>
+                  <ul class="dropdown-menu">
 
-                            <li><a href="/mutations/statistics">Mutation statistics</a></li>
-                            <li><a href="/mutations">Mutation browser
-                                <button  mp4="http://files.gpcrdb.org/video/mutations1.mp4" type="button" class="videoLink pull-right btn btn-xs btn-default">
-                                <span class="glyphicon glyphicon-film"></span>
-                                </button>
-                            </a></li>
-                            
-                            <li><a href="{{ documentation_url }}mutations.html#mutation-data-submission">Mutation data submission</a></li>
+                    <li><a href="/mutations/statistics">Mutation statistics</a></li>
+                    <li><a href="/mutations">Mutation browser
+                        <button  mp4="http://files.gpcrdb.org/video/mutations1.mp4" type="button" class="videoLink pull-right btn btn-xs btn-default">
+                        <span class="glyphicon glyphicon-film"></span>
+                        </button>
+                    </a></li>
+                    
+                    <li><a href="{{ documentation_url }}mutations.html#mutation-data-submission">Mutation data submission</a></li>
 
-                          </ul>
-                        </li>
+                  </ul>
+                </li>
             </ul>
         </li>
 
@@ -172,17 +194,17 @@
             <ul class="dropdown-menu" role="menu">
                 <li class="nav-header disabled text-left"><a>Proteins</a></li>
                 <li><a href="/signprot/">Signal protein page</a></li>
-                <li><a href="/signprot/statistics">GPCR-Gprotein coupling</a></li>
+                <li><a href="/signprot/statistics">GPCR-G protein coupling</a></li>
                 <li class="divider"></li>
                 <li class="nav-header disabled text-left"><a>Sequences</a></li>
                 <li><a href="/alignment/gproteinselection">G protein alignments</a></li>
                 <li class="divider"></li>
-                <li class="nav-header disabled text-left"><a>Structures</a></li>
+                <li class="nav-header disabled text-left"><a>Structure sites</a></li>
                 <li><a href="/signprot/ginterface">Interface mapping</a></li>
                 <li><a href="/sitesearch/targetselection">Site search - manual</a></li>
                 <li class="divider"></li>
                 <li class="nav-header disabled text-left"><a>Mutations</a></li>
-                <li><a href="http://files.gpcrdb.org/GPCR-Gprotein_Mutations.xlsx">Mutations affecting Gproteins</a></li>
+                <li><a href="http://files.gpcrdb.org/GPCR-Gprotein_Mutations.xlsx">Mutations affecting G proteins</a></li>
             </ul>
         </li>
 
@@ -195,6 +217,19 @@
 
                 <li class="nav-header disabled text-left"><a>Structures
                 </a></li>
+                <li><a href="/structure/fragment_superposition_index">Pharmacophore generation
+                <button 
+                url='http://dx.doi.org/10.1016/j.ymeth.2014.09.009' 
+                class="refLink pull-right btn btn-xs btn-default"
+                 data-toggle="tooltip" data-placement="right" title="Methods">
+                          <span class="glyphicon glyphicon-book"></span>
+                </button>
+                </a></li>
+
+                <li class="divider"></li>
+                <li class="nav-header disabled text-left"><a>Structure sites
+                </a></li>
+
                 <li><a href="/interaction">GPCR-ligand interactions
                  <button  mp4="http://files.gpcrdb.org/video/interactions1.mp4" type="button" class="videoLink pull-right btn btn-xs btn-default">
                     <span class="glyphicon glyphicon-film"></span>
@@ -207,20 +242,19 @@
                           <span class="glyphicon glyphicon-book"></span>
                 </button>
                 </a></li>
-                <li><a href="/sitesearch/targetselection">Site search manual</a></li>
-                <li><a href="/sitesearch/targetselectionpdb">Site search from PDB complex
-                 <button  mp4="http://files.gpcrdb.org/video/interactions2.mp4" type="button" class="videoLink pull-right btn btn-xs btn-default">
+
+                <li class="dropdown-submenu">
+                  <a tabindex="0" href="#">Site search</a>
+                  <ul class="dropdown-menu">
+                    <li><a href="/sitesearch/targetselectionpdb">Site search from PDB complex
+                    <button  mp4="http://files.gpcrdb.org/video/interactions2.mp4" type="button" class="videoLink pull-right btn btn-xs btn-default">
                           <span class="glyphicon glyphicon-film"></span>
                     </button>
-                </a></li>
-                <li><a href="/structure/fragment_superposition_index">Pharmacophore generation
-                <button 
-                url='http://dx.doi.org/10.1016/j.ymeth.2014.09.009' 
-                class="refLink pull-right btn btn-xs btn-default"
-                 data-toggle="tooltip" data-placement="right" title="Methods">
-                          <span class="glyphicon glyphicon-book"></span>
-                </button>
-                </a></li>
+                    </a></li>
+                    <li><a href="/sitesearch/targetselection">Site search - manual</a></li>
+                  </ul>
+                </li>
+
 
                 <!-- MUTATIONS -->
                 <li class="divider"></li>
@@ -260,9 +294,9 @@
                 <li><a href="/construct/statistics">Construct statistics</a></li>
                 <li><a href="/construct">Construct browser</a></li>
                 <li><a href="/construct/mutations">Mutation browser</a></li>
-                <li class="disabled"><a>Experimentalt browser</a></li>
                 <li class="divider"></li>
                 <li><a href="/construct/design">Construct design tool</a></li>
+                <li class="disabled"><a>Experiments browser</a></li>
             </ul>
         </li>
 
