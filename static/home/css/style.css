@@ -1,4 +1,4 @@
-body { padding-top: 70px; }
+/*body { padding-top: 70px; }*/
 
 h1, h2, h3, h4 { margin-top: 0px; }
 
@@ -90,4 +90,7 @@ input.form-control {
     width: 250px;
     font-size: 14px;
     display: inline;
+}
+.dropdown-menu {
+    min-width: 260px;
 }

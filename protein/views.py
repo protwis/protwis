@@ -131,9 +131,13 @@ def SelectionAutocomplete(request):
             protein_source_list.append(protein_source.item)
 
         # find proteins
-        ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q),
-            species__in=(species_list),
-            source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug)[:10]
+        if type_of_selection!='navbar':
+            ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q),
+                species__in=(species_list),
+                source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug)[:10]
+        else:
+            ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q), 
+                species__common_name='Human', source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
         for p in ps:
             p_json = {}
             p_json['id'] = p.id
@@ -143,32 +147,34 @@ def SelectionAutocomplete(request):
             p_json['category'] = 'Targets'
             results.append(p_json)
 
-        # find protein aliases
-        pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
-            protein__species__in=(species_list),
-            protein__source__in=(protein_source_list)).exclude(protein__family__slug__startswith=exclusion_slug)[:10]
-        for pa in pas:
-            pa_json = {}
-            pa_json['id'] = pa.protein.id
-            pa_json['label'] = pa.protein.name  + " [" + pa.protein.species.common_name + "]"
-            pa_json['slug'] = pa.protein.entry_name
-            pa_json['type'] = 'protein'
-            pa_json['category'] = 'Targets'
-            if pa_json not in results:
-                results.append(pa_json)
 
-        # protein families
-        if type_of_selection == 'targets' or type_of_selection == 'browse' or type_of_selection == 'gproteins':
-            # find protein families
-            pfs = ProteinFamily.objects.filter(name__icontains=q).exclude(slug='000').exclude(slug__startswith=exclusion_slug)[:10]
-            for pf in pfs:
-                pf_json = {}
-                pf_json['id'] = pf.id
-                pf_json['label'] = pf.name
-                pf_json['slug'] = pf.slug
-                pf_json['type'] = 'family'
-                pf_json['category'] = 'Target families'
-                results.append(pf_json)
+        if type_of_selection!='navbar':
+            # find protein aliases
+            pas = ProteinAlias.objects.prefetch_related('protein').filter(name__icontains=q,
+                protein__species__in=(species_list),
+                protein__source__in=(protein_source_list)).exclude(protein__family__slug__startswith=exclusion_slug)[:10]
+            for pa in pas:
+                pa_json = {}
+                pa_json['id'] = pa.protein.id
+                pa_json['label'] = pa.protein.name  + " [" + pa.protein.species.common_name + "]"
+                pa_json['slug'] = pa.protein.entry_name
+                pa_json['type'] = 'protein'
+                pa_json['category'] = 'Targets'
+                if pa_json not in results:
+                    results.append(pa_json)
+
+            # protein families
+            if type_of_selection == 'targets' or type_of_selection == 'browse' or type_of_selection == 'gproteins':
+                # find protein families
+                pfs = ProteinFamily.objects.filter(name__icontains=q).exclude(slug='000').exclude(slug__startswith=exclusion_slug)[:10]
+                for pf in pfs:
+                    pf_json = {}
+                    pf_json['id'] = pf.id
+                    pf_json['label'] = pf.name
+                    pf_json['slug'] = pf.slug
+                    pf_json['type'] = 'family'
+                    pf_json['category'] = 'Target families'
+                    results.append(pf_json)
 
         data = json.dumps(results)
     else:
