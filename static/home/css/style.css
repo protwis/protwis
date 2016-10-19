@@ -91,3 +91,6 @@ input.form-control {
     font-size: 14px;
     display: inline;
 }
+.dropdown-menu {
+    min-width: 260px;
+}
