@@ -245,6 +245,11 @@ class Alignment:
                     'protein_conformation__state', 'protein_segment', 'generic_number__scheme',
                     'display_generic_number__scheme')
 
+        print(len(rs))
+        self.number_of_residues_total = len(rs)
+        if len(rs)>120000: #300 receptors, 400 residues limit
+            return "Too large"
+
         # create a dict of proteins, segments and residues
         proteins = {}
         segment_counters = {}
@@ -866,6 +871,7 @@ class AlignedReferenceTemplate(Alignment):
         self.template_dict = OrderedDict()
         self.alignment_dict = OrderedDict()
         self.code_dict = {'ICL1':'12x50','ECL1':'23x50','ICL2':'34x50'}
+        self.changes_on_db = []
         
     def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
                              provide_similarity_table=None, main_pdb_array=None, provide_alignment=None):
@@ -947,6 +953,13 @@ class AlignedReferenceTemplate(Alignment):
             for st in self.similarity_table:
                 if st.protein_conformation.protein.parent==self.ordered_proteins[1].protein:
                     self.main_template_protein = self.ordered_proteins[1]
+                    if st.pdb_code.index=='4PHU':
+                        resis = Residue.objects.filter(protein_conformation=st.protein_conformation, 
+                                                       sequence_number__gte=2000)
+                        for r in resis:
+                            r.sequence_number = int(str(r.sequence_number)[1:])
+                            r.save()
+                            self.changes_on_db.append(r.sequence_number)
                     return st
         except:
             pass
@@ -1064,7 +1077,8 @@ class AlignedReferenceTemplate(Alignment):
                         
                     # Allow for partial main loop template
                     elif (len(ref_seq)>=len(main_temp_parent) and len(main_temp_parent)>len(main_temp_seq) and 
-                          [i.sequence_number for i in main_temp_seq]!=[i.sequence_number for i in main_temp_parent]):
+                          [i.sequence_number for i in main_temp_seq]!=[i.sequence_number for i in main_temp_parent] and
+                          self.segment_labels[0]!='ICL3'):
                         temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
             else:
                 temp_length, temp_length1, temp_length2 = [],[],[]
