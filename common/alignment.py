@@ -1072,7 +1072,8 @@ class AlignedReferenceTemplate(Alignment):
                         
                     # Allow for partial main loop template
                     elif (len(ref_seq)>=len(main_temp_parent) and len(main_temp_parent)>len(main_temp_seq) and 
-                          [i.sequence_number for i in main_temp_seq]!=[i.sequence_number for i in main_temp_parent]):
+                          [i.sequence_number for i in main_temp_seq]!=[i.sequence_number for i in main_temp_parent] and
+                          self.segment_labels[0]!='ICL3'):
                         temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
             else:
                 temp_length, temp_length1, temp_length2 = [],[],[]

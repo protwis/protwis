@@ -158,6 +158,8 @@ class HomologyModeling(object):
             self.prot_conf = ProteinConformation.objects.get(protein=self.reference_protein)
             self.uniprot_id = self.reference_protein.accession
             self.revise_xtal = False
+        class_tree = {'001':'A', '002':'B1', '003':'B2', '004':'C', '005':'F'}
+        self.class_name = 'Class'+class_tree[Protein.objects.get(entry_name=self.reference_entry_name).family.parent.slug[:3]]
         self.statistics.add_info('uniprot_id',self.uniprot_id)
         self.template_source = OrderedDict()
         self.helix_end_mods = None
@@ -236,9 +238,10 @@ class HomologyModeling(object):
                 except:
                     pass
                 pos_list.append(num)
+        print(pos_list)
         i = 0
-        path_to_file = './structure/homology_models/{}_{}/{}_{}_model.pdb'.format(self.reference_entry_name, self.state,
-                                                                                  self.reference_entry_name, self.state)
+        path_to_file = './structure/homology_models/{}_{}_{}_{}.pdb'.format(self.class_name, self.reference_entry_name, 
+                                                                            self.state, self.main_structure)
         with open (path_to_file, 'r+') as f:
             pdblines = f.readlines()
             out_list = []
@@ -360,7 +363,7 @@ class HomologyModeling(object):
             
             helixends = HelixEndsModeling(self.similarity_table_all, self.template_source, self.main_structure)
             try:
-                if len(main_pdb_array['H8'])==0:# or len(StructureSegment.objects.filter(structure=self.main_structure,protein_segment=16))==0:
+                if len(main_pdb_array['H8'])==0 and len(list(Residue.objects.filter(protein_conformation=self.prot_conf, protein_segment__slug='H8')))>0:
                     helixends.correct_helix_ends(self.main_structure, main_pdb_array, alignment, 
                                                  self.template_source, separate_H8=True)
                     main_pdb_array = helixends.main_pdb_array
@@ -449,8 +452,12 @@ class HomologyModeling(object):
                 else:
                     raise Exception()
             except:
+                if len(list(Residue.objects.filter(protein_conformation=self.prot_conf, protein_segment__slug='H8')))==0:
+                    sep_H8 = True
+                else:
+                    sep_H8 = None
                 helixends.correct_helix_ends(self.main_structure, main_pdb_array, alignment, 
-                                             self.template_source)
+                                             self.template_source, separate_H8=sep_H8)
                 self.helix_end_mods = helixends.helix_end_mods
                 self.template_source = helixends.template_source
 
@@ -758,7 +765,7 @@ class HomologyModeling(object):
             self.statistics.add_info('template_bulges', temp_bulge_list)
             self.statistics.add_info('reference_constrictions', ref_const_list)
             self.statistics.add_info('template_constrictions', temp_const_list)
-                
+            
             # insert bulge to array in the right place
             if ref_bulge_list!=[]:
                 out_pdb_array = OrderedDict()
@@ -839,7 +846,7 @@ class HomologyModeling(object):
                     a.alignment_dict[seg][list(incons.keys())[0]] = a.reference_dict[seg][list(incons.keys())[0]]
         
         self.statistics.add_info('pdb_db_inconsistencies', pdb_db_inconsistencies)
-        path = "./structure/homology_models/{}_{}/".format(self.reference_entry_name,self.state)
+        path = "./structure/homology_models/"
         if not os.path.exists(path):
             os.mkdir(path)
   
@@ -1043,7 +1050,7 @@ class HomologyModeling(object):
                             del self.template_source['ICL3'][keys[icl3_c-1]]
         except:
             pass
- 
+
         # non-conserved residue switching
         if switch_rotamers==True:
             non_cons_switch = self.run_non_conserved_switcher(main_pdb_array,a.reference_dict,a.template_dict,
@@ -1122,10 +1129,10 @@ class HomologyModeling(object):
         self.statistics.add_info('trimmed_residues', trimmed_residues)
 
         # write to file
-        path = "./structure/homology_models/{}_{}/".format(self.reference_entry_name,self.state)
+        path = "./structure/homology_models/"
         if not os.path.exists(path):
             os.mkdir(path)
-        trimmed_res_nums, helix_restraints, icl3_mid = self.write_homology_model_pdb(path+self.uniprot_id+"_post.pdb", 
+        trimmed_res_nums, helix_restraints, icl3_mid = self.write_homology_model_pdb(path+self.reference_entry_name+'_'+self.state+"_post.pdb", 
                                                                                      main_pdb_array, a, 
                                                                                      trimmed_residues=trimmed_residues)
         self.statistics.add_info('template_source',self.template_source)
@@ -1142,7 +1149,7 @@ class HomologyModeling(object):
             pdb.retrieve_pdb_file(str(self.main_structure),pdir='./')
             with open('./pdb{}.ent'.format(str(self.main_structure).lower()),'r') as f:
                 lines = f.readlines()
-            with open(path+self.uniprot_id+"_post.pdb", 'a') as model:
+            with open(path+self.reference_entry_name+'_'+self.state+"_post.pdb", 'a') as model:
                 hetatm = 1
                 for line in lines:
                     if line.startswith('HETATM'):
@@ -1167,24 +1174,24 @@ class HomologyModeling(object):
                 model.write('END')
 
         # Model with MODELLER
-        self.create_PIR_file(a.reference_dict, a.template_dict, path+self.uniprot_id+"_post.pdb", hetatm_count, water_count)
+        self.create_PIR_file(a.reference_dict, a.template_dict, path+self.reference_entry_name+'_'+self.state+"_post.pdb", hetatm_count, water_count)
         
         self.alignment = a
         self.main_pdb_array = main_pdb_array
         
-        self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.uniprot_id+"_post.pdb", 
-                          self.uniprot_id, 1, "{}_{}_model.pdb".format(self.reference_entry_name,self.state), 
+        self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.reference_entry_name+'_'+self.state+"_post.pdb", 
+                          self.uniprot_id, 1, "{}_{}_{}_{}.pdb".format(self.class_name, self.reference_entry_name,self.state,self.main_structure), 
                           atom_dict=trimmed_res_nums, helix_restraints=helix_restraints, icl3_mid=icl3_mid)
 
-        os.remove(path+self.uniprot_id+"_post.pdb")
+        os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
         
         # stat file
-#        with open('./structure/homology_models/{}_{}/{}.stat.txt'.format(self.reference_entry_name, self.state, 
-#                                                                         self.reference_entry_name), 'w') as stat_file:
+#        with open('./structure/homology_models/{}_{}.stat.txt'.format(self.reference_entry_name, self.state, 
+#                                                                      ), 'w') as stat_file:
 #            for label, info in self.statistics.items():
 #                stat_file.write('{} : {}\n'.format(label, info))
 
-        with open(path+'{}_{}.stats.txt'.format(self.reference_entry_name,self.state),'w') as s_file:
+        with open(path+'{}_{}_{}_{}.stats.txt'.format(self.class_name,self.reference_entry_name,self.state,self.main_structure),'w') as s_file:
             rot_table = []
             sections = []
                 
@@ -1256,7 +1263,7 @@ class HomologyModeling(object):
             self.upload_to_db(sections, rot_table)
 
         print('MODELLER build: ',datetime.now() - startTime)
-        pprint.pprint(self.statistics)
+#        pprint.pprint(self.statistics)
         print('################################')
         return self
     
@@ -1578,7 +1585,7 @@ sequence:{uniprot}::::::::
         a.starting_model = 1
         a.ending_model = number_of_models
         a.md_level = refine.slow
-        path = "./structure/homology_models/{}_{}".format(self.reference_entry_name,self.state)
+        path = "./structure/homology_models/"
         if not os.path.exists(path):
             os.mkdir(path)
         a.make()
@@ -1586,8 +1593,7 @@ sequence:{uniprot}::::::::
         # Get a list of all successfully built models from a.outputs
         ok_models = [x for x in a.outputs if x['failure'] is None]
         if len(ok_models)==0:
-            os.rename("./"+template, "./structure/homology_models/{}_{}/".format(self.reference_entry_name,
-                                                                                 self.state)+output_file_name)
+            os.rename("./"+template, "./structure/homology_models/"+output_file_name)
             return 0
 
         # Rank the models by DOPE score
@@ -1604,8 +1610,7 @@ sequence:{uniprot}::::::::
 
         for file in os.listdir("./"):
             if file==m['name']:
-                os.rename("./"+file, "./structure/homology_models/{}_{}/".format(self.reference_entry_name,
-                                                                                 self.state)+output_file_name)
+                os.rename("./"+file, "./structure/homology_models/"+output_file_name)
             elif file.startswith(self.uniprot_id):
                 os.remove("./"+file)
 
@@ -2839,6 +2844,8 @@ class Loops(object):
         self.main_pdb_array = temp_pdb_array
         temp_ref_dict, temp_temp_dict, temp_aligned_dict = OrderedDict(), OrderedDict(), OrderedDict()
         for ref_seg, temp_seg, aligned_seg in zip(reference_dict, template_dict, alignment_dict):
+            if ref_seg=='H8' and len(list(Residue.objects.filter(protein_conformation=self.prot_conf, protein_segment__slug='H8')))==0:
+                continue
             if self.segment_order.index(self.loop_label)-self.segment_order.index(ref_seg[:4])==1:
                 temp_ref_loop, temp_temp_loop, temp_aligned_loop = OrderedDict(), OrderedDict(), OrderedDict()
                 temp_ref_dict[ref_seg] = reference_dict[ref_seg]
