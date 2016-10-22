@@ -21,10 +21,9 @@ $.widget( "custom.catcomplete", $.ui.autocomplete, {
   });
 
 $(function() {
-    type_of_selection = 'navbar';
     redirect_on_select =''
     $("#nav-selection-autocomplete").catcomplete({
-        source: "/protein/autocomplete?type_of_selection=" + type_of_selection,
+        source: "/protein/autocomplete?type_of_selection=navbar",
         minLength: 2,
         autoFocus: true,
         delay: 500,

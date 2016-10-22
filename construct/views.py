@@ -448,6 +448,7 @@ class design(AbsTargetSelection):
     title = "Select a receptor"
 
     template_name = 'designselection.html'
+    type_of_selection = 'targets'
 
     selection_boxes = OrderedDict([
         ('reference', False),
