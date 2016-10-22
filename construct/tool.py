@@ -23,6 +23,7 @@ def compare_family_slug(a,b):
         return 3,"Receptor Family"
     else:
         return 4,"Receptor"
+
 def tool(request):
 
     simple_selection = request.session.get('selection', False)
@@ -141,7 +142,7 @@ def json_icl3(request, slug, **response_kwargs):
 
     print(tm5_start,tm5_50,tm5_end)
 
-    cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions')
+    cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
     
     deletions = OrderedDict()
     deletions['Receptor'] = {}
@@ -155,13 +156,15 @@ def json_icl3(request, slug, **response_kwargs):
         p_level = p.family.slug
         d_level, d_level_name = compare_family_slug(level,p_level)
         pdb = c.crystal.pdb_code
+        state = c.structure.state.slug
+        fusion, f_results = c.fusion()
         for deletion in c.deletions.all():
             #print(pdb,deletion.start,deletion.end)
             if deletion.start > tm5_start[entry_name] and deletion.start < tm6_end[entry_name]:
                 if p.entry_name not in deletions[d_level_name]:
                     deletions[d_level_name][entry_name] = {}
                 #deletions[entry_name][pdb] = [tm5_end[entry_name],tm6_start[entry_name],deletion.start,deletion.end,deletion.start-tm5_end[entry_name],tm6_start[entry_name]-deletion.end]
-                deletions[d_level_name][entry_name][pdb] = [deletion.start-tm5_50[entry_name],tm6_50[entry_name]-deletion.end-1]
+                deletions[d_level_name][entry_name][pdb] = [deletion.start-tm5_50[entry_name],tm6_50[entry_name]-deletion.end-1,state,str(fusion)]
 
     jsondata = deletions
     jsondata = json.dumps(jsondata)
@@ -174,13 +177,14 @@ def json_nterm(request, slug, **response_kwargs):
 
     ##PREPARE TM1 LOOKUP DATA
     proteins = Construct.objects.all().values_list('protein', flat = True)
-    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__protein_segment__slug='TM1').annotate(start=Min('residue__sequence_number'))
+    #pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__protein_segment__slug='TM1').annotate(start=Min('residue__sequence_number'))
+    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__generic_number__label__in=['1x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
     tm1_start = {}
     for pc in pconfs:
-        tm1_start[pc.protein.entry_name] = pc.start
+        tm1_start[pc[0]] = pc[1]
 
 
-    cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions')
+    cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
     deletions = OrderedDict()
     deletions['Receptor'] = {}
     deletions['Receptor Family'] = {}
@@ -193,11 +197,13 @@ def json_nterm(request, slug, **response_kwargs):
         p_level = p.family.slug
         d_level, d_level_name = compare_family_slug(level,p_level)
         pdb = c.crystal.pdb_code
+        state = c.structure.state.slug
+        fusion, f_results = c.fusion()
         for deletion in c.deletions.all():
             if deletion.start < tm1_start[entry_name]:
                 if p.entry_name not in deletions[d_level_name]:
                     deletions[d_level_name][entry_name] = {}
-                deletions[d_level_name][entry_name][pdb] = [deletion.start,deletion.end, tm1_start[entry_name]-deletion.end-1]
+                deletions[d_level_name][entry_name][pdb] = [deletion.start,deletion.end, tm1_start[entry_name]-deletion.end-1,state,str(fusion)]
 
     jsondata = deletions
     jsondata = json.dumps(jsondata)
@@ -209,13 +215,17 @@ def json_cterm(request, slug, **response_kwargs):
 
     ##PREPARE TM1 LOOKUP DATA
     proteins = Construct.objects.all().values_list('protein', flat = True)
-    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__protein_segment__slug='C-term').annotate(start=Min('residue__sequence_number'))
+    # pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__protein_segment__slug='C-term').annotate(start=Min('residue__sequence_number'))
+    # cterm_start = {}
+    # for pc in pconfs:
+    #     cterm_start[pc.protein.entry_name] = pc.start
+    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__generic_number__label__in=['8x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
     cterm_start = {}
     for pc in pconfs:
-        cterm_start[pc.protein.entry_name] = pc.start
+        cterm_start[pc[0]] = pc[1]
 
 
-    cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions')
+    cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
     
     deletions = OrderedDict()
     deletions['Receptor'] = {}
@@ -229,11 +239,13 @@ def json_cterm(request, slug, **response_kwargs):
         p_level = p.family.slug
         d_level, d_level_name = compare_family_slug(level,p_level)
         pdb = c.crystal.pdb_code
+        state = c.structure.state.slug
+        fusion, f_results = c.fusion()
         for deletion in c.deletions.all():
             if deletion.start >= cterm_start[entry_name]:
                 if p.entry_name not in deletions[d_level_name]:
                     deletions[d_level_name][entry_name] = {}
-                deletions[d_level_name][entry_name][pdb] = [deletion.start,deletion.end, cterm_start[entry_name]-deletion.start]
+                deletions[d_level_name][entry_name][pdb] = [deletion.start,deletion.end, cterm_start[entry_name]-deletion.start,state,str(fusion)]
 
     jsondata = deletions
     jsondata = json.dumps(jsondata)
