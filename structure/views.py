@@ -1532,7 +1532,7 @@ def webformdata(request) :
                 data.pop('concentr_unit'+comp_id, None)
 
 
-            if key.startswith('aamod') and len(key.split("_"))<3 and not key=='aamod_position' and not key=='aamod_single':
+            if key.startswith('aamod') and not key.startswith('aamod_position') and not key.startswith('aamod_pair') and not key=='aamod_position' and not key=='aamod_single':
                 if key!='aamod': #not first
                     mod_id = key.replace('aamod','')
                 else:

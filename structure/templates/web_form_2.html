@@ -465,7 +465,9 @@ select.optional option{
 			    	$( "[name='"+k+"']" ).trigger("change")
 				} else if (k.startsWith('aa_no')) {
 					addRow('mutations', '0');
-				} else if (k.startsWith('fusion_prot')) {
+				// } else if (k.startsWith('fusion_prot')) {
+				// 	addaux('aux_proteins');
+				} else if (k.startsWith('protein_type')) {
 					addaux('aux_proteins');
 				} else if (k.startsWith('chemical_comp')) {
 					addRow('chem_comp')
@@ -520,7 +522,9 @@ select.optional option{
 			    	$( "[name='"+k+"']" ).trigger("change")
 				} else if (k.startsWith('aa_no')) {
 					addRow('mutations', '0');
-				} else if (k.startsWith('fusion_prot')) {
+				// } else if (k.startsWith('fusion_prot')) {
+				// 	addaux('aux_proteins');
+				} else if (k.startsWith('protein_type')) {
 					addaux('aux_proteins');
 				} else if (k.startsWith('chemical_comp')) {
 					addRow('chem_comp')
@@ -701,7 +705,7 @@ select.optional option{
 						 </tr>
 						 <tr>
 						    <th>Ligand Concentration</th>
-						    <td><input class="half form-control random" id="id_ligand_conc" maxlength="50" name="ligand_conc" placeholder="value" type="text" /><input class="unit form-control random" id="id_ligand_conc_unit" name="ligand_conc_unit" placeholder="unit i.e.%w/v" type="text" /></td> 
+						    <td><input class="half form-control random optional" id="id_ligand_conc" maxlength="50" name="ligand_conc" placeholder="value" type="text" /><input class="unit form-control random optional" id="id_ligand_conc_unit" name="ligand_conc_unit" placeholder="unit i.e.%w/v" type="text" /></td> 
 						 </tr>      
 			        </table>   
 				</div>
@@ -834,7 +838,7 @@ select.optional option{
 						  </tr>
 						   <tr> 
 						    <th>Present in Expression Construct</th> 
-				 		    <td class="hidetext"><select class="custom_select form-control col_id col_id" id="id_presence_expr" name="presence_expr">
+				 		    <td class="hidetext"><select class="optional custom_select form-control col_id col_id" id="id_presence_expr" name="presence_expr">
 									<option value="">Please Select</option>
 									<option value="YES">YES</option>
 									<option value="NO">NO</option>
@@ -964,7 +968,7 @@ select.optional option{
 							    		<option value="glycosylation">Glycosyltation</option>
 							    		<option value="other">Other</option>
 							    	</select><br>
-							    	<input class="hidetext form-control other_mod widen second_table row_id" id="id_aamod" maxlength="50" name="aamod" type="text" placeholder="please insert" />
+							    	<input class="hidetext form-control other_mod widen second_table row_id" id="id_aamod" maxlength="50" name2="aamod" type="text" placeholder="please insert" />
 							    </td>
 							    <td><select class="form-control  half aamod_pos_type row_id" id="id_aamod_position" name="aamod_position">
 										<option value="">Select</option>
@@ -1049,7 +1053,7 @@ select.optional option{
 						     </tr>
 						       <tr>
 							    <th>Expression time</th>
-							    <td><input class="form-control random" id="id_expr_time" maxlength="50" name="time_expr" type="text" /></td> 
+							    <td><input class="form-control random optional" id="id_expr_time" maxlength="50" name="time_expr" type="text" /></td> 
 							 </tr>
 			                 <tr>
 						        <th>Remark</th>

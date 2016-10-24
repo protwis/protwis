@@ -21,7 +21,7 @@ from collections import OrderedDict
 
 
 # Create your views here.
-@cache_page(60 * 60 * 24)
+#@cache_page(60 * 60 * 24)
 def detail(request, slug):
 
     # get constructs
