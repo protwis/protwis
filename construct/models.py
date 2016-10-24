@@ -193,7 +193,8 @@ class ChemicalType(models.Model):
 
 class ChemicalConc(models.Model):
     chemical = models.ForeignKey('Chemical')
-    concentration = models.FloatField()
+    # concentration = models.FloatField()
+    concentration = models.CharField(max_length=200)
     concentration_unit = models.TextField(null=True)
 
     def __str__(self):
