@@ -437,6 +437,10 @@ select.optional option{
 
         for (i = 0; i < len; i++) {
 		  	k = keys[i];
+		  	if (k=='csrfmiddlewaretoken') { //ignore csrf
+		  		i++;
+		  		k = keys[i];
+		  	}
 	    	v = obj.raw_data[k];
 	    	if ( $( "[name='"+k+"']" ).length && v ) {
 	    		if($( "[name='"+k+"']" ).is("select") && $( "[name='"+k+"']" ).is(":visible")) {
