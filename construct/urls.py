@@ -5,8 +5,8 @@ from construct import views
 
 
 urlpatterns = [
-    # url(r'^$', views.ConstructBrowser.as_view(), name='browse'), #no cache, for dev
-    url(r'^$', cache_page(60*60*24*7)(views.ConstructBrowser.as_view()), name='browse'),
+    url(r'^$', views.ConstructBrowser.as_view(), name='browse'), #no cache, for dev
+    #url(r'^$', cache_page(60*60*24*7)(views.ConstructBrowser.as_view()), name='browse'),
     url(r'^statistics[/]?$', views.ConstructStatistics.as_view(), name='statistics'),
     url(r'^mutations[/]?$', views.ConstructMutations.as_view(), name='mutations'),
     url(r'^auto_webform/(?P<slug>[-\w]+)/$', views.fetch_pdb_for_webform, name='fetch'),
