@@ -428,7 +428,7 @@ select.optional option{
 
     	var keys = [];
     	for (k in obj.raw_data){
-    		if (obj.raw_data[k]) { //dont push keys without values
+    		if (obj.raw_data[k] && k!='csrfmiddlewaretoken') { //dont push keys without values
         		keys.push(k);
     		}
         }
@@ -437,10 +437,6 @@ select.optional option{
 
         for (i = 0; i < len; i++) {
 		  	k = keys[i];
-		  	if (k=='csrfmiddlewaretoken') { //ignore csrf
-		  		i++;
-		  		k = keys[i];
-		  	}
 	    	v = obj.raw_data[k];
 	    	if ( $( "[name='"+k+"']" ).length && v ) {
 	    		if($( "[name='"+k+"']" ).is("select") && $( "[name='"+k+"']" ).is(":visible")) {
