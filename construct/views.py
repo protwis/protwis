@@ -192,6 +192,9 @@ class ConstructStatistics(TemplateView):
             pos = mutation[0].sequence_number
             p_class = mutation[3]
             p_class = class_names[p_class]
+            pdb = mutation[2]
+
+            print(entry_name,"\t", pdb,"\t", pos,"\t", wt,"\t", mut)
 
 
             if p_class not in mutation_type:
