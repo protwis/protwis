@@ -159,7 +159,7 @@ def fetch_pdb_info(pdbname,protein):
                                 seg_uniprot_ids.append(u_id)
                         elif receptor and node.attrib['property']=='Annotation' and node.text == 'Engineered mutation': ## only in receptor
                             if {'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos} not in d['mutations']: #prevent duplicates
-                                d['mutations'].append({'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos})
+                                d['mutations'].append({'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos,'type':''})
                 if uniprot_pos:
                     pos_list.append(uniprot_pos) 
                     if receptor and uniprot_pos in pos_in_wt:
@@ -188,6 +188,8 @@ def fetch_pdb_info(pdbname,protein):
                 else:
                     subtype ='N/A'
                     continue #do not add segments without information
+                if subtype == 'Not_Observed':
+                    continue #ignore "aux" that are 'not observed'
                 d['auxiliary']['aux'+str(len(d['auxiliary']))] = {'type':'auto','subtype':subtype,'presence':'YES','position':insert_position, 'start':insert_start}
             elif receptor == False:
                 # print('\t',pdbname.lower(),'Protein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
@@ -425,7 +427,7 @@ def add_construct(d):
     construct.save()
     #MUTATIONS
     for mutation in d['mutations']:
-        mut = ConstructMutation.objects.create(sequence_number=mutation['pos'],wild_type_amino_acid=mutation['wt'],mutated_amino_acid=mutation['mut'])
+        mut = ConstructMutation.objects.create(sequence_number=mutation['pos'],wild_type_amino_acid=mutation['wt'],mutated_amino_acid=mutation['mut'],mutation_type=mutation['type'])
         construct.mutations.add(mut)
 
     #DELETIONS
@@ -660,6 +662,7 @@ def convert_ordered_to_disordered_annotation(d):
         d['raw_data']['mut_aa_'+str(i)] = mut['mut']
         d['raw_data']['wt_aa_'+str(i)] = mut['wt']
         d['raw_data']['aa_no_'+str(i)] = mut['pos']
+        d['raw_data']['mut_type_'+str(i)] = ''
         i+=1
 
     i = 2

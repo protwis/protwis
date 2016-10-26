@@ -15,45 +15,79 @@ Target: {{target.entry_name}}
   <p>You sure you want to reset this construct?</p>
 </div>
 
-<button onclick='$( "#dialog" ).dialog( "open" )''>Reset</button>
-
+State: <div class="btn-group" data-toggle="buttons">
+  <label class="btn btn-default active">
+    <input type="radio" name="state" value="inactive" checked=""> Inactive
+  </label>
+  <label class="btn btn-default">
+    <input type="radio" name="state" value="active"> Active
+  </label>
+</div>
+Fusion Site: <div class="btn-group" data-toggle="buttons">
+  <label class="btn btn-default">
+    <input type="radio" name="fusionpos" value="nterm"> N-term
+  </label>
+  <label class="btn btn-default active">
+    <input type="radio" name="fusionpos" value="icl3" checked=""> ICL3
+  </label>
+  <label class="btn btn-default">
+    <input type="radio" name="fusionpos" value="None"> None
+  </label>
+</div>
+<button class="btn btn-warning" onclick='$( "#dialog" ).dialog( "open" )''>Reset</button>
+<br>
+<br>
 <div class="row">
   <div class="col-sm-2">
-    
-    <ul id="n_menu">
-      <li class='nterm'><div>N-Term</div>
-        <ul>
-        </ul>
-      </li>
-    </ul>
 
-    <ul id="c_menu">
-      <li class='cterm'><div>C-Term</div>
-        <ul>
-        </ul>
-      </li>
-    </ul>
 
-    <ul id="i_menu">
-      <li class='icl3'><div>ICL3</div>
-        <ul>
-        </ul>
-      </li>
-    </ul>
+    Data-driven:<br>
+        <div class="btn-group-vertical btn-block">
+            <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle pull-right btn-block" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    N-term <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" id='ntermmenu'>
+                <li>Loading...</li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle pull-right" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    ICL3 <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" id='icl3menu'>
+                <li>Loading...</li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    C-term <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" id='ctermmenu'>
+                <li>Loading...</li>
+                </ul>
+            </div>
+        </div>
 
-    <ul id="m_menu">
-      <li class='common'><div>Common mutations</div>
-        <ul>
-        </ul>
-      </li>
-    </ul>
-
-    <ul id="g_menu">
-      <li class='glyco'><div>Glycosylation</div>
-        <ul>
-        </ul>
-      </li>
-    </ul>
+    Receptor specific:<br>
+        <div class="btn-group-vertical btn-block">
+            <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle pull-right btn-block" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                   Common mutations <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" id='common'>
+                <li>Loading...</li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle pull-right" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Glycosylation <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" id='glyco'>
+                <li>Loading...</li>
+                </ul>
+            </div>
+        </div>
 
   </div>
   <div class="col-sm-7">
@@ -64,12 +98,6 @@ Target: {{target.entry_name}}
     </div>
   </div>
 </div>
-
-
-
-
-
-
 
 {% endblock %}
 
@@ -98,10 +126,128 @@ Target: {{target.entry_name}}
 
     }
 
+    function build_nterm_menu() {
+      var state = $('input:radio[name=state]:checked').val();
+      var fusionpos = $('input:radio[name=fusionpos]:checked').val();
+      show_nterm = {};
+      $.each(n_term_data, function(level,proteins) {
+        $.each(proteins, function(protein, pdbs){
+          $.each(pdbs, function(pdb, vals){
+            // Do checks!
+            if (state==vals[3]) {
+              if (fusionpos==vals[4] || (fusionpos=='None' && vals[4]!='nterm') || (fusionpos!='nterm' && vals[4]=='None')) {
+                // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
+                if(!show_nterm[level]) { show_nterm[level] = {}; } 
+                if(!show_nterm[level][protein]) { show_nterm[level][protein] = {}; } 
+                show_nterm[level][protein][pdb] = vals
+              }
+            }
+          })
+        })
+      }) 
+
+      var items = [];
+      $.each( show_nterm, function( key, val ) {
+        temp = "<li id='" + key + "' class=\"dropdown-submenu\"><a href='#'>" + key + " ("+Object.keys(val).length+")</a><ul class=\"dropdown-menu\">";
+
+        $.each( val, function( protein, val2 ) {
+          temp += "<li id='" + protein + "' class=\"dropdown-submenu\"><a href='#'>" + protein + " ("+Object.keys(val2).length+")</a><ul class=\"dropdown-menu\">";
+          $.each( val2, function( pdb, value ) {
+              temp += "<li id='"+pdb+"'><a href='#' onclick='nterm_tm1(this)' value='"+value[2]+"' from='"+pdb+"'>"+pdb+" "+value[2]+" pos from 1.50</a></li>";
+          });
+          temp += "</ul></li>";
+        });
+        temp += "</ul></li>";
+        items.push( temp );
+      });
+      result = items.join( "" );
+      $("#ntermmenu").html(result);
+    }
+
+    function build_cterm_menu() {
+      var state = $('input:radio[name=state]:checked').val();
+      var fusionpos = $('input:radio[name=fusionpos]:checked').val();
+      show_cterm = {};
+      $.each(c_term_data, function(level,proteins) {
+        $.each(proteins, function(protein, pdbs){
+          $.each(pdbs, function(pdb, vals){
+            // Do checks!
+            if (state==vals[3]) {
+                // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
+                if(!show_cterm[level]) { show_cterm[level] = {}; } 
+                if(!show_cterm[level][protein]) { show_cterm[level][protein] = {}; } 
+                show_cterm[level][protein][pdb] = vals
+            }
+          })
+        })
+      }) 
+
+      var items = [];
+      $.each( show_cterm, function( key, val ) {
+        temp = "<li id='" + key + "' class=\"dropdown-submenu\"><a href='#'>" + key + " ("+Object.keys(val).length+")</a><ul class=\"dropdown-menu\">";
+
+        $.each( val, function( protein, val2 ) {
+          temp += "<li id='" + protein + "' class=\"dropdown-submenu\"><a href='#'>" + protein + " ("+Object.keys(val2).length+")</a><ul class=\"dropdown-menu\">";
+          $.each( val2, function( pdb, value ) {
+              temp += "<li id='"+pdb+"'><a href='#' onclick='cterm(this)' value='"+value[2]+"' from='"+pdb+"'>"+pdb+" "+value[2]+" pos from 8.50</a></li>";
+          });
+          temp += "</ul></li>";
+        });
+        temp += "</ul></li>";
+        items.push( temp );
+      });
+      result = items.join( "" );
+      console.log(result);
+      $("#ctermmenu").html(result);
+    }
+
+    function build_icl3_menu() {
+      var state = $('input:radio[name=state]:checked').val();
+      var fusionpos = $('input:radio[name=fusionpos]:checked').val();
+      show_icl3 = {};
+      $.each(icl3_data, function(level,proteins) {
+        $.each(proteins, function(protein, pdbs){
+          $.each(pdbs, function(pdb, vals){
+            // Do checks!
+            if (state==vals[2]) {
+              if (fusionpos==vals[3] || (fusionpos=='None' && vals[3]!='icl3') || (fusionpos!='icl3' && vals[3]=='None')) {
+                // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
+                if(!show_icl3[level]) { show_icl3[level] = {}; } 
+                if(!show_icl3[level][protein]) { show_icl3[level][protein] = {}; } 
+                show_icl3[level][protein][pdb] = vals
+              }
+            }
+          })
+        })
+      }) 
+
+      var items = [];
+      $.each( show_icl3, function( key, val ) {
+        temp = "<li id='" + key + "' class=\"dropdown-submenu\"><a href='#'>" + key + " ("+Object.keys(val).length+")</a><ul class=\"dropdown-menu\">";
+
+        $.each( val, function( protein, val2 ) {
+          temp += "<li id='" + protein + "' class=\"dropdown-submenu\"><a href='#'>" + protein + " ("+Object.keys(val2).length+")</a><ul class=\"dropdown-menu\">";
+          $.each( val2, function( pdb, value ) {
+              range1 = "5."+(50+value[0]);
+              range2 = "6."+(50-value[1]);
+              temp += "<li id='"+pdb+"'><a href='#' onclick='icl3(this)'  tm5='"+value[0]+"'  tm6='"+value[1]+"' from='"+pdb+"'>"+pdb+" "+range1+"-"+range2+"</a></li>";
+          });
+          temp += "</ul></li>";
+        });
+        temp += "</ul></li>";
+        items.push( temp );
+      });
+      result = items.join( "" );
+      console.log(result);
+      $("#icl3menu").html(result);
+    }
+
+    // ON CLICK FUNCTIONS
+
     function nterm_tm1(elem) {
       n_val = $(elem).attr("value");
       from = $(elem).attr("from");
-      until = {{residues.Nterm|length}}-n_val;
+      until = {{residues_gn.1x50.sequence_number}}-n_val;
 
       console.log(n_val+" "+until);
 
@@ -112,7 +258,7 @@ Target: {{target.entry_name}}
       }
 
 
-      modi = {method: "n-term", type: "deletion", from: from, range: range};
+      modi = {method: "n-term", type: "deletion", from: from, range: range, info: "Based on "+from};
       modifications.push(modi);
       overlay_modifications();
       modifications_overview();
@@ -121,7 +267,8 @@ Target: {{target.entry_name}}
     function cterm(elem) {
       n_val = $(elem).attr("value");
       from = $(elem).attr("from");
-      start = {{residues.Cterm.0.sequence_number}}-n_val;
+      start = {{residues_gn.8x50.sequence_number}}-n_val;
+      // start = {{residues.Cterm.0.sequence_number}}-n_val;
       {% with residues.Cterm|last as last %}
        end =   {{ last.sequence_number }};
       {% endwith %}
@@ -135,7 +282,7 @@ Target: {{target.entry_name}}
       }
 
 
-      modi = {method: "c-term", type: "deletion", from: from, range: range};
+      modi = {method: "c-term", type: "deletion", from: from, range: range, info: "Based on "+from};
       modifications.push(modi);
       overlay_modifications();
       modifications_overview();
@@ -155,7 +302,7 @@ Target: {{target.entry_name}}
       }
 
 
-      modi = {method: "ICL3", type: "deletion", from: from, range: range};
+      modi = {method: "ICL3", type: "deletion", from: from, range: range, info: "Based on "+from};
       modifications.push(modi);
       overlay_modifications();
       modifications_overview();
@@ -219,6 +366,7 @@ Target: {{target.entry_name}}
         type = val['type'];
         range = val['range'];
         method = val['method'];
+        from = val['from'];
 
         if (val['info']) {
           info = "<p>"+val['info']+"</p>";
@@ -228,7 +376,8 @@ Target: {{target.entry_name}}
 
         row =  "<h3>"+method+" ("+type+")</h3>" +
             "<div>" +
-            "  <p>"+range+"</p>" +
+            // "  <p>Based from "+from+"</p>" +
+            // "  <p>"+range+"</p>" +
             info +
             "  <button onclick='remove_mod(this)' mod_id="+key+">Remove</button>" +
             "</div>"
@@ -292,6 +441,12 @@ Target: {{target.entry_name}}
   // Make snake plot big
   $(document).ready(function() {
 
+    $('input[type=radio][name=state], input[type=radio][name=fusionpos]').change(function() {
+          build_nterm_menu();
+          build_cterm_menu();
+          build_icl3_menu();
+    });
+
     $( "#overview" ).accordion({
       collapsible: true,
       active: false,
@@ -324,113 +479,106 @@ Target: {{target.entry_name}}
         $(".short").hide();
         maxmin();
 
-      $( function() {
-            $( "#n_menu" ).menu();
-            $( "#c_menu" ).menu();
-            $( "#i_menu" ).menu();
-            $( "#m_menu" ).menu({
-              items: "> :not(.ui-widget-header)"
-            });
-            $( "#g_menu" ).menu();
-      } );
-
-
       // http://localhost:8000/construct/tool/json/nterm/adrb2_human/
       $.getJSON( "/construct/tool/json/nterm/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( key, val ) {
-            temp = "<li id='" + key + "'><div>" + key + " ("+Object.keys(val).length+")</div><ul>";
+          n_term_data = data; 
+          // var items = [];
+          // $.each( data, function( key, val ) {
+          //   temp = "<li id='" + key + "'><div>" + key + " ("+Object.keys(val).length+")</div><ul>";
 
-            $.each( val, function( protein, val2 ) {
-              temp += "<li id='" + protein + "'><div>" + protein + "</div><ul>";
-              $.each( val2, function( pdb, value ) {
-                  temp += "<li id='"+pdb+"'><div>"+pdb+"</div><ul><li><div> Range:"+value[0]+":"+value[1]+"</div></li><li><div onclick='nterm_tm1(this)' value='"+value[2]+"' from='"+pdb+"'>From TM1:"+value[2]+"</div></li></ul></li>";
-              });
-              temp += "</ul></li>";
-            });
+          //   $.each( val, function( protein, val2 ) {
+          //     temp += "<li id='" + protein + "'><div>" + protein + "</div><ul>";
+          //     $.each( val2, function( pdb, value ) {
+          //         temp += "<li id='"+pdb+"'><div>"+pdb+"</div><ul><li><div> Range:"+value[0]+":"+value[1]+"</div></li><li><div onclick='nterm_tm1(this)' value='"+value[2]+"' from='"+pdb+"'>From TM1:"+value[2]+"</div></li></ul></li>";
+          //     });
+          //     temp += "</ul></li>";
+          //   });
 
-            temp += "</ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $(".nterm").find("ul").html(result);
-          $( "#n_menu" ).menu( "refresh" );
+          //   temp += "</ul></li>";
+          //   items.push( temp );
+          // });
+          // result = items.join( "" );
+          // $(".nterm").find("ul").html(result);
+          // $( "#n_menu" ).menu( "refresh" );
+          build_nterm_menu();
         });
 
       // http://localhost:8000/construct/tool/json/cterm/adrb2_human/
       $.getJSON( "/construct/tool/json/cterm/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( key, val ) {
-            temp = "<li id='" + key + "'><div>" + key + " ("+Object.keys(val).length+")</div><ul>";
+          c_term_data = data;
+          // var items = [];
+          // $.each( data, function( key, val ) {
+          //   temp = "<li id='" + key + "'><div>" + key + " ("+Object.keys(val).length+")</div><ul>";
 
-            $.each( val, function( protein, val2 ) {
-              temp += "<li id='" + protein + "'><div>" + protein + "</div><ul>";
-              $.each( val2, function( pdb, value ) {
-                temp += "<li id='"+pdb+"'><div>"+pdb+"</div><ul><li><div onclick='cterm(this)' value='"+value[2]+"' from='"+pdb+"'>From C-term start:"+value[2]+"</div></li></ul></li>";
-              });
-              temp += "</ul></li>";
-            });
+          //   $.each( val, function( protein, val2 ) {
+          //     temp += "<li id='" + protein + "'><div>" + protein + "</div><ul>";
+          //     $.each( val2, function( pdb, value ) {
+          //       temp += "<li id='"+pdb+"'><div>"+pdb+"</div><ul><li><div onclick='cterm(this)' value='"+value[2]+"' from='"+pdb+"'>From C-term start:"+value[2]+"</div></li></ul></li>";
+          //     });
+          //     temp += "</ul></li>";
+          //   });
 
-            temp += "</ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $(".cterm").find("ul").html(result);
-          $( "#c_menu" ).menu( "refresh" );
+          //   temp += "</ul></li>";
+          //   items.push( temp );
+          // });
+          // result = items.join( "" );
+          // $(".cterm").find("ul").html(result);
+          // $( "#c_menu" ).menu( "refresh" );
+          build_cterm_menu();
         });
 
       // http://localhost:8000/construct/tool/json/icl3/adrb2_human/
       $.getJSON( "/construct/tool/json/icl3/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( key, val ) {
-            temp = "<li id='" + key + "'><div>" + key + " ("+Object.keys(val).length+")</div><ul>";
+          icl3_data = data; 
+          // var items = [];
+          // $.each( data, function( key, val ) {
+          //   temp = "<li id='" + key + "'><div>" + key + " ("+Object.keys(val).length+")</div><ul>";
 
-            $.each( val, function( protein, val2 ) {
-              temp += "<li id='" + protein + "'><div>" + protein + "</div><ul>";
-              $.each( val2, function( pdb, value ) {
-                  temp += "<li id='"+pdb+"'><div>"+pdb+"</div><ul><li><div onclick='icl3(this)' tm5='"+value[0]+"'  tm6='"+value[1]+"' from='"+pdb+"'>TM5:"+value[0]+" TM6:"+value[1]+"</div></li></ul></li>";
-              });
-              temp += "</ul></li>";
-            });
+          //   $.each( val, function( protein, val2 ) {
+          //     temp += "<li id='" + protein + "'><div>" + protein + "</div><ul>";
+          //     $.each( val2, function( pdb, value ) {
+          //         temp += "<li id='"+pdb+"'><div>"+pdb+"</div><ul><li><div onclick='icl3(this)' tm5='"+value[0]+"'  tm6='"+value[1]+"' from='"+pdb+"'>TM5:"+value[0]+" TM6:"+value[1]+"</div></li></ul></li>";
+          //     });
+          //     temp += "</ul></li>";
+          //   });
 
-            temp += "</ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $(".icl3").find("ul").html(result);
-          $( "#i_menu" ).menu( "refresh" );
+          //   temp += "</ul></li>";
+          //   items.push( temp );
+          // });
+          // result = items.join( "" );
+          // $(".icl3").find("ul").html(result);
+          // $( "#i_menu" ).menu( "refresh" );
+          build_icl3_menu();
         });
 
       // http://localhost:8000/construct/tool/json/cterm/adrb2_human/
       $.getJSON( "/construct/tool/json/mutations/{{target.entry_name}}/", function( data ) {
           var items = [];
           $.each( data, function( gn, val ) {
-            temp = "<li id='" + gn + "'><div>" + gn + " ("+val['hits']+" occurences)</div><ul>";
+            temp = "<li id='" + gn + "' class=\"dropdown-submenu\"><a>" + gn + " ("+val['hits']+" occurences)</a><ul class=\"dropdown-menu\">";
 
-            temp += "<li><div>"+gn+" in {{target.entry_name}} is "+val['wt'][0]+"</div></li>";
-            console.log(val['mutation']);
+            temp += "<li><a>"+gn+" in {{target.entry_name}} is "+val['wt'][0]+"</a></li><li class=\"divider\"></li>";
             $.each( val['proteins'], function( key, value ) {
-                temp += "<li id='"+key+"'><div class='origin'>"+value+" ("+val['mutation'][key][0]+"=>"+val['mutation'][key][1]+")</div><ul><li><div onclick='mut(this)' pos='"+val['wt'][1]+"' gn='"+gn+"' wt='"+val['wt'][0]+"' from='"+val['wt'][0]+"' to='"+val['mutation'][key][1]+"' > Mutate "+val['wt'][0]+val['wt'][1]+val['mutation'][key][1]+"</div></li></ul></li>";
+                temp += "<li class=\"dropdown-submenu\" id='"+key+"'><a class='origin'>"+value+" ("+val['mutation'][key][0]+"=>"+val['mutation'][key][1]+")</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' pos='"+val['wt'][1]+"' gn='"+gn+"' wt='"+val['wt'][0]+"' from='"+val['wt'][0]+"' to='"+val['mutation'][key][1]+"' > Mutate "+val['wt'][0]+val['wt'][1]+val['mutation'][key][1]+"</a></li></ul></li>";
             });
 
             temp += "</ul></li>";
             items.push( temp );
           });
           result = items.join( "" );
-          $(".common").find("ul").html(result);
-          $( "#m_menu" ).menu( "refresh" );
+          $("#common").html(result);
         });
 
             // http://localhost:8000/construct/tool/json/cterm/adrb2_human/
       $.getJSON( "/construct/tool/json/glyco/{{target.entry_name}}/", function( data ) {
           var items = [];
           $.each( data, function( type, val ) {
-            temp = "<li id='" + type + "'><div>" + type + " ("+Object.keys(val).length+" hits)</div><ul>";
+            temp = "<li id='" + type + "' class=\"dropdown-submenu\"><a>" + type + " ("+Object.keys(val).length+" hits)</a><ul class=\"dropdown-menu\">";
             $.each( val, function( key, value ) {
                 if (type == 'mammalian') {
-                temp += "<li id='"+key+"'><div class='origin'>"+value[4][0]+value[0]+value[1]+" & "+value[4][1]+parseInt(value[0]+1)+value[3]+" ("+value[5]+")</div><ul><li><div onclick='glyco(this)' motif='"+value[4]+"' pos='"+value[0]+"' wt='"+value[4][0]+"' from='"+value[4][0]+"' to='"+value[1]+"' to2='"+value[3]+"' wt2='"+value[4][1]+"'> Mutate "+value[4][0]+value[0]+value[1]+" & "+value[4][1]+parseInt(value[0]+1)+value[3]+"</div></li></ul></li>";
+                temp += "<li id='"+key+"'  class=\"dropdown-submenu\"><a class='origin'>"+value[4][0]+value[0]+value[1]+" & "+value[4][1]+parseInt(value[0]+1)+value[3]+" ("+value[5]+")</a><ul  class=\"dropdown-menu\"><li><a onclick='glyco(this)' motif='"+value[4]+"' pos='"+value[0]+"' wt='"+value[4][0]+"' from='"+value[4][0]+"' to='"+value[1]+"' to2='"+value[3]+"' wt2='"+value[4][1]+"'> Mutate "+value[4][0]+value[0]+value[1]+" & "+value[4][1]+parseInt(value[0]+1)+value[3]+"</a></li></ul></li>";
                 } else {
-                temp += "<li id='"+key+"'><div class='origin'>"+value[4][0]+value[0]+value[1]+" ("+value[5]+")</div><ul><li><div onclick='glyco(this)' motif='"+value[4]+"' pos='"+value[0]+"' wt='"+value[4][0]+"' from='"+value[4][0]+"' to='"+value[1]+"' > Mutate "+value[4][0]+value[0]+value[1]+"</div></li></ul></li>";
+                temp += "<li id='"+key+"' class=\"dropdown-submenu\"><a class='origin'>"+value[4][0]+value[0]+value[1]+" ("+value[5]+")</a><ul class=\"dropdown-menu\"><li><a onclick='glyco(this)' motif='"+value[4]+"' pos='"+value[0]+"' wt='"+value[4][0]+"' from='"+value[4][0]+"' to='"+value[1]+"' > Mutate "+value[4][0]+value[0]+value[1]+"</a></li></ul></li>";
                 }
             });
 
@@ -438,11 +586,11 @@ Target: {{target.entry_name}}
             items.push( temp );
           });
           result = items.join( "" );
-          $(".glyco").find("ul").html(result);
-          $( "#g_menu" ).menu( "refresh" );
+          $("#glyco").html(result);
         });
         
 
     });
 </script>
 {% endblock %}
+
