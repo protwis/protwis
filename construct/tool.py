@@ -76,7 +76,8 @@ def json_glyco(request, slug, **response_kwargs):
     for r in rs:
         residues[r.sequence_number] = r.protein_segment.slug
 
-    p = re.compile("N.[TS]")
+    #No proline!
+    p = re.compile("N[^P][TS]")
     #print('all')
     mutations_all = []
     for m in p.finditer(seq):

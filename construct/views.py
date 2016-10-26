@@ -514,6 +514,7 @@ class ConstructMutations(TemplateView):
         for mutation in mutations:
             wt = mutation[0].wild_type_amino_acid
             mut = mutation[0].mutated_amino_acid
+            mut_type = mutation[0].mutation_type
             entry_name = mutation[1]
             pdb = mutation[2]
             cname = mutation[4]
@@ -536,7 +537,7 @@ class ConstructMutations(TemplateView):
                 gn = ''
 
 
-            mutation_list.append({'entry_name':entry_name,'pdb':pdb,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class})
+            mutation_list.append({'entry_name':entry_name,'pdb':pdb,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class, 'type': mut_type})
 
 
         context['mutation_list'] = mutation_list
