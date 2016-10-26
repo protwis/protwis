@@ -1110,16 +1110,21 @@ def showcalculation(request):
 
 
     #Consider caching result! Would be by protein since it compares protein to whole class.
-    json_generic = '/tmp/'+str(context['proteins'][0])+'_generic.json'
-    json_alternative = '/tmp/'+str(context['proteins'][0])+'_alternative.json'
-    json_similarity_list = '/tmp/'+str(context['proteins'][0])+'_similarity_list.json'
+    json_generic = str(context['proteins'][0])+'_generic.json'
+    json_alternative = str(context['proteins'][0])+'_alternative.json'
+    json_similarity_list = str(context['proteins'][0])+'_similarity_list.json'
 
-    if os.path.isfile(json_generic) and os.path.isfile(json_alternative) and os.path.isfile(json_similarity_list) and 1==2: #DISABLE THIS AS IT MISFIRED WHEN NEW DATA
-        generic_aa_count = json.load(open(json_generic, 'r'))
-        alternative_aa = json.load(open(json_alternative, 'r'))
-        similarity_list = json.load(open(json_similarity_list, 'r'))
-        print('alignment (class) using cache')
-    else:
+
+    generic_aa_count = cache.get(json_generic)
+    alternative_aa = cache.get(json_alternative)
+    similarity_list = cache.get(json_similarity_list)
+
+    # if os.path.isfile(json_generic) and os.path.isfile(json_alternative) and os.path.isfile(json_similarity_list) and 1==1: #DISABLE THIS AS IT MISFIRED WHEN NEW DATA
+    #     generic_aa_count = json.load(open(json_generic, 'r'))
+    #     alternative_aa = json.load(open(json_alternative, 'r'))
+    #     similarity_list = json.load(open(json_similarity_list, 'r'))
+    #     print('alignment (class) using cache')
+    if generic_aa_count==None or alternative_aa==None or similarity_list==None:
         a = Alignment()
         a.load_reference_protein(context['proteins'][0])
         a.load_proteins(class_p)
@@ -1145,9 +1150,15 @@ def showcalculation(request):
             if (p.protein.entry_name==context['proteins'][0].entry_name):
                 similarity_list[p.protein.entry_name] = [int(100),int(100),1000]
 
-        json.dump(generic_aa_count, open(json_generic, 'w'))
-        json.dump(alternative_aa, open(json_alternative, 'w'))
-        json.dump(similarity_list, open(json_similarity_list, 'w'))
+        # json.dump(generic_aa_count, open(json_generic, 'w'))
+        # json.dump(alternative_aa, open(json_alternative, 'w'))
+        # json.dump(similarity_list, open(json_similarity_list, 'w'))
+
+        cache.set(json_generic,generic_aa_count)
+        cache.set(json_alternative,alternative_aa)
+        cache.set(json_similarity_list,similarity_list)
+    else:
+        print('alignment (class) using cache')
 
     results = {}
     mutant_lookup = {}
