@@ -148,9 +148,9 @@
                             {% for segment, s in row.alignment.items %}
                                 {% for r in s %}
                                     <td class="ali-td ali-residue res-color-{{ r.2 }}
-                                    {% if forloop.parentloop.parentloop.counter = 1 %}
+                                    {% if forloop.parentloop.parentloop.counter == 1 %}
                                      ali-residue-top-border
-                                    {% elif forloop.parentloop.parentloop.counter = num_of_sequences %}
+                                    {% elif forloop.parentloop.parentloop.counter == num_of_sequences %}
                                      ali-residue-bottom-border
                                     {% endif %}
                                     ">
@@ -216,9 +216,9 @@
                             {% for segment, s in row.alignment.items %}
                                 {% for r in s %}
                                     <td class="ali-td ali-residue res-color-{{ r.2 }}
-                                    {% if forloop.parentloop.parentloop.counter = 1 %}
+                                    {% if forloop.parentloop.parentloop.counter == 1 %}
                                      ali-residue-top-border
-                                    {% elif forloop.parentloop.parentloop.counter = num_of_non_matching_sequences %}
+                                    {% elif forloop.parentloop.parentloop.counter == num_of_non_matching_sequences %}
                                      ali-residue-bottom-border
                                     {% endif %}
                                     ">
