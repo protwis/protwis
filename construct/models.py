@@ -106,6 +106,7 @@ class ConstructMutation(models.Model):
     sequence_number = models.SmallIntegerField()
     wild_type_amino_acid = models.CharField(max_length=1)
     mutated_amino_acid = models.CharField(max_length=1)
+    mutation_type = models.CharField(max_length=30, null=True)
 
     def __str__(self):
         return '{}{}{}'.format(self.wild_type_amino_acid, self.sequence_number,
@@ -193,7 +194,8 @@ class ChemicalType(models.Model):
 
 class ChemicalConc(models.Model):
     chemical = models.ForeignKey('Chemical')
-    concentration = models.FloatField()
+    # concentration = models.FloatField()
+    concentration = models.CharField(max_length=200)
     concentration_unit = models.TextField(null=True)
 
     def __str__(self):
@@ -284,11 +286,13 @@ class Crystallization(models.Model):
     remarks = models.TextField(max_length=1000, null=True)
 
     chemical_lists =  models.ManyToManyField('ChemicalList') #LCP list, detergent list, lip conc and other chem components
-    protein_conc =  models.FloatField()
+    #protein_conc =  models.FloatField()
+    protein_conc = models.CharField(max_length=200,null=True)
     protein_conc_unit =  models.TextField(max_length=10,null=True)
     ligands = models.ManyToManyField('CrystallizationLigandConc')
 
-    temp = models.FloatField()
+    #temp = models.FloatField()
+    temp = models.CharField(max_length=200)
     ph_start = models.DecimalField(max_digits=3, decimal_places=1) #probably want more values
     ph_end = models.DecimalField(max_digits=3, decimal_places=1) #probably want more values
 
@@ -308,7 +312,8 @@ class Crystallization(models.Model):
 class CrystallizationLigandConc(models.Model):
     ligand = models.ForeignKey('ligand.Ligand')
     ligand_role = models.ForeignKey('ligand.LigandRole')
-    ligand_conc = models.FloatField(null=True)
+    #ligand_conc = models.FloatField(null=True)
+    ligand_conc = models.CharField(max_length=200,null=True)
     ligand_conc_unit = models.TextField(null=True)
 
     def __str__(self):

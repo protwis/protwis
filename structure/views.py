@@ -1440,10 +1440,11 @@ def webformdata(request) :
                 else:
                     mut_id=pos_id.replace('_','')
 
-                mutations.append({'pos':value,'wt':data['wt_aa'+pos_id],'mut':data['mut_aa'+pos_id]})
+                mutations.append({'pos':value,'wt':data['wt_aa'+pos_id],'mut':data['mut_aa'+pos_id], 'type':data['mut_type'+pos_id]})
                 data.pop(key, None)
                 data.pop('wt_aa'+pos_id, None)
                 data.pop('mut_aa'+pos_id, None)
+                data.pop('mut_type'+pos_id, None)
 
             if key.startswith(('date','name_cont', 'pi_name',
                 'pi_address','address','url','pi_email' )):
@@ -1532,7 +1533,7 @@ def webformdata(request) :
                 data.pop('concentr_unit'+comp_id, None)
 
 
-            if key.startswith('aamod') and len(key.split("_"))<3 and not key=='aamod_position' and not key=='aamod_single':
+            if key.startswith('aamod') and not key.startswith('aamod_position') and not key.startswith('aamod_pair') and not key=='aamod_position' and not key=='aamod_single':
                 if key!='aamod': #not first
                     mod_id = key.replace('aamod','')
                 else:

@@ -178,9 +178,20 @@
             <th class="protein-th">Segment</th>
             <th class="protein-th">WT</th>
             <th class="seq-th">MUT</th>
-            <th class="seq-th">Type</th>
             <th class='seq-th'>PDB</th>
             <th class="seq-th">Construct Name</th>
+            <th class="seq-th">Count</th>
+            <th class="seq-th">Ligand Accessible</th>
+            {% for aa in amino_acids %}
+                        <th class="protein-th">
+                            {{ aa }}
+                        </td>
+            {% endfor %}
+            {% for aa in amino_groups %}
+                        <th class="protein-th">
+                            {{ aa }}
+                        </td>
+            {% endfor %}
         </tr>
 
     </thead>
@@ -193,9 +204,23 @@
             <td>{{ mutation.segment}}</td>
             <td>{{ mutation.wt}}</td>
             <td>{{ mutation.mut}}</td>
-            <td>{{ mutation.type}}</td>
             <td>{{ mutation.pdb}}</td>
             <td>{{ mutation.cname}}</td>
+            <td>{{ mutation.count}}</td>
+            <td>{{ mutation.accessible}}</td>
+
+            {% for freq in mutation.amino_acids %}
+                            <td class="ali-td-stat-summary ali-residue res-cons-{{ freq.1 }}">
+                                {{ freq.0 }}
+                            </td>
+            {% endfor %}
+
+            {% for freq in mutation.amino_acids_groups %}
+                            <td class="ali-td-stat-summary ali-residue res-cons-{{ freq.1 }}">
+                                {{ freq.0 }}
+                            </td>
+            {% endfor %}
+
         </tr>
         {% endfor %}
     </tbody>

@@ -3,14 +3,18 @@ from django.views.generic import TemplateView, View
 from django.http import HttpResponse
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+
 
 from common.diagrams_gpcr import DrawSnakePlot
 from common.views import AbsTargetSelection
+from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
 from construct.models import *
 from construct.functions import *
-from protein.models import Protein, ProteinConformation
+from protein.models import Protein, ProteinConformation,ProteinSegment
 from structure.models import Structure
 from mutation.models import Mutation
+from residue.models import ResiduePositionSet
 from construct.tool import *
 
 
@@ -20,8 +24,11 @@ import copy
 from collections import OrderedDict
 
 
+Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
+
+
 # Create your views here.
-@cache_page(60 * 60 * 24)
+#@cache_page(60 * 60 * 24)
 def detail(request, slug):
 
     # get constructs
@@ -192,6 +199,9 @@ class ConstructStatistics(TemplateView):
             pos = mutation[0].sequence_number
             p_class = mutation[3]
             p_class = class_names[p_class]
+            pdb = mutation[2]
+
+            print(entry_name,"\t", pdb,"\t", pos,"\t", wt,"\t", mut)
 
 
             if p_class not in mutation_type:
@@ -263,6 +273,197 @@ class ConstructStatistics(TemplateView):
 
         return context
 
+
+class ConstructTable(TemplateView):
+    """
+    Fetching construct data for browser
+    """
+
+    template_name = "construct/residuetable.html"
+
+    def get_context_data (self, **kwargs):
+
+        context = super(ConstructTable, self).get_context_data(**kwargs)
+        cons = Construct.objects.all().prefetch_related(
+            "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
+            "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
+
+        #PREPARE DATA
+        proteins = Construct.objects.all().values_list('protein', flat = True)
+
+        #GRAB RESIDUES for mutations
+        mutations = []
+        positions = []
+        proteins = []
+        class_names = {}
+        classes = []
+        for c in cons:
+            p = c.protein
+            entry_name = p.entry_name
+            p_class = p.family.slug.split('_')[0]
+            if p_class not in classes:
+                classes.append(p_class)
+            pdb = c.crystal.pdb_code
+            for mutation in c.mutations.all():
+                if p.entry_name not in proteins:
+                    proteins.append(entry_name)
+                mutations.append((mutation,entry_name,pdb,p_class,c.name))
+                if mutation.sequence_number not in positions:
+                    positions.append(mutation.sequence_number)
+        rs = Residue.objects.filter(protein_conformation__protein__entry_name__in=proteins, sequence_number__in=positions).prefetch_related('generic_number','protein_conformation__protein','protein_segment')
+
+        #print(classes)
+
+        excluded_segment = ['C-term','N-term']
+        list(settings.REFERENCE_POSITIONS.keys())
+        align_segments = ProteinSegment.objects.all().filter(slug__in = list(settings.REFERENCE_POSITIONS.keys())).prefetch_related()
+
+        amino_acids_stats = {}
+        amino_acids_groups_stats = {}
+        accessible_in_class = {}
+        for c in classes:
+
+            #if c=='001':
+            #    continue
+            amino_acids_stats[c] = {}
+            amino_acids_groups_stats[c] = {}
+            accessible_in_class[c] = []
+
+            if c =='001':
+                residue_set_name = 'Class A binding pocket'
+            elif c=='004':
+                residue_set_name = 'Class C binding pocket'
+            elif c=='005':
+                residue_set_name = 'Class F binding pocket'
+            else:
+                residue_set_name = ''
+
+            if residue_set_name:
+                rset = ResiduePositionSet.objects.get(name=residue_set_name)
+                for residue in rset.residue_position.all():
+                    accessible_in_class[c].append(residue.label)
+            #print(accessible_in_class)
+
+            alignment_proteins = Protein.objects.filter(family__slug__startswith=c, species__common_name='Human', source__name='SWISSPROT')
+            #print(c,len(alignment_proteins))
+
+            a = Alignment()
+
+            a.load_proteins(alignment_proteins)
+
+            a.load_segments(align_segments) #get all segments to make correct diagrams
+
+            # build the alignment data matrix
+            a.build_alignment()
+
+            # calculate consensus sequence + amino acid and feature frequency
+            a.calculate_statistics()
+
+            #print(a.amino_acid_stats)
+                        # {% for ns, segments in a.generic_numbers.items %}
+                        # <tr>
+                        #     {% for s, num in segments.items %}
+                        #         {% for n, dn in num.items %}
+                        #             {% if 'Common G-alpha numbering scheme' in a.numbering_schemes.0 %}
+                        #             <td class="ali-td-generic-num">{{ dn|make_list|slice:'2:'|join:''}}</td>
+                        #             {% else %}
+                        #             <td class="ali-td-generic-num">{{ dn|safe }}</td>
+                        #             {% endif %}
+                        #         {% endfor %}
+                        #         <td class="ali-td">&nbsp;</td>
+                        #     {% endfor %}
+                        # </tr>
+                        # {% endfor %}
+            s_id = 0
+            a_id = 0
+            for ns, segments in a.generic_numbers.items():
+                for s, num in segments.items():
+                    for n, dn in num.items():
+                        temp = []
+                        temp2 = []
+                        for i, aa in enumerate(AMINO_ACIDS):
+                            temp.append(a.amino_acid_stats[i][s_id][a_id])
+
+                        for i, aa in enumerate(AMINO_ACID_GROUPS):
+                            temp2.append(a.feature_stats[i][s_id][a_id])
+                        amino_acids_stats[c][n] = temp
+                        amino_acids_groups_stats[c][n] = temp2
+                    a_id += 1
+                s_id += 1
+
+        rs_lookup = {}
+        gns = []
+        for r in rs:
+            entry_name = r.protein_conformation.protein.entry_name
+            pos = r.sequence_number
+            segment = r.protein_segment.slug
+            if entry_name not in rs_lookup:
+                rs_lookup[entry_name] = {}
+            if pos not in rs_lookup[entry_name]:
+                rs_lookup[entry_name][pos] = r
+
+        count_per_gn = {}
+        for mutation in mutations:
+            entry_name = mutation[1]
+            pos = mutation[0].sequence_number
+            if rs_lookup[entry_name][pos].generic_number:
+                gn = rs_lookup[entry_name][pos].generic_number.label
+                if gn not in count_per_gn:
+                    count_per_gn[gn] = {'hits': 0, 'proteins': []}
+                if entry_name not in count_per_gn[gn]['proteins']:
+                    count_per_gn[gn]['proteins'].append(entry_name)
+                    count_per_gn[gn]['hits'] += 1
+
+        #print(count_per_gn)
+
+        mutation_list = []
+        for mutation in mutations:
+            wt = mutation[0].wild_type_amino_acid
+            mut = mutation[0].mutated_amino_acid
+            entry_name = mutation[1]
+            pdb = mutation[2]
+            cname = mutation[4]
+            pos = mutation[0].sequence_number
+            p_class = mutation[3]
+            if p_class not in class_names:
+                class_names[p_class] = p.family.parent.parent.parent.name
+            p_class_name = class_names[p_class]
+            p_class = class_names[p_class]
+
+
+
+            if entry_name not in rs_lookup:
+                continue
+            if pos not in rs_lookup[entry_name]:
+                continue
+            segment = rs_lookup[entry_name][pos].protein_segment.slug
+            if rs_lookup[entry_name][pos].generic_number:
+                gn = rs_lookup[entry_name][pos].generic_number.label
+                stats = amino_acids_stats[mutation[3]][gn]
+                stats2 = amino_acids_groups_stats[mutation[3]][gn]
+                if gn in accessible_in_class[mutation[3]]:
+                    accessible = 'yes'
+                else:
+                    accessible = 'no'
+                count = count_per_gn[gn]['hits']
+            else:
+                gn = ''
+                stats = ''
+                stats2 = ''
+                accessible = 'N/A'
+
+
+
+            mutation_list.append({'entry_name':entry_name,'pdb':pdb,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class, 'amino_acids':stats, 'amino_acids_groups':stats2, 'accessible': accessible, 'count': count})
+
+
+        context['amino_acids'] = AMINO_ACIDS
+        context['amino_groups'] = AMINO_ACID_GROUPS
+        context['mutation_list'] = mutation_list
+        #print(mutation_list)
+
+        return context
+
 class ConstructMutations(TemplateView):
     """
     Fetching construct data for browser
@@ -313,6 +514,7 @@ class ConstructMutations(TemplateView):
         for mutation in mutations:
             wt = mutation[0].wild_type_amino_acid
             mut = mutation[0].mutated_amino_acid
+            mut_type = mutation[0].mutation_type
             entry_name = mutation[1]
             pdb = mutation[2]
             cname = mutation[4]
@@ -335,7 +537,7 @@ class ConstructMutations(TemplateView):
                 gn = ''
 
 
-            mutation_list.append({'entry_name':entry_name,'pdb':pdb,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class})
+            mutation_list.append({'entry_name':entry_name,'pdb':pdb,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class, 'type': mut_type})
 
 
         context['mutation_list'] = mutation_list
@@ -448,6 +650,7 @@ class design(AbsTargetSelection):
     title = "Select a receptor"
 
     template_name = 'designselection.html'
+    type_of_selection = 'targets'
 
     selection_boxes = OrderedDict([
         ('reference', False),
