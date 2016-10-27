@@ -132,7 +132,7 @@ class Command(BaseCommand):
                     for gp in primary:
                         if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
                             continue
-                        g = ProteinGProtein.objects.get_or_create(name=gp, slug = translation[gp])[0]
+                        g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
                         gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary')
                         gpair.save()
 
@@ -141,7 +141,7 @@ class Command(BaseCommand):
                             continue
                         if gp in primary: #sip those that were already primary
                              continue 
-                        g = ProteinGProtein.objects.get_or_create(name=gp, slug = translation[gp])[0]
+                        g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
                         gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary')
                         gpair.save()
 

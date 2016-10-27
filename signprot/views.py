@@ -92,7 +92,7 @@ def GProtein(request):
 
     return render(request, 'signprot/gprotein.html', context)        
 
-# @cache_page(60 * 60 * 24)
+@cache_page(60*60*24*2)
 def familyDetail(request, slug):
     # get family
     pf = ProteinFamily.objects.get(slug=slug)
@@ -221,7 +221,7 @@ class TargetSelection(AbsTargetSelection):
         },
     }
 
-
+@cache_page(60*60*24*2)
 def Ginterface(request, protein = None):
 
     residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=protein).prefetch_related('protein_segment','display_generic_number','generic_number')
@@ -313,6 +313,7 @@ def ajax(request, slug, **response_kwargs):
 
     return HttpResponse(jsondata, **response_kwargs)
 
+@cache_page(60*60*24*2)
 def StructureInfo(request, pdbname):
     """
     Show structure details
@@ -323,7 +324,7 @@ def StructureInfo(request, pdbname):
 
     return render(request,'signprot/structure_info.html',{'pdbname': pdbname, 'protein': protein, 'crystal': crystal})
 
-
+@cache_page(60*60*24*2)
 def signprotdetail(request, slug):
     # get protein
 
