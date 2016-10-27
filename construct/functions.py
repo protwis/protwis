@@ -158,7 +158,7 @@ def fetch_pdb_info(pdbname,protein):
                             if u_id not in seg_uniprot_ids:
                                 seg_uniprot_ids.append(u_id)
                         elif receptor and node.attrib['property']=='Annotation' and node.text == 'Engineered mutation': ## only in receptor
-                            if {'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos} not in d['mutations']: #prevent duplicates
+                            if {'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos,'type':''} not in d['mutations']: #prevent duplicates
                                 d['mutations'].append({'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos,'type':''})
                 if uniprot_pos:
                     pos_list.append(uniprot_pos) 
