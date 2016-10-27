@@ -190,6 +190,10 @@ def fetch_pdb_info(pdbname,protein):
                     continue #do not add segments without information
                 if subtype == 'Not_Observed':
                     continue #ignore "aux" that are 'not observed'
+                if subtype == 'Engineered mutation':
+                    continue #ignore "aux" that are 'not observed'
+                if subtype == 'S-arrestin':
+                    continue #  S-arrestin is not part of the chain
                 d['auxiliary']['aux'+str(len(d['auxiliary']))] = {'type':'auto','subtype':subtype,'presence':'YES','position':insert_position, 'start':insert_start}
             elif receptor == False:
                 # print('\t',pdbname.lower(),'Protein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
