@@ -3,14 +3,20 @@ from residue.models import Residue
 from structure.models import Structure
 
 def generate_schematic(c):
-
-    print("GENERATING!")
+    global fusion_protein_name
+    # print("GENERATING!")
 
     ### PREPARE DATA
     summary = {}
     annotations = {}
     json_annotations = {}
 
+    fusion_position,fusion_result = c.fusion()
+
+    if fusion_result:
+        fusion_protein_name = fusion_result[0][2]
+    else:
+        fusion_protein_name = None
 
     summary['solubilization'] = ''
     if c.solubilization:
@@ -63,6 +69,8 @@ def generate_schematic(c):
     for aux in c.insertions.order_by('position').all():
         position_without_number = aux.position.split("_")[0]
         if aux.start:
+            if aux.start==19 and aux.insert_type.name=='auto':
+                continue
             for i in range(aux.start,aux.end+1):
                 annotations[i] = [aux.insert_type.name,'Insertion<br>Protein_type: '+aux.insert_type.name,aux]
                 json_annotations[i] = ['ins','Insertion<br>Protein_type: '+aux.insert_type.name,"purple","white"]
@@ -145,7 +153,7 @@ def generate_schematic(c):
                         r_buffer.append([prev_r, False, 0,annotation,width])
 
                 r_chunks_schematic.append(r_buffer)
-                # print(last_segment,prev_r.protein_segment.slug,counter,len(r_buffer),width,len(r_buffer)*width)
+                #print(last_segment,prev_r.protein_segment.slug,counter,len(r_buffer),width,len(r_buffer)*width)
             border = True
             r_buffer = []
             a_buffer = []
@@ -182,8 +190,10 @@ def generate_schematic(c):
     a_buffer = []
     r_buffer = []
     nudge = 0
+    prev_r = None
     # create schemtics with annotations
     for i, r in enumerate(residues_custom):
+        # print(i)
         if r.sequence_number-1 in deletion and i==0:
             r_buffer.append([None, False, 0,annotations[r.sequence_number-1]])
             nudge = 1
@@ -224,31 +234,35 @@ def generate_schematic(c):
                         else:
                             r_buffer.append([prev_r, False, title_cell_skip,annotation])
                 r_chunks_schematic_construct.append(r_buffer)
+                # print("2",last_segment,prev_r.protein_segment.slug,counter,len(r_buffer),width,len(r_buffer)*width)
             last_segment = r.protein_segment.slug
             border = True
             r_buffer = []
             a_buffer = []
             ii = 0
             nudge = 0
+        #print(r_chunks_schematic_construct)
 
         if r.sequence_number in annotations:
             a_buffer.append([ii,annotations[r.sequence_number]])
 
-
-        if prev_r.sequence_number+1 in insert:
-            name = insert[prev_r.sequence_number+1].insert_type.subtype[:6]
-            title_cell_skip = 0
-            for i in range(21):
-                if i==0:
-                    r_buffer.append([None, name, title_cell_skip,['insert','insertion',insert[prev_r.sequence_number+1]]])
-                else:
-                    if i<len(name):
-                        title_cell_skip = 1
+        if prev_r:
+            if i+1==len(residues_custom):
+                prev_r = r
+            if prev_r.sequence_number+1 in insert:
+                name = insert[prev_r.sequence_number+1].insert_type.subtype[:6]
+                title_cell_skip = 0
+                for i in range(21):
+                    if i==0:
+                        r_buffer.append([None, name, title_cell_skip,['insert','insertion',insert[prev_r.sequence_number+1]]])
                     else:
-                        title_cell_skip = 0
-                    r_buffer.append([None, False, title_cell_skip,['insert','insertion',insert[prev_r.sequence_number+1]]])
-            r_chunks_schematic_construct.append(r_buffer)
-            r_buffer = []
+                        if i<len(name):
+                            title_cell_skip = 1
+                        else:
+                            title_cell_skip = 0
+                        r_buffer.append([None, False, title_cell_skip,['insert','insertion',insert[prev_r.sequence_number+1]]])
+                r_chunks_schematic_construct.append(r_buffer)
+                r_buffer = []
 
 
         if i+1==len(residues_custom) and r.sequence_number+1 in insert:
@@ -256,6 +270,7 @@ def generate_schematic(c):
             title_cell_skip = 0
             for i in range(21):
                 if i==0:
+                    #print(last_segment,name,len(r_chunks_schematic_construct))
                     r_buffer.append([None, name, title_cell_skip,['insert','insertion',insert[r.sequence_number+1]]])
                 else:
                     if i<len(name):
@@ -266,12 +281,14 @@ def generate_schematic(c):
             r_chunks_schematic_construct.append(r_buffer)
             r_buffer = []
 
+
         last_segment = r.protein_segment.slug
         prev_r = r
         ii+=1
 
 
     results['schematic_1_c'] = r_chunks_schematic_construct
+    # print(r_chunks_schematic_construct)
 
     # process residues and return them in chunks of 10
     # this is done for easier scaling on smaller screens
@@ -499,7 +516,7 @@ def generate_schematic(c):
 
     ### BUILD WT SPECIFIC TABLE
     wt_schematic_table = ""
-    order_list = ['N-term','TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','ECL2','TM5','ICL3','TM6','ECL3','TM7','ICL4','H8','C-term']
+    order_list = ['N-term','TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','ECL2','TM5','ICL3','TM6','ECL3','TM7','H8','C-term'] #,'ICL4'
     i = 0
     for block in order_list:
         wt_schematic_table += "<td>"
@@ -518,11 +535,12 @@ def generate_schematic(c):
 
     ### BUILD CONSTRUCT SPECIFIC TABLE
     c_schematic_table = ""
-    order_list = ['pre','N-term','TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','ECL2','TM5','insert','ICL3','TM6','ECL3','TM7','ICL4','H8','C-term']
+    order_list = ['pre','N-term','TM1','ICL1','TM2','ECL1','TM3','insert','ICL2','insert','TM4','ECL2','TM5','insert','ICL3','insert','TM6','ECL3','TM7','H8','C-term','post'] #,'ICL4'
     i = 0
-    # print(r_chunks_schematic_construct)
+    #print(r_chunks_schematic_construct)
     for block in order_list:
         c_schematic_table += "<td>"
+        # print(block)
         if i<len(r_chunks_schematic_construct):
             if block=='pre':
                 a = True
@@ -537,17 +555,25 @@ def generate_schematic(c):
                     else:
                         a = False
                 c_schematic_table += "</tr></table></div>"
-            elif block=='insert':
+            elif block=='post':
                 if r_chunks_schematic_construct[i][0][3]:
-                    if r_chunks_schematic_construct[i][0][3][0]=='insert':
+                    if r_chunks_schematic_construct[i][0][3][0]=='insert' :
+                        c_schematic_table += create_block(r_chunks_schematic_construct[i])
+                        i+=1
+            elif block=='insert':
+                # print("insert?",r_chunks_schematic_construct[i])
+                if r_chunks_schematic_construct[i][0][3]:
+                    if r_chunks_schematic_construct[i][0][3][0]=='insert' :
                         c_schematic_table += create_block(r_chunks_schematic_construct[i])
                         i+=1
             else:
                 if block==r_chunks_schematic_construct[i][0][1]:
                     c_schematic_table += create_block(r_chunks_schematic_construct[i])
+                    # print('found!',r_chunks_schematic_construct[i][0][1])
                 elif block==r_chunks_schematic_construct[i][1][1]: #if started with deletion
                     c_schematic_table += create_block(r_chunks_schematic_construct[i])
                 else:
+                    # print('not found!',r_chunks_schematic_construct[i][0][1],r_chunks_schematic_construct[i][1][1])
                     i -=1 #not found match, dont move up
                     c_schematic_table += "&nbsp;"
                 i += 1
@@ -570,15 +596,25 @@ def create_block(chunk):
     blank_max = 20
     for i,r in enumerate(chunk):
         if r[3]:
+            extra = r[3][1]
             if r[3][1]=='insertion' and i>19:
                 continue #pass to prevent too many
+
+            if r[3][1]=='insertion':
+                r[3][1] = r[3][2].autotype()
+
+                if r[3][2].insert_type.subtype==fusion_protein_name:
+                    r[3][1] = 'fusion'
+
+                extra = r[3][1]
+                extra += "top"
 
             if blank: 
                 temp += """<td class="seqv seqv-segment no-wrap" colspan="{}">&nbsp;</td>""".format(str(blank))
                 blank = 0
             temp += """<td class="seqv seqv-segment no-wrap {}">
                         <div data-toggle="tooltip" data-placement="top" data-html="true"
-                        title="{}">&nbsp;</div></td>""".format(r[3][1],r[3][2])
+                        title="{}">&nbsp;</div></td>""".format(extra,r[3][2])
             blank_max = blank_max-i
         else:
             blank += 1
@@ -610,10 +646,18 @@ def create_block(chunk):
                 text = r[0].protein_segment.slug
             else:
                 text = "&nbsp;"
+            if r[1] and r[3]:
+                if r[3][0] == 'insert':
+                    # print(text,r)
+                    name = r[3][2].insert_type.subtype 
+                    # print(name)
+                    extra = r[3][1]
+                    if name==fusion_protein_name:
+                        extra = 'fusion'
 
             if r[1]:
-                temp += """<td class="seqv seqv-segment no-wrap {}" colspan=20>{}</td>""".format(extra,text)
-            elif r[0]==None and r[3] and r[3][1]!='insertion':
+                temp += """<td class="seqv seqv-segment no-wrap {} " colspan=20>{}</td>""".format(extra,text)
+            elif r[0]==None and r[3] and r[3][0]!='insert':
                 temp += """<td class="seqv seqv-segment no-wrap {}" colspan=1>{}</td>""".format(extra,text)
 
     temp += "</tr></table></div>"
