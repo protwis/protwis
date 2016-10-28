@@ -108,6 +108,7 @@ class ConstructMutation(models.Model):
     wild_type_amino_acid = models.CharField(max_length=1)
     mutated_amino_acid = models.CharField(max_length=1)
     mutation_type = models.CharField(max_length=30, null=True)
+    remark = models.TextField(null=True)
 
     def __str__(self):
         return '{}{}{}'.format(self.wild_type_amino_acid, self.sequence_number,
