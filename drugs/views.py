@@ -40,7 +40,7 @@ def drugstatistics(request):
         del drugtarget['entry_name']
         drugtargets_approved.append(drugtarget)
 
-    drugtargets_raw_trials = Protein.objects.filter(drugs__status='in trial').values('entry_name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
+    drugtargets_raw_trials = Protein.objects.filter(drugs__status__in=['in trial','Phase IV','Phase III','Phase II','Phase I']).values('entry_name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
 
     list_of_hec_colors = get_spaced_colors(len(drugtargets_raw_trials))
     drugtargets_trials = []
@@ -50,9 +50,10 @@ def drugstatistics(request):
         del drugtarget['entry_name']
         drugtargets_trials.append(drugtarget)
 
+
     all_human_GPCRs = Protein.objects.filter(species_id=1, sequence_type_id=1, family__slug__startswith='00').distinct()
 
-    in_trial = Protein.objects.filter(drugs__status='in trial').exclude(drugs__status='approved').distinct()
+    in_trial = Protein.objects.filter(drugs__status__in=['in trial','Phase IV','Phase III','Phase II','Phase I']).exclude(drugs__status='approved').distinct()
 
     not_targeted = len(all_human_GPCRs) - len(drugtargets_approved) - len(in_trial)
 
@@ -88,7 +89,7 @@ def drugstatistics(request):
         del drugclas['family_id__parent__parent__parent__name']
         drugClasses_approved.append(drugclas)
 
-    drugclasses_raw_trials = Protein.objects.filter(drugs__status='in trial').values('family_id__parent__parent__parent__name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
+    drugclasses_raw_trials = Protein.objects.filter(drugs__status__in=['in trial','Phase IV','Phase III','Phase II','Phase I']).values('family_id__parent__parent__parent__name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
 
     list_of_hec_colors = get_spaced_colors(len(drugclasses_raw_trials)+1)
     drugClasses_trials = []
@@ -294,23 +295,23 @@ def drugmapping(request):
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['establishment'] = 4
 
     total_trials = 0
-    drugtargets_trials_class = Protein.objects.filter(drugs__status='in trial').values('family_id__parent__parent__parent__slug').annotate(value=Count('drugs__name', distinct = True))
+    drugtargets_trials_class = Protein.objects.filter(drugs__status__in=['in trial','Phase IV','Phase III','Phase II','Phase I']).values('family_id__parent__parent__parent__slug').annotate(value=Count('drugs__name', distinct = True))
     for i in drugtargets_trials_class:
         fid = i['family_id__parent__parent__parent__slug'].split("_")
         coverage[fid[0]]['family_sum_trials'] += i['value']
         total_trials += i['value']
 
-    drugtargets_trials_type = Protein.objects.filter(drugs__status='in trial').values('family_id__parent__parent__slug').annotate(value=Count('drugs__name', distinct = True))
+    drugtargets_trials_type = Protein.objects.filter(drugs__status__in=['in trial','Phase IV','Phase III','Phase II','Phase I']).values('family_id__parent__parent__slug').annotate(value=Count('drugs__name', distinct = True))
     for i in drugtargets_trials_type:
         fid = i['family_id__parent__parent__slug'].split("_")
         coverage[fid[0]]['children'][fid[1]]['family_sum_trials'] += i['value']
 
-    drugtargets_trials_family = Protein.objects.filter(drugs__status='in trial').values('family_id__parent__slug').annotate(value=Count('drugs__name', distinct = True))
+    drugtargets_trials_family = Protein.objects.filter(drugs__status__in=['in trial','Phase IV','Phase III','Phase II','Phase I']).values('family_id__parent__slug').annotate(value=Count('drugs__name', distinct = True))
     for i in drugtargets_trials_family:
         fid = i['family_id__parent__slug'].split("_")
         coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['family_sum_trials'] += i['value']
     
-    drugtargets_trials_target = Protein.objects.filter(drugs__status='in trial').values('family_id__slug').annotate(value=Count('drugs__name', distinct = True))
+    drugtargets_trials_target = Protein.objects.filter(drugs__status__in=['in trial','Phase IV','Phase III','Phase II','Phase I']).values('family_id__slug').annotate(value=Count('drugs__name', distinct = True))
     for i in drugtargets_trials_target:
         fid = i['family_id__slug'].split("_")
         coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['trials'] += i['value']
