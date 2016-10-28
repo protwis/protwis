@@ -435,7 +435,10 @@ def add_construct(d):
         if 'type' not in mutation:
             mutation['type'] = ''
 
-        mut = ConstructMutation.objects.create(sequence_number=mutation['pos'],wild_type_amino_acid=mutation['wt'],mutated_amino_acid=mutation['mut'],mutation_type=mutation['type'])
+        if 'remark' not in mutation:
+            mutation['remark'] = ''
+
+        mut = ConstructMutation.objects.create(sequence_number=mutation['pos'],wild_type_amino_acid=mutation['wt'],mutated_amino_acid=mutation['mut'],mutation_type=mutation['type'],remark=mutation['remark'])
         construct.mutations.add(mut)
 
     #DELETIONS
