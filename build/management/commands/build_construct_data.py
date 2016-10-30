@@ -34,7 +34,7 @@ class Command(BaseCommand):
 
         # source file directory
     construct_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data','construct_data'])
-    construct_data_local_dir = "/web/sites/files/construct_data"
+    construct_data_local_dir = "../files/construct_data"
 
     def handle(self, *args, **options):
         if options['filename']:
@@ -91,7 +91,8 @@ class Command(BaseCommand):
         if not filenames:
             filenames = os.listdir(self.construct_data_dir)
 
-        for filename in filenames:
+        for filename in sorted(filenames):
+            print('dealing with',filename)
             if filename[-4:]!='json':
                 continue
             filepath = os.sep.join([self.construct_data_dir, filename])
@@ -101,7 +102,8 @@ class Command(BaseCommand):
 
         filenames = os.listdir(self.construct_data_local_dir)
 
-        for filename in filenames:
+        for filename in sorted(filenames):
+            print('dealing with',filename)
             if filename[-4:]!='json':
                 continue
             filepath = os.sep.join([self.construct_data_local_dir, filename])
@@ -116,6 +118,7 @@ class Command(BaseCommand):
             try:
                 exists = Construct.objects.filter(structure__pdb_code__index=pdbname).exists()
                 if not exists:
+                    print(pdbname)
                     protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
                     d = fetch_pdb_info(pdbname,protein)
                     add_construct(d)
