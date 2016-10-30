@@ -65,9 +65,12 @@ class Construct(models.Model):
         #if temp==None or 1==1:
         if temp==None:
             # print(self.name+'_schematics no cache')
-            temp = generate_schematic(self)
-            self.schematics = pickle.dumps(temp)
-            self.save()
+            try:
+                temp = generate_schematic(self)
+                self.schematics = pickle.dumps(temp)
+                self.save()
+            except:
+                print('schematics failed for ',self.name)
         else:
             # print(self.name+'_schematics used cache')
             temp = pickle.loads(temp)
