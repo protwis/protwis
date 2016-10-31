@@ -395,22 +395,23 @@ def thermostabilising(request, slug, **response_kwargs):
             results['1'][gn][mut_aa]['hits'] += 1
 
         if gn:
-            if gn not in results['2']:
-                results['2'][gn] = {}
-            if mut_aa not in results['2'][gn]:
-                results['2'][gn][mut_aa] = {'pdbs':[], 'proteins':[], 'hits':0, 'wt':wt_lookup[gn]}
-            if entry_name not in results['2'][gn][mut_aa]['proteins']:
-                results['2'][gn][mut_aa]['proteins'].append(entry_name)
-                results['2'][gn][mut_aa]['hits'] += 1
-            if wt_lookup[gn][0] == wt_aa:
-                if gn not in results['3']:
-                    results['3'][gn] = {}
-                if wt_aa not in results['3'][gn]:
-                    results['3'][gn][wt_aa] = {'pdbs':[], 'proteins':[], 'hits':0, 'wt':wt_lookup[gn], 'muts':[]}
-                if entry_name not in results['3'][gn][wt_aa]['proteins']:
-                    results['3'][gn][wt_aa]['proteins'].append(entry_name)
-                    results['3'][gn][wt_aa]['hits'] += 1
-                    if mut_aa not in results['3'][gn][wt_aa]['muts']:
+            if gn in wt_lookup:
+                if gn not in results['2']:
+                    results['2'][gn] = {}
+                if mut_aa not in results['2'][gn]:
+                    results['2'][gn][mut_aa] = {'pdbs':[], 'proteins':[], 'hits':0, 'wt':wt_lookup[gn]}
+                if entry_name not in results['2'][gn][mut_aa]['proteins']:
+                    results['2'][gn][mut_aa]['proteins'].append(entry_name)
+                    results['2'][gn][mut_aa]['hits'] += 1
+                if wt_lookup[gn][0] == wt_aa:
+                    if gn not in results['3']:
+                        results['3'][gn] = {}
+                    if wt_aa not in results['3'][gn]:
+                        results['3'][gn][wt_aa] = {'pdbs':[], 'proteins':[], 'hits':0, 'wt':wt_lookup[gn], 'muts':[]}
+                    if entry_name not in results['3'][gn][wt_aa]['proteins']:
+                        results['3'][gn][wt_aa]['proteins'].append(entry_name)
+                        results['3'][gn][wt_aa]['hits'] += 1
+                        if mut_aa not in results['3'][gn][wt_aa]['muts']:
                         results['3'][gn][wt_aa]['muts'].append(mut_aa)
 
     temp = {}
