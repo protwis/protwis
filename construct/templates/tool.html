@@ -38,7 +38,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 <br>
 <br>
 <div class="row">
-  <div class="col-sm-2">
+  <div class="col-sm-3">
 
 
     Data-driven:<br>
@@ -71,17 +71,17 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     Receptor specific:<br>
         <div class="btn-group-vertical btn-block">
-            <div class="btn-group">
+<!--             <div class="btn-group">
                 <button type="button" class="btn btn-default dropdown-toggle pull-right btn-block" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                    Common mutations <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu" role="menu" id='common'>
                 <li>Loading...</li>
                 </ul>
-            </div>
+            </div> -->
             <div class="btn-group">
                 <button type="button" class="btn btn-default dropdown-toggle pull-right" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Glycosylation <span class="caret"></span>
+                    Glycosylation site removal<span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu" role="menu" id='glyco'>
                 <li>Loading...</li>
@@ -89,9 +89,17 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             </div>
             <div class="btn-group">
                 <button type="button" class="btn btn-default dropdown-toggle pull-right" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Palmitoylation <span class="caret"></span>
+                    Palmitoylation site removal<span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu" role="menu" id='palmi'>
+                <li>Loading...</li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle pull-right btn-block" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                   Thermostabilisating <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" id='thermo'>
                 <li>Loading...</li>
                 </ul>
             </div>
@@ -134,6 +142,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     }
 
+    function getSortedKeys(obj) {
+      var keys = []; for(var key in obj) keys.push(key);
+      return keys.sort(function(a,b){return obj[b]['hits']-obj[a]['hits']});
+  }
+
     function build_nterm_menu() {
       var state = $('input:radio[name=state]:checked').val();
       var fusionpos = $('input:radio[name=fusionpos]:checked').val();
@@ -146,22 +159,28 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
               if (fusionpos==vals[4] || (fusionpos=='None' && vals[4]!='nterm') || (fusionpos!='nterm' && vals[4]=='None')) {
                 // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
                 if(!show_nterm[level]) { show_nterm[level] = {}; } 
-                if(!show_nterm[level][protein]) { show_nterm[level][protein] = {}; } 
-                show_nterm[level][protein][pdb] = vals
+                if(!show_nterm[level][vals[2]]) { show_nterm[level][vals[2]] = {'proteins': [],'pdbs': [], 'hits':0}; } 
+                if(show_nterm[level][vals[2]]['proteins'].indexOf(protein)==-1) {
+                  show_nterm[level][vals[2]]['proteins'].push(protein);
+                  show_nterm[level][vals[2]]['pdbs'].push(pdb);
+                  show_nterm[level][vals[2]]['hits'] += 1;
+                }
               }
             }
           })
         })
+        show_nterm[level]['sortedkeys'] = getSortedKeys(show_nterm[level]);
       }) 
-
       var items = [];
       $.each( show_nterm, function( key, val ) {
         temp = "<li id='" + key + "' class=\"dropdown-submenu\"><a href='#'>" + key + " ("+Object.keys(val).length+")</a><ul class=\"dropdown-menu\">";
 
-        $.each( val, function( protein, val2 ) {
-          temp += "<li id='" + protein + "' class=\"dropdown-submenu\"><a href='#'>" + protein + " ("+Object.keys(val2).length+")</a><ul class=\"dropdown-menu\">";
-          $.each( val2, function( pdb, value ) {
-              temp += "<li id='"+pdb+"'><a href='#' onclick='nterm_tm1(this)' value='"+value[2]+"' from='"+pdb+"'>"+pdb+" "+value[2]+" pos from 1.50</a></li>";
+        $.each( val['sortedkeys'], function( i, pos ) {
+          val2 = show_nterm[key][pos];
+          temp += "<li id='" + pos + "' class=\"dropdown-submenu\"><a href='#'>" + pos + " ("+val2['hits']+")</a><ul class=\"dropdown-menu\">";
+          $.each( val2['proteins'], function( i, protein ) {
+               pdb = val2['pdbs'][i];
+              temp += "<li id='"+pdb+"'><a href='#' onclick='nterm_tm1(this)' value='"+pos+"' from='"+pdb+"'>"+protein+" ("+pdb+") "+pos+" pos from 1.50</a></li>";
           });
           temp += "</ul></li>";
         });
@@ -183,21 +202,28 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             if (state==vals[3]) {
                 // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
                 if(!show_cterm[level]) { show_cterm[level] = {}; } 
-                if(!show_cterm[level][protein]) { show_cterm[level][protein] = {}; } 
-                show_cterm[level][protein][pdb] = vals
+                if(!show_cterm[level][vals[2]]) { show_cterm[level][vals[2]] = {'proteins': [],'pdbs': [], 'hits':0}; } 
+                if(show_cterm[level][vals[2]]['proteins'].indexOf(protein)==-1) {
+                  show_cterm[level][vals[2]]['proteins'].push(protein);
+                  show_cterm[level][vals[2]]['pdbs'].push(pdb);
+                  show_cterm[level][vals[2]]['hits'] += 1;
+                }
             }
           })
         })
+        show_cterm[level]['sortedkeys'] = getSortedKeys(show_cterm[level]);
       }) 
 
       var items = [];
       $.each( show_cterm, function( key, val ) {
         temp = "<li id='" + key + "' class=\"dropdown-submenu\"><a href='#'>" + key + " ("+Object.keys(val).length+")</a><ul class=\"dropdown-menu\">";
 
-        $.each( val, function( protein, val2 ) {
-          temp += "<li id='" + protein + "' class=\"dropdown-submenu\"><a href='#'>" + protein + " ("+Object.keys(val2).length+")</a><ul class=\"dropdown-menu\">";
-          $.each( val2, function( pdb, value ) {
-              temp += "<li id='"+pdb+"'><a href='#' onclick='cterm(this)' value='"+value[2]+"' from='"+pdb+"'>"+pdb+" "+value[2]+" pos from 8.50</a></li>";
+        $.each( val['sortedkeys'], function( i, pos ) {
+          val2 = show_cterm[key][pos];
+          temp += "<li id='" + pos + "' class=\"dropdown-submenu\"><a href='#'>" + pos + " ("+val2['hits']+")</a><ul class=\"dropdown-menu\">";
+           $.each( val2['proteins'], function( i, protein ) {
+               pdb = val2['pdbs'][i];
+              temp += "<li id='"+pdb+"'><a href='#' onclick='cterm(this)' value='"+pos+"' from='"+pdb+"'>"+protein+" ("+pdb+") "+pos+" pos from 8.50</a></li>";
           });
           temp += "</ul></li>";
         });
@@ -218,26 +244,37 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             // Do checks!
             if (state==vals[2]) {
               if (fusionpos==vals[3] || (fusionpos=='None' && vals[3]!='icl3') || (fusionpos!='icl3' && vals[3]=='None')) {
-                // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
+
+                range = "5."+(50+vals[0])+"-"+"6."+(50-vals[1]);
+
                 if(!show_icl3[level]) { show_icl3[level] = {}; } 
-                if(!show_icl3[level][protein]) { show_icl3[level][protein] = {}; } 
-                show_icl3[level][protein][pdb] = vals
+                if(!show_icl3[level][range]) { show_icl3[level][range] = {'start': vals[0], 'end': vals[1], 'proteins': [],'pdbs': [], 'hits':0}; } 
+                if(show_icl3[level][range]['proteins'].indexOf(protein)==-1) {
+                  show_icl3[level][range]['proteins'].push(protein);
+                  show_icl3[level][range]['pdbs'].push(pdb);
+                  show_icl3[level][range]['hits'] += 1;
+                }
+
               }
             }
           })
         })
+        show_icl3[level]['sortedkeys'] = getSortedKeys(show_icl3[level]);
       }) 
+      console.log(show_icl3);
 
       var items = [];
       $.each( show_icl3, function( key, val ) {
         temp = "<li id='" + key + "' class=\"dropdown-submenu\"><a href='#'>" + key + " ("+Object.keys(val).length+")</a><ul class=\"dropdown-menu\">";
 
-        $.each( val, function( protein, val2 ) {
-          temp += "<li id='" + protein + "' class=\"dropdown-submenu\"><a href='#'>" + protein + " ("+Object.keys(val2).length+")</a><ul class=\"dropdown-menu\">";
-          $.each( val2, function( pdb, value ) {
-              range1 = "5."+(50+value[0]);
-              range2 = "6."+(50-value[1]);
-              temp += "<li id='"+pdb+"'><a href='#' onclick='icl3(this)'  tm5='"+value[0]+"'  tm6='"+value[1]+"' from='"+pdb+"'>"+pdb+" "+range1+"-"+range2+"</a></li>";
+        $.each( val['sortedkeys'], function( i, pos ) {
+          val2 = show_icl3[key][pos];
+          temp += "<li id='" + pos + "' class=\"dropdown-submenu\"><a href='#'>" + pos + " ("+val2['hits']+")</a><ul class=\"dropdown-menu\">";
+          $.each( val2['proteins'], function( i, protein ) {
+               pdb = val2['pdbs'][i];
+              range1 = "5."+(50+val2['start']);
+              range2 = "6."+(50-val2['end']);
+              temp += "<li id='"+pdb+"'><a href='#' onclick='icl3(this)'  tm5='"+val2['start']+"'  tm6='"+val2['end']+"' from='"+pdb+"'>"+protein+" ("+pdb+") "+range1+"-"+range2+"</a></li>";
           });
           temp += "</ul></li>";
         });
@@ -574,24 +611,24 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         });
 
       // http://localhost:8000/construct/tool/json/cterm/adrb2_human/
-      $.getJSON( "/construct/tool/json/mutations/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( gn, val ) {
-            // console.log(gn);
-            // console.log(val);
-            temp = "<li id='" + gn + "' class=\"dropdown-submenu\"><a>" + gn + " ("+val['hits']+" occurences)</a><ul class=\"dropdown-menu\">";
+      // $.getJSON( "/construct/tool/json/mutations/{{target.entry_name}}/", function( data ) {
+      //     var items = [];
+      //     $.each( data, function( gn, val ) {
+      //       // console.log(gn);
+      //       // console.log(val);
+      //       temp = "<li id='" + gn + "' class=\"dropdown-submenu\"><a>" + gn + " ("+val['hits']+" occurences)</a><ul class=\"dropdown-menu\">";
 
-            temp += "<li><a>"+gn+" in {{target.entry_name}} is "+val['wt'][0]+"</a></li><li class=\"divider\"></li>";
-            $.each( val['proteins'], function( key, value ) {
-                temp += "<li class=\"dropdown-submenu\" id='"+key+"'><a class='origin'>"+value+" ("+val['mutation'][key][0]+"=>"+val['mutation'][key][1]+")</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' pos='"+val['wt'][1]+"' gn='"+gn+"' wt='"+val['wt'][0]+"' from='"+val['wt'][0]+"' to='"+val['mutation'][key][1]+"' > Mutate "+val['wt'][0]+val['wt'][1]+val['mutation'][key][1]+"</a></li></ul></li>";
-            });
+      //       temp += "<li><a>"+gn+" in {{target.entry_name}} is "+val['wt'][0]+"</a></li><li class=\"divider\"></li>";
+      //       $.each( val['proteins'], function( key, value ) {
+      //           temp += "<li class=\"dropdown-submenu\" id='"+key+"'><a class='origin'>"+value+" ("+val['mutation'][key][0]+"=>"+val['mutation'][key][1]+")</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' pos='"+val['wt'][1]+"' gn='"+gn+"' wt='"+val['wt'][0]+"' from='"+val['wt'][0]+"' to='"+val['mutation'][key][1]+"' > Mutate "+val['wt'][0]+val['wt'][1]+val['mutation'][key][1]+"</a></li></ul></li>";
+      //       });
 
-            temp += "</ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $("#common").html(result);
-        });
+      //       temp += "</ul></li>";
+      //       items.push( temp );
+      //     });
+      //     result = items.join( "" );
+      //     $("#common").html(result);
+      //   });
 
             // http://localhost:8000/construct/tool/json/cterm/adrb2_human/
       $.getJSON( "/construct/tool/json/glyco/{{target.entry_name}}/", function( data ) {
@@ -627,6 +664,70 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           });
           result = items.join( "" );
           $("#palmi").html(result);
+        });
+
+      $.getJSON( "/construct/tool/json/termo/{{target.entry_name}}/", function( data ) {
+          var items = [];
+          $.each( data, function( level, gns ) {
+            if (level == 1) {
+              level_text = "From target recepter"
+            } else if (level == 2) {
+              level_text = "Common mutation (Mut)"
+            } else if (level == 3) {
+              level_text = "Common mutation (Wt)"
+            }
+            temp = "<li id='" + level + "' class=\"dropdown-submenu\"><a>" + level_text + "</a><ul class=\"dropdown-menu\">";
+            $.each( gns, function( gn, aa ) {
+                $.each( aa, function( key, value ) {
+
+                extra = " to ";
+                to = key ; 
+                number = value['pdbs'].length;
+                if (level == 2) {
+                  extra = " to ";
+                  from = value['wt'][0];
+                  to = key;
+                  number = value['proteins'].length;
+                } else if (level ==3 ){
+                  extra = " to " + value['muts'] + " from ";
+                  to = value['muts'];
+                  number = value['proteins'].length;
+                }
+
+                temp += "<li id='" + level + "' class=\"dropdown-submenu\"><a>" + gn + extra + " ("+number+" hits)</a><ul class=\"dropdown-menu\">";
+                temp += "<li><a>"+gn+" in {{target.entry_name}} is "+value['wt'][0]+"</a></li>";
+                temp += "<li class=\"divider\"></li>";
+
+                // pos = to.split(",");
+                if (level == 3) {
+                  $.each(to, function(key,pos){
+                    temp += "<li><a onclick='mut(this)' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+pos+"'><strong>Mutate "+value['wt'][0]+value['wt'][1]+pos+"</strong></a></li>";
+                  })
+                } else {
+                  temp += "<li><a onclick='mut(this)' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+to+"'><strong>Mutate "+value['wt'][0]+value['wt'][1]+to+"</strong></a></li>";
+                }
+                temp += "<li class=\"divider\"></li>";
+                if (level == 1 ) {
+                  $.each(value['pdbs'], function(i, pdb) {
+                      temp += "<li id='" + level + "'><a>" + pdb+"</a>";
+                  })
+                } else if (level == 2 || level == 3 ) {
+                  $.each(value['proteins'], function(i, pdb) {
+                      temp += "<li id='" + level + "'><a>" + pdb+"</a>";
+                  })
+                }
+                // temp += "<li id='" + level + "' class=\"dropdown-submenu\"><a>" + key + " ("+value['hits']+" hits)</a>";
+                // temp += "<ul class=\"dropdown-menu\"><li></li></ul>";
+
+                temp += "</li>";
+                temp += "</ul></li>";
+                });
+             });
+            temp += "</ul></li>";
+            items.push( temp );
+          });
+          result = items.join( "" );
+          $("#thermo").html(result);
         });
 
     });
