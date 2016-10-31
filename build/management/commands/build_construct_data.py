@@ -27,11 +27,14 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--filename', action='append', dest='filename',
             help='Filename to import. Can be used multiple times')
+        parser.add_argument('--local', action='store_true', dest='local', default=False,
+            help='Read local construct files')
 
     logger = logging.getLogger(__name__)
 
         # source file directory
     construct_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data','construct_data'])
+    construct_data_local_dir = "../files/construct_data"
 
     def handle(self, *args, **options):
         if options['filename']:
@@ -39,9 +42,17 @@ class Command(BaseCommand):
         else:
             filenames = False
 
+        if options['local']:
+            local_fill = True
+        else:
+            local_fill = False
+
         try:
             # self.purge_construct_data()
-            self.create_construct_data(filenames)
+            if not local_fill:
+                self.create_construct_data(filenames)
+            else:
+                self.create_construct_local_data()
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
@@ -69,6 +80,52 @@ class Command(BaseCommand):
         Solubilization.objects.all().delete()
         Purification.objects.all().delete()
         PurificationStep.objects.all().delete()
+
+    def create_construct_local_data(self, filenames=False):
+        self.logger.info('ADDING EXPERIMENTAL CONSTRUCT DATA')
+
+        #delete existing
+        self.purge_construct_data()
+
+        # read source files
+        if not filenames:
+            filenames = os.listdir(self.construct_data_dir)
+
+        for filename in sorted(filenames):
+            print('dealing with',filename)
+            if filename[-4:]!='json':
+                continue
+            filepath = os.sep.join([self.construct_data_dir, filename])
+            with open(filepath) as json_file:
+                d = json.load(json_file)
+                add_construct(d)
+
+        filenames = os.listdir(self.construct_data_local_dir)
+
+        for filename in sorted(filenames):
+            print('dealing with',filename)
+            if filename[-4:]!='json':
+                continue
+            filepath = os.sep.join([self.construct_data_local_dir, filename])
+            with open(filepath) as json_file:
+                d = json.load(json_file)
+                add_construct(d)
+
+        structures = Structure.objects.all()
+
+        for s in structures:
+            pdbname = str(s)
+            try:
+                exists = Construct.objects.filter(structure__pdb_code__index=pdbname).exists()
+                if not exists:
+                    print(pdbname)
+                    protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
+                    d = fetch_pdb_info(pdbname,protein)
+                    add_construct(d)
+                else:
+                    print("Entry for",pdbname,"already there")
+            except:
+                print(pdbname,'failed')
 
     def create_construct_data(self, filenames=False):
         self.logger.info('ADDING EXPERIMENTAL CONSTRUCT DATA')

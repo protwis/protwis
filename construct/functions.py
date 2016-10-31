@@ -158,7 +158,7 @@ def fetch_pdb_info(pdbname,protein):
                             if u_id not in seg_uniprot_ids:
                                 seg_uniprot_ids.append(u_id)
                         elif receptor and node.attrib['property']=='Annotation' and node.text == 'Engineered mutation': ## only in receptor
-                            if {'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos} not in d['mutations']: #prevent duplicates
+                            if {'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos,'type':''} not in d['mutations']: #prevent duplicates
                                 d['mutations'].append({'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos,'type':''})
                 if uniprot_pos:
                     pos_list.append(uniprot_pos) 
@@ -190,6 +190,10 @@ def fetch_pdb_info(pdbname,protein):
                     continue #do not add segments without information
                 if subtype == 'Not_Observed':
                     continue #ignore "aux" that are 'not observed'
+                if subtype == 'Engineered mutation':
+                    continue #ignore "aux" that are 'not observed'
+                if subtype == 'S-arrestin':
+                    continue #  S-arrestin is not part of the chain
                 d['auxiliary']['aux'+str(len(d['auxiliary']))] = {'type':'auto','subtype':subtype,'presence':'YES','position':insert_position, 'start':insert_start}
             elif receptor == False:
                 # print('\t',pdbname.lower(),'Protein in PDB, not part of receptor chain',seg_uniprot_ids,'chain',chain)
@@ -427,7 +431,14 @@ def add_construct(d):
     construct.save()
     #MUTATIONS
     for mutation in d['mutations']:
-        mut = ConstructMutation.objects.create(sequence_number=mutation['pos'],wild_type_amino_acid=mutation['wt'],mutated_amino_acid=mutation['mut'],mutation_type=mutation['type'])
+
+        if 'type' not in mutation:
+            mutation['type'] = ''
+
+        if 'remark' not in mutation:
+            mutation['remark'] = ''
+
+        mut = ConstructMutation.objects.create(sequence_number=mutation['pos'],wild_type_amino_acid=mutation['wt'],mutated_amino_acid=mutation['mut'],mutation_type=mutation['type'],remark=mutation['remark'])
         construct.mutations.add(mut)
 
     #DELETIONS
@@ -600,20 +611,19 @@ def add_construct(d):
                     defaults={'name': d['construct_crystal']['ligand_activity']})
                 except IntegrityError:
                     lr = LigandRole.objects.get(slug=role_slug)
+            if ligand:
+                ligand_c = CrystallizationLigandConc()
+                ligand_c.construct_crystallization = c
+                ligand_c.ligand = ligand
+                if lr: 
+                    ligand_c.ligand_role = lr
+                if 'ligand_conc' in d['construct_crystal']:
+                    ligand_c.ligand_conc = d['construct_crystal']['ligand_conc']
+                if 'ligand_conc_unit' in d['construct_crystal']:
+                    ligand_c.ligand_conc_unit = d['construct_crystal']['ligand_conc_unit']
+                ligand_c.save()
 
-
-            ligand_c = CrystallizationLigandConc()
-            ligand_c.construct_crystallization = c
-            ligand_c.ligand = ligand
-            if lr: 
-                ligand_c.ligand_role = lr
-            if 'ligand_conc' in d['construct_crystal']:
-                ligand_c.ligand_conc = d['construct_crystal']['ligand_conc']
-            if 'ligand_conc_unit' in d['construct_crystal']:
-                ligand_c.ligand_conc_unit = d['construct_crystal']['ligand_conc_unit']
-            ligand_c.save()
-
-            c.ligands.add(ligand_c)
+                c.ligands.add(ligand_c)
 
             construct.crystallization = c
 

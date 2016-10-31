@@ -62,11 +62,15 @@ class Construct(models.Model):
     def schematic(self):
         ## Use cache if possible
         temp = self.schematics
+        #if temp==None or 1==1:
         if temp==None:
             # print(self.name+'_schematics no cache')
-            temp = generate_schematic(self)
-            self.schematics = pickle.dumps(temp)
-            self.save()
+            try:
+                temp = generate_schematic(self)
+                self.schematics = pickle.dumps(temp)
+                self.save()
+            except:
+                print('schematics failed for ',self.name)
         else:
             # print(self.name+'_schematics used cache')
             temp = pickle.loads(temp)
@@ -107,6 +111,7 @@ class ConstructMutation(models.Model):
     wild_type_amino_acid = models.CharField(max_length=1)
     mutated_amino_acid = models.CharField(max_length=1)
     mutation_type = models.CharField(max_length=30, null=True)
+    remark = models.TextField(null=True)
 
     def __str__(self):
         return '{}{}{}'.format(self.wild_type_amino_acid, self.sequence_number,
@@ -151,6 +156,15 @@ class ConstructInsertion(models.Model):
 
     def __str__(self):
         return 'Protein: {}<br> Name: {}<br>Presence in Crystal: {}'.format(self.insert_type.name,self.insert_type.subtype,self.presence)
+
+    def autotype(self):
+        t = self.insert_type.subtype
+        if t=='Expression tag':
+            return 'tag'
+        elif t=='Linker':
+            return 'linker'
+        else:
+            return self.insert_type.name
 
     class Meta():
         db_table = 'construct_insertion'

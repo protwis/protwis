@@ -219,11 +219,15 @@ class Ligand(models.Model):
             if canonical_entry.exists():
                 return
             else: #insert the 'canonical' entry
-                canonical_entry = Ligand()
-                canonical_entry.name = pubchem_name
-                canonical_entry.canonical = True
-                canonical_entry.properities = self.properities
-                canonical_entry.save()
+                try:
+                    canonical_entry = Ligand()
+                    canonical_entry.name = pubchem_name
+                    canonical_entry.canonical = True
+                    canonical_entry.properities = self.properities
+                    canonical_entry.save()
+                except IntegrityError:
+                    logger.error("FAILED SAVING CANONICAL LIGAND, duplicate? "+pubchem_name+" "+name)
+                    print("FAILED SAVING CANONICAL LIGAND, duplicate? "+pubchem_name+" "+name)
 
 
 class LigandProperities(models.Model):

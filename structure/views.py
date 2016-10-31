@@ -1440,7 +1440,12 @@ def webformdata(request) :
                 else:
                     mut_id=pos_id.replace('_','')
 
-                mutations.append({'pos':value,'wt':data['wt_aa'+pos_id],'mut':data['mut_aa'+pos_id], 'type':data['mut_type'+pos_id]})
+                if 'mut_remark'+pos_id in data:
+                    remark = data['mut_remark'+pos_id]
+                else:
+                    remark = ''
+
+                mutations.append({'pos':value,'wt':data['wt_aa'+pos_id],'mut':data['mut_aa'+pos_id], 'type':data['mut_type'+pos_id], 'remark':remark})
                 data.pop(key, None)
                 data.pop('wt_aa'+pos_id, None)
                 data.pop('mut_aa'+pos_id, None)

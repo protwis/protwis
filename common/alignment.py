@@ -244,7 +244,6 @@ class Alignment:
                     'protein_conformation__state', 'protein_segment', 'generic_number__scheme',
                     'display_generic_number__scheme')
 
-        print(len(rs))
         self.number_of_residues_total = len(rs)
         if len(rs)>120000: #300 receptors, 400 residues limit
             return "Too large"

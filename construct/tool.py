@@ -67,6 +67,47 @@ def json_fusion(request, slug, **response_kwargs):
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
 
+
+def json_palmi(request, slug, **response_kwargs):
+
+
+    seq = Protein.objects.filter(entry_name=slug).values_list('sequence', flat = True).get()
+    rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug,protein_segment__slug__in=['H8','C-term']).order_by('sequence_number').prefetch_related('protein_segment')
+    residues = {}
+    seq = ''
+    end_h8 = 0
+    start_h8 = 0
+    for r in rs:
+        if not start_h8 and r.protein_segment.slug == 'H8':
+            start_h8 = r.sequence_number
+        if not end_h8 and r.protein_segment.slug == 'C-term':
+            end_h8 = r.sequence_number-1 #end_h8 was prev residue
+        elif end_h8 and r.sequence_number-10>end_h8:
+            continue
+        print(r.protein_segment.slug)
+        seq += r.amino_acid
+        residues[r.sequence_number] = r.protein_segment.slug
+
+    print(seq)
+    #No proline!
+    p = re.compile("C")
+    #print('all')
+    mutations_all = []
+    for m in p.finditer(seq):
+        print(m.start(),m.start()+start_h8, m.group())
+        mutations_all.append([m.start()+start_h8,"A",'','',m.group(),residues[m.start()+start_h8]])
+
+
+    palmi = OrderedDict()
+    palmi['all']= mutations_all
+
+    jsondata = palmi
+    jsondata = json.dumps(jsondata)
+    response_kwargs['content_type'] = 'application/json'
+    return HttpResponse(jsondata, **response_kwargs)
+
+
+
 def json_glyco(request, slug, **response_kwargs):
 
 
@@ -151,6 +192,7 @@ def json_icl3(request, slug, **response_kwargs):
     deletions['Ligand Type'] = {}
     deletions['Class'] = {}
     deletions['Different Class'] = {}
+    states = {}
     for c in cons:
         p = c.protein
         entry_name = p.entry_name
@@ -158,6 +200,8 @@ def json_icl3(request, slug, **response_kwargs):
         d_level, d_level_name = compare_family_slug(level,p_level)
         pdb = c.crystal.pdb_code
         state = c.structure.state.slug
+        if pdb not in states:
+            states[pdb] = state
         fusion, f_results = c.fusion()
         for deletion in c.deletions.all():
             #print(pdb,deletion.start,deletion.end)
@@ -166,6 +210,9 @@ def json_icl3(request, slug, **response_kwargs):
                     deletions[d_level_name][entry_name] = {}
                 #deletions[entry_name][pdb] = [tm5_end[entry_name],tm6_start[entry_name],deletion.start,deletion.end,deletion.start-tm5_end[entry_name],tm6_start[entry_name]-deletion.end]
                 deletions[d_level_name][entry_name][pdb] = [deletion.start-tm5_50[entry_name],tm6_50[entry_name]-deletion.end-1,state,str(fusion)]
+
+    for pdb,state in sorted(states.items()):
+        print(pdb,"\t",state)
 
     jsondata = deletions
     jsondata = json.dumps(jsondata)
@@ -316,7 +363,7 @@ def mutations(request, slug, **response_kwargs):
         gn = rs_lookup[entry_name][pos]
 
         if gn not in mutation_list:
-            mutation_list[gn] = {'proteins':[], 'hits':0, 'mutation':[]}
+            mutation_list[gn] = {'proteins':[], 'hits':0, 'mutation':[], 'wt':''}
 
         if entry_name not in mutation_list[gn]['proteins']:
             mutation_list[gn]['proteins'].append(entry_name)
