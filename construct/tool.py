@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.db.models import Min, Count, Max
+from django.conf import settings
 
 from construct.models import *
 from protein.models import ProteinConformation, Protein
@@ -8,6 +9,49 @@ from protein.models import ProteinConformation, Protein
 import json
 from collections import OrderedDict
 import re
+import xlrd
+import yaml
+import os
+
+def parse_excel(path):
+    workbook = xlrd.open_workbook(path)
+    worksheets = workbook.sheet_names()
+    d = {}
+    for worksheet_name in worksheets:
+        if worksheet_name in d:
+            print('Error, worksheet with this name already loaded')
+            continue
+
+        #d[worksheet_name] = OrderedDict()
+        worksheet = workbook.sheet_by_name(worksheet_name)
+
+        num_rows = worksheet.nrows - 1
+        num_cells = worksheet.ncols
+        curr_row = 0 #skip first, otherwise -1
+
+        headers = []
+        for i in range(num_cells):
+            h = worksheet.cell_value(0, i)
+            if h=="":
+                h = "i_"+str(i)
+            if h in headers:
+                h += "_"+str(i)
+            headers.append(worksheet.cell_value(0, i))
+        for curr_row in range(1,num_rows+1):
+            row = worksheet.row(curr_row)
+            key = worksheet.cell_value(curr_row, 0)
+
+            if key=='':
+                continue
+            if key not in d:
+                d[key] = []
+            temprow = OrderedDict()
+            for curr_cell in range(num_cells):
+                cell_value = worksheet.cell_value(curr_row, curr_cell)
+                if headers[curr_cell] not in temprow:
+                    temprow[headers[curr_cell]] = cell_value
+            d[key].append(temprow)
+    return d
 
 def compare_family_slug(a,b):
     a = a.split("_")
@@ -84,17 +128,14 @@ def json_palmi(request, slug, **response_kwargs):
             end_h8 = r.sequence_number-1 #end_h8 was prev residue
         elif end_h8 and r.sequence_number-10>end_h8:
             continue
-        print(r.protein_segment.slug)
         seq += r.amino_acid
         residues[r.sequence_number] = r.protein_segment.slug
 
-    print(seq)
     #No proline!
     p = re.compile("C")
     #print('all')
     mutations_all = []
     for m in p.finditer(seq):
-        print(m.start(),m.start()+start_h8, m.group())
         mutations_all.append([m.start()+start_h8,"A",'','',m.group(),residues[m.start()+start_h8]])
 
 
@@ -182,7 +223,6 @@ def json_icl3(request, slug, **response_kwargs):
         tm5_50[pc.protein.entry_name] = pc.start
         tm6_50[pc.protein.entry_name] = pc.end
 
-    print(tm5_start,tm5_50,tm5_end)
 
     cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
     
@@ -211,8 +251,8 @@ def json_icl3(request, slug, **response_kwargs):
                 #deletions[entry_name][pdb] = [tm5_end[entry_name],tm6_start[entry_name],deletion.start,deletion.end,deletion.start-tm5_end[entry_name],tm6_start[entry_name]-deletion.end]
                 deletions[d_level_name][entry_name][pdb] = [deletion.start-tm5_50[entry_name],tm6_50[entry_name]-deletion.end-1,state,str(fusion)]
 
-    for pdb,state in sorted(states.items()):
-        print(pdb,"\t",state)
+    # for pdb,state in sorted(states.items()):
+    #     print(pdb,"\t",state)
 
     jsondata = deletions
     jsondata = json.dumps(jsondata)
@@ -299,6 +339,109 @@ def json_cterm(request, slug, **response_kwargs):
     jsondata = json.dumps(jsondata)
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
+
+def thermostabilising(request, slug, **response_kwargs):
+
+
+    rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug).prefetch_related('protein_segment','display_generic_number','generic_number')
+
+    wt_lookup = {}
+    wt_lookup_pos = {}
+    for r in rs:
+        if r.generic_number:
+            gn = r.generic_number.label
+            wt_lookup[gn] = [r.amino_acid, r.sequence_number]
+        pos = r.sequence_number
+        wt_lookup_pos[pos] = [r.amino_acid]
+
+    level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
+    if level.split("_")[0]=='001':
+        c_level = 'A'
+    elif level.split("_")[0]=='002':
+        c_level = 'B'
+    elif level.split("_")[0]=='003':
+        c_level = 'B'
+    else:
+        c_level = ''
+
+    path = os.sep.join([settings.DATA_DIR, 'structure_data', 'construct_data', 'termo.xlsx'])
+    d = parse_excel(path)
+    if c_level in d:
+        termo = d[c_level]
+    else:
+        termo = []
+
+    results = OrderedDict()
+    results['1'] = {}
+    results['2'] = {} #fixed mut
+    results['3'] = {} #fixed wt
+
+    for mut in termo:
+        gn = mut['GN']
+        mut_aa = mut['MUT']
+        wt_aa = mut['WT']
+        entry_name = mut['UniProt']
+        pos = int(mut['POS'])
+        pdb = mut['PDB']
+        if mut['Effect'] != 'Thermostabilising':
+            continue #only thermo!
+        if entry_name == slug:
+            if gn not in results['1']:
+                results['1'][gn] = {}
+            if mut_aa not in results['1'][gn]:
+                results['1'][gn][mut_aa] = {'pdbs':[], 'hits':0, 'wt':wt_lookup[gn]}
+            if mut['PDB'] not in results['1'][gn][mut_aa]['pdbs']:
+                results['1'][gn][mut_aa]['pdbs'].append(pdb)
+            results['1'][gn][mut_aa]['hits'] += 1
+
+        if gn:
+            if gn not in results['2']:
+                results['2'][gn] = {}
+            if mut_aa not in results['2'][gn]:
+                results['2'][gn][mut_aa] = {'pdbs':[], 'proteins':[], 'hits':0, 'wt':wt_lookup[gn]}
+            if entry_name not in results['2'][gn][mut_aa]['proteins']:
+                results['2'][gn][mut_aa]['proteins'].append(entry_name)
+                results['2'][gn][mut_aa]['hits'] += 1
+            if wt_lookup[gn][0] == wt_aa:
+                if gn not in results['3']:
+                    results['3'][gn] = {}
+                if wt_aa not in results['3'][gn]:
+                    results['3'][gn][wt_aa] = {'pdbs':[], 'proteins':[], 'hits':0, 'wt':wt_lookup[gn], 'muts':[]}
+                if entry_name not in results['3'][gn][wt_aa]['proteins']:
+                    results['3'][gn][wt_aa]['proteins'].append(entry_name)
+                    results['3'][gn][wt_aa]['hits'] += 1
+                    if mut_aa not in results['3'][gn][wt_aa]['muts']:
+                        results['3'][gn][wt_aa]['muts'].append(mut_aa)
+
+    temp = {}
+    for gn, vals1 in results['2'].items():
+        for mut_aa, vals2 in vals1.items():
+            if vals2['hits']>1:
+                if gn not in temp:
+                    temp[gn] = {}
+                if mut_aa not in temp[gn]:
+                    temp[gn][mut_aa] = vals2
+                #results['2'][gn].pop(mut_aa, None)
+    results['2'] = temp
+
+    temp = {}
+    for gn, vals1 in results['3'].items():
+        for mut_aa, vals2 in vals1.items():
+            if vals2['hits']>1:
+                if gn not in temp:
+                    temp[gn] = {}
+                if mut_aa not in temp[gn]:
+                    temp[gn][mut_aa] = vals2
+                #results['2'][gn].pop(mut_aa, None)
+    results['3'] = temp
+
+
+    jsondata = results
+    jsondata = json.dumps(jsondata)
+    response_kwargs['content_type'] = 'application/json'
+    return HttpResponse(jsondata, **response_kwargs)
+
+
 
 def mutations(request, slug, **response_kwargs):
 
