@@ -891,6 +891,7 @@ select.optional option{
 							    <th>WT AA</th>
 							    <th>Mutant AA</th> 
 							    <th>Type</th> 
+							    <th>Remark</th> 
 							    <th></th> 
 							  </tr>     
 			                  <tr class="hidetext">
@@ -951,8 +952,13 @@ select.optional option{
 										<option value="Ligand binding increasing">Ligand binding increase</option>
 										<option value="Ligand binding decreasing">Ligand binding decrease</option>
 										<option value="Glycosylation site removal">Glycosylation site removal</option>
+										<option value="Palmitoylation site removal">Palmitoylation site removal</option>
+										<option value="Disulfide Bridge">Disulfide Bridge</option>
 										<option value="Unknown">Unknown</option>
 									</select>
+							    </td>
+					            <td>
+					            	<input class="optional form-control second_table row_id" id="id_mut_remark" maxlength="300" name="mut_remark" type="text" />
 							    </td>
 					            <td><span id="del_mut" type="button"  class="btn btn-danger btn-xs hidetext mut_delrow delrow glyphicon glyphicon-remove row_id"></span>
 					            </td> 

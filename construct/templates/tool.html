@@ -87,6 +87,14 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                 <li>Loading...</li>
                 </ul>
             </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle pull-right" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Palmitoylation <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" id='palmi'>
+                <li>Loading...</li>
+                </ul>
+            </div>
         </div>
 
   </div>
@@ -197,7 +205,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         items.push( temp );
       });
       result = items.join( "" );
-      console.log(result);
       $("#ctermmenu").html(result);
     }
 
@@ -238,7 +245,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         items.push( temp );
       });
       result = items.join( "" );
-      console.log(result);
       $("#icl3menu").html(result);
     }
 
@@ -253,7 +259,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       range = new Array;
       for (var i = 1; 1 > 0 ? i <= until : i > until; i += 1) {
-        console.log(i);
           range.push(i);
       }
 
@@ -277,7 +282,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       range = new Array;
       for (var i = start; 1 > 0 ? i <= end : i > end; i += 1) {
-        console.log(i);
           range.push(i);
       }
 
@@ -297,7 +301,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       range = new Array;
       for (var i = start; 1 > 0 ? i < end : i > end; i += 1) {
-        console.log(i);
           range.push(i);
       }
 
@@ -357,6 +360,24 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       modifications_overview();
     }
 
+    function palmi(elem) {
+      pos = $(elem).attr("pos");
+      to = $(elem).attr("to");
+      wt = $(elem).attr("wt");
+
+      origin = $(elem).attr("motif");
+
+      console.log(origin);
+
+      range = new Array;
+      range.push(pos);
+      modi = {method: wt+pos+to + " Palmitoylation site removal", type: "mutation", to: to, range: range, info: "Based on "+origin};
+      modifications.push(modi);
+
+      overlay_modifications();
+      modifications_overview();
+    }
+
     function modifications_overview() {
 
       $("#overview").html("");
@@ -410,9 +431,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
         type = val['type'];
         range = val['range'];
+        console.log(key);
 
         $.each(range, function(i, ii){
-
+          console.log(ii);
           color_residue(ii,type);
 
         })
@@ -432,8 +454,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         fill = 'red';
      }
 
-     $('[id='+pos+']').css("fill", bg);
-     $('[id='+pos+']').next().css("fill", fill);
+     $('#'+pos+'t').css("fill", fill);
+     $('#'+pos+'t').prev().css("fill", bg);
 
 
     }
@@ -555,6 +577,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       $.getJSON( "/construct/tool/json/mutations/{{target.entry_name}}/", function( data ) {
           var items = [];
           $.each( data, function( gn, val ) {
+            // console.log(gn);
+            // console.log(val);
             temp = "<li id='" + gn + "' class=\"dropdown-submenu\"><a>" + gn + " ("+val['hits']+" occurences)</a><ul class=\"dropdown-menu\">";
 
             temp += "<li><a>"+gn+" in {{target.entry_name}} is "+val['wt'][0]+"</a></li><li class=\"divider\"></li>";
@@ -588,7 +612,22 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           result = items.join( "" );
           $("#glyco").html(result);
         });
-        
+                    
+      // http://localhost:8000/construct/tool/json/palmi/adrb2_human/
+      $.getJSON( "/construct/tool/json/palmi/{{target.entry_name}}/", function( data ) {
+          var items = [];
+          $.each( data, function( type, val ) {
+            temp = "";
+            $.each( val, function( key, value ) {
+                temp += "<li id='"+key+"' class=\"dropdown-submenu\"><a class='origin'>"+value[4][0]+value[0]+value[1]+" ("+value[5]+")</a><ul class=\"dropdown-menu\"><li><a onclick='palmi(this)' motif='"+value[4]+"' pos='"+value[0]+"' wt='"+value[4][0]+"' from='"+value[4][0]+"' to='"+value[1]+"' > Mutate "+value[4][0]+value[0]+value[1]+"</a></li></ul></li>";
+            });
+
+            temp += "</ul></li>";
+            items.push( temp );
+          });
+          result = items.join( "" );
+          $("#palmi").html(result);
+        });
 
     });
 </script>
