@@ -412,7 +412,7 @@ def thermostabilising(request, slug, **response_kwargs):
                         results['3'][gn][wt_aa]['proteins'].append(entry_name)
                         results['3'][gn][wt_aa]['hits'] += 1
                         if mut_aa not in results['3'][gn][wt_aa]['muts']:
-                        results['3'][gn][wt_aa]['muts'].append(mut_aa)
+                            results['3'][gn][wt_aa]['muts'].append(mut_aa)
 
     temp = {}
     for gn, vals1 in results['2'].items():
