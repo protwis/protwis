@@ -611,20 +611,19 @@ def add_construct(d):
                     defaults={'name': d['construct_crystal']['ligand_activity']})
                 except IntegrityError:
                     lr = LigandRole.objects.get(slug=role_slug)
+            if ligand:
+                ligand_c = CrystallizationLigandConc()
+                ligand_c.construct_crystallization = c
+                ligand_c.ligand = ligand
+                if lr: 
+                    ligand_c.ligand_role = lr
+                if 'ligand_conc' in d['construct_crystal']:
+                    ligand_c.ligand_conc = d['construct_crystal']['ligand_conc']
+                if 'ligand_conc_unit' in d['construct_crystal']:
+                    ligand_c.ligand_conc_unit = d['construct_crystal']['ligand_conc_unit']
+                ligand_c.save()
 
-
-            ligand_c = CrystallizationLigandConc()
-            ligand_c.construct_crystallization = c
-            ligand_c.ligand = ligand
-            if lr: 
-                ligand_c.ligand_role = lr
-            if 'ligand_conc' in d['construct_crystal']:
-                ligand_c.ligand_conc = d['construct_crystal']['ligand_conc']
-            if 'ligand_conc_unit' in d['construct_crystal']:
-                ligand_c.ligand_conc_unit = d['construct_crystal']['ligand_conc_unit']
-            ligand_c.save()
-
-            c.ligands.add(ligand_c)
+                c.ligands.add(ligand_c)
 
             construct.crystallization = c
 
