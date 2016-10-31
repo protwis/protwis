@@ -152,11 +152,13 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       var fusionpos = $('input:radio[name=fusionpos]:checked').val();
       show_nterm = {};
       $.each(n_term_data, function(level,proteins) {
+        find = 0;
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
             if (state==vals[3]) {
               if (fusionpos==vals[4] || (fusionpos=='None' && vals[4]!='nterm') || (fusionpos!='nterm' && vals[4]=='None')) {
+                find = 1;
                 // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
                 if(!show_nterm[level]) { show_nterm[level] = {}; } 
                 if(!show_nterm[level][vals[2]]) { show_nterm[level][vals[2]] = {'proteins': [],'pdbs': [], 'hits':0}; } 
@@ -169,7 +171,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             }
           })
         })
-        show_nterm[level]['sortedkeys'] = getSortedKeys(show_nterm[level]);
+        if (find==1 ){
+          show_nterm[level]['sortedkeys'] = getSortedKeys(show_nterm[level]);
+        }
       }) 
       var items = [];
       $.each( show_nterm, function( key, val ) {
@@ -196,10 +200,12 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       var fusionpos = $('input:radio[name=fusionpos]:checked').val();
       show_cterm = {};
       $.each(c_term_data, function(level,proteins) {
+        find = 0;
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
             if (state==vals[3]) {
+                find = 1;
                 // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
                 if(!show_cterm[level]) { show_cterm[level] = {}; } 
                 if(!show_cterm[level][vals[2]]) { show_cterm[level][vals[2]] = {'proteins': [],'pdbs': [], 'hits':0}; } 
@@ -211,7 +217,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             }
           })
         })
-        show_cterm[level]['sortedkeys'] = getSortedKeys(show_cterm[level]);
+        if (find==1 ){
+          show_cterm[level]['sortedkeys'] = getSortedKeys(show_cterm[level]);
+        }
       }) 
 
       var items = [];
@@ -239,12 +247,13 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       var fusionpos = $('input:radio[name=fusionpos]:checked').val();
       show_icl3 = {};
       $.each(icl3_data, function(level,proteins) {
+        find = 0;
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
             if (state==vals[2]) {
               if (fusionpos==vals[3] || (fusionpos=='None' && vals[3]!='icl3') || (fusionpos!='icl3' && vals[3]=='None')) {
-
+                find = 1;
                 range = "5."+(50+vals[0])+"-"+"6."+(50-vals[1]);
 
                 if(!show_icl3[level]) { show_icl3[level] = {}; } 
@@ -259,7 +268,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             }
           })
         })
-        show_icl3[level]['sortedkeys'] = getSortedKeys(show_icl3[level]);
+        if (find==1 ){
+          show_icl3[level]['sortedkeys'] = getSortedKeys(show_icl3[level]);
+        }
       }) 
       console.log(show_icl3);
 
