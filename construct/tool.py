@@ -164,7 +164,8 @@ def json_glyco(request, slug, **response_kwargs):
     mutations_all = []
     for m in p.finditer(seq):
         #print(m.start(), m.group())
-        mutations_all.append([m.start()+1,"Q",'','',m.group(),residues[m.start()+1]])
+        if residues[m.start()+1] in ['N-term','ECL1','ECL2','ECL3']:
+            mutations_all.append([m.start()+1,"Q",'','',m.group(),residues[m.start()+1]])
 
     #print('mamalian')
     #p = re.compile("[TS]{2}[A-Z]{1,11}[N]", overlapped=True)
@@ -185,7 +186,8 @@ def json_glyco(request, slug, **response_kwargs):
         if matches_seq[i][1]=="S":
             pos1 = "A"
 
-        mutations_mammalian.append([m.start()+1,pos0,m.start()+2,pos1,matches_seq[i],residues[m.start()+1]])
+        if residues[m.start()+1] in ['N-term','ECL1','ECL2','ECL3']:
+            mutations_mammalian.append([m.start()+1,pos0,m.start()+2,pos1,matches_seq[i],residues[m.start()+1]])
 
     glyco = OrderedDict()
     glyco['all']= mutations_all

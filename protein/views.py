@@ -105,6 +105,7 @@ def SelectionAutocomplete(request):
     if request.is_ajax():
         q = request.GET.get('term')
         type_of_selection = request.GET.get('type_of_selection')
+        selection_only_receptors = request.GET.get('selection_only_receptors')
         referer = request.META.get('HTTP_REFERER')
         
         if 'gproteinselection' in str(referer) or 'signprot' in str(referer) and not 'ginterface' in str(referer):
@@ -164,7 +165,7 @@ def SelectionAutocomplete(request):
                     results.append(pa_json)
 
             # protein families
-            if type_of_selection == 'targets' or type_of_selection == 'browse' or type_of_selection == 'gproteins':
+            if (type_of_selection == 'targets' or type_of_selection == 'browse' or type_of_selection == 'gproteins') and selection_only_receptors!="True":
                 # find protein families
                 pfs = ProteinFamily.objects.filter(name__icontains=q).exclude(slug='000').exclude(slug__startswith=exclusion_slug)[:10]
                 for pf in pfs:
