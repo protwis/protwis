@@ -15,15 +15,15 @@
         }
 
         #filters{
-            float:left;
+/*            float:left;
           display:none;
-          position:absolute; 
-          background:white; 
+          position:absolute; */
+/*          background:white; 
           border: 1px solid #D1C9C2; 
-          border-top: 1; 
-          width: 400px; 
+          border-top: 1; /**/
+/*          width: 400px; 
           margin: 0 auto; 
-          padding:  7px 15px; 
+          
           text-align: left; 
           -webkit-border-bottom-right-radius: 6px; 
           -webkit-border-bottom-left-radius: 6px; 
@@ -31,8 +31,12 @@
           -moz-border-radius-bottomleft: 6px; 
           border-bottom-right-radius: 6px; 
           border-bottom-left-radius: 6px;
-          z-index: 1;
+          z-index: 1;*/
             font-size: 10px;
+            padding:  7px 15px; 
+        }
+        #datatable {
+        width: 100% !Important;
         }
 
         @media (min-width: 1600px){
@@ -62,14 +66,24 @@
 
             // var oTable;
             var oTable = $('#constructs').DataTable({
-                'scrollX': true,
+                scrollX: true,
                 // 'paging': true,
-                // 'autoWidth': true,
+                'autoWidth': true,
+                "bFilter": false,
+                
 
                 scrollY:        '80vh',
                 scrollCollapse: true,
                 paging:         false
             });
+
+                // scrollX: true,
+                // searching: false,
+                // scrollY:        '80vh',
+                // scrollCollapse: true,
+                // paging:         false
+
+
 
             var prev_ids = Array()
             var current_align_ids = Array()
@@ -77,18 +91,11 @@
             console.log(oTable);
             $("#constructs_div").show();
             assign_to_row();
-            $("#loading_div").hide();
 
 
             yadcf.init(oTable,
                 [
                     {
-                        column_number : 1,
-                        filter_type: "text",
-                        column_data_type: "text",
-                        filter_default_label: "Construct",
-                        filter_container_id: "external_filter_container0"
-                    }, {
                         column_number : 2,
                         filter_type: "multi_select",
                         select_type: 'select2',
@@ -120,13 +127,6 @@
                         filter_default_label: "Species",
                         filter_container_id: "external_filter_container4"
                     },
-                    {
-                        column_number : 6,
-                        filter_type: "text",
-                        column_data_type: "text",
-                        filter_default_label: "PDB",
-                        filter_container_id: "external_filter_container5"
-                    }, 
                 ],
                 {
                     cumulative_filtering: false
@@ -134,6 +134,11 @@
             );
 
             yadcf.exResetAllFilters(oTable);
+
+            $("#constructs_div").hide();
+            $("#loading_div").hide();
+            update_tables('wt');
+            $("#wt_schematics_div").show();
 
             // $.datepicker.regional[""].dateFormat = "yy-mm-dd";
             // $.datepicker.setDefaults($.datepicker.regional['']);
@@ -159,7 +164,7 @@
                     }
                 });
                oTable.fnDraw();
-                update_tables();
+               update_tables('both');
             });
 
             $("#remove_non_sel").click(function () { 
@@ -173,7 +178,7 @@
                    }
                 });
                 oTable.fnDraw();
-                update_tables();
+               update_tables('both');
             });
 
             function update_tables(tables) {
@@ -211,7 +216,7 @@
                     // if (header_height>0) {
                     //     $(".spacer").height(header_height);
                     // }
-                    $(".spacer").height(50); // 25 px blank, then 35 row
+                    // $(".spacer").height(15); // 25 px blank, then 35 row
                     // 
                     // $("#constructs_schematics").trigger("destroy");
                     
@@ -269,8 +274,8 @@
             });
 
             $('#apply_filter').click(function() {
-                update_tables();
-                $("#filters").toggle();
+                update_tables("both");
+                //$("#filters").toggle();
             });
 
             $("#OpenFilters").click(function () {
@@ -419,7 +424,7 @@
 {% block content %}
 
     <br />
-        <button class="btn btn-primary btn-group" id='OpenFilters'>Filters</button>
+        <!-- <button class="btn btn-primary btn-group" id='OpenFilters'>Filters</button> -->
 
         <div class="btn-group">
         <button class="btn btn-primary btn-group" id='show_browser'>Browser</button>
@@ -436,8 +441,24 @@
                 <li><a href="#" id="show_construct">Construct schematic</a></li>
               </ul>
         </div> -->
+
         <div class="dropdown btn-group">
-              <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Selection options
+              <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Sequence
+              <span class="caret"></span></button>
+              <ul class="dropdown-menu">
+                <li><a href="#" id="align">Align selected</a></li>
+              </ul>
+        </div>
+    <div id='filters'>
+    <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container3"></span></div>
+    <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container2"></span></div>
+    <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container1"></span></div>
+<!--     <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container0"></span></div> -->
+    <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container4"></span></div>
+<!--     <div style='width: 140px;display: inline-block;'><span id="external_filter_container5"></span></div> -->
+    <button id='apply_filter' class="btn btn-default btn-xs">Apply Filter</button>
+            <div class="dropdown btn-group">
+              <button class="btn btn-default btn-xs dropdown-toggle" type="button" data-toggle="dropdown">Selection options
               <span class="caret"></span></button>
               <ul class="dropdown-menu">
                 <li><a href="#">Toggle all <input class="select-all" type="checkbox" onclick="select_all(this)"></a></li>
@@ -445,44 +466,25 @@
                 <li><a href="#" id="remove_non_sel">Remove Non-selected</a></li>
               </ul>
         </div>
-        <div class="dropdown btn-group">
-              <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Align
-              <span class="caret"></span></button>
-              <ul class="dropdown-menu">
-                <li><a href="#" id="align">Align selected</a></li>
-              </ul>
-        </div>
-    <div id='filters'>
-    <div><span style='width: 160px;display: inline-block;'>Class:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container3"></span></div>
-    <div><span style='width: 160px;display: inline-block;'>Family:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container2"></span></div>
-    <div><span style='width: 160px;display: inline-block;'>Receptor(s):</span><span  style='width: 160px;display: inline-block;' id="external_filter_container1"></span></div>
-    <div><span style='width: 160px;display: inline-block;'>Construct:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container0"></span></div>
-    <div><span style='width: 160px;display: inline-block;'>Species:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container4"></span></div>
-    <div><span style='width: 160px;display: inline-block;'>PDB:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container5"></span></div>
-    <button id='apply_filter'>Apply Filter</button>
     </div>
 
     <div style="padding-top: 0px; font-size: 15px; white-space: nowrap;" id="loading_div">
     <br>Loading...
     </div>
     <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" id="constructs_div">
-        <table width="100%" class="display" id="constructs">
+        <table width="100%" class="display" id="constructs" style='margin: 0;width: 100%;'>
             <thead>
                     <tr style='max-height: 20px'>
                     <th class="protein-th" colspan=1></th>
                     <th class="protein-th" colspan=5>Construct</th>
                     <th class="seq-th" colspan=4>Sequence modifications</th>
-                    <th class="parts1-th" colspan=3>Expression </th>
-                    <th class="parts2-th" colspan=1>Solubilization</th>
-                    <th class="parts3-th" colspan=1>Purification</th>
-                    <th class="parts4-th" colspan=4>Crystallization</th>
                     <th class="pdb-th" colspan=2></th>
                     <th class="pub-th" colspan=2></th>
                 </tr>
                 <tr>
                     <th class="protein-th"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
                     <th class="protein-th">Name</th>
-                    <th class="protein-th">Protein</th>
+                    <th class="protein-th">Receptor</th>
                     <th class="protein-th">Family</th>
                     <th class="protein-th">Class</th>
                     <th class="protein-th">Species</th>
@@ -490,15 +492,6 @@
                     <th class='seq-th'>Deletions</th>
                     <th class="seq-th">Modifications</th>
                     <th class='seq-th'>Insertions</th>
-                    <th class="parts1-th">Method</th>
-                    <th class="parts1-th">Host cell</th>
-                    <th class="parts1-th">Host cell type</th>
-                    <th class="parts2-th">Solubilization</th>
-                    <th class="parts3-th">Purification</th>
-                    <th class="parts4-th">Method</th>
-                    <th class="parts4-th">Type</th>
-                    <th class="parts4-th">Additional</th>
-                    <th class="parts4-th">Components</th>
                     <th class="pdb-th">PDB</th>
                     <th class="pdb-th">Resolution</th>
                     <th class="pub-th">Reference</th>
@@ -519,47 +512,6 @@
                     <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.deletions }}"> {{ construct.deletions.count }}</a></td>
                     <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.modifications }}"> {{ construct.modifications.count }}</a></td>
                     <td class="text-center"><a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.insertions }}"> {{ construct.insertions.count }}</a></td>
-
-                        {% if construct.expression %}
-                    <td>{{ construct.expression.expression_method}}</td><td>{{ construct.expression.host_cell_type}}</td><td>{{ construct.expression.host_cell}}</td>
-                        {% else %}
-                    <td colspan=1> N/A</td>
-                    <td colspan=1> N/A</td>
-                    <td colspan=1> N/A</td>
-                        {% endif %}
-
-                    <td>
-                        {% if construct.solubilization %}
-                            <a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.solubilization }}"> {{ construct.solubilization.chemical_list.chemicals.count}} chemicals</a>
-                        {% else %}
-                            N/A
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        {% if construct.purification %}
-                            <a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.purification }}">  {{ construct.purification.steps.count}} steps</a>
-                        {% else %}
-                            N/A
-                        {% endif %}
-                    </td>
-
-                        {% if construct.crystallization %}
-                    <td>{{ construct.crystallization.crystal_method.name}}</td><td>{{ construct.crystallization.crystal_type.name}}</td><td>{{ construct.crystallization.crystal_type.sub_name}}</td>
-                        {% else %}
-                    <td colspan=1> N/A</td>
-                    <td colspan=1> N/A</td>
-                    <td colspan=1> N/A</td>
-                        {% endif %}
-
-                    <td>
-                        {% if construct.crystallization %}
-                            <a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.crystallization_chems }}"> {{ construct.crystallization.chemicals_total}} chems</a>
-                        {% else %}
-                            N/A
-                        {% endif %}
-                    </td>
-
                     <td class="text-center"><a href="{{ construct.crystal.pdb_code}}">{{ construct.crystal.pdb_code}}
                     </a></td>
                     <td class="text-center">{{ construct.crystal.resolution|floatformat:"1" }}</td>
@@ -576,7 +528,7 @@
                 {% endfor %}
             </tbody>
         </table>
-    </div><br>
+    </div>
 <div style='height:80vh;overflow-y: scroll;overflow-x: scroll;font-size: 10px;border-bottom: 1px solid #111;' id="wt_schematics_div">
         <div class='spacer'>
             <!-- <br>Size: <div class="slider" style='width:100px'></div> -->
@@ -587,7 +539,7 @@
                 <tr class='hidden2'>
                     <th class="protein-th"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
                     <th class="protein-th">Construct name</th>
-                    <th class="protein-th">Protein</th>
+                    <th class="protein-th">Receptor</th>
                     <th class="protein-th">N-term<br><input class="alt_seg" type="checkbox" id="align_N-term"></th>
                     <th class="protein-th">TM1<br><input class="alt_seg" type="checkbox" id="align_TM1"></th>
                     <th class="pdb-th">ICL1<br><input class="alt_seg" type="checkbox" id="align_ICL1"></th>
@@ -628,7 +580,7 @@
                 <tr class='hidden2'>
                     <th class="protein-th"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
                     <th class="protein-th">Construct name</th>
-                    <th class="protein-th">Protein</th>
+                    <th class="protein-th">Receptor</th>
                     <th class="protein-th">N-inserts<br><input class="alt_seg" type="checkbox" id="align_xx"></th>
                     <th class="protein-th">N-term<br><input class="alt_seg" type="checkbox" id="align_xx"></th>
                     <th class="protein-th">TM1<br><input class="alt_seg" type="checkbox" id="align_TM1"></th>
