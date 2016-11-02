@@ -26,13 +26,13 @@ body {
   <svg id="targetdistribution"></svg>
 </div>
 <br>
-<h2 align="center" style="font-family: open sans;position: relative; bottom:-50px;">Disease associations GPCRs</h2>
+<h2 align="center" style="font-family: open sans;position: relative; bottom:-50px;">Disease associations of GPCRs</h2>
 <div class="row" style="position: relative; left: 65%; bottom:-50px;">
   <div class="col-xs-12">
 <select onchange="updateBubbles(this.value)" multiple class="form-control input-lg" size="3">
   <option selected="selected" value="not_targeted">Not targeted</option>
   <option value="established">Established targets</option>
-  <option value="not_established">Not established targets</option>
+  <option value="not_established">Under investigation</option>
 </select>
   </div>
 </div>
@@ -107,8 +107,8 @@ body {
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 
 <script>
-var dataset =  [{text:"Established", value: 100},
-                {text:"Not established", value: 65},
+var dataset =  [{text:"Established", value: 101},
+                {text:"Under Investigation", value: 64},
                 {text:"Not targeted", value: 237}];
 // data.sort(function(a, b){return a-b});
 //data.sort(d3.descending());
@@ -284,13 +284,13 @@ updateBubbles('not_targeted')
 function updateBubbles(request) {
 
   if (request == 'not_targeted') {
-    dataframe = [['arthritis', 1.63, 20], ['Normosmic congenital hypogonadotropic hypogonadism', 2.0, 12], ['ulcerative colitis', 1.2, 22], ['Usher syndrome', 1.0, 31], ['Blue cone monochromatism', 2.0, 16], ['red-green color blindness', 2.0, 15], ['Progressive cone dystrophy', 2.0, 13], ['chronic inflammatory demyelinating polyradiculoneuropathy', 2.8, 9], ['asthma', 1.0, 26], ['Li-Fraumeni syndrome', 1.11, 23], ['Lethal congenital contracture syndrome', 1.0, 24], ['age-related macular degeneration', 1.0, 30], ['red color blindness', 1.0, 32], ['relapsing-remitting multiple sclerosis', 4.0, 3], ['inflammatory bowel disease', 3.72, 6], ['heart failure', 1.87, 19], ['Retinal dystrophy', 3.0, 8], ['chronic progressive multiple sclerosis', 3.58, 7], ['autoimmune disease', 4.9, 0], ['Bilateral polymicrogyria', 1.0, 29], ['exudative vitreoretinopathy', 1.0, 34], ['Cone rod dystrophy', 1.0, 33], ['Congenital stationary night blindness', 2.0, 14], ['Retinitis pigmentosa', 1.0, 27], ['ciliopathy', 1.0, 28], ['rheumatoid arthritis', 1.63, 21], ['multiple sclerosis', 4.0, 4], ['Kallmann syndrome', 2.0, 18]];
+    dataframe = [['autoimmune disease', 4.9, 0], ['relapsing-remitting multiple sclerosis', 4.0, 3], ['multiple sclerosis', 4.0, 4], ['inflammatory bowel disease', 3.72, 6], ['chronic progressive multiple sclerosis', 3.58, 7], ['Retinal dystrophy', 3.0, 8], ['chronic inflammatory demyelinating polyradiculoneuropathy', 2.8, 9], ['Normosmic congenital hypogonadotropic hypogonadism', 2.0, 12], ['Blue cone monochromatism', 2.0, 16], ['red-green color blindness', 2.0, 15], ['Progressive cone dystrophy', 2.0, 13], ['Congenital stationary night blindness', 2.0, 14], ['Kallmann syndrome', 2.0, 18], ['heart failure', 1.87, 19], ['arthritis', 1.63, 20], ['rheumatoid arthritis', 1.63, 21], ['ulcerative colitis', 1.2, 22], ['Li-Fraumeni syndrome', 1.11, 23], ['Usher syndrome', 1.0, 31], ['asthma', 1.0, 26], ['Lethal congenital contracture syndrome', 1.0, 24], ['age-related macular degeneration', 1.0, 30], ['red color blindness', 1.0, 32], ['Bilateral polymicrogyria', 1.0, 29], ['exudative vitreoretinopathy', 1.0, 34], ['Cone rod dystrophy', 1.0, 33], ['Retinitis pigmentosa', 1.0, 27], ['ciliopathy', 1.0, 28]];
   }
   else if (request == 'not_established') {
     dataframe = [['asthma', 1.96, 10], ['Familial melanoma', 1.0, 30], ['Genetic obesity', 1.0, 23], ['body mass index', 1.55, 15], ['autoimmune disease', 2.42, 4], ['Congenital hypogonadotropic hypogonadism', 1.0, 34], ['obesity', 2.79, 13], ['Congenital stationary night blindness', 1.0, 26], ['schizophrenia', 1.94, 12], ['Autosomal recessive cerebellar ataxia', 1.0, 24], ['Normosmic congenital hypogonadotropic hypogonadism', 1.0, 21], ['Autosomal recessive congenital cerebellar ataxia',  1.0,  20], ['breast carcinoma', 1.29, 18], ['typeI diabetes mellitus', 1.52, 17], ['Woolly hair', 1.0, 28], ['diabetes mellitus', 1.52, 16], ['inflammatory bowel disease', 1.99, 8], ['mental or behavioural disorder', 1.95, 11], ['Growth hormone excess', 1.0, 19], ['Retinal dystrophy', 1.0, 29], ["Crohn's disease", 1.0, 33], ['body height', 1.98, 9], ['liver disease', 1.0, 32], ['sexual dysfunction', 2.7, 3]];
   }
   else if (request == 'established') {
-    dataframe = [['asthma', 16.0, 14], ['obstructive lung disease', 16.0, 13], ['heart disease', 12.67, 24], ['post-operative sign or symptom', 11.63, 31], ['obesity', 12.73, 23], ['insomnia', 11.33, 32], ['hypertension', 19.7, 7], ['alcohol dependence', 14.37, 18], ['Nasal obstruction', 11.0, 34], ['attention deficit hyperactivity disorder', 14.0, 20], ['drug dependence', 12.37, 26], ['cirrhosis of liver', 13.08, 22], ['kidney disease', 14.02, 19], ['pain', 18.99, 8], ['mental or behavioural disorder', 20.84, 6], ['glaucoma', 12.0, 29], ['unipolar depression', 18.82, 9], ['diabetes mellitus', 27.2, 2], ['heart failure', 17.15, 11], ['allergic rhinitis', 12.0, 28], ['post-traumatic stress disorder', 15.0, 17], ['atrial fibrillation', 12.27, 27], ['coronary artery disease', 11.7, 30], ['liver disease', 15.4, 16], ['typeII diabetes mellitus', 13.17, 21], ['hemorrhage', 17.97, 10], ["Parkinson's disease", 25.97, 4], ['septic shock', 11.31, 33], ['migraine disorder', 21.52, 5], ['pregnancy', 15.7, 15]];
+    dataframe = [['diabetes mellitus', 27.2, 2], ["Parkinson's disease", 25.97, 4], ['migraine disorder', 21.52, 5], ['mental or behavioural disorder', 20.84, 6], ['hypertension', 19.7, 7], ['pain', 18.99, 8], ['unipolar depression', 18.82, 9], ['hemorrhage', 17.97, 10], ['heart failure', 17.15, 11], ['asthma', 16.0, 14], ['obstructive lung disease', 16.0, 13], ['pregnancy', 15.7, 15], ['liver disease', 15.4, 16], ['post-traumatic stress disorder', 15.0, 17], ['alcohol dependence', 14.37, 18], ['kidney disease', 14.02, 19], ['attention deficit hyperactivity disorder', 14.0, 20], ['typeII diabetes mellitus', 13.17, 21], ['cirrhosis of liver', 13.08, 22], ['obesity', 12.73, 23], ['heart disease', 12.67, 24], ['drug dependence', 12.37, 26], ['atrial fibrillation', 12.27, 27], ['glaucoma', 12.0, 29], ['allergic rhinitis', 12.0, 28], ['coronary artery disease', 11.7, 30], ['post-operative sign or symptom', 11.63, 31], ['insomnia', 11.33, 32], ['septic shock', 11.31, 33], ['Nasal obstruction', 11.0, 34]];
   }
   else {
     dataframe = []

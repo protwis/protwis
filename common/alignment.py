@@ -244,7 +244,6 @@ class Alignment:
                     'protein_conformation__state', 'protein_segment', 'generic_number__scheme',
                     'display_generic_number__scheme')
 
-        print(len(rs))
         self.number_of_residues_total = len(rs)
         if len(rs)>120000: #300 receptors, 400 residues limit
             return "Too large"
@@ -441,6 +440,8 @@ class Alignment:
 
                         # add display number to list of display numbers for this position
                         if r.display_generic_number:
+                            if pos not in self.generic_numbers[ns_slug][segment]:
+                                self.generic_numbers[ns_slug][segment][pos] = []
                             if r.display_generic_number.label not in self.generic_numbers[ns_slug][segment][pos]:
                                 self.generic_numbers[ns_slug][segment][pos].append(r.display_generic_number.label)
                         else:
