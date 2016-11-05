@@ -104,6 +104,17 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                 </ul>
             </div>
         </div>
+      Consensus analysis:<br>
+        <div class="btn-group-vertical btn-block">
+            <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle pull-right btn-block" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                   Xtal conservation in class <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" id='cons_strucs'>
+                <li>Loading...</li>
+                </ul>
+            </div>
+        </div>
 
   </div>
   <div class="col-sm-7">
@@ -675,6 +686,16 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           });
           result = items.join( "" );
           $("#palmi").html(result);
+        });
+
+        $.getJSON( "/construct/tool/json/cons_strucs/{{target.entry_name}}/", function( data ) {
+          var items = [];
+          $.each( data, function( gn, val ) {
+            temp = "<li id='"+gn+"' class=\"dropdown-submenu\"><a class='origin'>"+gn+" ("+val[0]+val[1]+val[2]+") ("+val[3]+"0% cons)</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' > Mutate "+val[0]+val[1]+val[2]+"</a></li></ul></li>";
+            items.push( temp );
+          });
+          result = items.join( "" );
+          $("#cons_strucs").html(result);
         });
 
       $.getJSON( "/construct/tool/json/termo/{{target.entry_name}}/", function( data ) {

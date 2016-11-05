@@ -25,5 +25,6 @@ urlpatterns = [
     url(r'^tool/json/mutations/(?P<slug>[-\w]+)/$', views.mutations, name='mutations'),
     url(r'^tool/json/fusion/(?P<slug>[-\w]+)/$', views.json_fusion, name='fusion'),
     url(r'^tool/json/termo/(?P<slug>[-\w]+)/$', views.thermostabilising, name='termo'),
+    url(r'^tool/json/cons_strucs/(?P<slug>[-\w]+)/$', views.cons_strucs, name='cons_strucs'),
     url(r'^(?P<slug>[-\w]+)/$', views.detail, name='detail'),
 ]
