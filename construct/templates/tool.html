@@ -41,7 +41,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
   <div class="col-sm-3">
 
 
-    Data-driven:<br>
+    Truncation suggestions:<br>
         <div class="btn-group-vertical btn-block">
             <div class="btn-group">
                 <button type="button" class="btn btn-default dropdown-toggle pull-right btn-block" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -111,6 +111,30 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                    Xtal conservation in class <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu" role="menu" id='cons_strucs'>
+                <li>Loading...</li>
+                </ul>
+            </div>
+             <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle pull-right btn-block" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                   Cons. in Receptor Family <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" id='cons_rf'>
+                <li>Loading...</li>
+                </ul>
+            </div>
+             <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle pull-right btn-block" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                   Cons. in Receptor Family&Class <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" id='cons_rf_and_class'>
+                <li>Loading...</li>
+                </ul>
+            </div>
+             <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle pull-right btn-block" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                   Remove G/P to cons. in RF <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" id='cons_rm_GP'>
                 <li>Loading...</li>
                 </ul>
             </div>
@@ -192,10 +216,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
         $.each( val['sortedkeys'], function( i, pos ) {
           val2 = show_nterm[key][pos];
-          temp += "<li id='" + pos + "' class=\"dropdown-submenu\"><a href='#'>" + pos + " ("+val2['hits']+")</a><ul class=\"dropdown-menu\">";
+          temp += "<li id='" + pos + "' class=\"dropdown-submenu\"><a href='#'>" + pos + " pos from 1x50 ("+val2['hits']+")</a><ul class=\"dropdown-menu\">";
           $.each( val2['proteins'], function( i, protein ) {
                pdb = val2['pdbs'][i];
-              temp += "<li id='"+pdb+"'><a href='#' onclick='nterm_tm1(this)' value='"+pos+"' from='"+pdb+"'>"+protein+" ("+pdb+") "+pos+" pos from 1.50</a></li>";
+              temp += "<li id='"+pdb+"'><a href='#' onclick='nterm_tm1(this)' value='"+pos+"' from='"+pdb+"'>"+protein+" ("+pdb+") "+pos+" pos from 1x50</a></li>";
           });
           temp += "</ul></li>";
         });
@@ -239,10 +263,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
         $.each( val['sortedkeys'], function( i, pos ) {
           val2 = show_cterm[key][pos];
-          temp += "<li id='" + pos + "' class=\"dropdown-submenu\"><a href='#'>" + pos + " ("+val2['hits']+")</a><ul class=\"dropdown-menu\">";
+          temp += "<li id='" + pos + "' class=\"dropdown-submenu\"><a href='#'>" + pos + " pos from 8x50 ("+val2['hits']+")</a><ul class=\"dropdown-menu\">";
            $.each( val2['proteins'], function( i, protein ) {
                pdb = val2['pdbs'][i];
-              temp += "<li id='"+pdb+"'><a href='#' onclick='cterm(this)' value='"+pos+"' from='"+pdb+"'>"+protein+" ("+pdb+") "+pos+" pos from 8.50</a></li>";
+              temp += "<li id='"+pdb+"'><a href='#' onclick='cterm(this)' value='"+pos+"' from='"+pdb+"'>"+protein+" ("+pdb+") "+pos+" pos from 8x50</a></li>";
           });
           temp += "</ul></li>";
         });
@@ -283,7 +307,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           show_icl3[level]['sortedkeys'] = getSortedKeys(show_icl3[level]);
         }
       }) 
-      console.log(show_icl3);
 
       var items = [];
       $.each( show_icl3, function( key, val ) {
@@ -696,6 +719,39 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           });
           result = items.join( "" );
           $("#cons_strucs").html(result);
+        });
+
+        $.getJSON( "/construct/tool/json/cons_rf/{{target.entry_name}}/", function( data ) {
+          var items = [];
+          $.each( data, function( gn, val ) {
+            temp = "<li id='"+gn+"' class=\"dropdown-submenu\"><a class='origin'>"+gn+" ("+val[0]+val[1]+val[2]+") ("+val[3]+"0% cons)</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' > Mutate "+val[0]+val[1]+val[2]+"</a></li></ul></li>";
+            items.push( temp );
+          });
+          result = items.join( "" );
+          $("#cons_rf").html(result);
+        });
+
+        $.getJSON( "/construct/tool/json/cons_rf_and_class/{{target.entry_name}}/", function( data ) {
+          var items = [];
+          $.each( data, function( gn, val ) {
+            temp = "<li id='"+gn+"' class=\"dropdown-submenu\"><a class='origin'>"+gn+" ("+val[0]+val[1]+val[2]+") ("+val[3]+"0% cons)</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' > Mutate "+val[0]+val[1]+val[2]+"</a></li></ul></li>";
+            items.push( temp );
+          });
+          result = items.join( "" );
+          $("#cons_rf_and_class").html(result);
+        });
+
+
+        
+
+        $.getJSON( "/construct/tool/json/cons_rm_GP/{{target.entry_name}}/", function( data ) {
+          var items = [];
+          $.each( data, function( gn, val ) {
+            temp = "<li id='"+gn+"' class=\"dropdown-submenu\"><a class='origin'>"+gn+" ("+val[0]+val[1]+val[2]+") ("+val[3]+"0% cons)</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' > Mutate "+val[0]+val[1]+val[2]+"</a></li></ul></li>";
+            items.push( temp );
+          });
+          result = items.join( "" );
+          $("#cons_rm_GP").html(result);
         });
 
       $.getJSON( "/construct/tool/json/termo/{{target.entry_name}}/", function( data ) {
