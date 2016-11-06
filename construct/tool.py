@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.db.models import Min, Count, Max
 from django.conf import settings
+from django.views.decorators.cache import cache_page
 
 from construct.models import *
 from protein.models import ProteinConformation, Protein, ProteinSegment
@@ -103,6 +104,7 @@ def tool(request):
 
     return render(request,'tool.html',context)
 
+@cache_page(60 * 60 * 24)
 def json_fusion(request, slug, **response_kwargs):
 
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
@@ -114,7 +116,7 @@ def json_fusion(request, slug, **response_kwargs):
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
 
-
+@cache_page(60 * 60 * 24)
 def json_palmi(request, slug, **response_kwargs):
 
 
@@ -151,7 +153,7 @@ def json_palmi(request, slug, **response_kwargs):
     return HttpResponse(jsondata, **response_kwargs)
 
 
-
+@cache_page(60 * 60 * 24)
 def json_glyco(request, slug, **response_kwargs):
 
 
@@ -201,7 +203,7 @@ def json_glyco(request, slug, **response_kwargs):
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
 
-
+@cache_page(60 * 60 * 24)
 def json_icl3(request, slug, **response_kwargs):
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
 
@@ -264,6 +266,7 @@ def json_icl3(request, slug, **response_kwargs):
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
 
+@cache_page(60 * 60 * 24)
 def json_nterm(request, slug, **response_kwargs):
 
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
@@ -303,6 +306,7 @@ def json_nterm(request, slug, **response_kwargs):
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
 
+@cache_page(60 * 60 * 24)
 def json_cterm(request, slug, **response_kwargs):
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
 
@@ -345,6 +349,7 @@ def json_cterm(request, slug, **response_kwargs):
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
 
+@cache_page(60 * 60 * 24)
 def thermostabilising(request, slug, **response_kwargs):
 
 
@@ -448,7 +453,7 @@ def thermostabilising(request, slug, **response_kwargs):
     return HttpResponse(jsondata, **response_kwargs)
 
 
-
+@cache_page(60 * 60 * 24)
 def mutations(request, slug, **response_kwargs):
 
     ##PREPARE TM1 LOOKUP DATA
@@ -537,7 +542,7 @@ def mutations(request, slug, **response_kwargs):
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
 
-
+@cache_page(60 * 60 * 24)
 def cons_strucs(request, slug, **response_kwargs):
 
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
@@ -550,12 +555,79 @@ def cons_strucs(request, slug, **response_kwargs):
     amino_acids_stats = {}
     amino_acids_groups_stats = {}
         
+    potentials = cache.get("CD_xtal_"+level.split("_")[0])
 
-    print(len(xtal_proteins))
+    if potentials==None:
+        print(len(xtal_proteins))
+
+        a = Alignment()
+
+        a.load_proteins(xtal_proteins)
+
+        a.load_segments(align_segments) #get all segments to make correct diagrams
+
+        # build the alignment data matrix
+        a.build_alignment()
+
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
+
+        s_id = 0
+        a_id = 0
+        for ns, segments in a.generic_numbers.items():
+            for s, num in segments.items():
+                for n, dn in num.items():
+                    temp = []
+                    temp2 = []
+                    for i, aa in enumerate(AMINO_ACIDS):
+                        temp.append(a.amino_acid_stats[i][s_id][a_id])
+
+                    for i, aa in enumerate(AMINO_ACID_GROUPS):
+                        temp2.append(a.feature_stats[i][s_id][a_id])
+                    amino_acids_stats[n] = temp
+                    amino_acids_groups_stats[n] = temp2
+                a_id += 1
+            s_id += 1
+
+        potentials = {}
+        for seg, aa_list in a.consensus.items():
+            for gn, aa in aa_list.items():
+                if int(aa[1])>5: #if conservations is >50%
+                    potentials[gn] = [aa[0],aa[1]]
+        cache.set("CD_xtal_"+level.split("_")[0],potentials,60*60*24)
+
+
+    rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug, generic_number__label__in=list(potentials.keys())).prefetch_related('protein_segment','display_generic_number','generic_number')
+
+    results = {}
+    for r in rs:
+        gn = r.generic_number.label
+        if r.amino_acid!=potentials[gn][0]:
+            results[gn] = [r.amino_acid, r.sequence_number,potentials[gn][0],potentials[gn][1]]
+    jsondata = json.dumps(results)
+    response_kwargs['content_type'] = 'application/json'
+    return HttpResponse(jsondata, **response_kwargs)
+
+@cache_page(60 * 60 * 24)
+def cons_rf(request, slug, **response_kwargs):
+
+    level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
+    print(level)
+    print("_".join(level.split("_")[0:3]))
+    ##PREPARE TM1 LOOKUP DATA
+    #c_proteins = Construct.objects.filter(protein__family__slug__startswith = level.split("_")[0]).all().values_list('protein__pk', flat = True).distinct()
+    rf_proteins = Protein.objects.filter(family__slug__startswith="_".join(level.split("_")[0:3]), source__name='SWISSPROT',species__common_name='Human')
+    align_segments = ProteinSegment.objects.all().filter(slug__in = list(settings.REFERENCE_POSITIONS.keys())).prefetch_related()
+
+    amino_acids_stats = {}
+    amino_acids_groups_stats = {}
+        
+
+    print(len(rf_proteins))
 
     a = Alignment()
 
-    a.load_proteins(xtal_proteins)
+    a.load_proteins(rf_proteins)
 
     a.load_segments(align_segments) #get all segments to make correct diagrams
 
@@ -596,6 +668,184 @@ def cons_strucs(request, slug, **response_kwargs):
         gn = r.generic_number.label
         if r.amino_acid!=potentials[gn][0]:
             results[gn] = [r.amino_acid, r.sequence_number,potentials[gn][0],potentials[gn][1]]
+    jsondata = json.dumps(results)
+    response_kwargs['content_type'] = 'application/json'
+    return HttpResponse(jsondata, **response_kwargs)
+
+@cache_page(60 * 60 * 24)
+def cons_rf_and_class(request, slug, **response_kwargs):
+
+    level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
+    print(level)
+    print("_".join(level.split("_")[0:3]))
+    ##PREPARE TM1 LOOKUP DATA
+    #c_proteins = Construct.objects.filter(protein__family__slug__startswith = level.split("_")[0]).all().values_list('protein__pk', flat = True).distinct()
+    rf_proteins = Protein.objects.filter(family__slug__startswith="_".join(level.split("_")[0:3]), source__name='SWISSPROT',species__common_name='Human')
+    align_segments = ProteinSegment.objects.all().filter(slug__in = list(settings.REFERENCE_POSITIONS.keys())).prefetch_related()
+
+    amino_acids_stats = {}
+    amino_acids_groups_stats = {}
+        
+    print(len(rf_proteins))
+
+    a = Alignment()
+
+    a.load_proteins(rf_proteins)
+
+    a.load_segments(align_segments) #get all segments to make correct diagrams
+
+    # build the alignment data matrix
+    a.build_alignment()
+
+    # calculate consensus sequence + amino acid and feature frequency
+    a.calculate_statistics()
+
+    s_id = 0
+    a_id = 0
+    for ns, segments in a.generic_numbers.items():
+        for s, num in segments.items():
+            for n, dn in num.items():
+                temp = []
+                temp2 = []
+                for i, aa in enumerate(AMINO_ACIDS):
+                    temp.append(a.amino_acid_stats[i][s_id][a_id])
+
+                for i, aa in enumerate(AMINO_ACID_GROUPS):
+                    temp2.append(a.feature_stats[i][s_id][a_id])
+                amino_acids_stats[n] = temp
+                amino_acids_groups_stats[n] = temp2
+            a_id += 1
+        s_id += 1
+
+    potentials = {}
+    for seg, aa_list in a.consensus.items():
+        for gn, aa in aa_list.items():
+            if int(aa[1])>5: #if conservations is >50%
+                potentials[gn] = [aa[0],aa[1]]
+
+    potentials2 = cache.get("CD_rfc_"+"_".join(level.split("_")[0:1]))
+
+    if potentials2==None:
+        class_proteins = Protein.objects.filter(family__slug__startswith="_".join(level.split("_")[0:1]), source__name='SWISSPROT',species__common_name='Human')
+        align_segments = ProteinSegment.objects.all().filter(slug__in = list(settings.REFERENCE_POSITIONS.keys())).prefetch_related()
+
+        amino_acids_stats = {}
+        amino_acids_groups_stats = {}
+            
+        print(len(class_proteins))
+
+        a = Alignment()
+
+        a.load_proteins(class_proteins)
+
+        a.load_segments(align_segments) #get all segments to make correct diagrams
+
+        # build the alignment data matrix
+        a.build_alignment()
+
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
+
+        s_id = 0
+        a_id = 0
+        for ns, segments in a.generic_numbers.items():
+            for s, num in segments.items():
+                for n, dn in num.items():
+                    temp = []
+                    temp2 = []
+                    for i, aa in enumerate(AMINO_ACIDS):
+                        temp.append(a.amino_acid_stats[i][s_id][a_id])
+
+                    for i, aa in enumerate(AMINO_ACID_GROUPS):
+                        temp2.append(a.feature_stats[i][s_id][a_id])
+                    amino_acids_stats[n] = temp
+                    amino_acids_groups_stats[n] = temp2
+                a_id += 1
+            s_id += 1
+
+        potentials2 = {}
+        for seg, aa_list in a.consensus.items():
+            for gn, aa in aa_list.items():
+                if int(aa[1])>5: #if conservations is >50%
+                    potentials2[gn] = [aa[0],aa[1]]
+        cache.set("CD_rfc_"+"_".join(level.split("_")[0:1]),potentials2,60*60*24)
+
+
+    rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug, generic_number__label__in=list(potentials.keys())).prefetch_related('protein_segment','display_generic_number','generic_number')
+
+    results = {}
+    for r in rs:
+        gn = r.generic_number.label
+        if r.amino_acid!=potentials[gn][0]:
+            if gn in potentials2:
+                print(gn,r.amino_acid,potentials[gn],potentials2[gn])
+                results[gn] = [r.amino_acid, r.sequence_number,potentials[gn][0],potentials[gn][1]]
+    jsondata = json.dumps(results)
+    response_kwargs['content_type'] = 'application/json'
+    return HttpResponse(jsondata, **response_kwargs)
+
+@cache_page(60 * 60 * 24)
+def cons_rm_GP(request, slug, **response_kwargs):
+
+    level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
+    print(level)
+    print("_".join(level.split("_")[0:3]))
+    ##PREPARE TM1 LOOKUP DATA
+    #c_proteins = Construct.objects.filter(protein__family__slug__startswith = level.split("_")[0]).all().values_list('protein__pk', flat = True).distinct()
+    rf_proteins = Protein.objects.filter(family__slug__startswith="_".join(level.split("_")[0:3]), source__name='SWISSPROT',species__common_name='Human')
+    align_segments = ProteinSegment.objects.all().filter(slug__in = list(settings.REFERENCE_POSITIONS.keys())).prefetch_related()
+
+    amino_acids_stats = {}
+    amino_acids_groups_stats = {}
+        
+
+    print(len(rf_proteins))
+
+    a = Alignment()
+
+    a.load_proteins(rf_proteins)
+
+    a.load_segments(align_segments) #get all segments to make correct diagrams
+
+    # build the alignment data matrix
+    a.build_alignment()
+
+    # calculate consensus sequence + amino acid and feature frequency
+    a.calculate_statistics()
+
+    s_id = 0
+    a_id = 0
+    for ns, segments in a.generic_numbers.items():
+        for s, num in segments.items():
+            for n, dn in num.items():
+                temp = []
+                temp2 = []
+                for i, aa in enumerate(AMINO_ACIDS):
+                    temp.append(a.amino_acid_stats[i][s_id][a_id])
+
+                for i, aa in enumerate(AMINO_ACID_GROUPS):
+                    temp2.append(a.feature_stats[i][s_id][a_id])
+                amino_acids_stats[n] = temp
+                amino_acids_groups_stats[n] = temp2
+            a_id += 1
+        s_id += 1
+
+    potentials = {}
+    for seg, aa_list in a.consensus.items():
+        for gn, aa in aa_list.items():
+            if int(aa[1])>5: #if conservations is >50%
+                potentials[gn] = [aa[0],aa[1]]
+
+
+    rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug, generic_number__label__in=list(potentials.keys())).prefetch_related('protein_segment','display_generic_number','generic_number')
+
+    results = {}
+    for r in rs:
+        gn = r.generic_number.label
+        if r.amino_acid in ['G','P']:
+            print(gn,potentials[gn][1],potentials[gn][0])
+            if r.amino_acid!=potentials[gn][0]:
+                results[gn] = [r.amino_acid, r.sequence_number,potentials[gn][0],potentials[gn][1]]
     jsondata = json.dumps(results)
     response_kwargs['content_type'] = 'application/json'
     return HttpResponse(jsondata, **response_kwargs)
