@@ -2773,7 +2773,7 @@ class Loops(object):
         ref_residues = list(Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
                                                    protein_segment__slug='ECL2'))
         # correct for 1 res longer template
-        if len(ref_residues)<self.main_pdb_array['ECL2']:
+        if len(ref_residues)<len(self.main_pdb_array['ECL2']):
             ref_x50_i = ref_residues.index([i for i in ref_residues if i.generic_number!=None and ggn(i.display_generic_number.label)=='45x50'][0])
             if loop_output_structure[0]==self.main_structure:
                 dif = len(list(self.main_pdb_array['ECL2'].keys())[:x50_i])-len(ref_residues[:ref_x50_i])
