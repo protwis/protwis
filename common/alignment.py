@@ -245,7 +245,6 @@ class Alignment:
                     'protein_conformation__state', 'protein_segment', 'generic_number__scheme',
                     'display_generic_number__scheme')
 
-        print(len(rs))
         self.number_of_residues_total = len(rs)
         if len(rs)>120000: #300 receptors, 400 residues limit
             return "Too large"
@@ -442,6 +441,8 @@ class Alignment:
 
                         # add display number to list of display numbers for this position
                         if r.display_generic_number:
+                            if pos not in self.generic_numbers[ns_slug][segment]:
+                                self.generic_numbers[ns_slug][segment][pos] = []
                             if r.display_generic_number.label not in self.generic_numbers[ns_slug][segment][pos]:
                                 self.generic_numbers[ns_slug][segment][pos].append(r.display_generic_number.label)
                         else:
@@ -624,7 +625,8 @@ class Alignment:
         for i, s in most_freq_aa.items():
             self.consensus[i] = OrderedDict()
             self.forced_consensus[i] = OrderedDict()
-            for p, r in s.items():
+            for p in sorted(s):
+                r = s[p]
                 conservation = str(round(r[1]/num_proteins*100))
                 if len(conservation) == 1:
                     cons_interval = '0'
@@ -666,7 +668,8 @@ class Alignment:
             for segment, segment_num in self.aa_count.items():
                 self.amino_acid_stats[i].append([])
                 k = 0
-                for gn, aas in segment_num.items():
+                for gn in sorted(segment_num):
+                    aas = segment_num[gn]
                     self.amino_acid_stats[i][j].append([])
                     for aa, freq in aas.items():
                         if aa == amino_acid:
@@ -687,7 +690,8 @@ class Alignment:
             for segment, segment_num in feature_count.items():
                 self.feature_stats[i].append([])
                 k = 0
-                for gn, fs in segment_num.items():
+                for gn in sorted(segment_num):
+                    fs = segment_num[gn]
                     self.feature_stats[i][j].append([])
                     for f, freq in fs.items():
                         if f == feature:

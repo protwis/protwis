@@ -50,28 +50,31 @@ class Alignment(GenericAlignment):
         if not generic_number:
             return ""
 
-        split_gn = generic_number.split("x")
-        split_gn_helix = split_gn[0].split('.')
-        helix_num = split_gn_helix[0]
-        seq_num = split_gn_helix[1]
-        str_num = split_gn[1]
+        if len(generic_number.split('.'))>2:
+            formatted_gn = generic_number
+        else:
+            split_gn = generic_number.split("x")
+            split_gn_helix = split_gn[0].split('.')
+            helix_num = split_gn_helix[0]
+            seq_num = split_gn_helix[1]
+            str_num = split_gn[1]
 
-        # is's ugly to have HTML here, but adding it in the template would awkward
+            # is's ugly to have HTML here, but adding it in the template would awkward
 
-        # helix number
-        formatted_gn = '<b>{:s}</b><br />'.format(helix_num)
-        
-        # sequence-based number
-        seq_class = 'ali-td-generic-num-normal'
-        # smaller font size if there are more than one sequence-based numbers
-        if len(seq_num) > 2:
-            seq_class = 'ali-td-generic-num-tiny'
-        # color number red if it differs from the structure-based number
-        if seq_num != str_num:
-            seq_class += ' ali-td-generic-num-red'
-        formatted_gn += '<span class="{:s}">.{:s}<br /></span>'.format(seq_class, seq_num)
-        
-        # structure-based number
-        formatted_gn += 'x{:s}'.format(str_num)
+            # helix number
+            formatted_gn = '<b>{:s}</b><br />'.format(helix_num)
+            
+            # sequence-based number
+            seq_class = 'ali-td-generic-num-normal'
+            # smaller font size if there are more than one sequence-based numbers
+            if len(seq_num) > 2:
+                seq_class = 'ali-td-generic-num-tiny'
+            # color number red if it differs from the structure-based number
+            if seq_num != str_num:
+                seq_class += ' ali-td-generic-num-red'
+            formatted_gn += '<span class="{:s}">.{:s}<br /></span>'.format(seq_class, seq_num)
+            
+            # structure-based number
+            formatted_gn += 'x{:s}'.format(str_num)
         
         return formatted_gn

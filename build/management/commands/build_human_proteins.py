@@ -5,12 +5,17 @@ from django.db import IntegrityError
 
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
-        ProteinSequenceType, Species, Gene, ProteinSource)
+        ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
+
 from residue.models import ResidueNumberingScheme
 
 import shlex
 import os
 from urllib.request import urlopen
+
+import pandas as pd
+import numpy  as np
+import math
 
 
 class Command(BaseBuild):
@@ -39,6 +44,7 @@ class Command(BaseBuild):
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
+
 
     def create_parent_protein_family(self):
         pf = ProteinFamily.objects.get_or_create(slug='000', defaults={
@@ -297,6 +303,7 @@ class Command(BaseBuild):
         up = {}
         up['genes'] = []
         up['names'] = []
+
         read_sequence = False
         remote = False
 

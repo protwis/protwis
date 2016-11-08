@@ -83,6 +83,34 @@ function SelectFullSequence(selection_type) {
     });
 }
 
+function SelectFullSequenceGprotein(selection_type) {
+    $.ajax({
+        'url': '/common/selectfullsequence',
+        'data': {
+            selection_type: selection_type,
+            protein_type: 'gprotein'
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}
+
+function SelectStructuredGprotein(selection_type) {
+    $.ajax({
+        'url': '/common/selectalignablesegments',
+        'data': {
+            selection_type: selection_type,
+            protein_type: 'gprotein'
+        },
+        'type': 'GET',
+        'success': function(data) {
+            $("#selection-" + selection_type).html(data);
+        },
+    });
+}
+
 function SelectAlignableSegments(selection_type) {
     $.ajax({
         'url': '/common/selectalignablesegments',

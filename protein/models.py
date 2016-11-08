@@ -1,5 +1,6 @@
 ﻿from django.db import models
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
+from common.diagrams_gprotein import DrawGproteinPlot
 from residue.models import Residue
 
 class Protein(models.Model):
@@ -40,6 +41,14 @@ class Protein(models.Model):
     def get_snake_plot(self):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         return DrawSnakePlot(residuelist,self.get_protein_class(),str(self))
+
+    def get_snake_plot_no_buttons(self):
+        residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
+        return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), nobuttons=1)
+
+    def get_gprotein_plot(self):
+        residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
+        return DrawGproteinPlot(residuelist,self.get_protein_class(),str(self))
 
     def get_protein_family(self):
         tmp = self.family
@@ -267,7 +276,7 @@ class ProteinConformationTemplateStructure(models.Model):
 class ProteinGProtein(models.Model):
     proteins = models.ManyToManyField('Protein', through='ProteinGProteinPair')
     name = models.CharField(max_length=100, unique=True)
-    sequence = models.TextField(null=True)
+    slug = models.SlugField(max_length=20, unique=True)
 
     def __str__(self):
         return self.name
