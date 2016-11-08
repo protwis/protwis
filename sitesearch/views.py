@@ -48,6 +48,8 @@ class SegmentSelection(AbsSegmentSelection):
         ('targets', True),
         ('segments', True),
     ])
+    
+    rsets = False
     buttons = {
         'continue': {
             'label': 'Show site',
@@ -92,6 +94,7 @@ class StructureUpload(AbsSegmentSelection):
     docs = 'sites.html#site-search-from-pdb-complex'
     segment_list = False
     structure_upload = True
+    rsets = False
 
     selection_boxes = OrderedDict([
         ('reference', False),

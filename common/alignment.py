@@ -245,7 +245,6 @@ class Alignment:
                     'protein_conformation__state', 'protein_segment', 'generic_number__scheme',
                     'display_generic_number__scheme')
 
-        print(len(rs))
         self.number_of_residues_total = len(rs)
         if len(rs)>120000: #300 receptors, 400 residues limit
             return "Too large"
@@ -442,6 +441,8 @@ class Alignment:
 
                         # add display number to list of display numbers for this position
                         if r.display_generic_number:
+                            if pos not in self.generic_numbers[ns_slug][segment]:
+                                self.generic_numbers[ns_slug][segment][pos] = []
                             if r.display_generic_number.label not in self.generic_numbers[ns_slug][segment][pos]:
                                 self.generic_numbers[ns_slug][segment][pos].append(r.display_generic_number.label)
                         else:
@@ -624,7 +625,8 @@ class Alignment:
         for i, s in most_freq_aa.items():
             self.consensus[i] = OrderedDict()
             self.forced_consensus[i] = OrderedDict()
-            for p, r in s.items():
+            for p in sorted(s):
+                r = s[p]
                 conservation = str(round(r[1]/num_proteins*100))
                 if len(conservation) == 1:
                     cons_interval = '0'
@@ -666,7 +668,8 @@ class Alignment:
             for segment, segment_num in self.aa_count.items():
                 self.amino_acid_stats[i].append([])
                 k = 0
-                for gn, aas in segment_num.items():
+                for gn in sorted(segment_num):
+                    aas = segment_num[gn]
                     self.amino_acid_stats[i][j].append([])
                     for aa, freq in aas.items():
                         if aa == amino_acid:
@@ -687,7 +690,8 @@ class Alignment:
             for segment, segment_num in feature_count.items():
                 self.feature_stats[i].append([])
                 k = 0
-                for gn, fs in segment_num.items():
+                for gn in sorted(segment_num):
+                    fs = segment_num[gn]
                     self.feature_stats[i][j].append([])
                     for f, freq in fs.items():
                         if f == feature:
@@ -1058,11 +1062,11 @@ class AlignedReferenceTemplate(Alignment):
                             temp_list2.append((struct, len(main_temp_ECL2[2]), similarity, float(struct.resolution),protein))
 
                         # Allow for partial main loop template
-                        if len(ref_ECL2[0])>=len(main_parent_ECL2[0]) and [i.sequence_number for i in main_temp_ECL2[0]]!=[i.sequence_number for i in main_parent_ECL2[0]]:
-                            if len(main_parent_ECL2[0])-len(main_temp_ECL2[0])<4:
+                        if len(main_parent_ECL2[0])-1<=len(ref_ECL2[0])<=len(main_parent_ECL2[0])+1 and [i.sequence_number for i in main_temp_ECL2[0]]!=[i.sequence_number for i in main_parent_ECL2[0]]:
+                            if len(main_parent_ECL2[0])-len(main_temp_ECL2[0])<=len(main_parent_ECL2[0])/2:
                                 temp_list1.append((struct, len(ref_ECL2[0]), 0, float(struct.resolution), protein))
-                        if len(ref_ECL2[2])>=len(main_parent_ECL2[2]) and [i.sequence_number for i in main_temp_ECL2[2]]!=[i.sequence_number for i in main_parent_ECL2[2]]:
-                            if len(main_parent_ECL2[2])-len(main_temp_ECL2[2])<4:
+                        if len(main_parent_ECL2[2])-1<=len(ref_ECL2[2])<=len(main_parent_ECL2[2])+1 and [i.sequence_number for i in main_temp_ECL2[2]]!=[i.sequence_number for i in main_parent_ECL2[2]]:
+                            if len(main_parent_ECL2[2])-len(main_temp_ECL2[2])<=len(main_parent_ECL2[2])/2:
                                 temp_list2.append((struct, len(ref_ECL2[2]), 0, float(struct.resolution), protein))
                     else:
                         raise Exception()
@@ -1071,9 +1075,12 @@ class AlignedReferenceTemplate(Alignment):
                         continue
                     if ((len(ref_seq)==len(main_temp_seq) and len(main_temp_seq)==len(main_temp_parent)) or 
                         self.segment_labels[0] in self.provide_alignment.reference_dict):
-                        similarity_table[self.main_template_structure] = self.provide_similarity_table[
-                                                                                            self.main_template_structure]
-                        temp_list.append((struct, len(main_temp_seq), similarity, float(struct.resolution), protein))
+                        if len(main_temp_seq)!=len(main_temp_parent):
+                            temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
+                        else:
+                            similarity_table[self.main_template_structure] = self.provide_similarity_table[
+                                                                                                self.main_template_structure]
+                            temp_list.append((struct, len(main_temp_seq), similarity, float(struct.resolution), protein))
                         
                     # Allow for partial main loop template
                     elif (len(ref_seq)>=len(main_temp_parent) and len(main_temp_parent)>len(main_temp_seq) and 
