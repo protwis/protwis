@@ -118,3 +118,26 @@ DESIGN_SUBSTITUTION_MATRIX = OrderedDict([
             'P':[['L','M'],['Increase size to block the binding site (Prolines are often structurally important and should be mutated with causion - unless closely related receptors show different residues in equivalent position.)']],     
         })
     ])
+
+AMINO_ACID_GROUP_NAMES = OrderedDict([
+        ('hp',     'Hydrophobic - All'),
+        ('alhp',   'Hydrophobic - Aliphatic'),
+        ('arhp',   'Hydrophobic - Aromatic'),
+        ('ar',     'Aromatic'),
+        ('pol',    'Polar'),
+        ('hb',     'H-Bonding'),
+        ('hbd',    'H-Bond Donor'),
+        ('hba',    'H-Bond Acceptor'),
+        ('charge', 'Charge'),
+        ('neg',    'Negative charge'),
+        ('pos',    'Positive charge'),
+        ('lar',    'Large'),
+        ('sma',    'Small'),
+        ('any',    'Any feature'),
+        ('custom', 'Custom'),
+    ])
+
+G_PROTEIN_SEGMENTS = OrderedDict([
+        ('Full', ['HN','hns1','S1','s1h1','H1','h1ha','HA','hahb','HB','hbhc','HC','hchd','HD','hdhe','HE','hehf','HF','hfs2','S2','s2s3','S3','s3h2','H2','h2s4','S4','s4h3','H3','h3s5','S5','s5hg','HG','hgh4','H4','h4s6','S6','s6h5','H5']),
+        ('Structured', ['HN','S1','H1','HA','HB','HC','HD','HE','HF','S2','S3','H2','S4','H3','S5','HG','H4','S6','H5']),
+    ])
