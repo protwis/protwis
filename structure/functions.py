@@ -608,7 +608,7 @@ the entity.xtra attribute
                     ref_vector = atom.get_vector()
                     for other_res in residue_up:
                         try:
-                            if other_res!=pp1[i-1] or other_res!=pp1[i+1]:
+                            if other_res!=pp1[i-1] and other_res!=pp1[i+1]:
                                 for other_atom in other_res:
                                     other_vector = other_atom.get_vector()
                                     d = other_vector-ref_vector
