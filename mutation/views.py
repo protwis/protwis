@@ -479,6 +479,7 @@ class design(AbsTargetSelection):
     title = "Select a receptor"
 
     template_name = 'mutation/designselection.html'
+    selection_only_receptors = True
 
     selection_boxes = OrderedDict([
         ('reference', False),
