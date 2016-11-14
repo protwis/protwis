@@ -629,6 +629,36 @@ class ConstructBrowser(TemplateView):
 
         return context
 
+class ExperimentBrowser(TemplateView):
+    """
+    Fetching construct data for browser
+    """
+
+    template_name = "experimental_browser.html"
+
+    def get_context_data (self, **kwargs):
+
+        context = super(ExperimentBrowser , self).get_context_data(**kwargs)
+        try:
+            cons = Construct.objects.all().prefetch_related(
+                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
+                "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
+
+            #context['constructs'] = cache.get('construct_browser')
+            #if context['constructs']==None:
+            context['constructs'] = []
+            for c in cons:
+                context['constructs'].append(c)
+
+            #cache.set('construct_browser', context['constructs'], 60*60*24*2) #two days
+            # else:
+            #     print('construct_browser used cache')
+
+        except Construct.DoesNotExist as e:
+            pass
+
+        return context
+
 class design(AbsTargetSelection):
 
     # Left panel
@@ -651,6 +681,7 @@ class design(AbsTargetSelection):
 
     template_name = 'designselection.html'
     type_of_selection = 'targets'
+    selection_only_receptors = True
 
     selection_boxes = OrderedDict([
         ('reference', False),

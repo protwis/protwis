@@ -23,6 +23,7 @@ class AbsTargetSelection(TemplateView):
     template_name = 'common/targetselection.html'
 
     type_of_selection = 'targets'
+    selection_only_receptors = False
     step = 1
     number_of_steps = 2
     title = 'SELECT TARGETS'

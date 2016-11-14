@@ -7,6 +7,7 @@ from construct import views
 urlpatterns = [
     url(r'^$', views.ConstructBrowser.as_view(), name='browse'), #no cache, for dev
     #url(r'^$', cache_page(60*60*24*7)(views.ConstructBrowser.as_view()), name='browse'),
+    url(r'^experiments[/]?$', views.ExperimentBrowser.as_view(), name='browse'), #no cache, for dev
     url(r'^statistics[/]?$', views.ConstructStatistics.as_view(), name='statistics'),
     url(r'^mutations[/]?$', views.ConstructMutations.as_view(), name='mutations'),
     url(r'^residuetable[/]?$', views.ConstructTable.as_view(), name='residuetable'),
@@ -23,5 +24,10 @@ urlpatterns = [
     url(r'^tool/json/palmi/(?P<slug>[-\w]+)/$', views.json_palmi, name='palmi'),
     url(r'^tool/json/mutations/(?P<slug>[-\w]+)/$', views.mutations, name='mutations'),
     url(r'^tool/json/fusion/(?P<slug>[-\w]+)/$', views.json_fusion, name='fusion'),
+    url(r'^tool/json/termo/(?P<slug>[-\w]+)/$', views.thermostabilising, name='termo'),
+    url(r'^tool/json/cons_strucs/(?P<slug>[-\w]+)/$', views.cons_strucs, name='cons_strucs'),
+    url(r'^tool/json/cons_rf/(?P<slug>[-\w]+)/$', views.cons_rf, name='cons_rf'),
+    url(r'^tool/json/cons_rm_GP/(?P<slug>[-\w]+)/$', views.cons_rm_GP, name='cons_rm_GP'),
+    url(r'^tool/json/cons_rf_and_class/(?P<slug>[-\w]+)/$', views.cons_rf_and_class, name='cons_rf_and_class'),
     url(r'^(?P<slug>[-\w]+)/$', views.detail, name='detail'),
 ]
