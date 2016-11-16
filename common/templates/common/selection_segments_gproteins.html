@@ -1,0 +1,60 @@
+    <h5>Predefined selections</h5>
+    <div class="btn-group" role="group">
+        <a href="javascript:void(0)" onclick="SelectFullSequenceGprotein('segments')"
+        class="btn btn-primary btn-sm">
+            Full Sequence
+        </a>
+    </div>
+    <div class="btn-group" role="group">
+        <a href="javascript:void(0)" onclick="SelectStructuredGprotein('segments')"
+        class="btn btn-primary btn-sm">
+            All secondary structure segments
+        </a>
+    </div>
+{% for ss_cat in ss_cats %}
+    <h5>{{ ss_cat.0.title }}</h5>
+    {% for s in ss %}
+        {% if s.category == ss_cat.0 %}
+        <div class="btn-group" role="group">
+            <a href="javascript:void(0)" onclick="AddToSelection('segments', '{{ s.category }}', '{{ s.id }}')"
+            class="btn btn-primary btn-sm">
+                {{ s.slug }}
+            </a>
+            {% if s.generic_numbers.all %}
+            <a href="javascript:void(0)" onclick="ExpandSegment('{{ s.id }}', 'residue', 'cgn')"
+            class="btn btn-primary btn-sm">
+                <span class="glyphicon glyphicon-arrow-down"></span>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% endfor %}
+{% endfor %}
+<p>
+<div id='segment-generic-numbers'>
+</div>
+</p>
+<p>
+    <a data-toggle="modal" data-target="#PositionsFileSelector"
+        class="btn btn-primary btn-xs">
+        <span class="glyphicon glyphicon-plus"></span> Read residue positions from a file
+    </a>
+</p>
+<div class="modal fade" id="PositionsFileSelector" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                Select a file to upload.
+            </div>
+            <div class="modal-body">
+                <form id="xls-form" enctype="multipart/form-data" method="post" onsubmit="return ReadDefinitionFromFile(document.getElementById('xls-file').files[0], '/common/residuesupload')">
+                    <input id="xls-file" type="file" /> {% csrf_token %}
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-dismiss="modal">Cancel</button>
+                <button onclick='$("#xls-form").submit()' type="button" class="btn btn-success" data-dismiss="modal">Save & close</button>
+            </div>
+        </div>
+    </div>
+</div>

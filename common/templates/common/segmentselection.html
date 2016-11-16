@@ -13,6 +13,8 @@
                     <h4>Sequence segments</h4>
                     {% if position_type == 'site_residue' %}
                         {% include 'common/selection_segments_sitesearch.html' %}
+                    {% elif position_type == 'gprotein' %}
+                        {% include 'common/selection_segments_gproteins.html' %}
                     {% else %}
                         {% include 'common/selection_segments.html' %}
                     {% endif %}
@@ -28,7 +30,6 @@
                 <h4>Predefined sets of residues</h4>
                 <div class="col-md-12 panel panel-primary">
                     <div class="panel-body">
-                        <h4>Predefined sets</h4>
                         <div>
                             {% include 'common/segmentselection_predefined.html' %}
                         </div>

@@ -4,6 +4,7 @@
 {% block addon_js %}
     <script type="text/javascript">
         var type_of_selection = '{{ type_of_selection }}';
+        var selection_only_receptors = '{{ selection_only_receptors }}';
         var redirect_url = '{{ buttons.continue.url }}'
         var redirect_on_select = '{{ redirect_on_select }}'
     </script>
@@ -25,12 +26,14 @@
                     <div id="filters-annotation">
                     {% include 'common/selection_filters_annotation.html' %}
                     </div>
+                    {% if filter_gprotein == False %}
                     <div id="filters-pref-gproteins">
                         {% include 'common/selection_filters_pref_gproteins.html' %}
                     </div>
                     <div id="filters-gproteins">
                         {% include 'common/selection_filters_gproteins.html' %}
                     </div>
+                    {% endif %}
 
                 </div>
             </div>

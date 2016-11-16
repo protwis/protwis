@@ -154,7 +154,7 @@ class ResidueTablesDisplay(TemplateView):
                         if alternative.label not in data[segment.slug][pos.label][scheme.slug]:
                             data[segment.slug][pos.label][scheme.slug] += " "+alternative.label
                         data[segment.slug][pos.label]['seq'][proteins.index(residue.protein_conformation.protein)] = str(residue)
-        print(data)
+
         # Preparing the dictionary of list of lists. Dealing with tripple nested dictionary in django templates is a nightmare
         flattened_data = OrderedDict.fromkeys([x.slug for x in segments], [])
         print(flattened_data)

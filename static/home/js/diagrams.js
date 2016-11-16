@@ -328,21 +328,36 @@
                             winner2 = Math.max.apply(window,counts);
                             color = "#D9D7CE";
                             color_letter = "#000";
-                            if (winner==0 && winner2) {
-                              if (increases>bigincreases) {
+                            // if (winner==0 && winner2) {
+                            //   if (increases>bigincreases) {
+                            //     color = "#FF7373";
+                            //     color_letter = "#FFF";
+                            //   } else {
+                            //     color = "#FA1111";
+                            //     color_letter = "#FDFF7B";
+                            //   }
+                            // } else if (winner==1) {
+                            //   if (decreases>bigdecreases) {
+                            //     color = "#87E88F";
+                            //   } else {
+                            //     color = "#66B36C";
+                            //   }
+                            // } else if (winner==2) {
+                            //   color = "#F7DA00";
+                            //   color_letter = "#000";
+                            // }
+                            
+                            if (bigincreases>0) {
                                 color = "#FF7373";
                                 color_letter = "#FFF";
-                              } else {
+                            } else if (increases>0) {
                                 color = "#FA1111";
                                 color_letter = "#FDFF7B";
-                              }
-                            } else if (winner==1) {
-                              if (decreases>bigdecreases) {
-                                color = "#87E88F";
-                              } else {
+                            } else if (bigdecreases>0) {
                                 color = "#66B36C";
-                              }
-                            } else if (winner==2) {
+                            } else if (decreases>0) {
+                                color = "#87E88F";
+                            } else  {
                               color = "#F7DA00";
                               color_letter = "#000";
                             }
@@ -420,24 +435,41 @@
                             winner2 = Math.max.apply(window,counts);
                             color = "#D9D7CE";
                             color_letter = "#000";
-                            if (winner==0 && winner2) {
-                              if (increases>bigincreases) {
+                            // if (winner==0 && winner2) {
+                            //   if (increases>bigincreases) {
+                            //     color = "#FF7373";
+                            //     color_letter = "#FFF";
+                            //   } else {
+                            //     color = "#FA1111";
+                            //     color_letter = "#FDFF7B";
+                            //   }
+                            // } else if (winner==1) {
+                            //   if (decreases>bigdecreases) {
+                            //     color = "#87E88F";
+                            //   } else {
+                            //     color = "#66B36C";
+                            //   }
+                            // } else if (winner==2) {
+                            //   color = "#F7DA00";
+                            //   color_letter = "#000";
+                            // }
+
+                            if (bigincreases>0) {
                                 color = "#FF7373";
                                 color_letter = "#FFF";
-                              } else {
+                            } else if (increases>0) {
                                 color = "#FA1111";
                                 color_letter = "#FDFF7B";
-                              }
-                            } else if (winner==1) {
-                              if (decreases>bigdecreases) {
-                                color = "#87E88F";
-                              } else {
+                            } else if (bigdecreases>0) {
                                 color = "#66B36C";
-                              }
-                            } else if (winner==2) {
+                            } else if (decreases>0) {
+                                color = "#87E88F";
+                            } else  {
                               color = "#F7DA00";
                               color_letter = "#000";
                             }
+
+
 
 
                              original_title = $('#'+plotid).find("#"+key).attr('original_title')
@@ -475,6 +507,45 @@
                             }
                              
                              extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
+
+
+                             $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
+                             $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+
+                             original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+
+                             $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+                          });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
+    
+                        });
+                    }
+
+                    function ajaxBarcode(plotid,protein) {
+
+                      resetColors(plotid);
+
+                        $.getJSON( '/signprot/ajax/'+protein+'/', function( data ) {
+                          $.each( data, function( key, val ) {
+
+                            var flags = [], falgsAA = [], output = [], outputAA = [], l = val.length, i;
+                            for( i=0; i<l; i++) {
+                                if( flags[val[i][1]]) continue;
+                                flags[val[i][1]] = true;
+                                output.push(val[i][1]);
+                            }
+                            for( i=0; i<l; i++) {
+                                if( flags[val[i][0]]) continue;
+                                flags[val[i][0]] = true;
+                                outputAA.push(val[i][0]);
+                            }
+                             
+                             extra = "\n" + String("Barcode position");
 
 
                              $('#'+plotid).find("#"+key).css("fill", "#E60A0A");

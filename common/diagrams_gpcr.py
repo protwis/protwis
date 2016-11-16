@@ -676,7 +676,7 @@ class DrawSnakePlot(Diagram):
                                 bend_direction = -1
                             elif bend_direction==-1:
                                 bend_direction = 1
-                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], where[1][0], r[3], self.residue_radius-1,name+" long")
+                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], r[0], r[3], self.residue_radius-1,name+" long")
 
                     if orientation==-1:
                         if where[1][1]<self.maxY[position]: self.maxY[position] = where[1][1]
