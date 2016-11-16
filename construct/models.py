@@ -6,6 +6,9 @@ from residue.models import Residue
 from mutation.models import Mutation
 
 from construct.schematics import generate_schematic
+from common.diagrams_gpcr import DrawSnakePlot
+
+import pickle
 
 class Construct(models.Model): 
     #overall class 
@@ -24,28 +27,68 @@ class Construct(models.Model):
     crystallization = models.ForeignKey('Crystallization', null=True)  #method description if present
     crystal = models.ForeignKey('CrystalInfo', null=True) #might not exist, if failed
     structure = models.ForeignKey('structure.Structure', null=True) #might not exist, if failed
+    schematics = models.BinaryField(null=True)
+    snakecache = models.BinaryField(null=True)
 
     #Back up of original entry
     json = models.TextField(null=True)
 
+    def fusion(self):
+        list_of_none_fusion = ['Expression tag','Linker','Not_Observed','Engineered mutation','','Conflict','Insertion','S-arrestin']
+        list_of_comfirmed_fusion = ['C8TP59','Q0SXH8','Q9V2J8','Soluble cytochrome b562','Endolysin','Rubredoxin','Lysozyme']
+        #ODD Rubredoxin
+        #Q9V2J8 GlgA glycogen synthase  auto_4ZJ8
+        #C8TP59  Cytochrome b562
+        # Q0SXH8 Cytochrome b(562)
+        result = []
+        position = None
+        for insert in self.insertions.all():
+            if insert.insert_type.subtype in list_of_none_fusion:
+                continue
+            if insert.insert_type.name!='fusion' and insert.insert_type.name!='auto':
+                continue
+            #print(insert.insert_type.name, insert.insert_type.subtype)
+            #print(insert.position, self.name)
+            confirmed = False
+            if insert.insert_type.name=='fusion' or insert.insert_type.subtype in list_of_comfirmed_fusion:
+                confirmed = True
+                if insert.position.startswith('N-term'):
+                    position = 'nterm'
+                else:
+                    position = 'icl3'
+            result.append([confirmed,insert.insert_type.name, insert.insert_type.subtype,insert.position])
+        return position,result
+
     def schematic(self):
         ## Use cache if possible
-        temp = cache.get(self.name+'_schematics')
+        temp = self.schematics
+        #if temp==None or 1==1:
         if temp==None:
-            print(self.name+'_schematics no cache')
+            # print(self.name+'_schematics no cache')
             try:
-                temp = cache.set(self.name+'_schematics', generate_schematic(self), 60*60*24*2) #two days
-                temp = cache.get(self.name+'_schematics')
+                temp = generate_schematic(self)
+                self.schematics = pickle.dumps(temp)
+                self.save()
             except:
-                temp = {}
+                print('schematics failed for ',self.name)
         else:
-            print(self.name+'_schematics used cache')
-            # temp = cache.set(self.name+'_schematics', generate_schematic(self), 60*60*24*2) #two days
-
-        # temp = generate_schematic(self) #override
+            # print(self.name+'_schematics used cache')
+            temp = pickle.loads(temp)
         return temp
 
-
+    def snake(self):
+        ## Use cache if possible
+        temp = self.snakecache
+        if temp==None:
+            # print(self.name+'_snake no cache')
+            residues = Residue.objects.filter(protein_conformation__protein=self.protein).order_by('sequence_number').prefetch_related(
+                'protein_segment', 'generic_number', 'display_generic_number')
+            temp = DrawSnakePlot(residues,self.protein.get_protein_class(),str(self.protein),nobuttons = True)
+            self.snakecache = pickle.dumps(temp)
+            self.save()
+        else:
+            temp = pickle.loads(temp)
+        return temp
 
 class CrystalInfo(models.Model):
     resolution = models.DecimalField(max_digits=5, decimal_places=3) #probably want more values
@@ -67,9 +110,11 @@ class ConstructMutation(models.Model):
     sequence_number = models.SmallIntegerField()
     wild_type_amino_acid = models.CharField(max_length=1)
     mutated_amino_acid = models.CharField(max_length=1)
+    mutation_type = models.CharField(max_length=30, null=True)
+    remark = models.TextField(null=True)
 
     def __str__(self):
-        return '{} {}{}'.format(self.wild_type_amino_acid, self.sequence_number,
+        return '{}{}{}'.format(self.wild_type_amino_acid, self.sequence_number,
             self.mutated_amino_acid)
 
     class Meta():
@@ -111,6 +156,15 @@ class ConstructInsertion(models.Model):
 
     def __str__(self):
         return 'Protein: {}<br> Name: {}<br>Presence in Crystal: {}'.format(self.insert_type.name,self.insert_type.subtype,self.presence)
+
+    def autotype(self):
+        t = self.insert_type.subtype
+        if t=='Expression tag':
+            return 'tag'
+        elif t=='Linker':
+            return 'linker'
+        else:
+            return self.insert_type.name
 
     class Meta():
         db_table = 'construct_insertion'
@@ -154,7 +208,8 @@ class ChemicalType(models.Model):
 
 class ChemicalConc(models.Model):
     chemical = models.ForeignKey('Chemical')
-    concentration = models.FloatField()
+    # concentration = models.FloatField()
+    concentration = models.CharField(max_length=200)
     concentration_unit = models.TextField(null=True)
 
     def __str__(self):
@@ -245,11 +300,13 @@ class Crystallization(models.Model):
     remarks = models.TextField(max_length=1000, null=True)
 
     chemical_lists =  models.ManyToManyField('ChemicalList') #LCP list, detergent list, lip conc and other chem components
-    protein_conc =  models.FloatField()
+    #protein_conc =  models.FloatField()
+    protein_conc = models.CharField(max_length=200,null=True)
     protein_conc_unit =  models.TextField(max_length=10,null=True)
     ligands = models.ManyToManyField('CrystallizationLigandConc')
 
-    temp = models.FloatField()
+    #temp = models.FloatField()
+    temp = models.CharField(max_length=200)
     ph_start = models.DecimalField(max_digits=3, decimal_places=1) #probably want more values
     ph_end = models.DecimalField(max_digits=3, decimal_places=1) #probably want more values
 
@@ -269,7 +326,8 @@ class Crystallization(models.Model):
 class CrystallizationLigandConc(models.Model):
     ligand = models.ForeignKey('ligand.Ligand')
     ligand_role = models.ForeignKey('ligand.LigandRole')
-    ligand_conc = models.FloatField(null=True)
+    #ligand_conc = models.FloatField(null=True)
+    ligand_conc = models.CharField(max_length=200,null=True)
     ligand_conc_unit = models.TextField(null=True)
 
     def __str__(self):

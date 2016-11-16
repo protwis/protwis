@@ -90,21 +90,36 @@ function ajaxMutants(plotid,protein) {
                             winner2 = Math.max.apply(window,counts);
                             color = "#D9D7CE";
                             color_letter = "#000";
-                            if (winner==0 && winner2) {
-                              if (increases>bigincreases) {
-                                color = "#F05960";
+                            // if (winner==0 && winner2) {
+                            //   if (increases>bigincreases) {
+                            //     color = "#F05960";
+                            //     color_letter = "#FDFF7B";
+                            //   } else {
+                            //     color = "#CC434A";
+                            //     color_letter = "#FDFF7B";
+                            //   }
+                            // } else if (winner==1) {
+                            //   if (decreases>bigdecreases) {
+                            //     color = "#87E88F";
+                            //   } else {
+                            //     color = "#66B36C";
+                            //   }
+                            // } else if (winner==2) {
+                            //   color = "#F7DA00";
+                            //   color_letter = "#000";
+                            // }
+
+                            if (bigincreases>0) {
+                                color = "#FF7373";
+                                color_letter = "#FFF";
+                            } else if (increases>0) {
+                                color = "#FA1111";
                                 color_letter = "#FDFF7B";
-                              } else {
-                                color = "#CC434A";
-                                color_letter = "#FDFF7B";
-                              }
-                            } else if (winner==1) {
-                              if (decreases>bigdecreases) {
-                                color = "#87E88F";
-                              } else {
+                            } else if (bigdecreases>0) {
                                 color = "#66B36C";
-                              }
-                            } else if (winner==2) {
+                            } else if (decreases>0) {
+                                color = "#87E88F";
+                            } else  {
                               color = "#F7DA00";
                               color_letter = "#000";
                             }
@@ -188,21 +203,36 @@ function table_ajaxMutants() {
                             winner2 = Math.max.apply(window,counts);
                             color = "#D9D7CE";
                             color_letter = "#000";
-                            if (winner==0 && winner2) {
-                              if (increases>bigincreases) {
+                            // if (winner==0 && winner2) {
+                            //   if (increases>bigincreases) {
+                            //     color = "#FF7373";
+                            //     color_letter = "#FFF";
+                            //   } else {
+                            //     color = "#FA1111";
+                            //     color_letter = "#FDFF7B";
+                            //   }
+                            // } else if (winner==1) {
+                            //   if (decreases>bigdecreases) {
+                            //     color = "#87E88F";
+                            //   } else {
+                            //     color = "#66B36C";
+                            //   }
+                            // } else if (winner==2) {
+                            //   color = "#F7DA00";
+                            //   color_letter = "#000";
+                            // }
+
+                            if (bigincreases>0) {
                                 color = "#FF7373";
                                 color_letter = "#FFF";
-                              } else {
+                            } else if (increases>0) {
                                 color = "#FA1111";
                                 color_letter = "#FDFF7B";
-                              }
-                            } else if (winner==1) {
-                              if (decreases>bigdecreases) {
-                                color = "#87E88F";
-                              } else {
+                            } else if (bigdecreases>0) {
                                 color = "#66B36C";
-                              }
-                            } else if (winner==2) {
+                            } else if (decreases>0) {
+                                color = "#87E88F";
+                            } else  {
                               color = "#F7DA00";
                               color_letter = "#000";
                             }

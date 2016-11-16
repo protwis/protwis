@@ -1,9 +1,9 @@
-input.form-control, select.form-control {
+/*input.form-control, select.form-control {
     width: 50px;
     height: 20px;
     font-size: 9px;
     padding: 2px 2px;
-}
+}*/
 input.number_range_filter, input.date_range_filter {
     width: 20px;
     font-size: 8px;
@@ -59,6 +59,48 @@ input.number_range_filter, input.date_range_filter {
 }
 .insertion {
     background-color: purple;
+}
+
+.fusion {
+    background-color: purple;
+    /*color: white;*/
+    background-color: rgb(142, 68, 173 );
+    background-color: rgba(142, 68, 173 , 0.6);
+}
+.fusiontop {
+    background-color: rgb(142, 68, 173 );
+}
+
+.tag, .signal {
+    background-color: gold;
+    background-color: rgb(244, 208, 63 );
+    background-color: rgba(244, 208, 63 , 0.6);
+}
+.tagtop, .signaltop {
+    background-color: rgb(244, 208, 63 );
+}
+
+.prot_cleavage {
+    background-color: #FFA233;
+    background-color: rgb(230, 126, 34 );
+    background-color: rgba(230, 126, 34 , 0.6);
+}
+.prot_cleavagetop {
+    background-color: rgb(230, 126, 34 );
+}
+
+.linker {
+    background-color: #58A2A1;
+    background-color: rgb(93, 173, 226 );
+    background-color: rgba(93, 173, 226 , 0.6);   
+}
+.linkertop {
+    background-color: #58A2A1;
+    background-color: rgb(93, 173, 226 ); 
+}
+
+.insert_text {
+    opacity: 0.5;
 }
 
 .bg-insertion {

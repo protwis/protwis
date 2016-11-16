@@ -1,19 +1,22 @@
 ﻿from django.shortcuts import render
 from django.conf import settings
 from django.views.generic import TemplateView
+from django.db.models import Case, When
 
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
 from common.views import AbsMiscSelection
 from structure.functions import BlastSearch
-from protein.models import Protein
+
 # from common.alignment_SITE_NAME import Alignment
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
-from protein.models import Protein, ProteinSegment
+from protein.models import Protein, ProteinSegment,ProteinFamily, ProteinSet
+from residue.models import ResiduePositionSet
 
 import inspect, os
 from collections import OrderedDict
 
+from common import definitions
 
 class TargetSelection(AbsTargetSelection):
     step = 1
@@ -32,6 +35,37 @@ class TargetSelection(AbsTargetSelection):
         },
     }
 
+class TargetSelectionGprotein(AbsTargetSelection):
+    step = 1
+    number_of_steps = 2
+    psets = False
+    filters = True
+    filter_gprotein = True
+
+    docs = 'sequences.html#structure-based-alignments'
+
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Continue to next step',
+            'url': '/alignment/segmentselectiongprot',
+            'color': 'success',
+        },
+    }
+    try:
+        ppf = ProteinFamily.objects.get(slug="100_000")
+        pfs = ProteinFamily.objects.filter(parent=ppf.id)
+        ps = Protein.objects.filter(family=ppf)
+        tree_indent_level = []
+        action = 'expand'
+        # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+        del ppf
+    except Exception as e:
+        pass
 
 class SegmentSelection(AbsSegmentSelection):
     step = 2
@@ -49,6 +83,36 @@ class SegmentSelection(AbsSegmentSelection):
             'color': 'success',
         },
     }
+
+class SegmentSelectionGprotein(AbsSegmentSelection):
+    step = 2
+    number_of_steps = 2
+    docs = 'sequences.html#structure-based-alignments'
+    description = 'Select sequence segments in the middle column for G proteins. You can expand every structural element and select individual' \
+        + ' residues by clicking on the down arrows next to each helix, sheet or loop.\n\n You can select the full sequence or show all structured regions at the same time.\n\nSelected segments will appear in the' \
+        + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
+        + ' button.'
+    
+    template_name = 'common/segmentselection.html'
+
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', True),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Show alignment',
+            'url': '/alignment/render',
+            'color': 'success',
+        },
+    }
+
+    position_type = 'gprotein'
+    rsets = ResiduePositionSet.objects.filter(name="Gprotein Barcode").prefetch_related('residue_position')
+
+    ss = ProteinSegment.objects.filter(name__regex = r'^[a-zA-Z0-9]{1,5}$', partial=False).prefetch_related('generic_numbers')
+    ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
 
 class BlastSearchInput(AbsMiscSelection):
@@ -102,8 +166,9 @@ def render_alignment(request):
     a.load_segments_from_selection(simple_selection)
 
     # build the alignment data matrix
-    a.build_alignment()
-
+    check = a.build_alignment()
+    if check == 'Too large':
+        return render(request, 'alignment/error.html', {'proteins': len(a.proteins), 'residues':a.number_of_residues_total})
     # calculate consensus sequence + amino acid and feature frequency
     a.calculate_statistics()
 
@@ -119,8 +184,16 @@ def render_family_alignment(request, slug):
 
     # fetch proteins and segments
     proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt')
-    segments = ProteinSegment.objects.filter(partial=False)
-    
+
+    if slug.startswith('100'):
+
+        gsegments = definitions.G_PROTEIN_SEGMENTS
+
+        preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(gsegments['Full'])])
+        segments = ProteinSegment.objects.filter(slug__in = gsegments['Full'], partial=False).order_by(preserved)
+    else:
+        segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False)
+
     # load data into the alignment
     a.load_proteins(proteins)
     a.load_segments(segments)

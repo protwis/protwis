@@ -159,7 +159,7 @@ var xlegend = 370;
 var ylegend = -520;
 
 var legend1 = svg_g.selectAll("circle")
-.data([ylegend, ylegend-40]);
+.data([ylegend-60, ylegend-30, ylegend]);
 
 var legendEnter = legend1.enter();
 
@@ -168,8 +168,9 @@ legendEnter.append("circle")
            .attr("cx", xlegend)
            .attr("r", 10)
            .style("fill", function(d) { 
-      if (d == ylegend) {return "#d62728"}
-      else {return "#43A047"};});
+      if (d == ylegend-60) {return "#d62728"}
+      else if(d == ylegend-30) {return "#43A047"}
+      else {return "#828953"};});
 
 legendEnter.append("circle")
            .attr("cy", function(d) { return d; })
@@ -181,13 +182,19 @@ legendEnter.append("text")
             .attr("x", xlegend + 30)
             .attr("y", ylegend + 5)         
             .style({"font": "15lspx sans-serif"})
-            .text("Target established");
+            .text("Approved and in trials");
 
 legendEnter.append("text")
             .attr("x", xlegend + 30)
-            .attr("y", ylegend - 40 + 5)         
+            .attr("y", ylegend - 30 + 5)         
             .style({"font": "15lspx sans-serif"})
             .text("Target in trials");
+
+legendEnter.append("text")
+            .attr("x", xlegend + 30)
+            .attr("y", ylegend - 60 + 5)         
+            .style({"font": "15lspx sans-serif"})
+            .text("Target established");
 
 node.append("circle")
   .attr("r", function(d) { 
