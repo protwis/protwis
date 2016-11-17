@@ -48,6 +48,7 @@ class Command(BaseBuild):
         parser.add_argument('-z', help='Create zip file of model directory containing all built models', default=False,
                             action='store_true')
         parser.add_argument('--hmver', help='Homology modeling version', default=1.0, type=float)
+        parser.add_argument('-s', help='Set activation state for model', default='inactive')
         
     def handle(self, *args, **options):
         if not os.path.exists('./structure/homology_models/'):
@@ -62,6 +63,10 @@ class Command(BaseBuild):
             self.version = options['hmver']
         else:
             self.version = 1.0
+        if options['s']=='inactive':
+            state = 'Inactive'
+        elif options['s']=='active':
+            state = 'Active'
         if options['r']==False:
             structures = Structure.objects.all()
             struct_parent = [i.protein_conformation.protein.parent for i in structures]
@@ -80,7 +85,7 @@ class Command(BaseBuild):
             except Exception as msg:
                 print(msg)
         else:
-            self.run_HomologyModeling(options['r'][0])
+            self.run_HomologyModeling(options['r'][0], state)
         
         os.chdir('./structure/')
         if options['z']==True:
@@ -99,31 +104,31 @@ class Command(BaseBuild):
             receptor_list = self.receptor_list[positions[0]:positions[1]]
         
         for receptor in receptor_list:
-            self.run_HomologyModeling(receptor)
+            self.run_HomologyModeling(receptor, state)
     
-    def run_HomologyModeling(self, receptor):
-#        try:
-        state = 'Inactive'
-        Homology_model = HomologyModeling(receptor, state, [state,"Active"], update=self.update, version=self.version)
-        alignment = Homology_model.run_alignment()
-        Homology_model.build_homology_model(alignment)
-        Homology_model.format_final_model()
-        if Homology_model.main_structure.pdb_code.index=='4PHU':
-            for r in Homology_model.changes_on_db:
-                res = Residue.objects.get(protein_conformation=Homology_model.main_structure.protein_conformation, 
-                                          sequence_number=r)
-                res.sequence_number = int('2'+str(res.sequence_number))
-                res.save()
-        logger.info('Model built for {} {}'.format(receptor, state))
-#        except Exception as msg:
-#            exc_type, exc_obj, exc_tb = sys.exc_info()
-#            print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
-#                                                                                    Homology_model.main_structure,msg))
-#            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
-#            t = tests.HomologyModelsTests()
-#            if 'Number of residues in the alignment and  pdb files are different' in str(msg):
-#                t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
-#                                         Homology_model.main_structure)
+    def run_HomologyModeling(self, receptor, state):
+        try:
+            Homology_model = HomologyModeling(receptor, state, [state,"Active"], update=self.update, version=self.version)
+            alignment = Homology_model.run_alignment()
+            Homology_model.build_homology_model(alignment)
+            if self.update==False:
+                Homology_model.format_final_model()
+            if Homology_model.main_structure.pdb_code.index=='4PHU':
+                for r in Homology_model.changes_on_db:
+                    res = Residue.objects.get(protein_conformation=Homology_model.main_structure.protein_conformation, 
+                                              sequence_number=r)
+                    res.sequence_number = int('2'+str(res.sequence_number))
+                    res.save()
+            logger.info('Model built for {} {}'.format(receptor, state))
+        except Exception as msg:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
+                                                                                    Homology_model.main_structure,msg))
+            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
+            t = tests.HomologyModelsTests()
+            if 'Number of residues in the alignment and  pdb files are different' in str(msg):
+                t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
+                                         Homology_model.main_structure)
 
         
 class HomologyModeling(object):
@@ -192,7 +197,7 @@ class HomologyModeling(object):
         except:
             hommod, created = StructureModel.objects.update_or_create(protein=self.reference_protein, state=s_state, 
                                                                       main_template=self.main_structure, 
-                                                                      pdb=self.format_final_model(), 
+                                                                      pdb=formatted_model, 
                                                                       version=self.version)
             new_entry = True
         if not new_entry:
@@ -298,6 +303,7 @@ class HomologyModeling(object):
                         except:
                             out_list.append(line)
         with open (path_to_file, 'w') as f:
+            
             f.write(''.join(out_list))
         pdb_struct = PDB.PDBParser(QUIET=True).get_structure('model', path_to_file)[0]
         assign_gn = as_gn.GenericNumbering(structure=pdb_struct)
@@ -305,7 +311,13 @@ class HomologyModeling(object):
         io = PDB.PDBIO()
         io.set_structure(pdb_struct)
         io.save(path_to_file)
-        return ''.join(out_list)
+        with open (path_to_file, 'r+') as f:
+            content = f.read()
+            first_line = 'REMARK    1 MODEL FOR {} CREATED WITH GPCRDB HOMOLOGY MODELING PIPELINE\n'.format(self.reference_entry_name)
+            second_line = 'REMARK    2 MAIN TEMPLATE: {}\n'.format(self.main_structure)
+            f.seek(0,0)
+            f.write(first_line+second_line+content)
+        return first_line+second_line+content
         
     def update_template_source(self, keys, struct, segment, just_rot=False):
         for k in keys:
@@ -873,8 +885,7 @@ class HomologyModeling(object):
         if 'H8' in main_pdb_array and 'ICL4' not in main_pdb_array and len(self.helix_end_mods['removed']['TM7'][1])>0:
             unwind_num = math.ceil(len(self.helix_end_mods['removed']['TM7'][1])/2)
             trimmed_residues+=list(main_pdb_array['TM7'].keys())[(unwind_num*-1):]+list(main_pdb_array['H8'].keys())[:unwind_num]
-        print('unwind tm7')
-        print(trimmed_residues)
+
         # N- and C-termini
         if N_and_C_termini==True and self.prot_conf.protein==self.main_structure.protein_conformation.protein.parent:
             N_struct = self.template_source['TM1'][list(self.template_source['TM1'])[0]][0]
@@ -1071,8 +1082,7 @@ class HomologyModeling(object):
                 for key in seg:
                     if a.reference_dict[seg_id][str(key).replace('.','x')]!='-':
                         trimmed_residues.append(key)
-        print('rota_switch')
-        print(trimmed_residues)
+        
         if 'ICL4_free' in main_pdb_array:
             freeICL4=True
         else:
@@ -1082,8 +1092,7 @@ class HomologyModeling(object):
                 if i not in trimmed_residues:
                     trimmed_residues.append(i)
         array_keys = list(main_pdb_array.keys())
-        print('ICL4')
-        print(trimmed_residues)
+        
         for i,j in self.helix_end_mods['added'].items():
             try:
                 if j[0][-1].replace('x','.') not in trimmed_residues:
@@ -1113,8 +1122,6 @@ class HomologyModeling(object):
                 trimmed_residues.append(parse.gn_indecer(j[1][0],'x',-1).replace('x','.'))
             except:
                 pass
-        print('helix_end_mods')
-        print(trimmed_residues)
         for i in ref_bulge_list+temp_bulge_list+ref_const_list+temp_const_list:
             i = list(i.keys())[0].replace('x','.')
             if parse.gn_indecer(i,'.',-2) not in trimmed_residues:
@@ -1125,8 +1132,6 @@ class HomologyModeling(object):
                 trimmed_residues.append(parse.gn_indecer(i,'.',1))
             if parse.gn_indecer(i,'.',2) not in trimmed_residues:
                 trimmed_residues.append(parse.gn_indecer(i,'.',2))
-        print('bulges+constrictions')
-        print(trimmed_residues)
         for s in a.reference_dict:
             if 'dis' in s:
                 key_list=list(a.reference_dict[s].keys())
@@ -1147,8 +1152,6 @@ class HomologyModeling(object):
                     trimmed_residues.append(list(a.reference_dict[segs[segs.index(s)-1]].keys())[-1].replace('x','.'))
                 if j<-1:
                     trimmed_residues.append(list(a.reference_dict[segs[segs.index(s)+1]].keys())[0].replace('x','.'))
-        print('dis_loop')
-        print(trimmed_residues)
         if self.reference_entry_name.startswith('taar') and str(self.main_structure)=='4IAR':
             trimmed_residues.append('5.36')
                 
@@ -1171,8 +1174,7 @@ class HomologyModeling(object):
                                                                                      main_pdb_array, a, 
                                                                                      trimmed_residues=trimmed_residues)
         self.statistics.add_info('template_source',self.template_source)
-        print('LAST')
-        pprint.pprint(trimmed_res_nums)
+
         # Adding HETATMs when revising xtal
         hetatm_count = 0
         water_count = 0
