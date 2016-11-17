@@ -505,36 +505,36 @@ def get_atom_line(atom, hetfield, segid, atom_number, resname, resseq, icode, ch
     return ATOM_FORMAT_STRING % args
     
 #==============================================================================
-class _AbstractHSExposure(AbstractPropertyMap):
+class HSExposureCB(AbstractPropertyMap):
     """
-Abstract class to calculate Half-Sphere Exposure (HSE).
-
-The HSE can be calculated based on the CA-CB vector, or the pseudo CB-CA
-vector based on three consecutive CA atoms. This is done by two separate
-subclasses.
-"""
-    def __init__(self, model, radius, offset, hse_up_key, hse_down_key, angle_key=None):
+    Abstract class to calculate Half-Sphere Exposure (HSE).
+    
+    The HSE can be calculated based on the CA-CB vector, or the pseudo CB-CA
+    vector based on three consecutive CA atoms. This is done by two separate
+    subclasses.
+    """
+    def __init__(self, model, radius, offset=0, hse_up_key='HSE_U', hse_down_key='HSE_D', angle_key=None):
         """
-@param model: model
-@type model: L{Model}
-
-@param radius: HSE radius
-@type radius: float
-
-@param offset: number of flanking residues that are ignored in the calculation
-of the number of neighbors
-@type offset: int
-
-@param hse_up_key: key used to store HSEup in the entity.xtra attribute
-@type hse_up_key: string
-
-@param hse_down_key: key used to store HSEdown in the entity.xtra attribute
-@type hse_down_key: string
-
-@param angle_key: key used to store the angle between CA-CB and CA-pCB in
-the entity.xtra attribute
-@type angle_key: string
-"""
+        @param model: model
+        @type model: L{Model}
+        
+        @param radius: HSE radius
+        @type radius: float
+        
+        @param offset: number of flanking residues that are ignored in the calculation
+        of the number of neighbors
+        @type offset: int
+        
+        @param hse_up_key: key used to store HSEup in the entity.xtra attribute
+        @type hse_up_key: string
+        
+        @param hse_down_key: key used to store HSEdown in the entity.xtra attribute
+        @type hse_down_key: string
+        
+        @param angle_key: key used to store the angle between CA-CB and CA-pCB in
+        the entity.xtra attribute
+        @type angle_key: string
+        """
         assert(offset>=0)
         # For PyMOL visualization
         self.ca_cb_list=[]
@@ -617,20 +617,31 @@ the entity.xtra attribute
                                                                  (other_res['CA'].get_bfactor(),other_res.get_id()[1])])
                         except:
                             pass
-        AbstractPropertyMap.__init__(self, hse_map, hse_keys, hse_list)
 
     def _get_cb(self, r1, r2, r3):
-        """This method is provided by the subclasses to calculate HSE."""
-        return NotImplemented
+        """
+        Method to calculate CB-CA vector.
+        
+        @param r1, r2, r3: three consecutive residues (only r2 is used)
+        @type r1, r2, r3: L{Residue}
+        """
+        if r2.get_resname()=='GLY':
+            return self._get_gly_cb_vector(r2), 0.0
+        else:
+            if r2.has_id('CB') and r2.has_id('CA'):
+                vcb=r2['CB'].get_vector()
+                vca=r2['CA'].get_vector()
+                return (vcb-vca), 0.0
+        return None
 
     def _get_gly_cb_vector(self, residue):
         """
-Return a pseudo CB vector for a Gly residue.
-The pseudoCB vector is centered at the origin.
-
-CB coord=N coord rotated over -120 degrees
-along the CA-C axis.
-"""
+        Return a pseudo CB vector for a Gly residue.
+        The pseudoCB vector is centered at the origin.
+        
+        CB coord=N coord rotated over -120 degrees
+        along the CA-C axis.
+        """
         try:
             n_v=residue["N"].get_vector()
             c_v=residue["C"].get_vector()
@@ -648,38 +659,3 @@ along the CA-C axis.
         # This is for PyMol visualization
         self.ca_cb_list.append((ca_v, cb_v))
         return cb_at_origin_v
-        
-        
-class HSExposureCB(_AbstractHSExposure):
-    """
-Class to calculate HSE based on the real CA-CB vectors.
-"""
-    def __init__(self, model, radius=12, offset=0):
-        """
-@param model: the model that contains the residues
-@type model: L{Model}
-
-@param radius: radius of the sphere (centred at the CA atom)
-@type radius: float
-
-@param offset: number of flanking residues that are ignored in the calculation of the number of neighbors
-@type offset: int
-"""
-        _AbstractHSExposure.__init__(self, model, radius, offset,
-                'EXP_HSE_B_U', 'EXP_HSE_B_D')
-
-    def _get_cb(self, r1, r2, r3):
-        """
-Method to calculate CB-CA vector.
-
-@param r1, r2, r3: three consecutive residues (only r2 is used)
-@type r1, r2, r3: L{Residue}
-"""
-        if r2.get_resname()=='GLY':
-            return self._get_gly_cb_vector(r2), 0.0
-        else:
-            if r2.has_id('CB') and r2.has_id('CA'):
-                vcb=r2['CB'].get_vector()
-                vca=r2['CA'].get_vector()
-                return (vcb-vca), 0.0
-        return None
