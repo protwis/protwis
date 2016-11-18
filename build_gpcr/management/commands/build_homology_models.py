@@ -137,7 +137,8 @@ class HomologyModeling(object):
         @param reference_entry_name: str, protein entry name \n
         @param state: str, endogenous ligand state of reference \n
         @param query_states: list, list of endogenous ligand states to be applied for template search, 
-        default: same as reference
+        @param update: boolean, upload the StructureModel table, default=False
+        @param version: float, version number of homology modeling pipeline, default=1.0
     '''
     segment_coding = {1:'TM1',2:'TM2',3:'TM3',4:'TM4',5:'TM5',6:'TM6',7:'TM7',8:'H8', 12:'ICL1', 23:'ECL1', 34:'ICL2', 
                       45:'ECL2'}
@@ -185,6 +186,9 @@ class HomologyModeling(object):
         return "<Hommod: {}, {}>".format(self.reference_entry_name, self.state)
 
     def upload_to_db(self, sections, rotamers):
+        ''' Upload to model to StructureModel and upload segment and rotamer info to StructureModelStatsSegment and
+            StructureModelStatsRotamer.
+        '''
         s_state=ProteinState.objects.get(name=self.state)
         formatted_model = self.format_final_model()
         new_entry = False
@@ -218,6 +222,8 @@ class HomologyModeling(object):
                                                                                 rotamer_template=r[4],model_segment=m_seg)
                                    
     def right_rotamer_select(self, rotamer):
+        ''' Filter out compound rotamers.
+        '''
         if len(rotamer)>1:
             for i in rotamer:
                 if i.pdbdata.pdb.startswith('COMPND')==False:
@@ -228,6 +234,9 @@ class HomologyModeling(object):
         return rotamer
                                                             
     def format_final_model(self):
+        ''' Do final formatting on homology model pdb file. Adds REMARK line, correct residue numbering and 
+            class-specific generic numbers. Returns the pdb in string format.
+        '''
         if self.prot_conf.protein!=self.main_structure.protein_conformation.protein.parent:
             try:
                 del self.template_source['N-term']
@@ -320,6 +329,8 @@ class HomologyModeling(object):
         return first_line+second_line+content
         
     def update_template_source(self, keys, struct, segment, just_rot=False):
+        ''' Update the tempalte_source dictionary with structure info for backbone and rotamers.
+        '''
         for k in keys:
             if just_rot==True:
                 try:
@@ -332,17 +343,17 @@ class HomologyModeling(object):
                 except:
                     pass
         
-    def run_alignment(self, core_alignment=True, query_states='default', 
+    def run_alignment(self, core_alignment=True, query_states=self.query_states, 
                       segments=['TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','ECL2','TM5','TM6','TM7','H8'], 
                       order_by='similarity'):
         ''' Creates pairwise alignment between reference and target receptor(s).
             Returns Alignment object.
             
+            @param core_alignment: boolean, False if only create core alignment (no loops)
+            @param query_states: list, list of endogenous ligand states to be applied for template search
             @param segments: list, list of segments to use, e.g.: ['TM1','ICL1','TM2','ECL1'] \n
             @param order_by: str, order results by identity, similarity or simscore
         '''
-        if query_states=='default':
-            query_states=self.query_states
         alignment = AlignedReferenceTemplate()
         alignment.run_hommod_alignment(self.reference_protein, segments, query_states, order_by)
         self.changes_on_db = alignment.changes_on_db
@@ -516,6 +527,10 @@ class HomologyModeling(object):
             alignment string. \n
             @param switch_bulges: boolean, identify and switch bulge sites. Default = True.
             @param switch_constrictions: boolean, identify and switch constriction sites. Default = True.
+            @param loops: boolean, set it to True if you want loop modeling. Default = True.
+            @param switch_rotamers: boolean, set it to True if you want alternative rotamer tempaltes. Default = True.
+            @param N_and_C_termini: boolean, set it to True if you want to model N/C-termini. Only applies for refining
+            crystals. Default = True.
         '''
         a = ref_temp_alignment[0]
         main_pdb_array = ref_temp_alignment[1]
@@ -1517,6 +1532,8 @@ class HomologyModeling(object):
             @param filename: str, filename of output file \n
             @param main_pdb_array: OrderedDict(), of atoms of pdb, where keys are generic numbers/residue numbers and
             values are list of atoms. Output of GPCRDBParsingPDB.pdb_array_creator().
+            @param alignment: AlignedReferenceTemplate class, alignment of reference and template.
+            @trimmed_residues: list, list of generic numbers that are trimmed/to be modeled by MODELLER.
         '''
         key = ''
         res_num = 0
@@ -1600,8 +1617,12 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
     def create_PIR_file(self, reference_dict, template_dict, template_file, hetatm_count, water_count):
         ''' Create PIR file from reference and template alignment (AlignedReferenceAndTemplate).
         
-            @param ref_temp_alignment: AlignedReferenceAndTemplate
+            @param reference_dict: AlignedReferenceAndTemplate.reference_dict
+            @param template_dict: AlignedReferenceAndTempalte.template_dict
             @template_file: str, name of template file with path
+            @param hetatm_count: int, number of hetero atoms
+            @param water_count: int, number of water atoms
+            
         '''
         ref_sequence, temp_sequence = '',''
         res_num = 1
@@ -1664,6 +1685,11 @@ sequence:{uniprot}::::::::
             @param reference: str, Uniprot code of reference sequence \n
             @param number_of_models: int, number of models to be built \n
             @param output_file_name: str, name of output file
+            @param atom_dict: nested OrderedDict(), atoms to model with MODELLER organized by segments and generic
+            numbers, default=None
+            @param helix_restraints: list, list of generic numbers that should be modelled as helical regions by 
+            MODELLER, default=[]
+            @param icl3_mid: int, position of the break in the middle of ICL3, default=None
         '''
         log.none()
         env = environ(rand_seed=1000) #!!random number generator
@@ -1716,6 +1742,8 @@ sequence:{uniprot}::::::::
 
 
 class SilentModeller(object):
+    ''' No text to console.
+    '''
     def __enter__(self):
         self._stdout = sys.stdout
         sys.stdout = open(os.devnull, 'w')
@@ -1802,7 +1830,7 @@ class SegmentEnds(object):
 
     
 class HelixEndsModeling(HomologyModeling):
-    '''
+    ''' Class for modeling the helix ends of GPCRs. 
     '''
     def __init__(self, similarity_table, template_source, main_structure):
         self.helix_ends = OrderedDict()
