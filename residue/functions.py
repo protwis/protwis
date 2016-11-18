@@ -582,8 +582,7 @@ def ggn(gn):
 def dgn(gn, protein_conformation):
     ''' Converts generic number to display generic number.
     '''
-    scheme_table = {'001':'gpcrdba','002':'gpcrdbb','003':'gpcrdbb','004':'gpcrdbc','005':'gpcrdbf'}    
-    scheme = ResidueNumberingScheme.objects.get(slug=scheme_table[protein_conformation.protein.family.slug[:3]])
+    scheme = ResidueNumberingScheme.objects.get(slug=protein_conformation.protein.residue_numbering_scheme)
     convert_gn = ResidueGenericNumberEquivalent.objects.get(label=gn, scheme=scheme).default_generic_number.label
     return Residue.objects.get(protein_conformation=protein_conformation, generic_number__label=convert_gn).display_generic_number.label
     
