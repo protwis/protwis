@@ -23,6 +23,8 @@ urlpatterns = [
     url(r'^structure/',include('structure.urls')),
     url(r'^construct/',include('construct.urls')),
     url(r'^sitesearch/',include('sitesearch.urls')),
+    url(r'^drugs/',include('drugs.urls')),
+    url(r'^signprot/',include('signprot.urls'))
 ]
 
 handler404 = views.error404

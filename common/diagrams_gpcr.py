@@ -38,7 +38,7 @@ class DrawSnakePlot(Diagram):
         # FIXME DO PUREIMAGE
         pureImage = False
         #$pureImage = isset($_GET['pureimage']) && $_GET['pureimage'] == 'TRUE' ? TRUE : FALSE;
-        
+
         # get sequence, baldwin, and bw information of this receptor
 
         self.sequence = residue_list
@@ -53,7 +53,7 @@ class DrawSnakePlot(Diagram):
             if segment not in self.segments: self.segments[segment] = []
             label = ''
             displaylabel = ''
-            if r.generic_number: 
+            if r.generic_number:
                 label = r.generic_number.label
             elif hasattr(r, 'family_generic_number'):
                 label = r.family_generic_number
@@ -84,7 +84,7 @@ class DrawSnakePlot(Diagram):
 
         # margin between two helixes
         self.margin = 30
-        
+
         # highest and lowest bound of this svg
         self.high =100
         self.low = 0
@@ -95,10 +95,10 @@ class DrawSnakePlot(Diagram):
 
         # helices length
         # helicesLength = Svg::getSnakePlotHelicesLength($baldwin, $helixWidth, $angleDeg) #FIXME
-        
+
         # top and bottom residue coords in each helix
         self.TBCoords = {}
-        
+
         self.output = ""
         self.traceoutput = ""
         self.helixoutput = ""
@@ -129,7 +129,7 @@ class DrawSnakePlot(Diagram):
         self.drawSnakePlotLoops()
         self.drawSnakePlotTerminals()
 
-    def __str__(self):  
+    def __str__(self):
 
         self.output = "<g id=snake transform='translate(0, " + str(-self.low+ self.offsetY) + ")'>" + self.traceoutput+self.output+self.helixoutput+self.drawToolTip() + "</g>"; #for resizing height
         return mark_safe(self.create(self.output,self.maxX['right']+30,self.high-self.low+self.offsetY*2,"snakeplot", self.nobuttons))
@@ -139,7 +139,7 @@ class DrawSnakePlot(Diagram):
         self.TBCoords[helix_num] = {}
 
         if helix_num%2==0: rs.reverse() # reverse direction for even helix because they go from inside to outside
-        
+
         output_residues = []
 
         res_num = len(self.segments['TM'+str(helix_num)])
@@ -159,7 +159,7 @@ class DrawSnakePlot(Diagram):
         bulge = 0
         skip = 0
         indentX = -self.residue_radius+3
-        indentY = 3 
+        indentY = 3
         for i in range(0,res_num):
             prevGeneric_number = prevGeneric.split('x')[1]
             currGeneric_number = rs[i][2].split('x')[1]
@@ -168,13 +168,13 @@ class DrawSnakePlot(Diagram):
                 if row_pos==0:  # if first in row, use space for bulge
                     bulgeY = 5
                     bulgeX = 7
-                else: 
+                else:
                     bulgeY = 5
                     bulgeX = 5
                 row_length+=1
             elif i!=0 and ((helix_num%2==0 and int(prevGeneric_number)-1!= int(currGeneric_number)) or (helix_num%2!=0 and int(prevGeneric_number)+1!= int(currGeneric_number))):
                 skip = 1
-                if row_pos!=0 and row_pos+1<row_length: 
+                if row_pos!=0 and row_pos+1<row_length:
                     nextX =round(startX-(row_pos+1)*self.residue_radius*1.5+indentX+bulgeX)
                     nextY = round(startY+row*self.residue_radius*2.4+(row_pos+1)*self.residue_radius*0.5+indentY+bulgeY)
                     output_trace += "<line x1="+str(prevX)+" y1="+str(prevY)+" x2="+str(nextX)+" y2="+str(nextY)+" stroke='grey' fill='none' stroke-width='1' stroke-dasharray='1,1' />"
@@ -185,7 +185,7 @@ class DrawSnakePlot(Diagram):
                     row_length = 3 if row_length == 4 else 4
                 else:
                     row_pos +=1
-            
+
             # move left as you go down a row
             x = round(startX-row_pos*self.residue_radius*1.6+indentX+bulgeX)
 
@@ -202,13 +202,13 @@ class DrawSnakePlot(Diagram):
                 if row_pos==1:  # if first in row, use space for bulge
                     bulgeY = -3
                     bulgeX = 10
-                else: 
+                else:
                     bulgeY = -3
                     bulgeX = 7
                 rs[i][2] = prevGeneric # make it the prev one, to catch missing ones correctly
                 bulge = 0
 
-            if row_length==3: 
+            if row_length==3:
                 output_residue_in += output_residue
             else:
                 output_residue_out += output_residue
@@ -225,14 +225,14 @@ class DrawSnakePlot(Diagram):
                 output_trace += "<path d='" + points + "' stroke='grey' fill='none' stroke-width='2'  />"
 
             # alternate between 4 and 3 res per row
-            if row_length>3 and row_pos>=row_length: 
+            if row_length>3 and row_pos>=row_length:
                 row_length=3
                 row_pos = 0
                 row += 1
                 bulgeX = 0
                 bulgeY = 0
                 indentX = -self.residue_radius+3
-                indentY = 3 
+                indentY = 3
             elif row_length==3 and row_pos>=3:
                 row_length=4
                 row_pos = 0
@@ -250,7 +250,7 @@ class DrawSnakePlot(Diagram):
         temp = ''
         if helix_num%2==0: output_residues.reverse()
         for res in output_residues:
-            temp += res 
+            temp += res
 
         return output_trace+temp
 
@@ -276,7 +276,7 @@ class DrawSnakePlot(Diagram):
         bulge = 0
         skip = 0
         indentX = -self.residue_radius+3
-        indentY = 3 
+        indentY = 3
         for i in range(0,res_num):
             if rs[i][2]!='' and prevGeneric!='':
                 prevGeneric_number = prevGeneric.split('x')[1]
@@ -286,13 +286,13 @@ class DrawSnakePlot(Diagram):
                     if row_pos==0:  # if first in row, use space for bulge
                         bulgeY = 5
                         bulgeX = 7
-                    else: 
+                    else:
                         bulgeY = 5
                         bulgeX = 5
                     row_length+=1
                 elif i!=0 and ((helix_num%2!=0 and int(prevGeneric_number)-1!= int(currGeneric_number)) or (helix_num%2==0 and int(prevGeneric_number)+1!= int(currGeneric_number))):
                     skip = 1
-                    if row_pos!=0 and row_pos+1<row_length: 
+                    if row_pos!=0 and row_pos+1<row_length:
                         nextX =round(startX-(row_pos+1)*self.residue_radius*1.5+indentX+bulgeX)
                         nextY = round(startY+row*self.residue_radius*2.4+(row_pos+1)*self.residue_radius*0.5+indentY+bulgeY)
                         output_trace += "<line x1="+str(prevX)+" y1="+str(prevY)+" x2="+str(nextX)+" y2="+str(nextY)+" stroke='grey' fill='none' stroke-width='1' stroke-dasharray='1,1' />"
@@ -303,7 +303,7 @@ class DrawSnakePlot(Diagram):
                         row_length = 3 if row_length == 4 else 4
                     else:
                         row_pos +=1
-            
+
             x = round(startX-row_pos*self.residue_radius*1.6+indentX+bulgeX) # move left as you go down a row
             y = round(startY+row*self.residue_radius*2.4+row_pos*self.residue_radius*0.5+indentY+bulgeY) #Move down with right amount
             x = round(startX+row*self.residue_radius*2.4-row_pos*self.residue_radius*0.5+indentY+bulgeY) #move left as you go down a row
@@ -319,13 +319,13 @@ class DrawSnakePlot(Diagram):
                 if row_pos==1:  # if first in row, use space for bulge
                     bulgeY = -3
                     bulgeX = 10
-                else: 
+                else:
                     bulgeY = -3
                     bulgeX = 7
                 rs[i][2] = prevGeneric # make it the prev one, to catch missing ones correctly
                 bulge = 0
 
-            if row_length==3: 
+            if row_length==3:
                 output_residue_in += output_residue
             else:
                 output_residue_out += output_residue
@@ -341,14 +341,14 @@ class DrawSnakePlot(Diagram):
                 output_trace += "<path d='" + points + "' stroke='grey' fill='none' stroke-width='2'  />"
 
             # alternate between 4 and 3 res per row
-            if row_length>3 and row_pos>=row_length: 
+            if row_length>3 and row_pos>=row_length:
                 row_length=3
                 row_pos = 0
                 row += 1
                 bulgeX = 0
                 bulgeY = 0
                 indentX = -self.residue_radius+3
-                indentY = 3 
+                indentY = 3
             elif row_length==3 and row_pos>=3:
                 row_length=4
                 row_pos = 0
@@ -456,9 +456,9 @@ class DrawSnakePlot(Diagram):
                     if pos_bend>=abs(x2-x_max)-40: #no more bend left
                         pos_bend = 0
                         bend += 1
-                        if bend_direction==1: 
+                        if bend_direction==1:
                             bend_direction = -1
-                        elif bend_direction==-1: 
+                        elif bend_direction==-1:
                             bend_direction = 1
 
                 if i==0: self.output += "<line class='"+name+" long' x1="+str(x1)+" y1="+str(y1)+" x2="+str(where[1][0])+" y2="+str(where[1][1])+" stroke='black' fill='none' stroke-width='2' stroke-dasharray2='1,1' />"
@@ -483,7 +483,7 @@ class DrawSnakePlot(Diagram):
         orientation = 1
         for i in range(1,7):
             number = round(0.01+i/2) # hacky way of getting # of loop intra/extra (1 to 3)
-            if i%2==0: 
+            if i%2==0:
                 position = 'extra' # is loop intra- or extrascelluar
                 name = "ECL"+str(number)
                 orientation = -1
@@ -523,10 +523,10 @@ class DrawSnakePlot(Diagram):
             y2 = self.TBCoords[i+1][position][1]
 
             boxX = (x1+x2)/2 # midway between
-            if position=='extra': 
+            if position=='extra':
                 boxY = min(y1,y2)-y_offset # over helix
                 y_indent = -1*bezier_pull
-            if position=='intra': 
+            if position=='intra':
                 boxY = max(y1,y2)+y_offset # over helix
                 y_indent = bezier_pull
 
@@ -579,7 +579,7 @@ class DrawSnakePlot(Diagram):
                     tries += 1
                     if tries>100:
                         break
-            
+
             pos = (length-length_of_residues_in_loop)/2 # get start pos
 
             indentX = 0
@@ -672,13 +672,13 @@ class DrawSnakePlot(Diagram):
                         if pos_bend>=(x2-x_left-40): # no more bend left
                             bend +=1
                             pos_bend = 0
-                            if bend_direction==1: 
+                            if bend_direction==1:
                                 bend_direction = -1
-                            elif bend_direction==-1: 
+                            elif bend_direction==-1:
                                 bend_direction = 1
-                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], where[1][0], r[3], self.residue_radius-1,name+" long")
+                    self.output += self.DrawResidue(where[1][0],where[1][1],r[1], r[0], r[3], self.residue_radius-1,name+" long")
 
-                    if orientation==-1: 
+                    if orientation==-1:
                         if where[1][1]<self.maxY[position]: self.maxY[position] = where[1][1]
                     else:
                         if where[1][1]>self.maxY[position]: self.maxY[position] = where[1][1]
@@ -699,10 +699,10 @@ class DrawSnakePlot(Diagram):
                 points2 = "M "+str(x1)+" "+str(y1)+" Q"+str(boxX)+" "+str(boxY+y_indent)+" "+str(x2)+" "+str(y2)
                 labelbox = self.wherebezier([x1,y1],[boxX,boxY+y_indent],[x2,y2],0.001,length/2)
 
-                if len(rs)>loop_long_length: 
+                if len(rs)>loop_long_length:
                     points2 = "M "+str(x1)+","+str(y1)+" C"+str(x1-abs(y_indent)*0.5)+","+str(boxY+y_indent*0.5)+" "+str(x2+abs(y_indent)*0.5)+","+str(boxY+y_indent*0.5)+" "+str(x2)+","+str(y2)
                     labelbox = self.wherebezier([x1,y1],[x1-abs(y_indent)*0.5,boxY+y_indent*0.5],[x2+abs(y_indent)*0.5,boxY+y_indent*0.5],0.001,length/2,[x2,y2] )
-                
+
                 labelbox[1][1] += orientation*40
 
                 self.output += "<path class='"+name+" long' d='" + points2 + "' stroke='black' fill='none' stroke-width='2' />"
@@ -721,28 +721,28 @@ class DrawSnakePlot(Diagram):
                     if where[1][1]>self.high: self.high = where[1][1]
                     if where[1][1]<self.low: self.low = where[1][1]
                     prev_where = where[1][0],where[1][1]
-                    
-                    if orientation==-1: 
+
+                    if orientation==-1:
                         if where[1][1]<self.maxY[position]: self.maxY[position] = where[1][1]
                     else:
                         if where[1][1]>self.maxY[position]: self.maxY[position] = where[1][1]
 
-                    if orientation==-1: 
-                        if where[1][1]<max_y: 
+                    if orientation==-1:
+                        if where[1][1]<max_y:
                             max_y = where[1][1]
                             x_at_max_y = where[1][0]
                     else:
-                        if where[1][1]>max_y: 
+                        if where[1][1]>max_y:
                             max_y = where[1][1]
                             x_at_max_y = where[1][0]
 
-                if orientation==1: 
+                if orientation==1:
                     max_y = max_y+25
                 else:
                     max_y = max_y-20
                 self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str(x_at_max_y-18)+" y="+str(max_y-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
                 self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str(x_at_max_y)+" y="+str(max_y)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
-    
+
     def drawSnakePlotLoop(self,number):
         name = "ICL"+str(number)
         rs = self.segments[name]
@@ -770,7 +770,7 @@ class DrawSnakePlot(Diagram):
             prevhelix = 3
             nexthelix = 4
             indentX = -self.residue_radius+3
-            indentY = 3 
+            indentY = 3
             bigrow = 4
             smallrow = 3
 
@@ -779,7 +779,7 @@ class DrawSnakePlot(Diagram):
         row_length = 3 #start a row row helix
         row_pos = 0
         row = 0
-        
+
         max_y = 0
 
         start = 1
@@ -795,13 +795,15 @@ class DrawSnakePlot(Diagram):
             elif start==0 and rs[i][2]=='':
                 res_after.append(i)
 
-
         startX = self.TBCoords[prevhelix]['intra'][0]+40
         startY =  self.TBCoords[prevhelix]['intra'][1]+40+10*len(res_before)
+        if len(res_before)>10:
+            startY =  self.TBCoords[prevhelix]['intra'][1]+40+20*len(res_before)
+
 
 
         for p,i in list(enumerate(res_helix)):
-            
+
             x = round(startX+row*self.residue_radius*2.4-row_pos*self.residue_radius*0.5+indentY) #move left as you go down a row
             y = round(startY+row_pos*self.residue_radius*1.6+indentX) # Move down with right amount
             output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], rs[i][3], self.residue_radius)
@@ -810,7 +812,7 @@ class DrawSnakePlot(Diagram):
 
             if y>max_y: #get position for label
                 max_y = y
-          
+
             output_residue_in += output_residue
 
             if (row_pos==1 and row!=0): # if need for trace
@@ -820,12 +822,12 @@ class DrawSnakePlot(Diagram):
                 output_trace += "<path d='" + points + "' stroke='grey' fill='none' stroke-width='2'  />" #stroke-dasharray='1,2'
 
             #alternate between 4 and 3 res per row
-            if row_length>smallrow and row_pos>=row_length: 
+            if row_length>smallrow and row_pos>=row_length:
                 row_length=smallrow
                 row_pos = 0
                 row += 1
                 indentX = -self.residue_radius+3
-                indentY = 3 
+                indentY = 3
             elif row_length==smallrow and row_pos>=smallrow:
                 row_length=bigrow
                 row_pos = 0
@@ -846,13 +848,13 @@ class DrawSnakePlot(Diagram):
                 for p2,i2 in list(enumerate(res_before)):
                     where = self.wherebezier([self.TBCoords[prevhelix]['intra'][0],self.TBCoords[prevhelix]['intra'][1]],[self.TBCoords[prevhelix]['intra'][0]-30,y],[x,y],0.001,pos)
                     pos += between_residues
-                    self.output += self.DrawResidue(where[1][0],where[1][1],rs[i2][1], where[1][0], rs[i2][3], self.residue_radius-1,name+" long")
+                    self.output += self.DrawResidue(where[1][0],where[1][1],rs[i2][1], where[1][0], rs[i2][3], self.residue_radius-1,name)
 
 
             if p==len(res_helix)-1: #if end, add to next helix
                 points = "M "+str(self.TBCoords[nexthelix]['intra'][0])+" "+str(self.TBCoords[nexthelix]['intra'][1])+" Q"+str(self.TBCoords[nexthelix]['intra'][0]+30)+" "+str(y)+" "+str(x)+" "+str(y)
                 length_after = self.lengthbezier([self.TBCoords[nexthelix]['intra'][0],self.TBCoords[nexthelix]['intra'][1]],[self.TBCoords[nexthelix]['intra'][0]+30,y],[x,y],0.001)
-            
+
                 self.output += "<path d='" + points + "' stroke='black' fill='none' stroke-width='2' />"
 
                 pos = length_after-between_residues-10
@@ -861,12 +863,12 @@ class DrawSnakePlot(Diagram):
                     pos -= between_residues
                     self.output += self.DrawResidue(where[1][0],where[1][1],rs[i2][1], where[1][0], rs[i2][3], self.residue_radius-1,name)
 
-   
+
         self.output += output_trace+output_residue_in+output_residue_out
 
         self.output += "<rect class='"+name+" long' x="+str(((self.TBCoords[prevhelix]['intra'][0]+self.TBCoords[nexthelix]['intra'][0])/2)-18)+" y="+str(max_y-13+30)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
         self.output += str("<text  class='"+name+" long' x="+str((self.TBCoords[prevhelix]['intra'][0]+self.TBCoords[nexthelix]['intra'][0])/2)+" y="+str(max_y+30)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
- 
+
 
 class DrawHelixBox(Diagram):
 
@@ -931,7 +933,7 @@ class DrawHelixBox(Diagram):
                 print('failed helix',i,msg)
                 pass
 
-    def __str__(self):  
+    def __str__(self):
         return mark_safe(self.create(self.output+self.drawToolTip(),595,430,"helixbox", self.nobuttons))
 
     def DrawHelix(self, startX,startY,residuelist,radius,direction,helixNum,helixTopResidue,rotation):
@@ -940,7 +942,7 @@ class DrawHelixBox(Diagram):
         for r in residuelist:
             displaylabel = r.amino_acid+str(r.sequence_number)
             generic_number = ''
-            if r.generic_number: 
+            if r.generic_number:
                 generic_number = r.generic_number.label
             elif hasattr(r, 'family_generic_number'):
                 generic_number = r.family_generic_number
@@ -954,7 +956,7 @@ class DrawHelixBox(Diagram):
         numResPerSide = 5
         numResInBox = numResPerSide*4
         residueRadius = 12
-        
+
         # start positions of the four sides
         output_residue = ""
 
@@ -982,7 +984,7 @@ class DrawHelixBox(Diagram):
         coordinates = {}
 
         for i in range(1,numResInBox+1):
-            
+
             # next helix side
             if helixSide == 1:
                 # go back to side 1
@@ -1037,7 +1039,7 @@ class DrawHelixBox(Diagram):
                      resPosIncr*perpDir*perpMove["x"])
                 y['1'] = (helixSideCoord[helixSide]["y"] + (resPosIncr+0.6)*move["y"] +
                      resPosIncr*perpDir*perpMove["y"])
-            
+
             if coordinateIndices: #not empty
                 for coordinateIndex in coordinateIndices:
                     tempCurrentResidue = currentResidue;
@@ -1047,11 +1049,11 @@ class DrawHelixBox(Diagram):
                     # Get label information of each residue.
                     residue_number = sequence[tempCurrentResidue]['residueNumber'];
                     label = sequence[tempCurrentResidue]['displaylabel']
-                    
+
                     # draw the residue
                     output_residue += self.DrawResidue(x[coordinateIndex],y[coordinateIndex],
                         sequence[tempCurrentResidue]['residueType'],residue_number, label,residueRadius);
-                
+
             # residue position incrementer
             if i % 4 == 0:
                 resPosIncr += 1
@@ -1061,7 +1063,7 @@ class DrawHelixBox(Diagram):
 
             # next residue
             currentResidue = nextResidue
-        
+
         output_backbone = self.DrawBackbone(coordinates)
 
         helix_number_svg = "<text x='"+str(startX)+"' y='"+str(startY+7)+"' text-anchor='middle' font-family='helvetica' font-size='20'>"+str(helixNum)+"</text>\n"

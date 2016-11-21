@@ -1,0 +1,40 @@
+/*Annotations*/
+.deletion {
+    background-color: red;
+}
+.modification {
+    background-color: gold;
+}
+.mutation {
+    background-color: orange;
+}
+.insertion {
+    background-color: purple;
+}
+
+.bg-insertion {
+    background-color: #d9b3ff;
+}
+
+.bg-deletion {
+    background-color: red;
+}
+.bg-mutation {
+    background-color: orange;
+}
+
+#seq_c {
+    display: none;
+}
+
+#schematic_seq_c {
+    display: none;
+}
+
+.construct_div {
+    padding-left:3px;
+    padding-right:3px;
+    float:left;
+    position: relative;
+    max-width: 46px;
+}

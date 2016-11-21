@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework import views, generics, viewsets
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, FileUploadParser
+from rest_framework.renderers import JSONRenderer
 from django.template.loader import render_to_string
 from django.db.models import Q
 from django.conf import settings
@@ -19,6 +20,7 @@ from api.serializers import (ProteinSerializer, ProteinFamilySerializer, Species
 from api.renderers import PDBRenderer
 from common.alignment import Alignment
 from common.definitions import *
+from drugs.models import Drugs
 
 import json, os
 from io import StringIO
@@ -28,9 +30,25 @@ from collections import OrderedDict
 # FIXME add
 # getMutations
 # numberPDBfile
+import coreapi
+from urllib.parse import urlparse
+from urllib.parse import urljoin
+from rest_framework import renderers, response, schemas
+from rest_framework.decorators import api_view, renderer_classes
+from rest_framework import response, schemas
+from rest_framework.routers import DefaultRouter
+from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
 
-def index(request):
-    return render(request, 'api/index.html', {'site_title': settings.SITE_TITLE})
+router = DefaultRouter(
+    schema_title='GPCRdb API',
+    schema_renderers=[OpenAPIRenderer, SwaggerUIRenderer, renderers.CoreJSONRenderer]
+)
+
+@api_view()
+@renderer_classes([SwaggerUIRenderer, OpenAPIRenderer, renderers.CoreJSONRenderer])
+def schema_view(request):
+    generator = schemas.SchemaGenerator(title='GPCRdb API')
+    return response.Response(generator.get_schema(request=request))
 
 class ProteinDetail(generics.RetrieveAPIView):
     """
@@ -693,6 +711,31 @@ class StructureAssignGenericNumbers(views.APIView):
         return Response(out_stream.getvalue())
 
 
+class StructureSequenceParser(views.APIView):
+    """
+    Analyze the uploaded pdb structure listing auxiliary proteins, mutations, deletions and insertions. 
+    \n/structure/structure/parse_pdb\n
+    e.g. 
+    curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/services/structure/parse_pdb
+    """
+    parser_classes = (FileUploadParser,)
+    renderer_classes =(JSONRenderer)
+
+    def post(self, request):
+
+        root, ext = os.path.splitext(request.FILES['pdb_file'].name)
+        header = parse_pdb_header(request.FILES['pdb_file'])
+        parser = SequenceParser(request.FILES['pdb_file'])
+
+        json_data = OrderedDict()
+        json_data["header"] = header
+        json_data.update(parser.get_fusions())
+        json_data.update(parser.get_mutations())
+        json_data.update(parser.get_deletions())
+
+        return Response(json_data)
+
+
 class StructureLigandInteractions(generics.ListAPIView):
     """
     Get a list of interactions between structure and ligand
@@ -725,3 +768,28 @@ class MutantList(generics.ListAPIView):
     def get_queryset(self):
         queryset = MutationRaw.objects.all()
         return queryset.filter(protein=self.kwargs.get('entry_name'))
+
+class DrugList(views.APIView):
+    """
+    Get a list of drugs for a single protein instance by entry name
+    \n/drugs/{proteins}/
+    \n{entry_name} is a protein identifier from Uniprot, e.g. adrb2_human
+    """
+    def get(self, request, entry_name=None):
+
+        drugs = Drugs.objects.filter(target__entry_name=entry_name).distinct()
+
+        druglist = []
+        for drug in drugs:
+            drugname = drug.name
+            drugtype = drug.drugtype
+            status = drug.status
+            approval = drug.approval
+            indication = drug.indication
+            novelty = drug.novelty
+            druglist.append({'name':drugname, 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty})
+
+        return Response(druglist)
+
+
+

@@ -1,10 +1,10 @@
 from django.conf.urls import include, url
-from rest_framework import routers
-
 from api import views
 
+
 urlpatterns = [
-    url(r'^reference/', include('rest_framework.urls')),
+    url(r'^', include(views.router.urls, namespace='services')),
+    url(r'^reference/', views.schema_view),
     url(r'^protein/accession/(?P<accession>[^/].+)/$', views.ProteinByAccessionDetail.as_view(),
         name='proteinbyaccession'),
     url(r'^protein/(?P<entry_name>[^/].+)/$', views.ProteinDetail.as_view(), name='protein-detail'),
@@ -60,9 +60,9 @@ urlpatterns = [
         name='structuretemplate-partial'),
     url(r'structure/assign_generic_numbers$', views.StructureAssignGenericNumbers.as_view(),
         name='assign_generic_numbers'),
-
+    url(r'structure/parse_pdb$', views.StructureSequenceParser.as_view(), name='sequence_parser'),
     url(r'^species/$', views.SpeciesList.as_view(), name='species-list'),
     url(r'^species/(?P<latin_name>[^/]+)/$', views.SpeciesDetail.as_view(), name='species-detail'),
-
-    url(r'^mutants/(?P<entry_name>[^/].+)/$', views.MutantList.as_view(), name='mutants')
+    url(r'^mutants/(?P<entry_name>[^/].+)/$', views.MutantList.as_view(), name='mutants'),
+    url(r'^drugs/(?P<entry_name>[^/].+)/$', views.DrugList.as_view(), name='drugs')
 ]

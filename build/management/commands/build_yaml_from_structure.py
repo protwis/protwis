@@ -108,7 +108,7 @@ class Command(BaseCommand):
         output = {}
         segments = ProteinSegment.objects.all()
         for segment in segments:
-            resi = list(Residue.objects.filter(protein_segment__slug = segment.slug,
+            resi = list(Residue.objects.filter(protein_segment = segment,
                 protein_conformation__protein__entry_name = prot_entry_name).order_by('sequence_number'))
             try:
                 if resi:

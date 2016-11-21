@@ -4,6 +4,8 @@ from django.conf import settings
 from django import forms
 from django.db.models import Count, Min, Sum, Avg, Q
 from django.utils.text import slugify
+from django.core.cache import cache
+from django.views.decorators.cache import cache_page
 
 from interaction.models import *
 from interaction.forms import PDBform
@@ -22,7 +24,7 @@ from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
 from common.views import AbsTargetSelection
 from common.alignment import Alignment
-from protein.models import Protein, ProteinFamily, ProteinGProtein
+from protein.models import Protein, ProteinFamily, ProteinGProtein, ProteinGProteinPair
 
 import os
 from os import listdir, devnull, makedirs
@@ -128,10 +130,13 @@ def StructureDetails(request, pdbname):
         structure_ligand_pair__structure__pdb_code__index=pdbname).annotate(numRes=Count('pk', distinct=True)).order_by('-numRes')
     resn_list = ''
 
+
+    main_ligand = "none"
     for structure in structures:
         if structure['structure_ligand_pair__annotated']:
             resn_list += ",\"" + \
                 structure['structure_ligand_pair__pdb_reference'] + "\""
+            main_ligand = structure['structure_ligand_pair__pdb_reference']
     print(resn_list)
 
 
@@ -142,14 +147,18 @@ def StructureDetails(request, pdbname):
     residuelist = Residue.objects.filter(protein_conformation__protein=p).prefetch_related('protein_segment','display_generic_number','generic_number')
     lookup = {}
 
+    residues_lookup = {}
     for r in residuelist:
         if r.generic_number:
             lookup[r.generic_number.label] = r.sequence_number
+            residues_lookup[r.sequence_number] = r.amino_acid +str(r.sequence_number)+ " "+ r.generic_number.label
 
     residues = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').order_by('rotamer__residue__sequence_number')
     residues_browser = []
     ligands = []
+    display_res = []
+    main_ligand_full = "None"
     residue_table_list = []
     for residue in residues:
         key = residue.interaction_type.name
@@ -171,11 +180,17 @@ def StructureDetails(request, pdbname):
         else:
             display = ''
         ligand = residue.structure_ligand_pair.ligand.name
+        display_res.append(str(pos))
         residues_browser.append({'type': key, 'aa': aa, 'ligand': ligand,
                                  'pos': pos, 'wt_pos': wt_pos, 'gpcrdb': display, 'segment': segment})
+        if pos not in residues_lookup:
+            residues_lookup[pos] = aa + str(pos) + " " +display + " interaction " + key
+        else:
+            residues_lookup[pos] += " interaction " + key
         if ligand not in ligands:
             ligands.append(ligand)
-
+            main_ligand_full = ligand
+    display_res = ' or '.join(display_res)
     # RESIDUE TABLE
     segments = ProteinSegment.objects.all().filter().prefetch_related()
 
@@ -259,8 +274,8 @@ def StructureDetails(request, pdbname):
                 residuelist, p.get_protein_class(), str(p), nobuttons=1)
 
     return render(request, 'interaction/structure.html', {'pdbname': pdbname, 'structures': structures,
-                                                          'crystal': crystal, 'protein': p, 'helixbox' : HelixBox, 'snakeplot': SnakePlot, 'residues': residues_browser, 'annotated_resn':
-                                                          resn_list, 'ligands': ligands, 'data': context['data'],
+                                                          'crystal': crystal, 'protein': p, 'helixbox' : HelixBox, 'snakeplot': SnakePlot, 'residues': residues_browser, 'residues_lookup': residues_lookup, 'display_res': display_res, 'annotated_resn':
+                                                          resn_list, 'ligands': ligands,'main_ligand' : main_ligand,'main_ligand_full' : main_ligand_full, 'data': context['data'],
                                                           'header': context['header'], 'segments': context['segments'],
                                                           'number_of_schemes': len(numbering_schemes)})
 
@@ -492,7 +507,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                     quit()
 
                 structureligandinteraction = StructureLigandInteraction.objects.filter(
-                    pdb_reference=temp[1], structure=structure, annotated=True) #, pdb_file=None 
+                    pdb_reference=temp[1], structure=structure, annotated=True) #, pdb_file=None
                 if structureligandinteraction.exists():  # if the annotated exists
                     annotated_found = 1
                     annotated = 1
@@ -550,6 +565,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                 ResidueFragmentInteraction.objects.filter(structure_ligand_pair=structureligandinteraction).delete()
 
                 for interaction in output['interactions']:
+                    # print(interaction)
                     aa = interaction[0]
                     aa, pos, chain = regexaa(aa)
                     residue = check_residue(protein, pos, aa)
@@ -558,7 +574,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                     fragment, rotamer = extract_fragment_rotamer(
                                     f, residue, structure, ligand)
 
-                    #print(interaction[2],interaction[3],interaction[4],interaction[5])
+                    # print(interaction[2],interaction[3],interaction[4],interaction[5])
                     if fragment!=None:
                         interaction_type, created = ResidueFragmentInteractionType.objects.get_or_create(
                                         slug=interaction[2], name=interaction[3], type=interaction[4], direction=interaction[5])
@@ -918,7 +934,7 @@ def calculate(request, redirect=None):
 
                 # convert identified interactions to residue features and add them to the session
                 # numbers in lists represent the interaction "hierarchy", i.e. if a residue has more than one
-                # interaction, 
+                # interaction,
                 interaction_name_dict = {
                     'polar_double_neg_protein': [1, 'neg'],
                     'polar_double_pos_protein': [1, 'neg'],
@@ -946,7 +962,7 @@ def calculate(request, redirect=None):
                                 if (not feature
                                     or interaction_name_dict[interaction][0] < interaction_name_dict[feature][0]):
                                     feature = interaction
-                        
+
                         if not feature:
                             continue
 
@@ -1172,7 +1188,7 @@ def pdb(request):
     # response['X-Sendfile'] = smart_str(mypath)
     if session:
         session = request.session.session_key
-        pdbdata = open('/tmp/interactions/' + session +
+        pdbdata = open('/tmp/signprot/' + session +
                        '/pdbs/' + pdbname + '.pdb', 'r').read()
         response = HttpResponse(pdbdata, content_type='text/plain')
     else:
@@ -1193,120 +1209,4 @@ def pdb(request):
         response = HttpResponse(structure.pdb_data.pdb,
                                 content_type='text/plain')
     return response
-
-def GProtein(request):
-
-    context = OrderedDict()
-    i=0
-
-    # proteins = Protein.objects.filter(source__name='SWISSPROT').prefetch_related('proteingproteinpair_set')
-    gproteins = ProteinGProtein.objects.all().prefetch_related('proteingproteinpair_set')
-
-    jsondata = {}
-    selectivitydata = {}
-    for gp in gproteins:
-        ps = gp.proteingproteinpair_set.all()
-
-        if ps:
-            jsondata[str(gp)] = []
-            for p in ps:
-                if str(p.protein.entry_name).split('_')[0].upper() not in selectivitydata:
-                    selectivitydata[str(p.protein.entry_name).split('_')[0].upper()] = []
-                selectivitydata[str(p.protein.entry_name).split('_')[0].upper()].append(str(gp))
-                # print(p.protein.family.parent.parent.parent)
-                jsondata[str(gp)].append(str(p.protein.entry_name)+'\n')
-
-            jsondata[str(gp)] = ''.join(jsondata[str(gp)])
-
-    context["gdata"] = jsondata
-    context["selectivitydata"] = selectivitydata
-
-    return render(request, 'interaction/gprotein.html', context)
-
-class TargetSelection(AbsTargetSelection):
-    step = 1
-    number_of_steps = 1
-    filters = False
-    psets = False
-    target_input = False
-    redirect_on_select = True
-    type_of_selection = 'ginterface'
-    title = 'SELECT TARGET for Gs INTERFACE'
-    description = 'Select a reference target by searching or browsing.' \
-        + '\n\nThe Gs interface from adrb2 (PDB: 3SN6) will be superposed onto the selected target.' \
-        + '\n\nAn interaction browser for the adrb2 Gs interface will be given for comparison"'
-
-    # template_name = 'common/targetselection.html'
-
-    selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
-        ('segments', False),
-    ])
-
-    buttons = {
-        'continue': {
-            'label': 'Continue to next step',
-            'url': '#',
-            'color': 'success',
-        },
-    }
-
-
-def Ginterface(request, protein = None):
-
-    context = OrderedDict()
-
-    residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=protein).prefetch_related('protein_segment','display_generic_number','generic_number')
-    SnakePlot = DrawSnakePlot(
-                residuelist, "Class A (Rhodopsin)", protein, nobuttons=1)
-
-    crystal = Structure.objects.get(pdb_code__index="3SN6")
-    aa_names = definitions.AMINO_ACID_GROUP_NAMES
-    names_aa = dict(zip(aa_names.values(),aa_names.keys()))
-    names_aa['Polar (S/T)'] = 'pol_short'
-    names_aa['Polar (N/Q/H)'] = 'pol_long'
-
-    residues_browser = [{'pos': 135, 'aa': 'I', 'gprotseg': "H5",'segment': 'TM3', 'ligand': 'Gs', 'type': aa_names['hp'], 'gpcrdb': '3.54x54', 'gpnum': 'G.H5.16', 'gpaa': 'Q384', 'availability': 'interacting'},{'pos': 136, 'aa': 'T', 'gprotseg': "H5",'segment': 'TM3', 'ligand': 'Gs', 'type': 'Polar (S/T)', 'gpcrdb': '3.55x55', 'gpnum': 'G.H5.12', 'gpaa': 'R380', 'availability': 'interacting'},{'pos': 139, 'aa': 'F', 'gprotseg': "H5",'segment': 'ICL2', 'ligand': 'Gs', 'type': 'Aromatic', 'gpcrdb': '34.51x51', 'gpnum': 'G.H5.8', 'gpaa': 'F376', 'availability': 'interacting'},{'pos': 139, 'aa': 'F', 'gprotseg': "S1",'segment': 'ICL2', 'ligand': 'Gs', 'type': 'Aromatic', 'gpcrdb': '34.51x51', 'gpnum': 'G.S1.2', 'gpaa': 'H41', 'availability': 'interacting'},{'pos': 141, 'aa': 'Y', 'gprotseg': "H5",'segment': 'ICL2', 'ligand': 'Gs', 'type': 'Aromatic', 'gpcrdb': '34.53x53', 'gpnum': 'G.H5.19', 'gpaa': 'H387', 'availability': 'interacting'},{'pos': 225, 'aa': 'E', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'Negative charge', 'gpcrdb': '5.64x64', 'gpnum': 'G.H5.12', 'gpaa': 'R380', 'availability': 'interacting'},{'pos': 225, 'aa': 'E', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'Negative charge', 'gpcrdb': '5.64x64', 'gpnum': 'G.H5.16', 'gpaa': 'Q384', 'availability': 'interacting'},{'pos': 229, 'aa': 'Q', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'Polar (N/Q/H)', 'gpcrdb': '5.68x68', 'gpnum': 'G.H5.13', 'gpaa': 'D381', 'availability': 'interacting'},{'pos': 229, 'aa': 'Q', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'Polar (N/Q/H)', 'gpcrdb': '5.68x68', 'gpnum': 'G.H5.16', 'gpaa': 'Q384', 'availability': 'interacting'},{'pos': 229, 'aa': 'Q', 'gprotseg': "H5",'segment': 'TM5', 'ligand': 'Gs', 'type': 'Polar (N/Q/H)', 'gpcrdb': '5.68x68', 'gpnum': 'G.H5.17', 'gpaa': 'R385', 'availability': 'interacting'},{'pos': 274, 'aa': 'T', 'gprotseg': "H5",'segment': 'TM6', 'ligand': 'Gs', 'type': 'Polar (S/T)', 'gpcrdb': '6.36x36', 'gpnum': 'G.H5.24', 'gpaa': 'E392', 'availability': 'interacting'},{'pos': 328, 'aa': 'R', 'gprotseg': "H5",'segment': 'TM7', 'ligand': 'Gs', 'type': 'Positive charge', 'gpcrdb': '7.55x55', 'gpnum': 'G.H5.24', 'gpaa': 'E392', 'availability': 'interacting'}, {'pos': 232, 'aa': 'K', 'segment': 'TM5', 'ligand': 'Gs', 'type': 'Positive charge', 'gpcrdb': '5.71x71', 'gprotseg': "H5", 'gpnum': 'G.H5.13', 'gpaa': 'D381', 'availability': 'interacting'}]
-
-    # accessible_gn = ['3.50x50', '3.53x53', '3.54x54', '3.55x55', '34.50x50', '34.51x51', '34.53x53', '34.54x54', '5.61x61', '5.64x64', '5.65x65', '5.67x67', '5.68x68', '5.71x71', '5.72x72', '5.74x74', '5.75x75', '6.29x29', '6.32x32', '6.33x33', '6.36x36', '6.37x37', '7.55x55', '8.48x48', '8.49x49']
-
-    accessible_gn = ['3.50x50', '3.53x53','34.50x50', '34.54x54', '5.61x61', '5.64x64', '5.65x65', '5.67x67', '5.68x68', '5.69x69', '5.72x72', '5.74x74', '5.75x75', '6.29x29', '6.32x32', '6.33x33', '6.36x36', '6.37x37','8.48x48', '8.49x49']
-
-    exchange_table = OrderedDict([('hp', ('V','I', 'L', 'M')),
-                                 ('ar', ('F', 'H', 'W', 'Y')),
-                                 ('pol_short', ('S', 'T')), # Short/hydroxy
-                                 ('pol_long', ('N', 'Q', 'H')), # Amino-like (both donor and acceptor
-                                 ('neg', ('D', 'E')),
-                                 ('pos', ('K', 'R'))])
-
-    interacting_gn = []
-
-    accessible_pos = residuelist.filter(display_generic_number__label__in=accessible_gn).values_list('sequence_number', flat=True)
-
-    # Which of the Gs interacting_pos are conserved?
-    GS_none_equivalent_interacting_pos = []
-    GS_none_equivalent_interacting_gn = []
-
-    for interaction in residues_browser:
-        interacting_gn.append(interaction['gpcrdb'])
-        gs_b2_interaction_type_long = (next((item['type'] for item in residues_browser if item['gpcrdb'] == interaction['gpcrdb']), None))
-        
-        interacting_aa = residuelist.filter(display_generic_number__label__in=[interaction['gpcrdb']]).values_list('amino_acid', flat=True)
-
-        if interacting_aa:
-            interaction['aa'] = interacting_aa[0]
-            pos = residuelist.filter(display_generic_number__label__in=[interaction['gpcrdb']]).values_list('sequence_number', flat=True)[0]
-            interaction['pos'] = pos
-
-            feature = names_aa[gs_b2_interaction_type_long]
-            
-            if interacting_aa[0] not in exchange_table[feature]:
-                GS_none_equivalent_interacting_pos.append(pos)
-                GS_none_equivalent_interacting_gn.append(interaction['gpcrdb'])
-
-    GS_equivalent_interacting_pos = residuelist.filter(display_generic_number__label__in=interacting_gn).values_list('sequence_number', flat=True)
-
-    return render(request, 'interaction/ginterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn} )
-
-
+    

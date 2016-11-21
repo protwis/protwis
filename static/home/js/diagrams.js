@@ -133,7 +133,6 @@
                             classtext = $(this).attr( "class" );
                             test = $(this).attr("original_title");
                             test2 = $(this).css("display");
-                            //if (classtext=='rtext N-term long') console.log(counter + test + " " + test2 + " " + classtext + " " );
                             if ($(this).css("display")!='none') {
                                 count = count +1;
                                 if (y<svgmin) {
@@ -150,42 +149,34 @@
                         console.log('max '+svgmax+' '+classmax+' min'+svgmin+' '+classmin+' count'+count);
                         
                         var svg = $('#snake').closest('svg')[0];
-                        oldheight = $(svg).attr('height');
+
+                        check = document.getElementById("snakeplot").getAttribute('viewBox');
+                        console.log('check',check)
+                        if (typeof check !== typeof undefined && check !== false && check !== null ) {
+                          oldheight = check.split(" ")[3];
+                          width = check.split(" ")[2];
+                        } else {
+                          console.log('not found it');
+                          oldheight = $(svg).attr('height');
+                          width = $("#snakeplot").attr('width');
+                        }
+
+                        newheight = (svgmax-svgmin+margin*2);
                         svg.setAttribute('height', (svgmax-svgmin+margin*2));
-                        // $(svg).animate(
-                          //  {"min-height": (svgmax-svgmin+margin*2)},
-                          // {duration: 500,
-                          //  step: function( top ){
-                          //      this.setAttribute("height", "translate(0,"+Math.round(top)+")");
-                          //    }
-                         //   });
 
                         console.log('New height:'+ (svgmax-svgmin) +' old height:'+oldheight);
                         console.log("Prev attr"+$('#snake').attr("transform"));
 
                         $('#snake').attr("transform", "translate(0," + (-svgmin+margin) + ")");
                         
-                        // $('#snake')
-                        // .animate(
-                         //  {"min-height": (-svgmin+margin)},
-                         //  {duration: 500,
-                         //   step: function( top ){
-                         //       this.setAttribute("transform", "translate(0,"+top+")");
-                          //    }
-                          //  });
+                        // $('#snakeplot')[0].attr("viewBox", "0 0 " + width + " " + newheight);
+                        document.getElementById("snakeplot").setAttribute("viewBox", "0 0 " + width + " " + newheight);
+
+
+                        svg.setAttribute('height', "100%");
+                        svg.setAttribute('width', "100%");
 
                         console.log("New attr"+$('#snake').attr("transform"));
-                        // svgAsDataUri(document.getElementById("snakeplot"),{}, function(uri) {
-                        //     console.log(uri);
-                        //   $("body").append('<img src="' + uri + '" /><a href-lang="image/svg+xml" href="data:image/svg+xml;base64,\n'+uri+'" title="file.svg">download</a>');
-                        //    $('body').append(
-                        //     $('<a>')
-                        //       .attr('href-lang', 'image/svg+xml')
-                        //       .attr('href',  uri)
-                        //       .attr('download',  'svg.svg')
-                        //       .text('Download new')
-                        //   );
-                        // });
                     }
 
                     $( document ).ready(function() {    
@@ -220,6 +211,7 @@
                             'container': 'body',
                             'placement': 'top',
                             'animation': false,
+                            'html' : true
                         });
 
 
@@ -227,6 +219,7 @@
                             'container': 'body',
                             'placement': 'top',
                             'animation': false,
+                            'html' : true
                         });
 
                         $("circle").hover(function(){
@@ -335,21 +328,36 @@
                             winner2 = Math.max.apply(window,counts);
                             color = "#D9D7CE";
                             color_letter = "#000";
-                            if (winner==0 && winner2) {
-                              if (increases>bigincreases) {
+                            // if (winner==0 && winner2) {
+                            //   if (increases>bigincreases) {
+                            //     color = "#FF7373";
+                            //     color_letter = "#FFF";
+                            //   } else {
+                            //     color = "#FA1111";
+                            //     color_letter = "#FDFF7B";
+                            //   }
+                            // } else if (winner==1) {
+                            //   if (decreases>bigdecreases) {
+                            //     color = "#87E88F";
+                            //   } else {
+                            //     color = "#66B36C";
+                            //   }
+                            // } else if (winner==2) {
+                            //   color = "#F7DA00";
+                            //   color_letter = "#000";
+                            // }
+                            
+                            if (bigincreases>0) {
                                 color = "#FF7373";
                                 color_letter = "#FFF";
-                              } else {
+                            } else if (increases>0) {
                                 color = "#FA1111";
                                 color_letter = "#FDFF7B";
-                              }
-                            } else if (winner==1) {
-                              if (decreases>bigdecreases) {
-                                color = "#87E88F";
-                              } else {
+                            } else if (bigdecreases>0) {
                                 color = "#66B36C";
-                              }
-                            } else if (winner==2) {
+                            } else if (decreases>0) {
+                                color = "#87E88F";
+                            } else  {
                               color = "#F7DA00";
                               color_letter = "#000";
                             }
@@ -427,24 +435,41 @@
                             winner2 = Math.max.apply(window,counts);
                             color = "#D9D7CE";
                             color_letter = "#000";
-                            if (winner==0 && winner2) {
-                              if (increases>bigincreases) {
+                            // if (winner==0 && winner2) {
+                            //   if (increases>bigincreases) {
+                            //     color = "#FF7373";
+                            //     color_letter = "#FFF";
+                            //   } else {
+                            //     color = "#FA1111";
+                            //     color_letter = "#FDFF7B";
+                            //   }
+                            // } else if (winner==1) {
+                            //   if (decreases>bigdecreases) {
+                            //     color = "#87E88F";
+                            //   } else {
+                            //     color = "#66B36C";
+                            //   }
+                            // } else if (winner==2) {
+                            //   color = "#F7DA00";
+                            //   color_letter = "#000";
+                            // }
+
+                            if (bigincreases>0) {
                                 color = "#FF7373";
                                 color_letter = "#FFF";
-                              } else {
+                            } else if (increases>0) {
                                 color = "#FA1111";
                                 color_letter = "#FDFF7B";
-                              }
-                            } else if (winner==1) {
-                              if (decreases>bigdecreases) {
-                                color = "#87E88F";
-                              } else {
+                            } else if (bigdecreases>0) {
                                 color = "#66B36C";
-                              }
-                            } else if (winner==2) {
+                            } else if (decreases>0) {
+                                color = "#87E88F";
+                            } else  {
                               color = "#F7DA00";
                               color_letter = "#000";
                             }
+
+
 
 
                              original_title = $('#'+plotid).find("#"+key).attr('original_title')
@@ -501,6 +526,45 @@
                         });
                     }
 
+                    function ajaxBarcode(plotid,protein) {
+
+                      resetColors(plotid);
+
+                        $.getJSON( '/signprot/ajax/'+protein+'/', function( data ) {
+                          $.each( data, function( key, val ) {
+
+                            var flags = [], falgsAA = [], output = [], outputAA = [], l = val.length, i;
+                            for( i=0; i<l; i++) {
+                                if( flags[val[i][1]]) continue;
+                                flags[val[i][1]] = true;
+                                output.push(val[i][1]);
+                            }
+                            for( i=0; i<l; i++) {
+                                if( flags[val[i][0]]) continue;
+                                flags[val[i][0]] = true;
+                                outputAA.push(val[i][0]);
+                            }
+                             
+                             extra = "\n" + String("Barcode position");
+
+
+                             $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
+                             $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+
+                             original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+
+                             $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+                          });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
+    
+                        });
+                    }
+
                     function ajaxInteractionsPos(plotid) {
 
                       resetColors(plotid);
@@ -530,6 +594,45 @@
 
                              original_title = $('#'+plotid).find("#"+key).attr('original_title')
 
+
+                             $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+                          });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
+  
+                    }
+
+                    function construct_annotations(plotid) {
+
+                      resetColors(plotid);
+
+                      var pos = jQuery.parseJSON(annotations_json);
+
+                          $.each( pos, function( key, val ) {
+
+                            // var flags = [], falgsAA = [], output = [], outputAA = [], l = val.length, i;
+                            // for( i=0; i<l; i++) {
+                            //     if( flags[val[i][1]]) continue;
+                            //     flags[val[i][1]] = true;
+                            //     output.push(val[i][1]);
+                            // }
+                            // for( i=0; i<l; i++) {
+                            //     if( flags[val[i][0]]) continue;
+                            //     flags[val[i][0]] = true;
+                            //     outputAA.push(val[i][0]);
+                            // }
+                             
+                            //  extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
+                             extra = "<br>"+val[1]; //.replace(/<br>/g, '&#013;');
+
+
+                             $('#'+plotid).find("#"+key).css("fill", val[2]);
+                             $('#'+plotid).find("#"+key).next().css("fill", val[3]);
+
+                             original_title = $('#'+plotid).find("#"+key).attr('original_title')
 
                              $('#'+plotid).find("#"+key).attr('title',original_title+extra);
                              $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);

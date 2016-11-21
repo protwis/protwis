@@ -1,0 +1,114 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% load structure_extras %}
+{% block addon_css %}
+<style>
+
+.node circle {
+  /*fill: #fff;*/
+  /*stroke: DarkGreen;*/
+  fill: DarkGreen;
+  stroke: #000000 ;
+  stroke-width: .3px;
+}
+
+.d3-tip {
+  font-family: Verdana;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 9px;
+  border: 0px;      
+  border-radius: 10px;   
+  color: #fff; 
+  z-index: 5070;
+}
+.center{
+    text-align:center;
+}
+</style>
+{% endblock %}
+{% block content %}
+<h3>Drug target classification tree</h3>
+
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/d3.tip.js' %}"></script>
+
+<script type="text/javascript" charset="utf-8">
+   drugdata = {{ drugdata.drugdata|safe }};
+</script>
+
+<div id="drugdata">
+</div>
+<p><div class="btn-group">
+    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+            aria-haspopup="true" aria-expanded="false">
+        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu">
+        <li>
+            <a href="javascript:saveSvgAsPng(document.getElementById('drugmapping_svg'), 'drugmapping.png');">PNG</a>
+        </li>
+        <li>
+            <a href="javascript:saveSvgAsJpg(document.getElementById('drugmapping_svg'), 'drugmapping.jpg');">JPG</a>
+        </li>
+        <li>
+            <a href="javascript:saveSvgAsTiff(document.getElementById('drugmapping_svg'), 'drugmapping.tiff');">TIFF</a>
+            </a>
+        </li>
+    </ul>
+</div></p>
+
+<table>
+    <tbody id="tbody"></tbody>
+</table>
+<h5 id="caption">Drug details for: </h5>
+<div class="row">
+  <div class="col-md-12 text-center">
+        <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
+            <table width="100%" class="display table" id="clickdata">
+                <thead>
+<!--                     <tr>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                    </tr>  -->   
+                    <tr>
+                        <th style="background-color:#98df8a;text-align:center">Drug Name</th>
+                        <th style="background-color:#98df8a;text-align:center">Indication</th>
+                        <th style="background-color:#ffbb78;text-align:center">Status</th>
+                        <th style="background-color:#ffbb78;text-align:center">Year of Approval</th>
+                        <th style="background-color:#ffbb78;text-align:center">Drug Type</th>
+                        <th style="background-color:#ffbb78;text-align:center">Novelty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+<!--                 <tfoot>
+                    <tr>
+                        <th style="text-align:center">Drug Name</th>
+                        <th style="text-align:center">Indication</th>
+                        <th style="text-align:center">Status</th>
+                        <th style="text-align:center">Year of Approval</th>
+                        <th style="text-align:center">Drug Type</th>
+                        <th style="text-align:center">Novelty</th>
+                    </tr>
+                </tfoot> -->
+            </table>
+        </div>
+  </div>
+</div>
+
+<br>
+<br>
+<br>
+<br>
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+<script src="{% static 'home/js/drugtree.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>         
+{% endblock %}
