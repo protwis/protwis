@@ -99,6 +99,13 @@
           box.height ||
           clone.style.height ||
           out$.getComputedStyle(el).getPropertyValue('height'));
+
+        if (clone.getAttribute('viewBox')) {
+          width = clone.getAttribute('viewBox').split(" ")[2];
+          height = clone.getAttribute('viewBox').split(" ")[3];
+        } 
+
+
         if (width === undefined || 
             width === null || 
             isNaN(parseFloat(width))) {
@@ -126,6 +133,7 @@
       clone.setAttribute("width", width * options.scale);
       clone.setAttribute("height", height * options.scale);
       clone.setAttribute("viewBox", "0 0 " + width + " " + height);
+
       outer.appendChild(clone);
 
       var css = styles(el, options.selectorRemap);

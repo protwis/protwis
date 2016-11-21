@@ -1,0 +1,102 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block addon_css %}
+<link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
+<link href="{% static 'home/css/color_picker.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row text-success">
+    <div class="text-center">
+        <h2>{{ p.name|safe }} ({{ p.entry_name }})</h2>
+    </div>
+</div>
+
+{% include "protein/protein_info.html" %}
+
+{% include "protein/sequence_viewer.html" %}
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>LINKS</h4>
+    </div>
+    <div class="col-md-10">
+        <p><a href="http://www.uniprot.org/uniprot/{{p.accession}}">UniProt</a></p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>DIAGRAMS</h4>
+    </div>
+    <div class="col-md-10" style="height:500px">
+    <p><b>H5 Domain:</b></p>
+    {{ p.get_gprotein_plot }}
+    <p><div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+        aria-haspopup="true" aria-expanded="false">
+        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+        <li>
+            <a href="javascript:saveSvgAsPng(document.getElementById('GproteinPlot'), 'plot_{{ p.entry_name }}.png',
+            {scale: 3});">PNG</a>
+        </li>
+        <li>
+            <a href="javascript:saveSvgAsJpg(document.getElementById('GproteinPlot'), 'plot_{{ p.entry_name }}.jpg',
+            {scale: 3});">JPG</a>
+        </li>
+        <li>
+            <a href="javascript:saveSvgAsTiff(document.getElementById('GproteinPlot'), 'plot_{{ p.entry_name }}.tiff',
+            {scale: 3});">TIFF</a>
+            </a>
+        </li>
+        <li>
+        <a id=snake_svg_link href-lang="image/svg+xml" href="" download="plot_{{ p.entry_name }}">SVG</a>
+        </li>
+        </ul>
+    </div></p>
+    </div>
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>MUTATIONS</h4>
+    </div>
+    <div class="col-md-10">
+    <p>{{ mutations|length }} mutation data points available.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>STRUCTURES</h4>
+    </div>
+    <div class="col-md-10">
+        {% for structure in structures %}
+        <p><a href="../../signprot/structure/{{ structure }}">{{ structure }}</a></p>
+        {% empty %}
+        No structures available
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/sequenceviewer.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/diagrams.js' %}"></script>
+<script src="{% static 'home/js/color_picker.js' %}"></script>
+{% endblock %}

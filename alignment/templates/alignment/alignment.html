@@ -38,16 +38,26 @@
                         <td class="ali-td-generic-num ali-td-first-col">{{ ns.1 }}</td>
                     </tr>
                     {% endfor %}
-
+                    
                     <!-- protein names -->
                     {% for p in a.proteins %}
-                    <tr>
-                        <td class="ali-td ali-td-first-col">
-                            <a href='/protein/{{ p.protein.entry_name }}'>
-                                [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
-                            </a>
-                        </td>
-                    </tr>
+                        {% if 'Common G-alpha numbering scheme' in a.numbering_schemes.0 %}
+                            <tr>
+                                <td class="ali-td ali-td-first-col">
+                                    <a href='/signprot/{{ p.protein.entry_name }}'>
+                                        [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                                    </a>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td class="ali-td ali-td-first-col">
+                                    <a href='/protein/{{ p.protein.entry_name }}'>
+                                        [{{ p.protein.species.common_name }}] {{ p.protein.name|safe }}
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endif %}
                     {% endfor %}
 
                     <!-- numbering scheme lines -->
@@ -124,7 +134,11 @@
                         <tr>
                             {% for s, num in segments.items %}
                                 {% for n, dn in num.items %}
+                                    {% if 'Common G-alpha numbering scheme' in a.numbering_schemes.0 %}
+                                    <td class="ali-td-generic-num">{{ dn|make_list|slice:'2:'|join:'' }}</td>
+                                    {% else %}
                                     <td class="ali-td-generic-num">{{ dn|safe }}</td>
+                                    {% endif %}
                                 {% endfor %}
                                 <td class="ali-td">&nbsp;</td>
                             {% endfor %}
@@ -137,9 +151,9 @@
                             {% for segment, s in row.alignment.items %}
                                 {% for r in s %}
                                     <td class="ali-td ali-residue res-color-{{ r.2 }}
-                                    {% if forloop.parentloop.parentloop.counter = 1 %}
+                                    {% if forloop.parentloop.parentloop.counter == 1 %}
                                      ali-residue-top-border
-                                    {% elif forloop.parentloop.parentloop.counter = num_of_sequences %}
+                                    {% elif forloop.parentloop.parentloop.counter == num_of_sequences %}
                                      ali-residue-bottom-border
                                     {% endif %}
                                     ">
@@ -173,7 +187,11 @@
                         <tr>
                             {% for s, num in segments.items %}
                                 {% for n, dn in num.items %}
+                                    {% if 'Common G-alpha numbering scheme' in a.numbering_schemes.0 %}
+                                    <td class="ali-td-generic-num">{{ dn|make_list|slice:'2:'|join:''}}</td>
+                                    {% else %}
                                     <td class="ali-td-generic-num">{{ dn|safe }}</td>
+                                    {% endif %}
                                 {% endfor %}
                                 <td class="ali-td">&nbsp;</td>
                             {% endfor %}

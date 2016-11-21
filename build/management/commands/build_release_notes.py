@@ -57,7 +57,7 @@ class Command(BaseCommand):
 
         stats = [
             ['Proteins', Protein.objects.filter(sequence_type__slug='wt').count()],
-            ['Human proteins', Protein.objects.filter(sequence_type__slug='wt', species__id=1).count()],
+            ['Human proteins', Protein.objects.filter(sequence_type__slug='wt', species__common_name="Human").count()],
             ['Species', Species.objects.all().count()],
             ['Exp. structures', Structure.objects.all().count()],
             ['Ligands', Ligand.objects.filter(canonical=True).count()],
@@ -70,9 +70,9 @@ class Command(BaseCommand):
             if created:
                 self.logger.info('Created release statistics type {}'.format(stat[0]))
 
-            rstat, created = ReleaseStatistics.objects.update_or_create(release=release_notes, statistics_type=stat_type,
+            rstat, created = ReleaseStatistics.objects.update_or_create(release=latest_release_notes, statistics_type=stat_type,
                 defaults={'value': stat[1]})
             if created:
-                self.logger.info('Created release stat {} {}'.format(release_notes, stat[1]))
+                self.logger.info('Created release stat {} {}'.format(latest_release_notes, stat[1]))
 
         self.logger.info('COMPLETED CREATING RELEASE NOTES')

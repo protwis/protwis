@@ -1,7 +1,10 @@
-﻿from Bio.Blast import NCBIXML
+﻿from Bio.Blast import NCBIXML, NCBIWWW
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import Select
 import Bio.PDB.Polypeptide as polypeptide
+from Bio.PDB.AbstractPropertyMap import AbstractPropertyMap
+from Bio.PDB.Polypeptide import CaPPBuilder, is_aa
+from Bio.PDB.Vector import rotaxis
 
 from django.conf import settings
 from common.selection import SimpleSelection
@@ -17,6 +20,7 @@ import sys
 import tempfile
 import logging
 import math
+import urllib
 
 logger = logging.getLogger("protwis")
 
@@ -64,6 +68,40 @@ class BlastSearch(object):
                 logger.debug("Looping over alignments, current hit: {}".format(aln.hit_id))
                 output.append((aln.hit_id, aln))
         return output
+#==============================================================================
+
+class BlastSearchOnline(object):
+
+    def __init__(self, blast_program='blastp', db='swissprot', top_results=1):
+        self.blast_program = blast_program
+        self.db = db
+        self.top_results = top_results
+        pass
+
+    def run(self, input_seq):
+        output = []
+
+        result = NCBIXML.read(NCBIWWW.qblast(self.blast_program, self.db, input_seq, auto_format='xml'))
+        for aln in result.alignments[:self.top_results]:         
+            logger.debug("Looping over alignments, current hit: {}".format(aln.hit_id))
+            output.append((aln.hit_id, aln))
+        return output
+
+    def get_uniprot_entry_name (self, up_id):
+
+        #get the 'entry name' field for given uniprot id
+        #'entry name' is a protein id in gpcrdb
+        url = "http://www.uniprot.org/uniprot/?query=accession:%s&columns=entry name&format=tab" %up_id
+
+        #used urllib, urllib2 throws an error here for some reason
+        try:
+            response = urllib.urlopen(url)
+            page = response.readlines()
+            return page[1].strip().lower()
+
+        except urllib.HTTPError as error:
+            print(error)
+            return ''
 
 #==============================================================================
 
@@ -465,3 +503,159 @@ def get_atom_line(atom, hetfield, segid, atom_number, resname, resseq, icode, ch
         pass 
     args=(record_type, atom_number, name, altloc, resname, chain_id, resseq, icode, x, y, z, occupancy_str, bfactor, segid, element, charge) 
     return ATOM_FORMAT_STRING % args
+    
+#==============================================================================
+class HSExposureCB(AbstractPropertyMap):
+    """
+    Abstract class to calculate Half-Sphere Exposure (HSE).
+    
+    The HSE can be calculated based on the CA-CB vector, or the pseudo CB-CA
+    vector based on three consecutive CA atoms. This is done by two separate
+    subclasses.
+    """
+    def __init__(self, model, radius, offset=0, hse_up_key='HSE_U', hse_down_key='HSE_D', angle_key=None):
+        """
+        @param model: model
+        @type model: L{Model}
+        
+        @param radius: HSE radius
+        @type radius: float
+        
+        @param offset: number of flanking residues that are ignored in the calculation
+        of the number of neighbors
+        @type offset: int
+        
+        @param hse_up_key: key used to store HSEup in the entity.xtra attribute
+        @type hse_up_key: string
+        
+        @param hse_down_key: key used to store HSEdown in the entity.xtra attribute
+        @type hse_down_key: string
+        
+        @param angle_key: key used to store the angle between CA-CB and CA-pCB in
+        the entity.xtra attribute
+        @type angle_key: string
+        """
+        assert(offset>=0)
+        # For PyMOL visualization
+        self.ca_cb_list=[]
+        ppb=CaPPBuilder()
+        ppl=ppb.build_peptides(model)
+        hse_map={}
+        hse_list=[]
+        hse_keys=[]
+        ### GP
+        self.clash_pairs = []
+        for pp1 in ppl:
+            for i in range(0, len(pp1)):
+                if i==0:
+                    r1=None
+                else:
+                    r1=pp1[i-1]
+                r2=pp1[i]
+                if i==len(pp1)-1:
+                    r3=None
+                else:
+                    r3=pp1[i+1]
+                # This method is provided by the subclasses to calculate HSE
+                result=self._get_cb(r1, r2, r3)
+                if result is None:
+                    # Missing atoms, or i==0, or i==len(pp1)-1
+                    continue
+                pcb, angle=result
+                hse_u=0
+                hse_d=0
+                ca2=r2['CA'].get_vector()
+                residue_up=[]   ### GP
+                residue_down=[] ### GP
+                for pp2 in ppl:
+                    for j in range(0, len(pp2)):
+                        if pp1 is pp2 and abs(i-j)<=offset:
+                            # neighboring residues in the chain are ignored
+                            continue
+                        ro=pp2[j]
+                        if not is_aa(ro) or not ro.has_id('CA'):
+                            continue
+                        cao=ro['CA'].get_vector()
+                        d=(cao-ca2)
+                        if d.norm()<radius:
+                            if d.angle(pcb)<(math.pi/2):
+                                hse_u+=1
+                                ### GP
+                                # Puts residues' names in a list that were found in the upper half sphere
+                                residue_up.append(ro)
+                                ### end of GP code
+                            else:
+                                hse_d+=1
+                                ### GP
+                                # Puts residues' names in a list that were found in the lower half sphere
+                                residue_down.append(ro)    
+                                ### end of GP code
+                res_id=r2.get_id()
+                chain_id=r2.get_parent().get_id()
+                # Fill the 3 data structures
+                hse_map[(chain_id, res_id)]=(hse_u, hse_d, angle)
+                hse_list.append((r2, (residue_up, residue_down, hse_u, hse_d, angle)))
+                ### GP residue_up and residue_down added to hse_list
+                hse_keys.append((chain_id, res_id))
+                # Add to xtra
+                r2.xtra[hse_up_key]=hse_u
+                r2.xtra[hse_down_key]=hse_d
+                if angle_key:
+                    r2.xtra[angle_key]=angle
+                
+                ### GP checking for atom clashes
+                for atom in pp1[i]:
+                    ref_vector = atom.get_vector()
+                    for other_res in residue_up:
+                        try:
+                            if other_res!=pp1[i-1] and other_res!=pp1[i+1]:
+                                for other_atom in other_res:
+                                    other_vector = other_atom.get_vector()
+                                    d = other_vector-ref_vector
+                                    if d.norm()<2:
+                                        self.clash_pairs.append([(pp1[i]['CA'].get_bfactor(),pp1[i].get_id()[1]),
+                                                                 (other_res['CA'].get_bfactor(),other_res.get_id()[1])])
+                        except:
+                            pass
+
+    def _get_cb(self, r1, r2, r3):
+        """
+        Method to calculate CB-CA vector.
+        
+        @param r1, r2, r3: three consecutive residues (only r2 is used)
+        @type r1, r2, r3: L{Residue}
+        """
+        if r2.get_resname()=='GLY':
+            return self._get_gly_cb_vector(r2), 0.0
+        else:
+            if r2.has_id('CB') and r2.has_id('CA'):
+                vcb=r2['CB'].get_vector()
+                vca=r2['CA'].get_vector()
+                return (vcb-vca), 0.0
+        return None
+
+    def _get_gly_cb_vector(self, residue):
+        """
+        Return a pseudo CB vector for a Gly residue.
+        The pseudoCB vector is centered at the origin.
+        
+        CB coord=N coord rotated over -120 degrees
+        along the CA-C axis.
+        """
+        try:
+            n_v=residue["N"].get_vector()
+            c_v=residue["C"].get_vector()
+            ca_v=residue["CA"].get_vector()
+        except:
+            return None
+        # center at origin
+        n_v=n_v-ca_v
+        c_v=c_v-ca_v
+        # rotation around c-ca over -120 deg
+        rot=rotaxis(-math.pi*120.0/180.0, c_v)
+        cb_at_origin_v=n_v.left_multiply(rot)
+        # move back to ca position
+        cb_v=cb_at_origin_v+ca_v
+        # This is for PyMol visualization
+        self.ca_cb_list.append((ca_v, cb_v))
+        return cb_at_origin_v

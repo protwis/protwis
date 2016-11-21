@@ -49,6 +49,8 @@ INSTALLED_APPS = (
     'build_' + SITE_NAME,
     'construct',
     'tools',
+    'drugs',
+    'signprot',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -93,6 +95,9 @@ MEDIA_ROOT = '/protwis/media/protwis'
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH' : False,
+}
 
 # Templates
 
@@ -112,6 +117,7 @@ TEMPLATES = [
                 'django.template.context_processors.static',
                 'django.template.context_processors.tz',
                 'django.contrib.messages.context_processors.messages',
+                'protwis.context_processors.google_analytics'
             ],
         },
     },
