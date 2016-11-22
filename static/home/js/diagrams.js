@@ -96,10 +96,18 @@
 
                         //console.log( $('#'+target));
 
-                        $('#'+target).find("circle").each(function( index ){
-                              //console.log( index + ": " + $( this ).text() );
+                        // $('#'+target).find("circle").each(function( index ){
+                        //       //console.log( index + ": " + $( this ).text() );
+                        //       aa =  $(this).next().text().trim();
+                        //       //console.log( index + ": " + aa );
+                        //       $(this).css("fill", presetColors[aa][0]);
+                        //       $(this).next().css("fill", presetColors[aa][1]);
+                        //     });
+
+                        $('#'+target).find(".rcircle").each(function( index ){
+                              // console.log( index + ": " + $( this ).text() );
                               aa =  $(this).next().text().trim();
-                              //console.log( index + ": " + aa );
+                              // console.log( index + ": " + aa );
                               $(this).css("fill", presetColors[aa][0]);
                               $(this).next().css("fill", presetColors[aa][1]);
                             });
@@ -109,7 +117,14 @@
                     function resetColors(target) {
 
 
-                        $('#'+target).find("circle").each(function( index ){
+                        // $('#'+target).find("circle").each(function( index ){
+                        //       //console.log( index + ": " + $( this ).text() );
+                        //       aa =  $(this).next().text();
+                        //       //console.log( index + ": " + aa );
+                        //       $(this).css("fill", 'white');
+                        //       $(this).next().css("fill", 'black');
+                        //     });
+                        $('#'+target).find(".rcircle").each(function( index ){
                               //console.log( index + ": " + $( this ).text() );
                               aa =  $(this).next().text();
                               //console.log( index + ": " + aa );
