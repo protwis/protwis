@@ -36,7 +36,7 @@ class QueryPDB():
     <queryType>org.pdb.query.simple.TreeQuery</queryType>
     <description>TransmembraneTree Search for G Protein-Coupled Receptors (GPCRs)</description>
     <t>19</t>
-    <n>236</n>
+    <n>245</n>
     <nodeDesc>G Protein-Coupled Receptors (GPCRs)</nodeDesc>
 </orgPdbQuery>
     
@@ -60,12 +60,14 @@ class QueryPDB():
                 continue
             if 'extracellular' in str_des:
                 continue
+            if i=='1EDN':
+                continue
             uniprots = re.findall('accession id="([A-Z0-9]+)"', str_text)
             try:
                 s = Protein.objects.get(entry_name=i.lower())
                 continue
             except:
-                new_struct.append((i, s))
+                new_struct.append((i, uniprots))
             miss_count = 0
             for j in uniprots:
                 try:
