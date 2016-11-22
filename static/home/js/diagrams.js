@@ -533,26 +533,23 @@
                         $.getJSON( '/signprot/ajax/'+protein+'/', function( data ) {
                           $.each( data, function( key, val ) {
 
-                            var flags = [], falgsAA = [], output = [], outputAA = [], l = val.length, i;
-                            for( i=0; i<l; i++) {
-                                if( flags[val[i][1]]) continue;
-                                flags[val[i][1]] = true;
-                                output.push(val[i][1]);
-                            }
-                            for( i=0; i<l; i++) {
-                                if( flags[val[i][0]]) continue;
-                                flags[val[i][0]] = true;
-                                outputAA.push(val[i][0]);
-                            }
+                            console.log(val[1])
+
+                            if (val[0]<15) {
+                                $('#'+plotid).find("#"+key).css("fill", "#f8dfb4");
+                                extra = "\n" + String(val[1]);
+                            } else if (val[0]<20) {
+                                color = "#FA1111";
+                             $('#'+plotid).find("#"+key).css("fill", "#4dc7e6");
+                             extra = "\n" + String(val[1]);
+                            } else  {
+                              $('#'+plotid).find("#"+key).css("fill", "#b162a7");
+                              extra = "\n" + String(val[1]);
+                            }                       
                              
-                             extra = "\n" + String("Barcode position");
-
-
-                             $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
-                             $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
+                             // $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
 
                              original_title = $('#'+plotid).find("#"+key).attr('original_title')
-
 
                              $('#'+plotid).find("#"+key).attr('title',original_title+extra);
                              $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);

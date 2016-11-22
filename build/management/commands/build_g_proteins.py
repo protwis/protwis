@@ -526,7 +526,7 @@ class Command(BaseCommand):
         cgn_dict['3']=['Gs', 'Gi/o', 'Gq/11', 'G12/13']
 
         #Protein lines not to be added to Protein families
-        cgn_dict['4']=['GNAS2', 'GNAL', 'GNAI1', 'GNAI1', 'GNAI3', 'GNAT2', 'GNAT1', 'GNAT3', 'GNAO', 'GNAZ', 'GNAQ', 'GNA11', 'GNA14', 'GNA15', 'GNA12', 'GNA13']
+        cgn_dict['4']=['GNAS2', 'GNAL', 'GNAI1', 'GNAI2', 'GNAI3', 'GNAT2', 'GNAT1', 'GNAT3', 'GNAO', 'GNAZ', 'GNAQ', 'GNA11', 'GNA14', 'GNA15', 'GNA12', 'GNA13']
 
         for entry in cgn_dict['000']:
 

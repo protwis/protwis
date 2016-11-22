@@ -43,10 +43,11 @@ class Command(BaseCommand):
         self.logger.info('CREATING RESIDUE SETS')
 
         residue_sets = {
-            'Signalling protein pocket': ['gpcrdba', ['3x50', '3x53', '3x54', '3x55', '34x50', '34x51', '34x53', '34x54', '5x64', '5x67', '5x68', '5x71', '5x74','6x29', '6x36', '7x55', '8x48', '8x49']],
-            'Gprotein Barcode': ['cgn', ['G.hns1.02','G.hns1.03','G.S1.02','G.S3.01','G.S3.03','G.H4.26','G.H4.27','G.h4s6.03','G.h4s6.20','G.H5.11','G.H5.12','G.H5.13','G.H5.15','G.H5.16','G.H5.17','G.H5.19','G.H5.20','G.H5.23','G.H5.24','G.H5.25','G.H5.26']],
+            'Signalling protein pocket': ['gpcrdba', ['3x50', '3x53', '3x54', '3x55', '3x56', '34x50', '34x51', '34x52', '34x53', '34x54', '34x55', '34x56', '34x57', '5x61', '5x64', '5x65', '5x66', '5x67', '5x68', '5x69', '5x71', '5x72', '5x74', '5x75', '6x25', '6x26', '6x28', '6x29', '6x32', '6x33', '6x36', '6x37', '6x40', '7x55', '7x56', '8x47', '8x48', '8x49', '8x51']
+], 'Gprotein Barcode': ['cgn', ['G.hns1.02','G.hns1.03','G.S1.02','G.s2s3.01','G.S3.01','G.S3.03','G.H4.26','G.H4.27','G.h4s6.03','G.h4s6.20','G.H5.08','G.H5.11','G.H5.12','G.H5.13','G.H5.15','G.H5.16','G.H5.17','G.H5.19','G.H5.20','G.H5.21','G.H5.22','G.H5.23','G.H5.24','G.H5.25','G.H5.26']],
             'YM binding site': ['cgn', ['G.H1.02','G.H1.05','G.H1.06','G.H1.09','G.h1ha.01','G.h1ha.04','H.HA.03','H.HA.06','H.HA.07','H.HA.10','G.hfs2.03','G.hfs2.05','G.hfs2.06','G.S2.01','G.S2.02','G.S2.03','G.S2.04']]
                         }
+
         for set_name in residue_sets.keys():
             residues = []
             for res in residue_sets[set_name][1]:

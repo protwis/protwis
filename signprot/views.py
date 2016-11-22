@@ -243,7 +243,7 @@ def Ginterface(request, protein = None):
 
     # accessible_gn = ['3.50x50', '3.53x53', '3.54x54', '3.55x55', '34.50x50', '34.51x51', '34.53x53', '34.54x54', '5.61x61', '5.64x64', '5.65x65', '5.67x67', '5.68x68', '5.71x71', '5.72x72', '5.74x74', '5.75x75', '6.29x29', '6.32x32', '6.33x33', '6.36x36', '6.37x37', '7.55x55', '8.48x48', '8.49x49']
 
-    accessible_gn = ['3.50x50', '3.53x53','34.50x50', '34.54x54', '5.61x61', '5.64x64', '5.65x65', '5.67x67', '5.68x68', '5.69x69', '5.72x72', '5.74x74', '5.75x75', '6.29x29', '6.32x32', '6.33x33', '6.36x36', '6.37x37','8.48x48', '8.49x49']
+    accessible_gn = ['3.50x50', '3.53x53', '3.54x54', '3.55x55', '3.56x56', '34.50x50', '34.51x51', '34.52x52', '34.53x53', '34.54x54', '34.55x55', '34.56x56', '34.57x57', '5.61x61', '5.64x64', '5.65x65', '5.66x66', '5.67x67', '5.68x68', '5.69x69', '5.71x71', '5.72x72', '5.74x74', '5.75x75', '6.25x25', '6.26x26', '6.28x28', '6.29x29', '6.32x32', '6.33x33', '6.36x36', '6.37x37', '6.40x40', '7.55x55', '7.56x56', '8.47x47', '8.48x48', '8.49x49', '8.51x51']
 
     exchange_table = OrderedDict([('hp', ('V','I', 'L', 'M')),
                                  ('ar', ('F', 'H', 'W', 'Y')),
@@ -300,13 +300,19 @@ def ajax(request, slug, **response_kwargs):
 
     jsondata = {}
     positions = []
-    for residue in rsets.residue_position.all():
+    for x, residue in enumerate(rsets.residue_position.all()):
         try:
             pos = str(list(Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label))[0])
         except:
             print("Protein has no residue position at", residue.label)
         a = pos[1:]
-        jsondata[a] = [5,"Test",residue.label]
+        cutoff_tag = 'Evolutionary neutral'
+        if x >= 5:
+            cutoff_tag = 'Selectivity determining'
+        elif x >= 10:
+            cutoff_tag = 'Conserved'
+
+        jsondata[a] = [x, cutoff_tag, residue.label]
 
     jsondata = json.dumps(jsondata)
     response_kwargs['content_type'] = 'application/json'
