@@ -180,20 +180,23 @@ legendEnter.append("circle")
 
 legendEnter.append("text")
             .attr("x", xlegend + 30)
-            .attr("y", ylegend + 5)         
-            .style({"font": "15lspx sans-serif"})
+            .attr("y", ylegend + 5)        
+            .style("font-family", "Palatino") 
+            .style({"font": "15px sans-serif"})
             .text("Approved and in trials");
 
 legendEnter.append("text")
             .attr("x", xlegend + 30)
-            .attr("y", ylegend - 30 + 5)         
-            .style({"font": "15lspx sans-serif"})
+            .attr("y", ylegend - 30 + 5)   
+            .style("font-family", "Palatino")      
+            .style({"font": "15px sans-serif"})
             .text("Target in trials");
 
 legendEnter.append("text")
             .attr("x", xlegend + 30)
-            .attr("y", ylegend - 60 + 5)         
-            .style({"font": "15lspx sans-serif"})
+            .attr("y", ylegend - 60 + 5)    
+            .style("font-family", "Palatino")     
+            .style({"font": "15px sans-serif"})
             .text("Target established");
 
 node.append("circle")
@@ -263,19 +266,19 @@ node.append("text")
   .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
   .attr("transform", function(d) { return d.x < 180 ? "translate(8)" : "rotate(180)translate(-8)"; })
   .text(function(d) { if (d.depth==4) { return d.name.toUpperCase() ; } else if (d.depth>0) { return d.name;} else { return ""; } })
-  .style("font-size", function(d) { if (d.depth<3) {return "16px"} else if (d.depth==3) {return "14px"} else { return "12px" } })
+  // .style("font-size", function(d) { if (d.depth<3) {return "1px"} else if (d.depth==3) {return "1px"} else { return "1px" } })
   .style("font-family", "Palatino")
   .style("font", function(d) {
-    if (d.depth === 1) {return "16px sans-serif"} 
-    else if (d.depth === 2) {return "15px sans-serif"}
+    if (d.depth === 1) {return "19px sans-serif"} 
+    else if (d.depth === 2) {return "17px sans-serif"}
     else if (d.depth === 3) {return "12px sans-serif"}
-    else if (d.depth === 4) {return "8px sans-serif"}
+    else if (d.depth === 4) {return "8.5px sans-serif"}
     })
   // .style("fill", function(d) {
   //     if (d.crystal_structure > 0) {return "#00B8D4" }
   //     else {return "black"}; })
-  .style("font-weight", function(d) {
-      if (d.crystal_structure > 0) {return "bold" }
-      else {return "padding"}; })
+  // .style("font-weight", function(d) {
+  //     if (d.crystal_structure > 0) {return "bold" }
+  //     else {return "padding"}; })
 
 
