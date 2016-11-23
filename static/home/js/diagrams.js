@@ -545,27 +545,28 @@
 
                       resetColors(plotid);
 
-                        $.getJSON( '/signprot/ajax/'+protein+'/', function( data ) {
+                        var textboxvalue = $('input[name=cutoff]').val();
+                        console.log(textboxvalue)
+                        $.getJSON( '/signprot/ajax/'+protein+'/'+textboxvalue, function( data ) {
                           $.each( data, function( key, val ) {
 
-                            console.log(val[1])
-
-                            if (val[0]<15) {
-                                $('#'+plotid).find("#"+key).css("fill", "#f8dfb4");
+                            if (val[1]=='Conserved') {
+                                color = "#b162a7";
+                                color_letter = "#fefdfd";
+                                $('#'+plotid).find("#"+key).next().css("fill", color_letter);
                                 extra = "\n" + String(val[1]);
-                            } else if (val[0]<20) {
-                                color = "#FA1111";
-                             $('#'+plotid).find("#"+key).css("fill", "#4dc7e6");
-                             extra = "\n" + String(val[1]);
+                            } else if (val[1]=='Evolutionary neutral') {
+                                color = "#f8dfb4";
+                                extra = "\n" + String(val[1]);
                             } else  {
-                              $('#'+plotid).find("#"+key).css("fill", "#b162a7");
-                              extra = "\n" + String(val[1]);
+                                color = "#4dc7e6";
+                                extra = "\n" + String(val[1]);
                             }                       
                              
-                             // $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
 
                              original_title = $('#'+plotid).find("#"+key).attr('original_title')
 
+                             $('#'+plotid).find("#"+key).css("fill", color);
                              $('#'+plotid).find("#"+key).attr('title',original_title+extra);
                              $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
 
