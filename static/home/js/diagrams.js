@@ -546,8 +546,7 @@
                       resetColors(plotid);
 
                         var textboxvalue = $('input[name=cutoff]').val();
-                        console.log(textboxvalue)
-                        $.getJSON( '/signprot/ajax/'+protein+'/'+textboxvalue, function( data ) {
+                        $.getJSON( '/signprot/ajax/barcode/'+protein+'/'+textboxvalue, function( data ) {
                           $.each( data, function( key, val ) {
 
                             if (val[1]=='Conserved') {
@@ -578,6 +577,29 @@
                         });
                     }
 
+                    function ajaxInterface(plotid,protein) {
+
+                      resetColors(plotid);
+
+                        $.getJSON( '/signprot/ajax/interface/'+protein+'/', function( data ) {
+                          $.each( data, function( key, val ) {
+
+                             extra = "\n" + String("Receptor interface position");
+                             $('#'+plotid).find("#"+key).css("fill", "#e60a0a");
+                             $('#'+plotid).find("#"+key).next().css("fill", "#fafb74");
+
+                             original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+                             $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+                          });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
+    
+                        });
+                    }
                     function ajaxInteractionsPos(plotid) {
 
                       resetColors(plotid);
