@@ -182,7 +182,7 @@ class AbsSegmentSelection(TemplateView):
     ])
 
     try:
-        rsets = ResiduePositionSet.objects.exclude(name="Gprotein Barcode").prefetch_related('residue_position')
+        rsets = ResiduePositionSet.objects.exclude(name__in=['Gprotein Barcode', 'YM binding site']).prefetch_related('residue_position')
     except Exception as e:
         pass
 
