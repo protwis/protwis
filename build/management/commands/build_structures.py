@@ -146,6 +146,9 @@ class Command(BaseBuild):
      'MET':'M', 'PHE':'F', 'PRO':'P', 'SER':'S',
      'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V'}
 
+        atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9, 
+                         'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14}
+
 
         entry_name = d['construct_crystal']['uniprot']
 
@@ -610,7 +613,14 @@ class Command(BaseBuild):
                                 residues_bulk.append(residue)
                                 rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
                                 #rotamer_data_bulk.append(PdbData(pdb=temp))
-                                rotamer_data_bulk.append(rotamer_data)
+                                missing_atoms = False
+                                if rotamer_data.pdb.startswith('COMPND'):
+                                    lines = len(rotamer_data.pdb.split('\n'))-2
+                                else:
+                                    lines = len(rotamer_data.pdb.split('\n'))
+                                if lines<atom_num_dict[residue.amino_acid]:
+                                    missing_atoms = True
+                                rotamer_data_bulk.append([rotamer_data, missing_atoms])
                                 # rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
                                 #rotamer_bulk.append(Rotamer(residue=residue, structure=structure, pdbdata=rotamer_data))
 
@@ -701,7 +711,8 @@ class Command(BaseBuild):
 
         rotamer_bulk = []
         for i,res in enumerate(bulked_res):
-            rotamer_bulk.append(Rotamer(residue=res, structure=structure, pdbdata=bulked_rot[i]))
+            rotamer_bulk.append(Rotamer(residue=res, structure=structure, pdbdata=bulked_rot[i][0], 
+                                        missing_atoms=bulked_rot[i][1]))
 
         Rotamer.objects.bulk_create(rotamer_bulk)
         #

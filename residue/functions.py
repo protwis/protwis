@@ -537,7 +537,6 @@ def generic_number_within_segment_borders(generic_number, list_of_tpl_generic_nu
     else:
         return False
 
-
 def format_anomalities(b_and_c,number):
     offset = 0
     bulge = False
@@ -574,3 +573,16 @@ def format_anomalities(b_and_c,number):
         gn = str(int(number))+"1"
 
     return gn
+
+def ggn(gn):
+    ''' Converts display generic number to generic number.
+    '''
+    return gn.split('.')[0]+'x'+gn.split('x')[1]
+
+def dgn(gn, protein_conformation):
+    ''' Converts generic number to display generic number.
+    '''
+    scheme = ResidueNumberingScheme.objects.get(slug=protein_conformation.protein.residue_numbering_scheme)
+    convert_gn = ResidueGenericNumberEquivalent.objects.get(label=gn, scheme=scheme).default_generic_number.label
+    return Residue.objects.get(protein_conformation=protein_conformation, generic_number__label=convert_gn).display_generic_number.label
+    
