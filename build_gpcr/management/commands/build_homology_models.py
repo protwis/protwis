@@ -64,14 +64,14 @@ class Command(BaseBuild):
         else:
             self.version = 1.0
         if options['s']=='inactive':
-            state = 'Inactive'
+            self.state = 'Inactive'
         elif options['s']=='active':
-            state = 'Active'
+            self.state = 'Active'
         if options['r']==False:
             structures = Structure.objects.all()
             struct_parent = [i.protein_conformation.protein.parent for i in structures]
             classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
-                                            family__slug__istartswith='001')
+                                            family__slug__istartswith='004')
             self.receptor_list = [i.entry_name for i in classA if i not in struct_parent]
             print(self.receptor_list)
             try:
@@ -85,7 +85,7 @@ class Command(BaseBuild):
             except Exception as msg:
                 print(msg)
         else:
-            self.run_HomologyModeling(options['r'][0], state)
+            self.run_HomologyModeling(options['r'][0], self.state)
         
         os.chdir('./structure/')
         if options['z']==True:
@@ -104,12 +104,12 @@ class Command(BaseBuild):
             receptor_list = self.receptor_list[positions[0]:positions[1]]
         
         for receptor in receptor_list:
-            self.run_HomologyModeling(receptor, state)
+            self.run_HomologyModeling(receptor, self.state)
     
     def run_HomologyModeling(self, receptor, state):
         try:
             Homology_model = HomologyModeling(receptor, state, [state,"Active"], update=self.update, version=self.version)
-            alignment = Homology_model.run_alignment()
+            alignment = Homology_model.run_alignment([state,"Active"])
             Homology_model.build_homology_model(alignment)
             if self.update==False:
                 Homology_model.format_final_model()
@@ -343,7 +343,7 @@ class HomologyModeling(object):
                 except:
                     pass
         
-    def run_alignment(self, core_alignment=True, query_states=self.query_states, 
+    def run_alignment(self, query_states, core_alignment=True,  
                       segments=['TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','ECL2','TM5','TM6','TM7','H8'], 
                       order_by='similarity'):
         ''' Creates pairwise alignment between reference and target receptor(s).
@@ -1293,7 +1293,7 @@ class HomologyModeling(object):
                           self.uniprot_id, 1, "{}_{}_{}_{}.pdb".format(self.class_name, self.reference_entry_name,self.state,self.main_structure), 
                           atom_dict=trimmed_res_nums, helix_restraints=helix_restraints, icl3_mid=icl3_mid)
 
-#        os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
+        os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
         
         # stat file
 #        with open('./structure/homology_models/{}_{}.stat.txt'.format(self.reference_entry_name, self.state, 
@@ -1373,7 +1373,7 @@ class HomologyModeling(object):
             self.upload_to_db(sections, rot_table)
 
         print('MODELLER build: ',datetime.now() - startTime)
-        pprint.pprint(self.statistics)
+#        pprint.pprint(self.statistics)
         print('################################')
         return self
     
