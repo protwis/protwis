@@ -365,15 +365,14 @@ class HomologyModeling(object):
             self.segments = segments
             self.main_structure = alignment.main_template_structure           
             self.similarity_table = alignment.similarity_table
-            self.similarity_table_all = self.run_alignment(core_alignment=False, 
-                                                           query_states=['Inactive','Active'])[0].similarity_table
+            self.similarity_table_all = self.run_alignment(["Inactive","Active"], core_alignment=False)[0].similarity_table
             self.main_template_preferred_chain = str(self.main_structure.preferred_chain)[0]
             self.statistics.add_info("main_template", self.main_structure)
             self.statistics.add_info("preferred_chain", self.main_template_preferred_chain)
             
             parse = GPCRDBParsingPDB()
             main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
-
+            
             try:
                 if len(alignment.reference_dict['H8'])==0:
                     del alignment.reference_dict['H8']
@@ -515,6 +514,7 @@ class HomologyModeling(object):
             self.statistics.add_info('similarity_table', self.similarity_table)
             self.statistics.add_info('loops',self.loop_template_table)
             print('Loop alignment: ',datetime.now() - startTime)
+        
         return alignment, main_pdb_array
         
         
@@ -1987,7 +1987,7 @@ class HelixEndsModeling(HomologyModeling):
         return ends
         
     def correct_helix_ends(self, main_structure, main_pdb_array, a, template_source, separate_H8=None):
-        ''' Updates main template structure with annotated helix ends, if helix is too long, it removes residues, if it
+        ''' Updates main template structure with annotated helix ends. If helix is too long, it removes residues, if it
             is too short, it superpositions residues from next closest template. Updates alignment with changes.
         '''
         modifications = {'added':{'TM1':[[],[]],'TM2':[[],[]],'TM3':[[],[]],'TM4':[[],[]],'TM5':[[],[]],'TM6':[[],[]],
@@ -2002,7 +2002,6 @@ class HelixEndsModeling(HomologyModeling):
             H8_alt = None
         raw_helix_ends = self.fetch_struct_helix_ends_from_array(main_pdb_array)
         anno_helix_ends = self.fetch_struct_helix_ends_from_db(main_structure, H8_alt)
-
         for lab,seg in a.template_dict.items():
             if separate_H8==True:
                 if lab=='H8':
@@ -2064,7 +2063,7 @@ class HelixEndsModeling(HomologyModeling):
                         del main_pdb_array[raw_seg][gn.replace('x','.')]
                         modifications['removed'][raw_seg][0].append(gn)
             protein_conf = ProteinConformation.objects.get(protein=template.protein_conformation.protein.parent)
-            try:            
+            try:
                 e_dif = parser.gn_comparer(raw_helix_ends[raw_seg][1],anno_helix_ends[anno_seg][1],
                                            protein_conf)
             except:
