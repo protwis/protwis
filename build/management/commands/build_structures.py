@@ -614,10 +614,10 @@ class Command(BaseBuild):
                                 rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
                                 #rotamer_data_bulk.append(PdbData(pdb=temp))
                                 missing_atoms = False
-                                if rotamer_data.startswith('COMPND'):
-                                    lines = len(rotamer_data.split('\n'))-2
+                                if rotamer_data.pdb.startswith('COMPND'):
+                                    lines = len(rotamer_data.pdb.split('\n'))-2
                                 else:
-                                    lines = len(rotamer_data.split('\n'))
+                                    lines = len(rotamer_data.pdb.split('\n'))
                                 if lines<atom_num_dict[residue.amino_acid]:
                                     missing_atoms = True
                                 rotamer_data_bulk.append([rotamer_data, missing_atoms])
