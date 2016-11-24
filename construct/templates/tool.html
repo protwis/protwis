@@ -6,6 +6,25 @@
   .ui-widget-header { padding: 0.2em; }
   </style>
 
+<div class="modal bd-example-modal-lg" id="myModal"  tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">Modal title</h4>
+      </div>
+      <div class="modal-body" id="ModalBody">
+        ...
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <h2> Construct Design Tool  </h2>
 <p>
 Target: {{target.entry_name}}
@@ -35,10 +54,40 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
   </label>
 </div>
 <button class="btn btn-warning" onclick='$( "#dialog" ).dialog( "open" )''>Reset</button>
+<button class="btn btn-info" onclick='exportCSVsuggestions();'>Export all suggestions to CSV</button>
 <br>
 <br>
 <div class="row">
-  <div class="col-sm-3">
+  <div class="col-sm-2">
+  Truncation suggestions:
+  </div>
+  <div class="col-sm-8">
+    <button type="button" id="nterm_button" class="btn btn-primary" onclick='$("#myModalLabel").html("N-term");$("#ModalBody").html(tables["nterm"]);$("#myModal").modal("show");'>
+      N-term
+    </button>
+    <button type="button" id="icl3_button" class="btn btn-primary" onclick='$("#myModalLabel").html("ICL3");$("#ModalBody").html(tables["icl3"]);$("#myModal").modal("show");'>
+      ICL3
+    </button>
+    <button type="button" id="cterm_button" class="btn btn-primary" onclick='$("#myModalLabel").html("C-term");$("#ModalBody").html(tables["cterm"]);$("#myModal").modal("show");'>
+      C-term
+    </button>
+  </div>
+</div>
+<div class="row">
+  <div class="col-sm-2">
+  Mutations:
+  </div>
+  <div class="col-sm-8">
+    <button type="button" id="mutations_button" class="btn btn-primary" onclick='build_mutations();$("#myModalLabel").html("Thermostabilisation");$("#ModalBody").html(tables["mutations"]);$("#myModal").modal("show");'>
+      Thermostabilisation
+    </button>
+    <button type="button" id="removals_button" class="btn btn-primary" onclick='build_site_removals();$("#myModalLabel").html("Site Removal");$("#ModalBody").html(tables["site_removals"]);$("#myModal").modal("show");'>
+      Site Removal
+    </button>
+  </div>
+</div>
+<div class="row">
+  <!-- <div class="col-sm-3">
 
 
     Truncation suggestions:<br>
@@ -71,14 +120,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     Receptor specific:<br>
         <div class="btn-group-vertical btn-block">
-<!--             <div class="btn-group">
-                <button type="button" class="btn btn-default dropdown-toggle pull-right btn-block" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                   Common mutations <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu" role="menu" id='common'>
-                <li>Loading...</li>
-                </ul>
-            </div> -->
             <div class="btn-group">
                 <button type="button" class="btn btn-default dropdown-toggle pull-right" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Glycosylation site removal<span class="caret"></span>
@@ -140,16 +181,18 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             </div>
         </div>
 
-  </div>
-  <div class="col-sm-7">
+  </div> -->
+  <div class="col-sm-12">
   {{ target.get_snake_plot_no_buttons }}
   </div>
-  <div class="col-sm-3">
+</div>
+<div class="row">
+  <div class="col-sm-12">
     <div id="overview">
     </div>
   </div>
 </div>
-
+<iframe id="my_iframe" style="display:none;"></iframe>
 {% endblock %}
 
 {% block addon_js %}
@@ -157,7 +200,17 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     <script src="{% static 'home/js/diagrams.js' %}"></script> 
     <script type="text/javascript" charset="utf-8">
 
-        var modifications = new Array;
+    var modifications = new Array;
+    var tables = new Array;
+    var mutations_browser = new Array;
+    var removals_list = new Array;
+    var export_list = {};
+    export_list['nterm'] = [];
+    export_list['cterm'] = [];
+    export_list['icl3'] = [];
+    export_list['thermo'] = [];
+    export_list['removals'] = [];
+
 
     function resetAll() {
       modifications = new Array;
@@ -177,22 +230,98 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     }
 
-    function getSortedKeys(obj) {
+  function getSortedKeys(obj) {
       var keys = []; for(var key in obj) keys.push(key);
       return keys.sort(function(a,b){return obj[b]['hits']-obj[a]['hits']});
+  }
+
+  function exportCSVsuggestions(){
+
+    // var data = [["name1", "city1", "some other info"], ["name2", "city2", "more info"]];
+    // var csvContent = "data:text/csv;charset=utf-8,";
+    console.log(export_list);
+    // export_list.forEach(function(infoArray, index){
+
+    //    //dataString = infoArray.join("'\t'");
+    //    dataString = infoArray.join("','");
+    //    csvContent += "'"+dataString+ "'\n";
+
+    // }); 
+    // var encodedUri = encodeURI(csvContent);
+    // var link = document.createElement("a");
+    // link.setAttribute("href", encodedUri);
+    // link.setAttribute("download", "construct_suggestins_{{target.entry_name}}.csv");
+    // document.body.appendChild(link); // Required for FF
+
+    // link.click(); // This will download the data file named "my_data.csv".
+    postData = JSON.stringify(export_list);
+    //postData = [];
+    
+    // document.getElementById('my_iframe').src = "/common/exportexcel";
+
+    console.log(postData)
+    $.ajax({
+      type:    "POST",
+      url:     "/common/exportexcel",
+      data:    {"d":postData},
+      success: function(data) {
+            console.log(data);
+            console.log("/common/exportexceldownload/" + data+ "/{{target.entry_name}}");
+            $("body").append("<iframe src='/common/exportexceldownload/" + data+ "/{{target.entry_name}}' style='display: none;' ></iframe>");
+      },
+      // vvv---- This is the new bit
+      error:   function(jqXHR, textStatus, errorThrown) {
+            alert("Error, status = " + textStatus + ", " +
+                  "error thrown: " + errorThrown
+            );
+            console.log("Error, status = " + textStatus + ", " +
+                  "error thrown: " + errorThrown);
+      }
+    });
+
+    // $.post('/common/exportexcel', postData, function(retData) {
+    //   console.log('hi');
+    //   //$("body").append("<iframe src='" + retData.url+ "' style='display: none;' ></iframe>");
+    //       var blob=new Blob([retData]);
+    //       var link=document.createElement('a');
+    //       link.href=window.URL.createObjectURL(blob);
+    //       link.download="myFileName.xls";
+    //       link.click();
+    // }); 
+  }
+
+  function getSortedKeys_advanced(obj) {
+
+    var keys = []; for(var key in obj) keys.push(key);
+    return keys.sort(function(a,b){
+      if (obj[a]['levels_num'][0] < obj[b]['levels_num'][0]) return 1;
+      if (obj[a]['levels_num'][0] > obj[b]['levels_num'][0]) return -1;
+
+      if (obj[a]['levels_num'][1] < obj[b]['levels_num'][1]) return 1;
+      if (obj[a]['levels_num'][1] > obj[b]['levels_num'][1]) return -1;
+
+      if (obj[a]['levels_num'][2] < obj[b]['levels_num'][2]) return 1;
+      if (obj[a]['levels_num'][2] > obj[b]['levels_num'][2]) return -1;
+
+      if (obj[a]['levels_num'][3] < obj[b]['levels_num'][3]) return 1;
+      if (obj[a]['levels_num'][3] > obj[b]['levels_num'][3]) return -1;
+      return 0;
+    });
   }
 
     function build_nterm_menu() {
       var state = $('input:radio[name=state]:checked').val();
       var fusionpos = $('input:radio[name=fusionpos]:checked').val();
       show_nterm = {};
+      show_table = {};
+      level_num = 0
       $.each(n_term_data, function(level,proteins) {
         find = 0;
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
             if (state==vals[3]) {
-              if (fusionpos==vals[4] || (fusionpos=='None' && vals[4]!='nterm') || (fusionpos!='nterm' && vals[4]=='None')) {
+              if (fusionpos==vals[4] || (fusionpos=='None' && vals[4]!='nterm') || (fusionpos!='nterm' && vals[4]=='None') || 1==1) { //include all data regardless of fusion
                 find = 1;
                 // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
                 if(!show_nterm[level]) { show_nterm[level] = {}; } 
@@ -202,6 +331,20 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                   show_nterm[level][vals[2]]['pdbs'].push(pdb);
                   show_nterm[level][vals[2]]['hits'] += 1;
                 }
+
+                // TABLE
+                if(!show_table[vals[2]]) { show_table[vals[2]] = {'gn': vals[2], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0}; }
+
+                if(show_table[vals[2]]['proteins'].indexOf(protein)==-1) {
+                  show_table[vals[2]]['proteins'].push(protein);
+                  show_table[vals[2]]['pdbs'].push(pdb);
+                  show_table[vals[2]]['hits'] += 1;
+                  show_table[vals[2]]['levels_num'][level_num] += 1;
+                }
+
+                if(show_table[vals[2]]['levels'].indexOf(level)==-1) {
+                  show_table[vals[2]]['levels'].push(level);
+                }
               }
             }
           })
@@ -209,6 +352,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         if (find==1 ){
           show_nterm[level]['sortedkeys'] = getSortedKeys(show_nterm[level]);
         }
+        level_num += 1;
       }) 
       var items = [];
       $.each( show_nterm, function( key, val ) {
@@ -228,12 +372,27 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       });
       result = items.join( "" );
       $("#ntermmenu").html(result);
+
+      var items_table = ["<table class='table-striped table table-bordered'><thead><tr><th>From 1.50</th><th>Hits</th><th>Levels</th><th>Use</th></tr></thead><tbody>"];
+      $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
+        val = show_table[pos];
+        temp = "<tr><td>1x"+(50-parseInt(pos))+"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td><a href='#' onclick='nterm_tm1(this)' value='"+pos+"' from=''>Apply</a></tr>";
+        items_table.push( temp );
+        export_list['nterm'].push(["1x"+(50-parseInt(pos)),val['hits'],val['levels']])
+      });
+      items_table.push( "</tbody></table>" );
+      result = items_table.join( "" );
+      tables['nterm'] = result;
+      $("#nterm_button").html("N-term ("+Object.keys(show_table).length+")");
+      // $("#ModalBody").html(result);
     }
 
     function build_cterm_menu() {
       var state = $('input:radio[name=state]:checked').val();
       var fusionpos = $('input:radio[name=fusionpos]:checked').val();
       show_cterm = {};
+      show_table = {};
+      level_num = 0
       $.each(c_term_data, function(level,proteins) {
         find = 0;
         $.each(proteins, function(protein, pdbs){
@@ -249,12 +408,27 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                   show_cterm[level][vals[2]]['pdbs'].push(pdb);
                   show_cterm[level][vals[2]]['hits'] += 1;
                 }
+
+                // TABLE
+                if(!show_table[vals[2]]) { show_table[vals[2]] = {'gn': vals[2], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0}; }
+
+                if(show_table[vals[2]]['proteins'].indexOf(protein)==-1) {
+                  show_table[vals[2]]['proteins'].push(protein);
+                  show_table[vals[2]]['pdbs'].push(pdb);
+                  show_table[vals[2]]['hits'] += 1;
+                  show_table[vals[2]]['levels_num'][level_num] += 1;
+                }
+
+                if(show_table[vals[2]]['levels'].indexOf(level)==-1) {
+                  show_table[vals[2]]['levels'].push(level);
+                }
             }
           })
         })
         if (find==1 ){
           show_cterm[level]['sortedkeys'] = getSortedKeys(show_cterm[level]);
         }
+        level_num += 1;
       }) 
 
       var items = [];
@@ -275,12 +449,27 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       });
       result = items.join( "" );
       $("#ctermmenu").html(result);
+
+      var items_table = ["<table class='table-striped table table-bordered'><thead><tr><th>From 8.50</th><th>Hits</th><th>Levels</th><th>Use</th></tr></thead><tbody>"];
+      $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
+        val = show_table[pos];
+        temp = "<tr><td>8x"+(parseInt(pos)+50)+"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td><a href='#' onclick='cterm(this)' value='"+pos+"' from=''>Apply</a></tr>";
+        items_table.push( temp );
+        export_list['cterm'].push(["8x"+(parseInt(pos)+50),val['hits'],val['levels']])
+      });
+      items_table.push( "</tbody></table>" );
+      result = items_table.join( "" );
+      tables['cterm'] = result;
+      $("#cterm_button").html("C-term ("+Object.keys(show_table).length+")");
+
     }
 
     function build_icl3_menu() {
       var state = $('input:radio[name=state]:checked').val();
       var fusionpos = $('input:radio[name=fusionpos]:checked').val();
       show_icl3 = {};
+      show_table = {};
+      level_num = 0
       $.each(icl3_data, function(level,proteins) {
         find = 0;
         $.each(proteins, function(protein, pdbs){
@@ -299,6 +488,20 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                   show_icl3[level][range]['hits'] += 1;
                 }
 
+                // TABLE
+                if(!show_table[range]) { show_table[range] = {'start': vals[0], 'end': vals[1], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0}; }
+
+                if(show_table[range]['proteins'].indexOf(protein)==-1) {
+                  show_table[range]['proteins'].push(protein);
+                  show_table[range]['pdbs'].push(pdb);
+                  show_table[range]['hits'] += 1;
+                  show_table[range]['levels_num'][level_num] += 1;
+                }
+
+                if(show_table[range]['levels'].indexOf(level)==-1) {
+                  show_table[range]['levels'].push(level);
+                }
+
               }
             }
           })
@@ -306,6 +509,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         if (find==1 ){
           show_icl3[level]['sortedkeys'] = getSortedKeys(show_icl3[level]);
         }
+        level_num += 1;
       }) 
 
       var items = [];
@@ -328,6 +532,115 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       });
       result = items.join( "" );
       $("#icl3menu").html(result);
+
+      var items_table = ["<table class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th>Use</th></tr></thead><tbody>"];
+      $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
+        val = show_table[pos];
+        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td><a href='#' onclick='icl3(this)' tm5='"+val['start']+"'  tm6='"+val['end']+"' from=''>Apply</a></tr>";
+        items_table.push( temp );
+        export_list['icl3'].push([pos,val['start'],val['end'],val['hits'],val['levels']])
+      });
+      items_table.push( "</tbody></table>" );
+      result = items_table.join( "" );
+      tables['icl3'] = result;
+      $("#icl3_button").html("ICL3 ("+Object.keys(show_table).length+")");
+    }
+
+    function build_mutations() {
+      console.log(mutations_browser);
+      console.log(mutations_browser.length);
+      var keys = Object.keys(mutations_browser);
+      muts = {}
+      $.each(keys, function( i,type ) {
+        $.each(mutations_browser[type], function(gn, values){
+          if(!muts[gn]) { muts[gn] = {'gn': gn, 'types': [], 'hits':0, 'details':[]}; }
+
+          muts[gn]['hits'] += 1;
+          muts[gn]['types'].push(type)
+          muts[gn]['details'].push(values)
+        });
+      });
+      console.log(muts);
+        var items_table = ["<table class='table-striped table table-bordered'><thead><tr><th>Position</th><th>Mutation</th><th>Hits</th><th>Levels</th></tr></thead><tbody>"];
+      $.each( getSortedKeys(muts), function( i, gn ) {
+        vals = muts[gn];
+        mut_suggestions = [];
+        check = []
+        label = []
+        $.each(vals['details'], function(i, val) {
+            console.log(val);
+            if (vals['types'][i].substring(0, 5) == "cons_") {
+              label.push(val[0]+val[1]+val[2]);
+              if ($.inArray(val[0]+val[1]+val[2], check)==-1) {
+                mut_suggestions.push("<a onclick='mut(this)' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' >"+val[0]+val[1]+val[2]+"</a>");
+                check.push(val[0]+val[1]+val[2]);
+              }
+            } else if (vals['types'][i].substring(0, 5) == "termo") {
+              $.each( val, function( key, value ) {
+                if (vals['types'][i]=='termo_Common mutation (Wt)') {
+                  console.log(key);
+                  console.log(value);
+                  $.each(value['muts'], function(i, mut_aa) {
+                    console.log(mut_aa);
+                    label.push(value['wt'][0]+value['wt'][1]+mut_aa);
+                    if ($.inArray(value['wt'][0]+value['wt'][1]+mut_aa, check)==-1) {
+                      mut_suggestions.push("<a onclick='mut(this)' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+mut_aa+"'>"+value['wt'][0]+value['wt'][1]+mut_aa+"</a>");
+                      check.push(value['wt'][0]+value['wt'][1]+mut_aa);
+                    }
+                   });
+                } else {
+                    // temp += "<li><a onclick='mut(this)' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+to+"'><strong>Mutate "+value['wt'][0]+value['wt'][1]+to+"</strong></a></li>";
+
+                  label.push(value['wt'][0]+value['wt'][1]+key);
+                  if ($.inArray(value['wt'][0]+value['wt'][1]+key, check)==-1) {
+                    mut_suggestions.push("<a onclick='mut(this)' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+key+"'>"+value['wt'][0]+value['wt'][1]+key+"</a>");
+                    check.push(value['wt'][0]+value['wt'][1]+key);
+                  }
+                }
+              });
+
+            }
+        });
+        temp = "<tr><td>"+gn+"</td><td>"+mut_suggestions.join(", ")+"</td><td>"+vals['hits']+"</td><td>"+vals['types']+"</td><td></tr>";
+        items_table.push( temp );
+        export_list['thermo'].push([gn,label.join(", "),val['hits'],val['types']]);
+      });
+      items_table.push( "</tbody></table>" );
+      result = items_table.join( "" );
+      tables['mutations'] = result;
+      $("#mutations_button").html("Thermostabilisation ("+Object.keys(muts).length+")");
+    }
+
+    function build_site_removals() {
+      var keys = Object.keys(removals_list);
+      removals = {}
+      count = 0;
+      var items_table = ["<table class='table-striped table table-bordered'><thead><tr><th>Segment</th><th>Mutation</th><th>Type of removal</th></tr></thead><tbody>"];
+      $.each(keys, function( i,type ) {
+        $.each(removals_list[type], function(subtype, values){
+          console.log(type);
+          console.log(subtype);
+          $.each(values, function(i, details) { 
+            console.log(i);
+            console.log(details);
+            count += 1;
+            if (details[2]!="") { //single mutation
+              suggestion = "<a onclick='glyco(this)' motif='"+details[4]+"' pos='"+details[0]+"' wt='"+details[4][0]+"' from='"+details[4][0]+"' to='"+details[1]+"' to2='"+details[3]+"' wt2='"+details[4][1]+"'> Mutate "+details[4][0]+details[0]+details[1]+" & "+details[4][1]+parseInt(details[0]+1)+details[3]+"</a>";
+              label = "Mutate "+details[4][0]+details[0]+details[1]+" & "+details[4][1]+parseInt(details[0]+1)+details[3];
+            } else {
+                suggestion =  "<a onclick='glyco(this)' motif='"+details[4]+"' pos='"+details[0]+"' wt='"+details[4][0]+"' from='"+details[4][0]+"' to='"+details[1]+"' > Mutate "+details[4][0]+details[0]+details[1]+"</a>";
+                label = "Mutate "+details[4][0]+details[0]+details[1];
+            }
+            temp = "<tr><td>"+details[5]+"</td><td>"+suggestion+"</td><td>"+type+" ("+subtype+")</td><td></tr>";
+            items_table.push( temp );
+            export_list['removals'].push([details[5],label,type,subtype]);
+          });
+        });
+      });
+      items_table.push( "</tbody></table>" );
+      result = items_table.join( "" );
+      tables['site_removals'] = result;
+      $("#removals_button").html("Site removals ("+count+")");
     }
 
     // ON CLICK FUNCTIONS
@@ -344,7 +657,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           range.push(i);
       }
 
-
+      $('#myModal').modal('hide');
       modi = {method: "n-term", type: "deletion", from: from, range: range, info: "Based on "+from};
       modifications.push(modi);
       overlay_modifications();
@@ -359,8 +672,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       {% with residues.Cterm|last as last %}
        end =   {{ last.sequence_number }};
       {% endwith %}
-
-      console.log(start+" "+end);
 
       range = new Array;
       for (var i = start; 1 > 0 ? i <= end : i > end; i += 1) {
@@ -586,96 +897,22 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       // http://localhost:8000/construct/tool/json/nterm/adrb2_human/
       $.getJSON( "/construct/tool/json/nterm/{{target.entry_name}}/", function( data ) {
           n_term_data = data; 
-          // var items = [];
-          // $.each( data, function( key, val ) {
-          //   temp = "<li id='" + key + "'><div>" + key + " ("+Object.keys(val).length+")</div><ul>";
-
-          //   $.each( val, function( protein, val2 ) {
-          //     temp += "<li id='" + protein + "'><div>" + protein + "</div><ul>";
-          //     $.each( val2, function( pdb, value ) {
-          //         temp += "<li id='"+pdb+"'><div>"+pdb+"</div><ul><li><div> Range:"+value[0]+":"+value[1]+"</div></li><li><div onclick='nterm_tm1(this)' value='"+value[2]+"' from='"+pdb+"'>From TM1:"+value[2]+"</div></li></ul></li>";
-          //     });
-          //     temp += "</ul></li>";
-          //   });
-
-          //   temp += "</ul></li>";
-          //   items.push( temp );
-          // });
-          // result = items.join( "" );
-          // $(".nterm").find("ul").html(result);
-          // $( "#n_menu" ).menu( "refresh" );
           build_nterm_menu();
         });
 
       // http://localhost:8000/construct/tool/json/cterm/adrb2_human/
       $.getJSON( "/construct/tool/json/cterm/{{target.entry_name}}/", function( data ) {
           c_term_data = data;
-          // var items = [];
-          // $.each( data, function( key, val ) {
-          //   temp = "<li id='" + key + "'><div>" + key + " ("+Object.keys(val).length+")</div><ul>";
-
-          //   $.each( val, function( protein, val2 ) {
-          //     temp += "<li id='" + protein + "'><div>" + protein + "</div><ul>";
-          //     $.each( val2, function( pdb, value ) {
-          //       temp += "<li id='"+pdb+"'><div>"+pdb+"</div><ul><li><div onclick='cterm(this)' value='"+value[2]+"' from='"+pdb+"'>From C-term start:"+value[2]+"</div></li></ul></li>";
-          //     });
-          //     temp += "</ul></li>";
-          //   });
-
-          //   temp += "</ul></li>";
-          //   items.push( temp );
-          // });
-          // result = items.join( "" );
-          // $(".cterm").find("ul").html(result);
-          // $( "#c_menu" ).menu( "refresh" );
           build_cterm_menu();
         });
 
       // http://localhost:8000/construct/tool/json/icl3/adrb2_human/
       $.getJSON( "/construct/tool/json/icl3/{{target.entry_name}}/", function( data ) {
           icl3_data = data; 
-          // var items = [];
-          // $.each( data, function( key, val ) {
-          //   temp = "<li id='" + key + "'><div>" + key + " ("+Object.keys(val).length+")</div><ul>";
-
-          //   $.each( val, function( protein, val2 ) {
-          //     temp += "<li id='" + protein + "'><div>" + protein + "</div><ul>";
-          //     $.each( val2, function( pdb, value ) {
-          //         temp += "<li id='"+pdb+"'><div>"+pdb+"</div><ul><li><div onclick='icl3(this)' tm5='"+value[0]+"'  tm6='"+value[1]+"' from='"+pdb+"'>TM5:"+value[0]+" TM6:"+value[1]+"</div></li></ul></li>";
-          //     });
-          //     temp += "</ul></li>";
-          //   });
-
-          //   temp += "</ul></li>";
-          //   items.push( temp );
-          // });
-          // result = items.join( "" );
-          // $(".icl3").find("ul").html(result);
-          // $( "#i_menu" ).menu( "refresh" );
           build_icl3_menu();
         });
 
-      // http://localhost:8000/construct/tool/json/cterm/adrb2_human/
-      // $.getJSON( "/construct/tool/json/mutations/{{target.entry_name}}/", function( data ) {
-      //     var items = [];
-      //     $.each( data, function( gn, val ) {
-      //       // console.log(gn);
-      //       // console.log(val);
-      //       temp = "<li id='" + gn + "' class=\"dropdown-submenu\"><a>" + gn + " ("+val['hits']+" occurences)</a><ul class=\"dropdown-menu\">";
 
-      //       temp += "<li><a>"+gn+" in {{target.entry_name}} is "+val['wt'][0]+"</a></li><li class=\"divider\"></li>";
-      //       $.each( val['proteins'], function( key, value ) {
-      //           temp += "<li class=\"dropdown-submenu\" id='"+key+"'><a class='origin'>"+value+" ("+val['mutation'][key][0]+"=>"+val['mutation'][key][1]+")</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' pos='"+val['wt'][1]+"' gn='"+gn+"' wt='"+val['wt'][0]+"' from='"+val['wt'][0]+"' to='"+val['mutation'][key][1]+"' > Mutate "+val['wt'][0]+val['wt'][1]+val['mutation'][key][1]+"</a></li></ul></li>";
-      //       });
-
-      //       temp += "</ul></li>";
-      //       items.push( temp );
-      //     });
-      //     result = items.join( "" );
-      //     $("#common").html(result);
-      //   });
-
-            // http://localhost:8000/construct/tool/json/cterm/adrb2_human/
       $.getJSON( "/construct/tool/json/glyco/{{target.entry_name}}/", function( data ) {
           var items = [];
           $.each( data, function( type, val ) {
@@ -693,6 +930,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           });
           result = items.join( "" );
           $("#glyco").html(result);
+          removals_list["glyco"] = data;
+          build_site_removals();
         });
                     
       // http://localhost:8000/construct/tool/json/palmi/adrb2_human/
@@ -709,6 +948,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           });
           result = items.join( "" );
           $("#palmi").html(result);
+          removals_list["palmi"] = data;
+          build_site_removals();
         });
 
         $.getJSON( "/construct/tool/json/cons_strucs/{{target.entry_name}}/", function( data ) {
@@ -719,6 +960,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           });
           result = items.join( "" );
           $("#cons_strucs").html(result);
+          mutations_browser['cons_strucs'] = data;
+          build_mutations();
         });
 
         $.getJSON( "/construct/tool/json/cons_rf/{{target.entry_name}}/", function( data ) {
@@ -729,6 +972,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           });
           result = items.join( "" );
           $("#cons_rf").html(result);
+          mutations_browser['cons_rf'] = data;
+          build_mutations();
         });
 
         $.getJSON( "/construct/tool/json/cons_rf_and_class/{{target.entry_name}}/", function( data ) {
@@ -739,6 +984,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           });
           result = items.join( "" );
           $("#cons_rf_and_class").html(result);
+          mutations_browser['cons_rf_and_class'] = data;
+          build_mutations();
         });
 
 
@@ -752,6 +999,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           });
           result = items.join( "" );
           $("#cons_rm_GP").html(result);
+          mutations_browser['cons_rm_GP'] = data;
+          build_mutations();
         });
 
       $.getJSON( "/construct/tool/json/termo/{{target.entry_name}}/", function( data ) {
@@ -764,6 +1013,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             } else if (level == 3) {
               level_text = "Common mutation (Wt)"
             }
+            mutations_browser['termo_'+level_text] = gns;
             temp = "<li id='" + level + "' class=\"dropdown-submenu\"><a>" + level_text + "</a><ul class=\"dropdown-menu\">";
             $.each( gns, function( gn, aa ) {
                 $.each( aa, function( key, value ) {
@@ -817,6 +1067,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           result = items.join( "" );
           $("#thermo").html(result);
         });
+          build_mutations();
 
     });
 </script>
