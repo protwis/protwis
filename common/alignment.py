@@ -1246,10 +1246,14 @@ class AlignedReferenceTemplate(Alignment):
                         ref_segment_dict[gen_num]='-'
                         temp_segment_dict[gen_num]=temp_position[2]
                         align_segment_dict[gen_num]='-'
-                    elif (ref_position[2]=='-' or ref_position[2]=='_') and temp_position[1]=='':
+                    elif ref_position[2]=='-' and temp_position[1]=='':
                         ref_segment_dict[ref_position[0]]='-'
                         temp_segment_dict[str(temp_position[4])]=temp_position[2]
                         align_segment_dict[ref_position[0]]='-'
+                    elif ref_position[2]=='_' and temp_position[1]=='':
+                        ref_segment_dict[ref_position[0]]='x'
+                        temp_segment_dict[str(temp_position[4])]=temp_position[2]
+                        align_segment_dict[ref_position[0]]='x'
                     elif ref_position[2]=='_' and temp_position[1]!=False:
                         bw, gn = temp_position[1].split('x')
                         gen_num = '{}x{}'.format(bw.split('.')[0],gn)
