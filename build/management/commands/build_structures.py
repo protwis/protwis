@@ -648,6 +648,7 @@ class Command(BaseBuild):
                         seq_split = display_split[0].split(".")
 
                         new_display = seq_split[0]+"."+str(int(seq_split[1])+1)+"x"+str(int(display_split[1])+1)
+                        new_equivalent = seq_split[0]+"x"+str(int(display_split[1])+1)
 
                         if debug: print("Added Generic Number for",res.sequence_number,": GN",new_gn," Display",new_display)
 
@@ -655,6 +656,16 @@ class Command(BaseBuild):
                                 scheme=ns_obj, label=new_gn, protein_segment=res.protein_segment)
                         display_gn, created = ResidueGenericNumber.objects.get_or_create(
                                 scheme=scheme, label=new_display, protein_segment=res.protein_segment)
+
+                        try:
+                            gn_equivalent, created = ResidueGenericNumberEquivalent.objects.get_or_create(
+                                default_generic_number=gn,
+                                scheme=scheme,
+                                defaults={'label': new_equivalent})
+                        except IntegrityError:
+                            gn_equivalent = ResidueGenericNumberEquivalent.objects.get(
+                                default_generic_number=gn,
+                                scheme=scheme)
 
                         res.generic_number = gn
                         res.display_generic_number = display_gn
@@ -682,6 +693,7 @@ class Command(BaseBuild):
                         seq_split = display_split[0].split(".")
 
                         new_display = seq_split[0]+"."+str(int(seq_split[1])-1)+"x"+str(int(display_split[1])-1)
+                        new_equivalent = seq_split[0]+"x"+str(int(display_split[1])-1)
 
                         if debug: print("Added Generic Number for",res.sequence_number,": GN",new_gn," Display",new_display)
 
@@ -689,6 +701,16 @@ class Command(BaseBuild):
                                 scheme=ns_obj, label=new_gn, protein_segment=res.protein_segment)
                         display_gn, created = ResidueGenericNumber.objects.get_or_create(
                                 scheme=scheme, label=new_display, protein_segment=res.protein_segment)
+
+                        try:
+                            gn_equivalent, created = ResidueGenericNumberEquivalent.objects.get_or_create(
+                                default_generic_number=gn,
+                                scheme=scheme,
+                                defaults={'label': new_equivalent})
+                        except IntegrityError:
+                            gn_equivalent = ResidueGenericNumberEquivalent.objects.get(
+                                default_generic_number=gn,
+                                scheme=scheme)
 
                         res.generic_number = gn
                         res.display_generic_number = display_gn
