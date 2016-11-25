@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinAnomaly, ProteinAnomalyType,
     ProteinSegment)
-from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue
+from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue, ResidueGenericNumberEquivalent
 from common.models import WebLink, WebResource, Publication
 from structure.models import (Structure, StructureType, StructureSegment, StructureStabilizingAgent,PdbData,
     Rotamer, StructureSegmentModeling, StructureCoordinates, StructureCoordinatesDescription, StructureEngineering,
