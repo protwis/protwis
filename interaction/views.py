@@ -670,11 +670,13 @@ def calculate(request, redirect=None):
             if 'file' in request.FILES:
                 pdbdata = request.FILES['file']
                 pdbname = os.path.splitext(str(pdbdata))[0]
-                with open(module_dir + '/pdbs/' + str(pdbdata), 'wb+') as destination:
+                pdbname = pdbname.replace("_","")
+                print(pdbname)
+                with open(module_dir + '/pdbs/' + str(pdbdata).replace("_",""), 'wb+') as destination:
                     for chunk in pdbdata.chunks():
                         destination.write(chunk)
 
-                temp_path = module_dir + '/pdbs/' + str(pdbdata)
+                temp_path = module_dir + '/pdbs/' + str(pdbdata).replace("_","")
                 pdbdata = open(temp_path, 'r').read()
                 runusercalculation(pdbname, session_key)
 
@@ -1188,7 +1190,7 @@ def pdb(request):
     # response['X-Sendfile'] = smart_str(mypath)
     if session:
         session = request.session.session_key
-        pdbdata = open('/tmp/signprot/' + session +
+        pdbdata = open('/tmp/interactions/' + session +
                        '/pdbs/' + pdbname + '.pdb', 'r').read()
         response = HttpResponse(pdbdata, content_type='text/plain')
     else:
