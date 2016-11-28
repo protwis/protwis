@@ -13,7 +13,7 @@ class NaturalMutations(models.Model):
     number_homozygotes = models.FloatField()
 
     def __str__(self):
-        return self.protein.name
+        return self.protein.name + '_' + str(self.residue.sequence_number) + '_' + self.residue.amino_acid  
 
     class Meta():
         db_table = 'mutation_natural'
