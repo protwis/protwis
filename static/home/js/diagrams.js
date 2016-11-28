@@ -577,6 +577,70 @@
                         });
                     }
 
+                    function ajaxNaturalMutation(plotid, protein) {
+
+                      resetColors(plotid);
+
+                        $.getJSON( '/mutational_landscape/ajax/NaturalMutation/'+protein+'/', function( data ) {
+                          $.each( data, function( key, val ) {
+                            // NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes
+                             extra = "\nAAchange: " + "-->" + String(val[0]) + 
+                             "\nAllele Frequency: " + String(val[1]) +
+                             "\nAllele Count: " + String(val[2]) + 
+                             "\nAllele Number: " + String(val[3]) +
+                            "\nNumber of Homozygotes: " + String(val[4]);
+
+                             color = "#FFB347";
+                             color_letter = "#fefdfd";
+                             $('#'+plotid).find("#"+key).next().css("fill", color_letter);
+
+                             original_title = $('#'+plotid).find("#"+key).attr('original_title')
+                             $('#'+plotid).find("#"+key).css("fill", color);
+                             $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+                          });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
+    
+                        });
+                    }
+
+                    function ajaxNaturalMutationPos(plotid) {
+
+                      resetColors(plotid);
+
+                        var pos = jQuery.parseJSON(natural_mutations_json);
+
+                        var color_code = pos['color']
+
+                          $.each(pos, function( key, val ) {
+
+                             extra = "\nAAchanges: " + "-->" + String(val['AA']) +
+                            "\nNumber of Proteins: " + String(val['val']);
+
+                             if (val['val']==0) {
+                                color_letter = "#000000"
+                             } else  {
+                                color_letter = "#fefdfd";
+                             } 
+                             
+                             color = color_code[val['val']];
+                             $('#'+plotid).find("#"+key).next().css("fill", color_letter);
+
+                             original_title = $('#'+plotid).find("#"+key).attr('original_title')
+                             $('#'+plotid).find("#"+key).css("fill", color);
+                             $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+                          });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
+    
+                    }
+
                     function ajaxInterface(plotid,protein) {
 
                       resetColors(plotid);
