@@ -52,12 +52,12 @@ class BlastSearch(object):
             logger.debug("Running Blast with sequence: {}".format(input_seq))
             tmp.write(bytes(str(input_seq) + '\n', 'latin1'))
             tmp.seek(0)
-            blast = Popen('%s -db %s -outfmt 5 -gapopen 13' % (self.blast_path, self.blastdb), universal_newlines=True, stdin=tmp,
+            blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, stdin=tmp,
                 stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate()
         else:
         #Rest of the world:
-            blast = Popen('%s -db %s -outfmt 5 -gapopen 13' % (self.blast_path, self.blastdb), universal_newlines=True, shell=True,
+            blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, shell=True,
                 stdin=PIPE, stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate(input=str(input_seq))
         if len(blast_err) != 0:
