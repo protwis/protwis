@@ -6,12 +6,11 @@ class NaturalMutations(models.Model):
 
     protein = models.ForeignKey('protein.Protein')
     residue = models.ForeignKey('residue.Residue')
-    mutation_type = models.ForeignKey('MutationType', null=True)
     amino_acid = models.CharField(max_length=1)
-    allele_frequency = models.CharField()
-    allele_count = models.CharField()
-    allele_number = models.CharField()
-    number_homozygotes = models.CharField()
+    allele_frequency = models.FloatField()
+    allele_count = models.FloatField()
+    allele_number = models.FloatField()
+    number_homozygotes = models.FloatField()
 
     def __str__(self):
         return self.protein.name
@@ -24,7 +23,6 @@ class CancerMutations(models.Model):
 
     protein = models.ForeignKey('protein.Protein')
     residue = models.ForeignKey('residue.Residue')
-    mutation_type = models.ForeignKey('MutationType', null=True)
     amino_acid = models.CharField(max_length=1)
     cancer_type = models.CharField(max_length=100)
 
@@ -39,7 +37,6 @@ class DiseaseMutations(models.Model):
 
     protein = models.ForeignKey('protein.Protein')
     residue = models.ForeignKey('residue.Residue')
-    mutation_type = models.ForeignKey('MutationType', null=True)
     amino_acid = models.CharField(max_length=1)
     disease = models.CharField(max_length=100)
 

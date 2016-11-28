@@ -51,6 +51,7 @@ INSTALLED_APPS = (
     'tools',
     'drugs',
     'signprot',
+    'mutational_landscape',
 )
 
 MIDDLEWARE_CLASSES = (
