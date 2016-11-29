@@ -87,6 +87,19 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
   </div>
 </div>
 <div class="row">
+  <div class="col-sm-2">
+  Mutations:
+  </div>
+  <div class="col-sm-8">
+    <button type="button" id="mutations_button" class="btn btn-primary" onclick='build_mutations();$("#myModalLabel").html("Custom");$("#ModalBody").html(tables["custom"]);$("#myModal").modal("show");'>
+      Custom
+    </button>
+    <button type="button" id="removals_button" class="btn btn-primary" onclick='build_site_removals();$("#myModalLabel").html("Overview");$("#ModalBody").html(tables["overview"]);$("#myModal").modal("show");'>
+      Current modifications
+    </button>
+  </div>
+</div>
+<div class="row">
   <!-- <div class="col-sm-3">
 
 
@@ -210,6 +223,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     export_list['icl3'] = [];
     export_list['thermo'] = [];
     export_list['removals'] = [];
+
+    tables["custom"] = []
+    tables["custom"].push( "Mutate: <input type='text' placeholder='sequence position'> to <input type='text' placeholder='aminoacid (1-letter)'> <input type='text' placeholder='Reason'><input type=button value=Add><br>");
+    tables["custom"].push( "Deletion: <input type='text' placeholder='from (sequence position)'> - <input type='text' placeholder='to (sequence number)'><input type=button value=Add><br>");
+    tables["custom"] = tables["custom"].join( "" );    
 
 
     function resetAll() {
@@ -774,6 +792,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     function modifications_overview() {
 
       $("#overview").html("");
+      tables["overview"] = [];
 
       $.each(modifications, function(key,val) {
 
@@ -797,13 +816,16 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             "</div>"
 
         $("#overview").append(row);
+        tables["overview"].push(row);
 
       }) 
-      $( "#overview" ).accordion( "refresh" );
-      $( "#overview" ).accordion({
-        collapsible: true,
-        active: false,
-      });
+
+      tables["overview"] = tables["overview"].join( "" );
+      // $( "#overview" ).accordion( "refresh" );
+      // $( "#overview" ).accordion({
+      //   collapsible: true,
+      //   active: false,
+      // });
 
     }
 
@@ -815,6 +837,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       resetModifications();
       overlay_modifications();
       modifications_overview();
+      $("#ModalBody").html(tables["overview"]);
 
     }
 
@@ -887,8 +910,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         }
       }
     });
-
-
 
         $(".long").show();
         $(".short").hide();
