@@ -49,23 +49,20 @@ class Command(BaseCommand):
         else:
             filenames = False
         
-        try:
-            self.create_g_proteins(filenames)
-        except Exception as msg:
-            self.logger.error(msg)
-
         #add gproteins from cgn db
         try:
-            # self.purge_cgn_residues()
-            # self.purge_cgn_protein_segments()
+            self.purge_coupling_data()
+            self.purge_cgn_residues()
+            self.purge_cgn_proteins()
+
+            self.create_g_proteins(filenames)
             self.cgn_create_proteins_and_families()
-            # self.purge_cgn_proteins()
-            #delete added g-proteins
 
         except Exception as msg:
+            print(msg)
             self.logger.error(msg)
 
-        #add residues from cgn db
+        # add residues from cgn db
         try:
             human_and_orths = self.cgn_add_proteins()
 
@@ -73,12 +70,13 @@ class Command(BaseCommand):
         except Exception as msg:
             self.logger.error(msg)
 
+        # add barcode data
         try:
             self.create_barcode()
         except Exception as msg:
             self.logger.error(msg)
 
-    def purge_data(self):
+    def purge_coupling_data(self):
         try:
             ProteinGProteinPair.objects.filter().delete()
             ProteinGProtein.all().delete()
@@ -126,7 +124,6 @@ class Command(BaseCommand):
 
     def create_g_proteins(self, filenames=False):
         self.logger.info('CREATING GPROTEINS')
-        self.purge_data()
 
         translation = {'Gs family':'100_000_001', 'Gi/Go family':'100_000_002', 'Gq/G11 family':'100_000_003','G12/G13 family':'100_000_004',}
 
