@@ -23,12 +23,6 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
     if jsondata == None:
         jsondata = {}
 
-        # NaturalMutations_pos = list(NaturalMutations.objects.filter(protein__entry_name=slug).values_list('residue__sequence_number', flat=True))
-
-        # for pos in NaturalMutations_pos:
-
-        #     jsondata[pos] = [5, 'Natural Mutation', pos]
-
         NMs = NaturalMutations.objects.filter(protein__entry_name=slug).prefetch_related('residue')
 
         for NM in NMs:
@@ -37,6 +31,51 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
             jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes]
 
 
+
+        jsondata = json.dumps(jsondata)
+        response_kwargs['content_type'] = 'application/json'
+
+        cache.set(name_of_cache, jsondata, 60*60*24*2) #two days timeout on cache
+
+    return HttpResponse(jsondata, **response_kwargs)
+
+def ajaxCancerMutation(request, slug, **response_kwargs):
+
+    name_of_cache = 'ajaxCancerMutation_'+slug
+
+    jsondata = cache.get(name_of_cache)
+
+    if jsondata == None:
+        jsondata = {}
+
+        CMs = CancerMutations.objects.filter(protein__entry_name=slug).prefetch_related('residue')
+
+        for CM in CMs:
+            SN = CM.residue.sequence_number
+            jsondata[SN] = [CM.amino_acid]
+
+        jsondata = json.dumps(jsondata)
+        response_kwargs['content_type'] = 'application/json'
+
+        cache.set(name_of_cache, jsondata, 60*60*24*2) #two days timeout on cache
+
+    return HttpResponse(jsondata, **response_kwargs)
+
+
+def ajaxDiseaseMutation(request, slug, **response_kwargs):
+
+    name_of_cache = 'ajaxDiseaseMutation_'+slug
+
+    jsondata = cache.get(name_of_cache)
+
+    if jsondata == None:
+        jsondata = {}
+
+        DMs = DiseaseMutations.objects.filter(protein__entry_name=slug).prefetch_related('residue')
+
+        for DM in DMs:
+            SN = NM.residue.sequence_number
+            jsondata[SN] = [DM.amino_acid]
 
         jsondata = json.dumps(jsondata)
         response_kwargs['content_type'] = 'application/json'

@@ -577,6 +577,32 @@
                         });
                     }
 
+                    function ajaxCancerMutation(plotid, protein) {
+
+                      resetColors(plotid);
+
+                        $.getJSON( '/mutational_landscape/ajax/CancerMutation/'+protein+'/', function( data ) {
+                          $.each( data, function( key, val ) {
+                            // NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes
+                             extra = "\nAAchange: " + "-->" + String(val[0]);
+
+                             color = "#FFB347";
+                             color_letter = "#fefdfd";
+                             $('#'+plotid).find("#"+key).next().css("fill", color_letter);
+
+                             original_title = $('#'+plotid).find("#"+key).attr('original_title')
+                             $('#'+plotid).find("#"+key).css("fill", color);
+                             $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+                          });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
+    
+                        });
+                    }
+
                     function ajaxNaturalMutation(plotid, protein) {
 
                       resetColors(plotid);
