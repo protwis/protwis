@@ -129,7 +129,7 @@ class Command(BaseCommand):
 
         # read source files
         if not filenames:
-            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('.csv')]
+            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('Gprotein_crossclass.csv')]
 
         for filename in filenames:
             filepath = os.sep.join([self.gprotein_data_path, filename])
