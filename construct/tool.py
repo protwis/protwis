@@ -375,6 +375,10 @@ def thermostabilising(request, slug, **response_kwargs):
         c_level = 'B'
     elif level.split("_")[0]=='003':
         c_level = 'B'
+    elif level.split("_")[0]=='004':
+        c_level = 'C'
+    elif level.split("_")[0]=='005':
+        c_level = 'F'
     else:
         c_level = ''
 
@@ -449,6 +453,139 @@ def thermostabilising(request, slug, **response_kwargs):
                     temp[gn][mut_aa] = vals2
                 #results['2'][gn].pop(mut_aa, None)
     results['3'] = temp
+
+
+    jsondata = results
+    jsondata = json.dumps(jsondata)
+    response_kwargs['content_type'] = 'application/json'
+    return HttpResponse(jsondata, **response_kwargs)
+
+
+#@cache_page(60 * 60 * 24)
+def structure_rules(request, slug, **response_kwargs):
+
+
+    rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug).prefetch_related('protein_segment','display_generic_number','generic_number')
+
+    wt_lookup = {}
+    wt_lookup_pos = {}
+    for r in rs:
+        if r.generic_number:
+            gn = r.generic_number.label
+            wt_lookup[gn] = [r.amino_acid, r.sequence_number]
+        pos = r.sequence_number
+        wt_lookup_pos[pos] = [r.amino_acid]
+
+    level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
+    if level.split("_")[0]=='001':
+        c_level = 'A'
+    elif level.split("_")[0]=='002':
+        c_level = 'B'
+    elif level.split("_")[0]=='003':
+        c_level = 'B'
+    elif level.split("_")[0]=='004':
+        c_level = 'C'
+    elif level.split("_")[0]=='005':
+        c_level = 'F'
+    else:
+        c_level = ''
+
+    path = os.sep.join([settings.DATA_DIR, 'structure_data', 'construct_data', 'structure_rules.xlsx'])
+    d = parse_excel(path)
+    if c_level in d:
+        rules = d[c_level]
+    else:
+        rules = []
+
+    results = OrderedDict()
+    results['active'] = {}
+    results['inactive'] = {} #fixed mut
+
+    for rule in rules:
+        gn = rule['Generic Position']
+        mut_aa = rule['Mut AA']
+        wt_aas = rule['Wt AA'].split("/")
+        definition = rule['Definition']
+        state = rule['State']
+        valid = False
+        if gn in wt_lookup:
+            for wt_aa in wt_aas:
+                if wt_aa=='X' and wt_lookup[gn][0]!=mut_aa: #if universal but not mut aa
+                    valid = True
+                elif wt_lookup[gn][0]==wt_aa:
+                    valid = True
+            if valid:
+                print("valid",wt_lookup[gn],wt_aas,mut_aa)
+                print(rule)
+                mut = {'wt':wt_lookup[gn][0], 'gn': gn, 'pos':wt_lookup[gn][1], 'mut':mut_aa, 'definition':definition}
+                if state=='all':
+                    if gn not in results['active']: 
+                        results['active'][gn] = []
+                    if gn not in results['inactive']: 
+                        results['inactive'][gn] = []
+                    results['active'][gn].append(mut)
+                    results['inactive'][gn].append(mut)
+                else:
+                    if gn not in results[state]: 
+                        results[state][gn] = []
+                    results[state][gn].append(mut)
+
+
+    #     entry_name = mut['UniProt']
+    #     pos = int(mut['POS'])
+    #     pdb = mut['PDB']
+    #     if mut['Effect'] != 'Thermostabilising':
+    #         continue #only thermo!
+    #     if entry_name == slug:
+    #         if gn not in results['1']:
+    #             results['1'][gn] = {}
+    #         if mut_aa not in results['1'][gn]:
+    #             results['1'][gn][mut_aa] = {'pdbs':[], 'hits':0, 'wt':wt_lookup[gn]}
+    #         if mut['PDB'] not in results['1'][gn][mut_aa]['pdbs']:
+    #             results['1'][gn][mut_aa]['pdbs'].append(pdb)
+    #         results['1'][gn][mut_aa]['hits'] += 1
+
+    #     if gn:
+    #         if gn in wt_lookup:
+    #             if gn not in results['2']:
+    #                 results['2'][gn] = {}
+    #             if mut_aa not in results['2'][gn]:
+    #                 results['2'][gn][mut_aa] = {'pdbs':[], 'proteins':[], 'hits':0, 'wt':wt_lookup[gn]}
+    #             if entry_name not in results['2'][gn][mut_aa]['proteins']:
+    #                 results['2'][gn][mut_aa]['proteins'].append(entry_name)
+    #                 results['2'][gn][mut_aa]['hits'] += 1
+    #             if wt_lookup[gn][0] == wt_aa:
+    #                 if gn not in results['3']:
+    #                     results['3'][gn] = {}
+    #                 if wt_aa not in results['3'][gn]:
+    #                     results['3'][gn][wt_aa] = {'pdbs':[], 'proteins':[], 'hits':0, 'wt':wt_lookup[gn], 'muts':[]}
+    #                 if entry_name not in results['3'][gn][wt_aa]['proteins']:
+    #                     results['3'][gn][wt_aa]['proteins'].append(entry_name)
+    #                     results['3'][gn][wt_aa]['hits'] += 1
+    #                     if mut_aa not in results['3'][gn][wt_aa]['muts']:
+    #                         results['3'][gn][wt_aa]['muts'].append(mut_aa)
+
+    # temp = {}
+    # for gn, vals1 in results['2'].items():
+    #     for mut_aa, vals2 in vals1.items():
+    #         if vals2['hits']>1:
+    #             if gn not in temp:
+    #                 temp[gn] = {}
+    #             if mut_aa not in temp[gn]:
+    #                 temp[gn][mut_aa] = vals2
+    #             #results['2'][gn].pop(mut_aa, None)
+    # results['2'] = temp
+
+    # temp = {}
+    # for gn, vals1 in results['3'].items():
+    #     for mut_aa, vals2 in vals1.items():
+    #         if vals2['hits']>1:
+    #             if gn not in temp:
+    #                 temp[gn] = {}
+    #             if mut_aa not in temp[gn]:
+    #                 temp[gn][mut_aa] = vals2
+    #             #results['2'][gn].pop(mut_aa, None)
+    # results['3'] = temp
 
 
     jsondata = results
