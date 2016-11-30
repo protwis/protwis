@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinAnomaly, ProteinAnomalyType,
     ProteinSegment)
-from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue
+from residue.models import ResidueGenericNumber, ResidueNumberingScheme, Residue, ResidueGenericNumberEquivalent
 from common.models import WebLink, WebResource, Publication
 from structure.models import (Structure, StructureType, StructureSegment, StructureStabilizingAgent,PdbData,
     Rotamer, StructureSegmentModeling, StructureCoordinates, StructureCoordinatesDescription, StructureEngineering,
@@ -145,6 +145,9 @@ class Command(BaseBuild):
      'HIS':'H', 'ILE':'I', 'LEU':'L', 'LYS':'K',
      'MET':'M', 'PHE':'F', 'PRO':'P', 'SER':'S',
      'THR':'T', 'TRP':'W', 'TYR':'Y', 'VAL':'V'}
+
+        atom_num_dict = {'E':9, 'S':6, 'Y':12, 'G':4, 'A':5, 'V':7, 'M':8, 'L':8, 'I':8, 'T':7, 'F':11, 'H':10, 'K':9, 
+                         'D':8, 'C':6, 'R':11, 'P':7, 'Q':9, 'N':8, 'W':14}
 
 
         entry_name = d['construct_crystal']['uniprot']
@@ -610,7 +613,14 @@ class Command(BaseBuild):
                                 residues_bulk.append(residue)
                                 rotamer_data, created = PdbData.objects.get_or_create(pdb=temp)
                                 #rotamer_data_bulk.append(PdbData(pdb=temp))
-                                rotamer_data_bulk.append(rotamer_data)
+                                missing_atoms = False
+                                if rotamer_data.pdb.startswith('COMPND'):
+                                    lines = len(rotamer_data.pdb.split('\n'))-2
+                                else:
+                                    lines = len(rotamer_data.pdb.split('\n'))
+                                if lines<atom_num_dict[residue.amino_acid]:
+                                    missing_atoms = True
+                                rotamer_data_bulk.append([rotamer_data, missing_atoms])
                                 # rotamer, created = Rotamer.objects.get_or_create(residue=residue, structure=structure, pdbdata=rotamer_data)
                                 #rotamer_bulk.append(Rotamer(residue=residue, structure=structure, pdbdata=rotamer_data))
 
@@ -638,6 +648,7 @@ class Command(BaseBuild):
                         seq_split = display_split[0].split(".")
 
                         new_display = seq_split[0]+"."+str(int(seq_split[1])+1)+"x"+str(int(display_split[1])+1)
+                        new_equivalent = seq_split[0]+"x"+str(int(display_split[1])+1)
 
                         if debug: print("Added Generic Number for",res.sequence_number,": GN",new_gn," Display",new_display)
 
@@ -645,6 +656,16 @@ class Command(BaseBuild):
                                 scheme=ns_obj, label=new_gn, protein_segment=res.protein_segment)
                         display_gn, created = ResidueGenericNumber.objects.get_or_create(
                                 scheme=scheme, label=new_display, protein_segment=res.protein_segment)
+
+                        try:
+                            gn_equivalent, created = ResidueGenericNumberEquivalent.objects.get_or_create(
+                                default_generic_number=gn,
+                                scheme=scheme,
+                                defaults={'label': new_equivalent})
+                        except IntegrityError:
+                            gn_equivalent = ResidueGenericNumberEquivalent.objects.get(
+                                default_generic_number=gn,
+                                scheme=scheme)
 
                         res.generic_number = gn
                         res.display_generic_number = display_gn
@@ -672,6 +693,7 @@ class Command(BaseBuild):
                         seq_split = display_split[0].split(".")
 
                         new_display = seq_split[0]+"."+str(int(seq_split[1])-1)+"x"+str(int(display_split[1])-1)
+                        new_equivalent = seq_split[0]+"x"+str(int(display_split[1])-1)
 
                         if debug: print("Added Generic Number for",res.sequence_number,": GN",new_gn," Display",new_display)
 
@@ -679,6 +701,16 @@ class Command(BaseBuild):
                                 scheme=ns_obj, label=new_gn, protein_segment=res.protein_segment)
                         display_gn, created = ResidueGenericNumber.objects.get_or_create(
                                 scheme=scheme, label=new_display, protein_segment=res.protein_segment)
+
+                        try:
+                            gn_equivalent, created = ResidueGenericNumberEquivalent.objects.get_or_create(
+                                default_generic_number=gn,
+                                scheme=scheme,
+                                defaults={'label': new_equivalent})
+                        except IntegrityError:
+                            gn_equivalent = ResidueGenericNumberEquivalent.objects.get(
+                                default_generic_number=gn,
+                                scheme=scheme)
 
                         res.generic_number = gn
                         res.display_generic_number = display_gn
@@ -701,7 +733,8 @@ class Command(BaseBuild):
 
         rotamer_bulk = []
         for i,res in enumerate(bulked_res):
-            rotamer_bulk.append(Rotamer(residue=res, structure=structure, pdbdata=bulked_rot[i]))
+            rotamer_bulk.append(Rotamer(residue=res, structure=structure, pdbdata=bulked_rot[i][0], 
+                                        missing_atoms=bulked_rot[i][1]))
 
         Rotamer.objects.bulk_create(rotamer_bulk)
         #

@@ -12,7 +12,7 @@ from common.selection import Selection
 from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
 
-from signprot.models import SignprotStructure
+from signprot.models import SignprotStructure, SignprotBarcode
 
 from common import definitions
 from collections import OrderedDict
@@ -88,7 +88,7 @@ def GProtein(request):
 
         context["selectivitydata"] = selectivitydata
 
-        cache.set(name_of_cache, context, 60*60*24*2) #two days timeout on cache
+        
 
     return render(request, 'signprot/gprotein.html', context)        
 
@@ -243,7 +243,7 @@ def Ginterface(request, protein = None):
 
     # accessible_gn = ['3.50x50', '3.53x53', '3.54x54', '3.55x55', '34.50x50', '34.51x51', '34.53x53', '34.54x54', '5.61x61', '5.64x64', '5.65x65', '5.67x67', '5.68x68', '5.71x71', '5.72x72', '5.74x74', '5.75x75', '6.29x29', '6.32x32', '6.33x33', '6.36x36', '6.37x37', '7.55x55', '8.48x48', '8.49x49']
 
-    accessible_gn = ['3.50x50', '3.53x53','34.50x50', '34.54x54', '5.61x61', '5.64x64', '5.65x65', '5.67x67', '5.68x68', '5.69x69', '5.72x72', '5.74x74', '5.75x75', '6.29x29', '6.32x32', '6.33x33', '6.36x36', '6.37x37','8.48x48', '8.49x49']
+    accessible_gn = ['3.50x50', '3.53x53', '3.54x54', '3.55x55', '3.56x56', '34.50x50', '34.51x51', '34.52x52', '34.53x53', '34.54x54', '34.55x55', '34.56x56', '34.57x57', '5.61x61', '5.64x64', '5.65x65', '5.66x66', '5.67x67', '5.68x68', '5.69x69', '5.71x71', '5.72x72', '5.74x74', '5.75x75', '6.25x25', '6.26x26', '6.28x28', '6.29x29', '6.32x32', '6.33x33', '6.36x36', '6.37x37', '6.40x40', '7.55x55', '7.56x56', '8.47x47', '8.48x48', '8.49x49', '8.51x51']
 
     exchange_table = OrderedDict([('hp', ('V','I', 'L', 'M')),
                                  ('ar', ('F', 'H', 'W', 'Y')),
@@ -293,23 +293,64 @@ def Ginterface(request, protein = None):
 
     return render(request, 'signprot/ginterface.html', {'pdbname': '3SN6', 'snakeplot': SnakePlot, 'gproteinplot': gproteinplot, 'crystal': crystal, 'interacting_equivalent': GS_equivalent_interacting_pos, 'interacting_none_equivalent': GS_none_equivalent_interacting_pos, 'accessible': accessible_pos, 'residues': residues_browser, 'mapped_protein': protein, 'interacting_gn': GS_none_equivalent_interacting_gn, 'primary_Gprotein': set(primary), 'secondary_Gprotein': set(secondary)} )
 
-def ajax(request, slug, **response_kwargs):
+def ajaxInterface(request, slug, **response_kwargs):
 
-    rsets = ResiduePositionSet.objects.get(name="Gprotein Barcode")
-    # residues = Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label)
+    name_of_cache = 'ajaxInterface_'+slug
 
-    jsondata = {}
-    positions = []
-    for residue in rsets.residue_position.all():
-        try:
-            pos = str(list(Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label))[0])
-        except:
-            print("Protein has no residue position at", residue.label)
-        a = pos[1:]
-        jsondata[a] = [5,"Test",residue.label]
+    jsondata = cache.get(name_of_cache)
 
-    jsondata = json.dumps(jsondata)
+    if jsondata == None:
+        rsets = ResiduePositionSet.objects.get(name="Gprotein Barcode")
+        # residues = Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label)
+
+        jsondata = {}
+        positions = []
+        for x, residue in enumerate(rsets.residue_position.all()):
+            try:
+                pos = str(list(Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label))[0])
+            except:
+                print("Protein has no residue position at", residue.label)
+            a = pos[1:]
+
+            jsondata[a] = [5, 'Receptor interface position', residue.label]
+
+        jsondata = json.dumps(jsondata)
+
+    cache.set(name_of_cache, jsondata, 60*60*24*2) #two days timeout on cache
+
     response_kwargs['content_type'] = 'application/json'
+
+    return HttpResponse(jsondata, **response_kwargs)
+
+def ajaxBarcode(request, slug, cutoff, **response_kwargs):
+
+    name_of_cache = 'ajaxBarcode_'+slug+cutoff
+
+    jsondata = cache.get(name_of_cache)
+
+    if jsondata == None:
+        jsondata = {}
+
+        selectivity_pos = list(SignprotBarcode.objects.filter(protein__entry_name=slug, seq_identity__gte=cutoff).values_list('residue__display_generic_number__label', flat=True))
+
+        conserved = list(SignprotBarcode.objects.filter(protein__entry_name=slug, paralog_score__gte=cutoff, seq_identity__gte=cutoff).prefetch_related('residue__display_generic_number').values_list('residue__display_generic_number__label', flat=True))
+
+        all_positions = Residue.objects.filter(protein_conformation__protein__entry_name=slug).prefetch_related('display_generic_number')
+
+        for res in all_positions:
+            cgn = str(res.generic_number)
+            res = str(res.sequence_number)
+            if cgn in conserved:
+                jsondata[res] = [0, 'Conserved', cgn]
+            elif cgn in selectivity_pos and cgn not in conserved:
+                jsondata[res] = [1, 'Selectivity determining', cgn]
+            else:
+                jsondata[res] = [2, 'Evolutionary neutral', cgn]
+
+        jsondata = json.dumps(jsondata)
+        response_kwargs['content_type'] = 'application/json'
+
+        cache.set(name_of_cache, jsondata, 60*60*24*2) #two days timeout on cache
 
     return HttpResponse(jsondata, **response_kwargs)
 

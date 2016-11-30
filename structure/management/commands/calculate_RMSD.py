@@ -16,18 +16,175 @@ import numpy as np
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument('file1')
-        parser.add_argument('file2')
+        parser.add_argument('files', help='Add any number of files as arguments. First one has to be the reference file.',
+                            type=str, nargs='+')
         
     def handle(self, *args, **options):
         v = Validation()
-        self.stdout.write('1. Overall all, 2. Overall backbone, 3. 7TM all, 4. 7TM backbone', ending='\n')
-        self.stdout.write(v.run_RMSD(options['file1'],options['file2']), ending='')
+        v.run_RMSD_list(options['files'])
+        self.stdout.write('\nNumber of superposed residues:\n')
+        for i,j in v.number_of_residues_superposed.items():
+            self.stdout.write('{}: {}'.format(i,j))
+        self.stdout.write('\nNumber of superposed atoms:\n')
+        for i,j in v.number_of_atoms_superposed.items():
+            self.stdout.write('{}: {}'.format(i,j))
+        self.stdout.write('\nRMSD scores:\n')
+        for i,j in v.rmsds.items():
+            self.stdout.write('{}: {}'.format(i,j))
         self.stdout.write('\n',ending='')
+
 
 class Validation():
     def __init__(self):
-        pass
+        self.number_of_residues_superposed = OrderedDict()
+        self.number_of_atoms_superposed = OrderedDict()
+        self.rmsds = OrderedDict()
+        self.four_scores = ['overall_all','overall_backbone','TM_all','TM_backbone']
+    
+    def run_RMSD_list(self, files, seq_nums=None):
+        ''' Calculates 4 RMSD values between a list of GPCR pdb files. It compares the files using sequence and generic
+        numbers. First file in the list has to be the reference file.
+            1. overall all atoms RMSD
+            2. overall backbone atoms RMSD
+            3. 7TM all atoms RMSD
+            4. 7TM backbone atoms RMSD
+        '''
+        c = 0
+        for f in files:
+            c+=1
+            if c==1:
+                self.number_of_residues_superposed['reference'] = OrderedDict()
+                self.number_of_atoms_superposed['reference'] = OrderedDict()
+                self.rmsds['reference'] = OrderedDict()
+            else:
+                self.number_of_residues_superposed['file{}'.format(str(c))] = OrderedDict()
+                self.number_of_atoms_superposed['file{}'.format(str(c))] = OrderedDict()
+                self.rmsds['file{}'.format(str(c))] = OrderedDict()
+        parser = PDB.PDBParser(QUIET=True)
+        count = 0
+        pdbs = []
+        for f in files:
+            count+=1
+            pdb = parser.get_structure('struct{}'.format(count), f)[0]
+            assign_gn = as_gn.GenericNumbering(structure=pdb)
+            pdb = assign_gn.assign_generic_numbers()
+            pdbs.append(pdb)
+        chains = []
+        for p in pdbs:
+            this = []
+            for c in p.get_chains():
+                this.append(c.get_id())
+            chains.append(this)
+        usable_chains = []
+        for m in chains[1:]:
+            for c in m:
+                if c in chains[0]:
+                    usable_chains.append(c)
+        arrays = []
+        for p in pdbs:
+            try:
+                if pdbs.index(p)==0 and len(usable_chains)==0:
+                    chain = [c.get_id() for c in pdbs[0].get_chains()][0]
+                else:
+                    chain = p[usable_chains[0]].get_id()
+            except:
+                try:
+                    chain = p[' '].get_id()
+                except:
+                    chain = p['A'].get_id()
+            pdb_array1, pdb_array2 = OrderedDict(), OrderedDict()
+            for residue in p[chain]:
+                if residue.get_full_id()[3][0]!=' ':
+                    continue
+                if seq_nums!=None and int(residue.get_id()[1]) in seq_nums:
+                    pdb_array1[int(residue.get_id()[1])] = residue
+                elif seq_nums==None:
+                    pdb_array1[int(residue.get_id()[1])] = residue
+                try:
+                    if -8.1 < residue['CA'].get_bfactor() < 8.1:
+                        pdb_array2[int(residue.get_id()[1])] = residue
+                except:
+                    pass
+            arrays.append([pdb_array1,pdb_array2])    
+        
+        all_deletes, TM_deletes = [], []
+        all_keep, TM_keep = [], []
+        for i in range(0,2):
+            for res in arrays[0][i]:
+                for m in arrays[1:]:
+                    if res not in m[i]:
+                        if i==0:
+                            all_deletes.append(res)
+                        else:
+                            TM_deletes.append(res)
+                    else:
+                        if i==0:
+                            all_keep.append(res)
+                        else:
+                            TM_keep.append(res)
+        deletes = [all_deletes, TM_deletes]
+        keeps = [all_keep, TM_keep]
+        num_atoms1, num_atoms2 = OrderedDict(), OrderedDict()
+        num_atoms = [num_atoms1, num_atoms2]
+        mismatches = []
+        for m in arrays:
+            for i in range(0,2):
+                for res in m[i]:
+                    if res in deletes[i] or res not in keeps[i]:
+                        del m[i][res]
+                    else:
+                        try:
+                            if m[i][res].get_resname()!=num_atoms[i][res][0].get_parent().get_resname():
+                                del num_atoms[i][res]
+                                mismatches.append(res)
+                            else:
+                                raise Exception()
+                        except:
+                            if res not in mismatches:
+                                atoms = []
+                                for atom in m[i][res]:
+                                    atoms.append(atom)
+                                if res not in num_atoms[i]:
+                                    num_atoms[i][res] = atoms
+                                else:
+                                    if len(atoms)<len(num_atoms[i][res]):
+                                        num_atoms[i][res] = atoms
+        atom_lists = []
+        for m in arrays:
+            this_model = []
+            for i in range(0,2):
+                this_list_all = []
+                this_list_bb = []
+                for res in m[i]:
+                    if res in num_atoms[i]:
+                        atoms = [a.get_id() for a in m[i][res].get_list()]
+                        ref_atoms = [at.get_id() for at in num_atoms[i][res]]
+                        for atom in sorted(atoms):
+                            if atom in ref_atoms:
+                                this_list_all.append(m[i][res][atom])
+                                if atom in ['N','CA','C']:
+                                    this_list_bb.append(m[i][res][atom])
+                this_model.append(this_list_all)
+                this_model.append(this_list_bb)
+            atom_lists.append(this_model)
+        TM_keys = list(num_atoms[1].keys())        
+        c = 0
+        for m in atom_lists:
+            c+=1
+            for i in range(0,4):
+                if i<2:
+                    j=0
+                else:
+                    j=1
+                if c>1:
+                    self.number_of_residues_superposed['file{}'.format(str(c))][self.four_scores[i]] = len(num_atoms[j])
+                    self.number_of_atoms_superposed['file{}'.format(str(c))][self.four_scores[i]] = len(m[i])
+                    rmsd = self.calc_RMSD(atom_lists[0][i], m[i])#, TM_keys)
+                    self.rmsds['file{}'.format(str(c))][self.four_scores[i]] = rmsd
+                else:
+                    self.number_of_residues_superposed['reference'][self.four_scores[i]] = len(num_atoms[j])
+                    self.number_of_atoms_superposed['reference'][self.four_scores[i]] = len(m[i])
+                    self.rmsds['reference'][self.four_scores[i]] = None
     
     def run_RMSD(self,file1,file2):
         ''' Calculates 4 RMSD values between two GPCR pdb files. It compares the two files using sequence numbers.
@@ -45,35 +202,49 @@ class Validation():
         pdb1 = assign_gn1.assign_generic_numbers()
         assign_gn2 = as_gn.GenericNumbering(structure=pdb2)
         pdb2 = assign_gn2.assign_generic_numbers()
-        
-        for chain1 in pdb1:
-            for residue1 in chain1:
-                if residue1.get_full_id()[3][0]!=' ':
-                    continue
-                pdb_array1[int(residue1.get_id()[1])] = residue1
-                try:
-                    if -8.1 < residue1['CA'].get_bfactor() < 8.1:
-                        pdb_array3[int(residue1.get_id()[1])] = residue1
-                except:
-                    pass
-        for chain2 in pdb2:
-            for residue2 in chain2:
-                if residue2.get_full_id()[3][0]!=' ':
-                    continue
-                pdb_array2[int(residue2.get_id()[1])] = residue2
-                try:
-                    if -8.1 < residue2['CA'].get_bfactor() < 8.1:
-                        pdb_array4[int(residue2.get_id()[1])] = residue2
-                except:
-                    pass
+
+        for i in pdb1:
+            for j in pdb2:
+                if i.get_id()==j.get_id():
+                    chain1 = i.get_id()                        
+                    chain2 = i.get_id()
+                    break
+                
+        if 'chain1' not in locals():
+            for i in pdb1.get_chains():
+                chain1 = i.get_id()
+                break
+        if 'chain2' not in locals():
+            for i in pdb2.get_chains():
+                chain2 = i.get_id()
+                break
+
+        for residue1 in pdb1[chain1]:
+            if residue1.get_full_id()[3][0]!=' ':
+                continue
+            pdb_array1[int(residue1.get_id()[1])] = residue1
+            try:
+                if -8.1 < residue1['CA'].get_bfactor() < 8.1:
+                    pdb_array3[int(residue1.get_id()[1])] = residue1
+            except:
+                pass
+        for residue2 in pdb2[chain2]:
+            if residue2.get_full_id()[3][0]!=' ':
+                continue
+            pdb_array2[int(residue2.get_id()[1])] = residue2
+            try:
+                if -8.1 < residue2['CA'].get_bfactor() < 8.1:
+                    pdb_array4[int(residue2.get_id()[1])] = residue2
+            except:
+                pass
         overall_all1, overall_all2, overall_backbone1, overall_backbone2, o_a, o_b = self.create_lists(pdb_array1, pdb_array2)
         TM_all1, TM_all2, TM_backbone1, TM_backbone2, t_a, t_b = self.create_lists(pdb_array3, pdb_array4)
-        
+
         rmsd1 = self.calc_RMSD(overall_all1, overall_all2,o_a)
         rmsd2 = self.calc_RMSD(overall_backbone1, overall_backbone2,o_b)
         rmsd3 = self.calc_RMSD(TM_all1, TM_all2,t_a)
         rmsd4 = self.calc_RMSD(TM_backbone1, TM_backbone2,t_b)  
-        return rmsd1, rmsd2, rmsd3, rmsd4
+        return [rmsd1, rmsd2, rmsd3, rmsd4]
         
     def create_lists(self, pdb_array1, pdb_array2):
         ''' Creates the 4 atom lists needed for run_RMSD().
@@ -97,15 +268,16 @@ class Validation():
                     break
         return overall_all1, overall_all2, overall_backbone1, overall_backbone2, keys1, keys2
 
-    def calc_RMSD(self, list1, list2, keys):
+    def calc_RMSD(self, list1, list2, TM_keys=None):
         ''' Calculates RMSD between two atoms lists. The two lists have to have the same length. 
         '''
-        superpose = sp.RotamerSuperpose(list1, list2)
+        superpose = sp.RotamerSuperpose(list1, list2, TM_keys)
         list2 = superpose.run()
         array1, array2 = np.array([0,0,0]), np.array([0,0,0])
-        for a1, a2, k in zip(list1, list2, keys):
+        for a1, a2 in zip(list1, list2):
             array1 = np.vstack((array1, list(a1.get_coord())))
             array2 = np.vstack((array2, list(a2.get_coord())))
+        print(array1.shape,array2.shape)
         rmsd = np.sqrt(sum(sum((array1[1:]-array2[1:])**2))/array1[1:].shape[0])
         return rmsd
         

@@ -145,7 +145,7 @@ def json_palmi(request, slug, **response_kwargs):
 
 
     palmi = OrderedDict()
-    palmi['all']= mutations_all
+    palmi['']= mutations_all
 
     jsondata = palmi
     jsondata = json.dumps(jsondata)
@@ -153,7 +153,7 @@ def json_palmi(request, slug, **response_kwargs):
     return HttpResponse(jsondata, **response_kwargs)
 
 
-@cache_page(60 * 60 * 24)
+#@cache_page(60 * 60 * 24)
 def json_glyco(request, slug, **response_kwargs):
 
 
@@ -167,10 +167,14 @@ def json_glyco(request, slug, **response_kwargs):
     p = re.compile("N[^P][TS]")
     #print('all')
     mutations_all = []
-    for m in p.finditer(seq):
+    matches = re.finditer(r'(?=([N][^P][TS]))',seq)
+    matches_seq = re.findall(r'(?=([N][^P][TS]))',seq)
+    #{"all": [[39, "Q", "", "", "NTS", "N-term"], [203, "Q", "", "", "NNT", "ECL2"]], "mammalian": [[205, "V", 206, "V", "TTCVLNDPN", "ECL2"]]}
+    for i,m in enumerate(matches):
+        #print(matches_seq[i],m.start())
         #print(m.start(), m.group())
         if residues[m.start()+1] in ['N-term','ECL1','ECL2','ECL3']:
-            mutations_all.append([m.start()+1,"Q",'','',m.group(),residues[m.start()+1]])
+            mutations_all.append([m.start()+1,"Q",'','',matches_seq[i],residues[m.start()+1]])
 
     #print('mamalian')
     #p = re.compile("[TS]{2}[A-Z]{1,11}[N]", overlapped=True)
@@ -195,8 +199,8 @@ def json_glyco(request, slug, **response_kwargs):
             mutations_mammalian.append([m.start()+1,pos0,m.start()+2,pos1,matches_seq[i],residues[m.start()+1]])
 
     glyco = OrderedDict()
-    glyco['all']= mutations_all
-    glyco['mammalian'] = mutations_mammalian
+    glyco['o-linked']= mutations_all
+    glyco['n-linked'] = mutations_mammalian
 
     jsondata = glyco
     jsondata = json.dumps(jsondata)
