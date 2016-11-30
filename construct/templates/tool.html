@@ -78,7 +78,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
   Mutations:
   </div>
   <div class="col-sm-8">
-    <button type="button" id="mutations_button" class="btn btn-primary" onclick='build_mutations();$("#myModalLabel").html("Thermostabilisation");$("#ModalBody").html(tables["mutations"]);$("#myModal").modal("show");'>
+    <button type="button" id="mutations_button" class="btn btn-primary" onclick='build_mutations();$("#myModalLabel").html("Thermostabilisation");$("#ModalBody").html(tables["mutations"]);$("#myModal").modal("show");build_tooltips(); '>
       Thermostabilisation
     </button>
     <button type="button" id="removals_button" class="btn btn-primary" onclick='build_site_removals();$("#myModalLabel").html("Site Removal");$("#ModalBody").html(tables["site_removals"]);$("#myModal").modal("show");'>
@@ -236,6 +236,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       modifications_overview();
     }
 
+    function build_tooltips() {
+      $('[data-toggle="tooltip"]').tooltip(); 
+    }
+
     function resetModifications() {
 
       $('#snakeplot').find("circle").each(function( index ){
@@ -257,7 +261,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     // var data = [["name1", "city1", "some other info"], ["name2", "city2", "more info"]];
     // var csvContent = "data:text/csv;charset=utf-8,";
-    console.log(export_list);
+    // console.log(export_list);
     // export_list.forEach(function(infoArray, index){
 
     //    //dataString = infoArray.join("'\t'");
@@ -277,14 +281,14 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     
     // document.getElementById('my_iframe').src = "/common/exportexcel";
 
-    console.log(postData)
+    // console.log(postData)
     $.ajax({
       type:    "POST",
       url:     "/common/exportexcel",
       data:    {"d":postData},
       success: function(data) {
-            console.log(data);
-            console.log("/common/exportexceldownload/" + data+ "/{{target.entry_name}}");
+            // console.log(data);
+            // console.log("/common/exportexceldownload/" + data+ "/{{target.entry_name}}");
             $("body").append("<iframe src='/common/exportexceldownload/" + data+ "/{{target.entry_name}}' style='display: none;' ></iframe>");
       },
       // vvv---- This is the new bit
@@ -565,20 +569,28 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     }
 
     function build_mutations() {
-      console.log(mutations_browser);
-      console.log(mutations_browser.length);
+      // console.log(mutations_browser);
+      // console.log(mutations_browser.length);
+
+      var state = $('input:radio[name=state]:checked').val();
       var keys = Object.keys(mutations_browser);
+      export_list['thermo'] = [];
+      console.log("mutaiton state"+state);
       muts = {}
       $.each(keys, function( i,type ) {
+        if (type.substring(0, 11) == "struc_rules" && type.substring(12)!=state) {
+          return true; //loop away from these
+        }
         $.each(mutations_browser[type], function(gn, values){
           if(!muts[gn]) { muts[gn] = {'gn': gn, 'types': [], 'hits':0, 'details':[]}; }
 
           muts[gn]['hits'] += 1;
-          muts[gn]['types'].push(type)
-          muts[gn]['details'].push(values)
+          muts[gn]['types'].push(type);
+          muts[gn]['details'].push(values);
+          console.log(values);
         });
       });
-      console.log(muts);
+      // console.log(muts);
         var items_table = ["<table class='table-striped table table-bordered'><thead><tr><th>Position</th><th>Mutation</th><th>Hits</th><th>Levels</th></tr></thead><tbody>"];
       $.each( getSortedKeys(muts), function( i, gn ) {
         vals = muts[gn];
@@ -586,23 +598,23 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         check = []
         label = []
         $.each(vals['details'], function(i, val) {
-            console.log(val);
+            // console.log(val);
             if (vals['types'][i].substring(0, 5) == "cons_") {
               label.push(val[0]+val[1]+val[2]);
               if ($.inArray(val[0]+val[1]+val[2], check)==-1) {
-                mut_suggestions.push("<a onclick='mut(this)' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' >"+val[0]+val[1]+val[2]+"</a>");
+                mut_suggestions.push("<a onclick='mut(this)'  data-animation='false' data-toggle='tooltip' title='"+vals['types'][i]+"' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' >"+val[0]+val[1]+val[2]+"</a>");
                 check.push(val[0]+val[1]+val[2]);
               }
             } else if (vals['types'][i].substring(0, 5) == "termo") {
               $.each( val, function( key, value ) {
                 if (vals['types'][i]=='termo_Common mutation (Wt)') {
-                  console.log(key);
-                  console.log(value);
+                  // console.log(key);
+                  // console.log(value);
                   $.each(value['muts'], function(i, mut_aa) {
-                    console.log(mut_aa);
+                    // console.log(mut_aa);
                     label.push(value['wt'][0]+value['wt'][1]+mut_aa);
                     if ($.inArray(value['wt'][0]+value['wt'][1]+mut_aa, check)==-1) {
-                      mut_suggestions.push("<a onclick='mut(this)' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+mut_aa+"'>"+value['wt'][0]+value['wt'][1]+mut_aa+"</a>");
+                      mut_suggestions.push("<a onclick='mut(this)'  data-animation='false' data-toggle='tooltip' title='"+vals['types'][i]+"' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+mut_aa+"'>"+value['wt'][0]+value['wt'][1]+mut_aa+"</a>");
                       check.push(value['wt'][0]+value['wt'][1]+mut_aa);
                     }
                    });
@@ -611,17 +623,27 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
                   label.push(value['wt'][0]+value['wt'][1]+key);
                   if ($.inArray(value['wt'][0]+value['wt'][1]+key, check)==-1) {
-                    mut_suggestions.push("<a onclick='mut(this)' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+key+"'>"+value['wt'][0]+value['wt'][1]+key+"</a>");
+                    mut_suggestions.push("<a onclick='mut(this)'  data-animation='false' data-toggle='tooltip' title='"+vals['types'][i]+"' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+key+"'>"+value['wt'][0]+value['wt'][1]+key+"</a>");
                     check.push(value['wt'][0]+value['wt'][1]+key);
                   }
                 }
               });
 
+            } else if (vals['types'][i].substring(0, 11) == "struc_rules") {
+              console.log(val);
+              $.each( val, function( key, value ) {
+                label.push(value['wt']+value['pos']+value['mut']);
+                // vals['types'][i] += value['definition'];
+                if ($.inArray(value['wt']+value['pos']+value['mut'], check)==-1) {
+                  mut_suggestions.push("<a onclick='mut(this)'  data-animation='false' data-toggle='tooltip' title='"+vals['types'][i]+":"+value['definition']+"' pos='"+value['pos']+"' gn='"+gn+"' wt='"+value['wt']+"' from='"+value['wt']+"' to='"+value['mut']+"' >"+value['wt']+value['pos']+value['mut']+"</a>");
+                  check.push(value['wt']+value['pos']+value['mut']);
+                }
+              });
             }
         });
         temp = "<tr><td>"+gn+"</td><td>"+mut_suggestions.join(", ")+"</td><td>"+vals['hits']+"</td><td>"+vals['types']+"</td><td></tr>";
         items_table.push( temp );
-        export_list['thermo'].push([gn,label.join(", "),val['hits'],val['types']]);
+        export_list['thermo'].push([gn,label.join(", "),vals['hits'],vals['types']]);
       });
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
@@ -636,11 +658,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       var items_table = ["<table class='table-striped table table-bordered'><thead><tr><th>Segment</th><th>Mutation</th><th>Type of removal</th></tr></thead><tbody>"];
       $.each(keys, function( i,type ) {
         $.each(removals_list[type], function(subtype, values){
-          console.log(type);
-          console.log(subtype);
+          // console.log(type);
+          // console.log(subtype);
           $.each(values, function(i, details) { 
-            console.log(i);
-            console.log(details);
+            // console.log(i);
+            // console.log(details);
             count += 1;
             if (details[2]!="") { //single mutation
               suggestion = "<a onclick='glyco(this)' motif='"+details[4]+"' pos='"+details[0]+"' wt='"+details[4][0]+"' from='"+details[4][0]+"' to='"+details[1]+"' to2='"+details[3]+"' wt2='"+details[4][1]+"'> Mutate "+details[4][0]+details[0]+details[1]+" & "+details[4][1]+parseInt(details[0]+1)+details[3]+"</a>";
@@ -708,7 +730,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       end = {{residues_gn.6x50.sequence_number}}-$(elem).attr("tm6");
       start = {{residues_gn.5x50.sequence_number}}-(-$(elem).attr("tm5"));
-      console.log(start+" "+end);
+      // console.log(start+" "+end);
 
       range = new Array;
       for (var i = start; 1 > 0 ? i < end : i > end; i += 1) {
@@ -731,7 +753,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       origin = $(elem).parent().parent().parent().find('.origin').html();
 
-      console.log(origin);
+      // console.log(origin);
 
       range = new Array;
       range.push(pos);
@@ -752,7 +774,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       origin = $(elem).attr("motif");
 
-      console.log(origin);
+      // console.log(origin);
 
       range = new Array;
       range.push(pos);
@@ -778,7 +800,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       origin = $(elem).attr("motif");
 
-      console.log(origin);
+      // console.log(origin);
 
       range = new Array;
       range.push(pos);
@@ -831,7 +853,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     function remove_mod(elem) {
       id = $(elem).attr("mod_id");
-      console.log('remove id'+id)
+      // console.log('remove id'+id)
       //delete modifications[id];
       modifications.splice(id, 1);
       resetModifications();
@@ -847,10 +869,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
         type = val['type'];
         range = val['range'];
-        console.log(key);
+        // console.log(key);
 
         $.each(range, function(i, ii){
-          console.log(ii);
+          // console.log(ii);
           color_residue(ii,type);
 
         })
@@ -1087,6 +1109,15 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           });
           result = items.join( "" );
           $("#thermo").html(result);
+        });
+          build_mutations();
+
+    });
+
+      $.getJSON( "/construct/tool/json/struc_rules/{{target.entry_name}}/", function( data ) {
+          var items = [];
+          $.each( data, function( level, gns ) {
+            mutations_browser['struc_rules_'+level] = gns;
         });
           build_mutations();
 
