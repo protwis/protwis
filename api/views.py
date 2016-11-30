@@ -168,7 +168,8 @@ class ResiduesList(generics.ListAPIView):
     
     def get_queryset(self):
         queryset = Residue.objects.all()
-        return queryset.filter(protein_conformation__protein__sequence_type__slug='wt',
+        #protein_conformation__protein__sequence_type__slug='wt',
+        return queryset.filter(
             protein_conformation__protein__entry_name=self.kwargs.get('entry_name'))
 
 
