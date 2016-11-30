@@ -194,7 +194,7 @@ function drawBubbleChart(root){
     var diameter = 960,
         format = d3.format(",d");
 
-    var color = d3.scale.category20();
+    var color = d3.scale.category10();
     
     // Create a bubble layout based on the tree of objects. 
     // This adds properties x,y,r to each of our leaf objects
@@ -268,11 +268,12 @@ function drawBubbleChart(root){
        .attr("dy", ".35em")
        .attr("y", -15)  
        .style("text-anchor", "middle")
-       .style({
-        "fill":"black", 
-        "font-family":"Helvetica Neue, Helvetica, Arial, san-serif",
-        "font-size": "13px"
-        })
+       .style("font-family", "Palatino")
+       .style("font", function(d) {
+          if (d.value <= 1.5) {return "13px sans-serif"}
+          else if (d.value <= 3) {return "15px sans-serif"} 
+          else {return "17px sans-serif"}
+          })
        .text(function(d) {
               return d.name;
         }).call(wrap,0);
@@ -285,7 +286,7 @@ updateBubbles('not_targeted')
 function updateBubbles(request) {
 
   if (request == 'not_targeted') {
-    dataframe = [['autoimmune disease', 4.9, 0], ['relapsing-remitting multiple sclerosis', 4.0, 3], ['multiple sclerosis', 4.0, 4], ['inflammatory bowel disease', 3.72, 6], ['chronic progressive multiple sclerosis', 3.58, 7], ['Retinal dystrophy', 3.0, 8], ['chronic inflammatory demyelinating polyradiculoneuropathy', 2.8, 9], ['Normosmic congenital hypogonadotropic hypogonadism', 2.0, 12], ['Blue cone monochromatism', 2.0, 16], ['red-green color blindness', 2.0, 15], ['Progressive cone dystrophy', 2.0, 13], ['Congenital stationary night blindness', 2.0, 14], ['Kallmann syndrome', 2.0, 18], ['heart failure', 1.87, 19], ['arthritis', 1.63, 20], ['rheumatoid arthritis', 1.63, 21], ['ulcerative colitis', 1.2, 22], ['Li-Fraumeni syndrome', 1.11, 23], ['Usher syndrome', 1.0, 31], ['asthma', 1.0, 26], ['Lethal congenital contracture syndrome', 1.0, 24], ['age-related macular degeneration', 1.0, 30], ['red color blindness', 1.0, 32], ['Bilateral polymicrogyria', 1.0, 29], ['exudative vitreoretinopathy', 1.0, 34], ['Cone rod dystrophy', 1.0, 33], ['Retinitis pigmentosa', 1.0, 27], ['ciliopathy', 1.0, 28]];
+    dataframe = [['relapsing-remitting multiple sclerosis', 4.0, 0], ['inflammatory bowel disease', 3.72, 1], ['chronic progressive multiple sclerosis', 3.58, 0], ['Retinal dystrophy', 3.0, 2], ['chronic inflammatory demyelinating polyradiculoneuropathy', 2.8, 3], ['Normosmic congenital hypogonadotropic hypogonadism', 2.0, 4], ['Progressive cone dystrophy', 2.0, 2], ['Congenital stationary night blindness', 2.0, 2], ['red-green color blindness', 2.0, 2], ['Blue cone monochromatism', 2.0, 2], ['Kallmann syndrome', 2.0, 5], ['heart failure', 1.87, 6], ['arthritis', 1.63, 7], ['rheumatoid arthritis', 1.63, 7], ['ulcerative colitis', 1.2, 1], ['Li-Fraumeni syndrome', 1.11, 5], ['Lethal congenital contracture syndrome', 1.0, 5], ['asthma', 1.0, 8], ['Retinitis pigmentosa', 1.0, 2], ['ciliopathy', 1.0, 5], ['Bilateral polymicrogyria', 1.0, 5], ['age-related macular degeneration', 1.0, 2], ['Usher syndrome', 1.0, 3], ['red color blindness', 1.0, 2], ['Cone rod dystrophy', 1.0, 2], ['Familial exudative vitreoretinopathy', 1.0, 11]];
   }
   else if (request == 'not_established') {
     dataframe = [['asthma', 1.96, 10], ['Familial melanoma', 1.0, 30], ['Genetic obesity', 1.0, 23], ['body mass index', 1.55, 15], ['autoimmune disease', 2.42, 4], ['Congenital hypogonadotropic hypogonadism', 1.0, 34], ['obesity', 2.79, 13], ['Congenital stationary night blindness', 1.0, 26], ['schizophrenia', 1.94, 12], ['Autosomal recessive cerebellar ataxia', 1.0, 24], ['Normosmic congenital hypogonadotropic hypogonadism', 1.0, 21], ['Autosomal recessive congenital cerebellar ataxia',  1.0,  20], ['breast carcinoma', 1.29, 18], ['typeI diabetes mellitus', 1.52, 17], ['Woolly hair', 1.0, 28], ['diabetes mellitus', 1.52, 16], ['inflammatory bowel disease', 1.99, 8], ['mental or behavioural disorder', 1.95, 11], ['Growth hormone excess', 1.0, 19], ['Retinal dystrophy', 1.0, 29], ["Crohn's disease", 1.0, 33], ['body height', 1.98, 9], ['liver disease', 1.0, 32], ['sexual dysfunction', 2.7, 3]];
