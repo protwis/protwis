@@ -28,4 +28,6 @@ urlpatterns = [
     url(r'^selectiongproteinpredefined', views.SelectionGproteinPredefined, name='selectiongproteinpredefined'),
     url(r'^selectiongproteintoggle', views.SelectionGproteinToggle, name='selectiongproteintoggle'),
     url(r'^targetformread', views.ReadTargetInput, name='targetformread'),
+    url(r'^exportexcel$', views.ExportExcel, name='exportexcel'),
+    url(r'^exportexceldownload/(?P<ts>[^/]*?)/(?P<entry_name>.+)$', views.ExportExcelDownload, name='exportexceldownload'),
 ]

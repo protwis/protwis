@@ -11,7 +11,7 @@ from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, Protei
 
 from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residue, ResidueGenericNumberEquivalent)
 
-from signprot.models import SignprotStructure
+from signprot.models import SignprotStructure, SignprotBarcode
 import pandas as pd
 
 from optparse import make_option
@@ -28,18 +28,20 @@ from urllib.request import urlopen
 class Command(BaseCommand):
     help = 'Build G proteins'
 
+    # source file directory
+    gprotein_data_path = os.sep.join([settings.DATA_DIR, 'g_protein_data'])
     gprotein_data_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'PDB_UNIPROT_ENSEMBLE_ALL.txt'])
+    barcode_data_file = os.sep.join([settings.DATA_DIR, 'g_protein_data', 'barcode_data.csv'])
+
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
+
+    logger = logging.getLogger(__name__)
 
     def add_arguments(self, parser):
         parser.add_argument('--filename', action='append', dest='filename',
             help='Filename to import. Can be used multiple times')
 
-    logger = logging.getLogger(__name__)
-
-        # source file directory
-    gprotein_data_dir = os.sep.join([settings.DATA_DIR, 'g_protein_data'])
 
     def handle(self, *args, **options):
         if options['filename']:
@@ -50,21 +52,17 @@ class Command(BaseCommand):
         try:
             self.create_g_proteins(filenames)
         except Exception as msg:
-            print(msg)
             self.logger.error(msg)
 
         #add gproteins from cgn db
         try:
             # self.purge_cgn_residues()
             # self.purge_cgn_protein_segments()
-
             self.cgn_create_proteins_and_families()
             # self.purge_cgn_proteins()
             #delete added g-proteins
 
-            
         except Exception as msg:
-            print(msg)
             self.logger.error(msg)
 
         #add residues from cgn db
@@ -73,9 +71,13 @@ class Command(BaseCommand):
 
             self.update_protein_conformation(human_and_orths)
         except Exception as msg:
-            print(msg)
             self.logger.error(msg)
-    
+
+        try:
+            self.create_barcode()
+        except Exception as msg:
+            self.logger.error(msg)
+
     def purge_data(self):
         try:
             ProteinGProteinPair.objects.filter().delete()
@@ -90,6 +92,38 @@ class Command(BaseCommand):
         except:
             self.logger.warning('Existing Residue data cannot be deleted')
 
+    def create_barcode(self):
+
+        barcode_data =  pd.read_csv(self.barcode_data_file)
+
+        for index, entry in enumerate(barcode_data.iterrows()):
+
+            similarity = barcode_data[index:index+1]['aln_seqSim'].values[0]
+            identity = barcode_data[index:index+1]['aln_seqIdn'].values[0]
+            entry_name = barcode_data[index:index+1]['subfamily'].values[0].lower()+'_human'
+            CGN = barcode_data[index:index+1]['CGN'].values[0]
+            paralog = barcode_data[index:index+1]['paralog'].values[0]
+
+            try:
+                p = Protein.objects.get(entry_name=entry_name)
+            except Protein.DoesNotExist:
+                self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
+                continue
+
+            try:
+                cgn=Residue.objects.get(protein_conformation__protein=p, display_generic_number__label=CGN)
+            except:
+                # self.logger.warning('No residue number (GAP - position) for', CGN, "in ", p.name, "")
+                continue
+
+            if cgn:
+                try:
+                    barcode, created = SignprotBarcode.objects.get_or_create(protein=p, residue=cgn, seq_similarity=similarity, seq_identity=identity, paralog_score=paralog)
+                    if created:
+                        self.logger.info('Created barcode for ' + CGN + ' for protein ' + p.name)
+                except IntegrityError:
+                    self.logger.error('Failed creating barcode for ' + CGN + ' for protein ' + p.name)
+
     def create_g_proteins(self, filenames=False):
         self.logger.info('CREATING GPROTEINS')
         self.purge_data()
@@ -98,10 +132,10 @@ class Command(BaseCommand):
 
         # read source files
         if not filenames:
-            filenames = [fn for fn in os.listdir(self.gprotein_data_dir) if fn.endswith('.csv')]
+            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('.csv')]
 
         for filename in filenames:
-            filepath = os.sep.join([self.gprotein_data_dir, filename])
+            filepath = os.sep.join([self.gprotein_data_path, filename])
 
             with open(filepath, 'r') as f:
                 reader = csv.reader(f)
@@ -116,7 +150,6 @@ class Command(BaseCommand):
                         p = Protein.objects.get(entry_name=entry_name)
                     except Protein.DoesNotExist:
                         self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
-                        print('error',entry_name)
                         continue
 
                     primary = primary.replace("G protein (identity unknown)","None") #replace none
@@ -526,7 +559,7 @@ class Command(BaseCommand):
         cgn_dict['3']=['Gs', 'Gi/o', 'Gq/11', 'G12/13']
 
         #Protein lines not to be added to Protein families
-        cgn_dict['4']=['GNAS2', 'GNAL', 'GNAI1', 'GNAI1', 'GNAI3', 'GNAT2', 'GNAT1', 'GNAT3', 'GNAO', 'GNAZ', 'GNAQ', 'GNA11', 'GNA14', 'GNA15', 'GNA12', 'GNA13']
+        cgn_dict['4']=['GNAS2', 'GNAL', 'GNAI1', 'GNAI2', 'GNAI3', 'GNAT2', 'GNAT1', 'GNAT3', 'GNAO', 'GNAZ', 'GNAQ', 'GNA11', 'GNA14', 'GNA15', 'GNA12', 'GNA13']
 
         for entry in cgn_dict['000']:
 

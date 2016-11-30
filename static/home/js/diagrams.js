@@ -545,30 +545,27 @@
 
                       resetColors(plotid);
 
-                        $.getJSON( '/signprot/ajax/'+protein+'/', function( data ) {
+                        var textboxvalue = $('input[name=cutoff]').val();
+                        $.getJSON( '/signprot/ajax/barcode/'+protein+'/'+textboxvalue, function( data ) {
                           $.each( data, function( key, val ) {
 
-                            var flags = [], falgsAA = [], output = [], outputAA = [], l = val.length, i;
-                            for( i=0; i<l; i++) {
-                                if( flags[val[i][1]]) continue;
-                                flags[val[i][1]] = true;
-                                output.push(val[i][1]);
-                            }
-                            for( i=0; i<l; i++) {
-                                if( flags[val[i][0]]) continue;
-                                flags[val[i][0]] = true;
-                                outputAA.push(val[i][0]);
-                            }
+                            if (val[1]=='Conserved') {
+                                color = "#b162a7";
+                                color_letter = "#fefdfd";
+                                $('#'+plotid).find("#"+key).next().css("fill", color_letter);
+                                extra = "\n" + String(val[1]);
+                            } else if (val[1]=='Evolutionary neutral') {
+                                color = "#f8dfb4";
+                                extra = "\n" + String(val[1]);
+                            } else  {
+                                color = "#4dc7e6";
+                                extra = "\n" + String(val[1]);
+                            }                       
                              
-                             extra = "\n" + String("Barcode position");
-
-
-                             $('#'+plotid).find("#"+key).css("fill", "#E60A0A");
-                             $('#'+plotid).find("#"+key).next().css("fill", "#FDFF7B");
 
                              original_title = $('#'+plotid).find("#"+key).attr('original_title')
 
-
+                             $('#'+plotid).find("#"+key).css("fill", color);
                              $('#'+plotid).find("#"+key).attr('title',original_title+extra);
                              $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
 
@@ -580,6 +577,29 @@
                         });
                     }
 
+                    function ajaxInterface(plotid,protein) {
+
+                      resetColors(plotid);
+
+                        $.getJSON( '/signprot/ajax/interface/'+protein+'/', function( data ) {
+                          $.each( data, function( key, val ) {
+
+                             extra = "\n" + String("Receptor interface position");
+                             $('#'+plotid).find("#"+key).css("fill", "#e60a0a");
+                             $('#'+plotid).find("#"+key).next().css("fill", "#fafb74");
+
+                             original_title = $('#'+plotid).find("#"+key).attr('original_title')
+
+                             $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+                             $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+                          });
+                        $("circle").tooltip('fixTitle');
+                        $("text").tooltip('fixTitle');
+    
+                        });
+                    }
                     function ajaxInteractionsPos(plotid) {
 
                       resetColors(plotid);
