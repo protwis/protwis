@@ -1,8 +1,10 @@
 ﻿from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView
+from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.db.models import Case, When
+from django.core.cache import cache
 
 from common.selection import SimpleSelection, Selection, SelectionItem
 from common import definitions
@@ -15,6 +17,8 @@ import inspect
 from collections import OrderedDict
 from io import BytesIO
 import xlsxwriter, xlrd
+import time
+import json
 
 
 class AbsTargetSelection(TemplateView):
@@ -178,7 +182,7 @@ class AbsSegmentSelection(TemplateView):
     ])
 
     try:
-        rsets = ResiduePositionSet.objects.exclude(name="Gprotein Barcode").prefetch_related('residue_position')
+        rsets = ResiduePositionSet.objects.exclude(name__in=['Gprotein Barcode', 'YM binding site']).prefetch_related('residue_position')
     except Exception as e:
         pass
 
@@ -1288,3 +1292,61 @@ def ReadTargetInput(request):
     context = selection.dict(selection_type)
 
     return render(request, 'common/selection_lists.html', context)
+
+@csrf_exempt
+def ExportExcel(request):
+    """Convert json file to excel file"""
+    headers = ['reference','review', 'protein', 'mutation_pos', 'generic', 'mutation_from', 'mutation_to',
+        'ligand_name', 'ligand_idtype', 'ligand_id', 'ligand_class',
+        'exp_type', 'exp_func',  'exp_wt_value',  'exp_wt_unit','exp_mu_effect_sign', 'exp_mu_effect_type', 'exp_mu_effect_value',
+        'exp_mu_effect_qual', 'exp_mu_effect_ligand_prop',  'exp_mu_ligand_ref', 'opt_type', 'opt_wt',
+        'opt_mu', 'opt_sign', 'opt_percentage', 'opt_qual','opt_agonist', 'added_date'
+         ] #'added_by',
+
+    data = request.POST['d']
+    data = json.loads(data)
+    print(data)
+
+
+    #EXCEL SOLUTION
+    output = BytesIO()
+    workbook = xlsxwriter.Workbook(output)
+
+    for name,values in data.items():
+        worksheet = workbook.add_worksheet(name)
+
+        col = 0
+        for h in headers:
+            worksheet.write(0, col, h)
+            col += 1
+        row = 1
+        for d in values:
+            col = 0
+            print(d)
+            # for h in headers:
+            #     worksheet.write(row, col, d[h])
+            #     col += 1
+            for c in d:
+                print(c)
+                if isinstance(c, list):
+                    c = ",".join(c)
+                worksheet.write(row, col, c)
+                col += 1
+            row += 1
+    workbook.close()
+    output.seek(0)
+    xlsx_data = output.read()
+
+    ts = time.time()
+
+    cache.set(ts,xlsx_data,30)
+    response = HttpResponse(ts)
+    return response
+
+def ExportExcelDownload(request, ts, entry_name):
+    """Convert json file to excel file"""
+
+    response = HttpResponse(cache.get(ts),content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename='+entry_name+'.xlsx' #% 'mutations'
+
+    return response
