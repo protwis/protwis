@@ -89,17 +89,23 @@ def tool(request):
 
     residues = {}
     residues_gn = {}
+    residues_pos = {}
     for r in rs:
         segment = r.protein_segment.slug
         segment = segment.replace("-","")
         if segment not in residues:
             residues[segment] = []
         residues[segment].append(r)
+        label = ''
         if r.generic_number:
             residues_gn[r.generic_number.label] = r
+            label = r.display_generic_number.label
+
+        residues_pos[r.sequence_number] = [r.amino_acid,r.protein_segment.slug,label]
 
     context['residues'] = residues
     context['residues_gn'] = residues_gn
+    context['residues_pos'] = residues_pos
     #print(residues)
 
     return render(request,'tool.html',context)
@@ -515,8 +521,6 @@ def structure_rules(request, slug, **response_kwargs):
                 elif wt_lookup[gn][0]==wt_aa:
                     valid = True
             if valid:
-                print("valid",wt_lookup[gn],wt_aas,mut_aa)
-                print(rule)
                 mut = {'wt':wt_lookup[gn][0], 'gn': gn, 'pos':wt_lookup[gn][1], 'mut':mut_aa, 'definition':definition}
                 if state=='all':
                     if gn not in results['active']: 

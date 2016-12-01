@@ -213,6 +213,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     <script src="{% static 'home/js/diagrams.js' %}"></script> 
     <script type="text/javascript" charset="utf-8">
 
+    var residues_pos = {{residues_pos|safe}};
+
     var modifications = new Array;
     var tables = new Array;
     var mutations_browser = new Array;
@@ -225,8 +227,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     export_list['removals'] = [];
 
     tables["custom"] = []
-    tables["custom"].push( "Mutate: <input type='text' placeholder='sequence position'> to <input type='text' placeholder='aminoacid (1-letter)'> <input type='text' placeholder='Reason'><input type=button value=Add><br>");
-    tables["custom"].push( "Deletion: <input type='text' placeholder='from (sequence position)'> - <input type='text' placeholder='to (sequence number)'><input type=button value=Add><br>");
+    tables["custom"].push( "Mutate: <input type='text' id='custom_pos' placeholder='sequence position'> to <input type='text' id='custom_mut' placeholder='aminoacid (1-letter)'> <input type='text'  id='custom_reason' placeholder='Reason'><input type=button value=Add onclick='custom_mut()'><div id=confirm_cus_mut></div><br>");
+    tables["custom"].push( "Deletion: <input type='text' id='custom_del_start' placeholder='from (sequence position)'> - <input type='text' id='custom_del_end' placeholder='to (sequence number)'> <input type='text'  id='custom_del_reason' placeholder='Reason'><input type=button value=Add onclick='custom_del()'><div id=confirm_cus_del></del><br>");
     tables["custom"] = tables["custom"].join( "" );    
 
 
@@ -575,7 +577,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       var state = $('input:radio[name=state]:checked').val();
       var keys = Object.keys(mutations_browser);
       export_list['thermo'] = [];
-      console.log("mutaiton state"+state);
       muts = {}
       $.each(keys, function( i,type ) {
         if (type.substring(0, 11) == "struc_rules" && type.substring(12)!=state) {
@@ -587,7 +588,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           muts[gn]['hits'] += 1;
           muts[gn]['types'].push(type);
           muts[gn]['details'].push(values);
-          console.log(values);
         });
       });
       // console.log(muts);
@@ -630,7 +630,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
               });
 
             } else if (vals['types'][i].substring(0, 11) == "struc_rules") {
-              console.log(val);
               $.each( val, function( key, value ) {
                 label.push(value['wt']+value['pos']+value['mut']);
                 // vals['types'][i] += value['definition'];
@@ -690,8 +689,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       from = $(elem).attr("from");
       until = {{residues_gn.1x50.sequence_number}}-n_val;
 
-      console.log(n_val+" "+until);
-
       range = new Array;
       for (var i = 1; 1 > 0 ? i <= until : i > until; i += 1) {
           range.push(i);
@@ -744,6 +741,63 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       modifications_overview();
     }
 
+    function custom_del(confirm) {
+      start = $('#custom_del_start').val();
+      end = $('#custom_del_end').val();
+      reason = $('#custom_del_reason').val();
+
+      start_gn = residues_pos[start][2];
+      start_wt = residues_pos[start][0];
+      start_seg = residues_pos[start][1];
+
+      end_gn = residues_pos[end][2];
+      end_wt = residues_pos[end][0];
+      end_seg = residues_pos[end][1];
+
+      label = start_wt+start+'-'+end_wt+end+' ('+start_seg+'/'+end_seg+')';
+      if (typeof(confirm)==='undefined'){
+        $('#confirm_cus_del').html('Custom deletion! '+label+' '+'Reason:'+reason+' <input type=button value=Confirm onclick=custom_del("1")>');
+      } else {
+        range = new Array;
+        for (var i = parseInt(start); 1 > 0 ? i <= parseInt(end) : i > parseInt(end); i += 1) {
+            range.push(i);
+        }
+        modi = {method: label, type: "deletion", to: to, range: range, info: "Custom deletion. Reason:"+reason};
+        modifications.push(modi);
+        overlay_modifications();
+        modifications_overview();
+        $('#confirm_cus_del').html('Added '+label);
+        pos = $('#custom_del_end').val('');
+        to = $('#custom_del_start').val('');
+        reason = $('#custom_del_reason').val('');
+      }
+    }
+
+    function custom_mut(confirm) {
+      pos = $('#custom_pos').val();
+      to = $('#custom_mut').val();
+      reason = $('#custom_reason').val();
+      gn = residues_pos[pos][2];
+      wt = residues_pos[pos][0];
+      seg = residues_pos[pos][1];
+
+
+      label = wt+pos+to;
+      if (typeof(confirm)==='undefined'){
+        $('#confirm_cus_mut').html('Custom! '+label+' ('+seg+'/'+gn+') '+'Reason:'+reason+' <input type=button value=Confirm onclick=custom_mut("1")>');
+      } else {
+        range = new Array;
+        range.push(pos);
+        modi = {method: label+" "+gn, type: "mutation", to: to, range: range, info: "Custom mutation. Reason:"+reason};
+        modifications.push(modi);
+        overlay_modifications();
+        modifications_overview();
+        $('#confirm_cus_mut').html('Added '+label);
+        pos = $('#custom_pos').val('');
+        to = $('#custom_mut').val('');
+        reason = $('#custom_reason').val('');
+      }
+    }
 
     function mut(elem) {
       gn = $(elem).attr("gn");
@@ -813,7 +867,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     function modifications_overview() {
 
-      $("#overview").html("");
+      // $("#overview").html("");
       tables["overview"] = [];
 
       $.each(modifications, function(key,val) {
@@ -837,7 +891,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             "  <button onclick='remove_mod(this)' mod_id="+key+">Remove</button>" +
             "</div>"
 
-        $("#overview").append(row);
+        // $("#overview").append(row);
         tables["overview"].push(row);
 
       }) 
