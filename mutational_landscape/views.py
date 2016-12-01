@@ -28,14 +28,13 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
         for NM in NMs:
 
             SN = NM.residue.sequence_number
+            # account for multiple mutations at this position!
             jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes]
-
-
 
         jsondata = json.dumps(jsondata)
         response_kwargs['content_type'] = 'application/json'
 
-        cache.set(name_of_cache, jsondata, 60*60*24*2) #two days timeout on cache
+        cache.set(name_of_cache, jsondata, 20) # 60*60*24*2 two days timeout on cache
 
     return HttpResponse(jsondata, **response_kwargs)
 
@@ -57,7 +56,7 @@ def ajaxCancerMutation(request, slug, **response_kwargs):
         jsondata = json.dumps(jsondata)
         response_kwargs['content_type'] = 'application/json'
 
-        cache.set(name_of_cache, jsondata, 60*60*24*2) #two days timeout on cache
+        cache.set(name_of_cache, jsondata, 20) #two days timeout on cache
 
     return HttpResponse(jsondata, **response_kwargs)
 
@@ -74,12 +73,12 @@ def ajaxDiseaseMutation(request, slug, **response_kwargs):
         DMs = DiseaseMutations.objects.filter(protein__entry_name=slug).prefetch_related('residue')
 
         for DM in DMs:
-            SN = NM.residue.sequence_number
+            SN = DM.residue.sequence_number
             jsondata[SN] = [DM.amino_acid]
 
         jsondata = json.dumps(jsondata)
         response_kwargs['content_type'] = 'application/json'
 
-        cache.set(name_of_cache, jsondata, 60*60*24*2) #two days timeout on cache
+        cache.set(name_of_cache, jsondata, 20) #two days timeout on cache
 
     return HttpResponse(jsondata, **response_kwargs)
