@@ -117,6 +117,40 @@ def detail(request, slug):
                     max_snp_pos = natural_mutation_list[NM.residue.generic_number.label]['val']
             else:
                 natural_mutation_list[NM.residue.generic_number.label] = {'val':1, 'AA': NM.amino_acid}
+    
+    CMs = CancerMutations.objects.filter(
+        protein__in=proteins).prefetch_related('residue__generic_number')
+
+    cancer_mutation_list = {}
+    max_cancer_pos = 1
+    for CM in CMs:
+        if CM.residue.generic_number:
+            if CM.residue.generic_number.label in cancer_mutation_list:
+                cancer_mutation_list[CM.residue.generic_number.label]['val'] += 1
+                if not str(CM.amino_acid) in cancer_mutation_list[CM.residue.generic_number.label]['AA']:
+                    cancer_mutation_list[CM.residue.generic_number.label]['AA'] = cancer_mutation_list[CM.residue.generic_number.label]['AA'] + str(CM.amino_acid)
+
+                if cancer_mutation_list[CM.residue.generic_number.label]['val'] > max_cancer_pos:
+                    max_cancer_pos = cancer_mutation_list[CM.residue.generic_number.label]['val']
+            else:
+                cancer_mutation_list[CM.residue.generic_number.label] = {'val':1, 'AA': CM.amino_acid}
+
+    DMs = DiseaseMutations.objects.filter(
+        protein__in=proteins).prefetch_related('residue__generic_number')
+
+    disease_mutation_list = {}
+    max_disease_pos = 1
+    for DM in DMs:
+        if DM.residue.generic_number:
+            if DM.residue.generic_number.label in disease_mutation_list:
+                disease_mutation_list[DM.residue.generic_number.label]['val'] += 1
+                if not str(DM.amino_acid) in disease_mutation_list[DM.residue.generic_number.label]['AA']:
+                    disease_mutation_list[DM.residue.generic_number.label]['AA'] = disease_mutation_list[DM.residue.generic_number.label]['AA'] + str(DM.amino_acid)
+
+                if disease_mutation_list[DM.residue.generic_number.label]['val'] > max_cancer_pos:
+                    max_cancer_pos = disease_mutation_list[DM.residue.generic_number.label]['val']
+            else:
+                disease_mutation_list[DM.residue.generic_number.label] = {'val':1, 'AA': DM.amino_acid}
 
     mutations_list = {}
     for mutation in mutations:
@@ -144,6 +178,8 @@ def detail(request, slug):
     jsondata = {}
     jsondata_interaction = {}
     jsondata_natural_mutations = {}
+    jsondata_cancer_mutations = {}
+    jsondata_disease_mutations = {}
     for r in residues:
         if r.generic_number:
             if r.generic_number.label in mutations_list:
@@ -152,8 +188,14 @@ def detail(request, slug):
                 jsondata_interaction[r.sequence_number] = interaction_list[r.generic_number.label]
             if r.generic_number.label in natural_mutation_list:
                 jsondata_natural_mutations[r.sequence_number] = natural_mutation_list[r.generic_number.label]
+            if r.generic_number.label in cancer_mutation_list:
+                jsondata_cancer_mutations[r.sequence_number] = cancer_mutation_list[r.generic_number.label]
+            if r.generic_number.label in disease_mutation_list:
+                jsondata_disease_mutations[r.sequence_number] = disease_mutation_list[r.generic_number.label]
 
     jsondata_natural_mutations['color'] = linear_gradient(n=max_snp_pos)
+    jsondata_cancer_mutations['color'] = linear_gradient(n=max_cancer_pos)
+    jsondata_disease_mutations['color'] = linear_gradient(n=max_disease_pos)
 
     HelixBox = DrawHelixBox(residues,'Class A','family_diagram_preloaded_data')
     SnakePlot = DrawSnakePlot(residues,'Class A','family_diagram_preloaded_data') ## was str(list_proteins)
@@ -195,6 +237,6 @@ def detail(request, slug):
 
     context = {'pf': pf, 'families': families, 'structures': structures, 'no_of_proteins': no_of_proteins,
         'no_of_human_proteins': no_of_human_proteins, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot,
-        'mutations':mutations, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'mutations_pos_list' : json.dumps(jsondata),'interaction_pos_list' : json.dumps(jsondata_interaction), 'natural_mutations_pos_list': json.dumps(jsondata_natural_mutations)}
+        'mutations':mutations, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'mutations_pos_list' : json.dumps(jsondata),'interaction_pos_list' : json.dumps(jsondata_interaction), 'natural_mutations_pos_list': json.dumps(jsondata_natural_mutations), 'cancer_mutations_pos_list': json.dumps(jsondata_cancer_mutations), 'disease_mutations_pos_list': json.dumps(jsondata_disease_mutations)}
 
     return render(request, 'family/family_detail.html', context)
