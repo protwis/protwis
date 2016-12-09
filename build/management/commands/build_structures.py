@@ -180,7 +180,7 @@ class Command(BaseBuild):
                             # print(seg)
                             for i in seg[6]:
                                 removed.append(i)
-
+        
         if len(deletions)>len(d['wt_seq'])*0.9:
             #if too many deltions
             removed = []
@@ -269,7 +269,7 @@ class Command(BaseBuild):
         gaps = 0
         unmapped_ref = {}
         for i, r in enumerate(pw2[0][0], 1): #loop over alignment to create lookups (track pos)
-            # print(i,r,pw2[0][1][i-1]) #print alignment for sanity check
+#            print(i,r,pw2[0][1][i-1]) #print alignment for sanity check
             if r == "-":
                 gaps += 1
             if r != "-":
@@ -1073,6 +1073,7 @@ class Command(BaseBuild):
                                     defaults={'name': ligand['role']})
                                     if created:
                                         self.logger.info('Created ligand role {}'.format(ligand['role']))
+                                    print('DONE')
                                 except IntegrityError:
                                     lr = LigandRole.objects.get(slug=role_slug)
 
@@ -1082,7 +1083,6 @@ class Command(BaseBuild):
                                 if i.pdb_reference != pdb_reference:
                                     i.pdb_reference = pdb_reference
                                     i.save()
-
 
 
                     # structure segments
