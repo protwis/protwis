@@ -876,6 +876,8 @@ class AlignedReferenceTemplate(Alignment):
         self.alignment_dict = OrderedDict()
         self.code_dict = {'ICL1':'12x50','ECL1':'23x50','ICL2':'34x50'}
         self.changes_on_db = []
+        self.loop_partial_except_list = {'ICL1':[],'ECL1':[],'ICL2':[],'ECL2_1':['3UZA'],'ECL2_mid':[],'ECL2_2':[],
+                                         'ICL3':[],'ECL3':[],'ICL4':[]}
         
     def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
                              provide_similarity_table=None, main_pdb_array=None, provide_alignment=None):
@@ -1140,9 +1142,9 @@ class AlignedReferenceTemplate(Alignment):
                     temp_list2.append((struct, temp_length2, similarity, float(struct.resolution), protein))
         
         if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
-            ECL2_1 = self.order_sim_table(temp_list1, ref_ECL2[0], OrderedDict())
-            ECL2_mid = self.order_sim_table(temp_list_mid, ref_ECL2[1], OrderedDict(), x50_ref)
-            ECL2_2 = self.order_sim_table(temp_list2, ref_ECL2[2], OrderedDict())
+            ECL2_1 = self.order_sim_table(temp_list1, ref_ECL2[0], OrderedDict(), ECL2_part='_1')
+            ECL2_mid = self.order_sim_table(temp_list_mid, ref_ECL2[1], OrderedDict(), x50_ref, ECL2_part='_mid')
+            ECL2_2 = self.order_sim_table(temp_list2, ref_ECL2[2], OrderedDict(), ECL2_part='_2')
             self.loop_table = OrderedDict([('ECL2_1',ECL2_1),('ECL2_mid',ECL2_mid),('ECL2_2',ECL2_2)])
             if len(ECL2_mid)==0:
                 self.loop_table=None
@@ -1150,7 +1152,7 @@ class AlignedReferenceTemplate(Alignment):
         else:
             return self.order_sim_table(temp_list, ref_seq, similarity_table, x50_ref)
                     
-    def order_sim_table(self, temp_list, ref_seq, similarity_table, x50_ref=None):
+    def order_sim_table(self, temp_list, ref_seq, similarity_table, x50_ref=None, ECL2_part=''):
         alt_temps_gn = []
         if self.segment_labels[0]!='ECL2' or self.segment_labels[0]=='ECL2' and x50_ref==True:
             for entry in temp_list:
@@ -1172,8 +1174,16 @@ class AlignedReferenceTemplate(Alignment):
                 if self.revise_xtal==i[0].pdb_code.index.lower():
                     temp_list.append(i)
                     break
+            main_t = None
+            if self.revise_xtal.upper() in self.loop_partial_except_list[self.segment_labels[0]+ECL2_part]:
+                main_t = temp_list[0]
+                temp_list = []
+            main_t_added = False
             for i in combined:
                 if self.revise_xtal!=i[0].pdb_code.index.lower():
+                    if main_t!=None and main_t_added==False and i[2]==0:
+                        temp_list.append(main_t)
+                        main_t_added = True
                     temp_list.append(i)
             combined = temp_list
         for i in combined:
