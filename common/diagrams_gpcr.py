@@ -808,6 +808,7 @@ class DrawSnakePlot(Diagram):
             y = round(startY+row_pos*self.residue_radius*1.6+indentX) # Move down with right amount
             output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], rs[i][3], self.residue_radius)
 
+            if y>self.maxY['intra']: self.maxY['intra'] = y-20
             row_pos += 1
 
             if y>max_y: #get position for label
@@ -848,7 +849,7 @@ class DrawSnakePlot(Diagram):
                 for p2,i2 in list(enumerate(res_before)):
                     where = self.wherebezier([self.TBCoords[prevhelix]['intra'][0],self.TBCoords[prevhelix]['intra'][1]],[self.TBCoords[prevhelix]['intra'][0]-30,y],[x,y],0.001,pos)
                     pos += between_residues
-                    self.output += self.DrawResidue(where[1][0],where[1][1],rs[i2][1], where[1][0], rs[i2][3], self.residue_radius-1,name)
+                    output_residue_in += self.DrawResidue(where[1][0],where[1][1],rs[i2][1], where[1][0], rs[i2][3], self.residue_radius-1,name)
 
 
             if p==len(res_helix)-1: #if end, add to next helix
@@ -861,7 +862,7 @@ class DrawSnakePlot(Diagram):
                 for p2,i2 in list(enumerate(res_after)):
                     where = self.wherebezier([self.TBCoords[nexthelix]['intra'][0],self.TBCoords[nexthelix]['intra'][1]],[self.TBCoords[nexthelix]['intra'][0]+30,y],[x,y],0.001,pos)
                     pos -= between_residues
-                    self.output += self.DrawResidue(where[1][0],where[1][1],rs[i2][1], where[1][0], rs[i2][3], self.residue_radius-1,name)
+                    output_residue_in += self.DrawResidue(where[1][0],where[1][1],rs[i2][1], where[1][0], rs[i2][3], self.residue_radius-1,name)
 
 
         self.output += output_trace+output_residue_in+output_residue_out

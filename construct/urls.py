@@ -20,6 +20,7 @@ urlpatterns = [
     url(r'^tool/json/nterm/(?P<slug>[-\w]+)/$', views.json_nterm, name='nterm'),
     url(r'^tool/json/cterm/(?P<slug>[-\w]+)/$', views.json_cterm, name='cterm'),
     url(r'^tool/json/icl3/(?P<slug>[-\w]+)/$', views.json_icl3, name='icl3'),
+    url(r'^tool/json/icl2/(?P<slug>[-\w]+)/$', views.json_icl2, name='icl2'),
     url(r'^tool/json/glyco/(?P<slug>[-\w]+)/$', views.json_glyco, name='glyco'),
     url(r'^tool/json/palmi/(?P<slug>[-\w]+)/$', views.json_palmi, name='palmi'),
     url(r'^tool/json/mutations/(?P<slug>[-\w]+)/$', views.mutations, name='mutations'),
