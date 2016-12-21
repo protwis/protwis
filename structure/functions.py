@@ -569,9 +569,15 @@ class HSExposureCB(AbstractPropertyMap):
                 residue_down=[] ### GP
                 for pp2 in ppl:
                     for j in range(0, len(pp2)):
-                        if pp1 is pp2 and abs(i-j)<=offset:
+                        try:
+                            if r2.get_id()[1]-1!=r1.get_id()[1] or r2.get_id()[1]+1!=r3.get_id()[1]:
+                                pass
+                            else:
+                                raise Exception
+                        except:
+                            if pp1 is pp2 and abs(i-j)<=offset:
                             # neighboring residues in the chain are ignored
-                            continue
+                                continue
                         ro=pp2[j]
                         if not is_aa(ro) or not ro.has_id('CA'):
                             continue
@@ -604,19 +610,34 @@ class HSExposureCB(AbstractPropertyMap):
                     r2.xtra[angle_key]=angle
                 
                 ### GP checking for atom clashes
+                include_prev, include_next = False, False
+                try:
+                    if pp1[i].get_id()[1]-1!=pp1[i-1].get_id()[1]:
+                        include_prev = True
+                except:
+                    include_prev = False
+                try:                                
+                    if pp1[i].get_id()[1]+1!=pp1[i+1].get_id()[1]:
+                        include_next = True
+                except:
+                    include_next = False
                 for atom in pp1[i]:
                     ref_vector = atom.get_vector()
                     for other_res in residue_up:
                         try:
-                            if other_res!=pp1[i-1] and other_res!=pp1[i+1]:
-                                for other_atom in other_res:
-                                    other_vector = other_atom.get_vector()
-                                    d = other_vector-ref_vector
-                                    if d.norm()<2:
-                                        self.clash_pairs.append([(pp1[i]['CA'].get_bfactor(),pp1[i].get_id()[1]),
-                                                                 (other_res['CA'].get_bfactor(),other_res.get_id()[1])])
+                            if other_res==pp1[i-1] and include_prev==False:
+                                continue
+                            elif len(pp1)>=i+1 and other_res==pp1[i+1] and include_next==False:
+                                continue
+                            else:
+                                raise Exception
                         except:
-                            pass
+                            for other_atom in other_res:
+                                other_vector = other_atom.get_vector()
+                                d = other_vector-ref_vector
+                                if d.norm()<2:
+                                    self.clash_pairs.append([(pp1[i]['CA'].get_bfactor(),pp1[i].get_id()[1]),
+                                                             (other_res['CA'].get_bfactor(),other_res.get_id()[1])])
 
     def _get_cb(self, r1, r2, r3):
         """
