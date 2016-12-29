@@ -107,44 +107,44 @@ class Command(BaseBuild):
             self.run_HomologyModeling(receptor, self.state)
     
     def run_HomologyModeling(self, receptor, state):
-        try:
-            Homology_model = HomologyModeling(receptor, state, [state,"Active"], update=self.update, version=self.version)
-            alignment = Homology_model.run_alignment([state,"Active"])
-            Homology_model.build_homology_model(alignment)
-            if self.update==False:
-                Homology_model.format_final_model()
-            if Homology_model.main_structure.pdb_code.index=='4PHU':
-                for r in Homology_model.changes_on_db:
-                    res = Residue.objects.get(protein_conformation=Homology_model.main_structure.protein_conformation, 
-                                              sequence_number=r)
-                    res.sequence_number = int('2'+str(res.sequence_number))
-                    res.save()
-            # check for clashes in finished model
-            p = PDB.PDBParser()
-            if Homology_model.revise_xtal==False:
-                post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_{}_GPCRdb.pdb'.format(
-                                Homology_model.class_name,Homology_model.reference_entry_name,Homology_model.state,
-                                Homology_model.main_structure))[0]
-            else:
-                post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_GPCRdb.pdb'.format(
-                                Homology_model.class_name,Homology_model.uniprot_id,Homology_model.main_structure))[0]
-            hse = HSExposureCB(post_model, radius=8)
-            clash_pairs = hse.clash_pairs
-            if len(clash_pairs)>0:
-                print('Remaining clashes in {}:'.format(Homology_model.reference_entry_name))
-                for i in clash_pairs:
-                    print(i)
-                logger.info('Remaining clashes in {}\n{}'.format(Homology_model.reference_entry_name,clash_pairs))
-            logger.info('Model built for {} {}'.format(receptor, state))
-        except Exception as msg:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
-                                                                                    Homology_model.main_structure,msg))
-            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
-            t = tests.HomologyModelsTests()
-            if 'Number of residues in the alignment and  pdb files are different' in str(msg):
-                t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
-                                         Homology_model.main_structure)
+#        try:
+        Homology_model = HomologyModeling(receptor, state, [state,"Active"], update=self.update, version=self.version)
+        alignment = Homology_model.run_alignment([state,"Active"])
+        Homology_model.build_homology_model(alignment)
+        if self.update==False:
+            Homology_model.format_final_model()
+        if Homology_model.main_structure.pdb_code.index=='4PHU':
+            for r in Homology_model.changes_on_db:
+                res = Residue.objects.get(protein_conformation=Homology_model.main_structure.protein_conformation, 
+                                          sequence_number=r)
+                res.sequence_number = int('2'+str(res.sequence_number))
+                res.save()
+        # check for clashes in finished model
+        p = PDB.PDBParser()
+        if Homology_model.revise_xtal==False:
+            post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_{}_GPCRdb.pdb'.format(
+                            Homology_model.class_name,Homology_model.reference_entry_name,Homology_model.state,
+                            Homology_model.main_structure))[0]
+        else:
+            post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_GPCRdb.pdb'.format(
+                            Homology_model.class_name,Homology_model.uniprot_id,Homology_model.main_structure))[0]
+        hse = HSExposureCB(post_model, radius=8)
+        clash_pairs = hse.clash_pairs
+        if len(clash_pairs)>0:
+            print('Remaining clashes in {}:'.format(Homology_model.reference_entry_name))
+            for i in clash_pairs:
+                print(i)
+            logger.info('Remaining clashes in {}\n{}'.format(Homology_model.reference_entry_name,clash_pairs))
+        logger.info('Model built for {} {}'.format(receptor, state))
+#        except Exception as msg:
+#            exc_type, exc_obj, exc_tb = sys.exc_info()
+#            print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
+#                                                                                    Homology_model.main_structure,msg))
+#            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
+#            t = tests.HomologyModelsTests()
+#            if 'Number of residues in the alignment and  pdb files are different' in str(msg):
+#                t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
+#                                         Homology_model.main_structure)
 
         
 class HomologyModeling(object):
@@ -1380,7 +1380,7 @@ class HomologyModeling(object):
                 print("Warning: Can't fix side chain clash on {}".format(msg))
         pprint.pprint(trimmed_res_nums)
         self.statistics.add_info('clashing_residues', clash_pairs)
-        
+
         # Model with MODELLER
         self.create_PIR_file(a.reference_dict, a.template_dict, path+self.reference_entry_name+'_'+self.state+"_post.pdb", hetatm_count, water_count)
         
@@ -2985,7 +2985,6 @@ class Loops(object):
             if loop_output_structure[2]==self.main_structure:
                 dif = len(list(self.main_pdb_array['ECL2'].keys())[x50_i+3:])-len(ref_residues[ref_x50_i+3:])
                 ref_residues = ref_residues[:ref_x50_i+3] + list(dif*'-') + ref_residues[ref_x50_i+3:]
-                
         for ref_seg, temp_seg, aligned_seg in zip(reference_dict, template_dict, alignment_dict):
             if ref_seg[0]=='T' and self.segment_order.index(self.loop_label)-self.segment_order.index(ref_seg[:4])==1:
                 temp_ref_dict[ref_seg] = reference_dict[ref_seg]
