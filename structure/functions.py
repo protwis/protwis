@@ -513,7 +513,7 @@ class HSExposureCB(AbstractPropertyMap):
     vector based on three consecutive CA atoms. This is done by two separate
     subclasses.
     """
-    def __init__(self, model, radius, offset=0, hse_up_key='HSE_U', hse_down_key='HSE_D', angle_key=None):
+    def __init__(self, model, radius, offset=0, hse_up_key='HSE_U', hse_down_key='HSE_D', angle_key=None, check_chain_breaks=False):
         """
         @param model: model
         @type model: L{Model}
@@ -544,9 +544,18 @@ class HSExposureCB(AbstractPropertyMap):
         hse_list=[]
         hse_keys=[]
         ### GP
+        residues_in_pdb,residues_with_proper_CA=[],[]
+        if check_chain_breaks==True:
+            for m in model:
+                for chain in m:
+                    for res in chain:
+                        if is_aa(res):
+                            residues_in_pdb.append(res.get_id()[1])
         self.clash_pairs = []
+        self.chain_breaks = []
         for pp1 in ppl:
             for i in range(0, len(pp1)):
+                residues_with_proper_CA.append(pp1[i].get_id()[1])
                 if i==0:
                     r1=None
                 else:
@@ -589,6 +598,7 @@ class HSExposureCB(AbstractPropertyMap):
                                 ### GP
                                 # Puts residues' names in a list that were found in the upper half sphere
                                 residue_up.append(ro)
+                                
                                 ### end of GP code
                             else:
                                 hse_d+=1
@@ -638,7 +648,10 @@ class HSExposureCB(AbstractPropertyMap):
                                 if d.norm()<2:
                                     self.clash_pairs.append([(pp1[i]['CA'].get_bfactor(),pp1[i].get_id()[1]),
                                                              (other_res['CA'].get_bfactor(),other_res.get_id()[1])])
-
+        if check_chain_breaks==True:
+            for r in residues_in_pdb:
+                if r not in residues_with_proper_CA:
+                    print('Chain break at {}'.format(r))
     def _get_cb(self, r1, r2, r3):
         """
         Method to calculate CB-CA vector.
