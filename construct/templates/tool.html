@@ -29,6 +29,9 @@
 </div>
 
 <h2> Construct Design Tool  </h2>
+
+<p> This is a tool to help aid crystallographers design crystal constructs.</p>
+
 <p>
 Target: {{target.entry_name}}
 </p>
@@ -58,7 +61,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     <input type="radio" name="fusionpos" value="nterm"> N-term
   </label>
 
-    {% if class == 'A' or class == 'F' %}
+    {% if class == 'A' and residues.ICL3|length > 8 or class == 'F' %}
   <label class="btn btn-default active">
     <input type="radio" name="fusionpos" value="icl3" checked=""> ICL3
   </label>
@@ -83,6 +86,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
 <br>
 <br>
+<span id='load'>
+<span id=loadstatus>Please wait for the dataset to load</span>
+<span id='method_options' style='display: none;'>
 <div class="row">
   <div class="col-sm-2">
   Deletions:
@@ -92,7 +98,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       N-term
     </button>
 
-      {% if class == 'A' or class == 'F' %}
+      {% if class == 'A' and residues.ICL3|length > 8 or class == 'F' %}
         <button type="button" id="icl3_start_button" class="btn btn-primary" onclick='showModal("ICL3 (Start)",tables["icl3_start"],"#icl3_sug_start");'>
         ICL3
         </button>
@@ -136,6 +142,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
   </div>
 </div>
+</span>
 <div class="row">
   <div class="col-sm-12">
   {{ target.get_snake_plot_no_buttons }}
@@ -223,6 +230,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     var mutations_browser = new Array;
     var removals_list = new Array;
     var export_list = {};
+    var load_status = 0;
     export_list['nterm'] = [];
     export_list['cterm'] = [];
     // export_list['icl3'] = [];
@@ -243,6 +251,17 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         evt.stopPropagation();
       } else {
         evt.cancelBubble = true;
+      }
+    }
+
+    function updateLoadStatus() {
+
+      $('#loadstatus').html("Please wait while data is loaded. "+Math.round(load_status*100/11)+"% done");
+      if (load_status != 11) {
+        $('#method_options').hide();
+      } else {
+        $('#method_options').show();
+        $('#loadstatus').hide();
       }
     }
 
@@ -384,13 +403,20 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
               if (fusionpos==vals[4] || (fusionpos=='None' && vals[4]!='nterm') || (fusionpos!='nterm' && vals[4]=='None') || 1==1) { //include all data regardless of fusion
                 // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
                 // TABLE
-                if(!show_table[vals[2]]) { show_table[vals[2]] = {'gn': vals[2], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0, 'fusion_proteins':[]}; }
+                if(!show_table[vals[2]]) { show_table[vals[2]] = {'gn': vals[2], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0, 'fusion_proteins':[], 'fusion_proteins_counts':{}}; }
 
                 if(show_table[vals[2]]['proteins'].indexOf(protein)==-1) {
                   show_table[vals[2]]['proteins'].push(protein);
                   show_table[vals[2]]['pdbs'].push(pdb);
                   show_table[vals[2]]['hits'] += 1;
                   show_table[vals[2]]['levels_num'][level_num] += 1;
+
+                  if (vals[5] in show_table[vals[2]]['fusion_proteins_counts'] && vals[4]=='nterm' && vals[5]!=''){
+                    show_table[vals[2]]['fusion_proteins_counts'][vals[5]] += 1;
+                  } else if (vals[3]=='nterm' && vals[5]!='') {
+                    show_table[vals[2]]['fusion_proteins_counts'][vals[5]] = 1;
+                  }
+
                 }
 
                 if(show_table[vals[2]]['levels'].indexOf(level)==-1) {
@@ -399,6 +425,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
                 if(show_table[vals[2]]['fusion_proteins'].indexOf(vals[5])==-1 && vals[4]=='nterm' && vals[5]!='') {
                   show_table[vals[2]]['fusion_proteins'].push(vals[5]);
+                }
+
+                if ( !(vals[5] in show_table[vals[2]]['fusion_proteins_counts']) && vals[4]=='nterm' && vals[5]!=''){
+                    show_table[vals[2]]['fusion_proteins_counts'][vals[5]] = 1;
                 }
 
               }
@@ -411,7 +441,12 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       var items_table = ["<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>Hits</th><th>Levels</th><th id=fusion_search>Fusion proteins</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
         val = show_table[pos];
-        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+val['fusion_proteins']+"</td><td><a href='#' onclick='nterm_tm1(this)' from='"+val['pdbs']+"' value='"+pos+"' from=''>Apply</a></tr>";
+        t_fusion = [];
+        keysSorted = Object.keys(val['fusion_proteins_counts']).sort(function(a,b){return val['fusion_proteins_counts'][b]-val['fusion_proteins_counts'][a]});
+        $.each(keysSorted, function(i,key) {
+          t_fusion.push(key+'['+val['fusion_proteins_counts'][key]+']');
+        })
+        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='nterm_tm1(this)' from='"+val['pdbs']+"' value='"+pos+"' from=''>Apply</a></tr>";
         items_table.push( temp );
         export_list['nterm'].push([pos,val['hits'],val['levels'],val['fusion_proteins']])
       });
@@ -501,13 +536,20 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                 range_end = "6."+(50-vals[1]);
 
                 // TABLE
-                if(!show_table_start[range_start]) { show_table_start[range_start] = {'start': vals[0], 'end': vals[1], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0, 'fusion_proteins':[]}; }
+                if(!show_table_start[range_start]) { show_table_start[range_start] = {'start': vals[0], 'end': vals[1], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0, 'fusion_proteins':[], 'fusion_proteins_counts':{}}; }
 
                 if(show_table_start[range_start]['proteins'].indexOf(protein)==-1) {
                   show_table_start[range_start]['proteins'].push(protein);
                   show_table_start[range_start]['pdbs'].push(pdb);
                   show_table_start[range_start]['hits'] += 1;
                   show_table_start[range_start]['levels_num'][level_num] += 1;
+
+                  if (vals[4] in show_table_start[range_start]['fusion_proteins_counts'] && vals[3]=='icl3' && vals[4]!=''){
+                    show_table_start[range_start]['fusion_proteins_counts'][vals[4]] += 1;
+                  } else if (vals[3]=='icl3' && vals[4]!='') {
+                    show_table_start[range_start]['fusion_proteins_counts'][vals[4]] = 1;
+                  }
+
                 }
 
                 if(show_table_start[range_start]['levels'].indexOf(level)==-1) {
@@ -518,14 +560,25 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                   show_table_start[range_start]['fusion_proteins'].push(vals[4]);
                 }
 
+                if ( !(vals[4] in show_table_start[range_start]['fusion_proteins_counts']) && vals[3]=='icl3' && vals[4]!=''){
+                    show_table_start[range_start]['fusion_proteins_counts'][vals[4]] = 1;
+                }
+
                 // TABLE
-                if(!show_table_end[range_end]) { show_table_end[range_end] = {'start': vals[0], 'end': vals[1], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0, 'fusion_proteins':[]}; }
+                if(!show_table_end[range_end]) { show_table_end[range_end] = {'start': vals[0], 'end': vals[1], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0, 'fusion_proteins':[], 'fusion_proteins_counts':{}}; }
 
                 if(show_table_end[range_end]['proteins'].indexOf(protein)==-1) {
                   show_table_end[range_end]['proteins'].push(protein);
                   show_table_end[range_end]['pdbs'].push(pdb);
                   show_table_end[range_end]['hits'] += 1;
                   show_table_end[range_end]['levels_num'][level_num] += 1;
+
+                  if (vals[4] in show_table_end[range_end]['fusion_proteins_counts'] && vals[3]=='icl3' && vals[4]!=''){
+                    show_table_end[range_end]['fusion_proteins_counts'][vals[4]] += 1;
+                  } else if (vals[3]=='icl3' && vals[4]!='') {
+                    show_table_end[range_end]['fusion_proteins_counts'][vals[4]] = 1;
+                  }
+
                 }
 
                 if(show_table_end[range_end]['levels'].indexOf(level)==-1) {
@@ -536,6 +589,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                   show_table_end[range_end]['fusion_proteins'].push(vals[4]);
                 }
 
+                if ( !(vals[4] in show_table_end[range_end]['fusion_proteins_counts']) && vals[3]=='icl3' && vals[4]!=''){
+                    show_table_end[range_end]['fusion_proteins_counts'][vals[4]] = 1;
+                }
+
 
               }
             }
@@ -544,10 +601,18 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         level_num += 1;
       }) 
 
+      console.log(show_table_start);
+      console.log(show_table_end);
+
       var items_table = ["First select the start position of the deletion. A new window will open to select the end position.<table id=icl3_sug_start class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
         val = show_table_start[pos];
-        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td>"+val['fusion_proteins']+"</td><td><a href='#' onclick='icl3_start(this)' from='"+val['pdbs']+"' tm5='"+val['start']+"'  tm6='"+val['end']+"' from=''>Apply</a></tr>";
+        t_fusion = [];
+        keysSorted = Object.keys(val['fusion_proteins_counts']).sort(function(a,b){return val['fusion_proteins_counts'][b]-val['fusion_proteins_counts'][a]});
+        $.each(keysSorted, function(i,key) {
+          t_fusion.push(key+'['+val['fusion_proteins_counts'][key]+']');
+        })
+        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl3_start(this)' from='"+val['pdbs']+"' tm5='"+val['start']+"'  tm6='"+val['end']+"' from=''>Apply</a></tr>";
         items_table.push( temp );
         export_list['icl3_start'].push([pos,val['start'],val['end'],val['hits'],val['levels'],val['pdbs']])
       });
@@ -557,7 +622,12 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       var items_table = ["<div id=icl3_start_info></div><table id=icl3_sug_end class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
         val = show_table_end[pos];
-        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+val['fusion_proteins']+"</td><td><a href='#' onclick='icl3(this)' from='"+val['pdbs']+"' tm5='"+val['start']+"'  tm6='"+val['end']+"' from=''>Apply</a></tr>";
+        t_fusion = [];
+        keysSorted = Object.keys(val['fusion_proteins_counts']).sort(function(a,b){return val['fusion_proteins_counts'][b]-val['fusion_proteins_counts'][a]});
+        $.each(keysSorted, function(i,key) {
+          t_fusion.push(key+'['+val['fusion_proteins_counts'][key]+']');
+        })
+        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl3(this)' from='"+val['pdbs']+"' tm5='"+val['start']+"'  tm6='"+val['end']+"' from=''>Apply</a></tr>";
         items_table.push( temp );
         export_list['icl3_end'].push([pos,val['start'],val['end'],val['hits'],val['levels'],val['pdbs']])
       });
@@ -588,13 +658,19 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                 range_end = "4."+(50-vals[1]);
 
                 // TABLE
-                if(!show_table_start[range_start]) { show_table_start[range_start] = {'start': vals[0], 'end': vals[1], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0, 'fusion_proteins':[]}; }
+                if(!show_table_start[range_start]) { show_table_start[range_start] = {'start': vals[0], 'end': vals[1], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0, 'fusion_proteins':[], 'fusion_proteins_counts':{}}; }
 
                 if(show_table_start[range_start]['proteins'].indexOf(protein)==-1) {
                   show_table_start[range_start]['proteins'].push(protein);
                   show_table_start[range_start]['pdbs'].push(pdb);
                   show_table_start[range_start]['hits'] += 1;
                   show_table_start[range_start]['levels_num'][level_num] += 1;
+
+                  if (vals[4] in show_table_start[range_start]['fusion_proteins_counts'] && vals[3]=='icl3' && vals[4]!=''){
+                    show_table_start[range_start]['fusion_proteins_counts'][vals[4]] += 1;
+                  } else if (vals[3]=='icl3' && vals[4]!='') {
+                    show_table_start[range_start]['fusion_proteins_counts'][vals[4]] = 1;
+                  }
                 }
 
                 if(show_table_start[range_start]['levels'].indexOf(level)==-1) {
@@ -605,14 +681,24 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                   show_table_start[range_start]['fusion_proteins'].push(vals[4]);
                 }
 
+                if ( !(vals[4] in show_table_start[range_start]['fusion_proteins_counts']) && vals[3]=='icl3' && vals[4]!=''){
+                    show_table_start[range_start]['fusion_proteins_counts'][vals[4]] = 1;
+                }
+
                 // TABLE
-                if(!show_table_end[range_end]) { show_table_end[range_end] = {'start': vals[0], 'end': vals[1], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0, 'fusion_proteins':[]}; }
+                if(!show_table_end[range_end]) { show_table_end[range_end] = {'start': vals[0], 'end': vals[1], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0, 'fusion_proteins':[], 'fusion_proteins_counts':{}}; }
 
                 if(show_table_end[range_end]['proteins'].indexOf(protein)==-1) {
                   show_table_end[range_end]['proteins'].push(protein);
                   show_table_end[range_end]['pdbs'].push(pdb);
                   show_table_end[range_end]['hits'] += 1;
                   show_table_end[range_end]['levels_num'][level_num] += 1;
+
+                  if (vals[4] in show_table_end[range_end]['fusion_proteins_counts'] && vals[3]=='icl3' && vals[4]!=''){
+                    show_table_end[range_end]['fusion_proteins_counts'][vals[4]] += 1;
+                  } else if (vals[3]=='icl3' && vals[4]!='') {
+                    show_table_end[range_end]['fusion_proteins_counts'][vals[4]] = 1;
+                  }
                 }
 
                 if(show_table_end[range_end]['levels'].indexOf(level)==-1) {
@@ -620,6 +706,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                 }
                 if(show_table_end[range_end]['fusion_proteins'].indexOf(vals[4])==-1 && vals[3]=='icl3' && vals[4]!='') {
                   show_table_end[range_end]['fusion_proteins'].push(vals[4]);
+                }
+
+                if ( !(vals[4] in show_table_end[range_end]['fusion_proteins_counts']) && vals[3]=='icl3' && vals[4]!=''){
+                    show_table_end[range_end]['fusion_proteins_counts'][vals[4]] = 1;
                 }
 
               }
@@ -632,7 +722,12 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       var items_table = ["First select the start position of the deletion. A new window will open to select the end position.<table id=icl2_sug_start class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
         val = show_table_start[pos];
-        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td>"+val['fusion_proteins']+"</td><td><a href='#' onclick='icl2_start(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from=''>Apply</a></tr>";
+        t_fusion = [];
+        keysSorted = Object.keys(val['fusion_proteins_counts']).sort(function(a,b){return val['fusion_proteins_counts'][b]-val['fusion_proteins_counts'][a]});
+        $.each(keysSorted, function(i,key) {
+          t_fusion.push(key+'['+val['fusion_proteins_counts'][key]+']');
+        })
+        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl2_start(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from=''>Apply</a></tr>";
         items_table.push( temp );
         export_list['icl2_start'].push([pos,val['start'],val['end'],val['hits'],val['levels'],val['pdbs']])
       });
@@ -642,7 +737,12 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       var items_table = ["<div id=icl2_start_info></div><table  id=icl2_sug_end class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
         val = show_table_end[pos];
-        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+val['fusion_proteins']+"</td><td><a href='#' onclick='icl2(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from=''>Apply</a></tr>";
+        t_fusion = [];
+        keysSorted = Object.keys(val['fusion_proteins_counts']).sort(function(a,b){return val['fusion_proteins_counts'][b]-val['fusion_proteins_counts'][a]});
+        $.each(keysSorted, function(i,key) {
+          t_fusion.push(key+'['+val['fusion_proteins_counts'][key]+']');
+        })
+        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl2(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from=''>Apply</a></tr>";
         items_table.push( temp );
         export_list['icl2_end'].push([pos,val['start'],val['end'],val['hits'],val['levels'],val['pdbs']])
       });
@@ -694,7 +794,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         });
       });
       // console.log(muts);
-        var items_table = ["<table id='mut_sug' class='table-striped table table-bordered'><thead><tr><th>Priority</th><th>Position</th><th>Mutation</th><th>Hits</th><th>Methods</th></tr></thead><tbody>"];
+        var items_table = ["Select mutation by click the mutation suggestion in the <i>Mutation</i> column.<br>"];
+        items_table.push("<table id='mut_sug' class='table-striped table table-bordered'><thead><tr><th>Priority</th><th>Position</th><th>Mutation</th><th>Hits</th><th>Methods</th></tr></thead><tbody>");
         console.log(getSortedKeysPrio(muts));
       $.each( getSortedKeysPrio(muts), function( i, gn ) {
         vals = muts[gn];
@@ -1169,27 +1270,37 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       $.getJSON( "/construct/tool/json/nterm/{{target.entry_name}}/", function( data ) {
           n_term_data = data; 
           build_nterm_menu();
+          load_status += 1;
+          updateLoadStatus();
         });
 
       // http://localhost:8000/construct/tool/json/cterm/adrb2_human/
       $.getJSON( "/construct/tool/json/cterm/{{target.entry_name}}/", function( data ) {
           c_term_data = data;
           build_cterm_menu();
+          load_status += 1;
+          updateLoadStatus();
         });
 
-
-    {% if class == 'A' or class == 'F' %}
+      console.log('icl3! {{residues.ICL3|length}}' );
+    {% if class == 'A' and residues.ICL3|length > 8 or class == 'F' %}
       // http://localhost:8000/construct/tool/json/icl3/adrb2_human/
       $.getJSON( "/construct/tool/json/icl3/{{target.entry_name}}/", function( data ) {
           icl3_data = data; 
           build_icl3_menu();
+          load_status += 1;
+          updateLoadStatus();
         });
     {% elif class == 'B' or class == 'C' %}
       // http://localhost:8000/construct/tool/json/icl3/adrb2_human/
       $.getJSON( "/construct/tool/json/icl2/{{target.entry_name}}/", function( data ) {
           icl2_data = data; 
           build_icl2_menu();
+          load_status += 1;
+          updateLoadStatus();
         });
+    {% else %}
+      load_status += 1;
     {% endif %}
 
 
@@ -1212,6 +1323,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           $("#glyco").html(result);
           removals_list["glyco"] = data;
           build_site_removals();
+          load_status += 1;
+          updateLoadStatus();
         });
                     
       // http://localhost:8000/construct/tool/json/palmi/adrb2_human/
@@ -1230,6 +1343,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           $("#palmi").html(result);
           removals_list["palmi"] = data;
           build_site_removals();
+          load_status += 1;
+          updateLoadStatus();
         });
 
         $.getJSON( "/construct/tool/json/cons_strucs/{{target.entry_name}}/", function( data ) {
@@ -1242,6 +1357,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           $("#cons_strucs").html(result);
           mutations_browser['cons_strucs'] = data;
           build_mutations();
+          load_status += 1;
+          updateLoadStatus();
         });
 
         $.getJSON( "/construct/tool/json/cons_rf/{{target.entry_name}}/", function( data ) {
@@ -1254,6 +1371,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           $("#cons_rf").html(result);
           mutations_browser['cons_rf'] = data;
           build_mutations();
+          load_status += 1;
+          updateLoadStatus();
         });
 
         $.getJSON( "/construct/tool/json/cons_rf_and_class/{{target.entry_name}}/", function( data ) {
@@ -1266,6 +1385,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           $("#cons_rf_and_class").html(result);
           mutations_browser['cons_rf_and_class'] = data;
           build_mutations();
+          load_status += 1;
+          updateLoadStatus();
         });
 
 
@@ -1282,6 +1403,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           mutations_browser['cons_rm_nonconserved_GP'] = data['non-conserved'];
           mutations_browser['cons_rm_conserved_G'] = data['conserved'];
           build_mutations();
+          load_status += 1;
+          updateLoadStatus();
         });
 
       $.getJSON( "/construct/tool/json/termo/{{target.entry_name}}/", function( data ) {
@@ -1351,6 +1474,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           $("#thermo").html(result);
         });
           build_mutations();
+          load_status += 1;
+          updateLoadStatus();
 
     });
 
@@ -1360,6 +1485,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             mutations_browser['struc_rules_'+level] = gns;
         });
           build_mutations();
+          load_status += 1;
+          updateLoadStatus();
 
     });
 </script>
