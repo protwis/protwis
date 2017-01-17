@@ -39,35 +39,23 @@ logger.setLevel(logging.INFO)
 
 
 class Command(BaseBuild):  
-    help = 'Build automated chimeric GPCR homology models'    
+    help = 'Build automated chimeric GPCR homology models'
     
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
         parser.add_argument('--update', help='Upload model to GPCRdb, overwrites existing entry', default=False, 
                             action='store_true')
-        parser.add_argument('-r', help='Run program for specific receptor(s) by giving UniProt common name as argument', 
+        parser.add_argument('-r', help='''Run program for specific receptor(s) by giving UniProt common name as 
+                                          argument or build revised crystal by giving PDB code''', 
                             default=False, type=str, nargs='+')
         parser.add_argument('-z', help='Create zip file of model directory containing all built models', default=False,
                             action='store_true')
         parser.add_argument('--hmver', help='Homology modeling version', default=1.0, type=float)
         parser.add_argument('-s', help='Set activation state for model', default='inactive')
+        parser.add_argument('-c', help='Select GPCR class (A, B1, B2, C, F)', default=False)
         
     def handle(self, *args, **options):
-#        with open('./structure/homology_models/ClassF_Q99835_5L7D_GPCRdb.pdb','r') as f:
-#            p = PDB.PDBParser()
-#            model = p.get_structure('model', './structure/homology_models/ClassF_Q99835_5L7D_GPCRdb.pdb')
-#            for m in model:
-#                for chain in m:
-#                    for res in chain:
-##                        print(res)
-#                        pass
-#            hse = HSExposureCB(model, radius=8, check_chain_breaks=True)
-#            clash_pairs = hse.clash_pairs
-#            if len(clash_pairs)>0:
-#                print('Remaining clashes in {}:'.format(f))
-#                for i in clash_pairs:
-#                    print(i)
-#        return 0
+        open('./structure/homology_models/done_models.txt','w')
         if not os.path.exists('./structure/homology_models/'):
             os.mkdir('./structure/homology_models')
         if not os.path.exists('./structure/PIR/'):
@@ -84,12 +72,15 @@ class Command(BaseBuild):
             self.state = 'Inactive'
         elif options['s']=='active':
             self.state = 'Active'
+        GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'F':'005'}
         if options['r']==False:
+            if options['c']==False or options['c'].upper() not in GPCR_class_codes:
+                raise AssertionError('Error: Incorrect class name given. Use argument -c with class name A, B1, B2, C of F')
             structures = Structure.objects.all()
             struct_parent = [i.protein_conformation.protein.parent for i in structures]
-            classA = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
-                                            family__slug__istartswith='001')
-            self.receptor_list = [i.entry_name for i in classA if i not in struct_parent][:10]
+            GPCR_class = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
+                                            family__slug__istartswith=GPCR_class_codes[options['c'].upper()])
+            self.receptor_list = [i.entry_name for i in GPCR_class if i not in struct_parent]
             print(self.receptor_list)
             try:
                 self.prepare_input(options['proc'], self.receptor_list)
@@ -103,7 +94,20 @@ class Command(BaseBuild):
                 print(msg)
         else:
             self.run_HomologyModeling(options['r'][0], self.state)
-        
+            self.receptor_list = [options['r'][0]]
+        missing_models = []
+        with open('./structure/homology_models/done_models.txt') as f:
+            for i in f.readlines():
+                if i.split('\n')[0] not in self.receptor_list:
+                    missing_models.append(i.split('\n')[0])
+        if len(missing_models)==0:
+            print('All models were run')
+        else:
+            print(missing_models)
+            print(input())
+#            new_args = shlex.split('/env/bin/python3 manage.py build_homology_models -r {} -p {} -s {}'.format(' '.join(missing_models, options['proc'], options['s'])))
+        os.remove('./structure/homology_models/done_models.txt')
+
         os.chdir('./structure/')
         if options['z']==True:
             zipf = zipfile.ZipFile('../static/homology_models/homology_models_v{}.zip'.format(str(self.version)),'w',zipfile.ZIP_DEFLATED)
@@ -124,42 +128,70 @@ class Command(BaseBuild):
             self.run_HomologyModeling(receptor, self.state)
     
     def run_HomologyModeling(self, receptor, state):
+#        try:
+        seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX']
+        Homology_model = HomologyModeling(receptor, state, [state,"Active"], update=self.update, version=self.version)
+        alignment = Homology_model.run_alignment([state,"Active"])
+        Homology_model.build_homology_model(alignment)
+        if self.update==False:
+            Homology_model.format_final_model()
+        if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
+            args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
+            subprocess.call(args)
+        # check for clashes in finished model
+        p = PDB.PDBParser()
+        if Homology_model.revise_xtal==False:
+            post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_{}_GPCRdb.pdb'.format(
+                            Homology_model.class_name,Homology_model.reference_entry_name,Homology_model.state,
+                            Homology_model.main_structure))
+        else:
+            post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_GPCRdb.pdb'.format(
+                            Homology_model.class_name,Homology_model.uniprot_id,Homology_model.main_structure))
+        hse = HSExposureCB(post_model, radius=8, check_chain_breaks=True)
+
         try:
-            seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX']
-            Homology_model = HomologyModeling(receptor, state, [state,"Active"], update=self.update, version=self.version)
-            alignment = Homology_model.run_alignment([state,"Active"])
-            Homology_model.build_homology_model(alignment)
-            if self.update==False:
-                Homology_model.format_final_model()
-            if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
-                args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
-                subprocess.call(args)
-            # check for clashes in finished model
-            p = PDB.PDBParser()
-            if Homology_model.revise_xtal==False:
-                post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_{}_GPCRdb.pdb'.format(
-                                Homology_model.class_name,Homology_model.reference_entry_name,Homology_model.state,
-                                Homology_model.main_structure))
-            else:
-                post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_GPCRdb.pdb'.format(
-                                Homology_model.class_name,Homology_model.uniprot_id,Homology_model.main_structure))
-            hse = HSExposureCB(post_model, radius=8, check_chain_breaks=True)
-            clash_pairs = hse.clash_pairs
-            if len(clash_pairs)>0:
-                print('Remaining clashes in {}:'.format(Homology_model.reference_entry_name))
-                for i in clash_pairs:
-                    print(i)
-                logger.info('Remaining clashes in {}\n{}'.format(Homology_model.reference_entry_name,clash_pairs))
-            logger.info('Model built for {} {}'.format(receptor, state))
-        except Exception as msg:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
-                                                                                    Homology_model.main_structure,msg))
-            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
-            t = tests.HomologyModelsTests()
-            if 'Number of residues in the alignment and  pdb files are different' in str(msg):
-                t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
-                                         Homology_model.main_structure)
+            ref_list = list(Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein, protein_segment__slug='H8'))
+            if len(ref_list)==0:
+                raise Exception
+        except:
+            ref_list = list(Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein, protein_segment__slug='TM7'))
+
+        # Check for residue shifts in model
+        residue_shift = False
+        if PDB.Polypeptide.three_to_one(post_model[0][' '][ref_list[0].sequence_number].get_resname())!=ref_list[0].amino_acid:
+            residue_shift = True
+        if PDB.Polypeptide.three_to_one(post_model[0][' '][ref_list[-1].sequence_number].get_resname())!=ref_list[-1].amino_acid:
+            residue_shift = True
+        if residue_shift==True:
+            print('Residue shift in model {}'.format(Homology_model.reference_entry_name))
+            logger.info('Residue shift in model {}'.format(Homology_model.reference_entry_name))
+        # Check for clashes in model
+        if len(hse.clash_pairs)>0:
+            print('Remaining clashes in {}:'.format(Homology_model.reference_entry_name))
+            for i in hse.clash_pairs:
+                print(i)
+            logger.info('Remaining clashes in {}\n{}'.format(Homology_model.reference_entry_name,hse.clash_pairs))
+        # Check for chain breaks in model
+        if len(hse.chain_breaks)>0:
+            print('Chain breaks in {}:'.format(Homology_model.reference_entry_name))
+            for j in hse.chain_breaks:
+                print(j)
+            logger.info('Chain breaks in {}\n{}'.format(Homology_model.reference_entry_name,hse.chain_breaks))
+        logger.info('Model built for {} {}'.format(receptor, state))
+        
+        with open('./structure/homology_models/done_models.txt','a') as f:
+            f.write(receptor+'\n')
+#        except Exception as msg:
+#            exc_type, exc_obj, exc_tb = sys.exc_info()
+#            print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
+#                                                                                    Homology_model.main_structure,msg))
+#            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
+#            t = tests.HomologyModelsTests()
+#            if 'Number of residues in the alignment and  pdb files are different' in str(msg):
+#                t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
+#                                         Homology_model.main_structure)
+#            with open('./structure/homology_models/done_models.txt','a') as f:
+#                f.write(receptor+'\n')
 
         
 class HomologyModeling(object):
@@ -655,13 +687,13 @@ class HomologyModeling(object):
                     al.enhance_alignment(t[0],t[1])
                     a.reference_dict[label] = al.reference_dict[label]
                     a.template_dict[label] = al.template_dict[label]
-                    a.alignment_dict[label] = al.alignment_dict[label]                   
+                    a.alignment_dict[label] = al.alignment_dict[label]
                     
                 if label=='ECL2' and (loop.partialECL2_1==True or loop.partialECL2_2==True):
                     al = AlignedReferenceTemplate()
                     t = al.run_hommod_alignment(self.reference_protein, [label], ['Inactive','Active'], 
                                                 order_by='similarity', 
-                                                only_output_alignment=loop.loop_output_structure.protein_conformation.protein.parent)
+                                                only_output_alignment=loop.loop_output_structure[1].protein_conformation.protein.parent)
                     al.enhance_alignment(t[0],t[1],keep_all=True)
                     a.reference_dict[label] = al.reference_dict[label]
                     a.template_dict[label] = al.template_dict[label]
@@ -697,9 +729,7 @@ class HomologyModeling(object):
             
             self.statistics.add_info('loops', loop_stat)
             self.loops = loop_stat
-#        pprint.pprint(a.reference_dict['ICL2_dis'])
-#        pprint.pprint(a.template_dict['ICL2_dis'])
-#        pprint.pprint(main_pdb_array['ICL2_dis'])
+        
         print('Integrate loops: ',datetime.now() - startTime)
 
         # bulges and constrictions
@@ -1265,7 +1295,7 @@ class HomologyModeling(object):
                 trimmed_residues.append(i.replace('x','.'))
         
         self.statistics.add_info('trimmed_residues', trimmed_residues)
-        print(trimmed_residues)
+        
         # write to file
         trimmed_res_nums, helix_restraints, icl3_mid = self.write_homology_model_pdb(path+self.reference_entry_name+'_'+self.state+"_post.pdb", 
                                                                                      main_pdb_array, a, 
@@ -1314,6 +1344,8 @@ class HomologyModeling(object):
         post_model = p.get_structure('post', path+self.reference_entry_name+'_'+self.state+"_post.pdb")[0]
         hse = HSExposureCB(post_model, radius=8)
         clash_pairs = hse.clash_pairs
+#        pprint.pprint(a.reference_dict)
+#        pprint.pprint(a.template_dict)
         print(clash_pairs)
         for i in clash_pairs:
             gn1 = str(i[0][0]).replace('.','x')
@@ -1356,12 +1388,12 @@ class HomologyModeling(object):
                             if res=='-':
                                 ref_gap_counter+=1
                             if gn==gn1:
-                                trimmed_res_nums[segment1][str(i[0][0])] = i[0][1]-ref_gap_counter
+                                trimmed_res_nums[segment1][str(i[0][0])] = i[0][1]#-ref_gap_counter
                                 break_loop = True
                                 break
                             try:
                                 if i[0][1]+start_dif+ref_gap_counter==int(gn):
-                                    trimmed_res_nums[seg][gn] = i[0][1]-ref_gap_counter
+                                    trimmed_res_nums[seg][gn] = i[0][1]#-ref_gap_counter
                                     break_loop = True
                                     break
                             except:
@@ -1374,12 +1406,12 @@ class HomologyModeling(object):
                             if res=='-':
                                 ref_gap_counter+=1
                             if gn==gn2:
-                                trimmed_res_nums[segment2][str(i[1][0])] = i[1][1]-ref_gap_counter
+                                trimmed_res_nums[segment2][str(i[1][0])] = i[1][1]#-ref_gap_counter
                                 break_loop = True
                                 break
                             try:
                                 if i[1][1]+start_dif+ref_gap_counter==int(gn):
-                                    trimmed_res_nums[seg][gn] = i[1][1]-ref_gap_counter
+                                    trimmed_res_nums[seg][gn] = i[1][1]#-ref_gap_counter
                                     break_loop = True
                                     break
                             except:
@@ -1392,12 +1424,12 @@ class HomologyModeling(object):
                             if res=='-':
                                 ref_gap_counter+=1
                             if gn==gn1:
-                                trimmed_res_nums[segment1][gn1.replace('x','.')] = i[0][1]-ref_gap_counter
+                                trimmed_res_nums[segment1][gn1.replace('x','.')] = i[0][1]#-ref_gap_counter
                             elif gn==gn2:
-                                trimmed_res_nums[segment2][gn2.replace('x','.')] = i[1][1]-ref_gap_counter
+                                trimmed_res_nums[segment2][gn2.replace('x','.')] = i[1][1]#-ref_gap_counter
             except Exception as msg:
                 print("Warning: Can't fix side chain clash on {}".format(msg))
-
+        pprint.pprint(trimmed_res_nums)
         self.statistics.add_info('clashing_residues', clash_pairs)
 
         # Model with MODELLER
@@ -1595,9 +1627,10 @@ class HomologyModeling(object):
                                                  and '|' in ref_res):
                             trimmed_residues.append(ref_res.replace('x','.'))
                 gn = ref_res
+                
                 if ((gn in inconsistencies or alignment_dict[aligned_seg][aligned_res]=='.' and 
-                    reference_dict[ref_seg][gn]!=template_dict[temp_seg][gn]) or 
-                    len(main_pdb_array[ref_seg][ref_res.replace('x','.')])<atom_num_dict[template_dict[temp_seg][temp_res]]):
+                    reference_dict[ref_seg][gn]!=template_dict[temp_seg][gn]) or (template_dict[temp_seg][temp_res]!='x' and 
+                    len(main_pdb_array[ref_seg][ref_res.replace('x','.')])<atom_num_dict[template_dict[temp_seg][temp_res]])):
                     non_cons_count+=1
                     gn_ = str(ref_res).replace('x','.')
                     no_match = True
@@ -2235,7 +2268,24 @@ class HelixEndsModeling(HomologyModeling):
         self.helix_ends = raw_helix_ends
 
         for ref_seg, temp_seg, align_seg in zip(a.reference_dict, a.template_dict, a.alignment_dict):
-            mid = len(a.reference_dict[ref_seg])/2
+            if ref_seg=='H8' and H8_alt!=None:
+                first_res = Residue.objects.get(protein_conformation=H8_alt.protein_conformation, 
+                                                display_generic_number__label=dgn(raw_helix_ends[ref_seg][0],
+                                                                                  H8_alt.protein_conformation)).sequence_number
+                last_res = Residue.objects.get(protein_conformation=H8_alt.protein_conformation, 
+                                               display_generic_number__label=dgn(raw_helix_ends[ref_seg][1],
+                                                                                 H8_alt.protein_conformation)).sequence_number
+                mid = len(list(Residue.objects.filter(protein_conformation=H8_alt.protein_conformation, 
+                                                      sequence_number__in=range(first_res,last_res))))/2
+            elif ref_seg[0]=='T':
+                first_res = Residue.objects.get(protein_conformation=main_structure.protein_conformation, 
+                                                display_generic_number__label=dgn(raw_helix_ends[ref_seg][0],
+                                                                                  main_structure.protein_conformation)).sequence_number
+                last_res = Residue.objects.get(protein_conformation=main_structure.protein_conformation, 
+                                               display_generic_number__label=dgn(raw_helix_ends[ref_seg][1],
+                                                                                 main_structure.protein_conformation)).sequence_number
+                mid = len(list(Residue.objects.filter(protein_conformation=main_structure.protein_conformation, 
+                                                      sequence_number__in=range(first_res,last_res))))/2
             if ref_seg[0] not in ['T','H']:
                 continue
             if separate_H8==True:
@@ -2423,7 +2473,7 @@ class Loops(object):
                     r_x50 = ref_res.get(display_generic_number__label='45.50x50').sequence_number
                 except:
                     pass
-#            print(self.loop_label, self.loop_template_structures)
+            print(self.loop_label, self.loop_template_structures)
             if (self.loop_label=='ECL2' and 'ECL2_1' not in self.loop_template_structures) or self.loop_label!='ECL2' or superpose_modded_loop==True:
                 for template in self.loop_template_structures:
                     if self.loop_label=='ICL2' and template.pdb_code.index=='2RH1' and self.reference_protein.entry_name=='adrb2_human':
@@ -2446,17 +2496,29 @@ class Loops(object):
                                         raise Exception()
                                     loop_res = [r.sequence_number for r in l_res[1]]
                                     at_least_one_gn = False
-                                    x50_present = False
+                                    x50_present, x50_temp_present = False, False
                                     for i in ref_loop:
                                         try:
                                             g = ggn(i.display_generic_number.label)
                                             at_least_one_gn = True
                                             if 'x50' in g:
                                                 x50_present = True
+                                                break
+                                        except:
+                                            pass
+                                    print(self.loop_label,l_res)
+                                    for j in l_res[1]:
+                                        try:
+                                            g2 = ggn(j.display_generic_number.label)
+                                            print(g2)
+                                            if 'x50' in g2:
+                                                x50_temp_present = True
                                         except:
                                             pass
                                     if self.loop_template_structures[template]!=0:
                                         if x50_present==False and len(ref_loop)!=len(loop_res):
+                                            continue
+                                        elif x50_present==True and x50_temp_present==False and len(self.loop_template_structures)>1:
                                             continue
                                         partial = False
                                     else:
@@ -2867,8 +2929,7 @@ class Loops(object):
                                 break
                         l_res=0
                         temp_pdb_dict = OrderedDict()
-                        print(self.loop_label, ref_residues, input_residues)
-                        print(loop_template)
+
                         for r_res, r_id in zip(ref_residues, input_residues):
                             if l_res==loop_ends[0] or len(ref_residues)+loop_ends[1]==l_res:
                                 try:
