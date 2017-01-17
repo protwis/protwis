@@ -49,23 +49,20 @@ class Command(BaseCommand):
         else:
             filenames = False
         
-        try:
-            self.create_g_proteins(filenames)
-        except Exception as msg:
-            self.logger.error(msg)
-
         #add gproteins from cgn db
         try:
-            # self.purge_cgn_residues()
-            # self.purge_cgn_protein_segments()
+            self.purge_coupling_data()
+            self.purge_cgn_residues()
+            self.purge_cgn_proteins()
+
+            self.create_g_proteins(filenames)
             self.cgn_create_proteins_and_families()
-            # self.purge_cgn_proteins()
-            #delete added g-proteins
 
         except Exception as msg:
+            print(msg)
             self.logger.error(msg)
 
-        #add residues from cgn db
+        # add residues from cgn db
         try:
             human_and_orths = self.cgn_add_proteins()
 
@@ -73,12 +70,13 @@ class Command(BaseCommand):
         except Exception as msg:
             self.logger.error(msg)
 
+        # add barcode data
         try:
             self.create_barcode()
         except Exception as msg:
             self.logger.error(msg)
 
-    def purge_data(self):
+    def purge_coupling_data(self):
         try:
             ProteinGProteinPair.objects.filter().delete()
             ProteinGProtein.all().delete()
@@ -126,16 +124,17 @@ class Command(BaseCommand):
 
     def create_g_proteins(self, filenames=False):
         self.logger.info('CREATING GPROTEINS')
-        self.purge_data()
 
         translation = {'Gs family':'100_000_001', 'Gi/Go family':'100_000_002', 'Gq/G11 family':'100_000_003','G12/G13 family':'100_000_004',}
 
         # read source files
         if not filenames:
-            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('.csv')]
+            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('Gprotein_crossclass.csv')]
 
         for filename in filenames:
             filepath = os.sep.join([self.gprotein_data_path, filename])
+
+            self.logger.info('Reading filename' + filename)
 
             with open(filepath, 'r') as f:
                 reader = csv.reader(f)
@@ -218,7 +217,7 @@ class Command(BaseCommand):
 
             try:
                 Residue.objects.get_or_create(sequence_number=row['Position'], protein_conformation=pc, amino_acid=row['Residue'], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
-                self.logger.info("Residues added to db")
+                # self.logger.info("Residues added to db")
 
             except:
                 self.logger.error("Failed to add residues")
@@ -227,7 +226,7 @@ class Command(BaseCommand):
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
                 ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme_id=12)
-                self.logger.info("Residues added to ResidueGenericNumberEquivalent")
+                # self.logger.info("Residues added to ResidueGenericNumberEquivalent")
 
             except:
                 self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
