@@ -1162,7 +1162,6 @@ class AlignedReferenceTemplate(Alignment):
                 self.loop_table=None
             return self.loop_table
         else:
-            print(self.segment_labels[0],self.order_sim_table(temp_list, ref_seq, OrderedDict(), x50_ref), '\n')
             return self.order_sim_table(temp_list, ref_seq, OrderedDict(), x50_ref)
                     
     def order_sim_table(self, temp_list, ref_seq, similarity_table, x50_ref=None, ECL2_part=''):
@@ -1181,7 +1180,6 @@ class AlignedReferenceTemplate(Alignment):
         sorted_list_gn = sorted(alt_temps_gn, key=lambda x: (-x[2],x[3]))
         sorted_list = sorted(alt_temps, key=lambda x: (-x[2],x[3]))
         combined = sorted_list_gn+sorted_list
-        
         if self.revise_xtal!=None:
             temp_list = []
             for i in combined:

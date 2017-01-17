@@ -651,7 +651,9 @@ class HSExposureCB(AbstractPropertyMap):
         if check_chain_breaks==True:
             for r in residues_in_pdb:
                 if r not in residues_with_proper_CA:
-                    print('Chain break at {}'.format(r))
+                    self.chain_breaks.append(r)
+                    
+                    
     def _get_cb(self, r1, r2, r3):
         """
         Method to calculate CB-CA vector.
