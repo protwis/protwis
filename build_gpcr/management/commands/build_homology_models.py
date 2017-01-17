@@ -128,70 +128,70 @@ class Command(BaseBuild):
             self.run_HomologyModeling(receptor, self.state)
     
     def run_HomologyModeling(self, receptor, state):
-#        try:
-        seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX']
-        Homology_model = HomologyModeling(receptor, state, [state,"Active"], update=self.update, version=self.version)
-        alignment = Homology_model.run_alignment([state,"Active"])
-        Homology_model.build_homology_model(alignment)
-        if self.update==False:
-            Homology_model.format_final_model()
-        if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
-            args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
-            subprocess.call(args)
-        # check for clashes in finished model
-        p = PDB.PDBParser()
-        if Homology_model.revise_xtal==False:
-            post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_{}_GPCRdb.pdb'.format(
-                            Homology_model.class_name,Homology_model.reference_entry_name,Homology_model.state,
-                            Homology_model.main_structure))
-        else:
-            post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_GPCRdb.pdb'.format(
-                            Homology_model.class_name,Homology_model.uniprot_id,Homology_model.main_structure))
-        hse = HSExposureCB(post_model, radius=8, check_chain_breaks=True)
-
         try:
-            ref_list = list(Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein, protein_segment__slug='H8'))
-            if len(ref_list)==0:
-                raise Exception
-        except:
-            ref_list = list(Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein, protein_segment__slug='TM7'))
-
-        # Check for residue shifts in model
-        residue_shift = False
-        if PDB.Polypeptide.three_to_one(post_model[0][' '][ref_list[0].sequence_number].get_resname())!=ref_list[0].amino_acid:
-            residue_shift = True
-        if PDB.Polypeptide.three_to_one(post_model[0][' '][ref_list[-1].sequence_number].get_resname())!=ref_list[-1].amino_acid:
-            residue_shift = True
-        if residue_shift==True:
-            print('Residue shift in model {}'.format(Homology_model.reference_entry_name))
-            logger.info('Residue shift in model {}'.format(Homology_model.reference_entry_name))
-        # Check for clashes in model
-        if len(hse.clash_pairs)>0:
-            print('Remaining clashes in {}:'.format(Homology_model.reference_entry_name))
-            for i in hse.clash_pairs:
-                print(i)
-            logger.info('Remaining clashes in {}\n{}'.format(Homology_model.reference_entry_name,hse.clash_pairs))
-        # Check for chain breaks in model
-        if len(hse.chain_breaks)>0:
-            print('Chain breaks in {}:'.format(Homology_model.reference_entry_name))
-            for j in hse.chain_breaks:
-                print(j)
-            logger.info('Chain breaks in {}\n{}'.format(Homology_model.reference_entry_name,hse.chain_breaks))
-        logger.info('Model built for {} {}'.format(receptor, state))
-        
-        with open('./structure/homology_models/done_models.txt','a') as f:
-            f.write(receptor+'\n')
-#        except Exception as msg:
-#            exc_type, exc_obj, exc_tb = sys.exc_info()
-#            print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
-#                                                                                    Homology_model.main_structure,msg))
-#            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
-#            t = tests.HomologyModelsTests()
-#            if 'Number of residues in the alignment and  pdb files are different' in str(msg):
-#                t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
-#                                         Homology_model.main_structure)
-#            with open('./structure/homology_models/done_models.txt','a') as f:
-#                f.write(receptor+'\n')
+            seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX']
+            Homology_model = HomologyModeling(receptor, state, [state,"Active"], update=self.update, version=self.version)
+            alignment = Homology_model.run_alignment([state,"Active"])
+            Homology_model.build_homology_model(alignment)
+            if self.update==False:
+                Homology_model.format_final_model()
+            if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
+                args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
+                subprocess.call(args)
+            # check for clashes in finished model
+            p = PDB.PDBParser()
+            if Homology_model.revise_xtal==False:
+                post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_{}_GPCRdb.pdb'.format(
+                                Homology_model.class_name,Homology_model.reference_entry_name,Homology_model.state,
+                                Homology_model.main_structure))
+            else:
+                post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_GPCRdb.pdb'.format(
+                                Homology_model.class_name,Homology_model.uniprot_id,Homology_model.main_structure))
+            hse = HSExposureCB(post_model, radius=8, check_chain_breaks=True)
+    
+            try:
+                ref_list = list(Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein, protein_segment__slug='H8'))
+                if len(ref_list)==0:
+                    raise Exception
+            except:
+                ref_list = list(Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein, protein_segment__slug='TM7'))
+    
+            # Check for residue shifts in model
+            residue_shift = False
+            if PDB.Polypeptide.three_to_one(post_model[0][' '][ref_list[0].sequence_number].get_resname())!=ref_list[0].amino_acid:
+                residue_shift = True
+            if PDB.Polypeptide.three_to_one(post_model[0][' '][ref_list[-1].sequence_number].get_resname())!=ref_list[-1].amino_acid:
+                residue_shift = True
+            if residue_shift==True:
+                print('Residue shift in model {}'.format(Homology_model.reference_entry_name))
+                logger.info('Residue shift in model {}'.format(Homology_model.reference_entry_name))
+            # Check for clashes in model
+            if len(hse.clash_pairs)>0:
+                print('Remaining clashes in {}:'.format(Homology_model.reference_entry_name))
+                for i in hse.clash_pairs:
+                    print(i)
+                logger.info('Remaining clashes in {}\n{}'.format(Homology_model.reference_entry_name,hse.clash_pairs))
+            # Check for chain breaks in model
+            if len(hse.chain_breaks)>0:
+                print('Chain breaks in {}:'.format(Homology_model.reference_entry_name))
+                for j in hse.chain_breaks:
+                    print(j)
+                logger.info('Chain breaks in {}\n{}'.format(Homology_model.reference_entry_name,hse.chain_breaks))
+            logger.info('Model built for {} {}'.format(receptor, state))
+            
+            with open('./structure/homology_models/done_models.txt','a') as f:
+                f.write(receptor+'\n')
+        except Exception as msg:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
+                                                                                    Homology_model.main_structure,msg))
+            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
+            t = tests.HomologyModelsTests()
+            if 'Number of residues in the alignment and  pdb files are different' in str(msg):
+                t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
+                                         Homology_model.main_structure)
+            with open('./structure/homology_models/done_models.txt','a') as f:
+                f.write(receptor+'\n')
 
         
 class HomologyModeling(object):
@@ -1344,8 +1344,6 @@ class HomologyModeling(object):
         post_model = p.get_structure('post', path+self.reference_entry_name+'_'+self.state+"_post.pdb")[0]
         hse = HSExposureCB(post_model, radius=8)
         clash_pairs = hse.clash_pairs
-#        pprint.pprint(a.reference_dict)
-#        pprint.pprint(a.template_dict)
         print(clash_pairs)
         for i in clash_pairs:
             gn1 = str(i[0][0]).replace('.','x')
@@ -2473,7 +2471,7 @@ class Loops(object):
                     r_x50 = ref_res.get(display_generic_number__label='45.50x50').sequence_number
                 except:
                     pass
-            print(self.loop_label, self.loop_template_structures)
+#            print(self.loop_label, self.loop_template_structures)
             if (self.loop_label=='ECL2' and 'ECL2_1' not in self.loop_template_structures) or self.loop_label!='ECL2' or superpose_modded_loop==True:
                 for template in self.loop_template_structures:
                     if self.loop_label=='ICL2' and template.pdb_code.index=='2RH1' and self.reference_protein.entry_name=='adrb2_human':
@@ -2506,11 +2504,9 @@ class Loops(object):
                                                 break
                                         except:
                                             pass
-                                    print(self.loop_label,l_res)
                                     for j in l_res[1]:
                                         try:
                                             g2 = ggn(j.display_generic_number.label)
-                                            print(g2)
                                             if 'x50' in g2:
                                                 x50_temp_present = True
                                         except:
