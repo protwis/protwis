@@ -412,7 +412,12 @@ class Alignment:
             if len(s) > 1:
                 del self.segments[segment]
             else:
-                self.segments[segment].sort()
+                # self.segments[segment].sort()
+                sorted_segment = []
+                for gn in sorted(self.segments[segment], key=lambda x: x.split('x')):
+                    sorted_segment.append(gn)
+                self.segments[segment] = sorted_segment
+                
 
         for pc in self.proteins:
             row = OrderedDict()
