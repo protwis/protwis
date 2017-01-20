@@ -1,0 +1,77 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+    <svg id="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin none" style="width: 100%; height: 1000px">
+
+    </svg>
+
+    <script src="{% static 'home/js/snap.svg-min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.js' %}"> </script>
+
+    <script>
+        function HSVtoRGB(h, s, v) {
+            var r, g, b, i, f, p, q, t;
+            if (arguments.length === 1) {
+                s = h.s, v = h.v, h = h.h;
+            }
+            i = Math.floor(h * 6);
+            f = h * 6 - i;
+            p = v * (1 - s);
+            q = v * (1 - f * s);
+            t = v * (1 - (1 - f) * s);
+            switch (i % 6) {
+                case 0: r = v, g = t, b = p; break;
+                case 1: r = q, g = v, b = p; break;
+                case 2: r = p, g = v, b = t; break;
+                case 3: r = p, g = q, b = v; break;
+                case 4: r = t, g = p, b = v; break;
+                case 5: r = v, g = p, b = q; break;
+            }
+            return {
+                r: Math.round(r * 255),
+                g: Math.round(g * 255),
+                b: Math.round(b * 255)
+            };
+        }
+
+        function renderHeatMap(json_data) {
+            var heatmap = Snap("#heatmap");
+
+            x = 0; wi = json_data.size;
+            y = 0; hi = json_data.size;
+
+            heatmap.attr({viewBox:[x,y,wi,hi].join(',')});
+            heatmap.attr({viewBox:[x,y,wi,hi].join(' ')});
+
+            console.log(json_data);
+
+            for (i = 0; i < json_data.size; i++) {
+                for (j = 0; j < json_data.size; j++) {
+                    // Get the sequence numbers
+                    seq_i = json_data.map[i];
+                    seq_j = json_data.map[j];
+
+                    // Only draw if an interaction exists
+                    gen_num = seq_i + "," + seq_j;
+                    if (gen_num in json_data.data) {
+                        num_interactions = json_data.data[gen_num].size;
+
+                        rgb = HSVtoRGB(num_interactions / json_data.max_interactions , 1, 1);
+
+                        var cell = heatmap.rect(i, j, 1, 1);
+
+                        cell.attr({
+                            fill: "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")"
+                        });
+
+                        var title = Snap.parse('<title>Residue numbers: ' + gen_num + ', number of interactions: ' + num_interactions + '</title>');
+
+                        cell.append(title);
+                    }
+                }
+            }
+        }
+        $.getJSON("heatmapjsondata", null, renderHeatMap);
+    </script>
+{% endblock %}
