@@ -170,9 +170,9 @@
 
             $("#constructs_div").hide();
             $("#loading_div").hide();
-            update_tables('wt');
-            $("#wt_schematics_div").show();
-            set_scroll_divs("#wt_schematics_div");
+            update_tables('c');
+            $("#constructs_schematics_div").show();
+            set_scroll_divs("#constructs_schematics_div");
 
             // $.datepicker.regional[""].dateFormat = "yy-mm-dd";
             // $.datepicker.setDefaults($.datepicker.regional['']);
@@ -533,11 +533,12 @@
               </ul>
         </div>
     <div id='filters'>
+    Filter by either Class, Receptor Family or Receptor:
     <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container3"></span></div>
     <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container2"></span></div>
-    <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container1"></span></div>
+    <div style='width: 105px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container1"></span></div> and by
 <!--     <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container0"></span></div> -->
-    <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container4"></span></div>
+    <div style='width: 105px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container4"></span></div>
 <!--     <div style='width: 140px;display: inline-block;'><span id="external_filter_container5"></span></div> -->
     <button id='apply_filter' class="btn btn-default btn-xs">Apply Filter</button>
             <div class="dropdown btn-group">
