@@ -1304,6 +1304,29 @@ def ExportExcelSuggestions(request):
         'opt_mu', 'opt_sign', 'opt_percentage', 'opt_qual','opt_agonist', 'added_date'
          ] #'added_by',
 
+
+
+    # icl2_end
+    # thermo
+    # icl2_start
+    # nterm
+    # cterm
+    # icl3_start
+    # removals
+    # icl3_end
+
+    sheets = ['nterm','icl2_start','icl2_end','icl3_start','icl3_end','cterm','thermo','removals']
+
+    headers = {}
+    headers['nterm'] = ['From TM1','hits','Homology levels','Fusions']
+    headers['icl2_start'] = ['Start position','hits','Homology levels','PDB codes']
+    headers['icl2_end'] = ['End position','hits','Homology levels','PDB codes']
+    headers['icl3_start'] = ['Start position','hits','Homology levels','PDB codes']
+    headers['icl3_end'] = ['End position','hits','Homology levels','PDB codes']
+    headers['cterm'] = ['From TM8','hits','Homology levels']
+    headers['thermo'] = ['Generic position','Mutation','hits','methods']
+    headers['removals'] = ['segment','mutation','type','subtype']
+
     data = request.POST['d']
     data = json.loads(data)
 
@@ -1311,11 +1334,13 @@ def ExportExcelSuggestions(request):
     output = BytesIO()
     workbook = xlsxwriter.Workbook(output)
 
-    for name,values in data.items():
+    for name in sheets:
+        values = data[name]
+        if len(values)==0:
+            continue
         worksheet = workbook.add_worksheet(name)
-
         col = 0
-        for h in headers:
+        for h in headers[name]:
             worksheet.write(0, col, h)
             col += 1
         row = 1
@@ -1376,6 +1401,12 @@ def ExportExcelModifications(request):
                 print('No column for '+m)
             col += 1
         row += 1
+
+
+    worksheet2 = workbook.add_worksheet("sequence")
+    worksheet2.write(0, 0, "sequence")
+    worksheet2.write(0, 1, request.POST['s'])
+
     workbook.close()
     output.seek(0)
     xlsx_data = output.read()
