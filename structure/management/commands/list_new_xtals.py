@@ -15,8 +15,36 @@ import re
 class Command(BaseCommand):
         
     def handle(self, *args, **options):
-        q = QueryPDB()
-        q.list_xtals()
+        q = QueryPDB2()
+        q.run()
+
+
+class QueryPDB2():
+    def __init__(self):
+        pass
+
+    def run(self):
+        proteins = Protein.objects.filter(accession__isnull=False, species__common_name="Human")
+        for p in proteins:
+            self.pdb_request_by_uniprot(p.accession)
+
+    def pdb_request_by_uniprot(self, uniprot_id):
+        url = 'http://www.rcsb.org/pdb/rest/search'
+
+        queryText = """
+<orgPdbQuery>
+    <queryType>org.pdb.query.simple.UpAccessionIdQuery</queryType>
+    <description>Simple query for a list of UniprotKB Accession IDs: {}</description>
+    <accessionIdList>{}</accessionIdList>
+</orgPdbQuery>
+
+        """.format(uniprot_id, uniprot_id)
+        req = urllib.request.Request(url, data=bytes(queryText, 'utf-8'))
+        f = urllib.request.urlopen(req)
+        result = f.read()
+        structures = [i.split(':')[0] for i in result.decode('utf-8').split('\n')[:-1]]
+        print(uniprot_id, structures)
+        return structures
 
 
 class QueryPDB():    
@@ -36,7 +64,7 @@ class QueryPDB():
     <queryType>org.pdb.query.simple.TreeQuery</queryType>
     <description>TransmembraneTree Search for G Protein-Coupled Receptors (GPCRs)</description>
     <t>19</t>
-    <n>245</n>
+    <n>248</n>
     <nodeDesc>G Protein-Coupled Receptors (GPCRs)</nodeDesc>
 </orgPdbQuery>
     
