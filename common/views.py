@@ -12,6 +12,7 @@ from structure.models import Structure
 from protein.models import Protein, ProteinFamily, ProteinSegment, Species, ProteinSource, ProteinSet, ProteinGProtein, ProteinGProteinPair
 from residue.models import ResidueGenericNumber, ResidueNumberingScheme, ResidueGenericNumberEquivalent, ResiduePositionSet
 from interaction.forms import PDBform
+from construct.tool import FileUploadForm
 
 import inspect
 from collections import OrderedDict
@@ -1294,7 +1295,7 @@ def ReadTargetInput(request):
     return render(request, 'common/selection_lists.html', context)
 
 @csrf_exempt
-def ExportExcel(request):
+def ExportExcelSuggestions(request):
     """Convert json file to excel file"""
     headers = ['reference','review', 'protein', 'mutation_pos', 'generic', 'mutation_from', 'mutation_to',
         'ligand_name', 'ligand_idtype', 'ligand_id', 'ligand_class',
@@ -1303,36 +1304,109 @@ def ExportExcel(request):
         'opt_mu', 'opt_sign', 'opt_percentage', 'opt_qual','opt_agonist', 'added_date'
          ] #'added_by',
 
+
+
+    # icl2_end
+    # thermo
+    # icl2_start
+    # nterm
+    # cterm
+    # icl3_start
+    # removals
+    # icl3_end
+
+    sheets = ['nterm','icl2_start','icl2_end','icl3_start','icl3_end','cterm','thermo','removals']
+
+    headers = {}
+    headers['nterm'] = ['From TM1','hits','Homology levels','Fusions']
+    headers['icl2_start'] = ['Start position','hits','Homology levels','PDB codes']
+    headers['icl2_end'] = ['End position','hits','Homology levels','PDB codes']
+    headers['icl3_start'] = ['Start position','hits','Homology levels','PDB codes']
+    headers['icl3_end'] = ['End position','hits','Homology levels','PDB codes']
+    headers['cterm'] = ['From TM8','hits','Homology levels']
+    headers['thermo'] = ['Generic position','Mutation','hits','methods']
+    headers['removals'] = ['segment','mutation','type','subtype']
+
     data = request.POST['d']
     data = json.loads(data)
-    print(data)
-
 
     #EXCEL SOLUTION
     output = BytesIO()
     workbook = xlsxwriter.Workbook(output)
 
-    for name,values in data.items():
+    for name in sheets:
+        values = data[name]
+        if len(values)==0:
+            continue
         worksheet = workbook.add_worksheet(name)
-
         col = 0
-        for h in headers:
+        for h in headers[name]:
             worksheet.write(0, col, h)
             col += 1
         row = 1
         for d in values:
             col = 0
-            print(d)
+            #print(d)
             # for h in headers:
             #     worksheet.write(row, col, d[h])
             #     col += 1
             for c in d:
-                print(c)
+                #print(c)
                 if isinstance(c, list):
                     c = ",".join(c)
                 worksheet.write(row, col, c)
                 col += 1
             row += 1
+    workbook.close()
+    output.seek(0)
+    xlsx_data = output.read()
+
+    ts = time.time()
+
+    cache.set(ts,xlsx_data,30)
+    response = HttpResponse(ts)
+    return response
+
+@csrf_exempt
+def ExportExcelModifications(request):
+    """Convert json file to excel file"""
+    headers = ['type', 'method', 'range', 'info','from','to']
+
+    data = request.POST['d']
+    data = json.loads(data)
+
+    #EXCEL SOLUTION
+    output = BytesIO()
+    workbook = xlsxwriter.Workbook(output)
+    worksheet = workbook.add_worksheet("modifications")
+
+    row = 1
+    index = {}
+    for mod in data:
+        col = 0
+        for h in headers:
+            worksheet.write(0, col, h)
+            index[h] = col
+            col += 1
+        col = 0
+        for m,v in mod.items():
+            if isinstance(v, list) and m=='range' and len(v)>1:
+                #v = ",".join(str(x) for x in v)
+                v = str(v[0])+"-"+str(v[-1]) #first and last
+            elif isinstance(v, list):
+                v = ",".join(str(x) for x in v)
+            if m in index:
+                worksheet.write(row, index[m], str(v))
+            else:
+                print('No column for '+m)
+            col += 1
+        row += 1
+
+
+    worksheet2 = workbook.add_worksheet("sequence")
+    worksheet2.write(0, 0, "sequence")
+    worksheet2.write(0, 1, request.POST['s'])
+
     workbook.close()
     output.seek(0)
     xlsx_data = output.read()
@@ -1350,3 +1424,41 @@ def ExportExcelDownload(request, ts, entry_name):
     response['Content-Disposition'] = 'attachment; filename='+entry_name+'.xlsx' #% 'mutations'
 
     return response
+
+@csrf_exempt
+def ImportExcel(request, **response_kwargs):
+    """Recieves excel, outputs json"""
+    o = []
+    if request.method == 'POST':
+        form = FileUploadForm(data=request.POST, files=request.FILES)
+        if form.is_valid():
+            workbook = xlrd.open_workbook(file_contents=request.FILES['file_source'].read())
+            worksheets = workbook.sheet_names()
+            for worksheet_name in worksheets:
+                worksheet = workbook.sheet_by_name(worksheet_name)
+
+                num_rows = worksheet.nrows - 1
+                num_cells = worksheet.ncols - 1
+                curr_row = 0 #skip first, otherwise -1
+                while curr_row < num_rows:
+                    curr_row += 1
+                    row = worksheet.row(curr_row)
+                    curr_cell = -1
+                    temprow = []
+                    if worksheet.cell_value(curr_row, 0) == '': #if empty
+                        continue
+                    while curr_cell < num_cells:
+                        curr_cell += 1
+                        cell_type = worksheet.cell_type(curr_row, curr_cell)
+                        cell_value = worksheet.cell_value(curr_row, curr_cell)
+                        temprow.append(cell_value)
+                    o.append(temprow)
+            jsondata = json.dumps(o)
+            response_kwargs['content_type'] = 'application/json'
+            return HttpResponse(jsondata, **response_kwargs)
+
+        else:
+            pass
+    jsondata = json.dumps(o)
+    response_kwargs['content_type'] = 'application/json'
+    return HttpResponse(jsondata, **response_kwargs)
