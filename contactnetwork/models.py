@@ -2,8 +2,10 @@ from structure.models import Structure
 
 from django.db import models
 
+from polymorphic.models import PolymorphicModel
 
-class InteractingResiduePair(models.Model):
+
+class InteractingResiduePair(PolymorphicModel):
     referenced_structure = models.ForeignKey('structure.Structure')
     res1 = models.ForeignKey('residue.Residue', related_name='residue1')
     res2 = models.ForeignKey('residue.Residue', related_name='residue2')
@@ -12,11 +14,11 @@ class InteractingResiduePair(models.Model):
         db_table = 'interacting_residue_pair'
 
 
-class Interaction(models.Model):
+class Interaction(PolymorphicModel):
     interacting_pair = models.ForeignKey('contactnetwork.InteractingResiduePair')
 
     class Meta():
-        abstract = True
+        db_table = 'interaction'
 
 
 class VanDerWaalsInteraction(Interaction):
@@ -40,7 +42,7 @@ class PolarInteraction(Interaction):
     is_charged_res2 = models.BooleanField()
 
     class Meta():
-        abstract = True
+        db_table = 'interaction_polar'
 
 
 class PolarSidechainSidechainInteraction(PolarInteraction):
@@ -63,12 +65,12 @@ class PolarBackboneSidechainInteraction(PolarInteraction):
 
 class AromaticInteraction(Interaction):
     class Meta():
-        abstract = True
+        db_table = 'interaction_aromatic'
 
 
 class FaceToFaceInteraction(AromaticInteraction):
     def get_name(self):
-        return 'face-to-face'
+        return 'aromatic-face-to-face'
 
     class Meta():
         db_table = 'interaction_aromatic_face_face'
@@ -78,7 +80,7 @@ class FaceToEdgeInteraction(AromaticInteraction):
     res1_has_face = models.BooleanField()
 
     def get_name(self):
-        return 'face-to-edge'
+        return 'aromatic-face-to-edge'
 
     class Meta():
         db_table = 'interaction_aromatic_face_edge'
@@ -88,7 +90,7 @@ class PiCationInteraction(AromaticInteraction):
     res1_has_pi = models.BooleanField()
 
     def get_name(self):
-        return 'pi-cation'
+        return 'aromatic-pi-cation'
 
     class Meta():
         db_table = 'interaction_aromatic_pi_cation'

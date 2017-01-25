@@ -4,6 +4,6 @@ from contactnetwork import views
 # from django.views.generic import TemplateView
 
 urlpatterns = [
-    url(r'^heatmap$', views.HeatMap, name='heatmap'),
-    url(r'^heatmapdata$', views.HeatMapDataJson, name='heatmapjsondata'),
+    url(r'^interactions', views.Interactions, name='interactions'),
+    url(r'^interactiondata', views.InteractionData, name='interactiondata'),
 ]

@@ -11,6 +11,8 @@ import logging
 
 from contactnetwork.cube import compute_interactions
 
+from django.contrib.contenttypes.models import ContentType
+
 class Command(BaseCommand):
     help = 'Compute interactions for all available crystals.'
 
