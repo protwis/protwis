@@ -3,3 +3,7 @@
 protwis/settings_local.py
 env
 /data
+/*.sln
+/*.pyproj
+/.vs/protwis/v14/.suo
+/.vs/config/applicationhost.config
