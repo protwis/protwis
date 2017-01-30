@@ -66,6 +66,7 @@
                 toggleButtonClass('selection-button');
               }
         };
+        
     </script>
     <script src="{% static 'home/js/selection.js' %}"></script>
     <script src="{% static 'home/js/selection-autocomplete.js' %}"></script>
@@ -73,7 +74,70 @@
 
 {% endblock %}
 
+
+
 {% block middle_column %}
+    
+
+            <div class="col-md-12 panel panel-primary">
+                <div class="panel-body">
+                    <h4>January 2017</h4>
+    <button type="button" id="cterm_button" class="btn btn-primary" onclick='$("#myModal").modal("show");'>
+      New features!
+    </button>
+    </div>
+    </div>
+
+<div class="modal bd-example-modal-lg" id="myModal"  tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">New Features</h4>
+      </div>
+      <div class="modal-body" id="ModalBody">
+       <ul>
+        <li>Completely redesigned interface to be more intuitive.
+        <ul>
+        <li>Instead of extensive drop downs each&nbsp;<em>method</em>now open in separate windows so it is easier to manage.</li>
+        <li>General design improvements.</li>
+        <li>Snake plot has been given more space in order to give a clearer visual representation</li>
+        </ul>
+        </li>
+        <li>Ability to sort suggestions by either homology level or over all frequency.&nbsp;</li>
+        <li>Ability to filter truncation suggestions based on Fusion Protein.</li>
+        <li>Ability to use separate sources for start and end of ICL truncations.</li>
+        <li>Separate underlying data by choosing whether to base truncations no active/inactive data set, and whether to have truncations for ICL regions from a dataset with or without fusion proteins.</li>
+        <li>Ability to export all suggestions to excel</li>
+        <li>Ability to export chosen modifications along with modified sequence (WT sequence minus truncations and with mutations inserted).</li>
+        <li>Ability to import a previously generated excel sheet.
+        <ul>
+        <li>Useful to continue a previous design, to use same modifications on a different target, or to make modifications locally and visualise using tool.</li>
+        </ul>
+        </li>
+        <li>Allow ICL2 truncations for class B and C.&nbsp;</li>
+        <li>Do not suggestions ICL3 truncation if ICL3 is less than 9 residues.</li>
+        <li>Implemented a list of mutation suggestions from various sources
+        <ul>
+        <li>Some are rule based (devised by David)</li>
+        <li>Some are conservation based - e.g. Mutate to conserved residue in crystallised receptors.</li>
+        <li>Some are from literature data set for thermostability.</li>
+        <li>Some are from annotated crystal mutations.&nbsp;</li>
+        </ul>
+        </li>
+        <li>Ability to create custom modifications (Mutation or truncation)</li>
+        <li>Dataset has been cleaned up to more correctly identify fusion proteins and sites.&nbsp;</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
             {% if filters %}
             <div class="col-md-12 panel panel-primary">

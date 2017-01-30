@@ -351,9 +351,14 @@ class BackboneSelector():
         "target_residue" : 2
         }
 
-    similarity_rules = [[['H', 'F', 'Y', 'W'], ['AEF', 'AFF'], ['H', 'F', 'Y', 'W']],
-        [['Y'], ['AFE'], ['F']],
-        [['S', 'T'], ['HBA', 'HBD'], ['S', 'T']],]
+    #similarity_rules = [[['H', 'F', 'Y', 'W'], ['AEF', 'AFF'], ['H', 'F', 'Y', 'W']],
+    #    [['Y'], ['AFE'], ['F']],
+    #    [['S', 'T'], ['HBA', 'HBD'], ['S', 'T']],]
+    
+    #interaction_type slugs changed along the way
+    similarity_rules = [[['H', 'F', 'Y', 'W'], ['aro_ef_protein', 'aro_ff'], ['H', 'F', 'Y', 'W']],
+        [['Y'], ['aro_fe_protein'], ['F']],
+        [['S', 'T'], ['polar_acceptor_protein', 'polar_donor_protein'], ['S', 'T']],]
 
     def __init__ (self, ref_pdbio_struct, fragment, use_similar=False):
 
@@ -377,7 +382,8 @@ class BackboneSelector():
                                 if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and fragment.rotamer.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
                                     return [res['CA'], res['N'], res['O']] 
                         else:
-                            return [res['CA'], res['N'], res['O']] 
+                            if fragment.interaction_type.slug not in ['acc', 'hyd']:
+                                return [res['CA'], res['N'], res['O']] 
                 except Exception as msg:
                     continue
         return []                  
