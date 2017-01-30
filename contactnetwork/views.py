@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.db.models import Q
 
 import json
+import functools
 
 from contactnetwork.models import *
 from structure.models import Structure
@@ -19,16 +20,17 @@ def Interactions(request):
 def InteractionData(request):
     # PDB files
     try:
-        pdbs = request.GET.getlist('pdbs')
+        pdbs = request.GET.getlist('pdbs[]')
     except IndexError:
         pdbs = []
 
+    pdbs = [pdb.lower() for pdb in pdbs]
+
     # TM filters
     try:
-        tms = request.GET.getlist('tms')
+        tms = request.GET.getlist('tms[]')
     except IndexError:
         tms = []
-
 
     # Use generic numbers? Defaults to True.
     generic = True
@@ -47,7 +49,7 @@ def InteractionData(request):
             tm_filter_res1 = tm_filter_res1 | Q(interacting_pair__res1__generic_number__label__startswith=str(tm) + 'x')
 
         for tm in tms:
-            tm_filter_res2 = tm_filter_res2 | Q(interacting_pair__res1__generic_number__label__startswith=str(tm) + 'x')
+            tm_filter_res2 = tm_filter_res2 | Q(interacting_pair__res2__generic_number__label__startswith=str(tm) + 'x')
 
     tm_filter = tm_filter_res1 & tm_filter_res2
 
@@ -73,6 +75,9 @@ def InteractionData(request):
 
     if generic:
         data['tms'] = []
+
+    # Dict to keep track of which residue numbers are in use
+    number_dict = set()
 
     for i in interactions:
         pdb_name = i['interacting_pair__referenced_structure__protein_conformation__protein__entry_name']
@@ -108,6 +113,8 @@ def InteractionData(request):
             res1 = res1_gen
             res2 = res2_gen
 
+        number_dict |= {res1, res2}
+
         if res1 < res2:
             coord = str(res1) + ',' + str(res2)
         else:
@@ -119,7 +126,30 @@ def InteractionData(request):
         if pdb_name not in data['interactions'][coord]:
             data['interactions'][coord][pdb_name] = []
 
+        def gpcrdb_number_comparator(e1, e2):
+            t1 = e1.split('x')
+            t2 = e2.split('x')
+
+            if e1 == e2:
+                return 0
+
+            if t1[0] == t2[0]:
+                if t1[1] < t2[1]:
+                    return -1
+                else:
+                    return 1
+
+            if t1[0] < t2[0]:
+                return -1
+            else:
+                return 1
+
         data['interactions'][coord][pdb_name].append(model)
+
+        if (generic):
+            data['sequence_numbers'] = sorted(number_dict, key=functools.cmp_to_key(gpcrdb_number_comparator))
+        else:
+            data['sequence_numbers'] = sorted(number_dict)
 
     return JsonResponse(data)
 
