@@ -4,7 +4,7 @@
 {% block content %}
         <ul class="nav nav-tabs">
 			<li class="active">
-                <a href="#1a" data-toggle="tab">Single crystal</a>
+                <a href="#single-crystal-tab" data-toggle="tab">Single crystal</a>
 			</li>
 			<li>
                 <a href="#2a" data-toggle="tab">Single group of crystals</a>
@@ -15,7 +15,7 @@
 		</ul>
 
         <div class="tab-content clearfix">
-		    <div class="tab-pane active" id="1a">
+		    <div class="tab-pane active" id="single-crystal-tab">
                 <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Single crystal interactions</h1>
@@ -29,51 +29,51 @@
                                 <h3 class="panel-title">PDBs</h3>
                             </div>
                             <div class="panel-body">
-                                <p>Choose a crystal</p>
-                                <div id="single-crystal-no-crystals">
-                                    <h4>No crystal selected.</h4>
-                                    <h4 class="hidden">Selected crystal <span class="label label-danger" id="single-crystal-text">1f88</span></h4>
-                                </div>
+                                <input id="single-crystal-pdb" type="hidden" />
+                                <h4 id="single-crystal-no-crystal-text">No crystal selected.</h4>
+                                <h4 id="single-crystal-text" class="hidden">Selected crystal <span class="label label-danger" data-single-pdb="">1f88</span></h4>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div id="tms" class="col-md-4">
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title">TMs</h3>
                             </div>
                             <div class="panel-body">
+                                <input type="hidden" id="single-crystal-tms" value="[]" />
                                 <p>Choose transmembrane helices</p>
                                 <div class="btn-group">
-                                  <button type="button" class="btn btn-primary">All</button>
-                                  <button type="button" class="btn btn-primary">1</button>
-                                  <button type="button" class="btn btn-primary">2</button>
-                                  <button type="button" class="btn btn-primary">3</button>
-                                  <button type="button" class="btn btn-primary">4</button>
-                                  <button type="button" class="btn btn-primary">5</button>
-                                  <button type="button" class="btn btn-primary">6</button>
-                                  <button type="button" class="btn btn-primary">7</button>
+                                  <button id="single-crystal-all-tm-button" type="button" class="btn btn-primary active" data-tm="">All</button>
+                                  <button type="button" class="btn btn-primary" data-tm="1">1</button>
+                                  <button type="button" class="btn btn-primary" data-tm="2">2</button>
+                                  <button type="button" class="btn btn-primary" data-tm="3">3</button>
+                                  <button type="button" class="btn btn-primary" data-tm="4">4</button>
+                                  <button type="button" class="btn btn-primary" data-tm="5">5</button>
+                                  <button type="button" class="btn btn-primary" data-tm="6">6</button>
+                                  <button type="button" class="btn btn-primary" data-tm="7">7</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div id="numbering" class="col-md-4">
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title">Numbering scheme</h3>
                             </div>
                             <div class="panel-body">
+                                <input id="single-crystal-numbering" type="hidden" />
                                 <p>Choose a numbering scheme</p>
                                 <div class="radio">
                                   <label>
-                                    <input type="radio" name="optionsRadios" id="optionsRadios1" value="option1" checked>
+                                    <input value="seq" type="radio" name="optionsRadios" checked>
                                     Sequence number
                                   </label>
                                 </div>
                                 <div class="radio">
                                   <label>
-                                    <input type="radio" name="optionsRadios" id="optionsRadios2" value="option2">
+                                    <input value="gpcrdb" type="radio" name="optionsRadios">
                                     GPCRdb numbering scheme
                                   </label>
                                 </div>
@@ -83,7 +83,7 @@
                 </div>
                 <div class="row">
                     <div class="col-md-12">
-                        <div class="btn btn-success btn-lg pull-right">Go</div>
+                        <div id="single-crystal-go-button" class="btn btn-success btn-lg pull-right">Go</div>
                     </div>
                 </div>
             </div>
@@ -100,31 +100,32 @@
 
     <!-- Modal -->
     <div class="modal fade" id="single-crystal-pdb-modal" role="dialog">
-      <div class="modal-dialog">
-        <!-- Modal content-->
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title">Modal Header</h4>
-          </div>
-          <div class="modal-body">
-            <p>Some text in the modal.</p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          </div>
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a crystal</h4>
+                </div>
+                <div class="modal-body">
+                    <div id="single-crystal-pdbs">
+                        <!-- Content goes here -->
+                    </div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
 
     <svg id="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin none" style="width: 100%; height: 1000px">
 
     </svg>
 
-    <script src="{% static 'home/js/snap.svg-min.js' %}"> </script>
-    <script src="{% static 'home/js/jquery.js' %}"> </script>
-
     <script>
+        window.zoomHeatmap = null;
+
         function HSVtoRGB(h, s, v) {
             var r, g, b, i, f, p, q, t;
             if (arguments.length === 1) {
@@ -150,48 +151,166 @@
             };
         }
 
-        function renderHeatMap(json_data) {
+        function renderHeatMap(data) {
+            $('#heatmap').empty();
             var heatmap = Snap("#heatmap");
+            var interactions = data.interactions;
+            var num_seq_numbers = Object.keys(data.sequence_numbers).length;
 
-            x = 0; wi = json_data.size;
-            y = 0; hi = json_data.size;
+            x = 0; wi = num_seq_numbers;
+            y = 0; hi = num_seq_numbers;
 
             heatmap.attr({viewBox:[x,y,wi,hi].join(',')});
             heatmap.attr({viewBox:[x,y,wi,hi].join(' ')});
 
-            console.log(json_data);
-
-            for (i = 0; i < json_data.size; i++) {
-                for (j = 0; j < json_data.size; j++) {
+            for (var i = 0; i < num_seq_numbers; i++) {
+                for (var j = 0; j < num_seq_numbers; j++) {
                     // Get the sequence numbers
-                    seq_i = json_data.map[i];
-                    seq_j = json_data.map[j];
+                    var seq_i = data.sequence_numbers[i];
+                    var seq_j = data.sequence_numbers[j];
 
                     // Only draw if an interaction exists
-                    gen_num = seq_i + "," + seq_j;
-                    if (gen_num in json_data.data) {
-                        num_interactions = json_data.data[gen_num].size;
-
-                        rgb = HSVtoRGB(num_interactions / json_data.max_interactions , 1, 1);
-
+                    var num = seq_i + "," + seq_j;
+                    if (num in interactions) {
+                        var rgb = { r: 255, g: 0, b: 0};
                         var cell = heatmap.rect(i, j, 1, 1);
 
                         cell.attr({
                             fill: "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")"
                         });
-
-                        var title = Snap.parse('<title>Residue numbers: ' + gen_num + ', number of interactions: ' + num_interactions + '</title>');
-
-                        cell.append(title);
                     }
                 }
             }
         }
 
-        $(document).ready(function() {
-            //$.getJSON("heatmapjsondata", null, renderHeatMap);
+        function singleCrystalPopulateModal() {
+            $.getJSON( "/services/structure/?format=json", function( data ) {
+                $.each( data, function( key, val ) {
+                    // Create a button for each PDB in modal.
+                    var i = $('<span></span>', {
+                        'class': 'btn btn-primary btn-small',
+                        'html': val.pdb_code
+                    }).click(function () {
+                        // Make active and all other buttons inactive
+                        $('#single-crystal-pdbs .active').removeClass('active');
+                        $(this).addClass('active');
 
-            $('')
-        })
+                        // Update the input data.
+                        $('#single-crystal-pdb').val($(this).html());
+
+                        // Update the view to indicate that a crystal was chosen.
+                        $('#single-crystal-no-crystal-text').hide();
+                        $('#single-crystal-text').removeClass('hidden');
+                        $('#single-crystal-text span').html($(this).html());
+                        $('#single-crystal-pdb-modal').modal('toggle');
+                    });
+                    // Append the button
+                    $('#single-crystal-pdbs').append($(i)).append('\n');
+                });
+            });
+        }
+
+        function singleCrystalInitializeTMButtons() {
+            $('#single-crystal-tab #tms button').each(function() {
+                $(this).click(function() {
+                    var val = $(this).attr('data-tm');
+                    switch (val) {
+                        case '':
+                            // Deselect all other TMs and mark 'All' button as active.
+                            $('#single-crystal-tab #tms button').removeClass('active');
+                            $(this).addClass('active');
+                            $('#single-crystal-tms').val("[]");
+                            break;
+                        default:
+                            // Mark 'all' button as inactive and select TM.
+                            $('#single-crystal-all-tm-button').removeClass('active')
+                            $(this).toggleClass('active');
+
+                            // Add or remove TM
+                            var tms = [];
+                            $('#tms button.active').each(function() {
+                                tms.push($(this).data('tm'));
+                            });
+
+                            $('#single-crystal-tms').val(JSON.stringify(tms));
+                    }
+                });
+            });
+        }
+
+        function singleCrystalInitializeNumberingRadio() {
+            $('#numbering input:radio').change(
+                function(){
+                    if (this.checked) {
+                        $('#single-crystal-numbering').val(this.value);
+                    }
+                }
+            );
+        }
+
+        function singleCrystalInitializeGoButton() {
+            $('#single-crystal-go-button').click(function() {
+                var pdb = $('#single-crystal-pdb').val();
+                var tms = JSON.parse($('#single-crystal-tms').val());
+                var numbering = $('#single-crystal-numbering').val();
+                var useGenericNumbering = numbering === 'gpcrdb';
+
+                console.log(pdb);
+
+                $.getJSON( '/contactnetwork/interactiondata',
+                {
+                    'tms': tms,
+                    'generic': useGenericNumbering,
+                    'pdbs': [ pdb ]
+                },
+                function( data ) {
+                    if (window.zoomHeatmap != null) {
+                        window.zoomHeatmap.destroy();
+                        delete window.zoomHeatmap;
+                    }
+                    renderHeatMap(data);
+                    zoomHeatmap = svgPanZoom('#heatmap', {
+                        zoomEnabled: true,
+                        controlIconsEnabled: true,
+                        fit: true,
+                        center: true,
+                        minZoom: 0.75,
+                        maxZoom: 50,
+                        zoomScaleSensitivity: 0.25,
+                        dblClickZoomEnabled: true
+                    });
+                });
+
+            });
+        }
+
+        function singleCrystalInitializeHeatmap() {
+        }
+
+        function initalizeSingleCrystalView() {
+            singleCrystalPopulateModal();
+            singleCrystalInitializeTMButtons();
+            singleCrystalInitializeNumberingRadio();
+            singleCrystalInitializeGoButton();
+            singleCrystalInitializeHeatmap();
+        }
+
+        $(document).ready(function() {
+
+            // Single PDB files
+            initalizeSingleCrystalView();
+
+            // Single group of PDB files
+
+
+            // Two groups of PDB files
+        });
     </script>
+
+    <style type="text/css">
+        #single-crystal-pdbs {
+            height: 400px;
+            overflow: scroll;
+        }
+    </style>
 {% endblock %}
