@@ -55,11 +55,11 @@ class Command(BaseBuild):
         parser.add_argument('-c', help='Select GPCR class (A, B1, B2, C, F)', default=False)
         
     def handle(self, *args, **options):
-        open('./structure/homology_models/done_models.txt','w')
         if not os.path.exists('./structure/homology_models/'):
             os.mkdir('./structure/homology_models')
         if not os.path.exists('./structure/PIR/'):
             os.mkdir('./structure/PIR')
+        open('./structure/homology_models/done_models.txt','w')
         if options['update']==True:
             self.update = True
         else:
@@ -182,16 +182,23 @@ class Command(BaseBuild):
             with open('./structure/homology_models/done_models.txt','a') as f:
                 f.write(receptor+'\n')
         except Exception as msg:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
-                                                                                    Homology_model.main_structure,msg))
-            logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
-            t = tests.HomologyModelsTests()
-            if 'Number of residues in the alignment and  pdb files are different' in str(msg):
-                t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
-                                         Homology_model.main_structure)
-            with open('./structure/homology_models/done_models.txt','a') as f:
-                f.write(receptor+'\n')
+            try:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
+                                                                                        Homology_model.main_structure,msg))
+                logger.error('Failed to build model {}\n    {}'.format(receptor,msg))
+                t = tests.HomologyModelsTests()
+                if 'Number of residues in the alignment and  pdb files are different' in str(msg):
+                    t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
+                                             Homology_model.main_structure)
+                with open('./structure/homology_models/done_models.txt','a') as f:
+                    f.write(receptor+'\n')
+            except:
+                try:
+                    Protein.objects.get(entry_name=receptor)
+                except:
+                    logger.error('Invalid receptor name: {}'.format(receptor))
+                    print('Invalid receptor name: {}'.format(receptor))
 
         
 class HomologyModeling(object):
@@ -1009,6 +1016,7 @@ class HomologyModeling(object):
         # Adjust H8 if needed
         if 'H8' in main_pdb_array and 'ICL4' not in main_pdb_array and len(self.helix_end_mods['removed']['TM7'][1])>0:
             unwind_num = math.ceil(len(self.helix_end_mods['removed']['TM7'][1])/2)
+            print(unwind_num)
             trimmed_residues+=list(main_pdb_array['TM7'].keys())[(unwind_num*-1):]+list(main_pdb_array['H8'].keys())[:unwind_num]
 
         # N- and C-termini
