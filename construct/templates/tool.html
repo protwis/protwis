@@ -7,6 +7,7 @@
   <style>
   .ui-menu { width: 200px; }
   .ui-widget-header { padding: 0.2em; }
+  .info_text {padding: 0.2em;}
   </style>
 
 <div class="modal bd-example-modal-lg" id="myModal"  tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -30,12 +31,12 @@
 
 <h2> Construct Design Tool  </h2>
 
-<p> This is a tool to help aid crystallographers design crystal constructs.</p>
+<p> This is a tool to help aid crystallographers design crystal constructs.<a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool1.mp4" type="button" class="videoLink btn btn-xs btn-default">
+                          <span class="glyphicon glyphicon-film"></span>
+                        </button></p>
 
 <p>
-Target: {{target.entry_name}}
-</p>
-<p>
+Target: {{target.entry_name}} | 
 Class: {{class}}
 </p>
 
@@ -121,7 +122,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     <button type="button" id="mutations_button" class="btn btn-primary" onclick='build_mutations();showModal("Thermostabilisation",tables["mutations"],"#mut_sug");'>
       Thermostabilisation
     </button>
-    <button type="button" id="removals_button" class="btn btn-primary" onclick='build_site_removals();showModal("Site Removal",tables["site_removals"],"#site_sug");'>
+    <button type="button" id="removals_button" class="btn btn-primary" onclick='build_site_removals();showModal("Site removals",tables["site_removals"],"#site_sug");'>
       Site Removal
     </button>
   </div>
@@ -231,6 +232,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     var removals_list = new Array;
     var export_list = {};
     var load_status = 0;
+    var sequence = '';
     export_list['nterm'] = [];
     export_list['cterm'] = [];
     // export_list['icl3'] = [];
@@ -239,12 +241,43 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     export_list['icl2_start'] = [];
     export_list['icl2_end'] = [];
     export_list['thermo'] = [];
-    export_list['removals'] = [];
+    export_list['removals'] = [];  
 
-    tables["custom"] = []
+    var info_text = {};
+
+    info_text['nterm'] = '<p class=info_text>Here you select the N-term truncation. The data comes from crystallized receptors and is grouped by the truncation\'s distance to TM1. It is possible to sort the data by occurrances (hits) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest.</p>';
+
+    info_text['icl2_start'] = '<p class=info_text>Select the start position for the truncation within ICL2. The data comes from crystallized receptors and is grouped by their GPCRdb generic number. It is possible to sort the data by occurrances (hits) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest. Once the starting position is selected a new window will open to select the ending position.</p>';
+    info_text['icl2_end'] = '<p class=info_text>Select the ending position for the ICL2 truncation.</p>';
+
+    info_text['icl3_start'] = '<p class=info_text>Select the start position for the truncation within ICL3. The data comes from crystallized receptors and is grouped by their GPCRdb generic number. It is possible to sort the data by occurrances (hits) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest. Once the starting position is selected a new window will open to select the ending position.</p>';
+    info_text['icl3_end'] = '<p class=info_text>Select the ending position for the ICL3 truncation.</p>';
+
+    info_text['cterm'] = '<p class=info_text>Here you select the C-term truncation. The data comes from crystallized receptors and is grouped by the truncation\'s distance to TM8. It is possible to sort the data by occurrances (hits) or by homology (Levels).</p>';
+    info_text['termo'] = '<p class=info_text>Select mutation by click the mutation suggestion in the <i>Mutation</i> column.</p>';
+    info_text['sites'] = '<p class=info_text>The tool recognizes possible site motifs. These can be attempted to be removed using the following mutations.</p>';
+    info_text['custom'] = '<p class=info_text>Use options below to insert custom mutations or truncations not suggested by tool. You will be asked to confirm modification.</p>';
+    info_text['current'] = '<p class=info_text>See current modifications below. These will be included if you export to excel.</p>';
+
+
+
+    tables["custom"] = [info_text['custom']]
     tables["custom"].push( "Mutate: <input type='text' id='custom_pos' placeholder='sequence position'> to <input type='text' id='custom_mut' placeholder='aminoacid (1-letter)'> <input type='text'  id='custom_reason' placeholder='Reason'><input type=button value=Add onclick='custom_mut()'><div id=confirm_cus_mut></div><br>");
     tables["custom"].push( "Deletion: <input type='text' id='custom_del_start' placeholder='from (sequence position)'> - <input type='text' id='custom_del_end' placeholder='to (sequence number)'> <input type='text'  id='custom_del_reason' placeholder='Reason'><input type=button value=Add onclick='custom_del()'><div id=confirm_cus_del></del><br>");
-    tables["custom"] = tables["custom"].join( "" );    
+    tables["custom"] = tables["custom"].join( "" );  
+
+    tables["help"] = ['See small movie with a sample usage of tool: <button onclick="$(\'#toolvideo\').click();" mp4="http://files.gpcrdb.org/video/constructtool1.mp4" type="button" class="videoLink btn btn-xs btn-default">' +
+                        '<span class="glyphicon glyphicon-film"></span>' +
+                        '</button>']  
+  
+    tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>State</strong></div><div class='col-sm-10'>Select either Inactive or Active to limit the dataset to be crystals with chosen state.</div></div>");
+    tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>Fusion site</strong></div><div class='col-sm-10'>Select if and where the fusion protein to be inserted. This is used to make suggestions for the intercelluar loop (ICL) truncation based on crystals with fusion protein in same region.</div></div>");
+    tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>Export</strong></div><div class='col-sm-10'>Export all suggestions to an excel sheet for local analysis.</div></div>");
+    tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>Upload</strong></div><div class='col-sm-10'>Upload a previous construct design to continue work.</div></div>");
+    tables["help"].push( "<br><div class='row'><div class='col-sm-2'><strong>Deletions</strong></div><div class='col-sm-10'>Methods to help guide truncations in different regions</div></div>");
+    tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>Mutations</strong></div><div class='col-sm-10'>Suggestions for thermostabilising mutations and for site removals</div></div>");
+    tables["help"].push( "<div class='row'><div class='col-sm-2'><strong>Other</strong></div><div class='col-sm-10'>Create Custom modifications and see current modifications. Export current modificaitons to excel.</div></div>");
+    tables["help"] = tables["help"].join( "" );  
 
     function stopPropagation(evt) {
       if (evt.stopPropagation !== undefined) {
@@ -354,7 +387,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     $.ajax({
       type:    "POST",
       url:     "/common/exportexcelmodifications",
-      data:    {"d":postData},
+      data:    {"d":postData, "s":sequence},
       success: function(data) {
             $("body").append("<iframe src='/common/exportexceldownload/" + data+ "/{{target.entry_name}}' style='display: none;' ></iframe>");
       },
@@ -438,7 +471,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         level_num += 1;
       }) 
 
-      var items_table = ["<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>Hits</th><th>Levels</th><th id=fusion_search>Fusion proteins</th><th>Use</th></tr></thead><tbody>"];
+      var items_table = [info_text['nterm'] + "<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>Hits</th><th>Levels</th><th id=fusion_search>Fusion proteins</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
         val = show_table[pos];
         t_fusion = [];
@@ -501,7 +534,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         level_num += 1;
       }) 
 
-      var items_table = ["<table id=cterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix8 End</th><th>Hits</th><th>Levels</th><th>Use</th></tr></thead><tbody>"];
+      var items_table = [info_text['cterm'] + "<table id=cterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix8 End</th><th>Hits</th><th>Levels</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
         val = show_table[pos];
         temp = "<tr><td>"+(pos)+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td><a href='#' onclick='cterm(this)' from='"+val['pdbs']+"' value='"+pos+"' from=''>Apply</a></tr>";
@@ -604,7 +637,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       console.log(show_table_start);
       console.log(show_table_end);
 
-      var items_table = ["First select the start position of the deletion. A new window will open to select the end position.<table id=icl3_sug_start class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>"];
+      var items_table = [info_text['icl3_start'] + "<table id=icl3_sug_start class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
         val = show_table_start[pos];
         t_fusion = [];
@@ -614,12 +647,12 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         })
         temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl3_start(this)' from='"+val['pdbs']+"' tm5='"+val['start']+"'  tm6='"+val['end']+"' from=''>Apply</a></tr>";
         items_table.push( temp );
-        export_list['icl3_start'].push([pos,val['start'],val['end'],val['hits'],val['levels'],val['pdbs']])
+        export_list['icl3_start'].push([pos,val['hits'],val['levels'],val['pdbs']]) //,val['start'],val['end']
       });
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
       tables['icl3_start'] = result;
-      var items_table = ["<div id=icl3_start_info></div><table id=icl3_sug_end class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>"];
+      var items_table = [info_text['icl3_end'] + "<div id=icl3_start_info></div><table id=icl3_sug_end class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
         val = show_table_end[pos];
         t_fusion = [];
@@ -629,7 +662,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         })
         temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl3(this)' from='"+val['pdbs']+"' tm5='"+val['start']+"'  tm6='"+val['end']+"' from=''>Apply</a></tr>";
         items_table.push( temp );
-        export_list['icl3_end'].push([pos,val['start'],val['end'],val['hits'],val['levels'],val['pdbs']])
+        export_list['icl3_end'].push([pos,val['hits'],val['levels'],val['pdbs']]) //,val['start'],val['end']
       });
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
@@ -719,7 +752,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         level_num += 1;
       }) 
 
-      var items_table = ["First select the start position of the deletion. A new window will open to select the end position.<table id=icl2_sug_start class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>"];
+      var items_table = [info_text['icl2_start'] + "<table id=icl2_sug_start class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
         val = show_table_start[pos];
         t_fusion = [];
@@ -729,12 +762,12 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         })
         temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl2_start(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from=''>Apply</a></tr>";
         items_table.push( temp );
-        export_list['icl2_start'].push([pos,val['start'],val['end'],val['hits'],val['levels'],val['pdbs']])
+        export_list['icl2_start'].push([pos,val['hits'],val['levels'],val['pdbs']]) //,val['start'],val['end']
       });
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
       tables['icl2_start'] = result;
-      var items_table = ["<div id=icl2_start_info></div><table  id=icl2_sug_end class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>"];
+      var items_table = [info_text['icl2_end'] + "<div id=icl2_start_info></div><table  id=icl2_sug_end class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
         val = show_table_end[pos];
         t_fusion = [];
@@ -744,7 +777,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         })
         temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl2(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from=''>Apply</a></tr>";
         items_table.push( temp );
-        export_list['icl2_end'].push([pos,val['start'],val['end'],val['hits'],val['levels'],val['pdbs']])
+        export_list['icl2_end'].push([pos,val['hits'],val['levels'],val['pdbs']]) //,val['start'],val['end']
       });
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
@@ -794,7 +827,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         });
       });
       // console.log(muts);
-        var items_table = ["Select mutation by click the mutation suggestion in the <i>Mutation</i> column.<br>"];
+        var items_table = [info_text['termo']];
         items_table.push("<table id='mut_sug' class='table-striped table table-bordered'><thead><tr><th>Priority</th><th>Position</th><th>Mutation</th><th>Hits</th><th>Methods</th></tr></thead><tbody>");
         console.log(getSortedKeysPrio(muts));
       $.each( getSortedKeysPrio(muts), function( i, gn ) {
@@ -870,7 +903,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       var keys = Object.keys(removals_list);
       removals = {}
       count = 0;
-      var items_table = ["<table  id='site_sug' class='table-striped table table-bordered'><thead><tr><th>Segment</th><th>Mutation</th><th>Type of removal</th></tr></thead><tbody>"];
+      var items_table = [info_text['sites'] + "<table  id='site_sug' class='table-striped table table-bordered'><thead><tr><th>Segment</th><th>Mutation</th><th>Type of removal</th></tr></thead><tbody>"];
       $.each(keys, function( i,type ) {
         $.each(removals_list[type], function(subtype, values){
           // console.log(type);
@@ -1130,7 +1163,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       // $("#overview").html("");
       tables["overview"] = [];
-      tables["overview"].push("<table class='table-striped table table-bordered'><tr><th>Type</th><th>Modification</th><th>Pos/Range</th><th>Based on</th><th>Extra</th></tr>");
+      tables["overview"].push(info_text['current'] + "<table class='table-striped table table-bordered'><tr><th>Type</th><th>Modification</th><th>Pos/Range</th><th>Based on</th><th>Extra</th></tr>");
       $.each(modifications, function(key,val) {
 
         type = val['type'];
@@ -1190,20 +1223,39 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     function overlay_modifications() {
 
+      track_pos = {};
       $.each(modifications, function(key,val) {
 
         type = val['type'];
         range = val['range'];
-        // console.log(key);
+        // console.log(val);
 
         $.each(range, function(i, ii){
-          // console.log(ii);
+          // console.log(ii,type);
           color_residue(ii,type);
-
+          track_pos[ii] = val;
         })
 
-
       })
+      // console.log(track_pos);
+      sequence = "";
+      $.each(residues_pos, function(key,val) {
+        // console.log(key);
+        // console.log(val);
+        if (track_pos[key]){
+          // console.log(track_pos[key]);
+          if (track_pos[key]['type']=='mutation') {
+            sequence += track_pos[key]['to'];
+          console.log('added mutation'); 
+          }
+        } else {
+          sequence += val[0];
+          // console.log('added'); 
+        }
+      });
+          console.log(sequence.length); 
+          console.log(sequence); 
+          export_list['sequence'] = [sequence];
 
     }
 
