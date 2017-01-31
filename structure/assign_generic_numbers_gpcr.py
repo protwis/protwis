@@ -95,7 +95,6 @@ class GenericNumbering(object):
 
         while tmp_seq:
             #skipping position if there is a gap in either of sequences
-            print(q_seq[0],tmp_seq[0])
             if q_seq[0] == '-' or q_seq[0] == 'X' or q_seq[0] == ' ':
                 subj_counter += 1
                 tmp_seq.pop(0)
@@ -190,7 +189,6 @@ class GenericNumbering(object):
         #map the results onto pdb sequence for every sequence pair from blast
         for chain in self.pdb_seq.keys():
             for alignment in alignments[chain]:
-                print(alignment)
                 if alignment == []:
                     continue
                 for hsps in alignment[1].hsps:
