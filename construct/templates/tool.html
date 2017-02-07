@@ -12,6 +12,7 @@
   .large.tooltip-inner {
       max-width: 450px;
       width: 450px;
+      text-align:left;
     }
   .medium.tooltip-inner {
       max-width: 300px;
@@ -72,7 +73,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     <input type="radio" name="fusionpos" value="nterm"> N-term
   </label>
 
-    {% if class == 'A' and residues.ICL3|length > 8 or class == 'F' %}
+    {% if class == 'A' or class == 'F' %}
   <label class="btn btn-default active">
     <input type="radio" name="fusionpos" value="icl3" checked=""> ICL3
   </label>
@@ -109,7 +110,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       N-term
     </button>
 
-      {% if class == 'A' and residues.ICL3|length > 8 or class == 'F' %}
+      {% if class == 'A'  or class == 'F' %}
         <button type="button" id="icl3_start_button" class="btn btn-primary" onclick='showModal("ICL3 (Start)",tables["icl3_start"],"#icl3_sug_start");'>
         ICL3
         </button>
@@ -675,6 +676,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
       tables['icl3_start'] = result;
+      {% if class == 'A' and residues.ICL3|length < 9 %}
+      if (fusionpos!='icl3'){
+        tables['icl3_start'] = "Loop is too short to require a truncation without a fusion protein";
+      }
+      {% endif %}
       var items_table = [info_text['icl3_end'] + "<div id=icl3_start_info></div><table id=icl3_sug_end class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Freq</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
         val = show_table_end[pos];
@@ -690,6 +696,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
       tables['icl3_end'] = result;
+      
+
       $("#icl3_start_button").html("ICL3 ("+Object.keys(show_table_start).length+")");
     }
 
@@ -869,7 +877,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           prio_info = '<p class=info_text>Thermostabilising mutations have 5 priority levels based on method: <ol><li>From structure of this target ({{target.entry_name}})</li><li>Introducing conserved residue or observed in >2 structures</li><li>Observed in 1 structure</li><li>Increase helix propensity (Remove Gly)</li><li>State-stabilising interactions (e.g. ionic lock or sodium ion site)</li></ol></p>';
 
         var items_table = [info_text['termo']];
-        items_table.push("<table id='mut_sug' class='table-striped table table-bordered'><thead><tr><th>Prio <a class='prio_info' data-toggle='tooltip' data-html='true' data-placement='bottom' title='"+prio_info+"'><i class='glyphicon glyphicon-info-sign'></i></a></th><th>Pos</th><th>Mut</th><th>Methods</th></tr></thead><tbody>");
+        items_table.push("<table id='mut_sug' class='table-striped table table-bordered'><thead><tr><th>Prio <a class='prio_info' data-toggle='tooltip' data-html='true' data-placement='bottom' title='"+prio_info+"'><i class='glyphicon glyphicon-info-sign'></i></a></th><th>Pos</th><th>Mut</th><th>Methods <a class='prio_info' data-toggle='tooltip' data-html='true' data-placement='bottom' title='"+prio_info+"'><i class='glyphicon glyphicon-info-sign'></i></a></th></tr></thead><tbody>");
         console.log(getSortedKeysPrio(muts));
       $.each( getSortedKeysPrio(muts), function( i, gn ) {
         vals = muts[gn];
@@ -931,7 +939,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             }
         });
         //<td>"+vals['hits']+"</td>
-        temp = "<tr><td>"+vals['priority']+"</td><td>"+gn+"</td><td origin='"+vals['types']+"'>"+mut_suggestions.join(", ")+"</td><td>"+vals['pretty_types']+" <a class='methods_info' data-toggle='tooltip' data-html='true' data-placement='bottom' title='"+vals['types'].join("<br>")+"'><i class='glyphicon glyphicon-info-sign'></i></a></td></tr>";
+        temp = "<tr><td align=center>"+vals['priority']+"</td><td>"+gn+"</td><td origin='"+vals['types']+"'>"+mut_suggestions.join(", ")+"</td><td>"+vals['pretty_types']+" <a class='methods_info' data-toggle='tooltip' data-html='true' data-placement='bottom' title='"+vals['types'].join("<br>")+"'><i class='glyphicon glyphicon-info-sign'></i></a></td></tr>";
         items_table.push( temp );
         export_list['thermo'].push([gn,label.join(", "),vals['hits'],vals['types']]);
       });
@@ -1377,7 +1385,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         });
 
       console.log('icl3! {{residues.ICL3|length}}' );
-    {% if class == 'A' and residues.ICL3|length > 8 or class == 'F' %}
+      //and residues.ICL3|length > 8
+    {% if class == 'A'  or class == 'F' %}
       // http://localhost:8000/construct/tool/json/icl3/adrb2_human/
       $.getJSON( "/construct/tool/json/icl3/{{target.entry_name}}/", function( data ) {
           icl3_data = data; 
