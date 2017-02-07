@@ -255,6 +255,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     info_text['cterm'] = '<p class=info_text>Here you select the C-term truncation. The data comes from crystallized receptors and is grouped by the truncation\'s distance to TM8. It is possible to sort the data by occurrances (hits) or by homology (Levels).</p>';
     info_text['termo'] = '<p class=info_text>Select mutation by click the mutation suggestion in the <i>Mutation</i> column.</p>';
+
+    info_text['termo'] += '<p class=info_text>There are 5 priority levels: <ol><li> Thermostabilising mutants from target receptor</li><li>Conserved residues and common thermostabilising mutants</li><li>Rare thermostabilising mutants</li><li>Remove G in helixes</li><li>Other rules</li></ol></p>';
+
+
     info_text['sites'] = '<p class=info_text>The tool recognizes possible site motifs. These can be attempted to be removed using the following mutations.</p>';
     info_text['custom'] = '<p class=info_text>Use options below to insert custom mutations or truncations not suggested by tool. You will be asked to confirm modification.</p>';
     info_text['current'] = '<p class=info_text>See current modifications below. These will be included if you export to excel.</p>';
@@ -798,32 +802,47 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           return true; //loop away from these
         }
         $.each(mutations_browser[type], function(gn, values){
-          if(!muts[gn]) { muts[gn] = {'priority': 99, 'gn': gn, 'types': [], 'hits':0, 'details':[]}; }
+          if(!muts[gn]) { muts[gn] = {'priority': 99, 'gn': gn, 'types': [], 'pretty_types': [], 'hits':0, 'details':[]}; }
 
           muts[gn]['hits'] += 1;
-          muts[gn]['types'].push(type);
+
           muts[gn]['details'].push(values);
           if (type.substring(0, 11) == "struc_rules") {
             if (muts[gn]['priority']>5) muts[gn]['priority'] = 5;
+            pretty_type = 'Rules'
+          } else if (type == "termo_From target recepter") {
+            if (muts[gn]['priority']>1) muts[gn]['priority'] = 1;
+            pretty_type = 'From Receptor'
           } else if (type == "termo_Common mutation (Wt)") {
             if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
+            pretty_type = 'Inference (Common)'
           } else if (type == "termo_Common mutation (Mut)") {
             if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
+            pretty_type = 'Inference (Common)'
           } else if (type == "termo_Single common mutation (Wt)") {
             if (muts[gn]['priority']>2) muts[gn]['priority'] = 3;
+            pretty_type = 'Inference (Common)'
           } else if (type == "cons_rm_conserved_G") {
             if (muts[gn]['priority']>4) muts[gn]['priority'] = 4;
+            pretty_type = 'conservation (rm G)'
           } else if (type == "cons_rm_nonconserved_GP") {
             if (muts[gn]['priority']>4) muts[gn]['priority'] = 2;
+            pretty_type = 'conservation (rm GP)'
           } else if (type == "cons_rf_and_class") {
             if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
+            pretty_type = 'conservation'
           } else if (type == "cons_rf") {
             if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
+            pretty_type = 'conservation'
           } else if (type == "cons_strucs") {
             if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
+            pretty_type = 'conservation'
           } else {
             console.log(type);
           }
+
+          muts[gn]['types'].push(type);
+          muts[gn]['pretty_types'].push(pretty_type);
         });
       });
       // console.log(muts);
@@ -889,7 +908,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
               });
             }
         });
-        temp = "<tr><td>"+vals['priority']+"</td><td>"+gn+"</td><td origin='"+vals['types']+"'>"+mut_suggestions.join(", ")+"</td><td>"+vals['hits']+"</td><td>"+vals['types']+"</td></tr>";
+        temp = "<tr><td>"+vals['priority']+"</td><td>"+gn+"</td><td origin='"+vals['types']+"'>"+mut_suggestions.join(", ")+"</td><td>"+vals['hits']+"</td><td><p data-toggle='tooltip' title='"+vals['types']+"'>"+vals['pretty_types']+"</p></td></tr>";
         items_table.push( temp );
         export_list['thermo'].push([gn,label.join(", "),vals['hits'],vals['types']]);
       });
@@ -897,6 +916,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       result = items_table.join( "" );
       tables['mutations'] = result;
       $("#mutations_button").html("Thermostabilisation ("+Object.keys(muts).length+")");
+      $('[data-toggle="tooltip"]').tooltip();
     }
 
     function build_site_removals() {
@@ -1352,6 +1372,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           updateLoadStatus();
         });
     {% else %}
+      icl3_data = [];
       load_status += 1;
     {% endif %}
 
