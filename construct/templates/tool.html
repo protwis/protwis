@@ -8,6 +8,16 @@
   .ui-menu { width: 200px; }
   .ui-widget-header { padding: 0.2em; }
   .info_text {padding: 0.2em;}
+  .tooltip{}
+  .large.tooltip-inner {
+      max-width: 450px;
+      width: 450px;
+    }
+  .medium.tooltip-inner {
+      max-width: 300px;
+      width: 300px;
+    }
+
   </style>
 
 <div class="modal bd-example-modal-lg" id="myModal"  tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -223,6 +233,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         "bFilter": true, 
         "bInfo": false,
         "order": [],
+        // "fixedHeader": true,
+        "scrollY": "600px",
+        "autoWidth": false,
         "dom": 'lrtip'
     }
 
@@ -245,19 +258,16 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     var info_text = {};
 
-    info_text['nterm'] = '<p class=info_text>Here you select the N-term truncation. The data comes from crystallized receptors and is grouped by the truncation\'s distance to TM1. It is possible to sort the data by occurrances (hits) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest.</p>';
+    info_text['nterm'] = '<p class=info_text>Here you select the N-term truncation. The data comes from crystallized receptors and is grouped by the truncation\'s distance to TM1. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest.</p>';
 
-    info_text['icl2_start'] = '<p class=info_text>Select the start position for the truncation within ICL2. The data comes from crystallized receptors and is grouped by their GPCRdb generic number. It is possible to sort the data by occurrances (hits) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest. Once the starting position is selected a new window will open to select the ending position.</p>';
+    info_text['icl2_start'] = '<p class=info_text>Select the start position for the truncation within ICL2. The data comes from crystallized receptors and is grouped by their GPCRdb generic number. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest. Once the starting position is selected a new window will open to select the ending position.</p>';
     info_text['icl2_end'] = '<p class=info_text>Select the ending position for the ICL2 truncation.</p>';
 
-    info_text['icl3_start'] = '<p class=info_text>Select the start position for the truncation within ICL3. The data comes from crystallized receptors and is grouped by their GPCRdb generic number. It is possible to sort the data by occurrances (hits) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest. Once the starting position is selected a new window will open to select the ending position.</p>';
+    info_text['icl3_start'] = '<p class=info_text>Select the start position for the truncation within ICL3. The data comes from crystallized receptors and is grouped by their GPCRdb generic number. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest. Once the starting position is selected a new window will open to select the ending position.</p>';
     info_text['icl3_end'] = '<p class=info_text>Select the ending position for the ICL3 truncation.</p>';
 
-    info_text['cterm'] = '<p class=info_text>Here you select the C-term truncation. The data comes from crystallized receptors and is grouped by the truncation\'s distance to TM8. It is possible to sort the data by occurrances (hits) or by homology (Levels).</p>';
+    info_text['cterm'] = '<p class=info_text>Here you select the C-term truncation. The data comes from crystallized receptors and is grouped by the truncation\'s distance to TM8. It is possible to sort the data by occurrances (frequence) or by homology (Levels).</p>';
     info_text['termo'] = '<p class=info_text>Select mutation by click the mutation suggestion in the <i>Mutation</i> column.</p>';
-
-    info_text['termo'] += '<p class=info_text>There are 5 priority levels: <ol><li> Thermostabilising mutants from target receptor</li><li>Conserved residues and common thermostabilising mutants</li><li>Rare thermostabilising mutants</li><li>Remove G in helixes</li><li>Other rules</li></ol></p>';
-
 
     info_text['sites'] = '<p class=info_text>The tool recognizes possible site motifs. These can be attempted to be removed using the following mutations.</p>';
     info_text['custom'] = '<p class=info_text>Use options below to insert custom mutations or truncations not suggested by tool. You will be asked to confirm modification.</p>';
@@ -331,7 +341,16 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     }
 
     function build_tooltips() {
-      $('[data-toggle="tooltip"]').tooltip(); 
+      $('[data-toggle="tooltip"]').tooltip();
+      $('.prio_info').tooltip('destroy');
+      $('.prio_info').tooltip({
+          container: 'body',
+          template: '<div class="tooltip" role="tooltip"><div class="tooltip-arrow"></div><div class="tooltip-inner large"></div></div>'
+      });
+      $('.methods_info').tooltip('destroy');
+      $('.methods_info').tooltip({
+          template: '<div class="tooltip" role="tooltip"><div class="tooltip-arrow"></div><div class="tooltip-inner medium"></div></div>'
+      });
     }
 
     function resetModifications() {
@@ -475,7 +494,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         level_num += 1;
       }) 
 
-      var items_table = [info_text['nterm'] + "<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>Hits</th><th>Levels</th><th id=fusion_search>Fusion proteins</th><th>Use</th></tr></thead><tbody>"];
+      var items_table = [info_text['nterm'] + "<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>Freq</th><th>Levels</th><th id=fusion_search>Fusion proteins</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
         val = show_table[pos];
         t_fusion = [];
@@ -538,7 +557,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         level_num += 1;
       }) 
 
-      var items_table = [info_text['cterm'] + "<table id=cterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix8 End</th><th>Hits</th><th>Levels</th><th>Use</th></tr></thead><tbody>"];
+      var items_table = [info_text['cterm'] + "<table id=cterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix8 End</th><th>Freq</th><th>Levels</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
         val = show_table[pos];
         temp = "<tr><td>"+(pos)+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td><a href='#' onclick='cterm(this)' from='"+val['pdbs']+"' value='"+pos+"' from=''>Apply</a></tr>";
@@ -641,7 +660,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       console.log(show_table_start);
       console.log(show_table_end);
 
-      var items_table = [info_text['icl3_start'] + "<table id=icl3_sug_start class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>"];
+      var items_table = [info_text['icl3_start'] + "<table id=icl3_sug_start class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Freq</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
         val = show_table_start[pos];
         t_fusion = [];
@@ -656,7 +675,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
       tables['icl3_start'] = result;
-      var items_table = [info_text['icl3_end'] + "<div id=icl3_start_info></div><table id=icl3_sug_end class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>"];
+      var items_table = [info_text['icl3_end'] + "<div id=icl3_start_info></div><table id=icl3_sug_end class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Freq</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
         val = show_table_end[pos];
         t_fusion = [];
@@ -756,7 +775,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         level_num += 1;
       }) 
 
-      var items_table = [info_text['icl2_start'] + "<table id=icl2_sug_start class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>"];
+      var items_table = [info_text['icl2_start'] + "<table id=icl2_sug_start class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Freq</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
         val = show_table_start[pos];
         t_fusion = [];
@@ -771,7 +790,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
       tables['icl2_start'] = result;
-      var items_table = [info_text['icl2_end'] + "<div id=icl2_start_info></div><table  id=icl2_sug_end class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Hits</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>"];
+      var items_table = [info_text['icl2_end'] + "<div id=icl2_start_info></div><table  id=icl2_sug_end class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Freq</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>"];
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
         val = show_table_end[pos];
         t_fusion = [];
@@ -809,34 +828,34 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           muts[gn]['details'].push(values);
           if (type.substring(0, 11) == "struc_rules") {
             if (muts[gn]['priority']>5) muts[gn]['priority'] = 5;
-            pretty_type = 'Rules'
+            pretty_type = 'State-stabilising'
           } else if (type == "termo_From target recepter") {
             if (muts[gn]['priority']>1) muts[gn]['priority'] = 1;
             pretty_type = 'From Receptor'
           } else if (type == "termo_Common mutation (Wt)") {
             if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
-            pretty_type = 'Inference (Common)'
+            pretty_type = 'Observed (multiple)'
           } else if (type == "termo_Common mutation (Mut)") {
             if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
-            pretty_type = 'Inference (Common)'
+            pretty_type = 'Observed (multiple)'
           } else if (type == "termo_Single common mutation (Wt)") {
             if (muts[gn]['priority']>2) muts[gn]['priority'] = 3;
-            pretty_type = 'Inference (Common)'
+            pretty_type = 'Observed (single)'
           } else if (type == "cons_rm_conserved_G") {
             if (muts[gn]['priority']>4) muts[gn]['priority'] = 4;
-            pretty_type = 'conservation (rm G)'
+            pretty_type = 'Conservation (remove Gly)'
           } else if (type == "cons_rm_nonconserved_GP") {
             if (muts[gn]['priority']>4) muts[gn]['priority'] = 2;
-            pretty_type = 'conservation (rm GP)'
+            pretty_type = 'Conservation (remove Gly/Pro)'
           } else if (type == "cons_rf_and_class") {
             if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
-            pretty_type = 'conservation'
+            pretty_type = 'Conservation'
           } else if (type == "cons_rf") {
             if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
-            pretty_type = 'conservation'
+            pretty_type = 'Conservation'
           } else if (type == "cons_strucs") {
             if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
-            pretty_type = 'conservation'
+            pretty_type = 'Conservation'
           } else {
             console.log(type);
           }
@@ -846,8 +865,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         });
       });
       // console.log(muts);
+
+          prio_info = '<p class=info_text>Thermostabilising mutations have 5 priority levels based on method: <ol><li>From structure of this target ({{target.entry_name}})</li><li>Introducing conserved residue or observed in >2 structures</li><li>Observed in 1 structure</li><li>Increase helix propensity (Remove Gly)</li><li>State-stabilising interactions (e.g. ionic lock or sodium ion site)</li></ol></p>';
+
         var items_table = [info_text['termo']];
-        items_table.push("<table id='mut_sug' class='table-striped table table-bordered'><thead><tr><th>Priority</th><th>Position</th><th>Mutation</th><th>Hits</th><th>Methods</th></tr></thead><tbody>");
+        items_table.push("<table id='mut_sug' class='table-striped table table-bordered'><thead><tr><th>Prio <a class='prio_info' data-toggle='tooltip' data-html='true' data-placement='bottom' title='"+prio_info+"'><i class='glyphicon glyphicon-info-sign'></i></a></th><th>Pos</th><th>Mut</th><th>Methods</th></tr></thead><tbody>");
         console.log(getSortedKeysPrio(muts));
       $.each( getSortedKeysPrio(muts), function( i, gn ) {
         vals = muts[gn];
@@ -908,7 +930,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
               });
             }
         });
-        temp = "<tr><td>"+vals['priority']+"</td><td>"+gn+"</td><td origin='"+vals['types']+"'>"+mut_suggestions.join(", ")+"</td><td>"+vals['hits']+"</td><td><p data-toggle='tooltip' title='"+vals['types']+"'>"+vals['pretty_types']+"</p></td></tr>";
+        //<td>"+vals['hits']+"</td>
+        temp = "<tr><td>"+vals['priority']+"</td><td>"+gn+"</td><td origin='"+vals['types']+"'>"+mut_suggestions.join(", ")+"</td><td>"+vals['pretty_types']+" <a class='methods_info' data-toggle='tooltip' data-html='true' data-placement='bottom' title='"+vals['types'].join("<br>")+"'><i class='glyphicon glyphicon-info-sign'></i></a></td></tr>";
         items_table.push( temp );
         export_list['thermo'].push([gn,label.join(", "),vals['hits'],vals['types']]);
       });
@@ -916,7 +939,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       result = items_table.join( "" );
       tables['mutations'] = result;
       $("#mutations_button").html("Thermostabilisation ("+Object.keys(muts).length+")");
-      $('[data-toggle="tooltip"]').tooltip();
     }
 
     function build_site_removals() {
