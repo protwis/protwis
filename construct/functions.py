@@ -465,8 +465,12 @@ def add_construct(d):
                 insert.start = aux['start']
                 insert.end = aux['start']
             else:
-                insert.start = insert_deletions[id]['start']
-                insert.end = insert_deletions[id]['end']
+                if insert_deletions[id]['typo'] == 'range':
+                    insert.start = insert_deletions[id]['start']
+                    insert.end = insert_deletions[id]['end']
+                else:
+                    insert.start = insert_deletions[id]['pos']
+                    insert.end = insert_deletions[id]['pos']
             insert.save()
 
         construct.insertions.add(insert)
