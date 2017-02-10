@@ -7,7 +7,7 @@
                 <a href="#single-crystal-tab" data-toggle="tab">Single crystal</a>
 			</li>
 			<li>
-                <a href="#2a" data-toggle="tab">Single group of crystals</a>
+                <a href="#single-crystal-group-tab" data-toggle="tab">Single group of crystals</a>
 			</li>
 			<li>
                 <a href="#3a" data-toggle="tab">Two groups of crystals</a>
@@ -15,11 +15,116 @@
 		</ul>
 
         <div class="tab-content clearfix">
+            <!-- BEGIN SINGLE CRYSTAL TAB -->
 		    <div class="tab-pane active" id="single-crystal-tab">
                 <div class="row">
                     <div class="col-md-12">
                         <h1 class="page-header">Single crystal interactions</h1>
                         <p>Display interaction heatmap for a single crystal. Choose a PDB and options below.</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">PDBs</h3>
+                            </div>
+                            <div class="panel-body">
+                                <input id="single-crystal-pdb" type="hidden" />
+                                <h4 id="single-crystal-no-crystal-text">No crystal selected.</h4>
+                                <h4 id="single-crystal-text" class="hidden">Selected crystal <span class="label label-danger" data-single-pdb=""></span></h4>
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div id="single-crystal-segments-panel" class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Segments</h3>
+                            </div>
+                            <div class="panel-body">
+                                <input type="hidden" class="segments-input" value="[]" />
+                                <h5>Helices</h5>
+                                <div class="btn-group buttons-helices">
+                                  <button type="button" class="btn btn-primary all-button">All</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM1">1</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM2">2</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM3">3</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM4">4</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM5">5</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM6">6</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM7">7</button>
+                                  <button type="button" class="btn btn-primary" data-segment="H8">8</button>
+                                </div>
+                                <h5>Loops</h5>
+                                <div class="btn-group buttons-loops">
+                                  <button type="button" class="btn btn-primary all-button">All</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ECL1">ECL1</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ECL2">ECL2</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ECL3">ECL3</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ICL1">ICL1</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ICL2">ICL2</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ICL3">ICL3</button>
+                                </div>
+                                <h5>Termini</h5>
+                                <div class="btn-group buttons-termini">
+                                  <button type="button" class="btn btn-primary all-button">All</button>
+                                  <button type="button" class="btn btn-primary" data-segment="C-term">C-term</button>
+                                  <button type="button" class="btn btn-primary" data-segment="N-term">N-term</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Numbering scheme</h3>
+                            </div>
+                            <div class="panel-body" id="numbering">
+                                <input id="single-crystal-numbering" type="hidden" />
+                                <p>Choose a numbering scheme</p>
+                                <div class="radio">
+                                  <label>
+                                    <input value="seq" type="radio" name="single-crystal-numbering-radio" checked>
+                                    Sequence number
+                                  </label>
+                                </div>
+                                <div class="radio">
+                                  <label>
+                                    <input value="gpcrdb" type="radio" name="single-crystal-numbering-radio">
+                                    GPCRdb numbering scheme
+                                  </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div id="single-crystal-go-button" class="btn btn-success btn-lg pull-right">Go</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Interactions</h3>
+                            </div>
+                            <div class="panel-body">
+                                <div id="single-crystal-heatmap" class="heatmap-container">
+                                    <div class="heatmap-legend"></div>
+                                    <svg class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin none"></svg>
+                                </div>
+                            </div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+            <!-- END SINGLE CRYSTAL TAB -->
+            <!-- BEGIN SINGLE CRYSTAL GROUP TAB -->
+		    <div class="tab-pane" id="single-crystal-group-tab">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h1 class="page-header">Single crystal group interactions</h1>
+                        <p>Display interaction heatmap for a single group of crystals. Choose PDBs and options below.</p>
                     </div>
                 </div>
                 <div class="row">
@@ -29,23 +134,23 @@
                                 <h3 class="panel-title">PDBs</h3>
                             </div>
                             <div class="panel-body">
-                                <input id="single-crystal-pdb" type="hidden" />
-                                <h4 id="single-crystal-no-crystal-text">No crystal selected.</h4>
-                                <h4 id="single-crystal-text" class="hidden">Selected crystal <span class="label label-danger" data-single-pdb="">1f88</span></h4>
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button>
+                                <input id="single-crystal-group-pdbs-input" type="hidden" />
+                                <h4 id="single-crystal-group-no-crystal-text">No crystals selected.</h4>
+                                <h4 id="single-crystal-group-text" class="hidden">Selected crystals <span></span></h4>
+                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal">Select PDBs</button>
                             </div>
                         </div>
                     </div>
-                    <div id="tms" class="col-md-4">
-                        <div class="panel panel-default">
+                    <div class="col-md-4">
+                        <div id="single-crystal-group-tms-panel" class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title">TMs</h3>
                             </div>
                             <div class="panel-body">
-                                <input type="hidden" id="single-crystal-tms" value="[]" />
+                                <input type="hidden" id="single-crystal-group-tms" value="[]" />
                                 <p>Choose transmembrane helices</p>
                                 <div class="btn-group">
-                                  <button id="single-crystal-all-tm-button" type="button" class="btn btn-primary active" data-tm="">All</button>
+                                  <button id="single-crystal-group-all-tms-button" type="button" class="btn btn-primary active" data-tm="">All</button>
                                   <button type="button" class="btn btn-primary" data-tm="1">1</button>
                                   <button type="button" class="btn btn-primary" data-tm="2">2</button>
                                   <button type="button" class="btn btn-primary" data-tm="3">3</button>
@@ -57,48 +162,32 @@
                             </div>
                         </div>
                     </div>
-                    <div id="numbering" class="col-md-4">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Numbering scheme</h3>
-                            </div>
-                            <div class="panel-body">
-                                <input id="single-crystal-numbering" type="hidden" />
-                                <p>Choose a numbering scheme</p>
-                                <div class="radio">
-                                  <label>
-                                    <input value="seq" type="radio" name="optionsRadios" checked>
-                                    Sequence number
-                                  </label>
-                                </div>
-                                <div class="radio">
-                                  <label>
-                                    <input value="gpcrdb" type="radio" name="optionsRadios">
-                                    GPCRdb numbering scheme
-                                  </label>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="col-md-1">
+                        <div id="single-crystal-group-go-button" class="btn btn-success btn-lg pull-right">Go</div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
-                        <div id="single-crystal-go-button" class="btn btn-success btn-lg pull-right">Go</div>
+                         <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Interactions</h3>
+                            </div>
+                            <div class="panel-body">
+                                <svg id="single-crystal-group-heatmap" class="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin none"></svg>
+                            </div>
+                         </div>
                     </div>
                 </div>
             </div>
-            <div class="tab-pane" id="2a">
-                <h3>We use the class nav-pills instead of nav-tabs which automatically creates a background color for the tab</h3>
+            <!-- END SINGLE CRYSTAL GROUP TAB -->
+            <!-- BEGIN TWO CRYSTAL GROUPS TAB -->
+            <div class="tab-pane" id="3a">
+              <h3>We applied clearfix to the tab-content to rid of the gap between the tab and the content</h3>
             </div>
-        <div class="tab-pane" id="3a">
-          <h3>We applied clearfix to the tab-content to rid of the gap between the tab and the content</h3>
-				</div>
-          <div class="tab-pane" id="4a">
-          <h3>We use css to change the background color of the content to be equal to the tab</h3>
-				</div>
+            <!-- END TWO CRYSTAL GROUPS TAB -->
         </div>
 
-    <!-- Modal -->
+    <!-- BEGIN SINGLE CRYSTAL PDB CHOOSER MODAL -->
     <div class="modal fade" id="single-crystal-pdb-modal" role="dialog">
         <div class="modal-dialog">
             <!-- Modal content-->
@@ -118,14 +207,31 @@
             </div>
         </div>
     </div>
+    <!-- END SINGLE CRYSTAL PDB CHOOSER MODAL -->
 
-    <svg id="heatmap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin none" style="width: 100%; height: 1000px">
-
-    </svg>
+    <!-- BEGIN SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
+    <div class="modal fade" id="single-crystal-group-pdbs-modal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a group of crystals</h4>
+                </div>
+                <div class="modal-body">
+                    <div id="single-crystal-group-pdbs">
+                        <!-- Content goes here -->
+                    </div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
 
     <script>
-        window.zoomHeatmap = null;
-
         function HSVtoRGB(h, s, v) {
             var r, g, b, i, f, p, q, t;
             if (arguments.length === 1) {
@@ -151,10 +257,169 @@
             };
         }
 
-        function renderHeatMap(data) {
-            $('#heatmap').empty();
-            var heatmap = Snap("#heatmap");
+        function rgb2hex(r,g,b) {
+            r = r.toString(16);
+            g = g.toString(16);
+            b = b.toString(16);
+
+            if (r.length == 1)
+                r = '0' + r;
+
+            if (g.length == 1)
+                g = '0' + g;
+
+            if (b.length == 1)
+                b = '0' + b;
+
+            return '#' + r + g + b;
+        }
+
+        function getStrongestInteractionType(interactions) {
+
+            if ($.inArray('polarsidechainsidechaininteraction', interactions) > -1)
+                return 'polarsidechainsidechaininteraction';
+
+            if ($.inArray('polarbackbonesidechaininteraction', interactions) > -1)
+                return 'polarbackbonesidechaininteraction';
+
+            if ($.inArray('facetofaceinteraction', interactions) > -1)
+                return 'facetofaceinteraction';
+
+            if ($.inArray('facetoedgeinteraction', interactions) > -1)
+                return 'facetoedgeinteraction';
+
+            if ($.inArray('picationinteraction', interactions) > -1)
+                return 'picationinteraction';
+
+            if ($.inArray('hydrophobicinteraction', interactions) > -1)
+                return 'hydrophobicinteraction';
+
+            if ($.inArray('vanderwaalsinteraction', interactions) > -1)
+                return 'vanderwaalsinteraction';
+
+            return 'undefined';
+        }
+
+        function getStrongestInteractionTypeFromPdbObject(obj) {
+
+            var interactions = [];
+
+            for (var key in obj) {
+                if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                    var strongestInteraction = getStrongestInteractionType(obj[key]);
+                    interactions.push(strongestInteraction);
+                }
+            }
+
+            return getStrongestInteractionType(interactions);
+        }
+
+
+        function getInteractionColor(interaction) {
+
+            var r, g, b;
+
+            switch (interaction) {
+                case 'polarsidechainsidechaininteraction':
+                case 'polarbackbonesidechaininteraction':
+                case getFriendlyInteractionName('polarsidechainsidechaininteraction'):
+                case getFriendlyInteractionName('polarbackbonesidechaininteraction'):
+                    r = 254; g = 0; b = 16;
+                    break;
+                case 'facetofaceinteraction':
+                case 'facetoedgeinteraction':
+                case 'picationinteraction':
+                case getFriendlyInteractionName('facetofaceinteraction'):
+                case getFriendlyInteractionName('facetoedgeinteraction'):
+                case getFriendlyInteractionName('picationinteraction'):
+                    r = 94; g = 241; b = 242;
+                    break;
+                case 'hydrophobicinteraction':
+                case getFriendlyInteractionName('hydrophobicinteraction'):
+                    r = 0; g = 117; b = 220;
+                    break;
+                case 'vanderwaalsinteraction':
+                case getFriendlyInteractionName('vanderwaalsinteraction'):
+                    r = 89; g = 252; b = 197;
+                    break;
+                default:
+                    r = 0; g = 0; b = 0;
+            }
+
+            return { r: r, g: g, b: b };
+        }
+
+        function getFriendlyInteractionName(interaction) {
+            switch (interaction) {
+                case 'polarsidechainsidechaininteraction':
+                case 'polarbackbonesidechaininteraction':
+                    return 'Polar';
+                case 'facetofaceinteraction':
+                case 'facetoedgeinteraction':
+                case 'picationinteraction':
+                    return 'Aromatic';
+                case 'hydrophobicinteraction':
+                    return 'Hydrophobic';
+                case 'vanderwaalsinteraction':
+                    return 'Van der Waals';
+                default:
+                    return 'Unknown';
+            }
+        }
+
+        function getSegmentColor(segmentName) {
+            var r, g, b;
+
+            switch (segmentName) {
+                case 'N-term':
+                case 'C-term':
+                    r = 255; g = 150; b = 150;
+                    break;
+                case 'TM1':
+                case 'TM2':
+                case 'TM3':
+                case 'TM4':
+                case 'TM5':
+                case 'TM6':
+                case 'TM7':
+                case 'H8':
+                    r = 150; g = 255; b = 150;
+                    break;
+                case 'ECL1':
+                case 'ECL2':
+                case 'ECL3':
+                    r = 150; g = 150; b = 255;
+                    break;
+                case 'ICL1':
+                case 'ICL2':
+                case 'ICL3':
+                    r = 150; g = 150; b = 255;
+                    break;
+                default:
+                    r = 0; g = 0; b = 0;
+            }
+
+            return { r: r, g: g, b: b };
+        }
+
+        function renderHeatMap(data, heatMapSelector) {
+            // Destroy old zoom on heatmap
+            if (window.zoomHeatmap != null) {
+                window.zoomHeatmap.destroy();
+                delete window.zoomHeatmap;
+            }
+
+            // Destroy old legend content
+            $(heatMapSelector + ' .heatmap-legend').empty();
+
+            // Destroy all previous contents
+            $(heatMapSelector + ' .heatmap').empty();
+            var heatmap = Snap(heatMapSelector + ' .heatmap');
+
+            // Draw heatmap
             var interactions = data.interactions;
+            var segment_map = data.segment_map;
+            var sequence_numbers = data.sequence_numbers;
             var num_seq_numbers = Object.keys(data.sequence_numbers).length;
 
             x = 0; wi = num_seq_numbers;
@@ -163,7 +428,81 @@
             heatmap.attr({viewBox:[x,y,wi,hi].join(',')});
             heatmap.attr({viewBox:[x,y,wi,hi].join(' ')});
 
-            for (var i = 0; i < num_seq_numbers; i++) {
+            // Compute segment offsets
+            var i;
+
+            var segments = [];
+
+            var seg, prevSeg = segment_map[sequence_numbers[0]];
+            var seqStart = 0;
+
+            for (i = 0; i < num_seq_numbers; i++) {
+                seg = segment_map[sequence_numbers[i]];
+
+                if (seg === prevSeg) {
+                    continue;
+                }
+
+                segments.push({
+                    seg: prevSeg,
+                    start: seqStart,
+                    end: i-1
+                });
+
+                seqStart = i;
+                prevSeg = seg;
+            }
+
+            // Push last segment
+            segments.push({
+                seg: prevSeg,
+                start: seqStart,
+                end: i-1
+            });
+
+            // Draw segments
+            segments.forEach(function(s) {
+                var rgb = getSegmentColor(s.seg);
+
+                // Place the segments vertically.
+                var cell = heatmap.rect(s.start, 0, s.end - s.start + 1, num_seq_numbers);
+
+                cell.attr({
+                    'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
+                    'fill-opacity': "0.5"
+                });
+
+                var label = heatmap.text(s.start + (s.end - s.start + 1)/2, -3, s.seg);
+
+                label.attr({
+                    'text-anchor': 'middle',
+                    'font-size': 5
+                });
+            });
+
+            segments.forEach(function(s) {
+                rgb = getSegmentColor(s.seg);
+
+                // Place the segments horizontally.
+                cell = heatmap.rect(0, s.start, num_seq_numbers, s.end - s.start + 1);
+
+                cell.attr({
+                    'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
+                    'fill-opacity': "0.5"
+                });
+
+                var label = heatmap.text(-3, s.start + (s.end - s.start + 1)/2, s.seg);
+
+                label.attr({
+                    'text-anchor': 'end',
+                    'font-size': 5,
+                    'alignment-baseline': 'middle'
+                });
+            });
+
+
+            // Draw cells
+            for (i = 0; i < num_seq_numbers; i++) {
                 for (var j = 0; j < num_seq_numbers; j++) {
                     // Get the sequence numbers
                     var seq_i = data.sequence_numbers[i];
@@ -171,16 +510,66 @@
 
                     // Only draw if an interaction exists
                     var num = seq_i + "," + seq_j;
+
                     if (num in interactions) {
-                        var rgb = { r: 255, g: 0, b: 0};
+                        // Get the strongest interaction.
+                        var strongest = getStrongestInteractionTypeFromPdbObject(interactions[num]);
+                        var rgb = getInteractionColor(strongest);
                         var cell = heatmap.rect(i, j, 1, 1);
 
+                        var title = 'Residues ' + seq_i + ', ' + seq_j + '<br />'
+                                + 'Interaction: ' + getFriendlyInteractionName(strongest) + '<br />'
+                                + segment_map[seq_i] + ', ' + segment_map[seq_j];
+
                         cell.attr({
-                            fill: "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")"
+                            'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
+                            'data-interaction-type': strongest,
+                            'class': 'heatmap-interaction',
+                            'title': title
+                        });
+
+                        $('rect.heatmap-interaction').tooltip({
+                            'container': 'body',
+                            'placement': 'top',
+                            'delay': 75,
+                            'html': true
                         });
                     }
                 }
             }
+
+            // Populate heatmap legend
+            var interactionTypes = new Set();
+
+            $(heatMapSelector + ' .heatmap-interaction').each(function() {
+                var friendlyName = getFriendlyInteractionName($(this).data('interaction-type'));
+                interactionTypes.add(friendlyName);
+            });
+
+            var legendHtml = '<ul>';
+            interactionTypes.forEach(function(i) {
+                var rgb = getInteractionColor(i);
+                legendHtml = legendHtml
+                        + '<li>'
+                        + '<div class="color-box" style="background-color: ' + rgb2hex(rgb.r, rgb.g, rgb.b) + '">' + '</div><p>' + i + '</p>'
+                        + '</li>';
+            });
+            legendHtml += '</ul>';
+
+            $('.heatmap-legend').append(legendHtml);
+
+
+            // Make zoomable
+            window.zoomHeatmap = svgPanZoom(heatMapSelector + ' .heatmap', {
+                zoomEnabled: true,
+                // controlIconsEnabled: true,
+                fit: true,
+                center: true,
+                minZoom: 0.75,
+                maxZoom: 50,
+                zoomScaleSensitivity: 0.25,
+                dblClickZoomEnabled: true
+            });
         }
 
         function singleCrystalPopulateModal() {
@@ -210,30 +599,39 @@
             });
         }
 
-        function singleCrystalInitializeTMButtons() {
-            $('#single-crystal-tab #tms button').each(function() {
+        function initializeSegmentButtons(selector) {
+            // Initialize segment buttons.
+            $(selector + ' button').each(function() {
+                var s = $(this).attr('data-segment');
+
+                // Return if no segment data
+                if (s == null) {
+                    return;
+                }
+
                 $(this).click(function() {
-                    var val = $(this).attr('data-tm');
-                    switch (val) {
-                        case '':
-                            // Deselect all other TMs and mark 'All' button as active.
-                            $('#single-crystal-tab #tms button').removeClass('active');
-                            $(this).addClass('active');
-                            $('#single-crystal-tms').val("[]");
-                            break;
-                        default:
-                            // Mark 'all' button as inactive and select TM.
-                            $('#single-crystal-all-tm-button').removeClass('active')
-                            $(this).toggleClass('active');
+                    var segments = [];
+                    $(this).toggleClass('active');
+                    $(selector + ' button.active').each(function() {
+                        segments.push($(this).data('segment'));
+                    });
+                    $(selector + ' .segments-input').val(JSON.stringify(segments));
+                });
+            });
 
-                            // Add or remove TM
-                            var tms = [];
-                            $('#tms button.active').each(function() {
-                                tms.push($(this).data('tm'));
-                            });
+            // Initialize 'all' buttons.
+            $(selector  +' .all-button').each(function() {
+                $(this).click(function() {
+                    $(this).parent().find('button').each(function() {
+                        var s = $(this).attr('data-segment');
 
-                            $('#single-crystal-tms').val(JSON.stringify(tms));
-                    }
+                        // Return if no segment data
+                        if (s == null) {
+                            return;
+                        }
+
+                        $(this).addClass('active');
+                    });
                 });
             });
         }
@@ -251,25 +649,131 @@
         function singleCrystalInitializeGoButton() {
             $('#single-crystal-go-button').click(function() {
                 var pdb = $('#single-crystal-pdb').val();
-                var tms = JSON.parse($('#single-crystal-tms').val());
-                var numbering = $('#single-crystal-numbering').val();
-                var useGenericNumbering = numbering === 'gpcrdb';
+                var segments = JSON.parse($('#single-crystal-segments-panel .segments-input').val());
+                var useGenericNumbering = $('#single-crystal-numbering').val() === 'gpcrdb';
 
-                console.log(pdb);
+                $.getJSON( '/contactnetwork/interactiondata',
+                {
+                    'segments': segments,
+                    'generic': useGenericNumbering,
+                    'pdbs': [ pdb ]
+                },
+                function( data ) {
+                    // Re-render heatmap
+                    renderHeatMap(data, '#single-crystal-heatmap');
+                });
+            });
+        }
+
+
+        function initalizeSingleCrystalView() {
+            singleCrystalPopulateModal();
+            initializeSegmentButtons('#single-crystal-segments-panel');
+            singleCrystalInitializeNumberingRadio();
+            singleCrystalInitializeGoButton();
+        }
+
+
+        function singleCrystalGroupPopulateModal() {
+            $.getJSON( "/services/structure/?format=json", function( data ) {
+                $.each( data, function( key, val ) {
+                    // Create a button for each PDB in modal.
+                    var i = $('<span></span>', {
+                        'class': 'btn btn-primary btn-small',
+                        'html': val.pdb_code
+                    }).click(function () {
+                        // Toggle active/inactive state.
+                        $(this).toggleClass('active');
+
+                        // Remove all selected crystals
+                        $('#single-crystal-group-text span').empty();
+
+                        // Array with all selected PDB codes
+                        var pdbs = [];
+
+                        $('#single-crystal-group-pdbs span.active').each(function() {
+
+                            // Save PDB code
+                            pdbs.push($(this).html());
+
+                            // Create label for PDBs panel
+                            var label = $('<span></span>', {
+                                'class': 'label label-danger',
+                                'html': $(this).html()
+                            });
+
+                            $('#single-crystal-group-text > span').append(label).append('\n');
+                        });
+
+                        // Save PDBs array in input
+                        $('#single-crystal-group-pdbs-input').val(JSON.stringify(pdbs));
+
+                        // Update view
+                        if (pdbs.length == 0) {
+                            $('#single-crystal-group-no-crystal-text').removeClass('hidden');
+                            $('#single-crystal-group-text').addClass('hidden');
+                        } else {
+                            $('#single-crystal-group-no-crystal-text').addClass('hidden');
+                            $('#single-crystal-group-text').removeClass('hidden');
+                        }
+                    });
+                    // Append the button
+                    $('#single-crystal-group-pdbs').append($(i)).append('\n');
+                });
+            });
+        }
+
+        function singleCrystalGroupInitializeTMButtons() {
+            $('#single-crystal-group-tms-panel button').each(function() {
+                $(this).click(function() {
+                    var val = $(this).attr('data-tm');
+                    switch (val) {
+                        case '':
+                            // Deselect all other TMs and mark 'All' button as active.
+                            $('#single-crystal-group-tms-panel button').removeClass('active');
+                            $(this).addClass('active');
+                            $('#single-crystal-group-tms').val("[]");
+                            break;
+                        default:
+                            // Mark 'all' button as inactive and select TM.
+                            $('#single-crystal-group-all-tms-button').removeClass('active')
+                            $(this).toggleClass('active');
+
+                            // Add or remove TM
+                            var tms = [];
+                            $('#single-crystal-group-tms-panel button.active').each(function() {
+                                tms.push($(this).data('tm'));
+                            });
+
+                            // Make 'all' button active if no TMs were selected
+                            if (tms.length == 0) {
+                                $('#single-crystal-group-all-tms-button').addClass('active');
+                            }
+
+                            $('#single-crystal-group-tms').val(JSON.stringify(tms));
+                    }
+                });
+            });
+        }
+
+        function singleCrystalGroupInitializeGoButton() {
+            $('#single-crystal-group-go-button').click(function() {
+                var pdbs = $('#single-crystal-group-pdbs-input').val();
+                var tms = JSON.parse($('#single-crystal-group-tms').val());
 
                 $.getJSON( '/contactnetwork/interactiondata',
                 {
                     'tms': tms,
-                    'generic': useGenericNumbering,
-                    'pdbs': [ pdb ]
+                    'generic': 'true',
+                    'pdbs': JSON.parse(pdbs)
                 },
                 function( data ) {
                     if (window.zoomHeatmap != null) {
                         window.zoomHeatmap.destroy();
                         delete window.zoomHeatmap;
                     }
-                    renderHeatMap(data);
-                    zoomHeatmap = svgPanZoom('#heatmap', {
+                    renderHeatMap(data, '#single-crystal-group-heatmap');
+                    zoomHeatmap = svgPanZoom('#single-crystal-group-heatmap', {
                         zoomEnabled: true,
                         controlIconsEnabled: true,
                         fit: true,
@@ -284,15 +788,10 @@
             });
         }
 
-        function singleCrystalInitializeHeatmap() {
-        }
-
-        function initalizeSingleCrystalView() {
-            singleCrystalPopulateModal();
-            singleCrystalInitializeTMButtons();
-            singleCrystalInitializeNumberingRadio();
-            singleCrystalInitializeGoButton();
-            singleCrystalInitializeHeatmap();
+        function initializeSingleGroupCrystalView() {
+            singleCrystalGroupPopulateModal();
+            singleCrystalGroupInitializeTMButtons();
+            singleCrystalGroupInitializeGoButton();
         }
 
         $(document).ready(function() {
@@ -301,6 +800,7 @@
             initalizeSingleCrystalView();
 
             // Single group of PDB files
+            initializeSingleGroupCrystalView();
 
 
             // Two groups of PDB files
@@ -311,6 +811,54 @@
         #single-crystal-pdbs {
             height: 400px;
             overflow: scroll;
+        }
+
+        .heatmap {
+            border: 1px lightslategrey solid;
+            width: 100%;
+            height: 500px;
+        }
+
+        #single-crystal-go-button {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .heatmap-container {
+            position: relative;
+        }
+
+        .heatmap-legend {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            padding: 5px;
+            border: 1px dashed;
+            background-color: white;
+        }
+
+        .heatmap-legend ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .heatmap-legend ul li {
+            padding: 0;
+            margin: 0;
+        }
+
+        .heatmap-legend ul li p {
+            padding: 0;
+            margin: 0;
+            margin-left: 20px;
+        }
+
+        .heatmap-legend .color-box {
+            width: 15px;
+            height: 15px;
+            float: left;
+            margin-top: 3px;
         }
     </style>
 {% endblock %}

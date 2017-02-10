@@ -26,11 +26,11 @@ def InteractionData(request):
 
     pdbs = [pdb.lower() for pdb in pdbs]
 
-    # TM filters
+    # Segment filters
     try:
-        tms = request.GET.getlist('tms[]')
+        segments = request.GET.getlist('segments[]')
     except IndexError:
-        tms = []
+        segments = []
 
     # Use generic numbers? Defaults to True.
     generic = True
@@ -41,17 +41,12 @@ def InteractionData(request):
     except IndexError:
         pass
 
-    tm_filter_res1 = Q()
-    tm_filter_res2 = Q()
+    segment_filter_res1 = Q()
+    segment_filter_res2 = Q()
 
-    if generic:
-        for tm in tms:
-            tm_filter_res1 = tm_filter_res1 | Q(interacting_pair__res1__generic_number__label__startswith=str(tm) + 'x')
-
-        for tm in tms:
-            tm_filter_res2 = tm_filter_res2 | Q(interacting_pair__res2__generic_number__label__startswith=str(tm) + 'x')
-
-    tm_filter = tm_filter_res1 & tm_filter_res2
+    if segments:
+        segment_filter_res1 |= Q(interacting_pair__res1__protein_segment__slug__in=segments)
+        segment_filter_res2 |= Q(interacting_pair__res2__protein_segment__slug__in=segments)
 
     # Get the relevant interactions
     interactions = Interaction.objects.filter(
@@ -60,21 +55,22 @@ def InteractionData(request):
         'interacting_pair__referenced_structure__protein_conformation__protein__entry_name',
         'interacting_pair__res1__sequence_number',
         'interacting_pair__res1__generic_number__label',
+        'interacting_pair__res1__protein_segment__slug',
         'interacting_pair__res2__sequence_number',
         'interacting_pair__res2__generic_number__label',
+        'interacting_pair__res2__protein_segment__slug',
         'polymorphic_ctype__model',
     ).filter(
-        tm_filter
+        segment_filter_res1 & segment_filter_res2
     )
 
     # Initialize response dictionary
     data = {}
     data['interactions'] = {}
-    data['pdbs'] = []
+    data['pdbs'] = set()
     data['generic'] = generic
-
-    if generic:
-        data['tms'] = []
+    data['segments'] = set()
+    data['segment_map'] = {}
 
     # Dict to keep track of which residue numbers are in use
     number_dict = set()
@@ -85,25 +81,15 @@ def InteractionData(request):
         res2_seq = i['interacting_pair__res2__sequence_number']
         res1_gen = i['interacting_pair__res1__generic_number__label']
         res2_gen = i['interacting_pair__res2__generic_number__label']
+        res1_seg = i['interacting_pair__res1__protein_segment__slug']
+        res2_seg = i['interacting_pair__res2__protein_segment__slug']
         model = i['polymorphic_ctype__model']
 
         if generic and (not res1_gen or not res2_gen):
             continue
 
         # List PDB files that were found in dataset.
-        if pdb_name not in data['pdbs']:
-            data['pdbs'].append(pdb_name)
-
-        # List which TMs are available.
-        if generic:
-            tm_res1 = res1_gen.split('x')[0]
-            tm_res2 = res2_gen.split('x')[0]
-
-            if tm_res1 not in data['tms']:
-                data['tms'].append(tm_res1)
-
-            if tm_res2 not in data['tms']:
-                data['tms'].append(tm_res2)
+        data['pdbs'] |= {pdb_name}
 
         # Numbering convention
         res1 = res1_seq
@@ -112,6 +98,11 @@ def InteractionData(request):
         if generic:
             res1 = res1_gen
             res2 = res2_gen
+
+        # List which segments are available.
+        data['segment_map'][res1] = res1_seg
+        data['segment_map'][res2] = res2_seg
+        data['segments'] |= {res1_seg} | {res2_seg}
 
         number_dict |= {res1, res2}
 
@@ -146,10 +137,13 @@ def InteractionData(request):
 
         data['interactions'][coord][pdb_name].append(model)
 
-        if (generic):
-            data['sequence_numbers'] = sorted(number_dict, key=functools.cmp_to_key(gpcrdb_number_comparator))
-        else:
-            data['sequence_numbers'] = sorted(number_dict)
+    if (generic):
+        data['sequence_numbers'] = sorted(number_dict, key=functools.cmp_to_key(gpcrdb_number_comparator))
+    else:
+        data['sequence_numbers'] = sorted(number_dict)
+
+    data['segments'] = list(data['segments'])
+    data['pdbs'] = list(data['pdbs'])
 
     return JsonResponse(data)
 
