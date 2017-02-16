@@ -471,6 +471,10 @@ select.optional option{
 					addaux('aux_proteins');
 				} else if (k.startsWith('chemical_comp')) {
 					addRow('chem_comp')
+				} else if (k.startsWith('deterg_concentr')) {
+					$("#add_deterg").click();
+				} else if (k.startsWith('chem_enz_treatment')){
+					$("#add_treatment").click();
 				} else if (k.startsWith('delet_end')) {
 					while ( !($( "[name='"+k+"']" ).length)) {
 						addRow('deletions', '0');
@@ -532,6 +536,10 @@ select.optional option{
 					addaux('aux_proteins');
 				} else if (k.startsWith('chemical_comp')) {
 					addRow('chem_comp')
+				} else if (k.startsWith('deterg_concentr')) {
+					$("#add_deterg").click();
+				} else if (k.startsWith('chem_enz_treatment')){
+					$("#add_treatment").click();
 				} else if (k.startsWith('delet_end')) {
 					addRow('deletions', '0');
 			    	$( "[name='"+k+"']" ).val(v);
