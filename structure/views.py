@@ -1537,6 +1537,7 @@ def webformdata(request) :
                 data.pop(key, None)
                 data.pop('concentr'+comp_id, None)
                 data.pop('concentr_unit'+comp_id, None)
+                data.pop('chemical_comp_type'+comp_id, None)
 
 
             if key.startswith('aamod') and not key.startswith('aamod_position') and not key.startswith('aamod_pair') and not key=='aamod_position' and not key=='aamod_single':
