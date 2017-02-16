@@ -502,10 +502,17 @@ def add_construct(d):
             list_name,created  = ChemicalListName.objects.get_or_create(name='Solubilization')
             c_list.name = list_name
             c_list.save()
-            ct, created = ChemicalType.objects.get_or_create(name='detergent')
-            chem, created = Chemical.objects.get_or_create(name=d['solubilization']['deterg_type'], chemical_type=ct)
-            cc, created = ChemicalConc.objects.get_or_create(concentration=d['solubilization']['deterg_concentr'], concentration_unit=d['solubilization']['deterg_concentr_unit'], chemical=chem)
-            c_list.chemicals.add(cc)                
+            for item,value in d['solubilization'].items():
+                if item.startswith(('deterg_type')):
+                    d_id = ''
+                    if item != 'deterg_type': #if it has deterg_type_2 index
+                        d_id = "_" + item.split('_')[2]
+
+                    ct, created = ChemicalType.objects.get_or_create(name='detergent')
+                    chem, created = Chemical.objects.get_or_create(name=value, chemical_type=ct)
+                    cc, created = ChemicalConc.objects.get_or_create(concentration=d['solubilization']['deterg_concentr' + d_id], concentration_unit=d['solubilization']['deterg_concentr_unit' + d_id], chemical=chem)
+                    c_list.chemicals.add(cc)       
+
             ct, created = ChemicalType.objects.get_or_create(name='additive')
             chem, created = Chemical.objects.get_or_create(name=d['solubilization']['solub_additive'], chemical_type=ct)
             cc, created = ChemicalConc.objects.get_or_create(concentration=d['solubilization']['additive_concentr'], concentration_unit=d['solubilization']['addit_concentr_unit'], chemical=chem)
@@ -556,15 +563,16 @@ def add_construct(d):
 
             #MAKE LISTS
             c_list = ChemicalList()
-            list_name,created  = ChemicalListName.objects.get_or_create(name='crystallization_chemical_components')
+            list_name,created  = ChemicalListName.objects.get_or_create(name='Additional')
             c_list.name = list_name
             c_list.save()
-            for chemical in d['crystallization']['chemical_components']:
-                ct, created = ChemicalType.objects.get_or_create(name='crystallization_chemical_components')
-                chem, created = Chemical.objects.get_or_create(name=chemical['component'], chemical_type=ct)
-                cc, created = ChemicalConc.objects.get_or_create(concentration=chemical['value'], concentration_unit=chemical['unit'], chemical=chem)
-                c_list.chemicals.add(cc)
-            c.chemical_lists.add(c_list)
+            if 'chemical_components' in d['crystallization']:
+                for chemical in d['crystallization']['chemical_components']:
+                    ct, created = ChemicalType.objects.get_or_create(name=chemical['type'])
+                    chem, created = Chemical.objects.get_or_create(name=chemical['component'], chemical_type=ct)
+                    cc, created = ChemicalConc.objects.get_or_create(concentration=chemical['value'], concentration_unit=chemical['unit'], chemical=chem)
+                    c_list.chemicals.add(cc)
+                c.chemical_lists.add(c_list)
 
             if d['crystallization']['crystal_type']=='lipidic cubic phase': #make list of LCP stuff
                 c_list = ChemicalList()
