@@ -54,7 +54,7 @@ class Command(BaseCommand):
             else:
                 self.create_construct_local_data()
         except Exception as msg:
-            print(msg)
+            print("ERROR: "+str(msg))
             self.logger.error(msg)
 
 
@@ -140,6 +140,7 @@ class Command(BaseCommand):
             if filename[-4:]!='json':
                 continue
             filepath = os.sep.join([self.construct_data_dir, filename])
+            print('Adding '+filepath)
             with open(filepath) as json_file:
                 d = json.load(json_file)
 

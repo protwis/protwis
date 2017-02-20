@@ -33,8 +33,10 @@ def detail(request, slug):
 
     # get constructs
     c = Construct.objects.filter(name=slug).prefetch_related(
-        'modifications', 'mutations', 'deletions','insertions','insertions__insert_type',
-        'expression','solubilization','purification','crystallization','crystal').all()[0]
+                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type","expression","solubilization", "modifications", "deletions", 
+                "crystallization__crystal_method", "crystallization__crystal_type", 
+                "crystallization__chemical_lists", "crystallization__chemical_lists__chemicals__chemical__chemical_type",
+                "protein__species","structure__pdb_code","structure__publication__web_link", "contributor").all()[0]
 
     # get residues
     residues = Residue.objects.filter(protein_conformation__protein=c.protein).order_by('sequence_number').prefetch_related(
@@ -641,13 +643,17 @@ class ExperimentBrowser(TemplateView):
         context = super(ExperimentBrowser , self).get_context_data(**kwargs)
         try:
             cons = Construct.objects.all().prefetch_related(
-                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
-                "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
+                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type","expression","solubilization", "modifications", "deletions", 
+                "crystallization__crystal_method", "crystallization__crystal_type", 
+                "crystallization__chemical_lists", "crystallization__chemical_lists__chemicals__chemical__chemical_type",
+                "protein__species","structure__pdb_code","structure__publication__web_link", "contributor").annotate(pur_count = Count('purification__steps')).annotate(sub_count = Count('solubilization__chemical_list__chemicals'))
 
             #context['constructs'] = cache.get('construct_browser')
             #if context['constructs']==None:
             context['constructs'] = []
+            context['schematics'] = []
             for c in cons:
+                c.schematic_cache = c.schematic()
                 context['constructs'].append(c)
 
             #cache.set('construct_browser', context['constructs'], 60*60*24*2) #two days
