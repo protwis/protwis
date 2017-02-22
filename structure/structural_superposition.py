@@ -189,7 +189,7 @@ class RotamerSuperpose(object):
             return self.template_atoms
         except Exception as msg:
             if self.reference_atoms!='x':
-                print("Failed superimposition:\n{}".format(msg))
+                print("Failed rotamer superimposition:\n{}".format(msg))
 
 #==============================================================================  
 class BulgeConstrictionSuperpose(object):
