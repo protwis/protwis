@@ -933,9 +933,18 @@ class AlignedReferenceTemplate(Alignment):
         if self.main_template_structure==None:
             self.main_template_structure = self.get_main_template()
             
-    def __repr__(self):
-        return '<AlignedReferenceTemplate: Ref: {} ; Temp: {}>'.format(self.reference_protein.protein.entry_name, 
-                                                                       self.main_template_structure)
+    def local_pairwise_alignment(self, reference, template, segment):
+        '''
+        '''
+        self.load_reference_protein(reference)
+        self.load_proteins(template)
+        self.load_segments(ProteinSegment.objects.get(slug__in=segment))
+        self.build_alignment()
+        return self.enhance_alignment(self.proteins[0], self.proteins[1])
+
+    # def __repr__(self):
+    #     return '<AlignedReferenceTemplate: Ref: {} ; Temp: {}>'.format(self.reference_protein.protein.entry_name, 
+    #                                                                    self.main_template_structure)
 
     def load_proteins_by_structure(self):
         ''' Loads proteins into alignment based on available structures in the database.
@@ -959,7 +968,7 @@ class AlignedReferenceTemplate(Alignment):
                                                       "4XNV","4XNW","4NTJ","4PXZ","4PY0","3VW7","3V2Y","1GZM","3NY8",
                                                       "3NYA","3PDS","4ZUD","4RWD","5D6L","5JQH","5TGZ","5GLH","5GLI",
                                                       "4XT1","4K5Y","4Z9G","4L6R","5EE7","4OR2","4OO9","5CGC","5CGD",
-                                                      "4JKV","4N4W","5L7D","5L7I","4O9R","4QIM","4QIN"])
+                                                      "4JKV","4N4W","5L7D","5L7I","4O9R","4QIM","4QIN","5T1A","AAAA"])
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
   

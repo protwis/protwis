@@ -62,7 +62,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.data = self.parse_excel(self.annotation_source_file)
         self.dump_files()
-        self.analyse_annotation_consistency()
+        # self.analyse_annotation_consistency()
 
     def parse_excel(self,path):
         workbook = xlrd.open_workbook(path)
@@ -114,8 +114,8 @@ class Command(BaseCommand):
                 # if curr_row>2: break
         return d
     def analyse_annotation_consistency(self):
-        NonXtal = self.data["NonXtal_Bulges_Constr_GPCRdb#"]
-        Xtal = self.data["Xtal_Bulges_Constr_GPCRdb#"]
+        NonXtal = self.data["Bulges_Constr_NonXtal_GPCRdb#"]
+        Xtal = self.data["Bulges_Constr_Xtal_GPCRdb#"]
         output = {}
         counting_xtal = {}
         counting_non_xtal = {}
@@ -155,8 +155,8 @@ class Command(BaseCommand):
         print("Present in non-xtal, but not xtal",counting_xtal)
         print("Present in xtal, but not non-xtal",counting_non_xtal)
 
-        structures = self.data["Xtal_SegEnds_Prot#"]
-        structures_non_xtal = self.data["NonXtal_SegEnds_Prot#"]
+        structures = self.data["SegEnds_Xtal_Prot#"]
+        structures_non_xtal = self.data["SegEnds_NonXtal_Prot#"]
         info = {}
         for structure,vals in structures.items():
             if structure.split("_")[-1] == "wt":
@@ -184,7 +184,7 @@ class Command(BaseCommand):
         #     yaml.dump(pdb_info, outfile)
 
     def dump_files(self):
-        structures = self.data["Xtal_SegEnds_Prot#"]
+        structures = self.data["SegEnds_Xtal_Prot#"]
         pdb_info = {}
         pdb_info_all = {}
         for structure,vals in structures.items():
@@ -216,7 +216,7 @@ class Command(BaseCommand):
                     continue
                 pdb_info_all[entry][key] = val
 
-        data = self.data["Xtal_SegEnds_BW#"]
+        data = self.data["SegEnds_Xtal_BW#"]
         Xtal_SegEnds_BW = {}
         for structure,vals in data.items():
             entry = structure
@@ -228,7 +228,7 @@ class Command(BaseCommand):
                     continue
                 Xtal_SegEnds_BW[entry][key] = val
 
-        data = self.data["NonXtal_SegEnds_BW#"]
+        data = self.data["SegEnds_NonXtal_BW#"]
         NonXtal_SegEnds_BW = {}
         for structure,vals in data.items():
             entry = structure
@@ -240,7 +240,7 @@ class Command(BaseCommand):
                     continue
                 NonXtal_SegEnds_BW[entry][key] = val
 
-        data = self.data["NonXtal_SegEnds_Prot#"]
+        data = self.data["SegEnds_NonXtal_Prot#"]
         NonXtal_SegEnds_Prot = {}
         for structure,vals in data.items():
             entry = structure
@@ -252,17 +252,17 @@ class Command(BaseCommand):
                     continue
                 NonXtal_SegEnds_Prot[entry][key] = val
 
-        data = self.data["Xtal_Bulges_Constr_GPCRdb#"]
-        Xtal_Bulges_Constr_GPCRdb = {}
-        for structure,vals in data.items():
-            entry = structure
-            Xtal_Bulges_Constr_GPCRdb[entry] = OrderedDict()
-            for key,val in vals.items():
-                if not key:
-                    continue
-                Xtal_Bulges_Constr_GPCRdb[entry][key] = val
+        # data = self.data["Bulges_Constr_Xtal_GPCRdb#"]
+        # Xtal_Bulges_Constr_GPCRdb = {}
+        # for structure,vals in data.items():
+        #     entry = structure
+        #     Xtal_Bulges_Constr_GPCRdb[entry] = OrderedDict()
+        #     for key,val in vals.items():
+        #         if not key:
+        #             continue
+        #         Xtal_Bulges_Constr_GPCRdb[entry][key] = val
 
-        data = self.data["NonXtal_Bulges_Constr_GPCRdb#"]
+        data = self.data["Bulges_Constr_NonXtal_GPCRdb#"]
         NonXtal_Bulges_Constr_GPCRdb = {}
         for structure,vals in data.items():
             entry = structure
@@ -304,9 +304,9 @@ class Command(BaseCommand):
         with open(self.non_xtal_seg_end_file, 'w') as outfile:
             yaml.dump(NonXtal_SegEnds_Prot, outfile, indent=4)
 
-        Xtal_Bulges_Constr_GPCRdb = OrderedDict(sorted(Xtal_Bulges_Constr_GPCRdb.items()))
-        with open(self.xtal_anomalities_file, 'w') as outfile:
-            yaml.dump(Xtal_Bulges_Constr_GPCRdb, outfile, indent=4)
+        # Xtal_Bulges_Constr_GPCRdb = OrderedDict(sorted(Xtal_Bulges_Constr_GPCRdb.items()))
+        # with open(self.xtal_anomalities_file, 'w') as outfile:
+        #     yaml.dump(Xtal_Bulges_Constr_GPCRdb, outfile, indent=4)
 
         NonXtal_Bulges_Constr_GPCRdb = OrderedDict(sorted(NonXtal_Bulges_Constr_GPCRdb.items()))
         with open(self.all_anomalities_file, 'w') as outfile:
