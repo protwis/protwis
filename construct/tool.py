@@ -544,7 +544,7 @@ def thermostabilising(request, slug, **response_kwargs):
         pdb = mut['PDB']
         if mut['Effect'] != 'Thermostabilising':
             continue #only thermo!
-        if entry_name == slug:
+        if (entry_name == slug) or (entry_name.split('_')[0] == slug.split('_')[0] and wt_aa == wt_lookup[gn][0]):
             if gn not in results['1']:
                 results['1'][gn] = {}
             if mut_aa not in results['1'][gn]:
