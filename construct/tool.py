@@ -237,8 +237,8 @@ def json_glyco(request, slug, **response_kwargs):
             mutations_mammalian.append([m.start()+1,pos0,m.start()+2,pos1,matches_seq[i],residues[m.start()+1]])
 
     glyco = OrderedDict()
-    glyco['o-linked']= mutations_all
-    glyco['n-linked'] = mutations_mammalian
+    glyco['n-linked']= mutations_all
+    glyco['o-linked'] = mutations_mammalian
 
     jsondata = glyco
     jsondata = json.dumps(jsondata)
@@ -307,6 +307,8 @@ def json_icl3(request, slug, **response_kwargs):
                     deletions[d_level_name][entry_name] = {}
                 #deletions[entry_name][pdb] = [tm5_end[entry_name],tm6_start[entry_name],deletion.start,deletion.end,deletion.start-tm5_end[entry_name],tm6_start[entry_name]-deletion.end]
                 deletions[d_level_name][entry_name][pdb] = [deletion.start-tm5_50[entry_name],tm6_50[entry_name]-deletion.end-1,state,str(fusion),f_protein]
+                # if (str(fusion)=='icl3'):
+                #     print(entry_name,pdb,50+deletion.start-tm5_50[entry_name],50-(tm6_50[entry_name]-deletion.end-1),str(fusion),f_protein)
 
     # for pdb,state in sorted(states.items()):
     #     print(pdb,"\t",state)

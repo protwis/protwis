@@ -406,7 +406,7 @@ def add_construct(d):
 
     construct = Construct()
     construct.protein = protein
-    construct.name = d['construct_crystal']['pdb_name']
+    construct.name = d['construct_crystal']['pdb_name'].strip()
     construct.json = json.dumps(d, indent=4, separators=(',', ': '))
     construct.structure = structure
 
