@@ -30,7 +30,7 @@ body {
 <div class="row" style="position: relative; left: 65%; bottom:-50px;">
   <div class="col-xs-12">
 <select onchange="updateBubbles(this.value)" multiple class="form-control input-lg" size="3">
-  <option selected="selected" value="not_targeted">Not targeted</option>
+  <option selected="selected" value="not_targeted">Non-targeted</option>
   <option value="established">Established targets</option>
   <option value="not_established">Under investigation</option>
 </select>
@@ -462,7 +462,7 @@ function updatertypes(series,text) {
         "hideWhenLessThanPercentage": 3
       },
       "mainLabel": {
-        "fontSize": 12
+        "fontSize": 16
       },
       "percentage": {
         "color": "#ffffff",
@@ -572,7 +572,7 @@ function updaterclasses(series,text) {
         "hideWhenLessThanPercentage": 3
       },
       "mainLabel": {
-        "fontSize": 12
+        "fontSize": 16
       },
       "percentage": {
         "color": "#ffffff",
@@ -683,7 +683,7 @@ function updaterfamilies(series,text) {
         "hideWhenLessThanPercentage": 3
       },
       "mainLabel": {
-        "fontSize": 12
+        "fontSize": 16
       },
       "percentage": {
         "color": "#ffffff",
@@ -793,7 +793,7 @@ var pie = new d3pie("pie_disease", {
       "hideWhenLessThanPercentage": 3
     },
     "mainLabel": {
-      "fontSize": 12
+      "fontSize": 16
     },
     "percentage": {
       "color": "#ffffff",
@@ -903,7 +903,7 @@ var pie = new d3pie("pie_targets", {
       "hideWhenLessThanPercentage": 3
     },
     "mainLabel": {
-      "fontSize": 12
+      "fontSize": 16
     },
     "percentage": {
       "color": "#ffffff",

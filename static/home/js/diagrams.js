@@ -586,7 +586,7 @@
                             // NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes
                              extra = "\nAAchange: " + "-->" + String(val[0]);
 
-                             color = "#aa10eb";
+                             color = "#7572b1";
                              color_letter = "#fefdfd";
                              $('#'+plotid).find("#"+key).next().css("fill", color_letter);
 
@@ -641,7 +641,7 @@
                              "\nAllele Number: " + String(val[3]) +
                             "\nNumber of Homozygotes: " + String(val[4]);
 
-                             color = "#FFB347";
+                             color = "#70c070";
                              color_letter = "#fefdfd";
                              $('#'+plotid).find("#"+key).next().css("fill", color_letter);
 
@@ -677,7 +677,7 @@
                                 color_letter = "#fefdfd";
                              } 
                              
-                             color = color_code[val['val']];
+                             color = color_code[val['val']-1];
                              $('#'+plotid).find("#"+key).next().css("fill", color_letter);
 
                              original_title = $('#'+plotid).find("#"+key).attr('original_title')
@@ -711,7 +711,7 @@
                                 color_letter = "#fefdfd";
                              } 
                              
-                             color = color_code[val['val']];
+                             color = color_code[val['val']-1];
                              $('#'+plotid).find("#"+key).next().css("fill", color_letter);
 
                              original_title = $('#'+plotid).find("#"+key).attr('original_title')
@@ -739,9 +739,8 @@
                              extra = "\nAAchanges: " + "-->" + String(val['AA']) +
                             "\nNumber of Proteins: " + String(val['val']);
 
-                             color_letter = "#fefdfd";;
-                             color = color_code[val['val']];
-                             color = "#381837"
+                             color_letter = "#fefdfd";  
+                             color = color_code[val['val']-1];
                              $('#'+plotid).find("#"+key).next().css("fill", color_letter);
 
                              original_title = $('#'+plotid).find("#"+key).attr('original_title')
