@@ -35,8 +35,8 @@ class Command(BaseCommand):
 
         try:
             self.purge_data()
-            # self.create_natural_mutations()
-            # self.create_cancer_mutations()
+            self.create_natural_mutations()
+            self.create_cancer_mutations()
             self.create_disease_mutations()
         except Exception as msg:
             print(msg)
@@ -44,8 +44,8 @@ class Command(BaseCommand):
 
     def purge_data(self):
         try:
-            # NaturalMutations.objects.all().delete()
-            # CancerMutations.objects.all().delete()
+            NaturalMutations.objects.all().delete()
+            CancerMutations.objects.all().delete()
             DiseaseMutations.objects.all().delete()
         except Exception as msg:
             print(msg)

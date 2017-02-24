@@ -269,10 +269,10 @@ node.append("text")
   // .style("font-size", function(d) { if (d.depth<3) {return "1px"} else if (d.depth==3) {return "1px"} else { return "1px" } })
   .style("font-family", "Palatino")
   .style("font", function(d) {
-    if (d.depth === 1) {return "19px sans-serif"} 
+    if (d.depth === 1) {return "20px sans-serif"} 
     else if (d.depth === 2) {return "17px sans-serif"}
-    else if (d.depth === 3) {return "12px sans-serif"}
-    else if (d.depth === 4) {return "8.5px sans-serif"}
+    else if (d.depth === 3) {return "13px sans-serif"}
+    else if (d.depth === 4) {return "10.5px sans-serif"}
     })
   // .style("fill", function(d) {
   //     if (d.crystal_structure > 0) {return "#00B8D4" }
