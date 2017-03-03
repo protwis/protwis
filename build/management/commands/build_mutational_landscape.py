@@ -36,8 +36,8 @@ class Command(BaseCommand):
         try:
             self.purge_data()
             self.create_natural_mutations()
-            self.create_cancer_mutations()
-            self.create_disease_mutations()
+            # self.create_cancer_mutations()
+            # self.create_disease_mutations()
         except Exception as msg:
             print(msg)
             self.logger.error(msg)
@@ -45,8 +45,8 @@ class Command(BaseCommand):
     def purge_data(self):
         try:
             NaturalMutations.objects.all().delete()
-            CancerMutations.objects.all().delete()
-            DiseaseMutations.objects.all().delete()
+            # CancerMutations.objects.all().delete()
+            # DiseaseMutations.objects.all().delete()
         except Exception as msg:
             print(msg)
             self.logger.warning('Existing data cannot be deleted')
@@ -56,7 +56,7 @@ class Command(BaseCommand):
 
         # read source files
         if not filenames:
-            filenames = [fn for fn in os.listdir(self.mutation_data_path) if fn.endswith('ExAC.csv')]
+            filenames = [fn for fn in os.listdir(self.mutation_data_path) if fn.endswith('exac.csv')]
 
         for filename in filenames:
             filepath = os.sep.join([self.mutation_data_path, filename])
@@ -66,13 +66,16 @@ class Command(BaseCommand):
             for index, entry in enumerate(snp_data.iterrows()):
 
                 entry_name = snp_data[index:index+1]['EntryName'].values[0]
-                sequence_number = snp_data[index:index+1]['Sequence Number'].values[0]
+                sequence_number = snp_data[index:index+1]['SequenceNumber'].values[0]
                 residue = snp_data[index:index+1]['GPCRdb'].values[0]
                 amino_acid = snp_data[index:index+1]['NMaa'].values[0]
                 allele_frequency = float(snp_data[index:index+1]['Allele Frequency'].values[0])
                 allele_count = int(snp_data[index:index+1]['Allele Count'].values[0])
                 allele_number = int(snp_data[index:index+1]['Allele Number'].values[0])
                 number_homozygotes = int(snp_data[index:index+1]['Number of Homozygotes'].values[0])
+
+                sift_score = float(snp_data[index:index+1]['sift_score'].values[0])
+                polyphen_score = float(snp_data[index:index+1]['polyphen_score'].values[0])
 
                 try:
                     p = Protein.objects.get(entry_name=entry_name)
@@ -85,10 +88,11 @@ class Command(BaseCommand):
                 except:
                     # self.logger.warning('No residue number (GAP - position) for', sequence_number, "in ", p.name, "")
                     continue
-
                 if res:
                     try:
-                        snp, created = NaturalMutations.objects.get_or_create(protein=p, residue=res, amino_acid=amino_acid, allele_frequency=allele_frequency, allele_count=allele_count, allele_number=allele_number, number_homozygotes=number_homozygotes)
+                        snp, created = NaturalMutations.objects.get_or_create(protein=p, residue=res, amino_acid=amino_acid, allele_frequency=allele_frequency, allele_count=allele_count, allele_number=allele_number, number_homozygotes=number_homozygotes,
+                        sift_score=sift_score,
+                        polyphen_score=polyphen_score)
                         if created:
                             self.logger.info('Created SNP for ' + str(sequence_number) + ' for protein ' + str(p.name))
                     except:
@@ -182,5 +186,3 @@ class Command(BaseCommand):
                         # self.logger.error('Failed creating SNP for ' + sequence_number + ' for protein ' + p.name)
 
         self.logger.info('COMPLETED CREATING DISEASE MUTATIONS')
-
-

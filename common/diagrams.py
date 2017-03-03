@@ -20,7 +20,7 @@ class Diagram:
             return ("<svg id=\""+name+"\" " +
             "xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""+str(sizex)+"\" height=\""+str(sizey)+"\" " +
             "style='stroke-width: 0px; background-color: white;'>\n"+content+"</svg>" +
-            self.drawColorPanel(nobuttons)) #width=\"595\" height=\"430\"            
+            self.drawColorPanel(nobuttons)) #width=\"595\" height=\"430\"
         elif nobuttons:
             return ("<svg id=\""+name+"\" " +
             "xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""+str(sizex)+"\" height=\""+str(sizey)+"\" " +
@@ -105,22 +105,22 @@ class Diagram:
             output += '<br><button style="width:220px;" onclick="ajaxMutantsPos(\''+self.type+'\');">Show Invitro Mutants</button>'
             output += ' <button style="width:220px;" onclick="ajaxInteractionsPos(\''+self.type+'\')">Show Interactions from Crystals</button>'
             output += '<br><button style="width:220px;" onclick="ajaxNaturalMutationPos(\''+self.type+'\')">Show Natural Genetic Variations</button>'
-            output += ' <button style="width:220px;" onclick="ajaxCancerMutationPos(\''+self.type+'\')">Show Cancer Mutations</button>'
-            output += ' <button style="width:220px;" onclick="ajaxDiseaseMutationPos(\''+self.type+'\')">Show Disease Mutations</button>'
+            # output += ' <button style="width:220px;" onclick="ajaxCancerMutationPos(\''+self.type+'\')">Show Cancer Mutations</button>'
+            # output += ' <button style="width:220px;" onclick="ajaxDiseaseMutationPos(\''+self.type+'\')">Show Disease Mutations</button>'
         else:
             if nobuttons == 'gprotein':
                 output += ' <button style="width:220px;" onclick="ajaxInterface(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Receptor Interface</button>'
                 output += '<br><button style="width:220px;" onclick="ajaxNaturalMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Natural Genetic Variations</button>'
-                output += ' <button style="width:220px;" onclick="ajaxCancerMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Cancer Mutations</button>'
-                output += ' <button style="width:220px;" onclick="ajaxDiseaseMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Disease Mutations</button>'
+                # output += ' <button style="width:220px;" onclick="ajaxCancerMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Cancer Mutations</button>'
+                # output += ' <button style="width:220px;" onclick="ajaxDiseaseMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Disease Mutations</button>'
                 output += '<br><button style="width:220px;" onclick="ajaxBarcode(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Barcode</button>'
 
             else:
                 output += '<br><button style="width:220px;" onclick="ajaxMutants(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Invitro Mutants</button>'
                 output += ' <button style="width:220px;" onclick="ajaxInteractions(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Interactions from Crystals</button>'
                 output += '<br><button style="width:220px;" onclick="ajaxNaturalMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Natural Genetic Variations</button>'
-                output += ' <button style="width:220px;" onclick="ajaxCancerMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Cancer Mutations</button>'
-                output += ' <button style="width:220px;" onclick="ajaxDiseaseMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Disease Mutations</button>'
+                # output += ' <button style="width:220px;" onclick="ajaxCancerMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Cancer Mutations</button>'
+                # output += ' <button style="width:220px;" onclick="ajaxDiseaseMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Disease Mutations</button>'
 
         if nobuttons != 'gprotein':
             output += '<br><small>Invitro Mutant Data: Increased binding/potency: <font style="color: #000; background-color: #87E88F" color="#87E88F">>5-fold</font>, <font style="color: #000; background-color: #66B36C" color="#66B36C">>10-fold</font>; Reduced binding/potency: <font style="color: #FFF; background-color: #FF7373" color="#FF7373">>5-fold</font>, <font style="color: #FDFF7B; background-color: #FA1111" color="#FA1111">>10-fold</font>; <font style="color: #000; background-color: #F7DA00" color="#F7DA00">No/low effect (<5-fold)</font>; and <font style="color: #000; background-color: #D9D7CE" color="#D9D7CE">N/A</font> </small>'

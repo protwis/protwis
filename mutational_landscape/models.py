@@ -11,13 +11,15 @@ class NaturalMutations(models.Model):
     allele_count = models.IntegerField()
     allele_number = models.IntegerField()
     number_homozygotes = models.IntegerField()
+    sift_score = models.FloatField()
+    polyphen_score = models.FloatField()
 
     def __str__(self):
-        return self.protein.name + '_' + str(self.residue.sequence_number) + '_' + self.residue.amino_acid  
+        return self.protein.name + '_' + str(self.residue.sequence_number) + '_' + self.residue.amino_acid
 
     class Meta():
         db_table = 'mutation_natural'
-        unique_together = ('protein','residue','amino_acid')
+        # unique_together = ('protein','residue','amino_acid','allele_frequency')
 
 class CancerMutations(models.Model):
 

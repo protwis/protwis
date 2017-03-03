@@ -9,7 +9,7 @@
                                     'H': ['#0093DD', '#000000'],'P': ['#CC0099', '#FDFF7B'],
                                     'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
                                     '-': ['#FFFFFF', '#000000'],
-                                    '+': ['#FFFFFF', '#000000']        
+                                    '+': ['#FFFFFF', '#000000']
                                     };
 
                     var translateOffset = 0;
@@ -27,7 +27,7 @@
                         while (text.lastChild) {
                            text.removeChild(text.lastChild);
                         }
-                        
+
                         // var NS = "http://www.w3.org/2000/svg";
 
 
@@ -52,7 +52,7 @@
                             rect.setAttribute('height', 25);
                             rect.setAttribute('y', -40);
                         }
-                        
+
                         var bbox = text.getBBox();
                         rect.setAttribute('width', bbox.width + 8);
                         rect.setAttribute('x', -bbox.width/2 - 4);
@@ -151,18 +151,18 @@
                             if ($(this).css("display")!='none') {
                                 count = count +1;
                                 if (y<svgmin) {
-                                    svgmin = y; 
+                                    svgmin = y;
                                     classmin = classtext;
                                     }
                                 if (y>svgmax) {
                                     classmax = classtext;
-                                    svgmax= y; 
+                                    svgmax= y;
                                  }
 
-                            }   
+                            }
                         });
                         console.log('max '+svgmax+' '+classmax+' min'+svgmin+' '+classmin+' count'+count);
-                        
+
                         var svg = $('#snake').closest('svg')[0];
 
                         check = document.getElementById("snakeplot").getAttribute('viewBox');
@@ -183,7 +183,7 @@
                         console.log("Prev attr"+$('#snake').attr("transform"));
 
                         $('#snake').attr("transform", "translate(0," + (-svgmin+margin) + ")");
-                        
+
                         // $('#snakeplot')[0].attr("viewBox", "0 0 " + width + " " + newheight);
                         document.getElementById("snakeplot").setAttribute("viewBox", "0 0 " + width + " " + newheight);
 
@@ -194,7 +194,7 @@
                         console.log("New attr"+$('#snake').attr("transform"));
                     }
 
-                    $( document ).ready(function() {    
+                    $( document ).ready(function() {
                         // var elements = document.getElementsByClassName('long')
 
                         // for (var i = 0; i < elements.length; i++){
@@ -204,7 +204,7 @@
 
 
                         $('rect').each(function(){
-                            
+
                             rectclass = $(this).attr('class');
                             if (rectclass) {
                                 if (rectclass.indexOf("CL") >= 0 && rectclass.indexOf("long") >= 0) {
@@ -258,7 +258,7 @@
                       $(this).css("fill", newcolor[2]);
                       $(this).prev().css("fill", newcolor[1]);
                     });
-                    
+
                     $(".rcircle").click(function() {
                         parentid = $(this).closest('svg').attr('id');
                         newcolor = $(".pick-color."+parentid+".selected").attr('id');
@@ -296,8 +296,8 @@
                           $.each( data, function( key, val ) {
 
                              var ligands = [], bigincreases=0, increases = 0, bigdecreases=0, decreases = 0, unchanged=0, unspecified = 0;
-                             
-                             
+
+
                              $.each( val, function( key, v ) {
                               if( !(ligands[v[1]]) ) ligands[v[1]] = [];
                               ligands[v[1]].push(v[0])
@@ -331,7 +331,7 @@
                                 unspecified ++;
                               }
                              });
-                             
+
                              extra = "\n" + String(val[0].length) + " mutations: " +
                               (decreases+bigdecreases) +" increases | " +
                              (increases+bigincreases) +" decreases  |  " +
@@ -361,7 +361,7 @@
                             //   color = "#F7DA00";
                             //   color_letter = "#000";
                             // }
-                            
+
                             if (bigincreases>0) {
                                 color = "#FF7373";
                                 color_letter = "#FFF";
@@ -391,7 +391,7 @@
                           });
                         $("circle").tooltip('fixTitle');
                         $("text").tooltip('fixTitle');
-    
+
                         });
                     }
 
@@ -403,8 +403,8 @@
 
                         $.each( pos, function( key, val ) {
                              var ligands = [], bigincreases=0, increases = 0, bigdecreases=0, decreases = 0, unchanged=0, unspecified = 0;
-                             
-                             
+
+
                              $.each( val[0], function( key, v ) {
                               if( !(ligands[v[1]]) ) ligands[v[1]] = [];
                               ligands[v[1]].push(v[0])
@@ -438,7 +438,7 @@
                                 unspecified ++;
                               }
                              });
-                             
+
                              extra = "\n" + String(val[0].length) + " mutations: " +
                               (decreases+bigdecreases) +" increases | " +
                              (increases+bigincreases) +" decreases  |  " +
@@ -498,8 +498,8 @@
                           });
                         $("circle").tooltip('fixTitle');
                         $("text").tooltip('fixTitle');
-    
-                        
+
+
                     }
 
                     function ajaxInteractions(plotid,protein) {
@@ -520,7 +520,7 @@
                                 flags[val[i][0]] = true;
                                 outputAA.push(val[i][0]);
                             }
-                             
+
                              extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
 
 
@@ -537,7 +537,7 @@
                           });
                         $("circle").tooltip('fixTitle');
                         $("text").tooltip('fixTitle');
-    
+
                         });
                     }
 
@@ -560,8 +560,8 @@
                             } else  {
                                 color = "#4dc7e6";
                                 extra = "\n" + String(val[1]);
-                            }                       
-                             
+                            }
+
 
                              original_title = $('#'+plotid).find("#"+key).attr('original_title')
 
@@ -573,7 +573,7 @@
                           });
                         $("circle").tooltip('fixTitle');
                         $("text").tooltip('fixTitle');
-    
+
                         });
                     }
 
@@ -599,7 +599,7 @@
                           });
                         $("circle").tooltip('fixTitle');
                         $("text").tooltip('fixTitle');
-    
+
                         });
                     }
 
@@ -625,7 +625,7 @@
                           });
                         $("circle").tooltip('fixTitle');
                         $("text").tooltip('fixTitle');
-    
+
                         });
                     }
                     function ajaxNaturalMutation(plotid, protein) {
@@ -635,16 +635,15 @@
                         $.getJSON( '/mutational_landscape/ajax/NaturalMutation/'+protein+'/', function( data ) {
                           $.each( data, function( key, val ) {
                             // NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes
-                             extra = "\nAAchange: " + "-->" + String(val[0]) + 
+                             extra = "\nAAchange: " + "-->" + String(val[0]) +
                              "\nAllele Frequency: " + String(val[1]) +
-                             "\nAllele Count: " + String(val[2]) + 
+                             "\nAllele Count: " + String(val[2]) +
                              "\nAllele Number: " + String(val[3]) +
-                            "\nNumber of Homozygotes: " + String(val[4]);
+                            "\nNumber of Homozygotes: " + String(val[4]) +
+                            "\nPredicted effect (SIFT/PolyPhen): <span style='color:"+String(val[6])+"'> "+ String(val[5]);
 
                              color = "#70c070";
-                             color_letter = "#fefdfd";
-                             $('#'+plotid).find("#"+key).next().css("fill", color_letter);
-
+                             $('#'+plotid).find("#"+key).next().css("fill", "#fefdfd");
                              original_title = $('#'+plotid).find("#"+key).attr('original_title')
                              $('#'+plotid).find("#"+key).css("fill", color);
                              $('#'+plotid).find("#"+key).attr('title',original_title+extra);
@@ -654,7 +653,7 @@
                           });
                         $("circle").tooltip('fixTitle');
                         $("text").tooltip('fixTitle');
-    
+
                         });
                     }
 
@@ -675,8 +674,8 @@
                                 color_letter = "#000000"
                              } else  {
                                 color_letter = "#fefdfd";
-                             } 
-                             
+                             }
+
                              color = color_code[val['val']-1];
                              $('#'+plotid).find("#"+key).next().css("fill", color_letter);
 
@@ -689,7 +688,7 @@
                           });
                         $("circle").tooltip('fixTitle');
                         $("text").tooltip('fixTitle');
-    
+
                     }
 
                     function ajaxCancerMutationPos(plotid) {
@@ -709,8 +708,8 @@
                                 color_letter = "#000000"
                              } else  {
                                 color_letter = "#fefdfd";
-                             } 
-                             
+                             }
+
                              color = color_code[val['val']-1];
                              $('#'+plotid).find("#"+key).next().css("fill", color_letter);
 
@@ -723,7 +722,7 @@
                           });
                         $("circle").tooltip('fixTitle');
                         $("text").tooltip('fixTitle');
-    
+
                     }
 
                     function ajaxDiseaseMutationPos(plotid) {
@@ -739,7 +738,7 @@
                              extra = "\nAAchanges: " + "-->" + String(val['AA']) +
                             "\nNumber of Proteins: " + String(val['val']);
 
-                             color_letter = "#fefdfd";  
+                             color_letter = "#fefdfd";
                              color = color_code[val['val']-1];
                              $('#'+plotid).find("#"+key).next().css("fill", color_letter);
 
@@ -752,7 +751,7 @@
                           });
                         $("circle").tooltip('fixTitle');
                         $("text").tooltip('fixTitle');
-    
+
                     }
 
                     function ajaxInterface(plotid,protein) {
@@ -775,7 +774,7 @@
                           });
                         $("circle").tooltip('fixTitle');
                         $("text").tooltip('fixTitle');
-    
+
                         });
                     }
                     function ajaxInteractionsPos(plotid) {
@@ -798,7 +797,7 @@
                                 flags[val[i][0]] = true;
                                 outputAA.push(val[i][0]);
                             }
-                             
+
                              extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
 
 
@@ -815,7 +814,7 @@
                           });
                         $("circle").tooltip('fixTitle');
                         $("text").tooltip('fixTitle');
-  
+
                     }
 
                     function construct_annotations(plotid) {
@@ -837,7 +836,7 @@
                             //     flags[val[i][0]] = true;
                             //     outputAA.push(val[i][0]);
                             // }
-                             
+
                             //  extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
                              extra = "<br>"+val[1]; //.replace(/<br>/g, '&#013;');
 
@@ -854,7 +853,7 @@
                           });
                         $("circle").tooltip('fixTitle');
                         $("text").tooltip('fixTitle');
-  
+
                     }
 
                     function ajaxInteractionsLigand(protein,ligand) {
@@ -876,7 +875,7 @@
                                 flags[val[i][0]] = true;
                                 outputAA.push(val[i][0]);
                             }
-                             
+
                              extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
 
 
@@ -892,14 +891,14 @@
                           });
                         $("circle").tooltip('fixTitle');
                         $("text").tooltip('fixTitle');
-    
+
                         });
                     }
 
 
                     $(".pick-color").click(function() {
                         plottype = $(this).attr('class').split(' ')[1];
-                        
+
                         console.log($(this).attr('id'));
                         $(".pick-color."+plottype).css('borderWidth','2px');
                         $(".pick-color."+plottype).css('height','20px');
@@ -907,7 +906,7 @@
                         $(this).css('borderWidth','3px');
                         $(this).css('height','22px');
                         $(this).addClass('selected');
-                        
+
                     });
 
                     $( document ).ready(function() {
@@ -920,4 +919,3 @@
                     function getContrast50(hexcolor){
                          return (parseInt(hexcolor.replace('#', ''), 16) > 0xffffff/2) ? 'black':'white';
                     }
-                        
