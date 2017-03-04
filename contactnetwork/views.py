@@ -18,6 +18,25 @@ def Interactions(request):
 
 
 def InteractionData(request):
+
+    def gpcrdb_number_comparator(e1, e2):
+            t1 = e1.split('x')
+            t2 = e2.split('x')
+
+            if e1 == e2:
+                return 0
+
+            if t1[0] == t2[0]:
+                if t1[1] < t2[1]:
+                    return -1
+                else:
+                    return 1
+
+            if t1[0] < t2[0]:
+                return -1
+            else:
+                return 1
+
     # PDB files
     try:
         pdbs = request.GET.getlist('pdbs[]')
@@ -31,6 +50,12 @@ def InteractionData(request):
         segments = request.GET.getlist('segments[]')
     except IndexError:
         segments = []
+
+    # Interaction types
+    try:
+        i_types = request.GET.getlist('interaction_types[]')
+    except IndexError:
+        i_types = []
 
     # Use generic numbers? Defaults to True.
     generic = True
@@ -48,6 +73,11 @@ def InteractionData(request):
         segment_filter_res1 |= Q(interacting_pair__res1__protein_segment__slug__in=segments)
         segment_filter_res2 |= Q(interacting_pair__res2__protein_segment__slug__in=segments)
 
+    i_types_filter = Q()
+
+    if i_types:
+        i_types_filter |= Q(polymorphic_ctype__model__in=i_types)
+
     # Get the relevant interactions
     interactions = Interaction.objects.filter(
         interacting_pair__referenced_structure__protein_conformation__protein__entry_name__in=pdbs
@@ -61,7 +91,7 @@ def InteractionData(request):
         'interacting_pair__res2__protein_segment__slug',
         'polymorphic_ctype__model',
     ).filter(
-        segment_filter_res1 & segment_filter_res2
+        segment_filter_res1 & segment_filter_res2 & i_types_filter
     )
 
     # Initialize response dictionary
@@ -75,6 +105,8 @@ def InteractionData(request):
     # Dict to keep track of which residue numbers are in use
     number_dict = set()
 
+    itypes = set()
+
     for i in interactions:
         pdb_name = i['interacting_pair__referenced_structure__protein_conformation__protein__entry_name']
         res1_seq = i['interacting_pair__res1__sequence_number']
@@ -84,6 +116,8 @@ def InteractionData(request):
         res1_seg = i['interacting_pair__res1__protein_segment__slug']
         res2_seg = i['interacting_pair__res2__protein_segment__slug']
         model = i['polymorphic_ctype__model']
+
+        itypes |= {model}
 
         if generic and (not res1_gen or not res2_gen):
             continue
@@ -117,24 +151,6 @@ def InteractionData(request):
         if pdb_name not in data['interactions'][coord]:
             data['interactions'][coord][pdb_name] = []
 
-        def gpcrdb_number_comparator(e1, e2):
-            t1 = e1.split('x')
-            t2 = e2.split('x')
-
-            if e1 == e2:
-                return 0
-
-            if t1[0] == t2[0]:
-                if t1[1] < t2[1]:
-                    return -1
-                else:
-                    return 1
-
-            if t1[0] < t2[0]:
-                return -1
-            else:
-                return 1
-
         data['interactions'][coord][pdb_name].append(model)
 
     if (generic):
@@ -144,6 +160,8 @@ def InteractionData(request):
 
     data['segments'] = list(data['segments'])
     data['pdbs'] = list(data['pdbs'])
+
+    print(itypes)
 
     return JsonResponse(data)
 
