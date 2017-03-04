@@ -31,8 +31,8 @@
                             </div>
                             <div class="panel-body">
                                 <input class="crystal-pdb" type="hidden" />
-                                <h4 class="no-crystal-text">No crystal selected.</h4>
-                                <h4 class="crystal-text hidden">Selected crystal <span class="label label-danger"></span></h4>
+                                <h5 class="no-crystal-text">No crystal selected.</h5>
+                                <h5 class="crystal-text hidden">Selected crystal <span class="label label-danger"></span></h5>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button>
                             </div>
                         </div>
@@ -114,8 +114,8 @@
                             </div>
                             <div class="panel-body">
                                 <input class="crystal-pdb" type="hidden" />
-                                <h4 class="no-crystal-text">No crystals selected.</h4>
-                                <h4 class="crystal-text hidden">Selected crystals <span class="label label-danger" data-single-pdb=""></span></h4>
+                                <h5 class="no-crystal-text">No crystals selected.</h5>
+                                <h5 class="crystal-text hidden">Selected crystals <span class="label label-danger" data-single-pdb=""></span></h5>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal">Select PDBs</button>
                             </div>
                         </div>
@@ -158,7 +158,25 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-md-4">
+                        <div class="panel panel-default interactions-panel">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Interactions</h3>
+                            </div>
+                            <div class="panel-body">
+                                <input type="hidden" class="interactions-input" value="[]" />
+                                <h5>Types</h5>
+                                <div class="btn-group buttons-helices">
+                                  <button type="button" class="btn btn-primary all-button">All</button>
+                                  <button type="button" class="btn btn-primary" data-interaction-type="polarinteraction polarsidechainsidechaininteraction polarbackbonesidechaininteraction">Polar</button>
+                                  <button type="button" class="btn btn-primary" data-interaction-type="aromaticinteraction facetoedgeinteraction facetofaceinteraction picationinteraction">Arom.</button>
+                                  <button type="button" class="btn btn-primary" data-interaction-type="hydrophobicinteraction">Hydro.</button>
+                                  <button type="button" class="btn btn-primary" data-interaction-type="vanderwaalsinteraction">VDW</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-offset-3 col-md-1">
                         <div class="btn btn-success btn-lg pull-right go-button">Go</div>
                     </div>
                 </div>
@@ -1029,8 +1047,8 @@
                 $(this).click(function() {
                     var segments = [];
                     $(this).toggleClass('active');
-                    $(selector + ' button.active').each(function() {
-                        segments.push($(this).data('segment'));
+                    $(selector + ' .segments-panel button.active').each(function() {
+                        segments = segments.concat($(this).data('segment').split(' '));
                     });
                     $(selector + ' .segments-input').val(JSON.stringify(segments));
                 });
@@ -1039,17 +1057,113 @@
             // Initialize 'all' buttons.
             $(selector  + ' .segments-panel .all-button').each(function() {
                 $(this).click(function() {
-                    $(this).parent().find('button').each(function() {
-                        var s = $(this).attr('data-segment');
+                    if ($(this).html() === 'All') {
+                        $(this).html('None');
+                        $(this).parent().find('button').each(function() {
+                            var s = $(this).attr('data-segment');
 
-                        // Return if no segment data
-                        if (s == null) {
-                            return;
-                        }
+                            // Return if no segment data
+                            if (s == null) {
+                                return;
+                            }
 
-                        $(this).addClass('active');
-                    });
+                            if (!$(this).hasClass('active')) {
+                                $(this).trigger('click');
+                            }
+                        });
+                    } else {
+                        $(this).html('All');
+                        $(this).parent().find('button').each(function() {
+                            var s = $(this).attr('data-segment');
+
+                            // Return if no segment data
+                            if (s == null) {
+                                return;
+                            }
+
+                            if ($(this).hasClass('active')) {
+                                $(this).trigger('click');
+                            }
+                        });
+                    }
+
+                }); 
+
+                // Update data
+                var segments = [];
+                $(selector + ' .segments-panel button.active').each(function() {
+                    segments.push($(this).data('segment'));
                 });
+                $(selector + ' .segments-panel .segments-input').val(JSON.stringify(segments));
+
+                // Trigger click on initialization
+                $(this).trigger('click');
+            });
+        }
+
+        function initializeInteractionButtons(selector) {
+            // Initialize interaction buttons.
+            $(selector + ' .interactions-panel button').each(function() {
+                var s = $(this).attr('data-interaction-type');
+
+                // Return if no segment data
+                if (s == null) {
+                    return;
+                }
+
+                $(this).click(function() {
+                    var interactions = [];
+                    $(this).toggleClass('active');
+                    $(selector + ' .interactions-panel button.active').each(function() {
+                        interactions = interactions.concat($(this).data('interaction-type').split(' '));
+                    });
+                    $(selector + ' .interactions-input').val(JSON.stringify(interactions));
+                });
+            });
+
+            // Initialize 'all' buttons.
+            $(selector  + ' .interactions-panel .all-button').each(function() {
+                $(this).click(function() {
+                    if ($(this).html() === 'All') {
+                        $(this).html('None');
+                        $(this).parent().find('button').each(function() {
+                            var s = $(this).attr('data-interaction-type');
+
+                            // Return if no segment data
+                            if (s == null) {
+                                return;
+                            }
+
+                            if (!$(this).hasClass('active')) {
+                                $(this).trigger('click');
+                            }
+                        });
+                    } else {
+                        $(this).html('All');
+                        $(this).parent().find('button').each(function() {
+                            var s = $(this).attr('data-interaction-type');
+
+                            // Return if no segment data
+                            if (s == null) {
+                                return;
+                            }
+
+                            if ($(this).hasClass('active')) {
+                                $(this).trigger('click');
+                            }
+                        });
+                    }
+                }); 
+
+                // Update data
+                var interactions = [];
+                $(selector + ' .interactions-panel button.active').each(function() {
+                    interactions.push($(this).data('interaction-type'));
+                });
+                $(selector + ' .interactions-input').val(JSON.stringify(interactions));
+
+                // Trigger click on initialization
+                $(this).trigger('click');
             });
         }
 
@@ -1057,12 +1171,14 @@
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
                 var segments = JSON.parse($(selector + ' .segments-input').val());
+                var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
 
                 $.getJSON( '/contactnetwork/interactiondata',
                 {
                     'segments': segments,
                     'generic': generic,
-                    'pdbs': pdb
+                    'pdbs': pdb,
+                    'interaction_types': interactionTypes
                 },
                 function( data ) {
                     // Re-render heatmap
@@ -1084,6 +1200,7 @@
             initializeSegmentButtons('#single-crystal-tab');
             initializeGoButton('#single-crystal-tab', renderSingleCrystalHeatmap);
             initializeFullscreenButton('#single-crystal-tab');
+            initializeInteractionButtons('#single-crystal-tab');
         }
 
         function initializeSingleGroupCrystalView() {
@@ -1091,6 +1208,7 @@
             initializeSegmentButtons('#single-crystal-group-tab');
             initializeGoButton('#single-crystal-group-tab', renderSingleCrystalGroupHeatmap, true);
             initializeFullscreenButton('#single-crystal-group-tab');
+            initializeInteractionButtons('#single-crystal-group-tab');
         }
 
         $(document).ready(function() {
