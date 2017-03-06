@@ -52,6 +52,8 @@ def generate_schematic(c):
             pair_info = str(mod.pos_start)
             pair_short = ''
 
+        if mod.modification=='Disulfide bond': continue
+
         annotations[mod.pos_start] = ['mod','modification','Modified<br>'+mod.modification+"<br>"+pair_info,mod,pair_short]
         annotations[mod.pos_end] = ['mod','modification','Modified<br>'+mod.modification+"<br>"+pair_info,mod,pair_short]
         json_annotations[mod.pos_start] = ['mod','Modified<br>'+mod.modification+"<br>"+pair_info,"yellow","black"]

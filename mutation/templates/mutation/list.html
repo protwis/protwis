@@ -82,6 +82,7 @@ input.form-control {
 
             $('[data-toggle="tooltip"]').tooltip(); 
             //$('[data-toggle="tooltip"]').tooltip({html:true});
+            $('.foldchange').tooltip(); 
             {% if HelixBox %} 
             mutant_json = '{{mutations_pos_list|safe}}';
 
@@ -163,7 +164,7 @@ input.form-control {
                 <td>{{mutation.residue.protein_segment.slug}}</td>
                 <td>{{mutation.residue.amino_acid}} => {{mutation.mutation.amino_acid}}</td>
 
-                <td><a href="#" data-toogle="tooltip"   data-container="body" data-html="true" data-original-title="{{mutation.getCalculation}}" data-placement="top"> {{mutation.getFoldorQual|safe}}</a></td>
+                <td><a class="foldchange" href="#" data-toogle="tooltip"  data-html="true" data-original-title="{{mutation.getCalculation}}" data-placement="top"> {{mutation.getFoldorQual|safe}}</a></td>
 
                 <td>{% if mutation.exp_func.func %} {{mutation.exp_type.type}} ({{mutation.exp_func.func}}) {% else %} N/A {% endif %}</td>
                 <td>

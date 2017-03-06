@@ -107,6 +107,7 @@ class Diagram:
         else:
             if nobuttons == 'gprotein':
                 output += ' <button style="width:220px;" onclick="ajaxBarcode(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Barcode</button>'
+                output += ' <button style="width:220px;" onclick="ajaxInterface(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Receptor Interface</button>'
             else:
                 output += '<br><button style="width:120px;" onclick="ajaxMutants(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Mutants</button>'
                 output += ' <button style="width:220px;" onclick="ajaxInteractions(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Interactions from Crystals</button>'
@@ -136,7 +137,24 @@ class Diagram:
             """.format(resclass,x,y,radius,cfill,id,label,label,x,y+6,idtext,resclass,label,label,aa) #aa
         return output
 
-
+    def DrawResidueSquare(self, x,y,aa,residue_number,label,radius, resclass = '',cfill="white", precolor = False):
+        id = residue_number
+        idtext = str(id) + 't'
+        tfill = 'black'
+        #if (isset(_GET['precolor']) && _GET['precolor'] == 'TRUE') precolor = TRUE
+        # if (precolor) {
+        #     iid = str_replace('.', '_', id)
+        #     iidtext = str_replace('.', '_', idtext)
+        #     cfill = isset(_SESSION['color_pattern'][iid]) ? _SESSION['color_pattern'][iid] : 'white'
+        #     tfill = isset(_SESSION['color_pattern'][iidtext]) ? _SESSION['color_pattern'][iidtext] : 'black'
+        # }
+        output =  """
+            <rect class='{} rcircle' x='{}' y='{}' height='{}' width='{}' stroke='black' stroke-width='1' fill='{}'
+            fill-opacity='1' id='{}' title='{}' original_title='{}'/>
+            <text x='{}' y='{}' text-anchor='middle' font-family='helvetica' font-size='16' fill=''
+            id='{}' class='rtext {}' title='{}' original_title='{}'> {} </text>
+            """.format(resclass,x-radius*(1.5/2),y-radius*(1.5/2),radius*1.5,radius*1.5,cfill,id,label,label,x,y+6,idtext,resclass,label,label,aa) #aa
+        return output
     def deg2rad(self,degrees):
         radians = pi * degrees / 180
         return radians
