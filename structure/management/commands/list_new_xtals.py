@@ -7,26 +7,75 @@ Created on Mon Apr 25 15:50:57 2016
 from django.core.management.base import BaseCommand
 
 from protein.models import Protein
+from structure.models import Structure
 
 import urllib
 import re
+import os
+import xmltodict, pprint
 
 
 class Command(BaseCommand):
         
+    def add_arguments(self, parser):
+        super(Command, self).add_arguments(parser=parser)
+        parser.add_argument('--verbose', help='Print output', default=True, 
+                            action='store_true')
+        parser.add_argument('--classified', help="Use PDB's 'G protein-coupled receptors' classification", default=False, 
+                            action='store_true')
+
     def handle(self, *args, **options):
-        q = QueryPDB2()
-        q.run()
+        if options['verbose']:
+            self.verbose = True
+        else:
+            self.verbose = False
+        if options['classified']:
+            q = QueryPDBClassifiedGPCR()
+            q.list_xtals(self.verbose)
+        else:
+            q = QueryPDB()
+            q.list_xtals(self.verbose)
 
 
-class QueryPDB2():
+class QueryPDB():
+    ''' Queries PDB using GPCRdb protein and structure entries. If those are not available, it uses the structure and uniprot data folders.
+    '''
     def __init__(self):
-        pass
+        self.exceptions = []
+        try:
+            self.uniprots = Protein.objects.filter(accession__isnull=False)
+            if len(self.uniprots)<100:
+                raise Exception()
+        except:
+            self.uniprots = [i.split('.')[0] for i in os.listdir('/protwis/data/protwis/gpcr/protein_data/uniprot/')]
+        self.yamls = [i.split('.')[0] for i in os.listdir('/protwis/data/protwis/gpcr/structure_data/structures/')]
 
-    def run(self):
-        proteins = Protein.objects.filter(accession__isnull=False, species__common_name="Human")
-        for p in proteins:
-            self.pdb_request_by_uniprot(p.accession)
+    def list_xtals(self, verbose=True):
+        ''' List GPCR crystal structures missing from GPCRdb and the yaml files.
+        '''      
+        db_list, yaml_list = [], []
+        for u in self.uniprots:
+            structs = self.pdb_request_by_uniprot(u.accession)
+            if structs!=['null']:
+                for s in structs:
+                    try:
+                        st_obj = Structure.objects.get(pdb_code__index=s)
+                    except:
+                        if s not in self.exceptions:
+                            check = self.pdb_request_by_pdb(s)
+                            if check==1:
+                                db_list.append(s)
+                    if s not in self.yamls and s not in self.exceptions:
+                        if s not in db_list:
+                            check = self.pdb_request_by_pdb(s)
+                        else:
+                            check = 1
+                        if check==1:
+                            yaml_list.append(s)
+        if verbose:
+            print('Missing from db: ', db_list)
+            print('Missing yamls: ', yaml_list)
+        return db_list, yaml_list
 
     def pdb_request_by_uniprot(self, uniprot_id):
         url = 'http://www.rcsb.org/pdb/rest/search'
@@ -43,11 +92,49 @@ class QueryPDB2():
         f = urllib.request.urlopen(req)
         result = f.read()
         structures = [i.split(':')[0] for i in result.decode('utf-8').split('\n')[:-1]]
-        print(uniprot_id, structures)
         return structures
 
+    def pdb_request_by_pdb(self, pdb_code):
+        response = urllib.request.urlopen('http://www.rcsb.org/pdb/rest/describePDB?structureId={}'.format(pdb_code.lower()))
+        response_mol = urllib.request.urlopen('http://www.rcsb.org/pdb/rest/describeMol?structureId={}'.format(pdb_code.lower()))
+        str_des = str(response.read())
+        dic = xmltodict.parse(response_mol.read())
+        if 'NMR' in str_des or 'extracellular' in str_des:
+            return 0
+        if pdb_code=='AAAA':
+            return 0
+        polymer = dic['molDescription']['structureId']['polymer']
+        if type(polymer)==type([]):
+            for mol in polymer:
+                if 'receptor' in mol['polymerDescription']['@description']:
+                    if int(mol['@length'])<100:
+                        return 0
+                    else:
+                        try:
+                            if polymer['macroMolecule'][0]['accession']['@id'] in self.uniprots:
+                                return 1
+                            else:
+                                raise Exception()
+                        except:
+                            return 0
+        else:
+            if 'receptor' in polymer['polymerDescription']['@description'] and int(polymer['@length'])>100:
+                try:
+                    if polymer['macroMolecule'][0]['accession']['@id'] in self.uniprots:
+                        return 1
+                except:
+                    if polymer['macroMolecule']['accession']['@id'] in self.uniprots:
+                        return 1
+                    else:
+                        return 0
+            else:
+                return 0
 
-class QueryPDB():    
+
+class QueryPDBClassifiedGPCR(): 
+    ''' Queries PDB using GPCRdb protein and structure entries using the 'G protein-coupled receptors' classification on PDB. Tree node number (<n>248</n>) 
+        need to be updated when new xtals come in.
+    '''  
     def __init__(self):
         self.num_struct = None
         self.new_structures = None
