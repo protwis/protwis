@@ -130,8 +130,8 @@ class Command(BaseBuild):
     def run_HomologyModeling(self, receptor, state):
         try:
             seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX']
-            Homology_model = HomologyModeling(receptor, state, [state,"Active"], update=self.update, version=self.version)
-            alignment = Homology_model.run_alignment([state,"Active"])
+            Homology_model = HomologyModeling(receptor, state, [state], update=self.update, version=self.version)
+            alignment = Homology_model.run_alignment([state])
             Homology_model.build_homology_model(alignment)
             if self.update==False:
                 Homology_model.format_final_model()
@@ -488,7 +488,8 @@ class HomologyModeling(object):
             
             parse = GPCRDBParsingPDB()
             main_pdb_array = parse.pdb_array_creator(structure=self.main_structure)
-            
+            if self.main_structure.pdb_code.index=='4OR2':
+                main_pdb_array['H8'] = OrderedDict()
             try:
                 if len(alignment.reference_dict['H8'])==0:
                     del alignment.reference_dict['H8']
@@ -511,19 +512,21 @@ class HomologyModeling(object):
                     self.template_source = helixends.template_source
                     self.helix_end_mods = helixends.helix_end_mods
                     if self.reference_protein.family.slug.startswith('004'):
-                        H8_st = Structure.objects.get(pdb_code__index='4OO9')
+                        struct = Structure.objects.get(pdb_code__index='4OO9')
                         alt_simtable = self.similarity_table_all
-                        alt_simtable[H8_st] = 0
+                        alt_simtable[struct] = 0
+                        gn_list = list(Residue.objects.filter(protein_conformation=struct.protein_conformation, 
+                                                              protein_segment__slug='H8'))
                     else:
                         alt_simtable = self.similarity_table_all
-                    for struct in alt_simtable:
-                        try:
-                            gn_list = list(Residue.objects.filter(protein_conformation=struct.protein_conformation, 
-                                                                  protein_segment__slug='H8'))
-                            if len(gn_list)>0:
-                                break
-                        except:
-                            pass
+                        for struct in alt_simtable:
+                            try:
+                                gn_list = list(Residue.objects.filter(protein_conformation=struct.protein_conformation, 
+                                                                      protein_segment__slug='H8'))
+                                if len(gn_list)>0:
+                                    break
+                            except:
+                                pass
                     for i in alignment.ordered_proteins:
                         if i.protein.entry_name==struct.protein_conformation.protein.parent.entry_name:
                             break
@@ -543,6 +546,7 @@ class HomologyModeling(object):
                     alignment.template_dict['H8'] = template_dict
                     alignment.alignment_dict['H8'] = alignment_dict
         #######################
+                    
                     gn_num_list = [ggn(i.display_generic_number.label) for i in gn_list if i.display_generic_number!=None]
                     found_match = False                
                     c1 = -4
@@ -604,6 +608,7 @@ class HomologyModeling(object):
             self.statistics.add_info('helix_end_mods',self.helix_end_mods)
             
             print('Corrected helix ends: ',datetime.now() - startTime)
+            
             main_pdb_array = helixends.main_pdb_array
             alignment = helixends.alignment
 
@@ -1466,7 +1471,7 @@ class HomologyModeling(object):
                           self.uniprot_id, 1, path+modelname+'.pdb', 
                           atom_dict=trimmed_res_nums, helix_restraints=helix_restraints, icl3_mid=icl3_mid)
 
-        # os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
+        os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
         
         # stat file
 #        with open('./structure/homology_models/{}_{}.stat.txt'.format(self.reference_entry_name, self.state, 
@@ -1536,17 +1541,23 @@ class HomologyModeling(object):
                         sections.append([seg,first_seqnum,seq_num,first_gn,prev_gn,ref_prot.entry_name,first_temp])
                     
             for sec in sections:
-                s_file.write(str(sec)+"\n")
+                if self.revise_xtal==False and 'term' in sec[0]:
+                    pass
+                else:
+                    s_file.write(str(sec)+"\n")
                 for rot in rot_table:
-                    if int(sec[1])<=int(rot[1])<=int(sec[2]):
-                        s_file.write(str(rot)+"\n")
+                    if self.revise_xtal==False and 'term' in sec[0]:
+                        pass
+                    else:
+                        if int(sec[1])<=int(rot[1])<=int(sec[2]):
+                            s_file.write(str(rot)+"\n")
         
         if self.update==True:
             print('UPDATING DB')
             self.upload_to_db(sections, rot_table)
 
         print('MODELLER build: ',datetime.now() - startTime)
-        pprint.pprint(self.statistics)
+        # pprint.pprint(self.statistics)
         print('################################')
         return self
     
@@ -3649,7 +3660,12 @@ class GPCRDBParsingPDB(object):
                 except:
                     if res[0].get_parent().get_resname()=='YCM':
                         found_res = Residue.objects.get(protein_conformation=parent_prot_conf, sequence_number=gn)
-                        found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
+                        if 'term' in found_res.protein_segment.slug:
+                            continue
+                        try:
+                            found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
+                        except:
+                            found_gn = str(gn)
                         output[found_res.protein_segment.slug][found_gn] = res
             counter+=1
         return output

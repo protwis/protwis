@@ -956,19 +956,19 @@ class AlignedReferenceTemplate(Alignment):
         self.structures_data = Structure.objects.filter(
             state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
             template_family).order_by('protein_conformation__protein__parent',
-            'resolution').filter(pdb_code__index__in=["4IAQ","4IAR","4IB4","4NC3","2YDO","2YDV","3QAK","3REY","3RFM",
-                                                      "3UZA","3UZC","4EIY","4UHR","5IU4","5IU7","5IU8","5IUA","5IUB",
-                                                      "5K2A","5K2B","5K2C","5K2D","5G53","3VG9","5CXV","3UON","4MQS",
-                                                      "4MQT","4U15","4U16","5DSG","5F8U","2Y00","2Y02","2Y03","2Y04","2YCW",
-                                                      "2YCZ","3ZPQ","3ZPR","4AMI","4AMJ","4BVN","4GPO","5A8E","2RH1",
-                                                      "3D4S","3NY9","3P0G","3SN6","4LDE","4LDL","4LDO","4QKX","4YAY",
-                                                      "4MBS","3ODU","3OE0","4RWS","3PBL","4PHU","3RZE","4Z34","4Z35",
-                                                      "4Z36","4BOU","4XEE","4XES","4GRV","4N6H","4EJ4","4DJH","4DKL","5C1M","4EA3","5DHG","5DHH",
-                                                      "1U19","3DQB","5DYS","5EN0","3PQR","4J4Q","4ZWJ","2Z73","4ZJ8","4ZJC","4S0V",
-                                                      "4XNV","4XNW","4NTJ","4PXZ","4PY0","3VW7","3V2Y","1GZM","3NY8",
-                                                      "3NYA","3PDS","4ZUD","4RWD","5D6L","5JQH","5TGZ","5GLH","5GLI",
-                                                      "4XT1","4K5Y","4Z9G","4L6R","5EE7","4OR2","4OO9","5CGC","5CGD",
-                                                      "4JKV","4N4W","5L7D","5L7I","4O9R","4QIM","4QIN","5T1A","AAAA"])
+            'resolution')#.filter(pdb_code__index__in=["4IAQ","4IAR","4IB4","4NC3","2YDO","2YDV","3QAK","3REY","3RFM",
+                                                      # "3UZA","3UZC","4EIY","4UHR","5IU4","5IU7","5IU8","5IUA","5IUB",
+                                                      # "5K2A","5K2B","5K2C","5K2D","5G53","3VG9","5CXV","3UON","4MQS",
+                                                      # "4MQT","4U15","4U16","5DSG","5F8U","2Y00","2Y02","2Y03","2Y04","2YCW",
+                                                      # "2YCZ","3ZPQ","3ZPR","4AMI","4AMJ","4BVN","4GPO","5A8E","2RH1",
+                                                      # "3D4S","3NY9","3P0G","3SN6","4LDE","4LDL","4LDO","4QKX","4YAY",
+                                                      # "4MBS","3ODU","3OE0","4RWS","3PBL","4PHU","3RZE","4Z34","4Z35",
+                                                      # "4Z36","4BOU","4XEE","4XES","4GRV","4N6H","4EJ4","4DJH","4DKL","5C1M","4EA3","5DHG","5DHH",
+                                                      # "1U19","3DQB","5DYS","5EN0","3PQR","4J4Q","4ZWJ","2Z73","4ZJ8","4ZJC","4S0V",
+                                                      # "4XNV","4XNW","4NTJ","4PXZ","4PY0","3VW7","3V2Y","1GZM","3NY8",
+                                                      # "3NYA","3PDS","4ZUD","4RWD","5D6L","5JQH","5TGZ","5GLH","5GLI",
+                                                      # "4XT1","4K5Y","4Z9G","4L6R","5EE7","4OR2","4OO9","5CGC","5CGD",
+                                                      # "4JKV","4N4W","5L7D","5L7I","4O9R","4QIM","4QIN","5T1A","AAAA"])
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
   
@@ -1112,6 +1112,8 @@ class AlignedReferenceTemplate(Alignment):
                     # Allow for partial main loop template
                     elif (len(ref_seq)>=len(main_temp_parent) and len(main_temp_parent)>len(main_temp_seq) and 
                           [i.sequence_number for i in main_temp_seq]!=[i.sequence_number for i in main_temp_parent]):
+                        if x50_ref==False and len(ref_seq)!=len(main_temp_parent):
+                            continue
                         if self.segment_labels[0]=='ICL3':
                             if len(main_temp_parent)<=10:
                                 temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
