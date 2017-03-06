@@ -157,6 +157,9 @@ def render_mutations(request, protein = None, family = None, download = None, re
                 if len(re.sub('<[^>]*>', '', protein.name)+" "+name)>longest_name:
                     longest_name = len(re.sub('<[^>]*>', '', protein.name)+" "+name)
 
+        if len(alignment_proteins)==0:
+            alignment_proteins = proteins
+
         used_scheme = max(used_schemes, key=used_schemes.get)
 
         mutations = MutationExperiment.objects.filter(
@@ -226,7 +229,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
         consensus = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&consensus")
         generic_number_objs = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&generic_number_objs")
-        if generic_number_objs == None or consensus == None:
+        if generic_number_objs == None or consensus == None or consensus == []:
             a = Alignment()
 
             a.load_proteins(alignment_proteins)

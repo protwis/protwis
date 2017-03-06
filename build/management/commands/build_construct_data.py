@@ -130,6 +130,8 @@ class Command(BaseCommand):
     def create_construct_data(self, filenames=False):
         self.logger.info('ADDING EXPERIMENTAL CONSTRUCT DATA')
 
+        self.purge_construct_data()
+
         # read source files
         if not filenames:
             filenames = os.listdir(self.construct_data_dir)
@@ -148,9 +150,14 @@ class Command(BaseCommand):
         for s in structures:
             pdbname = str(s)
             try:
-                protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
-                d = fetch_pdb_info(pdbname,protein)
-                add_construct(d)
+                exists = Construct.objects.filter(structure__pdb_code__index=pdbname).exists()
+                if not exists:
+                    print(pdbname)
+                    protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
+                    d = fetch_pdb_info(pdbname,protein)
+                    add_construct(d)
+                else:
+                    print("Entry for",pdbname,"already there")
             except:
                 print(pdbname,'failed')
 
