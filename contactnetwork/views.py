@@ -105,8 +105,6 @@ def InteractionData(request):
     # Dict to keep track of which residue numbers are in use
     number_dict = set()
 
-    itypes = set()
-
     for i in interactions:
         pdb_name = i['interacting_pair__referenced_structure__protein_conformation__protein__entry_name']
         res1_seq = i['interacting_pair__res1__sequence_number']
@@ -116,8 +114,6 @@ def InteractionData(request):
         res1_seg = i['interacting_pair__res1__protein_segment__slug']
         res2_seg = i['interacting_pair__res2__protein_segment__slug']
         model = i['polymorphic_ctype__model']
-
-        itypes |= {model}
 
         if generic and (not res1_gen or not res2_gen):
             continue
@@ -160,8 +156,6 @@ def InteractionData(request):
 
     data['segments'] = list(data['segments'])
     data['pdbs'] = list(data['pdbs'])
-
-    print(itypes)
 
     return JsonResponse(data)
 
