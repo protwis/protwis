@@ -1,0 +1,205 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.yadcf.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+        <style type="text/css">
+        .select2-result-label{
+            font-size:x-small;
+            font-size: 10px;
+        }
+
+        #filters{
+            float:left;
+          display:none;
+          position:absolute;
+          background:white;
+          border: 1px solid #D1C9C2;
+          border-top: 1;
+          width: 400px;
+          margin: 0 auto;
+          padding:  7px 15px;
+          text-align: left;
+          -webkit-border-bottom-right-radius: 6px;
+          -webkit-border-bottom-left-radius: 6px;
+          -moz-border-radius-bottomright: 6px;
+          -moz-border-radius-bottomleft: 6px;
+          border-bottom-right-radius: 6px;
+          border-bottom-left-radius: 6px;
+          z-index: 1;
+            font-size: 10px;
+        }
+
+        @media (min-width: 1600px){
+            #content {
+                width: 1570px;
+            }
+        }
+        @media (min-width: 1800px){
+            #content {
+                width: 1770px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
+    <script src="{% static 'home/js/select2.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
+
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function () {
+            // 'use strict';
+
+            // var oTable;
+            var oTable = $('#mutations').DataTable({
+                'scrollX': true,
+                // 'paging': true,
+                // 'autoWidth': true,
+
+                scrollY:        '80vh',
+                scrollCollapse: true,
+                paging:         false
+            });
+
+            yadcf.init(oTable,
+                [
+                    {
+                        column_number : 0,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "Receptor",
+                        filter_container_id: "external_filter_container1"
+                    },
+                    {
+                        column_number: 1,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        column_data_type: "html",
+                        html_data_type: "text",
+                        filter_default_label: "GNs",
+                        filter_container_id: "external_filter_container2"
+                    },
+                    {
+                        column_number: 3,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "Segment",
+                        filter_container_id: "external_filter_container3"
+                    },
+                    {
+                        column_number : 4,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "WT",
+                        filter_container_id: "external_filter_container4"
+                    },
+                    {
+                        column_number : 5,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        filter_default_label: "MUT",
+                        filter_container_id: "external_filter_container5"
+                    },
+                    {
+                        column_number : 6,
+                        filter_type: "text",
+                        column_data_type: "text",
+                        filter_default_label: "PDB",
+                        filter_container_id: "external_filter_container6"
+                    },
+                    {
+                        column_number : 7,
+                        filter_type: "text",
+                        column_data_type: "text",
+                        filter_default_label: "Name",
+                        filter_container_id: "external_filter_container7"
+                    },
+                ],
+                {
+                    cumulative_filtering: false
+                }
+            );
+
+            yadcf.exResetAllFilters(oTable);
+
+            // $.datepicker.regional[""].dateFormat = "yy-mm-dd";
+            // $.datepicker.setDefaults($.datepicker.regional['']);
+
+
+
+        });
+        $('#apply_filter').click(function() {
+            $("#filters").toggle();
+        });
+
+        $("#OpenFilters").click(function () {
+            $("#filters").toggle();
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+
+<h2> Mutations</h2>
+
+        <button class="btn btn-primary btn-group" id='OpenFilters'>Filters</button>
+            <div id='filters'>
+<!--     <div><span style='width: 160px;display: inline-block;'>Class:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container3"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Family:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container2"></span></div> -->
+    <div><span style='width: 160px;display: inline-block;'>Receptor(s):</span><span  style='width: 160px;display: inline-block;' id="external_filter_container1"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Generic Number:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container2"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Segment(s):</span><span  style='width: 160px;display: inline-block;' id="external_filter_container3"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>WT:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container4"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>MUT:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container5"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Construct:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container7"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>PDB:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container6"></span></div>
+    <button id='apply_filter'>Apply Filter</button>
+    </div>
+
+
+<table width="100%" class="display" id="mutations">
+    <thead>
+
+        <tr>
+            <th class="protein-th">Class Name</th>
+            <th class="protein-th">Generic Number</th>
+            <th class="protein-th">Position</th>
+            <th class="protein-th">Segment</th>
+            <th class="protein-th">WT</th>
+            <th class="seq-th">MUT</th>
+            <th class="seq-th">Effect</th>
+            <th class='seq-th'>PDB</th>
+        </tr>
+
+    </thead>
+    <tbody>
+    {% for mutation in mutation_list %}
+        <tr id="{{ mutation.pk }}">
+            <td><a href="{{ construct.name|safe}}">{{ mutation.p_class|safe }}</a></td>
+            <td>{% if mutation.gn != None %}
+                    {{mutation.gn}}
+                {% endif %}
+            </td>
+            <td>{{ mutation.pos}}</td>
+            <td>{{ mutation.segment}}</td>
+            <td>{{ mutation.wt}}</td>
+            <td>{{ mutation.mut}}</td>
+            <td>{{ mutation.type}}</td>
+            <td>{{ mutation.pdb}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
