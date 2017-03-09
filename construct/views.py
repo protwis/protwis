@@ -11,7 +11,7 @@ from common.views import AbsTargetSelection
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
 from construct.models import *
 from construct.functions import *
-from protein.models import Protein, ProteinConformation,ProteinSegment
+from protein.models import Protein, ProteinConformation, ProteinSegment
 from structure.models import Structure
 from mutation.models import Mutation
 from residue.models import ResiduePositionSet
@@ -178,7 +178,7 @@ class ConstructStatistics(TemplateView):
             #print(segment)
             ordered_truncations[segment] = OrderedDict()
             for p_class, c_vals in sorted(s_vals.items()):
-                #print(p_class) 
+                #print(p_class)
                 ordered_truncations[segment][p_class] = OrderedDict()
                 for pos, p_vals in sorted(c_vals.items(),key=lambda x: (len(x[1]),x[0]), reverse=True):
                     #print(pos, len(p_vals))
@@ -241,7 +241,7 @@ class ConstructStatistics(TemplateView):
                 mutation_list[p_class][gn] = {'proteins':[], 'hits':0, 'mutation':[]}
             if entry_name not in mutation_list[p_class][gn]['proteins']:
                 mutation_list[p_class][gn]['proteins'].append(entry_name)
-                mutation_list[p_class][gn]['hits'] += 1  
+                mutation_list[p_class][gn]['hits'] += 1
                 mutation_list[p_class][gn]['mutation'].append((mutation[0].wild_type_amino_acid,mutation[0].mutated_amino_acid))
 
 
@@ -544,6 +544,77 @@ class ConstructMutations(TemplateView):
         print(mutation_list)
 
         return context
+
+def thermostabilisation(request):
+    ''' View to display and summarise mutation data for thermostabilising mutational constructs. '''
+
+    # Get a list of all constructs.
+    constructs = Construct.objects.all().prefetch_related("crystal", "mutations", "purification",
+                                                          "protein__family__parent__parent__parent",
+                                                          "insertions__insert_type", "modifications", "deletions",
+                                                          "crystallization__chemical_lists", "protein__species",
+                                                          "structure__pdb_code", "structure__publication__web_link",
+                                                          "contributor")
+
+    #GRAB RESIDUES for mutations
+    mutation = []
+    positions = set()
+    proteins = set()
+    class_names = {}
+    for record in constructs:
+        prot = record.protein
+        entry_name = prot.entry_name
+        class_slug_id = prot.family.slug.split('_')[0] # <-- gets class identifier.
+        for mutation in record.mutations.all():
+            proteins.add(entry_name)
+            positions.add(mutation.sequence_number)
+
+            p_class = class_names.setdefault(class_slug_id, prot.family.parent.parent.parent.name)
+            mutations.append((mutation, entry_name, record.crystal.pdb_code, p_class))
+
+
+    # Get the residues associated with the proteins and positions identified in the constructs above.
+    residue_list = Residue.objects.filter(protein_conformation__protein__entry_name__in=proteins,
+                                          sequence_number__in=positions
+                                         ).prefetch_related('generic_number',
+                                                            'protein_conformation__protein',
+                                                            'protein_segment')
+    # Create a dictionary of residues.
+    res_lookup = {}
+    # Organise the residues in a dict {res_entry_name: {dict of pos:residue}}
+    # Done to get the generic number of the residues.
+    for record in residue_list:
+        protein_name = record.protein_conformation.protein.entry_name
+        # If entry_name is not already in res_lookup, add it and return a POINTER to the dict entry.
+        protein = res_lookup.setdefault(protein_name, {})
+        # Use pointer to change the res_lookup[protein] dict in place
+        protein[record.sequence_number] = (record.protein_segment.slug, record.generic_number)
+
+    mutation_list = []
+    for mutation in mutations:
+        entry_name = mutation[1]
+        pos = mutation[0].sequence_number
+
+        # Add to the dictionary iff the key, mutation[3], doesn't already exist.
+        # Then return the value corresponding to the key (new or not).
+
+        try:
+            mutation_list.append({'pdb':mutation[2],
+                                  'segment':res_lookup[entry_name][pos][0],
+                                  'pos': pos,
+                                  'gn': res_lookup[entry_name][pos][1],
+                                  'wt': mutation[0].wild_type_amino_acid,
+                                  'mut': mutation[0].mutated_amino_acid,
+                                  'p_class': p_class,
+                                  'type': mutation[0].mutation_type})
+        except KeyError:
+            continue
+
+
+    return render(request, "construct/thermostablisation.html", {'mutation_list':mutation_list})
+
+
+
 
 def fetch_all_pdb(request):
 
