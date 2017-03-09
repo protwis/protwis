@@ -1023,7 +1023,7 @@
                         var nInteractions = Object.keys(interactions[num]).length;
                         var frequency = nInteractions / data.pdbs.length;
 
-                        var rgb = { r: 255, g: frequency*255, b: frequency*255 };
+                        var rgb = { r: 255, g: 255-frequency*255, b: 255-frequency*255 };
                         var cell = heatmap.rect(i, j, 1, 1);
 
                         var title =  'Residues ' + seq_i + ', ' + seq_j + '<br />'
@@ -1063,10 +1063,14 @@
             var legendHtml = '<h4 class="center">Interaction count</h4>'
                 + '<p>From: <span class="min-value">0</span></p>'
                 + '<input class="min-interactions-range" type="range" min="0" max="' + data.pdbs.length + '" value="0" step="1" />'
-                + '<div class="temperature-scale"></div>'
+                + '<div class="temperature-scale">'
+                + '<span class="white-to-red"></span>'
+                + '</div>'
                 + '<p>To: <span class="max-value">' + data.pdbs.length + '</span></p>'
                 + '<input class="max-interactions-range" type="range" min="0" max="' + data.pdbs.length + '" value="' + data.pdbs.length + '" step="1" />'
-                + '<div class="temperature-scale"></div>';
+                + '<div class="temperature-scale">'
+                + '<span class="white-to-red"></span>'
+                + '</div>';
             $(heatMapSelector + ' .heatmap-legend').append(legendHtml); 
 
             function getRangeChangeFunction() {
@@ -1117,7 +1121,7 @@
             });
         }
 
-        function renderTwoCrystalGroupsHeatmap(data1, data2, heatmapSelector) {
+        function renderTwoCrystalGroupsHeatmap(data1, data2, data3, heatMapSelector) {
 
             // Destroy old zoom on heatmap
             if (window.zoomHeatmap[heatMapSelector] != null) {
@@ -1133,10 +1137,10 @@
             var heatmap = Snap(heatMapSelector + ' .heatmap');
 
             // Draw heatmap
-            var interactions = data.interactions;
-            var segment_map = data.segment_map;
-            var sequence_numbers = data.sequence_numbers;
-            var num_seq_numbers = Object.keys(data.sequence_numbers).length;
+            var interactions = data3.interactions;
+            var segment_map = data3.segment_map;
+            var sequence_numbers = data3.sequence_numbers;
+            var num_seq_numbers = Object.keys(data3.sequence_numbers).length;
 
             x = 0; wi = num_seq_numbers;
             y = 0; hi = num_seq_numbers;
@@ -1237,27 +1241,42 @@
             for (i = 0; i < num_seq_numbers; i++) {
                 for (var j = 0; j < num_seq_numbers; j++) {
                     // Get the sequence numbers
-                    var seq_i = data.sequence_numbers[i];
-                    var seq_j = data.sequence_numbers[j];
+                    var seq_i = data3.sequence_numbers[i];
+                    var seq_j = data3.sequence_numbers[j];
 
                     // Only draw if an interaction exists
                     var num = seq_i + "," + seq_j;
 
-                    if (num in interactions) {
-                        // Get the strongest interaction.
-                        var nInteractions = Object.keys(interactions[num]).length;
-                        var frequency = nInteractions / data.pdbs.length;
+                    var n1 = 0;
+                    var n2 = 0;
 
-                        var rgb = { r: 255, g: frequency*255, b: frequency*255 };
+                    if (num in data1.interactions) {
+                        n1 = Object.keys(data1.interactions[num]).length;
+                    }
+
+                    if (num in data2.interactions) {
+                        n2 = Object.keys(data2.interactions[num]).length;
+                    }
+
+                    if ((num in data1.interactions) || (num in data2.interactions)) {
+                        // Difference in frequencies
+                        var fDiff = (n1 / data1.pdbs.length) - (n2 / data2.pdbs.length);
+
+                        if (fDiff <= 0) {
+                            // If fDiff is close to -1, we want a redder color
+                            var rgb = { r: 255, g: 255-255*(-fDiff), b: 255-255*(-fDiff) };
+                        } else {
+                            // If fDiff is close to 1 we want a bluer color
+                            var rgb = { r: 255-255*fDiff, g: 255-255*fDiff, b: 255 };
+                        }
+
                         var cell = heatmap.rect(i, j, 1, 1);
 
-                        var title =  'Residues ' + seq_i + ', ' + seq_j + '<br />'
-                                + 'Interaction count: ' + nInteractions + '<br />'
-                                + segment_map[seq_i] + ', ' + segment_map[seq_j];
+                        var title =  'Residues ' + seq_i + ', ' + seq_j + '<br />' + 'Frequency difference: ' + fDiff.toFixed(2);
 
                         cell.attr({
                             'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
-                            'data-num-interactions': nInteractions,
+                            'data-frequency-diff': fDiff,
                             'class': 'heatmap-interaction',
                             'title': title
                         });
@@ -1286,12 +1305,18 @@
 
             // Populate heatmap legend
             var legendHtml = '<h4 class="center">Interaction count</h4>'
-                + '<p>From: <span class="min-value">0</span></p>'
-                + '<input class="min-interactions-range" type="range" min="0" max="' + data.pdbs.length + '" value="0" step="1" />'
-                + '<div class="temperature-scale"></div>'
-                + '<p>To: <span class="max-value">' + data.pdbs.length + '</span></p>'
-                + '<input class="max-interactions-range" type="range" min="0" max="' + data.pdbs.length + '" value="' + data.pdbs.length + '" step="1" />'
-                + '<div class="temperature-scale"></div>';
+                + '<p>From: <span class="min-value">-1</span></p>'
+                + '<input class="min-interactions-range" type="range" min="-1" max="1" value="-1" step="0.01" />'
+                + '<div class="temperature-scale">'
+                + '<span class="red-to-white"></span>'
+                + '<span class="white-to-blue"></span>'
+                + '</div>'
+                + '<p>To: <span class="max-value">1</span></p>'
+                + '<input class="max-interactions-range" type="range" min="-1" max="1" value="1" step="0.01" />'
+                + '<div class="temperature-scale">'
+                + '<span class="red-to-white"></span>'
+                + '<span class="white-to-blue"></span>'
+                + '</div>';
             $(heatMapSelector + ' .heatmap-legend').append(legendHtml); 
 
             function getRangeChangeFunction() {
@@ -1302,12 +1327,12 @@
 
 
                     $(heatMapSelector + ' .heatmap-legend .min-value').html(tMin);
-                    $(heatMapSelector + ' .heatmap-legend .max-value').html(tMax    );
+                    $(heatMapSelector + ' .heatmap-legend .max-value').html(tMax);
 
                     // Hide all below min treshold
                     $(heatMapSelector + ' rect').each(function() {
-                        var n = $(this).data("num-interactions");
-                        if (n < tMin || tMax < n) {
+                        var f = $(this).data("frequency-diff");
+                        if (f <= tMin || tMax <= f) {
                             $(this).hide();
                         } else {
                             $(this).show();
@@ -1400,7 +1425,7 @@
                             });
 
                             // Save PDBs array in input
-                            $(selector + ' .crystal-pdb').val(JSON.stringify(pdbs));
+                            $(selector + ' ' + dataSelector).val(JSON.stringify(pdbs));
 
                             // Update view
                             if (pdbs.length == 0) {
@@ -1555,7 +1580,11 @@
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
                 var segments = JSON.parse($(selector + ' .segments-input').val());
-                var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+
+                var interactionTypes = [];
+
+                if (!$(selector + ' .interactions-input').val() == null) 
+                    interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
 
                 $.getJSON( '/contactnetwork/interactiondata',
                 {
@@ -1567,6 +1596,45 @@
                 function( data ) {
                     // Re-render heatmap
                     heatmapFunction(data, selector + ' .heatmap-container');
+                });
+            });
+        }
+
+
+        function initializeGoButtonTwoCrystalGroups(selector, heatmapFunction, generic=false) {
+            $(selector + ' .go-button').click(function() {
+                var pdbs1 = JSON.parse($(selector + ' .crystal-group-1-pdbs').val());
+                var pdbs2 = JSON.parse($(selector + ' .crystal-group-2-pdbs').val());
+                var segments = JSON.parse($(selector + ' .segments-input').val());
+                var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
+
+                $.getJSON( '/contactnetwork/interactiondata',
+                {
+                    'segments': segments,
+                    'generic': generic,
+                    'pdbs': pdbs1,
+                    'interaction_types': interactionTypes
+                },
+                function( data1 ) {
+                    $.getJSON( '/contactnetwork/interactiondata',
+                    {
+                        'segments': segments,
+                        'generic': generic,
+                        'pdbs': pdbs2,
+                        'interaction_types': interactionTypes
+                    },
+                    function( data2 ) {
+                        $.getJSON( '/contactnetwork/interactiondata',
+                        {
+                            'segments': segments,
+                            'generic': generic,
+                            'pdbs': pdbs1.concat(pdbs2),
+                            'interaction_types': interactionTypes
+                        }, function ( data3 ) {
+                        // Re-render heatmap
+                        heatmapFunction(data1, data2, data3, selector + ' .heatmap-container');
+                        });
+                    });
                 });
             });
         }
@@ -1599,7 +1667,7 @@
             populateModal('#two-crystal-groups-tab', '#two-crystal-group-pdbs-modal-1', '.crystal-group-1-pdbs', '.crystal-text-1', '.no-crystal-text-1', false);
             populateModal('#two-crystal-groups-tab', '#two-crystal-group-pdbs-modal-2', '.crystal-group-2-pdbs', '.crystal-text-2', '.no-crystal-text-2', false);
             initializeSegmentButtons('#two-crystal-groups-tab');
-            initializeGoButton('#two-crystal-groups-tab', renderTwoCrystalGroupsHeatmap, true);
+            initializeGoButtonTwoCrystalGroups('#two-crystal-groups-tab', renderTwoCrystalGroupsHeatmap, true);
             initializeFullscreenButton('#two-crystal-groups-tab');
             initializeInteractionButtons('#two-crystal-groups-tab');
         }
@@ -1689,8 +1757,10 @@
             left: 3px;
         }
 
-        .heatmap-legend .temperature-scale {
+        .heatmap-legend .temperature-scale .white-to-red {
             height: 10px;
+            width: 100%;
+            display: inline-block;
             background: -moz-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* ff3.6+ */
             background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,255,255,1)), color-stop(100%, rgba(255,0,0,1))); /* safari4+,chrome */
             background: -webkit-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* safari5.1+,chrome10+ */
@@ -1698,6 +1768,32 @@
             background: -ms-linear-gradient(180deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* ie10+ */
             background: linear-gradient(270deg, rgba(255,0,0,1) 0%, rgba(255,255,255,1) 100%); /* w3c */
             filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#FF0000',GradientType=1 );
+        }
+
+        .heatmap-legend .temperature-scale .red-to-white {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,0,0,1)), color-stop(100%, rgba(255,255,255,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(255,255,255,1) 0%, rgba(255,0,0,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FF0000', endColorstr='#FFFFFF',GradientType=1 );
+        }
+
+        .heatmap-legend .temperature-scale .white-to-blue {
+            height: 10px;
+            width: 50%;
+            display: inline-block;
+            background: -moz-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* ff3.6+ */
+            background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255,255,255,1)), color-stop(100%, rgba(0,0,255,1))); /* safari4+,chrome */
+            background: -webkit-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* safari5.1+,chrome10+ */
+            background: -o-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* opera 11.10+ */
+            background: -ms-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* ie10+ */
+            background: linear-gradient(270deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* w3c */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#0000FF',GradientType=1 );
         }
     </style>
 {% endblock %}
