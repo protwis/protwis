@@ -652,8 +652,15 @@ class HSExposureCB(AbstractPropertyMap):
                                 other_vector = other_atom.get_vector()
                                 d = other_vector-ref_vector
                                 if d.norm()<2:
-                                    self.clash_pairs.append([(pp1[i]['CA'].get_bfactor(),pp1[i].get_id()[1]),
-                                                             (other_res['CA'].get_bfactor(),other_res.get_id()[1])])
+                                    if len(str(pp1[i]['CA'].get_bfactor()).split('.')[1])==1:
+                                        clash_res1 = float(str(pp1[i]['CA'].get_bfactor())+'0')
+                                    else:
+                                        clash_res1 = pp1[i]['CA'].get_bfactor()
+                                    if len(str(other_res['CA'].get_bfactor()).split('.')[1])==1:
+                                        clash_res2 = float(str(other_res['CA'].get_bfactor())+'0')
+                                    else:
+                                        clash_res2 = other_res['CA'].get_bfactor()
+                                    self.clash_pairs.append([(clash_res1, pp1[i].get_id()[1]), (clash_res2, other_res.get_id()[1])])
         if check_chain_breaks==True:
             for r in residues_in_pdb:
                 if r not in residues_with_proper_CA:
