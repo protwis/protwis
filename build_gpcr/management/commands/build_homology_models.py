@@ -1471,7 +1471,7 @@ class HomologyModeling(object):
                           self.uniprot_id, 1, path+modelname+'.pdb', 
                           atom_dict=trimmed_res_nums, helix_restraints=helix_restraints, icl3_mid=icl3_mid)
 
-        os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
+        # os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
         
         # stat file
 #        with open('./structure/homology_models/{}_{}.stat.txt'.format(self.reference_entry_name, self.state, 
@@ -1557,7 +1557,7 @@ class HomologyModeling(object):
             self.upload_to_db(sections, rot_table)
 
         print('MODELLER build: ',datetime.now() - startTime)
-        # pprint.pprint(self.statistics)
+        pprint.pprint(self.statistics)
         print('################################')
         return self
     
@@ -2206,6 +2206,7 @@ class HelixEndsModeling(HomologyModeling):
             H8_alt = None
         raw_helix_ends = self.fetch_struct_helix_ends_from_array(main_pdb_array)
         anno_helix_ends = self.fetch_struct_helix_ends_from_db(main_structure, H8_alt)
+        
         for lab,seg in a.template_dict.items():
             if separate_H8==True:
                 if lab=='H8':
@@ -2315,8 +2316,10 @@ class HelixEndsModeling(HomologyModeling):
                 last_res = Residue.objects.get(protein_conformation=H8_alt.protein_conformation, 
                                                display_generic_number__label=dgn(raw_helix_ends[ref_seg][1],
                                                                                  H8_alt.protein_conformation)).sequence_number
-                mid = len(list(Residue.objects.filter(protein_conformation=H8_alt.protein_conformation, 
-                                                      sequence_number__in=range(first_res,last_res))))/2
+                temp_seg_seq_len = len(list(Residue.objects.filter(protein_conformation=H8_alt.protein_conformation, 
+                                                                   sequence_number__in=range(first_res,last_res))))
+                mid = (len(a.template_dict[temp_seg])-temp_seg_seq_len)/2+temp_seg_seq_len/2
+
             elif ref_seg[0]=='T':
                 first_res = Residue.objects.get(protein_conformation=main_structure.protein_conformation, 
                                                 display_generic_number__label=dgn(raw_helix_ends[ref_seg][0],
@@ -2324,11 +2327,10 @@ class HelixEndsModeling(HomologyModeling):
                 last_res = Residue.objects.get(protein_conformation=main_structure.protein_conformation, 
                                                display_generic_number__label=dgn(raw_helix_ends[ref_seg][1],
                                                                                  main_structure.protein_conformation)).sequence_number
-                mid = len(list(Residue.objects.filter(protein_conformation=main_structure.protein_conformation, 
-                                                      sequence_number__in=range(first_res,last_res))))/2
-                # Exceptions: TMs that miss a large part
-                if main_structure.pdb_code.index=='4L6R' and ref_seg=='TM4':
-                    mid=13
+                temp_seg_seq_len = len(list(Residue.objects.filter(protein_conformation=main_structure.protein_conformation, 
+                                                                   sequence_number__in=range(first_res,last_res))))
+                mid = (len(a.template_dict[temp_seg])-temp_seg_seq_len)/2+temp_seg_seq_len/2
+
             if ref_seg[0] not in ['T','H']:
                 continue
             if separate_H8==True:
@@ -2483,7 +2485,7 @@ class Loops(object):
         self.model_loop = False
         self.partialECL2_1 = False
         self.partialECL2_2 = False
-        self.excluded_loops = {'ICL1':[],'ECL1':[],'ICL2':[],'ECL2_1':[],'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':[]}
+        self.excluded_loops = {'ICL1':[],'ECL1':[],'ICL2':[],'ECL2_1':[],'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':['4DJH']}
     
     def fetch_loop_residues(self, main_pdb_array, superpose_modded_loop=False):
         ''' Fetch list of Atom objects of the loop when there is an available template. Returns an OrderedDict().
