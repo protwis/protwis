@@ -9,6 +9,7 @@ from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFa
 from residue.models import Residue
 from structure.models import Structure
 from mutation.models import MutationExperiment
+from mutational_landscape.models import NaturalMutations
 from common.selection import Selection
 from common.views import AbsBrowseSelection
 
@@ -60,6 +61,9 @@ def detail(request, slug):
 
     mutations = MutationExperiment.objects.filter(protein=p)
 
+    missense_variation = len(NaturalMutations.objects.filter(protein=p))
+    print(missense_variation)
+
     # process residues and return them in chunks of 10
     # this is done for easier scaling on smaller screens
     chunk_size = 10
@@ -96,7 +100,7 @@ def detail(request, slug):
         r_chunks.append(r_buffer)
 
     context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
-        'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations}
+        'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations, 'missense': missense_variation}
 
     return render(request, 'protein/protein_detail.html', context)
 
@@ -107,7 +111,7 @@ def SelectionAutocomplete(request):
         type_of_selection = request.GET.get('type_of_selection')
         selection_only_receptors = request.GET.get('selection_only_receptors')
         referer = request.META.get('HTTP_REFERER')
-        
+
         if 'gproteinselection' in str(referer) or 'signprot' in str(referer) and not 'ginterface' in str(referer):
             exclusion_slug = '00'
         else:
@@ -137,7 +141,7 @@ def SelectionAutocomplete(request):
                 species__in=(species_list),
                 source__in=(protein_source_list)).exclude(family__slug__startswith=exclusion_slug)[:10]
         else:
-            ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q), 
+            ps = Protein.objects.filter(Q(name__icontains=q) | Q(entry_name__icontains=q) | Q(family__name__icontains=q),
                 species__common_name='Human', source__name='SWISSPROT').exclude(family__slug__startswith=exclusion_slug)[:10]
         for p in ps:
             p_json = {}
