@@ -7,7 +7,7 @@ var tree = d3.layout.tree()
 var diagonal = d3.svg.diagonal.radial()
     .projection(function(d) { return [d.y, d.x / 180 * Math.PI]; });
 
-var svg = d3.select("#drugdata").append("svg")
+var svg = d3.select("#variantdata").append("svg")
     .attr("width", diameter)
     .attr("height", diameter)
     .attr("id", "drugmapping_svg")
@@ -23,7 +23,7 @@ var svg_g = svg.append("g")
 
 var color = d3.scale.category10();
 
-var data = drugdata;
+var data = variantdata;
 
 var nodes = tree.nodes(data),
   links = tree.links(nodes);
@@ -52,8 +52,8 @@ var tip = d3.tip()
         .style("visibility","visible")
         .offset([0, 0])
         .html(function(d) {
-          if (d.depth === 4) {return d.name.toUpperCase() + "<br>" + "<span style='color:#43A047'> Trials: " + d.trials + "<br>" + "<span style='color:#d62728'> Approved: " + d.approved;}
-          else {return d.name + "<br>" + "<span style='color:#43A047'> Trials: " + d.family_sum_trials + "<br>" + "<span style='color:#d62728'> Approved: " + d.family_sum_approved;}
+          if (d.depth === 4) {return d.name.toUpperCase() + "<br>" + "<span style='color:#d7ded7'> Number of variants: " + d.number_of_variants + "<br>" + "<span style='color:#d7ded7'>Density: " + d.density_of_variants;}
+          else {return d.name + "<br>" + "<span style='color:#d7ded7'> Number of variants: " + d.family_sum_trials + "<br>" + "<span style='color:#d7ded7'> Density: " + d.family_sum_approved;}
         });
 
 tip(svg_g.append("g"));
@@ -74,12 +74,10 @@ var node = svg_g.selectAll(".node")
 
 node.append("circle")
   .attr("r", function(d) {
-    if (d.trials >= 1 || d.approved >= 1 ) {return 6.0}
+    if (d.number_of_variants >= 1) {return 6.0}
     else {return 0.0} ;})
-  .style("fill-opacity", 1.0)
-  .style("fill", function(d) {
-    if (d.establishment == 4) {return "#d62728"}
-    else {return "#43A047"};});
+  .style("fill", function(d) {return "#43A047"})
+  .style("fill-opacity", function(d) {return d.density_of_variants * 2});
 
 node.append("circle")
   .attr("r", 1.0)
@@ -97,5 +95,5 @@ node.append("text")
     if (d.depth === 1) {return "20px sans-serif"}
     else if (d.depth === 2) {return "16px sans-serif"}
     else if (d.depth === 3) {return "12px sans-serif"}
-    else if (d.depth === 4) {return "10px sans-serif"}
+    else if (d.depth === 4) {return "9px sans-serif"}
     })

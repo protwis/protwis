@@ -109,6 +109,15 @@
         {% endfor %}
     </div>
 </div>
+
+<div class="row">
+    <div class="col-md-2 text-right text-info">
+        <h4>GENETIC VARIATION</h4>
+    </div>
+    <div class="col-md-10">
+    <a href="/mutational_landscape/protein/{{ p }}">{{ missense }} missense variants known.</a>
+    </div>
+</div>
 {% endblock %}
 
 {% block addon_js %}
