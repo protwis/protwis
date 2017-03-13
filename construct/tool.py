@@ -129,11 +129,36 @@ def tool(request):
 
         residues_pos[r.sequence_number] = [r.amino_acid,r.protein_segment.slug,label]
 
+
+    cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
+    
+    inserts = {}
+    inserts['fusions'] = []
+    inserts['other'] = {}
+    for ins in ConstructInsertionType.objects.all().order_by('name','subtype'):
+       # print(ins.name,ins.subtype,ins.sequence)
+        if ins.name == 'fusion':
+            inserts['fusions'].append(ins.subtype)
+        else:
+            if ins.name not in inserts['other']:
+                inserts['other'][ins.name] = []
+            if ins.subtype not in inserts['other'][ins.name]:
+                inserts['other'][ins.name].append(ins.subtype)
+        # fusion, f_results = c.fusion()
+        # if fusion:
+        #     f_protein = f_results[0][2]
+        #     if f_protein not in inserts['fusions']:
+        #         inserts['fusions'].append(f_protein)
+        # else:
+        #     for ins in c.insertions.all():
+        #         print(ins)
+    print(inserts)
     context['residues'] = residues
     context['residues_gn'] = residues_gn
     context['residues_pos'] = residues_pos
     context['class'] = c_level
     context['active_xtals'] = active_xtals
+    context['inserts'] = inserts
     context['form'] = FileUploadForm
     #print(residues)
 

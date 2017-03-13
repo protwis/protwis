@@ -1370,7 +1370,7 @@ def ExportExcelSuggestions(request):
 @csrf_exempt
 def ExportExcelModifications(request):
     """Convert json file to excel file"""
-    headers = ['type', 'method', 'range', 'info','from','to']
+    headers = ['type', 'method', 'range', 'info','insert_location','order','from','to','sequence']
 
     data = request.POST['d']
     data = json.loads(data)
@@ -1406,6 +1406,10 @@ def ExportExcelModifications(request):
     worksheet2 = workbook.add_worksheet("sequence")
     worksheet2.write(0, 0, "sequence")
     worksheet2.write(0, 1, request.POST['s'])
+    worksheet2.write(1, 0, "sequence_short")
+    worksheet2.write(1, 1, request.POST['s_short'])
+    worksheet2.write(2, 0, "sequence_long")
+    worksheet2.write(2, 1, request.POST['s_long'])
 
     workbook.close()
     output.seek(0)
