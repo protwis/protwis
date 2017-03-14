@@ -174,11 +174,9 @@
         <tr>
             <th class="protein-th">Class Name</th>
             <th class="protein-th">Generic Number</th>
-            <th class="protein-th">Position</th>
             <th class="protein-th">Segment</th>
             <th class="protein-th">WT</th>
             <th class="seq-th">MUT</th>
-            <th class="seq-th">Effect</th>
             <th class='seq-th'>PDB</th>
         </tr>
 
@@ -187,15 +185,11 @@
     {% for mutation in mutation_list %}
         <tr id="{{ mutation.pk }}">
             <td><a href="{{ construct.name|safe}}">{{ mutation.p_class|safe }}</a></td>
-            <td>{% if mutation.gn != None %}
-                    {{mutation.gn}}
-                {% endif %}
+            <td>{{mutation.gn}}
             </td>
-            <td>{{ mutation.pos}}</td>
             <td>{{ mutation.segment}}</td>
             <td>{{ mutation.wt}}</td>
             <td>{{ mutation.mut}}</td>
-            <td>{{ mutation.type}}</td>
             <td>{{ mutation.pdb}}</td>
         </tr>
         {% endfor %}
