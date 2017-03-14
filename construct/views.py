@@ -23,7 +23,6 @@ import json
 import copy
 from collections import OrderedDict
 
-
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 
@@ -541,79 +540,66 @@ class ConstructMutations(TemplateView):
 
 
         context['mutation_list'] = mutation_list
-        print(mutation_list)
+        # print(mutation_list)
 
         return context
+
+
 
 def thermostabilisation(request):
     ''' View to display and summarise mutation data for thermostabilising mutational constructs. '''
 
     # Get a list of all constructs.
-    constructs = Construct.objects.all().prefetch_related("crystal", "mutations", "purification",
-                                                          "protein__family__parent__parent__parent",
-                                                          "insertions__insert_type", "modifications", "deletions",
-                                                          "crystallization__chemical_lists", "protein__species",
-                                                          "structure__pdb_code", "structure__publication__web_link",
-                                                          "contributor")
+    constructs = Construct.objects.all().order_by().only("protein",
+                                                         "mutations"
+                                                        ).prefetch_related("protein",
+                                                                           "mutations",
+                                                                           "protein__family__parent__parent__parent")
 
     #GRAB RESIDUES for mutations
-    mutation = []
-    positions = set()
-    proteins = set()
+    mutation_list = []
     class_names = {}
+    m_positions = set()
+    m_proteins = set()
+
     for record in constructs:
         prot = record.protein
-        entry_name = prot.entry_name
+        protein_name = prot.entry_name
         class_slug_id = prot.family.slug.split('_')[0] # <-- gets class identifier.
-        for mutation in record.mutations.all():
-            proteins.add(entry_name)
-            positions.add(mutation.sequence_number)
 
-            p_class = class_names.setdefault(class_slug_id, prot.family.parent.parent.parent.name)
-            mutations.append((mutation, entry_name, record.crystal.pdb_code, p_class))
+        p_class = class_names.setdefault(class_slug_id, prot.family.parent.parent.parent.name)
 
+        for mutant in record.mutations.all():
+            # Add to the list of proteins and positions for which residues should be retrieved.
+            # Note that this is done because it's faster to make 1 SQL query like this to the residue table than to
+            # make lots of 'get' queries or to query the table for the pairs of positions and protein_names.
+            m_positions.add(mutant.sequence_number)
+            m_proteins.add(protein_name)
 
-    # Get the residues associated with the proteins and positions identified in the constructs above.
-    residue_list = Residue.objects.filter(protein_conformation__protein__entry_name__in=proteins,
-                                          sequence_number__in=positions
-                                         ).prefetch_related('generic_number',
-                                                            'protein_conformation__protein',
-                                                            'protein_segment')
-    # Create a dictionary of residues.
+            # Add information already known to the mutation list.
+            mutation_list.append({'pdb':protein_name,
+                                  'position': mutant.sequence_number,
+                                  'wt': mutant.wild_type_amino_acid,
+                                  'mut': mutant.mutated_amino_acid,
+                                  'p_class': p_class})
+
     res_lookup = {}
-    # Organise the residues in a dict {res_entry_name: {dict of pos:residue}}
-    # Done to get the generic number of the residues.
-    for record in residue_list:
-        protein_name = record.protein_conformation.protein.entry_name
-        # If entry_name is not already in res_lookup, add it and return a POINTER to the dict entry.
-        protein = res_lookup.setdefault(protein_name, {})
-        # Use pointer to change the res_lookup[protein] dict in place
-        protein[record.sequence_number] = (record.protein_segment.slug, record.generic_number)
+    for res in Residue.objects.order_by().filter(protein_conformation__protein__entry_name__in=m_proteins,
+                                                 sequence_number__in=m_positions
+                                                ).prefetch_related('generic_number',
+                                                                   'protein_conformation__protein',
+                                                                   'protein_segment'):
+        entry_name = res_lookup.setdefault(res.protein_conformation.protein.entry_name, {})
+        entry_name.setdefault(res.sequence_number, (res.protein_segment.slug, res.generic_number))
 
-    mutation_list = []
-    for mutation in mutations:
-        entry_name = mutation[1]
-        pos = mutation[0].sequence_number
-
-        # Add to the dictionary iff the key, mutation[3], doesn't already exist.
-        # Then return the value corresponding to the key (new or not).
-
-        try:
-            mutation_list.append({'pdb':mutation[2],
-                                  'segment':res_lookup[entry_name][pos][0],
-                                  'pos': pos,
-                                  'gn': res_lookup[entry_name][pos][1],
-                                  'wt': mutation[0].wild_type_amino_acid,
-                                  'mut': mutation[0].mutated_amino_acid,
-                                  'p_class': p_class,
-                                  'type': mutation[0].mutation_type})
-        except KeyError:
-            continue
+    for mutant in mutation_list:
+        # Add the information gained from the residue query.
+        residue = res_lookup[mutant['pdb']][mutant['position']]
+        mutant['segment'] = residue[0]
+        mutant['gn'] = residue[1]
 
 
     return render(request, "construct/thermostablisation.html", {'mutation_list':mutation_list})
-
-
 
 
 def fetch_all_pdb(request):
