@@ -553,15 +553,14 @@ def thermostabilisation(request):
     constructs = Construct.objects.all().order_by().only("protein",
                                                          "mutations"
                                                         ).prefetch_related("protein",
-                                                                           "mutations",
+                                                                           "mutations__residue__generic_number",
+                                                                           "mutations__residue__protein_segment",
                                                                            "protein__family__parent__parent__parent")
 
-    #GRAB RESIDUES for mutations
     mutation_list = []
     class_names = {}
-    m_positions = set()
-    m_proteins = set()
 
+    # For each contruct, retrieve the correct information, and then add it to the context dictionary, mutation_list.
     for record in constructs:
         prot = record.protein
         protein_name = prot.entry_name
@@ -570,33 +569,15 @@ def thermostabilisation(request):
         p_class = class_names.setdefault(class_slug_id, prot.family.parent.parent.parent.name)
 
         for mutant in record.mutations.all():
-            # Add to the list of proteins and positions for which residues should be retrieved.
-            # Note that this is done because it's faster to make 1 SQL query like this to the residue table than to
-            # make lots of 'get' queries or to query the table for the pairs of positions and protein_names.
-            m_positions.add(mutant.sequence_number)
-            m_proteins.add(protein_name)
 
             # Add information already known to the mutation list.
             mutation_list.append({'pdb':protein_name,
                                   'position': mutant.sequence_number,
+                                  'gn':mutant.residue.generic_number,
+                                  'segment': mutant.residue.protein_segment.slug,
                                   'wt': mutant.wild_type_amino_acid,
                                   'mut': mutant.mutated_amino_acid,
                                   'p_class': p_class})
-
-    res_lookup = {}
-    for res in Residue.objects.order_by().filter(protein_conformation__protein__entry_name__in=m_proteins,
-                                                 sequence_number__in=m_positions
-                                                ).prefetch_related('generic_number',
-                                                                   'protein_conformation__protein',
-                                                                   'protein_segment'):
-        entry_name = res_lookup.setdefault(res.protein_conformation.protein.entry_name, {})
-        entry_name.setdefault(res.sequence_number, (res.protein_segment.slug, res.generic_number))
-
-    for mutant in mutation_list:
-        # Add the information gained from the residue query.
-        residue = res_lookup[mutant['pdb']][mutant['position']]
-        mutant['segment'] = residue[0]
-        mutant['gn'] = residue[1]
 
 
     return render(request, "construct/thermostablisation.html", {'mutation_list':mutation_list})
