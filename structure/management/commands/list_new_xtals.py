@@ -41,9 +41,9 @@ class QueryPDB():
     ''' Queries PDB using GPCRdb protein and structure entries. If those are not available, it uses the structure and uniprot data folders.
     '''
     def __init__(self):
-        self.exceptions = []
+        self.exceptions = ['4QXE', '3KS9', '4XAQ', '4XAS', '5CNI', '5CNJ', '5KZN', '5KZQ', '3SM9', '4XAR', '5CNK', '5CNM', '3LMK', '3MQ4']
         try:
-            self.uniprots = Protein.objects.filter(accession__isnull=False)
+            self.uniprots = [i.accession for i in Protein.objects.filter(accession__isnull=False)]
             if len(self.uniprots)<100:
                 raise Exception()
         except:
@@ -55,7 +55,7 @@ class QueryPDB():
         '''      
         db_list, yaml_list = [], []
         for u in self.uniprots:
-            structs = self.pdb_request_by_uniprot(u.accession)
+            structs = self.pdb_request_by_uniprot(u)
             if structs!=['null']:
                 for s in structs:
                     try:
@@ -119,10 +119,11 @@ class QueryPDB():
                             return 0
         else:
             if 'receptor' in polymer['polymerDescription']['@description'] and int(polymer['@length'])>100:
-                try:
-                    if polymer['macroMolecule'][0]['accession']['@id'] in self.uniprots:
-                        return 1
-                except:
+                if type(polymer['macroMolecule'])==type([]):
+                    for mM in polymer['macroMolecule']:
+                        if mM['accession']['@id'] in self.uniprots:
+                            return 1
+                else:
                     if polymer['macroMolecule']['accession']['@id'] in self.uniprots:
                         return 1
                     else:
