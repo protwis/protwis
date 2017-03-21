@@ -61,31 +61,33 @@ def render_variants(request, protein = None, family = None, download = None, rec
         proteins.append(Protein.objects.get(entry_name = protein))
 
     # flatten the selection into individual proteins
-    for target in simple_selection.targets:
-        if target.type == 'protein':
-            proteins.append(target.item)
-        elif target.type == 'family':
-            # species filter
-            species_list = []
-            for species in simple_selection.species:
-                species_list.append(species.item)
 
-            # annotation filter
-            protein_source_list = []
-            for protein_source in simple_selection.annotation:
-                protein_source_list.append(protein_source.item)
+    if simple_selection:
+        for target in simple_selection.targets:
+            if target.type == 'protein':
+                proteins.append(target.item)
+            elif target.type == 'family':
+                # species filter
+                species_list = []
+                for species in simple_selection.species:
+                    species_list.append(species.item)
 
-            if species_list:
-                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                    species__in=(species_list),
-                    source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
-            else:
-                family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
-                    source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                # annotation filter
+                protein_source_list = []
+                for protein_source in simple_selection.annotation:
+                    protein_source_list.append(protein_source.item)
 
-            for fp in family_proteins:
-                proteins.append(fp)
-    
+                if species_list:
+                    family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                        species__in=(species_list),
+                        source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+                else:
+                    family_proteins = Protein.objects.filter(family__slug__startswith=target.item.slug,
+                        source__in=(protein_source_list)).select_related('residue_numbering_scheme', 'species')
+
+                for fp in family_proteins:
+                    proteins.append(fp)
+
     NMs = NaturalMutations.objects.filter(Q(protein__in=proteins)).prefetch_related('residue')
 
     jsondata = {}

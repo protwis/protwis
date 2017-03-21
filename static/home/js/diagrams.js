@@ -642,7 +642,7 @@
                             "\nNumber of Homozygotes: " + String(val[4]) +
                             "\nPredicted effect (SIFT/PolyPhen): <span style='color:"+String(val[6])+"'> "+ String(val[5]);
 
-                             color = "#70c070";
+                             color = "#c40100";
                              $('#'+plotid).find("#"+key).next().css("fill", "#fefdfd");
                              original_title = $('#'+plotid).find("#"+key).attr('original_title')
                              $('#'+plotid).find("#"+key).css("fill", color);

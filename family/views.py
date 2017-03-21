@@ -117,7 +117,7 @@ def detail(request, slug):
                     max_snp_pos = natural_mutation_list[NM.residue.generic_number.label]['val']
             else:
                 natural_mutation_list[NM.residue.generic_number.label] = {'val':1, 'AA': NM.amino_acid}
-    
+
     CMs = CancerMutations.objects.filter(
         protein__in=proteins).prefetch_related('residue__generic_number')
 
@@ -193,9 +193,9 @@ def detail(request, slug):
             if r.generic_number.label in disease_mutation_list:
                 jsondata_disease_mutations[r.sequence_number] = disease_mutation_list[r.generic_number.label]
 
-    jsondata_natural_mutations['color'] = linear_gradient(start_hex="#c6ffba", finish_hex="#377032", n=max_snp_pos)
-    jsondata_cancer_mutations['color'] = linear_gradient(start_hex="#d8baff", finish_hex="#422d65", n=max_cancer_pos)
-    jsondata_disease_mutations['color'] = linear_gradient(start_hex="#ffa1b1", finish_hex="#6e000b", n=max_disease_pos)
+    jsondata_natural_mutations['color'] = linear_gradient(start_hex="#c79494", finish_hex="#c40100", n=max_snp_pos)
+    # jsondata_cancer_mutations['color'] = linear_gradient(start_hex="#d8baff", finish_hex="#422d65", n=max_cancer_pos)
+    # jsondata_disease_mutations['color'] = linear_gradient(start_hex="#ffa1b1", finish_hex="#6e000b", n=max_disease_pos)
 
     HelixBox = DrawHelixBox(residues,'Class A','family_diagram_preloaded_data')
     SnakePlot = DrawSnakePlot(residues,'Class A','family_diagram_preloaded_data') ## was str(list_proteins)

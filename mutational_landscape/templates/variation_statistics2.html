@@ -233,8 +233,8 @@ var path = svg3.datum(interactions).selectAll("path")
       .attr("display", function(d) { return d.depth ? null : "none"; }) // hide inner ring
       .attr("d", arc)
       .style("fill", function(d) {
-          if (d.depth<4) { return "#00660b" } //&& d.depth<4 && 1==2
-          else {return "#00660b" }
+          if (d.depth<4) { return "#c40100" } //&& d.depth<4 && 1==2
+          else {return "#c40100" }
           })
       .style("stroke-width", function(d) { return (d.depth<4? "2px" : "1px" ) })
       .style("stroke", function(d) {
