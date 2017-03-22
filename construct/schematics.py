@@ -627,6 +627,9 @@ def create_block(chunk):
             <table class='schematic-block'><tr>"""
     blank = 0
     blank_max = 20
+    min_colspan = 1
+    if len(chunk)<10:
+        min_colspan = round(20/len(chunk))
     for i,r in enumerate(chunk):
         if r[3]:
             extra = r[3][1]
@@ -645,9 +648,9 @@ def create_block(chunk):
             if blank: 
                 temp += """<td class="seqv seqv-segment no-wrap" colspan="{}">&nbsp;</td>""".format(str(blank))
                 blank = 0
-            temp += """<td class="seqv seqv-segment no-wrap {}">
+            temp += """<td class="seqv seqv-segment no-wrap {}" colspan="{}">
                         <div data-toggle="tooltip" data-placement="top" data-html="true"
-                        title="{}">&nbsp;</div></td>""".format(extra,r[3][2])
+                        title="{}">&nbsp;</div></td>""".format(extra,min_colspan,r[3][2])
             blank_max = blank_max-i
         else:
             blank += 1
