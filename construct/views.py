@@ -615,16 +615,12 @@ class ConstructBrowser(TemplateView):
                 "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
                 "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
 
-            #context['constructs'] = cache.get('construct_browser')
-            #if context['constructs']==None:
             context['constructs'] = []
             for c in cons:
-                c.schematics = c.schematic()
+                #c.schematics = c.schematic()
+                c.wt_schematic = c.wt_schematic()
+                c.cons_schematic = c.cons_schematic()
                 context['constructs'].append(c)
-
-            #cache.set('construct_browser', context['constructs'], 60*60*24*2) #two days
-            # else:
-            #     print('construct_browser used cache')
 
         except Construct.DoesNotExist as e:
             pass
@@ -653,7 +649,8 @@ class ExperimentBrowser(TemplateView):
             context['constructs'] = []
             context['schematics'] = []
             for c in cons:
-                c.schematic_cache = c.schematic()
+                # c.schematic_cache = c.schematic()
+                c.summary = c.chem_summary()
                 context['constructs'].append(c)
 
             #cache.set('construct_browser', context['constructs'], 60*60*24*2) #two days
