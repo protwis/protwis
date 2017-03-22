@@ -1370,7 +1370,7 @@ def ExportExcelSuggestions(request):
 @csrf_exempt
 def ExportExcelModifications(request):
     """Convert json file to excel file"""
-    headers = ['type', 'method', 'range', 'info','insert_location','order','from','to','sequence']
+    headers = ['#','type', 'method', 'range', 'info','insert_location','order','from','to','sequence','fixed']
 
     data = request.POST['d']
     data = json.loads(data)
@@ -1382,13 +1382,15 @@ def ExportExcelModifications(request):
 
     row = 1
     index = {}
+    col = 0
+    for h in headers:
+        worksheet.write(0, col, h)
+        index[h] = col
+        col += 1
+    number = 0
     for mod in data:
-        col = 0
-        for h in headers:
-            worksheet.write(0, col, h)
-            index[h] = col
-            col += 1
-        col = 0
+        worksheet.write(row, 0, str(number))
+        number += 1
         for m,v in mod.items():
             if isinstance(v, list) and m=='range' and len(v)>1:
                 #v = ",".join(str(x) for x in v)
@@ -1399,17 +1401,25 @@ def ExportExcelModifications(request):
                 worksheet.write(row, index[m], str(v))
             else:
                 print('No column for '+m)
-            col += 1
         row += 1
 
 
     worksheet2 = workbook.add_worksheet("sequence")
-    worksheet2.write(0, 0, "sequence")
-    worksheet2.write(0, 1, request.POST['s'])
-    worksheet2.write(1, 0, "sequence_short")
-    worksheet2.write(1, 1, request.POST['s_short'])
-    worksheet2.write(2, 0, "sequence_long")
-    worksheet2.write(2, 1, request.POST['s_long'])
+    worksheet2.write(0, 0, "sequences")
+    row = 1
+
+    sequences = request.POST['s']
+    sequences = json.loads(sequences)
+    for s in sequences:
+        worksheet2.write(row, 0, "Modifications # used")
+        worksheet2.write(row, 1, ' '.join(s[0]))
+        row += 1
+        worksheet2.write(row, 0, "Short-hand")
+        worksheet2.write(row, 1, s[1])
+        row += 1
+        worksheet2.write(row, 0, "Sequence")
+        worksheet2.write(row, 1, s[2])
+        row += 1
 
     workbook.close()
     output.seek(0)
