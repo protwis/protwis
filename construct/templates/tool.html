@@ -344,7 +344,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     info_text['sites'] = '<p class=info_text>The tool recognizes possible site motifs. These can be attempted to be removed using the following mutations.</p>';
     info_text['custom'] = '<p class=info_text>Use options below to insert custom mutations or truncations not suggested by tool. You will be asked to confirm modification.</p>';
-    info_text['current'] = '<p class=info_text>See current modifications below. These will be included if you export to excel.</p>';
+    info_text['current'] = '<p class=info_text>See current modifications below. These will be included if you export to excel.<br> If there are several modfications chosen for the same form of deletion then you can either generate multiple construct sequences with combinations of the choices. Alternatively you can fix to a chosen modification by ticking the Fix box.<br> In the same fashion mutations can be fixed or used to make multiple sequences</p>';
 
 
 
@@ -790,7 +790,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         $.each(keysSorted, function(i,key) {
           t_fusion.push(key+'['+val['fusion_proteins_counts'][key]+']');
         })
-        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='nterm_tm1(this)' from='"+val['pdbs']+"' value='"+pos+"' from=''>Apply</a><a href='#' onclick='nterm_tm1(this)' from='"+val['pdbs']+"' value='"+pos+"' from=''>Range</a></tr>";
+        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='nterm_tm1(this)' from='"+val['pdbs']+"' value='"+pos+"' from=''>Apply</a></tr>";
         items_table.push( temp );
         export_list['nterm'].push([pos,val['hits'],val['levels'],val['fusion_proteins']])
       });
