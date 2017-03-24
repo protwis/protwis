@@ -2,6 +2,12 @@
 from django.conf import settings
 from django.views.generic import TemplateView
 from django.db.models import Case, When
+from django.core.cache import cache
+from django.core.cache import caches
+try:
+    cache_alignment = caches['alignments']
+except:
+    cache_alignment = cache
 
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
@@ -165,18 +171,39 @@ def render_alignment(request):
     a.load_proteins_from_selection(simple_selection)
     a.load_segments_from_selection(simple_selection)
 
-    # build the alignment data matrix
-    check = a.build_alignment()
-    if check == 'Too large':
-        return render(request, 'alignment/error.html', {'proteins': len(a.proteins), 'residues':a.number_of_residues_total})
-    # calculate consensus sequence + amino acid and feature frequency
-    a.calculate_statistics()
+    #create unique proteins_id
+    protein_ids = []
+    for p in a.proteins:
+        protein_ids.append(p.pk)
+    protein_list = ','.join(str(x) for x in sorted(protein_ids))
 
-    num_of_sequences = len(a.proteins)
-    num_residue_columns = len(a.positions) + len(a.segments)
+    #create unique proteins_id
+    segments_ids = []
+    for s in a.segments:
+        segments_ids.append(s)
+    segments_list = ','.join(str(x) for x in sorted(segments_ids))
 
-    return render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
-        'num_residue_columns': num_residue_columns})
+    key = "ALIGNMENT_"+str(hash(protein_list+"_"+segments_list))
+
+    return_html = cache_alignment.get(key)
+
+    if return_html==None or 'Custom' in segments_ids:
+        # build the alignment data matrix
+        check = a.build_alignment()
+        if check == 'Too large':
+            return render(request, 'alignment/error.html', {'proteins': len(a.proteins), 'residues':a.number_of_residues_total})
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
+
+        num_of_sequences = len(a.proteins)
+        num_residue_columns = len(a.positions) + len(a.segments)
+
+        return_html = render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
+            'num_residue_columns': num_residue_columns})
+        if 'Custom' not in segments_ids:
+            cache_alignment.set(key,return_html, 60*60*24*7) #set alignment cache one week
+
+    return return_html
 
 def render_family_alignment(request, slug):
     # create an alignment object
