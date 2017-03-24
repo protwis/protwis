@@ -969,17 +969,21 @@ class AlignedReferenceTemplate(Alignment):
                                                       "3NYA","3PDS","4ZUD","4RWD","5D6L","5JQH","5TGZ","5GLH","5GLI",
                                                       "4XT1","4K5Y","4Z9G","4L6R","5EE7","4OR2","4OO9","5CGC","5CGD",
                                                       "4JKV","4N4W","5L7D","5L7I","4O9R","4QIM","4QIN","5T1A","5TVN",
-                                                      "5UIG","5T04","4XT3"])
+                                                      "5UIG","5T04","4XT3","5LWE","5UEN"])
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
   
     def get_main_template(self):
         ''' Returns main template structure after checking for matching helix start and end positions.
         '''
+        i = 1
         try:
             for st in self.similarity_table:
-                if st.protein_conformation.protein.parent==self.ordered_proteins[1].protein:
-                    self.main_template_protein = self.ordered_proteins[1]
+                if st.pdb_code.index=='5LWE' and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
+                    i+=1
+                    continue
+                if st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
+                    self.main_template_protein = self.ordered_proteins[i]
                     if st.pdb_code.index in self.seq_nums_overwrite_cutoff_dict:
                         self.overwrite_db_seq_nums(st, self.seq_nums_overwrite_cutoff_dict[st.pdb_code.index])
                     return st

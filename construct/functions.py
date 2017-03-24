@@ -218,7 +218,6 @@ def fetch_pdb_info(pdbname,protein):
         for k, g in groupby(enumerate(pos_in_wt), lambda x:x[0]-x[1]):
             group = list(map(itemgetter(1), g))
             d['deletions'].append({'start':group[0], 'end':group[-1], 'origin':'user'})
-        print(d['deletions'])
         d['not_observed'] = []
         for k, g in groupby(enumerate(d['xml_not_observed']), lambda x:x[0]-x[1]):
             group = list(map(itemgetter(1), g))
