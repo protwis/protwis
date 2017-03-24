@@ -1514,7 +1514,7 @@ def webformdata(request) :
                 solubilization[key]=value
                 data.pop(key, None)
 
-            if key.startswith(('crystal_type','crystal_method','other_method','other_crystal_type',
+            elif key.startswith(('crystal_type','crystal_method','other_method','other_crystal_type',
                                'protein_concentr','protein_conc_unit','temperature','ph_single','ph',
                                'ph_range_one','ph_range_two','crystal_remark','lcp_lipid','lcp_add',
                                'lcp_conc','lcp_conc_unit','detergent','deterg_conc','deterg_conc_unit','lipid','lipid_concentr','lipid_concentr_unit',
@@ -1522,20 +1522,22 @@ def webformdata(request) :
                 crystallization[key]=value
                 data.pop(key, None)
 
-            if key.startswith('chemical_comp'):
+            if key.startswith('chemical_comp') and not key.startswith('chemical_comp_type'):
 
                 if 'chemical_components' not in crystallization:
                     crystallization['chemical_components'] = []
 
+                # print(key)    
                 if key!='chemical_comp': #not first
                     comp_id = key.replace('chemical_comp','')
                 else:
                     comp_id = ''
 
-                crystallization['chemical_components'].append({'component':value,'value':data['concentr'+comp_id],'unit':data['concentr_unit'+comp_id]})
+                crystallization['chemical_components'].append({'component':value,'type':data['chemical_comp_type'+comp_id],'value':data['concentr'+comp_id],'unit':data['concentr_unit'+comp_id]})
                 data.pop(key, None)
                 data.pop('concentr'+comp_id, None)
                 data.pop('concentr_unit'+comp_id, None)
+                data.pop('chemical_comp_type'+comp_id, None)
 
 
             if key.startswith('aamod') and not key.startswith('aamod_position') and not key.startswith('aamod_pair') and not key=='aamod_position' and not key=='aamod_single':

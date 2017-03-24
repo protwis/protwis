@@ -421,7 +421,7 @@ def add_construct(d):
 
     construct = Construct()
     construct.protein = protein
-    construct.name = d['construct_crystal']['pdb_name']
+    construct.name = d['construct_crystal']['pdb_name'].strip()
     construct.json = json.dumps(d, indent=4, separators=(',', ': '))
     construct.structure = structure
 
@@ -480,8 +480,12 @@ def add_construct(d):
                 insert.start = aux['start']
                 insert.end = aux['start']
             else:
-                insert.start = insert_deletions[id]['start']
-                insert.end = insert_deletions[id]['end']
+                if insert_deletions[id]['type'] == 'range':
+                    insert.start = insert_deletions[id]['start']
+                    insert.end = insert_deletions[id]['end']
+                else:
+                    insert.start = insert_deletions[id]['pos']
+                    insert.end = insert_deletions[id]['pos']
             insert.save()
 
         construct.insertions.add(insert)
@@ -497,8 +501,19 @@ def add_construct(d):
     #EXPRESSION
     if 'expression' in d:
         if 'expr_method' in d['expression']:
+
             if 'expr_remark' not in d['expression']:
                 d['expression']['expr_remark'] = ''
+
+            if d['expression']['host_cell'] == 'other [See next field]':
+                d['expression']['host_cell'] = d['expression']['other_host_cell']
+
+            if d['expression']['host_cell_type'] == 'other [See next field]':
+                d['expression']['host_cell_type'] = d['expression']['other_host']
+
+            if d['expression']['expr_method'] == 'Other [In case of E.Coli or Yeast recombinant expression]':
+                d['expression']['expr_method'] = d['expression']['expr_other']
+
             construct.expression,created = ExpressionSystem.objects.get_or_create(expression_method=d['expression']['expr_method'],
                                                             host_cell_type=d['expression']['host_cell_type'],
                                                             host_cell=d['expression']['host_cell'],
@@ -513,10 +528,23 @@ def add_construct(d):
             list_name,created  = ChemicalListName.objects.get_or_create(name='Solubilization')
             c_list.name = list_name
             c_list.save()
-            ct, created = ChemicalType.objects.get_or_create(name='detergent')
-            chem, created = Chemical.objects.get_or_create(name=d['solubilization']['deterg_type'], chemical_type=ct)
-            cc, created = ChemicalConc.objects.get_or_create(concentration=d['solubilization']['deterg_concentr'], concentration_unit=d['solubilization']['deterg_concentr_unit'], chemical=chem)
-            c_list.chemicals.add(cc)                
+            for item,value in d['solubilization'].items():
+                if item.startswith(('deterg_type')):
+                    d_id = ''
+                    if item != 'deterg_type': #if it has deterg_type_2 index
+                        d_id = "_" + item.split('_')[2]
+
+                    if value == 'other [See next field]':
+                        value = d['raw_data']['other_deterg_type'+ d_id]
+
+                    ct, created = ChemicalType.objects.get_or_create(name='detergent')
+                    chem, created = Chemical.objects.get_or_create(name=value, chemical_type=ct)
+                    if 'deterg_concentr' + d_id in d['solubilization']:
+                        cc, created = ChemicalConc.objects.get_or_create(concentration=d['solubilization']['deterg_concentr' + d_id], concentration_unit=d['solubilization']['deterg_concentr_unit' + d_id], chemical=chem)
+                    else: #if no concentr is dictionary, then it was inputted before caputring concentration for additinal chemicals
+                        cc, created = ChemicalConc.objects.get_or_create(concentration='', concentration_unit='',chemical=chem)
+                    c_list.chemicals.add(cc)       
+
             ct, created = ChemicalType.objects.get_or_create(name='additive')
             chem, created = Chemical.objects.get_or_create(name=d['solubilization']['solub_additive'], chemical_type=ct)
             cc, created = ChemicalConc.objects.get_or_create(concentration=d['solubilization']['additive_concentr'], concentration_unit=d['solubilization']['addit_concentr_unit'], chemical=chem)
@@ -533,6 +561,10 @@ def add_construct(d):
                 if not puri.startswith(('chem_enz_treatment','sol_remark')):
                     continue
                 else:
+                    if step == 'other [See next field]':
+                        continue #there will be sol_remark instead
+                    if step == 'None':
+                        continue #dont put in none step
                     s,created = PurificationStep.objects.get_or_create(name=step)
                     purification.steps.add(s)
             construct.purification = purification
@@ -542,6 +574,14 @@ def add_construct(d):
     if 'crystallization' in d:
         if 'crystal_type' in d['crystallization']:
             c = Crystallization()
+
+
+            if d['crystallization']['crystal_method'] == 'other [See next field]':
+                d['crystallization']['crystal_method'] = d['raw_data']['other_method']
+
+            if d['crystallization']['crystal_type'] == 'other [See next field]':
+                d['crystallization']['crystal_type'] = d['raw_data']['other_crystal_type']
+
             sub_name = "" if 'lcp_lipid' not in d['crystallization'] else d['crystallization']['lcp_lipid']
             c_type, created = CrystallizationTypes.objects.get_or_create(name=d['crystallization']['crystal_type'], sub_name=sub_name)
             c_method, created = CrystallizationMethods.objects.get_or_create(name=d['crystallization']['crystal_method'])
@@ -567,15 +607,18 @@ def add_construct(d):
 
             #MAKE LISTS
             c_list = ChemicalList()
-            list_name,created  = ChemicalListName.objects.get_or_create(name='crystallization_chemical_components')
+            list_name,created  = ChemicalListName.objects.get_or_create(name='Additional')
             c_list.name = list_name
             c_list.save()
-            for chemical in d['crystallization']['chemical_components']:
-                ct, created = ChemicalType.objects.get_or_create(name='crystallization_chemical_components')
-                chem, created = Chemical.objects.get_or_create(name=chemical['component'], chemical_type=ct)
-                cc, created = ChemicalConc.objects.get_or_create(concentration=chemical['value'], concentration_unit=chemical['unit'], chemical=chem)
-                c_list.chemicals.add(cc)
-            c.chemical_lists.add(c_list)
+            if 'chemical_components' in d['crystallization']:
+                for chemical in d['crystallization']['chemical_components']:
+                    if 'type' not in chemical: #to fix legacy json files
+                        chemical['type'] = 'unknown' 
+                    ct, created = ChemicalType.objects.get_or_create(name=chemical['type'])
+                    chem, created = Chemical.objects.get_or_create(name=chemical['component'], chemical_type=ct)
+                    cc, created = ChemicalConc.objects.get_or_create(concentration=chemical['value'], concentration_unit=chemical['unit'], chemical=chem)
+                    c_list.chemicals.add(cc)
+                c.chemical_lists.add(c_list)
 
             if d['crystallization']['crystal_type']=='lipidic cubic phase': #make list of LCP stuff
                 c_list = ChemicalList()
