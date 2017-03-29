@@ -223,21 +223,42 @@ def render_family_alignment(request, slug):
     else:
         segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False)
 
-    # load data into the alignment
-    a.load_proteins(proteins)
-    a.load_segments(segments)
+    protein_ids = []
+    for p in a.proteins:
+        protein_ids.append(p.pk)
+    protein_list = ','.join(str(x) for x in sorted(protein_ids))
 
-    # build the alignment data matrix
-    a.build_alignment()
+    #create unique proteins_id
+    segments_ids = []
+    for s in a.segments:
+        segments_ids.append(s)
+    segments_list = ','.join(str(x) for x in sorted(segments_ids))
 
-    # calculate consensus sequence + amino acid and feature frequency
-    a.calculate_statistics()
+    s = str(protein_list+"_"+segments_list)
+    key = "ALIGNMENT_"+hashlib.md5(s.encode('utf-8')).hexdigest()
+    return_html = cache_alignment.get(key)
 
-    num_of_sequences = len(a.proteins)
-    num_residue_columns = len(a.positions) + len(a.segments)
+    if return_html==None:
+        # load data into the alignment
+        a.load_proteins(proteins)
+        a.load_segments(segments)
 
-    return render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
+        # build the alignment data matrix
+        a.build_alignment()
+
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
+
+        num_of_sequences = len(a.proteins)
+        num_residue_columns = len(a.positions) + len(a.segments)
+
+        return_html = render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
         'num_residue_columns': num_residue_columns})
+
+    #update it if used
+    cache_alignment.set(key,return_html, 60*60*24*7) #set alignment cache one week
+
+    return return_html
 
 def render_fasta_alignment(request):
     # get the user selection from session
