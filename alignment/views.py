@@ -224,14 +224,14 @@ def render_family_alignment(request, slug):
         segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False)
 
     protein_ids = []
-    for p in a.proteins:
+    for p in proteins:
         protein_ids.append(p.pk)
     protein_list = ','.join(str(x) for x in sorted(protein_ids))
 
     #create unique proteins_id
     segments_ids = []
-    for s in a.segments:
-        segments_ids.append(s)
+    for s in segments:
+        segments_ids.append(s.slug)
     segments_list = ','.join(str(x) for x in sorted(segments_ids))
 
     s = str(protein_list+"_"+segments_list)
