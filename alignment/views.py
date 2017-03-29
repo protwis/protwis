@@ -214,6 +214,10 @@ def render_family_alignment(request, slug):
     # fetch proteins and segments
     proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt')
 
+    if len(proteins)>50 and len(slug.split("_"))<4:
+        # If alignment is going to be too big, only pick human.
+        proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt', species__latin_name='Homo sapiens')
+
     if slug.startswith('100'):
 
         gsegments = definitions.G_PROTEIN_SEGMENTS
@@ -222,6 +226,12 @@ def render_family_alignment(request, slug):
         segments = ProteinSegment.objects.filter(slug__in = gsegments['Full'], partial=False).order_by(preserved)
     else:
         segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False)
+        if len(proteins)>50:
+            # if a lot of proteins, exclude some segments
+            segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False).exclude(slug__in=['N-term','C-term'])
+        if len(proteins)>200:
+            # if many more proteins exluclude more segments
+            segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False).exclude(slug__in=['N-term','C-term']).exclude(category='loop')
 
     protein_ids = []
     for p in proteins:
