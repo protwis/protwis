@@ -83,17 +83,17 @@ class Command(BaseBuild):
             GPCR_class = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
                                             family__slug__istartswith=GPCR_class_codes[options['c'].upper()])
             self.receptor_list = [i.entry_name for i in GPCR_class if i not in struct_parent] #and i.entry_name not in files1]
-            d = os.listdir('./structure/homology_models/')
-            filess = []
-            for f in d:
-                fi = f.split('_')
-                fil = fi[1]+'_human'
+            # d = os.listdir('./structure/homology_models/')
+            # filess = []
+            # for f in d:
+            #     fi = f.split('_')
+            #     fil = fi[1]+'_human'
                 
-                filess.append(fil)
-            for r in self.receptor_list:
-                if r not in filess:
-                    print(r)
-            raise AssertionError
+            #     filess.append(fil)
+            # for r in self.receptor_list:
+            #     if r not in filess:
+            #         print(r)
+            # raise AssertionError
             print(self.receptor_list)
             
             try:
@@ -756,9 +756,9 @@ class HomologyModeling(object):
             self.statistics.add_info('loops', loop_stat)
             self.loops = loop_stat
 
-        # pprint.pprint(a.reference_dict['ICL1_dis'])
-        # pprint.pprint(a.template_dict['ICL1_dis'])
-        # pprint.pprint(main_pdb_array['ICL1_dis'])
+        # pprint.pprint(a.reference_dict['ECL2'])
+        # pprint.pprint(a.template_dict['ECL2'])
+        # pprint.pprint(main_pdb_array['ECL2'])
         # raise AssertionError
         print('Integrate loops: ',datetime.now() - startTime)
         
@@ -1896,7 +1896,6 @@ sequence:{uniprot}::::::::
                      "temp_sequence":temp_sequence,
                      "uniprot":self.uniprot_id,
                      "ref_sequence":ref_sequence}
-            print(start_num, res_num)
             output_file.write(template.format(**context))
             
     def run_MODELLER(self, pir_file, template, reference, number_of_models, output_file_name, atom_dict=None, 
@@ -2039,9 +2038,9 @@ class HomologyMODELLER(automodel):
                     rsr.add(secondary_structure.alpha(self.residue_range('{}:{}'.format(i[0]-4,chain),'{}:{}'.format(i[1],chain))))
                     break
     
-    # def make(self):
-    #     with SilentModeller():
-    #         super(HomologyMODELLER, self).make()
+    def make(self):
+        with SilentModeller():
+            super(HomologyMODELLER, self).make()
 
 
 class SegmentEnds(object):
@@ -2992,6 +2991,7 @@ class Loops(object):
                                     except:
                                         missing_indeces.append([i,input_residues.index(i)])
                                 temp_ref_residues = []
+
                                 for i in range(len(ref_residues)):
                                     for j in missing_indeces:
                                         if i==j[1]:
@@ -3009,16 +3009,33 @@ class Loops(object):
                                     except:
                                         missing_indeces.append([i,list(template_dict[self.loop_label].keys()).index(i)])
                                 temp_input_residues = []
-                                for i in range(len(input_residues)):
-                                    for j in missing_indeces:
-                                        if i==j[1]:
-                                            temp_input_residues.append(j[0])
-                                    temp_input_residues.append(input_residues[i])
-                                input_residues = temp_input_residues
-                                if len(list(template_dict[self.loop_label].keys()))>len(input_residues):
-                                    for j in missing_indeces:
-                                        if j[1]>=len(input_residues):
-                                            input_residues.append(j[0])
+
+                                if self.loop_label in ['ICL1', 'ECL1', 'ICL2']:
+                                    for i in range(0,len(list(template_dict[self.loop_label].keys()))):
+                                        gap_inserted = False
+                                        for j in missing_indeces:
+                                            if i==j[1]:
+                                                temp_input_residues.append(j[0])
+                                                gap_inserted = True
+                                                break
+                                        if gap_inserted==False: 
+                                            temp_input_residues.append(list(template_dict[self.loop_label])[i].replace('x','.'))
+                                    input_residues = temp_input_residues
+                                    if len(list(template_dict[self.loop_label].keys()))>len(input_residues):
+                                        for j in missing_indeces:
+                                            if j[1]>=len(input_residues):
+                                                input_resi
+                                else:
+                                    for i in range(len(input_residues)):
+                                        for j in missing_indeces:
+                                            if i==j[1]:
+                                                temp_input_residues.append(j[0])
+                                        temp_input_residues.append(input_residues[i])
+                                    input_residues = temp_input_residues
+                                    if len(list(template_dict[self.loop_label].keys()))>len(input_residues):
+                                        for j in missing_indeces:
+                                            if j[1]>=len(input_residues):
+                                                input_residues.append(j[0])
                         except:
                             pass
                         loop_ends = []
@@ -3178,6 +3195,8 @@ class Loops(object):
                                                    protein_segment__slug='ECL2'))
         # correct for 1 res longer template
         ref_x50_i = ref_residues.index([i for i in ref_residues if i.generic_number!=None and ggn(i.display_generic_number.label)=='45x50'][0])
+        print(ref_residues)
+        print(self.main_pdb_array['ECL2'])
         if len(ref_residues)<len(self.main_pdb_array['ECL2']):
             print(ref_residues)
             if loop_output_structure[0]!=None:
