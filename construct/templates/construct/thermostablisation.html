@@ -1,199 +1,478 @@
-{% extends "home/base.html" %}
-{% load staticfiles %}
+{% extends "home/base.html" %} {% load staticfiles %} {% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.yadcf.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<style type="text/css">
+.select2-result-label {
+    font-size: x-small;
+    font-size: 10px;
+}
 
+#filters {
+    float: left;
+    display: none;
+    position: absolute;
+    background: white;
+    border: 1px solid #D1C9C2;
+    border-top: 1;
+    width: 400px;
+    margin: 0 auto;
+    padding: 7px 15px;
+    text-align: left;
+    -webkit-border-bottom-right-radius: 6px;
+    -webkit-border-bottom-left-radius: 6px;
+    -moz-border-radius-bottomright: 6px;
+    -moz-border-radius-bottomleft: 6px;
+    border-bottom-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    z-index: 1;
+    font-size: 10px;
+}
 
-{% block addon_css %}
-    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.yadcf.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
-        <style type="text/css">
-        .select2-result-label{
-            font-size:x-small;
-            font-size: 10px;
-        }
+@media (min-width: 1600px) {
+    #content {
+        width: 1570px;
+    }
+}
 
-        #filters{
-            float:left;
-          display:none;
-          position:absolute;
-          background:white;
-          border: 1px solid #D1C9C2;
-          border-top: 1;
-          width: 400px;
-          margin: 0 auto;
-          padding:  7px 15px;
-          text-align: left;
-          -webkit-border-bottom-right-radius: 6px;
-          -webkit-border-bottom-left-radius: 6px;
-          -moz-border-radius-bottomright: 6px;
-          -moz-border-radius-bottomleft: 6px;
-          border-bottom-right-radius: 6px;
-          border-bottom-left-radius: 6px;
-          z-index: 1;
-            font-size: 10px;
-        }
-
-        @media (min-width: 1600px){
-            #content {
-                width: 1570px;
-            }
-        }
-        @media (min-width: 1800px){
-            #content {
-                width: 1770px;
-            }
-        }
-    </style>
+@media (min-width: 1800px) {
+    #content {
+        width: 1770px;
+    }
+}
+</style>
 {% endblock %}
-
 {% block addon_js %}
-    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-    <script src="{% static 'home/js/selection.js' %}"> </script>
-    <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
-    <script src="{% static 'home/js/select2.js' %}"> </script>
-    <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}">
+</script>
+<script src="{% static 'home/js/selection.js' %}">
+</script>
+<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}">
+</script>
+<script src="{% static 'home/js/select2.js' %}">
+</script>
+<script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
+<script type="text/javascript" charset="utf-8">
+$(document).ready(function() {
+    // 'use strict';
 
+    // var oTable;
+    var oTable = $('#mutations').DataTable({
+        'scrollX': true,
+        // 'paging': true,
+        // 'autoWidth': true,
 
-    <script type="text/javascript" charset="utf-8">
-        $(document).ready(function () {
-            // 'use strict';
+        scrollY: '80vh',
+        scrollCollapse: true,
+        paging: false
+    });
 
-            // var oTable;
-            var oTable = $('#mutations').DataTable({
-                'scrollX': true,
-                // 'paging': true,
-                // 'autoWidth': true,
+    yadcf.init(oTable, [{
+        column_number: 0,
+        filter_type: "multi_select",
+        select_type: 'select2',
+        column_data_type: "html",
+        html_data_type: "text",
+        filter_default_label: "Receptor",
+        filter_container_id: "external_filter_container1"
+    }, {
+        column_number: 1,
+        filter_type: "multi_select",
+        select_type: 'select2',
+        column_data_type: "html",
+        html_data_type: "text",
+        filter_default_label: "GNs",
+        filter_container_id: "external_filter_container2"
+    }, {
+        column_number: 3,
+        filter_type: "multi_select",
+        select_type: 'select2',
+        filter_default_label: "Segment",
+        filter_container_id: "external_filter_container3"
+    }, {
+        column_number: 4,
+        filter_type: "multi_select",
+        select_type: 'select2',
+        filter_default_label: "WT",
+        filter_container_id: "external_filter_container4"
+    }, {
+        column_number: 5,
+        filter_type: "multi_select",
+        select_type: 'select2',
+        filter_default_label: "MUT",
+        filter_container_id: "external_filter_container5"
+    }, {
+        column_number: 6,
+        filter_type: "text",
+                column_data_type: "text",
+        filter_default_label: "PDB",
+        filter_container_id: "external_filter_container6"
+    }, {
+        column_number: 7,
+        filter_type: "text",
+                column_data_type: "text",
+        filter_default_label: "Name",
+        filter_container_id: "external_filter_container7"
+    }, ], {
+        cumulative_filtering: false
+    });
 
-                scrollY:        '80vh',
-                scrollCollapse: true,
-                paging:         false
-            });
+    yadcf.exResetAllFilters(oTable);
 
-            yadcf.init(oTable,
-                [
-                    {
-                        column_number : 0,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_default_label: "Receptor",
-                        filter_container_id: "external_filter_container1"
-                    },
-                    {
-                        column_number: 1,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        column_data_type: "html",
-                        html_data_type: "text",
-                        filter_default_label: "GNs",
-                        filter_container_id: "external_filter_container2"
-                    },
-                    {
-                        column_number: 3,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "Segment",
-                        filter_container_id: "external_filter_container3"
-                    },
-                    {
-                        column_number : 4,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "WT",
-                        filter_container_id: "external_filter_container4"
-                    },
-                    {
-                        column_number : 5,
-                        filter_type: "multi_select",
-                        select_type: 'select2',
-                        filter_default_label: "MUT",
-                        filter_container_id: "external_filter_container5"
-                    },
-                    {
-                        column_number : 6,
-                        filter_type: "text",
-                        column_data_type: "text",
-                        filter_default_label: "PDB",
-                        filter_container_id: "external_filter_container6"
-                    },
-                    {
-                        column_number : 7,
-                        filter_type: "text",
-                        column_data_type: "text",
-                        filter_default_label: "Name",
-                        filter_container_id: "external_filter_container7"
-                    },
-                ],
-                {
-                    cumulative_filtering: false
-                }
-            );
-
-            yadcf.exResetAllFilters(oTable);
-
-            // $.datepicker.regional[""].dateFormat = "yy-mm-dd";
-            // $.datepicker.setDefaults($.datepicker.regional['']);
+    // $.datepicker.regional[""].dateFormat = "yy-mm-dd";
+    // $.datepicker.setDefaults($.datepicker.regional['']);
 
 
 
+});
+$('#apply_filter').click(function() {
+    $("#filters").toggle();
+});
+
+$("#OpenFilters").click(function() {
+    $("#filters").toggle();
+});
+</script>
+<script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+<script type="text/javascript">
+var groups = ["position_only", "pos_and_wt", "pos_and_mut", "all"]
+d3.select("#group_select")
+    .on('change', function() {
+        var selection = d3.select(this).property('value');
+        groups.forEach(function(d) {
+            if (d == selection) {
+                d3.selectAll('.' + d)
+                    .style('display', 'table-row');
+            } else {
+                d3.selectAll('.' + d)
+                    .style('display', 'none');
+            }
         });
-        $('#apply_filter').click(function() {
-            $("#filters").toggle();
-        });
-
-        $("#OpenFilters").click(function () {
-            $("#filters").toggle();
-        });
-    </script>
+    })
+</script>
 {% endblock %}
 
 {% block content %}
-
 <h2> Mutations</h2>
-
-        <button class="btn btn-primary btn-group" id='OpenFilters'>Filters</button>
-            <div id='filters'>
-<!--     <div><span style='width: 160px;display: inline-block;'>Class:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container3"></span></div>
-    <div><span style='width: 160px;display: inline-block;'>Family:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container2"></span></div> -->
-    <div><span style='width: 160px;display: inline-block;'>Receptor(s):</span><span  style='width: 160px;display: inline-block;' id="external_filter_container1"></span></div>
-    <div><span style='width: 160px;display: inline-block;'>Generic Number:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container2"></span></div>
-    <div><span style='width: 160px;display: inline-block;'>Segment(s):</span><span  style='width: 160px;display: inline-block;' id="external_filter_container3"></span></div>
-    <div><span style='width: 160px;display: inline-block;'>WT:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container4"></span></div>
-    <div><span style='width: 160px;display: inline-block;'>MUT:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container5"></span></div>
-    <div><span style='width: 160px;display: inline-block;'>Construct:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container7"></span></div>
-    <div><span style='width: 160px;display: inline-block;'>PDB:</span><span  style='width: 160px;display: inline-block;' id="external_filter_container6"></span></div>
+<button class="btn btn-primary btn-group" id='OpenFilters'>Filters</button>
+<div id='filters'>
+    <div><span style='width: 160px;display: inline-block;'>Class:</span><span style='width: 160px;display: inline-block;' id="external_filter_container3"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Family:</span><span style='width: 160px;display: inline-block;' id="external_filter_container2"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Receptor(s):</span><span style='width: 160px;display: inline-block;' id="external_filter_container1"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Generic Number:</span><span style='width: 160px;display: inline-block;' id="external_filter_container2"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Segment(s):</span><span style='width: 160px;display: inline-block;' id="external_filter_container3"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>WT:</span><span style='width: 160px;display: inline-block;' id="external_filter_container4"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>MUT:</span><span style='width: 160px;display: inline-block;' id="external_filter_container5"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Construct:</span><span style='width: 160px;display: inline-block;' id="external_filter_container7"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>PDB:</span><span style='width: 160px;display: inline-block;' id="external_filter_container6"></span></div>
     <button id='apply_filter'>Apply Filter</button>
-    </div>
-
-
+</div>
+<div>Group By:
+    <select id="group_select">
+        <option value="position_only">Position</option>
+        <option value="pos_and_wt">Position and Wild Type</option>
+        <option value="pos_and_mut">Position and Mutant</option>
+        <option value="all">Position, WT, and Mut</option>
+    </select>
+</div>
 <table width="100%" class="display" id="mutations">
     <thead>
-
         <tr>
-            <th class="protein-th">Class Name</th>
-            <th class="protein-th">Generic Number</th>
-            <th class="protein-th">Segment</th>
-            <th class="protein-th">WT</th>
-            <th class="seq-th">MUT</th>
-            <th class='seq-th'>PDB</th>
+            <th class="seq-th">State</th>
+            <th class="protein-th">Targets</th>
+            <th class="protein-th"> </th>
+            <th class="protein-th"> </th>
+            <th class="seq-th">Mutations</th>
+            <th class="seq-th"></th>
+            <th class="seq-th"></th>
+            <th class='seq-th'></th>
+            <th class="protein-th">Frequency</th>
+            <th class="protein-th"></th>
+            <th class="protein-th"></th>
+            <th class="protein-th"></th>
         </tr>
-
+        <tr>
+            <th class="seq-th">State</th>
+            <th class="protein-th">Class</th>
+            <th class="protein-th">Ligand Type</th>
+            <th class="protein-th">Receptor Family</th>
+            <th class="seq-th">Segment</th>
+            <th class="seq-th">Position (GN)</th>
+            <th class="seq-th">WT</th>
+            <th class='seq-th'>Mut</th>
+            <th class="protein-th">No. GPCRS</th>
+            <th class="protein-th">No. Receptor Fams</th>
+            <th class="protein-th">No. Structures</th>
+            <th class="protein-th">GPCRs (PDB IDs)</th>
+        </tr>
     </thead>
     <tbody>
-    {% for mutation in mutation_list %}
-        <tr id="{{ mutation.pk }}">
-            <td><a href="{{ construct.name|safe}}">{{ mutation.p_class|safe }}</a></td>
-            <td>{{mutation.gn}}
+        {% for key, group in position_only.items %}
+        <tr class="{{group_id}} position_only">
+            <td>
+                <table>
+                    {% for mutant in group.1.state %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
             </td>
-            <td>{{ mutation.segment}}</td>
-            <td>{{ mutation.wt}}</td>
-            <td>{{ mutation.mut}}</td>
-            <td>{{ mutation.pdb}}</td>
+            <td>
+                <table>
+                    {% for mutant in group.1.class %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table>
+                    {% for mutant in group.1.ligand %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table>
+                    {% for mutant in group.1.receptor %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>{{group.0.segment}}</td>
+            <td> {{group.0.gen_num}} </td>
+            <td>
+                <table>
+                    {% for mutant in group.1.wild_type %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table>
+                    {% for mutant in group.1.mutant %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td> {{group.0.count}} </td>
+            <td>{{group.1.receptor | length}}</td>
+            <td>{{group.1.struct_id | length}}</td>
+            <td>
+                <table>
+                    {% for mutant in group.1.pdb %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
         </tr>
         {% endfor %}
+
+
+        {% for key, group in pos_and_mut.items %}
+        <tr style="display:none" class="{{group_id}} pos_and_mut">
+            <td>
+                <table>
+                    {% for mutant in group.1.state %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table>
+                    {% for mutant in group.1.class %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table>
+                    {% for mutant in group.1.ligand %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table>
+                    {% for mutant in group.1.receptor %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>{{group.0.segment}}</td>
+            <td> {{group.0.gen_num}} </td>
+            <td>
+                <table>
+                    {% for mutant in group.1.wild_type %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>{{group.0.mutant}}</td>
+            <td> {{group.0.count}} </td>
+            <td>{{group.1.receptor | length}}</td>
+            <td>{{group.1.struct_id | length}}</td>
+
+            <td>
+                <table>
+                    {% for mutant in group.1.pdb %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+        </tr>
+        {% endfor %}
+
+        {% for key, group in pos_and_wt.items %}
+        <tr style="display:none" class="{{group_id}} pos_and_wt">
+            <td>
+                <table>
+                    {% for mutant in group.1.state %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table>
+                    {% for mutant in group.1.class %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table>
+                    {% for mutant in group.1.ligand %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table>
+                    {% for mutant in group.1.receptor %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>{{group.0.segment}}</td>
+            <td> {{group.0.gen_num}} </td>
+            <td>{{group.0.wild_type}}</td>
+            <td>
+                <table>
+                    {% for mutant in group.1.mutant %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+
+            <td> {{group.0.count}} </td>
+            <td>{{group.1.receptor | length}}</td>
+            <td>{{group.1.struct_id | length}}</td>
+            <td>
+                <table>
+                    {% for mutant in group.1.pdb %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+        </tr>
+        {% endfor %}
+
+        {% for key, group in all.items %}
+        <tr style="display:none" class="{{group_id}} all">
+            <td>
+                <table>
+                    {% for mutant in group.1.state %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table>
+                    {% for mutant in group.1.class %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table>
+                    {% for mutant in group.1.ligand %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table>
+                    {% for mutant in group.1.receptor %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>{{group.0.segment}}</td>
+            <td> {{group.0.gen_num}} </td>
+            <td>{{group.0.wild_type}}</td>
+            <td>{{group.0.mutant}}</td>
+
+            <td> {{group.0.count}} </td>
+            <td>{{group.1.receptor | length}}</td>
+            <td>{{group.1.struct_id | length}}</td>
+            <td>
+                <table>
+                    {% for mutant in group.1.pdb %}
+                    <tr style='background-color: transparent;'>
+                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+        </tr>
+        {% endfor %}
+
+
     </tbody>
 </table>
-
 {% endblock %}

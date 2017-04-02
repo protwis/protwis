@@ -113,12 +113,12 @@ class ConstructMutation(models.Model):
     mutated_amino_acid = models.CharField(max_length=1)
     mutation_type = models.CharField(max_length=30, null=True)
     remark = models.TextField(null=True)
-    residue = models.ForeignKey(Residue,null=True)
+    residue = models.ForeignKey(Residue, null=True)
 
     def get_res(self):
         '''Retrieve the residue connected to this mutation, and save it as a FK field.'''
         construct = self.construct_set.all()[0].protein.entry_name
-        return Residue.objects.get(protein_conformation__protein__entry_name=construct, sequence_number=96)
+        return Residue.objects.filter(protein_conformation__protein__entry_name=construct, sequence_number=self.sequence_number)[0]
 
     def save(self):
         self.residue_id = self.get_res()
