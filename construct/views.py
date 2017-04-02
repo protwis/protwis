@@ -537,6 +537,7 @@ class ConstructMutations(TemplateView):
 
 
             mutation_list.append({'entry_name':entry_name,'pdb':pdb,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class, 'type': mut_type})
+            if (pdb == 'adrb1_melga'): print(gn)
 
 
         context['mutation_list'] = mutation_list
@@ -550,37 +551,107 @@ def thermostabilisation(request):
     ''' View to display and summarise mutation data for thermostabilising mutational constructs. '''
 
     # Get a list of all constructs.
-    constructs = Construct.objects.all().order_by().only("protein",
-                                                         "mutations"
-                                                        ).prefetch_related("protein",
-                                                                           "mutations__residue__generic_number",
-                                                                           "mutations__residue__protein_segment",
-                                                                           "protein__family__parent__parent__parent")
+    constructs = Construct.objects.all().order_by().only("protein__entry_name",
+                                                         "protein__family__slug",
+                                                         "mutations__sequence_number",
+                                                         "mutations__residue__generic_number",
+                                                         "mutations__residue__protein_segment__slug",
+                                                         "protein__family__parent__parent__parent__name",
+                                                         "mutations__mutated_amino_acid",
+                                                         "mutations__wild_type_amino_acid",
+                                                         "structure__state__name"
+                                                        ).prefetch_related(
+                                                            "structure__state",
+                                                            "mutations__residue__generic_number",
+                                                            "mutations__residue__protein_segment",
+                                                            "protein__family__parent__parent__parent")
 
-    mutation_list = []
-    class_names = {}
+    # Define the data analysis modes.
+    groupings = {
+        "all":{"include_in_id":['gen_num', 'wild_type', 'mutant'], "exclude_from_info":['']},
+        "pos_and_wt":{"include_in_id":['gen_num', 'wild_type'], "exclude_from_info":['mutant']},
+        "pos_and_mut":{"include_in_id":['gen_num', 'mutant'], "exclude_from_info":['wild_type']},
+        "position_only":{"include_in_id":['gen_num'], "exclude_from_info":['wild_type', 'mutant']}
+        }
+
+    # Set up dictionaries to record information.
+    mutation_groups = {"position_only":{}, "all":{}, "pos_and_wt":{}, "pos_and_mut":{}}
+
 
     # For each contruct, retrieve the correct information, and then add it to the context dictionary, mutation_list.
     for record in constructs:
+        # Get info for the construct
+        struct_id = record.structure_id
+        state = record.structure.state.name
         prot = record.protein
-        protein_name = prot.entry_name
-        class_slug_id = prot.family.slug.split('_')[0] # <-- gets class identifier.
+        p_class = prot.family.parent.parent.parent.name
+        p_ligand = prot.family.parent.parent.name
+        p_receptor = prot.family.parent.name
+        pdb = record.crystal.pdb_code
 
-        p_class = class_names.setdefault(class_slug_id, prot.family.parent.parent.parent.name)
 
         for mutant in record.mutations.all():
+            if mutant.residue.generic_number is None:
+                generic_number = "None"
+            else:
+                generic_number = mutant.residue.generic_number.label
 
-            # Add information already known to the mutation list.
-            mutation_list.append({'pdb':protein_name,
-                                  'position': mutant.sequence_number,
-                                  'gn':mutant.residue.generic_number,
-                                  'segment': mutant.residue.protein_segment.slug,
-                                  'wt': mutant.wild_type_amino_acid,
-                                  'mut': mutant.mutated_amino_acid,
-                                  'p_class': p_class})
+            # Get the mutation info.
+            mutant_id = {'gen_num':generic_number, 'wild_type':mutant.wild_type_amino_acid,
+                         'mutant':mutant.mutated_amino_acid, 'count':0, 'segment':mutant.residue.protein_segment.slug
+                        }
+            mutant_info = {'pdb':pdb,
+                           'class': p_class,
+                           'ligand': p_ligand,
+                           'receptor': p_receptor,
+                           'wild_type':mutant_id["wild_type"],
+                           'mutant':mutant_id['mutant'],
+                           'state':state,
+                           'struct_id':struct_id
+                          }
+            # if (prot.entry_name == 'adrb1_melga'): print(generic_number)
+            # For each group, add the required info.
+            for group_name, attr in groupings.items():
+                # Create a dictionary of information pertaining to the whole group to which the mutant belongs
+                group_info = {key:item for key, item in mutant_id.items() if key not in attr['exclude_from_info']}
+                # Create a group ID (which will be unique for each grouping)
+                group_id = ",".join([str(val) for key, val in mutant_id.items()
+                                     if key in attr['include_in_id']])
+                # Set the default for the group id in each mutation_grouping.
+                group = mutation_groups[group_name].setdefault(group_id,
+                                                               [group_info, {}]
+                                                              )
+
+                # Edit group info as needed (in the case that many are being added to the same group)
+                group[0]['count'] += 1
+
+                # Remove unnecessary items from the mutant info
+                info = {key:set((item,)) for key, item in mutant_info.items() if key not in attr['include_in_id']}
+
+                if group[1] == {}:
+                    # Initialise the dict with the first mutant.
+                    group[1].update(info)
+                else:
+                    for key, item in info.items():
+                        group[1][key].update(item)
+                # Add the specific mutant info to the group.
+                # Note that the use of a list to do so leads to duplicate dicts in the list.
+                # However, as dicts aren't hashable, sets cannot be used. As a result,
+                # group[1].append(info)
+
+    # # For each mutation_groups entry, deal with the multiple dicts per group id issue.
+    # for group_name, attr in groupings.items():
+    #     for group_id, info_tuple in mutation_groups[group_name].items():
+            # info_tuple[1] = [dict(s) for s in set(frozenset(d.items()) for d in info_tuple[1])]
 
 
-    return render(request, "construct/thermostablisation.html", {'mutation_list':mutation_list})
+# list({v['id']:v for v in L}.values()).      [dict(s) for s in set(frozenset(d.items()) for d in L)]
+
+    return render(request, "construct/thermostablisation.html",
+                  {'pos_and_mut': mutation_groups['pos_and_mut'],
+                   'pos_and_wt': mutation_groups['pos_and_wt'],
+                   'all': mutation_groups['all'],
+                   'position_only': mutation_groups["position_only"]})
 
 
 def fetch_all_pdb(request):
