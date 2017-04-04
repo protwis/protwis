@@ -284,11 +284,12 @@ function showOtherChem(dropdown_class, other_class, drop_value, last_row){
           console.log(this_index);
         if (this_index>last_row){
             if(this.value === drop_value){
-              $('.'+other_class+'.row_id_'+(this_index-last_row)).show();  
+              $(this).parent().parent().find('.'+other_class).show();  
+              // $('.'+other_class+'.row_id_'+(this_index-last_row)).show();  
             } 
             else {
-              $("."+other_class+'.row_id_'+(this_index-last_row)).val('')
-              $("."+other_class+'.row_id_'+(this_index-last_row)).hide(); 
+              $(this).parent().parent().find('.'+other_class).val('')
+              $(this).parent().parent().find('.'+other_class).hide(); 
             }
         }
         else{
@@ -472,6 +473,63 @@ function Nterm(){
 // }
 
  function WithinReceptor(){
+    tracking = {}
+    $('#aux_proteins tr:first td').each(function() {
+      // console.log($(this).html());
+      // console.log($(this).find("input").val());
+      sort_id = $(this).find("input").val();
+      console.log($(this).find("input").attr('name'));
+      col_id = $(this).find("input").attr('name').split('_')[2];
+      // var sort_id=$(this).find("input:first").value();
+      console.log(sort_id);
+      if (sort_id=='' && col_id){
+        alert('error, please make sure all sort positions are filled out');
+        return false;
+      }
+      console.log(col_id);
+      if (col_id){
+        tracking[col_id] = sort_id;
+      }
+    });
+    console.log(tracking);
+    var tuples = [];
+    for (var key in tracking) tuples.push([key, tracking[key]]);
+    tuples.sort(function(a, b) {
+        a = parseInt(a[1]);
+        b = parseInt(b[1]);
+
+        return a < b ? -1 : (a > b ? 1 : 0);
+    });
+    var rows = jQuery('tr', "#aux_proteins");
+    for (var i = 0; i < tuples.length; i++) {
+        var key = tuples[i][0];
+        var value = tuples[i][1];
+
+        // do something with key and value
+        console.log("id: "+key+" pos:"+value);
+          rows.each(function() {
+            cols = jQuery(this).children('th, td');
+            //cols.eq(first_index).detach().insertAfter(cols.eq(1));
+            console.log("find  .col_id_"+key);
+            cols.find( ".col_id_"+key ).parent().detach().insertAfter(cols.eq(i));
+           });
+    }
+
+    // var rows = jQuery('tr', "#aux_proteins");
+    // for (rec_arr_i=0, len_rec=rec_array.length; rec_arr_i < len_rec; ++rec_arr_i) {
+        // rows.each(function() {
+        //     cols = jQuery(this).children('th, td');
+        //     //cols.eq(first_index).detach().insertAfter(cols.eq(1));
+        //     cols.eq(rec_array[rec_arr_i]).detach().insertAfter(cols.eq(last_index));
+        //      });
+
+    //   // console.log(n_term.val());
+    //   // console.log("index"+n_term.parent().parent().index());
+    // }
+     UpdateIds("#aux_proteins", "#deletions");
+    }
+
+ function WithinReceptor2(){
     Nterm();
    $('#aux_proteins tr:first').each(function() {
      // $(this).find('td').each(function() {

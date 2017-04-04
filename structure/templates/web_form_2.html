@@ -438,18 +438,18 @@ select.optional option{
         for (i = 0; i < len; i++) {
 		  	k = keys[i];
 	    	v = obj.raw_data[k];
+	    	// console.log('key is'+k);
 	    	if ( $( "[name='"+k+"']" ).length && v ) {
 	    		if($( "[name='"+k+"']" ).is("select") && $( "[name='"+k+"']" ).is(":visible")) {
 	    			// if select, then select correctly
-	    			// console.log('is select '+k);
 			    	if (v=='auto') {
 			    		// $("[name='"+k+"']").val($("[name='"+k+"'] option:first").val());
 			    	} else {
 			    		$( "[name='"+k+"']" ).val(v);
+			    		$("#id_"+k ).click();
 			    		$("#id_"+k ).change();
 			    	}
 			    	
-			    	// console.log('firing on change '+k);
 			    	// $( "[name='"+k+"']" ).onchange();
 
 				} else if ($( "[name='"+k+"']" ).is(":visible")) {
@@ -471,8 +471,15 @@ select.optional option{
 					addaux('aux_proteins');
 				} else if (k.startsWith('chemical_comp')) {
 					addRow('chem_comp')
+				} else if (k.startsWith('deterg_concentr')) {
+					$("#add_deterg").click();
+				} else if (k.startsWith('chem_enz_treatment')){
+					$("#add_treatment").click();
 				} else if (k.startsWith('delet_end')) {
-					addRow('deletions', '0');
+					while ( !($( "[name='"+k+"']" ).length)) {
+						addRow('deletions', '0');
+						console.log('WHILE delete stuff ' + k );
+					}
 			    	$( "[name='"+k+"']" ).val(v);
 				} else {
 					// console.log('Not found '+k)
@@ -507,11 +514,12 @@ select.optional option{
 				    		$("#id_"+k ).change();
 				    	}  else {
 				    		$( "[name='"+k+"']" ).val(v);
+				    		$("#id_"+k ).click();
 				    		$("#id_"+k ).change();
+			    			console.log('firing on change '+k);
 				    	}
 	    			}
 				} else {
-			    	$( "[name='"+k+"']" ).val(v);
 			    }
 			}  else if (v) {
 				// console.log('Not found '+k);
@@ -528,6 +536,10 @@ select.optional option{
 					addaux('aux_proteins');
 				} else if (k.startsWith('chemical_comp')) {
 					addRow('chem_comp')
+				} else if (k.startsWith('deterg_concentr')) {
+					$("#add_deterg").click();
+				} else if (k.startsWith('chem_enz_treatment')){
+					$("#add_treatment").click();
 				} else if (k.startsWith('delet_end')) {
 					addRow('deletions', '0');
 			    	$( "[name='"+k+"']" ).val(v);
@@ -575,6 +587,59 @@ select.optional option{
 	    			}
 				} else {
 			    	$( "[name='"+k+"']" ).val(v);
+			    	if($( "[name='"+k+"']" ).is("select")) {
+			    		$( "[name='"+k+"']" ).click();
+			    		$( "[name='"+k+"']" ).change();
+			    		console.log('k '+k+' CHANGED');
+			    	}
+			    }
+			}
+			else if (!($( "[name='"+k+"']" ).length)) {
+				console.log('Not found '+k)
+			} 
+		}
+
+				//run 4th time to fix those that happened after onchange
+		for (i = 0; i < len; i++) {
+		  	k = keys[i];
+	    	v = obj.raw_data[k];
+	    	if ( $( "[name='"+k+"']" ).length && v && $( "[name='"+k+"']" ).val()!=v) {
+	    		if($( "[name='"+k+"']" ).is("select") && $( "[name='"+k+"']" ).is(":visible")) {
+	    			// if select, then select correctly
+	    			// console.log('is select '+k);
+	    			if ($( "[name='"+k+"']" ).val()!=v) {
+	    				// if first time changing
+			    		// console.log('2x firing on change '+k+' '+v+' '+$( "[name='"+k+"']" ).val());
+				    	if (v=='auto') {
+				    		$( "[name='"+k+"']" ).append($("<option></option>")
+		                    .attr("value",v)
+		                    .text("Undefined - please update"));
+				    		id = k.split("_")[2]
+				    		subtype = obj.raw_data['aux'+id+'_subtype']
+				    		// console.log(k,id)
+				    		$( "[name='"+k+"']" ).after("<br>Parser: "+subtype);
+				    		$( "[name='"+k+"']" ).val(v);
+				    		$("#id_"+k ).change();
+			    			// $("[name='"+k+"']").val($("[name='"+k+"'] option:first").val());
+				    	} else if ( k.startsWith('insert_pos_type')) {
+				    		id = k.split("_")[3]
+				    		$("#id_position_"+id ).click();
+				    		console.log("click! #id_position_"+id);
+				    		$( "[name='"+k+"']" ).val(v);
+				    		$( "[name='"+k+"']" ).click();
+				    		$("#id_"+k ).change();
+				    	} else {
+				    		$( "[name='"+k+"']" ).val(v);
+				    		$("#id_"+k ).change();
+				    	}
+	    			}
+				} else {
+			    	$( "[name='"+k+"']" ).val(v);
+			    	if($( "[name='"+k+"']" ).is("select")) {
+			    		$( "[name='"+k+"']" ).click();
+			    		$( "[name='"+k+"']" ).change();
+			    		console.log('k '+k+' CHANGED');
+			    	}
 			    }
 			}
 			else if (!($( "[name='"+k+"']" ).length)) {
@@ -606,7 +671,7 @@ select.optional option{
 			<td> 
 				<div id="contr_contact_div" class="contr_contact col-md-12 panel panel-primary">
 					<span id="required_indication" class="hidetext required_ind">Fields marked with * are required.Please fill them out , or select a value from the list</span>
-					<h1>Contributor Contact information</h1><br>
+					<h2>Contributor Contact information</h2><br>
 					<table style="table-layout: fixed" style="width:100%" id="contact_information" >
 						  <tr>
 						    <th>Date</th>
@@ -643,7 +708,79 @@ select.optional option{
 
 			<td style="vertical-align: top" class="left_border_contact">
 				<div id="construct_crystal_div" class="construct_crystal col-md-12 panel panel-primary">
-					<h1>Construct Crystal Information</h1> <br>
+					<h2>Construct Crystal Information</h2> <br>
+					<table style="table-layout: fixed" style="width:100%"  id="construct">
+						  <tr>
+						    <th>PDB code</th>
+						    <td><input class="form-control random" id="id_pdb" placeholder="e.g.2RH1" maxlength="50" name="pdb" type="text" /></td> 
+						  </tr>
+			              <tr>
+						    <th>Name</th>
+						    <td><input class="form-control random" id="id_pdb_name" maxlength="50" placeholder="e.g.Rhodopsin" name="pdb_name" type="text"/></td>
+						  </tr>
+		                  <tr>
+						    <th ><a href="http://www.uniprot.org/">Protein name or ID (Uniprot)</a></th>
+						    <td><input placeholder="e.g.OPSD_HUMAN or P08100 "  class="form-control random" id="id_uniprot" maxlength="50" name="uniprot" type="text"/></td>
+						  </tr>
+						   <tr>
+						    <th>Ligand Name</th>
+						    <td><input class="form-control random" id="id_ligand_name" maxlength="50" name="ligand_name" type="text"/></td> 
+						 </tr>
+						 <tr>
+						    <th>Ligand activity type</th>
+						    <td><select class="form-control custom_select" id="id_ligand_activity" name="ligand_activity">
+								<option value="">Please Select</option>
+								<option value="agonist">Agonist</option>
+								<option value="antagonist">Antagonist</option>
+								<option value="nam">NAM</option>
+								<option value="inverse agonist">Inverse Agonist</option>
+								<option value="unknown">Unknown</option>
+								<option value="agonist-partial">Agonist (partial)</option>
+								<option value="pam">PAM</option>
+								<option value="inverse-agonist-partial">Inverse Agonist (partial)</option>
+								<option value="binding-unknown-pharmacological-activity">Binding-unknown pharmacological activity</option>
+								<option value="negative-allosteric-modulator-noncompetitive-antagonist">Negative allosteric modulator - Non Competitive Antagonist</option>
+								<option value="positive-allosteric-modulator">Positive allosteric modulator</option>
+								<option value="positive-ago-allosteric-modulator">Positive ago-allosteric modulator</option>
+								<option value="allosteric-agonist">Allosteric agonist</option>
+								<option value="full-agonist">Full agonist</option>
+								<option value="antagonist-neutralsilent">Antagonist(neutral/silent)</option>
+								<option value="unknown">Unknown</option>
+								<option value="none">None</option>
+								<option value="other">Other</option>
+						    </select><br>
+						<input class="hidetext ligand_act_oth form-control random" id="id_ligand_act_oth" name="other_lig_act" placeholder="please insert" type="text"/></td>
+						 </tr>
+						 <tr>
+						    <th>Ligand ID Type</th>
+						    <td>
+						    <select class="form-control custom_select	" id="id_ligand_id_type" name="ligand_id_type">
+								<option value="">Please Select</option>
+								<option value="PubChem CID">PubChem CID</option>
+								<option value="ChEMBL Compound ID">ChEMBL Compound ID</option>
+								<option value="SMILES">SMILES</option>
+								<option value="FASTA sequence (peptide)">FASTA sequence (peptide)</option>
+								<option value="UniProt Entry Code (peptide)">UniProt Entry Code (peptide)</option>
+								<option value="Other">Other</option>
+						    </select><span class="help-tip"><p>PubChem CID:description<br>ChEMBL Compound ID:description<br>SMILES:description<br>FASTA sequence (peptide):description<br>UniProt Entry Code (peptide):description</p></span><br>
+						    <input class="hidetext other_ligand form-control random" id="id_ligandidother" name="other_lig_id" placeholder="please insert" type="text"/>
+						</td>
+						 </tr>
+						 <tr>
+						    <th>Ligand ID</th>
+						    <td><input class="form-control " id="id_ligand_id" maxlength="50" name="ligand_id" type="text"/></td> 
+						 </tr>
+						 <tr>
+						    <th>Ligand Concentration</th>
+						    <td><input class="half form-control random optional" id="id_ligand_conc" maxlength="50" name="ligand_conc" placeholder="value" type="text" /><input class="unit form-control random optional" id="id_ligand_conc_unit" name="ligand_conc_unit" placeholder="unit i.e.%w/v" type="text" /></td> 
+						 </tr>      
+			        </table>   
+				</div>
+			</td>
+
+			<!-- <td style="vertical-align: top" class="left_border_contact">
+				<div id="construct_crystal_div" class="construct_crystal col-md-12 panel panel-primary">
+					<h2>Complexed Ligand</h2> <br>
 					<table style="table-layout: fixed" style="width:100%"  id="construct">
 						  <tr>
 						    <th>PDB code</th>
@@ -709,7 +846,7 @@ select.optional option{
 						 </tr>      
 			        </table>   
 				</div>
-			</td>
+			</td> -->
 		</table>
 <br><br><br>   
 		<div id="hintbox"></div>
@@ -717,12 +854,18 @@ select.optional option{
 			<tr><td colspan="3">
 				 <span class="help_aux"><p>Fusion Protein:description<br>Signal Peptide:description<br>Tag:description<br>Linker Sequence:description<br>Proteolytic cleavage site:description</p></span>
 				<div id="auxiliary_proteins_div">
-		            	<h3>Auxiliary proteins</h3>
+		            	<h3>Fused proteins/peptides</h3>
 		            <br>
 				    <input class="button btn btn-primary" type="button" value="Add Protein" id="add_aux" onclick="addaux('aux_proteins')" />
 				    <input class="button btn btn-primary" type="button" value="Arrange" id="arrange_button" onclick="WithinReceptor()" />
 				    <br><br>
 					<table style="table-layout: fixed" style="width:100%"  id="aux_proteins">
+							<tr>
+						    <th>Sorted position</th>
+						    <td class="hidetext">
+									<input class="form-control optional col_id" id="sort_pos" name="sort_pos" placeholder="number" type="text" />
+							</td> 
+						   </tr>
 						   <tr>
 						    <th>Position in construct</th>
 						    <td class="hidetext"><select class="custom_select form-control position col_id" id="id_position" name="position">
@@ -744,6 +887,21 @@ select.optional option{
 									<option value="prot_cleavage">Proteolytic Cleavage site</option>
 								</select>
 							</td> 
+						   </tr>
+						   <tr> 	
+							    <th>Protein ID</th>	    		 
+							    <td class="hidetext">
+							    	<select class="custom_select optional form-control protein_id_type col_id" id="id_protein_id_type" name="protein_id_type">
+										<option value="" >Please select ID Type</option>
+										<option value="pubchem">PubChem</option>
+									</select>
+								</td>
+							</tr>
+							<tr>
+							    <th> </th>
+							    <td class="hidetext">
+									<input class="form-control optional protein_id col_id" id="id_protein_id" name="protein_id" placeholder="id" type="text" />
+								</td> 
 						   </tr>
 						   <tr> 
 						    <th class="sub_type hidetext">Subprotein Type</th>
@@ -890,7 +1048,7 @@ select.optional option{
 							    <th>Res No.</th>
 							    <th>WT AA</th>
 							    <th>Mutant AA</th> 
-							    <th>Type</th> 
+							    <th>Effect</th> 
 							    <th>Remark</th> 
 							    <th></th> 
 							  </tr>     
@@ -953,7 +1111,7 @@ select.optional option{
 										<option value="Ligand binding decreasing">Ligand binding decrease</option>
 										<option value="Glycosylation site removal">Glycosylation site removal</option>
 										<option value="Palmitoylation site removal">Palmitoylation site removal</option>
-										<option value="Disulfide Bridge">Disulfide Bridge</option>
+										<!-- <option value="Disulfide Bridge">Disulfide Bridge</option> -->
 										<option value="Unknown">Unknown</option>
 									</select>
 							    </td>
@@ -1017,7 +1175,7 @@ select.optional option{
 						<h2>Expression System</h2><br>
 						<table  style="table-layout: fixed"  id="expr_system">
 							<tr>
-							    <th>Host cell</th>
+							    <th>Cell line type</th>
 							    <td><select class="form-control hostcell" id="id_host_cell" name="host_cell">
 										<option value="">Select</option>
 										<option value="Mammalian">Mammal</option>
@@ -1025,28 +1183,15 @@ select.optional option{
 										<option value="Yeast">Yeast</option>
 										<option value="Bacteria">Bacteria</option>
 										<option value="Cell-free">Cell-free</option>
+										<option value="unknown">Unknown</option>
+										<option value="none">None</option>
 										<option value="other [See next field]">other [See next field]</option>
 									</select><br>
 									<input class="hidetext form-control host_cell_other" id="id_other_host_cell" name="other_host_cell" placeholder="please insert" type="text"/>
 							    </td>
 						      </tr>
-			                  <tr>
-							    <th>Expression Method</th>
-							    <td><select class="form-control expression" id="id_expr_method" name="expr_method">
-										<option value="">Select</option>
-										<option value="Native_source">Native_source</option>
-										<option value="Stable_cells">Stable_cells</option>
-										<option value="Transient_transfection">Transient_transfection</option>
-										<option value="Baculovirus">Baculovirus</option>
-										<option value="Transgenic_organism">Transgenic_organism</option>
-										<option value="BacMam">BacMam</option>
-										<option value="Other [In case of E.Coli or Yeast recombinant expression]">Other [In case of E.Coli or Yeast recombinant expression]</option>
-									</select><br>
-									<input class="form-control hidetext other_expr" id="other_expr_method" name="expr_other" placeholder="please insert" type="text" />
-								</td>        
-						     </tr>
 			                 <tr>
-							    <th>Host cell type</th>
+							    <th>Cell line</th>
 							     <td><select class="form-control host_c_type" id="id_host_cell_type" name="host_cell_type">
 										<option value="">Select</option>
 										<option value="Sf9">Sf9</option>
@@ -1063,10 +1208,29 @@ select.optional option{
 										<option value="S. cerevisiae">S. cerevisiae</option>
 										<option value="E. coli BL21(DE3)">E. coli BL21(DE3)</option>
 										<option value="P. pastoris SMD1163">P. pastoris SMD1163</option>
+										<option value="unknown">Unknown</option>
+										<option value="none">None</option>
 										<option value="other [See next field]">other [See next field]</option>
 									</select><br>
 									<input class="form-control hidetext other_host_cell" id="other_cell_host" name="other_host" placeholder="please insert" type="text" />
 								</td>
+						     </tr>
+			                  <tr>
+							    <th>Expression method</th>
+							    <td><select class="form-control expression" id="id_expr_method" name="expr_method">
+										<option value="">Select</option>
+										<option value="Native_source">Native_source</option>
+										<option value="Stable_cells">Stable_cells</option>
+										<option value="Transient_transfection">Transient_transfection</option>
+										<option value="Baculovirus">Baculovirus</option>
+										<option value="Transgenic_organism">Transgenic_organism</option>
+										<option value="BacMam">BacMam</option>
+										<option value="unknown">Unknown</option>
+										<option value="none">None</option>
+										<option value="Other [In case of E.Coli or Yeast recombinant expression]">Other [In case of E.Coli or Yeast recombinant expression]</option>
+									</select><br>
+									<input class="form-control hidetext other_expr" id="other_expr_method" name="expr_other" placeholder="please insert" type="text" />
+								</td>        
 						     </tr>
 						       <tr>
 							    <th>Expression time</th>
@@ -1083,25 +1247,28 @@ select.optional option{
 					<div id="solubilization_div" class="solubilization col-md-12 panel panel-primary">
 						<h2>Solubilization and Purification</h2> <br>
 						<table  style="table-layout: fixed" id="solubil_deterg">
+							<tr><th>Detergent</th><th>Detergent concentration</th></tr>
 			                 <tr>
-							    <th>Solubilization detergent type</th>
 							    <td><select class="form-control det_type row_id" id="id_deterg_type" name="deterg_type">
 										<option value="">Select</option>
 										<option value="DDM">DDM</option>
 										<option value="DM">DM</option>
 										<option value="LMNG">LMNG</option>
 										<option value="OG">OG</option>
+										<option value="unknown">Unknown</option>
+										<option value="none">None</option>
 										<option value="other [See next field]">other [See next field]</option>
-									</select><span type="button" id="add_deterg" name="det_button" class="btn btn-info btn-xs glyphicon glyphicon-plus add_deterg row_id"></span><span type="button" id='del_deterg' class='btn btn-xs btn-danger glyphicon glyphicon-remove  hidetext deterg_delrow delrow row_id'/></span><br>
+									</select><br>
 									<input class="hidetext form-control other_type_deterg row_id" id="id_other_deterg_type" maxlength="50" name="other_deterg_type" placeholder="insert type" type="text" />
 								</td>
+							    <td><input class="form-control half random" id="id_deterg_concentr" maxlength="50" name="deterg_concentr" placeholder="value" type="text"/><input class="form-control unit random" id="id_deterg_concentr_unit" maxlength="50" name="deterg_concentr_unit" placeholder="unit i.e.% w/v" type="text" />
+							    <span type="button" id="add_deterg" name="det_button" class="btn btn-info btn-xs glyphicon glyphicon-plus add_deterg row_id"></span><span type="button" id='del_deterg' class='btn btn-xs btn-danger glyphicon glyphicon-remove  hidetext deterg_delrow delrow row_id'/></span>
+							    </td> 
 						     </tr>
 						  </table> 
 						  <table  style="table-layout: fixed"  id="solubil_purif">
 			                 <tr>
-							    <th>Detergent concentration</th>
-							    <td><input class="form-control half random" id="id_deterg_concentr" maxlength="50" name="deterg_concentr" placeholder="value" type="text"/><input class="form-control unit random" id="id_deterg_concentr_unit" maxlength="50" name="deterg_concentr_unit" placeholder="unit i.e.% w/v" type="text" />
-							    </td> 
+							    
 							 </tr>
 			                 <tr>
 							    <th>Solubilization additive</th>
@@ -1136,10 +1303,22 @@ select.optional option{
 		  			</div>
 				</td>
 				<td class="cryst3 left_border_sol">
-					<div id="crystallization_div"class="crystallization_div col-md-12 panel panel-primary">
+					<div id="crystallization_div" class="crystallization_div col-md-12 panel panel-primary">
 						<h2 style="text-align:center">Crystallization</h2>
 						<div style="font-size:10px; text-align:center;">*Fields marked with grey font are optional</div><br>
 						<table style="" id="crystallization">
+							    <th>Crystallisation method</th>
+							    <td ><select class="form-control cr_method random" id="id_crystal_method" name="crystal_method">
+										<option value="">Please Select</option>
+										<option value="microbatch">microbatch</option>
+										<option value="vapour diffusion">vapour diffusion</option>
+										<option value="free interface diffusion">free interface diffusion</option>
+										<option value="unknown">Unknown</option>
+										<option value="none">None</option>
+										<option value="other [See next field]">other [See next field]</option>
+									</select><span class="help-tip"><p>microbatch:description<br>vapour diffusion:description<br>free interface diffusion:description</p></span><br>
+									<input class="hidetext form-control other_method random" id="id_other_method" maxlength="50" name="other_method" placeholder="insert method" type="text" /></td>
+						     </tr>
 			                  <tr>
 							    <th>Type</th>
 							    <td><select class="form-control random" id="id_crystal_type" name="crystal_type">
@@ -1149,22 +1328,14 @@ select.optional option{
 										<option value="bicelles">bicelles</option>
 										<option value="detergent">detergent</option>
 										<option value="amphipol">amphipol</option>
+										<option value="sitting drop">sitting drop</option>
+										<option value="hanging drop">hanging drop</option>
 										<option value="other [See next field]">other [See next field]</option>
 									</select><br>
 									<input class="hidetext form-control other_cryst_type random" id="id_other_crystal_type" name="other_crystal_type" placeholder="insert type" type="text" />
 								</td>
 						     </tr>
 			                 <tr>
-							    <th>Method</th>
-							    <td ><select class="form-control cr_method random" id="id_crystal_method" name="crystal_method">
-										<option value="">Please Select</option>
-										<option value="microbatch">microbatch</option>
-										<option value="vapour diffusion">vapour diffusion</option>
-										<option value="free interface diffusion">free interface diffusion</option>
-										<option value="other [See next field]">other [See next field]</option>
-									</select><span class="help-tip"><p>microbatch:description<br>vapour diffusion:description<br>free interface diffusion:description</p></span><br>
-									<input class="hidetext form-control other_method random" id="id_other_method" maxlength="50" name="other_method" placeholder="insert method" type="text" /></td>
-						     </tr>
 			                 <tr>
 							    <th>Protein concentration</th>
 							    <td><input class="half form-control random" id="id_protein_concentr" maxlength="50" name="protein_concentr" placeholder="value" type="text" /><input class="unit form-control random" id="id_protein_conc_unit" maxlength="50" name="protein_conc_unit" placeholder="unit i.e.mg/ml" type="text" />
@@ -1203,6 +1374,8 @@ select.optional option{
 										<option value="monopalmitolein (9.7 MAG)">monopalmitolein (9.7 MAG)</option>
 										<option value="monovaccenin(11.7 MAG)">monovaccenin(11.7 MAG)</option>
 										<option value="monoeicosenoin (11.9 MAG)">monoeicosenoin (11.9 MAG)</option>
+										<option value="unknown">Unknown</option>
+										<option value="none">None</option>
 										<option value="other [See next field]">other [See next field]</option>
 									</select><br>
 									<input class="optional opt hidetext other_lcp form-control random" id="id_other_lcp_lipid" name="other_lcp_lipid" placeholder="insert lipid" type="text"/>
@@ -1244,6 +1417,8 @@ select.optional option{
 										<option value="CHAPSO">CHAPSO</option>
 										<option value="FacadeEM">FacadeEM</option>
 										<option value="amphipol A8-35">amphipol A8-35</option>
+										<option value="unknown">Unknown</option>
+										<option value="none">None</option>
 										<option value="other [See next field]">other [See next field]</option>
 									</select><br>
 									<input class="optional opt hidetext other_det form-control random" id="id_other_deterg" maxlength="50" name="other_deterg" placeholder="insert detergent" type="text"/>
@@ -1268,6 +1443,8 @@ select.optional option{
 										<option value="DHPC">DHPC</option>
 										<option value="Cholesterol">Cholesterol</option>
 										<option value="Brain_lipid_extract">Brain_lipid_extract</option>
+										<option value="unknown">Unknown</option>
+										<option value="none">None</option>
 										<option value="other [See next field]">other [See next field]</option>
 									</select><br>
 									<input class="opt optional hidetext other_lipid form-control random" id="id_other_lipid" maxlength="50" name="other_lipid" placeholder="insert lipid" type="text"/>
@@ -1284,10 +1461,20 @@ select.optional option{
 						<table  style="table-layout: fixed" id="chem_comp">
 							 <tr>
 							    <th>Crystal precipitate</th>
+							    <th>Type</th>
 							    <th>Concentration</th>
 							 </tr>
 							 <tr class="hidetext">
 							    <td><input type="search" class="form-control row_id row_id" id="id_chemical_comp" maxlength="50" name="chemical_comp" type="text" />
+							    </td>
+							    <td>
+							    <select class="form-control row_id" id="id_chemical_comp_type" name="chemical_comp_type">
+										<option value="">Please Select</option>
+										<option value="Lipid">Lipid</option>
+										<option value="LCP Lipid">LCP Lipid</option>
+										<option value="LCP Lipid additive">LCP Lipid additive</option>
+										<option value="Detergent">Detergent</option>
+									</select>
 							    </td>
 							    <td><input type="search" class="form-control half half row_id" id="id_concentr" maxlength="50" name="concentr" placeholder="value" type="text" /><input class="form-control unit unit row_id" id="id_concentr_unit" maxlength="50" name="concentr_unit" placeholder="unit" type="text" />
 							    </td> 
