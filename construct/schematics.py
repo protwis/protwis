@@ -2,9 +2,13 @@ from protein.models import Protein, ProteinConformation
 from residue.models import Residue
 from structure.models import Structure
 
+import time
+
 def generate_schematic(c):
     global fusion_protein_name
     # print("GENERATING!")
+
+    time1 = time.time()
 
     ### PREPARE DATA
     summary = {}
@@ -13,6 +17,10 @@ def generate_schematic(c):
 
     fusion_position,fusion_result = c.fusion()
 
+
+    time2 = time.time()
+    # print('%s function took %0.3f ms' % ('fusion', (time2-time1)*1000.0))
+
     if fusion_result:
         fusion_protein_name = fusion_result[0][2]
     else:
@@ -20,23 +28,31 @@ def generate_schematic(c):
 
     summary['solubilization'] = ''
     if c.solubilization:
-        for chem in c.solubilization.chemical_list.chemicals.all():
+        for chem in c.solubilization.chemical_list.chemicals.prefetch_related('chemical').all():
             summary['solubilization'] += """{} ({} {})<br>""".format(chem.chemical.name,chem.concentration,chem.concentration_unit)
+    time2 = time.time()
+    # print('%s function took %0.3f ms' % ('summaries', (time2-time1)*1000.0))
 
 
     summary['purification'] = ''
     if c.purification:
         for step in c.purification.steps.all():
-            summary['purification'] += """{}<br>""".format(step.name)
+            if step.name!='None':
+                summary['purification'] += """{}<br>""".format(step.name)
+    time2 = time.time()
+    # print('%s function took %0.3f ms' % ('summaries', (time2-time1)*1000.0))
 
 
     summary['crystallization_chems'] = ''
     if c.crystallization:
         for clist in c.crystallization.chemical_lists.all():
-            summary['crystallization_chems'] += """{}<br>""".format(clist.name)    
-            for chem in clist.chemicals.all():
+            # summary['crystallization_chems'] += """{}<br>""".format(clist.name)    
+            for chem in clist.chemicals.prefetch_related('chemical').all():
                 summary['crystallization_chems'] += """{} ({} {})<br>""".format(chem.chemical.name,chem.concentration,chem.concentration_unit)
 
+
+    time2 = time.time()
+    # print('%s function took %0.3f ms' % ('summaries', (time2-time1)*1000.0))
 
     n_term = {}
     insert = {}
@@ -68,7 +84,7 @@ def generate_schematic(c):
         summary['mutations'] += mut.wild_type_amino_acid+str(mut.sequence_number)+mut.mutated_amino_acid+'<br>'
 
     summary['insertions'] = '<div style="text-align:left">'
-    for aux in c.insertions.order_by('position').all():
+    for aux in c.insertions.order_by('position').prefetch_related('insert_type').all():
         position_without_number = aux.position.split("_")[0]
         if aux.start:
             if aux.start==19 and aux.insert_type.name=='auto':
@@ -92,9 +108,17 @@ def generate_schematic(c):
             annotations[i] = ['del','deletion','Deleted from '+str(dele.start)+' to '+str(dele.end),dele]
             json_annotations[i] = ['del','Deleted from '+str(dele.start)+' to '+str(dele.end),"red","white"]
 
+
+    time2 = time.time()
+    # print('%s function took %0.3f ms' % ('2', (time2-time1)*1000.0))
+
     # get residues
     residues = Residue.objects.filter(protein_conformation__protein=c.protein).order_by('sequence_number').prefetch_related(
         'protein_segment', 'generic_number', 'display_generic_number')
+
+
+    time2 = time.time()
+    # print('%s function took %0.3f ms' % ('3', (time2-time1)*1000.0))
 
     residues_custom = []
     residues_lookup = {}
@@ -110,6 +134,8 @@ def generate_schematic(c):
                 r.print_amino_acid = annotations[r.sequence_number][3].mutated_amino_acid
         residues_custom.append(r)
 
+    time2 = time.time()
+    # print('%s function took %0.3f ms' % ('4', (time2-time1)*1000.0))
 
     results = {}
     results['annotations'] = json_annotations
@@ -170,6 +196,9 @@ def generate_schematic(c):
     results['schematic_1_wt'] = r_chunks_schematic
 
     #### VERSION 1 SCHEMATIC CONSTRUC
+
+    time2 = time.time()
+    # print('%s function took %0.3f ms' % ('1', (time2-time1)*1000.0))
 
     for aux in sorted(n_term):
         name = n_term[aux].insert_type.subtype[:6]
@@ -586,7 +615,9 @@ def generate_schematic(c):
         
     results['summary'] = summary
 
-
+    time2 = time.time()
+    # print('%s function took %0.3f ms' % ('final', (time2-time1)*1000.0))
+    #print('done')
     return results
 
 
@@ -596,6 +627,9 @@ def create_block(chunk):
             <table class='schematic-block'><tr>"""
     blank = 0
     blank_max = 20
+    min_colspan = 1
+    if len(chunk)<10:
+        min_colspan = round(20/len(chunk))
     for i,r in enumerate(chunk):
         if r[3]:
             extra = r[3][1]
@@ -614,9 +648,9 @@ def create_block(chunk):
             if blank: 
                 temp += """<td class="seqv seqv-segment no-wrap" colspan="{}">&nbsp;</td>""".format(str(blank))
                 blank = 0
-            temp += """<td class="seqv seqv-segment no-wrap {}">
+            temp += """<td class="seqv seqv-segment no-wrap {}" colspan="{}">
                         <div data-toggle="tooltip" data-placement="top" data-html="true"
-                        title="{}">&nbsp;</div></td>""".format(extra,r[3][2])
+                        title="{}">&nbsp;</div></td>""".format(extra,min_colspan,r[3][2])
             blank_max = blank_max-i
         else:
             blank += 1
