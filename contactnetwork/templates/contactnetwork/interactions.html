@@ -852,23 +852,18 @@
                                 'title': title
                             });
 
-                            cells.push(cell);
-                        });
-
-                        // Add popover to all cells
-                        var title = 'Interactions at ' + seq_i + ', ' + seq_j;
-                        var content = 'Detailed info goes here.';
-
-                        cells.forEach(function(cell) {
+                            // Add popover to cells
                             cell.popover({
                                 'container': heatMapSelector,
                                 'placement': 'bottom',
                                 'animation': true,
                                 'html': true,
-                                'title': title,
-                                'content': content,
+                                'title': 'Interactions at ' + seq_i + ', ' + seq_j,
+                                'content': title,
                                 'tabindex': '0'
                             });
+
+                            cells.push(cell);
                         });
                     }
                 }
@@ -1118,15 +1113,26 @@
                         cell.attr({
                             'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
                             'data-num-interactions': nInteractions,
-                            'class': 'heatmap-interaction',
-                            'title': title
+                            'class': 'heatmap-interaction'
                         });
 
                         $(heatMapSelector + ' rect.heatmap-interaction').tooltip({
-                            'container': 'body',
+                            'container': heatMapSelector,
                             'placement': 'top',
                             'delay': 75,
+                            'title': title,
                             'html': true
+                        });
+
+                        // Add popover to cells
+                        $(heatMapSelector + ' rect.heatmap-interaction').popover({
+                            'container': heatMapSelector,
+                            'placement': 'bottom',
+                            'animation': true,
+                            'html': true,
+                            'title': 'Interactions at ' + seq_i + ', ' + seq_j,
+                            'content': title,
+                            'tabindex': '0'
                         });
 
                         contentGroup.add(cell);
@@ -1365,32 +1371,48 @@
 
                     if ((num in data1.interactions) || (num in data2.interactions)) {
                         // Difference in frequencies
+                        var f1 = (n1 / data1.pdbs.length);
+                        var f2 = (n2 / data2.pdbs.length);
                         var fDiff = (n1 / data1.pdbs.length) - (n2 / data2.pdbs.length);
 
                         if (fDiff <= 0) {
-                            // If fDiff is close to -1, we want a redder color
+                            // If fDiff is close to -1, we want a red color
                             var rgb = { r: 255, g: 255-255*(-fDiff), b: 255-255*(-fDiff) };
                         } else {
-                            // If fDiff is close to 1 we want a bluer color
+                            // If fDiff is close to 1 we want a blue color
                             var rgb = { r: 255-255*fDiff, g: 255-255*fDiff, b: 255 };
                         }
 
                         var cell = heatmap.rect(i, j, 1, 1);
 
-                        var title =  'Residues ' + seq_i + ', ' + seq_j + '<br />' + 'Frequency difference: ' + fDiff.toFixed(2);
+                        var title =  'Residues ' + seq_i + ', ' + seq_j + '<br />' 
+                                   + 'Frequency group 1: ' + f1.toFixed(2)+ '<br />' 
+                                   + 'Frequency group 2: ' + f2.toFixed(2)+ '<br />' 
+                                   + 'Frequency difference: ' + fDiff.toFixed(2)+ '<br />' ;
 
                         cell.attr({
                             'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
                             'data-frequency-diff': fDiff,
-                            'class': 'heatmap-interaction',
-                            'title': title
+                            'class': 'heatmap-interaction'
                         });
 
                         $(heatMapSelector + ' rect.heatmap-interaction').tooltip({
-                            'container': 'body',
+                            'container': heatMapSelector,
                             'placement': 'top',
                             'delay': 75,
-                            'html': true
+                            'html': true,
+                            'title': title
+                        });
+
+                        // Add popover to cells
+                        $(heatMapSelector + ' rect.heatmap-interaction').popover({
+                            'container': heatMapSelector,
+                            'placement': 'bottom',
+                            'animation': true,
+                            'html': true,
+                            'title': 'Interactions at ' + seq_i + ', ' + seq_j,
+                            'content': title,
+                            'tabindex': '0'
                         });
 
                         contentGroup.add(cell);
@@ -1409,7 +1431,7 @@
             g.transform("r225s-1,1");
 
             // Populate heatmap legend
-            var legendHtml = '<h4 class="center">Interaction count</h4>'
+            var legendHtml = '<h4 class="center">Frequency</h4>'
                 + '<p>From: <span class="min-value">-1</span></p>'
                 + '<input class="min-interactions-range" type="range" min="-1" max="1" value="-1" step="0.01" />'
                 + '<div class="temperature-scale">'
