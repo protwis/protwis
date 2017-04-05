@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from django.db.models import Q
 
+from collections import defaultdict
+
 import json
 import functools
 
@@ -16,6 +18,31 @@ def Interactions(request):
     """
     return render(request, 'contactnetwork/interactions.html')
 
+def PdbTreeData(request):
+    data = Structure.objects.values(
+        'pdb_code__index',
+        'protein_conformation__protein__parent__family__parent__parent__parent__name',
+        'protein_conformation__protein__parent__family__parent__parent__name',
+        'protein_conformation__protein__parent__family__parent__name',
+        'protein_conformation__protein__parent__family__name',
+        )
+
+    l = lambda:defaultdict(l)
+    data_dict = l()
+
+    for d in data:
+        pdb = d['pdb_code__index']
+        l3 = d['protein_conformation__protein__parent__family__name']
+        l2 = d['protein_conformation__protein__parent__family__parent__name']
+        l1 = d['protein_conformation__protein__parent__family__parent__parent__name']
+        l0 = d['protein_conformation__protein__parent__family__parent__parent__parent__name']
+
+        if not data_dict[l0][l1][l2]:
+            data_dict[l0][l1][l2] = []
+
+        data_dict[l0][l1][l2].append(pdb)
+
+    return JsonResponse(data_dict)
 
 def InteractionData(request):
 

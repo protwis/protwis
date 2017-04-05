@@ -30,9 +30,9 @@
                                 <h3 class="panel-title">PDBs</h3>
                             </div>
                             <div class="panel-body">
-                                <input class="crystal-pdb" type="hidden" />
-                                <h5 class="no-crystal-text">No crystal selected.</h5>
-                                <h5 class="crystal-text hidden">Selected crystal <span class="label label-danger"></span></h5>
+                                <input type="hidden" class="interactions-input" value="[]" />
+                                <input class="crystal-pdb" type="hidden" value="[]" />
+                                <h5><span class="crystal-count">0</span> crystal(s) selected.</h5>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button>
                             </div>
                         </div>
@@ -47,14 +47,14 @@
                                 <h5>Helices</h5>
                                 <div class="btn-group buttons-helices">
                                   <button type="button" class="btn btn-primary all-button">All</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM1">1</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM2">2</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM3">3</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM4">4</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM5">5</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM6">6</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM7">7</button>
-                                  <button type="button" class="btn btn-primary" data-segment="H8">8</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM1">TM1</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM2">TM2</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM3">TM3</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM4">TM4</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM5">TM5</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM6">TM6</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM7">TM7</button>
+                                  <button type="button" class="btn btn-primary" data-segment="H8">H8</button>
                                 </div>
                                 <h5>Loops</h5>
                                 <div class="btn-group buttons-loops">
@@ -69,14 +69,14 @@
                                 <h5>Termini</h5>
                                 <div class="btn-group buttons-termini">
                                   <button type="button" class="btn btn-primary all-button">All</button>
-                                  <button type="button" class="btn btn-primary" data-segment="C-term">C-term</button>
                                   <button type="button" class="btn btn-primary" data-segment="N-term">N-term</button>
+                                  <button type="button" class="btn btn-primary" data-segment="C-term">C-term</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-1">
-                        <div class="btn btn-success btn-lg pull-right go-button">Go</div>
+                        <div class="btn btn-success btn-lg pull-right go-button"><span>Go</span></div>
                     </div>
                 </div>
                 <div class="row">
@@ -113,9 +113,8 @@
                                 <h3 class="panel-title">PDBs</h3>
                             </div>
                             <div class="panel-body">
-                                <input class="crystal-pdb" type="hidden" />
-                                <h5 class="no-crystal-text">No crystals selected.</h5>
-                                <h5 class="crystal-text hidden">Selected crystals <span class="label label-danger" data-single-pdb=""></span></h5>
+                                <input class="crystal-pdb" type="hidden" value="[]" />
+                                <h5><span class="crystal-count">0</span> crystal(s) selected.</h5>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal">Select PDBs</button>
                             </div>
                         </div>
@@ -130,14 +129,14 @@
                                 <h5>Helices</h5>
                                 <div class="btn-group buttons-helices">
                                   <button type="button" class="btn btn-primary all-button">All</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM1">1</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM2">2</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM3">3</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM4">4</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM5">5</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM6">6</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM7">7</button>
-                                  <button type="button" class="btn btn-primary" data-segment="H8">8</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM1">TM1</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM2">TM2</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM3">TM3</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM4">TM4</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM5">TM5</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM6">TM6</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM7">TM7</button>
+                                  <button type="button" class="btn btn-primary" data-segment="H8">H8</button>
                                 </div>
                                 <h5>Loops</h5>
                                 <div class="btn-group buttons-loops">
@@ -152,8 +151,8 @@
                                 <h5>Termini</h5>
                                 <div class="btn-group buttons-termini">
                                   <button type="button" class="btn btn-primary all-button">All</button>
-                                  <button type="button" class="btn btn-primary" data-segment="C-term">C-term</button>
                                   <button type="button" class="btn btn-primary" data-segment="N-term">N-term</button>
+                                  <button type="button" class="btn btn-primary" data-segment="C-term">C-term</button>
                                 </div>
                             </div>
                         </div>
@@ -214,13 +213,11 @@
                                 <h3 class="panel-title">PDBs</h3>
                             </div>
                             <div class="panel-body">
-                                <input class="crystal-group-1-pdbs" type="hidden" />
-                                <input class="crystal-group-2-pdbs" type="hidden" />
-                                <h5 class="no-crystal-text-1">No crystals selected.</h5>
-                                <h5 class="crystal-text-1 hidden">Selected crystals <span class="label label-danger" data-single-pdb=""></span></h5>
+                                <input class="crystal-group-1-pdbs" type="hidden" value="[]" />
+                                <input class="crystal-group-2-pdbs" type="hidden" value="[]" />
+                                <h5><span class="crystal-count-1">0</span> crystal(s) selected.</h5>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1">Select PDBs</button>
-                                <h5 class="no-crystal-text-2">No crystals selected.</h5>
-                                <h5 class="crystal-text-2 hidden">Selected crystals <span class="label label-danger" data-single-pdb=""></span></h5>
+                                <h5><span class="crystal-count-2">0</span> crystal(s) selected.</h5>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2">Select PDBs</button>
                             </div>
                         </div>
@@ -235,14 +232,14 @@
                                 <h5>Helices</h5>
                                 <div class="btn-group buttons-helices">
                                   <button type="button" class="btn btn-primary all-button">All</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM1">1</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM2">2</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM3">3</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM4">4</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM5">5</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM6">6</button>
-                                  <button type="button" class="btn btn-primary" data-segment="TM7">7</button>
-                                  <button type="button" class="btn btn-primary" data-segment="H8">8</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM1">TM1</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM2">TM2</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM3">TM3</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM4">TM4</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM5">TM5</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM6">TM6</button>
+                                  <button type="button" class="btn btn-primary" data-segment="TM7">TM7</button>
+                                  <button type="button" class="btn btn-primary" data-segment="H8">H8</button>
                                 </div>
                                 <h5>Loops</h5>
                                 <div class="btn-group buttons-loops">
@@ -257,8 +254,8 @@
                                 <h5>Termini</h5>
                                 <div class="btn-group buttons-termini">
                                   <button type="button" class="btn btn-primary all-button">All</button>
-                                  <button type="button" class="btn btn-primary" data-segment="C-term">C-term</button>
                                   <button type="button" class="btn btn-primary" data-segment="N-term">N-term</button>
+                                  <button type="button" class="btn btn-primary" data-segment="C-term">C-term</button>
                                 </div>
                             </div>
                         </div>
@@ -313,12 +310,13 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Select a crystal</h4>
+                    <h4 class="modal-title">Select a group of crystals</h4>
                 </div>
                 <div class="modal-body">
-                    <div class="modal-pdbs">
-                        <!-- Content goes here -->
-                    </div>
+                      <div class="col-md-12">
+                        <div class="treeview"></div>
+                      </div>
+                      <div class="clearfix"></div>
                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -330,6 +328,29 @@
 
     <!-- BEGIN SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
     <div class="modal fade" id="single-crystal-group-pdbs-modal" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Select a group of crystals</h4>
+                </div>
+                <div class="modal-body">
+                      <div class="col-md-12">
+                        <div class="treeview"></div>
+                      </div>
+                      <div class="clearfix"></div>
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
+
+    <!-- BEGIN SINGLE CRYSTAL GROUP PDBS CHOOSER MODAL -->
+    <div class="modal fade" id="single-crystal-group-pdbs-modal-2" role="dialog">
         <div class="modal-dialog">
             <!-- Modal content-->
             <div class="modal-content">
@@ -360,9 +381,10 @@
                     <h4 class="modal-title">Select a group of crystals</h4>
                 </div>
                 <div class="modal-body">
-                    <div class="modal-pdbs">
-                        <!-- Content goes here -->
-                    </div>
+                      <div class="col-md-12">
+                        <div class="treeview"></div>
+                      </div>
+                      <div class="clearfix"></div>
                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -382,9 +404,10 @@
                     <h4 class="modal-title">Select a group of crystals</h4>
                 </div>
                 <div class="modal-body">
-                    <div class="modal-pdbs">
-                        <!-- Content goes here -->
-                    </div>
+                      <div class="col-md-12">
+                        <div class="treeview"></div>
+                      </div>
+                      <div class="clearfix"></div>
                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -606,7 +629,8 @@
             switch (segmentName) {
                 case 'N-term':
                 case 'C-term':
-                    r = 255; g = 150; b = 150;
+                    r = 190; g = 190; b = 190;
+                    //r = 255; g = 150; b = 150;
                     break;
                 case 'TM1':
                 case 'TM2':
@@ -616,23 +640,41 @@
                 case 'TM6':
                 case 'TM7':
                 case 'H8':
-                    r = 150; g = 255; b = 150;
+                    r = 230; g = 230; b = 230;
+                    //r = 150; g = 255; b = 150;
                     break;
                 case 'ECL1':
                 case 'ECL2':
                 case 'ECL3':
-                    r = 150; g = 150; b = 255;
+                    r = 190; g = 190; b = 190;
+                    //r = 150; g = 150; b = 255;
                     break;
                 case 'ICL1':
                 case 'ICL2':
                 case 'ICL3':
-                    r = 150; g = 150; b = 255;
+                    r = 190; g = 190; b = 190;
+                    //r = 150; g = 150; b = 255;
                     break;
                 default:
                     r = 0; g = 0; b = 0;
             }
 
             return { r: r, g: g, b: b };
+        }
+
+        function downloadSVG(svgSelector, name) {
+            var escapedSVG = new XMLSerializer().serializeToString($(svgSelector).get(0));
+            downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), name);
+        }
+
+        function downloadURI(uri, name) {
+            var link = document.createElement("a");
+            link.download = name;
+            link.href = uri;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            delete link;
         }
 
         function renderSingleCrystalHeatmap(data, heatMapSelector) {
@@ -706,14 +748,20 @@
 
                 // Place the segments vertically.
                 var cell = heatmap.rect(s.start, 0, s.end - s.start + 1, num_seq_numbers);
+                var line = heatmap.line(s.start, 0, s.start, num_seq_numbers);
 
                 cell.attr({
                     'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
                     'fill-opacity': "0.5"
                 });
 
+                line.attr({
+                    'stroke': "rgb(150,150,150)",
+                    'strokeWidth': "0.1"
+                });
+
                 // Add text
-                var label = heatmap.text(s.start + (s.end - s.start + 1)/2 - 2, 9 + cell.getBBox().height, s.seg);
+                var label = heatmap.text(s.start + (s.end - s.start + 1)/2 - 6, 9 + cell.getBBox().height, s.seg);
 
                 label.attr({
                     'text-anchor': 'start',
@@ -721,9 +769,10 @@
                 });
 
                 contentGroup.add(cell);
+                contentGroup.add(line);
                 labelGroup.add(label);
 
-                label.transform("r225");
+                label.transform("r270s-1,1");
             });
 
             segments.forEach(function(s) {
@@ -731,13 +780,19 @@
 
                 // Place the segments horizontally.
                 cell = heatmap.rect(0, s.start, num_seq_numbers, s.end - s.start + 1);
+                line = heatmap.line(0, s.end+1, num_seq_numbers, s.end+1);
 
                 cell.attr({
                     'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
                     'fill-opacity': "0.5"
                 });
 
-                var label = heatmap.text(-2, s.start + (s.end - s.start + 1)/2 - 3, s.seg);
+                line.attr({
+                    'stroke': "rgb(150,150,150)",
+                    'strokeWidth': "0.1"
+                });
+
+                var label = heatmap.text(-2, s.start + (s.end - s.start + 1)/2, s.seg);
 
                 label.attr({
                     'text-anchor': 'end',
@@ -745,9 +800,10 @@
                     'alignment-baseline': 'middle'
                 });
 
-                label.transform("r225");
+                label.transform("r180s-1,1");
 
                 contentGroup.add(cell);
+                contentGroup.add(line);
                 labelGroup.add(label);
             });
 
@@ -771,7 +827,7 @@
 
                             var content, title = 'Residues ' + seq_i + ', ' + seq_j + '<br />'
                                     + 'Interaction: ' + getFriendlyInteractionName(interaction) + '<br />'
-                                    + segment_map[seq_i] + ', ' + segment_map[seq_j];
+                                    + segment_map[seq_j] + ', ' + segment_map[seq_i];
 
                             var interactionId = 'single-i-' + num.replace(',','-');
 
@@ -822,11 +878,19 @@
             var bbox = contentGroup.getBBox();
             contentGroup.add(heatmap.polygon([bbox.x, bbox.y, bbox.x2, bbox.y, bbox.x2, bbox.y2]).attr({ fill: "white" }));
 
+            // Add bottom line
+            var line = heatmap.line(bbox.x, bbox.y, bbox.x2, bbox.y2);
+            line.attr({
+                'stroke': "rgb(150,150,150)",
+                'strokeWidth': "0.1"
+            });
+            contentGroup.add(line);
+
             // Rotate contents
             var g = heatmap.g();
             g.add(contentGroup);
             g.add(labelGroup);
-            g.transform("r135");
+            g.transform("r225s-1,1");
 
 
             // Populate heatmap legend
@@ -837,6 +901,7 @@
                 interactionTypes.add(friendlyName);
             });
 
+            // Add interactions color legend
             var legendHtml = '<ul>';
 
             interactionTypes = Array.from(interactionTypes).sort(function (i1, i2) {
@@ -851,6 +916,11 @@
                         + '</li>';
             });
             legendHtml += '</ul>';
+
+            // Add SVG download button
+            legendHtml += '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
+                            '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
+                          '</button>';
 
             $(heatMapSelector + ' .heatmap-legend').append(legendHtml);
 
@@ -922,7 +992,7 @@
             // Contains all labels
             var labelGroup = heatmap.g();
 
-            // Contains all labels
+            // Contains all content
             var contentGroup = heatmap.g();
 
             // Compute segment offsets
@@ -963,14 +1033,21 @@
 
                 // Place the segments vertically.
                 var cell = heatmap.rect(s.start, 0, s.end - s.start + 1, num_seq_numbers);
+                var line = heatmap.line(s.start, 0, s.start, num_seq_numbers);
 
                 cell.attr({
                     'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
                     'fill-opacity': "0.5"
                 });
 
-                 // Add text
-                var label = heatmap.text(s.start + (s.end - s.start + 1)/2 - 2, 9 + cell.getBBox().height, s.seg);
+                line.attr({
+                    'stroke': "rgb(150,150,150)",
+                    'strokeWidth': "0.1"
+                });
+
+
+                // Add text
+                var label = heatmap.text(s.start + (s.end - s.start + 1)/2 - 6, 9 + cell.getBBox().height, s.seg);
 
                 label.attr({
                     'text-anchor': 'start',
@@ -978,9 +1055,10 @@
                 });
 
                 contentGroup.add(cell);
+                contentGroup.add(line);
                 labelGroup.add(label);
 
-                label.transform("r225");
+                label.transform("r270s-1,1");
             });
 
             segments.forEach(function(s) {
@@ -988,13 +1066,19 @@
 
                 // Place the segments horizontally.
                 cell = heatmap.rect(0, s.start, num_seq_numbers, s.end - s.start + 1);
+                line = heatmap.line(0, s.end+1, num_seq_numbers, s.end+1);
 
                 cell.attr({
                     'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
                     'fill-opacity': "0.5"
                 });
 
-                var label = heatmap.text(-2, s.start + (s.end - s.start + 1)/2 - 3, s.seg);
+                line.attr({
+                    'stroke': "rgb(150,150,150)",
+                    'strokeWidth': "0.1"
+                });
+
+                var label = heatmap.text(-2, s.start + (s.end - s.start + 1)/2, s.seg);
 
                 label.attr({
                     'text-anchor': 'end',
@@ -1002,9 +1086,10 @@
                     'alignment-baseline': 'middle'
                 });
 
-                label.transform("r225");
+                label.transform("r180s-1,1");
 
                 contentGroup.add(cell);
+                contentGroup.add(line);
                 labelGroup.add(label);
             });
 
@@ -1057,7 +1142,7 @@
             var g = heatmap.g();
             g.add(contentGroup);
             g.add(labelGroup);
-            g.transform("r135");
+            g.transform("r225s-1,1");
 
             // Populate heatmap legend
             var legendHtml = '<h4 class="center">Interaction count</h4>'
@@ -1071,6 +1156,12 @@
                 + '<div class="temperature-scale">'
                 + '<span class="white-to-red"></span>'
                 + '</div>';
+
+            // Add SVG download button
+            legendHtml += '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
+                            '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
+                          '</button>';
+
             $(heatMapSelector + ' .heatmap-legend').append(legendHtml); 
 
             function getRangeChangeFunction() {
@@ -1192,14 +1283,20 @@
 
                 // Place the segments vertically.
                 var cell = heatmap.rect(s.start, 0, s.end - s.start + 1, num_seq_numbers);
+                var line = heatmap.line(s.start, 0, s.start, num_seq_numbers);
 
                 cell.attr({
                     'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
                     'fill-opacity': "0.5"
                 });
 
-                 // Add text
-                var label = heatmap.text(s.start + (s.end - s.start + 1)/2 - 2, 9 + cell.getBBox().height, s.seg);
+                line.attr({
+                    'stroke': "rgb(150,150,150)",
+                    'strokeWidth': "0.1"
+                });
+
+                // Add text
+                var label = heatmap.text(s.start + (s.end - s.start + 1)/2 - 6, 9 + cell.getBBox().height, s.seg);
 
                 label.attr({
                     'text-anchor': 'start',
@@ -1207,9 +1304,10 @@
                 });
 
                 contentGroup.add(cell);
+                contentGroup.add(line);
                 labelGroup.add(label);
 
-                label.transform("r225");
+                label.transform("r270s-1,1");
             });
 
             segments.forEach(function(s) {
@@ -1217,13 +1315,19 @@
 
                 // Place the segments horizontally.
                 cell = heatmap.rect(0, s.start, num_seq_numbers, s.end - s.start + 1);
+                line = heatmap.line(0, s.end+1, num_seq_numbers, s.end+1);
 
                 cell.attr({
                     'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
                     'fill-opacity': "0.5"
                 });
 
-                var label = heatmap.text(-2, s.start + (s.end - s.start + 1)/2 - 3, s.seg);
+                line.attr({
+                    'stroke': "rgb(150,150,150)",
+                    'strokeWidth': "0.1"
+                });
+
+                var label = heatmap.text(-2, s.start + (s.end - s.start + 1)/2, s.seg);
 
                 label.attr({
                     'text-anchor': 'end',
@@ -1231,9 +1335,10 @@
                     'alignment-baseline': 'middle'
                 });
 
-                label.transform("r225");
+                label.transform("r180s-1,1");
 
                 contentGroup.add(cell);
+                contentGroup.add(line);
                 labelGroup.add(label);
             });
 
@@ -1301,7 +1406,7 @@
             var g = heatmap.g();
             g.add(contentGroup);
             g.add(labelGroup);
-            g.transform("r135");
+            g.transform("r225s-1,1");
 
             // Populate heatmap legend
             var legendHtml = '<h4 class="center">Interaction count</h4>'
@@ -1317,6 +1422,12 @@
                 + '<span class="red-to-white"></span>'
                 + '<span class="white-to-blue"></span>'
                 + '</div>';
+
+            // Add SVG download button
+            legendHtml += '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\')" type="button" class="btn btn-primary pull-right" aria-label="Left Align">' +
+                            '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
+                          '</button>';
+
             $(heatMapSelector + ' .heatmap-legend').append(legendHtml); 
 
             function getRangeChangeFunction() {
@@ -1365,82 +1476,6 @@
                     }
                 }
             });
-        }
-
-        function populateModal(selector, modalSelector, dataSelector, textSelector, noCrystalText, singleCrystal = true) {
-            if (singleCrystal) {
-                $.getJSON( "/services/structure/?format=json", function( data ) {
-                    $.each( data, function( key, val ) {
-                        // Create a button for each PDB in modal.
-                        var i = $('<span></span>', {
-                            'class': 'btn btn-primary btn-small',
-                            'html': val.pdb_code
-                        }).click(function () {
-                            // Make active and all other buttons inactive
-                            $(modalSelector + ' .modal-pdbs .active').removeClass('active');
-                            $(this).addClass('active');
-
-                            // Update the input data.
-                            $(selector + ' ' + dataSelector).val('["' + $(this).html() + '"]');
-
-                            // Update the view to indicate that a crystal was chosen.
-                            $(selector + ' ' + noCrystalText).hide();
-                            $(selector + ' ' + textSelector).removeClass('hidden');
-                            $(selector + textSelector + ' span').html($(this).html());
-                            $(modalSelector).modal('toggle');
-                        });
-                        // Append the button
-                        $(modalSelector + ' .modal-pdbs').append($(i)).append('\n');
-                    });
-                });
-            } else {
-                $.getJSON( "/services/structure/?format=json", function( data ) {
-                    $.each( data, function( key, val ) {
-                        // Create a button for each PDB in modal.
-                        var i = $('<span></span>', {
-                            'class': 'btn btn-primary btn-small',
-                            'html': val.pdb_code
-                        }).click(function () {
-                            // Toggle active/inactive state.
-                            $(this).toggleClass('active');
-
-                            // Remove all selected crystals
-                            $(selector + ' ' + textSelector + ' span').empty();
-
-                            // Array with all selected PDB codes
-                            var pdbs = [];
-
-                            $(modalSelector + ' span.active').each(function() {
-
-                                // Save PDB code
-                                pdbs.push($(this).html());
-
-                                // Create label for PDBs panel
-                                var label = $('<span></span>', {
-                                    'class': 'label label-danger',
-                                    'html': $(this).html()
-                                });
-
-                                $(selector + ' ' + textSelector + ' > span').append(label).append('\n');
-                            });
-
-                            // Save PDBs array in input
-                            $(selector + ' ' + dataSelector).val(JSON.stringify(pdbs));
-
-                            // Update view
-                            if (pdbs.length == 0) {
-                                $(selector + ' ' + noCrystalText).removeClass('hidden');
-                                $(selector + ' ' + textSelector).addClass('hidden');
-                            } else {
-                                $(selector + ' ' + noCrystalText).addClass('hidden');
-                                $(selector + ' ' + textSelector).removeClass('hidden');
-                            }
-                        });
-                        // Append the button
-                        $(modalSelector + ' .modal-pdbs').append($(i)).append('\n');
-                    });
-                });
-            }
         }
 
         function initializeSegmentButtons(selector) {
@@ -1580,8 +1615,7 @@
             $(selector + ' .go-button').click(function() {
                 var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
                 var segments = JSON.parse($(selector + ' .segments-input').val());
-
-                var interactionTypes = [];
+                var interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
 
                 if (!$(selector + ' .interactions-input').val() == null) 
                     interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
@@ -1599,7 +1633,6 @@
                 });
             });
         }
-
 
         function initializeGoButtonTwoCrystalGroups(selector, heatmapFunction, generic=false) {
             $(selector + ' .go-button').click(function() {
@@ -1646,17 +1679,112 @@
             });
         }
 
+        function reshapeTreeData(node) {
+
+            // Check if we are at a leaf-node, i.e. a list of PDB codes.
+            if (Array.isArray(node)) {
+                var nodes = [];
+                for (var i in node) {
+                    nodes.push({
+                        'text': node[i]
+                    });
+                }
+                return nodes;
+            }
+
+            var nodes = [];
+            for (var name in node) {
+                if (node.hasOwnProperty(name)) {
+                    nodes.push({
+                        'text': name,
+                        'nodes': reshapeTreeData(node[name])
+                    });
+                }
+            }
+            return nodes;
+        }
+
+        function initializePdbChooser(treeSelector, pdbsCountSelector, pdbsInputSelector, multiSelect=true) {
+            $.get('pdbtreedata', function ( data ) {
+                var json = reshapeTreeData(data);
+
+                var $searchableTree = $(treeSelector).treeview({
+                    data: json,
+                    showIcon: false,
+                    showCheckbox: multiSelect,
+                    onNodeSelected: function(event, node) {
+                        if (!multiSelect && "undefined" === typeof node.nodes) {
+                            var pdbs = JSON.parse($(pdbsInputSelector).val());
+                            pdbs.push(node.text);
+                            $(pdbsInputSelector).val(JSON.stringify(pdbs));
+
+                            // Update view
+                            $(pdbsCountSelector).html(pdbs.length);
+                        }
+                    },
+                    onNodeUnselected: function(event, node) {
+                        if (!multiSelect && "undefined" === typeof node.nodes) {
+                            var pdbs = JSON.parse($(pdbsInputSelector).val());
+                            for (var i=pdbs.length-1; i>=0; i--) {
+                                if (pdbs[i] === node.text) {
+                                    pdbs.splice(i, 1);
+                                    break;
+                                }
+                            }
+                            $(pdbsInputSelector).val(JSON.stringify(pdbs));
+
+                            // Update view
+                            $(pdbsCountSelector).html(pdbs.length);
+                        }
+                    },
+                    onNodeChecked: function(event, node) {
+                        if ("undefined" === typeof node.nodes) {
+                            var pdbs = JSON.parse($(pdbsInputSelector).val());
+                            pdbs.push(node.text);
+                            $(pdbsInputSelector).val(JSON.stringify(pdbs));
+
+                            // Update view
+                            $(pdbsCountSelector).html(pdbs.length);
+                        }
+                        for(var i in node.nodes) {
+                            var child = node.nodes[i];
+                            $(this).treeview(true).checkNode(child.nodeId);
+                        }
+                    },
+                    onNodeUnchecked: function (event, node) {
+                        if ("undefined" === typeof node.nodes) {
+                            var pdbs = JSON.parse($(pdbsInputSelector).val());
+                            for (var i=pdbs.length-1; i>=0; i--) {
+                                if (pdbs[i] === node.text) {
+                                    pdbs.splice(i, 1);
+                                    break;
+                                }
+                            }
+                            $(pdbsInputSelector).val(JSON.stringify(pdbs));
+
+                            // Update view
+                            $(pdbsCountSelector).html(pdbs.length);
+                        }
+                        for(var i in node.nodes) {
+                            var child = node.nodes[i];
+                            $(this).treeview(true).uncheckNode(child.nodeId);
+                        }
+                    },
+                  levels: 0
+                });
+            });
+        }
+
 
         function initalizeSingleCrystalView() {
-            populateModal('#single-crystal-tab','#single-crystal-pdb-modal', '.crystal-pdb', '.crystal-text');
+            initializePdbChooser('#single-crystal-pdb-modal .treeview', '#single-crystal-tab .crystal-count', '#single-crystal-tab .crystal-pdb', false);
             initializeSegmentButtons('#single-crystal-tab');
             initializeGoButton('#single-crystal-tab', renderSingleCrystalHeatmap);
             initializeFullscreenButton('#single-crystal-tab');
-            initializeInteractionButtons('#single-crystal-tab');
         }
 
         function initializeSingleGroupCrystalView() {
-            populateModal('#single-crystal-group-tab', '#single-crystal-group-pdbs-modal', '.crystal-pdb', '.crystal-text', '.no-crystal-text', false);
+            initializePdbChooser('#single-crystal-group-pdbs-modal .treeview', '#single-crystal-group-tab .crystal-count', '#single-crystal-group-tab .crystal-pdb');
             initializeSegmentButtons('#single-crystal-group-tab');
             initializeGoButton('#single-crystal-group-tab', renderSingleCrystalGroupHeatmap, true);
             initializeFullscreenButton('#single-crystal-group-tab');
@@ -1664,8 +1792,8 @@
         }
 
         function initializeTwoCrystalGroupsView() {
-            populateModal('#two-crystal-groups-tab', '#two-crystal-group-pdbs-modal-1', '.crystal-group-1-pdbs', '.crystal-text-1', '.no-crystal-text-1', false);
-            populateModal('#two-crystal-groups-tab', '#two-crystal-group-pdbs-modal-2', '.crystal-group-2-pdbs', '.crystal-text-2', '.no-crystal-text-2', false);
+            initializePdbChooser('#two-crystal-group-pdbs-modal-1 .treeview', '#two-crystal-groups-tab .crystal-count-1', '#two-crystal-groups-tab .crystal-group-1-pdbs');
+            initializePdbChooser('#two-crystal-group-pdbs-modal-2 .treeview', '#two-crystal-groups-tab .crystal-count-2', '#two-crystal-groups-tab .crystal-group-2-pdbs');
             initializeSegmentButtons('#two-crystal-groups-tab');
             initializeGoButtonTwoCrystalGroups('#two-crystal-groups-tab', renderTwoCrystalGroupsHeatmap, true);
             initializeFullscreenButton('#two-crystal-groups-tab');
@@ -1673,7 +1801,6 @@
         }
 
         $(document).ready(function() {
-
             // Single PDB files
             initalizeSingleCrystalView();
 
@@ -1794,6 +1921,26 @@
             background: -ms-linear-gradient(180deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* ie10+ */
             background: linear-gradient(270deg, rgba(0,0,255,1) 0%, rgba(255,255,255,1) 100%); /* w3c */
             filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#FFFFFF', endColorstr='#0000FF',GradientType=1 );
+        }
+
+        #single-crystal-tab .panel .btn-primary:hover, #single-crystal-group-tab .panel .btn-primary:hover, #two-crystal-groups-tab .panel .btn-primary:hover {
+            background-color: #337ab7;
+        }
+
+        #single-crystal-tab .panel .btn-primary.active:hover, #single-crystal-group-tab .panel .btn-primary.active:hover, #two-crystal-groups-tab .panel .btn-primary.active:hover {
+            background-color: #286090;
+        }
+
+                #single-crystal-tab .panel .btn-primary:focus, #single-crystal-group-tab .panel .btn-primary:focus, #two-crystal-groups-tab .panel .btn-primary:focus {
+            background-color: #337ab7;
+        }
+
+        #single-crystal-tab .panel .btn-primary.active:focus, #single-crystal-group-tab .panel .btn-primary.active:focus, #two-crystal-groups-tab .panel .btn-primary.active:focus {
+            background-color: #286090;
+        }
+
+        .svg-download-button {
+            margin-top: 6px;
         }
     </style>
 {% endblock %}
