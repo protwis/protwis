@@ -6,4 +6,5 @@ from contactnetwork import views
 urlpatterns = [
     url(r'^interactions', views.Interactions, name='interactions'),
     url(r'^interactiondata', views.InteractionData, name='interactiondata'),
+    url(r'^pdbtreedata', views.PdbTreeData, name='pdbtreedata'),
 ]
