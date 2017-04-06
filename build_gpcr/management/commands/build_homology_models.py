@@ -1575,7 +1575,7 @@ class HomologyModeling(object):
             self.upload_to_db(sections, rot_table)
 
         print('MODELLER build: ',datetime.now() - startTime)
-        # pprint.pprint(self.statistics)
+        pprint.pprint(self.statistics)
         print('################################')
         return self
     
