@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from decimal import *
 
 AMINO_ACIDS = OrderedDict([
         ('A', 'Ala'),
@@ -28,58 +29,57 @@ AMINO_ACIDS = OrderedDict([
     ])
 
 # Amino Acid Propensities
-AA_PROPENSITIES = {
-    "A":0,
-    "R":0.21,
-    "N":0.65,
-    "D":0.69,
-    "C":0.68,
-    "E":0.40,
-    "Q":0.39,
-    "G":1.00,
-    "H":0.61,
-    "I":0.41,
-    "L":0.21,
-    "K":0.26,
-    "M":0.24,
-    "F":0.54,
-    "P":3.16,
-    "S":0.50,
-    "T":0.66,
-    "W":0.49,
-    "Y":0.53,
-    "V":0.61
+AA_PROPENSITY = {
+    "A":Decimal('0'),
+    "R":Decimal('0.21'),
+    "N":Decimal('0.65'),
+    "D":Decimal('0.69'),
+    "C":Decimal('0.68'),
+    "E":Decimal('0.40'),
+    "Q":Decimal('0.39'),
+    "G":Decimal('1.00'),
+    "H":Decimal('0.61'),
+    "I":Decimal('0.41'),
+    "L":Decimal('0.21'),
+    "K":Decimal('0.26'),
+    "M":Decimal('0.24'),
+    "F":Decimal('0.54'),
+    "P":Decimal('3.16'),
+    "S":Decimal('0.50'),
+    "T":Decimal('0.66'),
+    "W":Decimal('0.49'),
+    "Y":Decimal('0.53'),
+    "V":Decimal('0.61')
 }
 
 # The Octanol-Interface scale from the Wimley-White scale uis used here.
 HYDROPHOBICITY = {
-    "I":-1.12,
-    "L":-1.25,
-    "F":-1.71,
-    "V":-0.46,
-    "M":-0.67,
-    "P":0.14,
-    "W":-2.09,
-    "H":0.11,
-    "T":0.25,
-    "E":0.11,
-    "Q":0.77,
-    "C":-0.02,
-    "Y":-0.71,
-    "S":0.46,
-    "A":0.50,
-    "N":0.85,
-    "D":0.43,
-    "R":1.81,
-    "G":1.15,
-    "K":2.80,
-    "R+":1.81,
-    "H+":2.33,
-    "E-":3.63,
-    "K+":2.80,
-    "D-":3.64
+    "I":Decimal('-1.12'),
+    "L":Decimal('-1.25'),
+    "F":Decimal('-1.71'),
+    "V":Decimal('-0.46'),
+    "M":Decimal('-0.67'),
+    "P":Decimal('0.14'),
+    "W":Decimal('-2.09'),
+    "H":Decimal('0.11'),
+    "T":Decimal('0.25'),
+    "E":Decimal('0.11'),
+    "Q":Decimal('0.77'),
+    "C":Decimal('-0.02'),
+    "Y":Decimal('-0.71'),
+    "S":Decimal('0.46'),
+    "A":Decimal('0.50'),
+    "N":Decimal('0.85'),
+    "D":Decimal('0.43'),
+    "R":Decimal('1.81'),
+    "G":Decimal('1.15'),
+    "K":Decimal('2.80'),
+    "R+":Decimal('1.81'),
+    "H+":Decimal('2.33'),
+    "E-":Decimal('3.63'),
+    "K+":Decimal('2.80'),
+    "D-":Decimal('3.64')
     }
-
 
 
 AMINO_ACID_GROUPS = OrderedDict([

@@ -7,15 +7,17 @@ from django.conf import settings
 
 
 from common.diagrams_gpcr import DrawSnakePlot
+from common.definitions import AA_PROPENSITY, HYDROPHOBICITY
 from common.views import AbsTargetSelection
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
 from construct.models import *
 from construct.functions import *
+from construct.tool import *
 from protein.models import Protein, ProteinConformation, ProteinSegment
 from structure.models import Structure
 from mutation.models import Mutation
 from residue.models import ResiduePositionSet
-from construct.tool import *
+
 
 
 from datetime import datetime
@@ -550,21 +552,33 @@ class ConstructMutations(TemplateView):
 def thermostabilisation(request):
     ''' View to display and summarise mutation data for thermostabilising mutational constructs. '''
 
+    # Check if there are cached results for each.
+    conservation_cache_exists = False
+    if conservation_cache_exists is False:
+        # class_slug_lookup = {}
+        # receptor_slug_lookup = {}
+        protein_classes = {}
+        receptor_families = {}
+
     # Get a list of all constructs.
-    constructs = Construct.objects.all().order_by().only("protein__entry_name",
-                                                         "protein__family__slug",
-                                                         "mutations__sequence_number",
-                                                         "mutations__residue__generic_number",
-                                                         "mutations__residue__protein_segment__slug",
-                                                         "protein__family__parent__parent__parent__name",
-                                                         "mutations__mutated_amino_acid",
-                                                         "mutations__wild_type_amino_acid",
-                                                         "structure__state__name"
-                                                        ).prefetch_related(
-                                                            "structure__state",
-                                                            "mutations__residue__generic_number",
-                                                            "mutations__residue__protein_segment",
-                                                            "protein__family__parent__parent__parent")
+    constructs = Construct.objects.all()\
+            .order_by().only(
+                "protein__entry_name",
+                "mutations__sequence_number",
+                "mutations__residue__generic_number",
+                "mutations__residue__protein_segment__slug",
+                "protein__family__slug",
+                "protein__family__parent__parent__parent__name",
+                "mutations__mutated_amino_acid",
+                "mutations__wild_type_amino_acid",
+                "structure__state__name",
+                "crystal__pdb_code")\
+            .prefetch_related(
+                "structure__state",
+                "mutations__residue__generic_number",
+                "mutations__residue__protein_segment",
+                "protein__family__parent__parent__parent",
+                "crystal")
 
     # Define the data analysis modes.
     groupings = {
@@ -592,13 +606,14 @@ def thermostabilisation(request):
 
         for mutant in record.mutations.all():
             if mutant.residue.generic_number is None:
-                generic_number = "None"
+                generic_number = u'\u2014'
             else:
                 generic_number = mutant.residue.generic_number.label
 
             # Get the mutation info.
             mutant_id = {'gen_num':generic_number, 'wild_type':mutant.wild_type_amino_acid,
-                         'mutant':mutant.mutated_amino_acid, 'count':0, 'segment':mutant.residue.protein_segment.slug
+                         'mutant':mutant.mutated_amino_acid, 'count':0, 'segment':mutant.residue.protein_segment.slug,
+
                         }
             mutant_info = {'pdb':pdb,
                            'class': p_class,
@@ -609,7 +624,20 @@ def thermostabilisation(request):
                            'state':state,
                            'struct_id':struct_id
                           }
-            # if (prot.entry_name == 'adrb1_melga'): print(generic_number)
+
+            # If the conservation numbers are not cached, add the protein and receptor families to the list of those
+            # needed to perform the conservation calculations later.
+            if conservation_cache_exists is False and generic_number != u'\u2014':
+                # slug = prot.family.slug.split('_')[0]
+                # class_slug_lookup.setdefault(p_class, slug[0])
+                # receptor_slug_lookup.setdefault(p_receptor, slug[2])
+                pro_class = protein_classes.setdefault(p_class, {})
+                pro_class.setdefault(generic_number, set()).update(
+                    {mutant_id["wild_type"], mutant_id["mutant"]})
+                rec_fam = receptor_families.setdefault(p_receptor, {})
+                rec_fam.setdefault(generic_number, set()).update(
+                    {mutant_id["wild_type"], mutant_id["mutant"]})
+
             # For each group, add the required info.
             for group_name, attr in groupings.items():
                 # Create a dictionary of information pertaining to the whole group to which the mutant belongs
@@ -622,7 +650,17 @@ def thermostabilisation(request):
                                                                [group_info, {}]
                                                               )
 
-                # Edit group info as needed (in the case that many are being added to the same group)
+                # If the group is newly created, calculate the values for the Frequency Cols in the table.
+                if group[1] == {}:
+                    # Get propensity and hydrophobicity values.
+                    group[0]['propensity'], group[0]['hydro'] = calc_helix_and_propensity(group_name,
+                                                                                          mutant_info['mutant'],
+                                                                                          mutant_info['wild_type'])
+                    # If there the conservation values are cached, access them
+                    if conservation_cache_exists:
+                        pass
+
+                # Edit group info as needed
                 group[0]['count'] += 1
 
                 # Remove unnecessary items from the mutant info
@@ -632,26 +670,187 @@ def thermostabilisation(request):
                     # Initialise the dict with the first mutant.
                     group[1].update(info)
                 else:
+                     # Add the specific mutant info.
                     for key, item in info.items():
                         group[1][key].update(item)
-                # Add the specific mutant info to the group.
-                # Note that the use of a list to do so leads to duplicate dicts in the list.
-                # However, as dicts aren't hashable, sets cannot be used. As a result,
-                # group[1].append(info)
 
-    # # For each mutation_groups entry, deal with the multiple dicts per group id issue.
-    # for group_name, attr in groupings.items():
-    #     for group_id, info_tuple in mutation_groups[group_name].items():
-            # info_tuple[1] = [dict(s) for s in set(frozenset(d.items()) for d in info_tuple[1])]
+    # If the conservation values are not cached, create them
+    if conservation_cache_exists is False:
+        # Run function to create the hash table
+        conservation = conservation_table(protein_classes, receptor_families)
+        # For each group
+        for _, group in mutation_groups['pos_and_mut'].items():
+            # Check that there is only one class associated with the group
+            if len(group[1]['class']) == 1:
+                # Get class name from the set.
+                for prot_class in group[1]['class']:
+                # Note: Looping through the set of size 1 is the fastest way to access it's element without removal.
+                    # Look it up in the conservation table.
+                    g_n = group[0]['gen_num']
+                    mut = group[0]['mutant']
+                    try:
+                        group[0]["class_cons"] = conservation["class: "+prot_class][g_n][mut]
+                    except KeyError:
+                        group[0]["class_cons"] = u'\u2014'
 
+            # # Repeat for the receptor family
+            # Check that there is only one class associated with the group
+            if len(group[1]['class']) == 1:
+                # Get class name from the set.
+                for rec_fam in group[1]['receptor']:
+                # Note: Looping through the set of size 1 is the fastest way to access it's element without removal.
+                    # Look it up in the conservation table.
+                    g_n = group[0]['gen_num']
+                    mut = group[0]['mutant']
+                    try:
+                        group[0]["receptor_fam_cons"] = conservation["rec fam: "+rec_fam][g_n][mut]
+                    except KeyError:
+                        group[0]["receptor_fam_cons"] = u'\u2014'
 
-# list({v['id']:v for v in L}.values()).      [dict(s) for s in set(frozenset(d.items()) for d in L)]
+        for _, group in mutation_groups['pos_and_wt'].items():
+            # Check that there is only one class associated with the group
+            if len(group[1]['class']) == 1:
+                # Get class name from the set.
+                for prot_class in group[1]['class']:
+                # Note: Looping through the set of size 1 is the fastest way to access it's element without removal.
+                    # Look it up in the conservation table.
+                    g_n = group[0]['gen_num']
+                    w_t = group[0]['wild_type']
+                    try:
+                        group[0]["class_cons"] = conservation["class: "+prot_class][g_n][w_t]
+                    except KeyError:
+                        group[0]["class_cons"] = u'\u2014'
+
+            # # Repeat for the receptor family
+            # Check that there is only one class associated with the group
+            if len(group[1]['class']) == 1:
+                # Get class name from the set.
+                for rec_fam in group[1]['receptor']:
+                # Note: Looping through the set of size 1 is the fastest way to access it's element without removal.
+                    # Look it up in the conservation table.
+                    g_n = group[0]['gen_num']
+                    w_t = group[0]['wild_type']
+                    try:
+                        group[0]["receptor_fam_cons"] = conservation["rec fam: "+rec_fam][g_n][w_t]
+                    except KeyError:
+                        group[0]["receptor_fam_cons"] = u'\u2014'
+
+        for _, group in mutation_groups['all'].items():
+            # Check that there is only one class associated with the group
+            if len(group[1]['class']) == 1:
+                # Get class name from the set.
+                for prot_class in group[1]['class']:
+                # Note: Looping through the set of size 1 is the fastest way to access it's element without removal.
+                    # Look it up in the conservation table.
+                    g_n = group[0]['gen_num']
+                    try:
+                        mut = conservation["class: "+prot_class][g_n][group[0]['mutant']]
+                    except KeyError:
+                        mut = u'\u2014'
+                    try:
+                        w_t = conservation["class: "+prot_class][g_n][group[0]['wild_type']]
+                    except KeyError:
+                        w_t = u'\u2014'
+                    try:
+                        group[0]["class_cons"] = str(round(mut-w_t, 2))
+                    except TypeError:
+                        group[0]["class_cons"] = u'\u2014'
+                    group[0]["class_cons"] += ' ('+str(mut)+'/'+str(w_t)+')'
+
+            # # Repeat for the receptor family
+            # Check that there is only one class associated with the group
+            if len(group[1]['class']) == 1:
+                # Get class name from the set.
+                for rec_fam in group[1]['receptor']:
+                # Note: Looping through the set of size 1 is the fastest way to access it's element without removal.
+                    # Look it up in the conservation table.
+                    try:
+                        g_n = group[0]['gen_num']
+                        mut = group[0]['mutant']
+                        w_t = group[0]['wild_type']
+                        group[0]["receptor_fam_cons"] = conservation["rec fam: "+rec_fam][g_n][w_t]
+                    except KeyError:
+                        group[0]["receptor_fam_cons"] = u'\u2014'
+
 
     return render(request, "construct/thermostablisation.html",
                   {'pos_and_mut': mutation_groups['pos_and_mut'],
                    'pos_and_wt': mutation_groups['pos_and_wt'],
                    'all': mutation_groups['all'],
                    'position_only': mutation_groups["position_only"]})
+
+def conservation_table(protein_classes, receptor_families):
+    '''Calculate the conservation values needed for the thermostabilisation view'''
+    table = {}
+    prot_classes = [key for key, _ in protein_classes.items()]
+    gen_nums = [key for _, elem in protein_classes.items() for key, _ in elem.items()]
+
+    residues = Residue.objects.order_by()\
+        .only(
+            "amino_acid",
+            "generic_number__label",
+            "protein_conformation__protein__species_id",
+            "protein_conformation__protein__source_id",
+            "protein_conformation__protein__family__parent__parent__parent__name")\
+        .prefetch_related(
+            "protein_conformation__protein__family__parent__parent__parent",
+            "protein_conformation__protein__species",
+            "protein_conformation__protein__source",
+            "generic_number")\
+        .filter(
+            protein_conformation__protein__family__parent__parent__parent__name__in=prot_classes,
+            protein_conformation__protein__species_id="1", protein_conformation__protein__source_id="1",
+            generic_number__label__in=gen_nums)
+
+    count = 0
+
+    for prot_class, res_info in protein_classes.items():
+        table["class: " + prot_class] = {}
+        for gen_num, amino_acid_set in res_info.items():
+            count = count + 1
+            selection = residues.filter(
+                protein_conformation__protein__family__parent__parent__parent__name=prot_class,
+                generic_number__label=gen_num)
+            length = selection.count()
+            aa_counts = selection.filter(amino_acid__in=amino_acid_set) \
+                        .values('amino_acid').annotate(Count('amino_acid'))
+            table["class: " + prot_class][gen_num] = {aa['amino_acid']:round(aa['amino_acid__count']/length, 2)
+                                                      for aa in aa_counts}
+
+    for receptor_fam, res_info in receptor_families.items():
+        table["rec fam: " + receptor_fam] = {}
+        for gen_num, amino_acid_set in res_info.items():
+            count = count + 1
+            selection = residues.filter(
+                protein_conformation__protein__family__parent__name=receptor_fam,
+                generic_number__label=gen_num)
+            length = selection.count()
+            aa_counts = selection.filter(amino_acid__in=amino_acid_set) \
+                        .values('amino_acid').annotate(Count('amino_acid'))
+            table["rec fam: " + receptor_fam][gen_num] = {aa['amino_acid']:round(aa['amino_acid__count']/length, 2)
+                                                          for aa in aa_counts}
+
+    return table
+
+def calc_helix_and_propensity(group_name, mutant, wild_type):
+    ''' Calculate the propensity and hydrophobicity for the given mut & wt.'''
+    if group_name == 'position_only':
+        # No wt or mut grouping, so can't calc.
+        return ('-', '-')
+    elif group_name == 'pos_and_mut':
+        # Can only calc for mutant
+        return (AA_PROPENSITY[mutant], HYDROPHOBICITY[mutant])
+    elif group_name == 'pos_and_wt':
+        # Can only calc for wt
+        return (AA_PROPENSITY[wild_type], HYDROPHOBICITY[wild_type])
+    else:  # Then group_name = 'all'
+        # Can calc for all and get the difference between the mut & wt.
+        mut_prop = AA_PROPENSITY[mutant]
+        wt_prop = AA_PROPENSITY[wild_type]
+        mut_hydro = HYDROPHOBICITY[mutant]
+        wt_hydro = HYDROPHOBICITY[wild_type]
+        return (str(mut_prop-wt_prop)+' (' + str(mut_prop) + '/'+ str(wt_prop) +')',
+                str(mut_hydro-wt_hydro)+' (' + str(mut_hydro) + '/'+ str(wt_hydro) +')')
 
 
 def fetch_all_pdb(request):

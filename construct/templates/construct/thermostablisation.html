@@ -140,6 +140,14 @@ var groups = ["position_only", "pos_and_wt", "pos_and_mut", "all"]
 d3.select("#group_select")
     .on('change', function() {
         var selection = d3.select(this).property('value');
+        // if (selection == "position_only"){
+        //     d3.selectAll('.data_cols')
+        //         .style('display', 'none');
+        // }
+        // else {
+        //     d3.selectAll('.data_cols')
+        //         .style('display', 'table-column');
+        // }
         groups.forEach(function(d) {
             if (d == selection) {
                 d3.selectAll('.' + d)
@@ -151,6 +159,15 @@ d3.select("#group_select")
         });
     })
 </script>
+
+<style type="text/css">
+table.dataTable thead th{
+padding: 5px 5px;
+padding-right: 15px;
+border-bottom: 1px solid #111;
+font-size:12px}
+</style>
+
 {% endblock %}
 
 {% block content %}
@@ -177,20 +194,31 @@ d3.select("#group_select")
     </select>
 </div>
 <table width="100%" class="display" id="mutations">
+<!--     <colgroup>
+       <col/>
+       <col/>
+       <col/>
+       <col/>
+       <col/>
+       <col/>
+       <col/>
+       <col/>
+       <col/>
+       <col/>
+       <col/>
+       <col/>
+       <col class="data_cols" />
+       <col class="data_cols" />
+       <col class="data_cols" />
+       <col class="data_cols" />
+    </colgroup> -->
     <thead>
         <tr>
-            <th class="seq-th">State</th>
-            <th class="protein-th">Targets</th>
-            <th class="protein-th"> </th>
-            <th class="protein-th"> </th>
-            <th class="seq-th">Mutations</th>
-            <th class="seq-th"></th>
-            <th class="seq-th"></th>
-            <th class='seq-th'></th>
-            <th class="protein-th">Frequency</th>
-            <th class="protein-th"></th>
-            <th class="protein-th"></th>
-            <th class="protein-th"></th>
+            <th class="seq-th" colspan="1">State</th>
+            <th class="protein-th" colspan="3">Targets</th>
+            <th class="seq-th" colspan="4">Mutations</th>
+            <th class="protein-th" colspan="4">Frequency</th>
+            <th class="seq-th" colspan="4">Data</th>
         </tr>
         <tr>
             <th class="seq-th">State</th>
@@ -205,6 +233,10 @@ d3.select("#group_select")
             <th class="protein-th">No. Receptor Fams</th>
             <th class="protein-th">No. Structures</th>
             <th class="protein-th">GPCRs (PDB IDs)</th>
+            <th class="seq-th">Class Seq Conservation</th>
+            <th class="seq-th">Receptor Fam Seq Conservation</th>
+            <th class="seq-th">Helix Propensity</th>
+            <th class='seq-th'>Hydrophobicity</th>
         </tr>
     </thead>
     <tbody>
@@ -270,14 +302,18 @@ d3.select("#group_select")
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
             <td>
-                <table>
-                    {% for mutant in group.1.pdb %}
-                    <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
-                    </tr>
-                    {% endfor %}
-                </table>
+                {% for mutant in group.1.pdb %}
+                    {% if forloop.last %}
+                        {{mutant}}
+                    {% else %}
+                        {{mutant}},
+                    {% endif %}
+                {% endfor %}
             </td>
+            <td>&mdash;</td>
+            <td>&mdash;</td>
+            <td>&mdash;</td>
+            <td>&mdash;</td>
         </tr>
         {% endfor %}
 
@@ -345,6 +381,10 @@ d3.select("#group_select")
                     {% endfor %}
                 </table>
             </td>
+            <td>{{group.0.class_cons}}</td>
+            <td>{{group.0.receptor_fam_cons}}</td>
+            <td>{{group.0.propensity}}</td>
+            <td>{{group.0.hydro}}</td>
         </tr>
         {% endfor %}
 
@@ -411,6 +451,10 @@ d3.select("#group_select")
                     {% endfor %}
                 </table>
             </td>
+            <td>{{group.0.class_cons}}</td>
+            <td>{{group.0.receptor_fam_cons}}</td>
+            <td>{{group.0.propensity}}</td>
+            <td>{{group.0.hydro}}</td>
         </tr>
         {% endfor %}
 
@@ -469,6 +513,10 @@ d3.select("#group_select")
                     {% endfor %}
                 </table>
             </td>
+            <td>{{group.0.class_cons}}</td>
+            <td>{{group.0.receptor_fam_cons}}</td>
+            <td>{{group.0.propensity}}</td>
+            <td>{{group.0.hydro}}</td>
         </tr>
         {% endfor %}
 
