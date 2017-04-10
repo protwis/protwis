@@ -213,7 +213,7 @@ var proteins=[ "", "signal", "tag", "fusion", "linker", "prot_cleavage"];
 
 addLast("#addurl", "#contact_information", "5");
 addLast("#add_treatment", "#solubil_purif", "3");
-addLast("#add_deterg", "#solubil_deterg", "0");
+addLast("#add_deterg", "#solubil_deterg", "1");
 // addLast("#add_treatment", "#solubil_purif");
 
 $("#deleteurl").on('click', function() {
