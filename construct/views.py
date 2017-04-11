@@ -605,16 +605,19 @@ def thermostabilisation(request):
 
 
         for mutant in record.mutations.all():
-            if mutant.residue.generic_number is None:
+            try:
+                if mutant.residue.generic_number is None:
+                    generic_number = u'\u2014'
+                else:
+                    generic_number = mutant.residue.generic_number.label
+                segment = mutant.residue.protein_segment.slug
+            except AttributeError:
                 generic_number = u'\u2014'
-            else:
-                generic_number = mutant.residue.generic_number.label
+                segment = u'\u2014'
 
             # Get the mutation info.
             mutant_id = {'gen_num':generic_number, 'wild_type':mutant.wild_type_amino_acid,
-                         'mutant':mutant.mutated_amino_acid, 'count':0, 'segment':mutant.residue.protein_segment.slug,
-
-                        }
+                         'mutant':mutant.mutated_amino_acid, 'count':0, 'segment':segment}
             mutant_info = {'pdb':pdb,
                            'class': p_class,
                            'ligand': p_ligand,
@@ -674,38 +677,48 @@ def thermostabilisation(request):
                     for key, item in info.items():
                         group[1][key].update(item)
 
+
+
     # If the conservation values are not cached, create them
     if conservation_cache_exists is False:
+    #  pylint: disable=W0631
         # Run function to create the hash table
         conservation = conservation_table(protein_classes, receptor_families)
-        # For each group
+
+        # For each group within each analysis mode, attach the newly created conservation values.
         for _, group in mutation_groups['pos_and_mut'].items():
             # Check that there is only one class associated with the group
             if len(group[1]['class']) == 1:
                 # Get class name from the set.
                 for prot_class in group[1]['class']:
                 # Note: Looping through the set of size 1 is the fastest way to access it's element without removal.
-                    # Look it up in the conservation table.
-                    g_n = group[0]['gen_num']
-                    mut = group[0]['mutant']
-                    try:
-                        group[0]["class_cons"] = conservation["class: "+prot_class][g_n][mut]
-                    except KeyError:
-                        group[0]["class_cons"] = u'\u2014'
+                    break
+                # Look it up in the conservation table.
+                g_n = group[0]['gen_num']
+                mut = group[0]['mutant']
+                try:
+                    group[0]["class_cons"] = conservation[(prot_class, g_n)][mut]
+                except KeyError:
+                    group[0]["class_cons"] = u'\u2014'
+            else:
+                group[0]["class_cons"] = u'\u2014'
 
             # # Repeat for the receptor family
             # Check that there is only one class associated with the group
-            if len(group[1]['class']) == 1:
+            if len(group[1]['receptor']) == 1:
                 # Get class name from the set.
                 for rec_fam in group[1]['receptor']:
                 # Note: Looping through the set of size 1 is the fastest way to access it's element without removal.
-                    # Look it up in the conservation table.
-                    g_n = group[0]['gen_num']
-                    mut = group[0]['mutant']
-                    try:
-                        group[0]["receptor_fam_cons"] = conservation["rec fam: "+rec_fam][g_n][mut]
-                    except KeyError:
-                        group[0]["receptor_fam_cons"] = u'\u2014'
+                    break
+                # Look it up in the conservation table.
+                g_n = group[0]['gen_num']
+                mut = group[0]['mutant']
+                try:
+                    group[0]["receptor_fam_cons"] = conservation[(rec_fam, g_n)][mut]
+                except KeyError:
+                    group[0]["receptor_fam_cons"] = u'\u2014'
+            else:
+                group[0]["receptor_fam_cons"] = u'\u2014'
 
         for _, group in mutation_groups['pos_and_wt'].items():
             # Check that there is only one class associated with the group
@@ -713,27 +726,34 @@ def thermostabilisation(request):
                 # Get class name from the set.
                 for prot_class in group[1]['class']:
                 # Note: Looping through the set of size 1 is the fastest way to access it's element without removal.
-                    # Look it up in the conservation table.
-                    g_n = group[0]['gen_num']
-                    w_t = group[0]['wild_type']
-                    try:
-                        group[0]["class_cons"] = conservation["class: "+prot_class][g_n][w_t]
-                    except KeyError:
-                        group[0]["class_cons"] = u'\u2014'
+                    break
+                # Look it up in the conservation table.
+                g_n = group[0]['gen_num']
+                w_t = group[0]['wild_type']
+                try:
+                    group[0]["class_cons"] = conservation[(prot_class, g_n)][w_t]
+                except KeyError:
+                    group[0]["class_cons"] = u'\u2014'
+            else:
+                group[0]["class_cons"] = u'\u2014'
 
             # # Repeat for the receptor family
             # Check that there is only one class associated with the group
-            if len(group[1]['class']) == 1:
+            if len(group[1]['receptor']) == 1:
                 # Get class name from the set.
                 for rec_fam in group[1]['receptor']:
                 # Note: Looping through the set of size 1 is the fastest way to access it's element without removal.
-                    # Look it up in the conservation table.
-                    g_n = group[0]['gen_num']
-                    w_t = group[0]['wild_type']
-                    try:
-                        group[0]["receptor_fam_cons"] = conservation["rec fam: "+rec_fam][g_n][w_t]
-                    except KeyError:
-                        group[0]["receptor_fam_cons"] = u'\u2014'
+                    break
+
+                # Look it up in the conservation table.
+                g_n = group[0]['gen_num']
+                w_t = group[0]['wild_type']
+                try:
+                    group[0]["receptor_fam_cons"] = conservation[(rec_fam, g_n)][w_t]
+                except KeyError:
+                    group[0]["receptor_fam_cons"] = u'\u2014'
+            else:
+                group[0]["receptor_fam_cons"] = u'\u2014'
 
         for _, group in mutation_groups['all'].items():
             # Check that there is only one class associated with the group
@@ -741,36 +761,49 @@ def thermostabilisation(request):
                 # Get class name from the set.
                 for prot_class in group[1]['class']:
                 # Note: Looping through the set of size 1 is the fastest way to access it's element without removal.
-                    # Look it up in the conservation table.
-                    g_n = group[0]['gen_num']
-                    try:
-                        mut = conservation["class: "+prot_class][g_n][group[0]['mutant']]
-                    except KeyError:
-                        mut = u'\u2014'
-                    try:
-                        w_t = conservation["class: "+prot_class][g_n][group[0]['wild_type']]
-                    except KeyError:
-                        w_t = u'\u2014'
-                    try:
-                        group[0]["class_cons"] = str(round(mut-w_t, 2))
-                    except TypeError:
-                        group[0]["class_cons"] = u'\u2014'
-                    group[0]["class_cons"] += ' ('+str(mut)+'/'+str(w_t)+')'
+                    break
+                # Look it up in the conservation table.
+                g_n = group[0]['gen_num']
+                try:
+                    mut = conservation[(prot_class, g_n)][group[0]['mutant']]
+                except KeyError:
+                    mut = u'\u2014'
+                try:
+                    w_t = conservation[(prot_class, g_n)][group[0]['wild_type']]
+                except KeyError:
+                    w_t = u'\u2014'
+                try:
+                    group[0]["class_cons"] = str(round(mut-w_t, 2))
+                except TypeError:
+                    group[0]["class_cons"] = u'\u2014'
+                group[0]["class_cons"] += ' ('+str(mut)+'/'+str(w_t)+')'
+            else:
+                group[0]["class_cons"] = u'\u2014'
 
             # # Repeat for the receptor family
-            # Check that there is only one class associated with the group
-            if len(group[1]['class']) == 1:
+            if len(group[1]['receptor']) == 1:
                 # Get class name from the set.
                 for rec_fam in group[1]['receptor']:
                 # Note: Looping through the set of size 1 is the fastest way to access it's element without removal.
-                    # Look it up in the conservation table.
-                    try:
-                        g_n = group[0]['gen_num']
-                        mut = group[0]['mutant']
-                        w_t = group[0]['wild_type']
-                        group[0]["receptor_fam_cons"] = conservation["rec fam: "+rec_fam][g_n][w_t]
-                    except KeyError:
-                        group[0]["receptor_fam_cons"] = u'\u2014'
+                    break
+                # Look it up in the conservation table.
+                g_n = group[0]['gen_num']
+                try:
+                    mut = conservation[(rec_fam, g_n)][group[0]['mutant']]
+                except KeyError:
+                    mut = u'\u2014'
+                try:
+                    w_t = conservation[(rec_fam, g_n)][group[0]['wild_type']]
+                except KeyError:
+                    w_t = u'\u2014'
+                try:
+                    group[0]["receptor_fam_cons"] = str(round(mut-w_t, 2))
+                except TypeError:
+                    group[0]["receptor_fam_cons"] = u'\u2014'
+                group[0]["receptor_fam_cons"] += ' ('+str(mut)+'/'+str(w_t)+')'
+            else:
+                group[0]["receptor_fam_cons"] = u'\u2014'
+
 
 
     return render(request, "construct/thermostablisation.html",
@@ -800,35 +833,33 @@ def conservation_table(protein_classes, receptor_families):
         .filter(
             protein_conformation__protein__family__parent__parent__parent__name__in=prot_classes,
             protein_conformation__protein__species_id="1", protein_conformation__protein__source_id="1",
-            generic_number__label__in=gen_nums)
+            generic_number__label__in=gen_nums)\
+        .values(
+            'amino_acid',
+            'protein_conformation__protein__family__parent__parent__parent__name',
+            "protein_conformation__protein__family__parent__name",
+            "generic_number__label")\
+        .annotate(Count('amino_acid'))
 
-    count = 0
+    for dic in residues:
+        prot_row = table.setdefault(
+            (dic['protein_conformation__protein__family__parent__parent__parent__name'], dic['generic_number__label']),
+            {'total':0})
+        prot_row['total'] += dic['amino_acid__count']
+        prot_row.setdefault(dic['amino_acid'], 0)
+        prot_row[dic['amino_acid']] += dic['amino_acid__count']
 
-    for prot_class, res_info in protein_classes.items():
-        table["class: " + prot_class] = {}
-        for gen_num, amino_acid_set in res_info.items():
-            count = count + 1
-            selection = residues.filter(
-                protein_conformation__protein__family__parent__parent__parent__name=prot_class,
-                generic_number__label=gen_num)
-            length = selection.count()
-            aa_counts = selection.filter(amino_acid__in=amino_acid_set) \
-                        .values('amino_acid').annotate(Count('amino_acid'))
-            table["class: " + prot_class][gen_num] = {aa['amino_acid']:round(aa['amino_acid__count']/length, 2)
-                                                      for aa in aa_counts}
+        rec_row = table.setdefault(
+            (dic['protein_conformation__protein__family__parent__name'], dic['generic_number__label']), {'total':0})
+        rec_row['total'] += dic['amino_acid__count']
+        rec_row.setdefault(dic['amino_acid'], 0)
+        rec_row[dic['amino_acid']] += dic['amino_acid__count']
 
-    for receptor_fam, res_info in receptor_families.items():
-        table["rec fam: " + receptor_fam] = {}
-        for gen_num, amino_acid_set in res_info.items():
-            count = count + 1
-            selection = residues.filter(
-                protein_conformation__protein__family__parent__name=receptor_fam,
-                generic_number__label=gen_num)
-            length = selection.count()
-            aa_counts = selection.filter(amino_acid__in=amino_acid_set) \
-                        .values('amino_acid').annotate(Count('amino_acid'))
-            table["rec fam: " + receptor_fam][gen_num] = {aa['amino_acid']:round(aa['amino_acid__count']/length, 2)
-                                                          for aa in aa_counts}
+    for _, row in table.items():
+        for amino_acid, count in row.items():
+            if amino_acid != 'total':
+                row[amino_acid] = round(count/row['total'],2)
+
 
     return table
 
