@@ -115,23 +115,26 @@ class ConstructMutation(models.Model):
     remark = models.TextField(null=True)
     residue = models.ForeignKey(Residue, null=True)
 
-    def get_res(self, seq_no):
+    def get_res(self):
         '''Retrieve the residue connected to this mutation, and save it as a FK field.'''
-        construct = self.construct_set.get().structure.protein_conformation_id
+        construct = self.construct_set.get().protein.entry_name
+        seq_no = self.sequence_number
         try:
-            result = Residue.objects.get(protein_conformation_id=construct, sequence_number=seq_no)
+            result = Residue.objects.get(protein_conformation__protein__entry_name=construct, sequence_number=seq_no)
         except Residue.DoesNotExist:
             result = None
         return result
 
+
+
     def save(self, *args, **kwargs):
         '''Modify save function to automatically get the associated residue, should it exist'''
-        self.residue_id = self.get_res(self.sequence_number)
+        self.residue_id = self.get_res()
         super(ConstructMutation, self).save(*args, **kwargs)
 
     def __str__(self):
         return '{}{}{}'.format(self.wild_type_amino_acid, self.sequence_number,
-            self.mutated_amino_acid)
+                               self.mutated_amino_acid)
 
     class Meta():
         db_table = 'construct_mutation'

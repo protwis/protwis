@@ -165,7 +165,11 @@ table.dataTable thead th{
 padding: 5px 5px;
 padding-right: 15px;
 border-bottom: 1px solid #111;
-font-size:12px}
+}
+table.dataTable {
+    font-size: 12px;
+    text-align: center;
+}
 </style>
 
 {% endblock %}
@@ -218,7 +222,7 @@ font-size:12px}
             <th class="protein-th" colspan="3">Targets</th>
             <th class="seq-th" colspan="4">Mutations</th>
             <th class="protein-th" colspan="4">Frequency</th>
-            <th class="seq-th" colspan="4">Data</th>
+            <th class="seq-th" colspan="4">Data (Fold Change (Mutant/Wild Type))</th>
         </tr>
         <tr>
             <th class="seq-th">State</th>
@@ -230,13 +234,13 @@ font-size:12px}
             <th class="seq-th">WT</th>
             <th class='seq-th'>Mut</th>
             <th class="protein-th">No. GPCRS</th>
-            <th class="protein-th">No. Receptor Fams</th>
+            <th class="protein-th">No. Receptor Families</th>
             <th class="protein-th">No. Structures</th>
             <th class="protein-th">GPCRs (PDB IDs)</th>
-            <th class="seq-th">Class Seq Conservation</th>
-            <th class="seq-th">Receptor Fam Seq Conservation</th>
-            <th class="seq-th">Helix Propensity</th>
-            <th class='seq-th'>Hydrophobicity</th>
+            <th class="seq-th">Class Sequence Conservation</th>
+            <th class="seq-th">Receptor Family Sequence Conservation</th>
+            <th class="seq-th">Helix Propen- sity</th>
+            <th class='seq-th'>Hydroph- obicity</th>
         </tr>
     </thead>
     <tbody>
