@@ -11,13 +11,13 @@ from residue.models import Residue
 from structure.models import Structure, PdbData, StructureType
 from construct.functions import *
 from common.models import WebResource, WebLink, Publication
+
 import Bio.PDB as PDB
 from datetime import datetime
-
 import urllib
 import re
 import os
-import xmltodict, pprint
+import xmltodict
 
 
 class Command(BaseCommand):
@@ -131,7 +131,6 @@ class QueryPDB():
                             pdb_data, created = PdbData.objects.get_or_create(pdb=pdb_file)
                             d = datetime.strptime(publication_date,'%d-%b-%y')
                             publication_date = d.strftime('%Y-%m-%d')
-                            print(d)
                             try:
                                 if doi!='':
                                     try:
@@ -170,6 +169,7 @@ class QueryPDB():
                         Structure.objects.get_or_create(preferred_chain='-', resolution=resolution, publication_date=publication_date, representative='f', pdb_code=pdb_code,
                                                         pdb_data=pdb_data, protein_conformation=new_prot_conf, publication=publication, state=state, 
                                                         structure_type=StructureType.objects.get(slug='x-ray-diffraction'))
+                        print('{} added to db'.format(s))
                         
                     except Exception as msg:
                         print(msg)
