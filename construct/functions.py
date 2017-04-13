@@ -37,8 +37,10 @@ def fetch_pdb_info(pdbname,protein):
     d['construct_crystal'] = {}
     d['construct_crystal']['pdb'] = pdbname
     d['construct_crystal']['pdb_name'] = 'auto_'+pdbname
-    d['construct_crystal']['uniprot'] = protein.parent.entry_name
-
+    try:
+        d['construct_crystal']['uniprot'] = protein.parent.entry_name
+    except:
+        d['construct_crystal']['uniprot'] = protein.entry_name
     d['contact_info'] = {}
     d['contact_info']['name_cont'] = 'gpcrdb'
     d['contact_info']['pi_email'] = 'info@gpcrdb.org'
@@ -47,8 +49,12 @@ def fetch_pdb_info(pdbname,protein):
     d['contact_info']['date'] = time.strftime('%m/%d/%Y')
     d['contact_info']['address'] = ''
 
-    d['protein'] = protein.parent.name
-    d['wt_seq'] = protein.parent.sequence
+    try:
+        d['protein'] = protein.parent.name
+        d['wt_seq'] = protein.parent.sequence
+    except:
+        d['protein'] = protein.name
+        d['wt_seq'] = protein.sequence
     d['pdb'] = pdbname
     d['links'] = []
     d['xml_not_observed'] = []
@@ -172,14 +178,15 @@ def fetch_pdb_info(pdbname,protein):
             for k, g in groupby(enumerate(pos_list), lambda x:x[0]-x[1]):
                 group = list(map(itemgetter(1), g))
                 ranges.append((group[0], group[-1]))
-
+            
             if receptor==False and u_id_source=='UniProt':
                 url = 'http://www.uniprot.org/uniprot/$index.xml'
                 insert_info = fetch_from_web_api(url, seg_uniprot_ids[0], cache_dir, xml = True)
                 d['links'].append(Template(url).substitute(index=quote(str(seg_uniprot_ids[0]), safe='')))
 
-                for elm in insert_info.findall('.//{http://uniprot.org/uniprot}recommendedName'):
-                    seg_uniprot_ids[0] = elm.find('{http://uniprot.org/uniprot}fullName').text
+                if insert_info!=False:
+                    for elm in insert_info.findall('.//{http://uniprot.org/uniprot}recommendedName'):
+                        seg_uniprot_ids[0] = elm.find('{http://uniprot.org/uniprot}fullName').text
 
             d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list])
             if receptor == False and receptor_chain==chain: #not receptor, but is in same chain
