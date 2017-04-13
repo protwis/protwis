@@ -197,7 +197,7 @@ def site_upload(request):
             properties = {}
             properties['feature'] = feature
             properties['site_residue_group'] = selection.active_site_residue_group
-            properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS[feature])
+            properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS[feature]) if feature != 'custom' else row[5].value
             selection_object = SelectionItem(selection_subtype, position, properties)
             selection.add(selection_type, selection_subtype, selection_object)
             selection.site_residue_groups[group_id - 1][0] = min_match
