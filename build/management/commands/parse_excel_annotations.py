@@ -3,6 +3,10 @@ from django.core.management import call_command
 from django.conf import settings
 from django.db import connection
 
+from common.alignment import Alignment
+from protein.models import Protein, ProteinSegment
+from structure.models import Structure
+
 import datetime
 import logging
 from optparse import make_option
@@ -61,8 +65,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.data = self.parse_excel(self.annotation_source_file)
-        self.dump_files()
-        self.analyse_annotation_consistency()
+        # self.dump_files()
+        # self.analyse_annotation_consistency()
+        self.main_template_search()
 
     def parse_excel(self,path):
         workbook = xlrd.open_workbook(path)
@@ -113,6 +118,7 @@ class Command(BaseCommand):
                         d[worksheet_name][key][headers[curr_cell]] = cell_value
                 # if curr_row>2: break
         return d
+
     def analyse_annotation_consistency(self):
         NonXtal = self.data["NonXtal_Bulges_Constr_GPCRdb#"]
         Xtal = self.data["Xtal_Bulges_Constr_GPCRdb#"]
@@ -315,3 +321,33 @@ class Command(BaseCommand):
         Seqs = OrderedDict(sorted(Seqs.items()))
         with open(self.sequence_file, 'w') as outfile:
             yaml.dump(Seqs, outfile, indent=4)
+
+    def main_template_search(self):
+        family_mapping = {'001':'001','002':'002','003':'002','004':'004','005':'005','006':'001','007':'001'}
+        changes = {}
+        output_csv = ''
+        counter = 0
+        for protein, values in self.data['Xtal_Templ'].items():
+            # protein = 'lpar5_human'
+            # values = self.data['Xtal_Templ'][protein]
+            print(protein,values)
+            a = Alignment()
+            p = Protein.objects.get(entry_name=protein)
+            structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=family_mapping[p.family.slug[:3]]).exclude(preferred_chain='-')
+            structure_proteins = [i.protein_conformation.protein.parent for i in list(structures)]
+            a.load_reference_protein(p)
+            a.load_proteins(structure_proteins)
+            a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8']))
+            a.build_alignment()
+            a.calculate_similarity()
+            if values['Template']!=a.proteins[1].protein.entry_name:
+                changes[protein] = [values['Template'], a.proteins[1].protein.entry_name]
+            output_csv+='{},{}\n'.format(protein, a.proteins[1].protein.entry_name)
+            counter+=1
+            # break
+        with open('../../data/protwis/gpcr/structure_data/annotation/xtal_templates.csv','w') as f:
+            f.write(output_csv)
+        print('Changed {} entries out of {}:'.format(len(changes), counter))
+        print(changes)
+        return changes
+
