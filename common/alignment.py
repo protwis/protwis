@@ -800,13 +800,20 @@ class Alignment:
                     #         'min_match': 2,
                     #         'positions': {
                     #             {'3x51': 'hbd', '6x50': 'pos'}
-                    #         }
+                    #         },
+                    #         'amino_acids': {
+                    #             {'3x51': ['H', 'K', 'N', 'Q', 'R', 'S', 'T', 'W', 'Y'], '6x50': ['H', 'K', 'R']}
+                    #         },
                     #     }
                     # }
                     site_defs[group_id] = {'min_match': simple_selection.site_residue_groups[group_id -1][0],
-                        'positions': {}}
+                                           'positions': {},
+                                           'amino_acids': {},
+                                           }
 
                 site_defs[group_id]['positions'][position.item.label] = position.properties['feature']
+                if 'amino_acids' in position.properties:
+                    site_defs[group_id]['amino_acids'][position.item.label] = position.properties['amino_acids']
 
         # go through all proteins and match against site definitions
         for protein in self.proteins:
@@ -815,10 +822,16 @@ class Alignment:
                 min_match = site_defs[k]['min_match']
                 for position in segment:
                     # position example: ['6x49', '6.49x49', 'L', 'GPCRdb(A)', 282, 282]
-                    if position[2] in AMINO_ACID_GROUPS[site_defs[k]['positions'][position[0]]]:
-                        num_matched += 1
-                        if num_matched >= min_match:
-                            break
+                    try:
+                        if position[2] in site_defs[k]['amino_acids'][position[0]]:
+                            num_matched += 1
+                            if num_matched >= min_match:
+                                break
+                    except:
+                        if position[2] in AMINO_ACID_GROUPS[site_defs[k]['positions'][position[0]]]:
+                            num_matched += 1
+                            if num_matched >= min_match:
+                                break
                 else:
                     # if the protein sequence does not match the definitions, store it in non_matching_proteins
                     self.non_matching_proteins.append(protein)
