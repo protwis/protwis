@@ -82,18 +82,8 @@ class Command(BaseBuild):
             struct_parent = [i.protein_conformation.protein.parent for i in structures]
             GPCR_class = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
                                             family__slug__istartswith=GPCR_class_codes[options['c'].upper()])
-            self.receptor_list = [i.entry_name for i in GPCR_class if i not in struct_parent] #and i.entry_name not in files1]
-            # d = os.listdir('./structure/homology_models/')
-            # filess = []
-            # for f in d:
-            #     fi = f.split('_')
-            #     fil = fi[1]+'_human'
-                
-            #     filess.append(fil)
-            # for r in self.receptor_list:
-            #     if r not in filess:
-            #         print(r)
-            # raise AssertionError
+            self.receptor_list = [i.entry_name for i in GPCR_class if i not in struct_parent]
+
             print(self.receptor_list)
             
             try:
@@ -117,6 +107,7 @@ class Command(BaseBuild):
         if len(missing_models)==0:
             print('All models were run')
         else:
+            print('Missing models:')
             print(missing_models)
             print(input())
 #            new_args = shlex.split('/env/bin/python3 manage.py build_homology_models -r {} -p {} -s {}'.format(' '.join(missing_models, options['proc'], options['s'])))
@@ -153,7 +144,7 @@ class Command(BaseBuild):
             if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
                 args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
                 subprocess.call(args)
-            # run clash and break test
+            # Run clash and break test
             p = PDB.PDBParser()
             if Homology_model.revise_xtal==False:
                 post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_{}_GPCRdb.pdb'.format(
@@ -173,13 +164,16 @@ class Command(BaseBuild):
 
             # Check for residue shifts in model
             residue_shift = False
-            if PDB.Polypeptide.three_to_one(post_model[0][' '][ref_list[0].sequence_number].get_resname())!=ref_list[0].amino_acid:
-                residue_shift = True
-            if PDB.Polypeptide.three_to_one(post_model[0][' '][ref_list[-1].sequence_number].get_resname())!=ref_list[-1].amino_acid:
-                residue_shift = True
+            db_res = ''
+            for res in post_model[0][' ']:
+                db_res = Residue.objects.get(protein_conformation__protein=Homology_model.reference_protein, sequence_number=int(res.get_id()[1]))
+                if PDB.Polypeptide.three_to_one(res.get_resname())!=db_res.amino_acid:
+                    residue_shift = True
+                    break
             if residue_shift==True:
-                print('Residue shift in model {}'.format(Homology_model.reference_entry_name))
-                logger.info('Residue shift in model {}'.format(Homology_model.reference_entry_name))
+                print('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
+                logger.info('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
+                raise ValueError('Error: Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res)) 
             # Check for clashes in model
             if len(hse.clash_pairs)>0:
                 print('Remaining clashes in {}:'.format(Homology_model.reference_entry_name))
@@ -756,10 +750,6 @@ class HomologyModeling(object):
             self.statistics.add_info('loops', loop_stat)
             self.loops = loop_stat
 
-        # pprint.pprint(a.reference_dict['ECL2'])
-        # pprint.pprint(a.template_dict['ECL2'])
-        # pprint.pprint(main_pdb_array['ECL2'])
-        # raise AssertionError
         print('Integrate loops: ',datetime.now() - startTime)
         
         # bulges and constrictions
@@ -1037,6 +1027,7 @@ class HomologyModeling(object):
             os.mkdir(path)
   
         print('Check inconsistencies: ',datetime.now() - startTime)
+
         # inserting loops for free modeling
         for label, template in loop_stat.items():
             if template==None:
@@ -1062,10 +1053,10 @@ class HomologyModeling(object):
             if N_struct!=None:
                 N_term_temp = Residue.objects.filter(protein_conformation=N_struct.protein_conformation,
                                                      protein_segment__slug='N-term')
-                last_five = [i.sequence_number for i in list(N_term_temp)]#[-5:]]
+                last_five = [i.sequence_number for i in list(N_term_temp)]
             else:
                 last_five = []
-            if self.main_structure==N_struct:# and len(last_five)==5:
+            if self.main_structure==N_struct:
                 try:
                     temp_coo = list(parse.fetch_residues_from_pdb(N_struct,last_five).values())
                 except:
@@ -1490,13 +1481,8 @@ class HomologyModeling(object):
                           atom_dict=trimmed_res_nums, helix_restraints=helix_restraints, icl3_mid=icl3_mid)
 
         os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
-        
-        # stat file
-#        with open('./structure/homology_models/{}_{}.stat.txt'.format(self.reference_entry_name, self.state, 
-#                                                                      ), 'w') as stat_file:
-#            for label, info in self.statistics.items():
-#                stat_file.write('{} : {}\n'.format(label, info))
 
+        # stat file
         with open(path+modelname+'.stat.txt','w') as s_file:
             rot_table = []
             sections = []
@@ -1864,7 +1850,6 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
         for ref_seg, temp_seg in zip(reference_dict, template_dict):
             for ref_res, temp_res in zip(reference_dict[ref_seg], template_dict[temp_seg]):
                 if reference_dict[ref_seg][ref_res] in ['-','x']: 
-                    # ref_sequence+='-'
                     continue
                 else:
                     ref_sequence+=reference_dict[ref_seg][ref_res]
@@ -2338,7 +2323,6 @@ class HelixEndsModeling(HomologyModeling):
                                                                                  H8_alt.protein_conformation)).sequence_number
                 temp_seg_seq_len = len(list(Residue.objects.filter(protein_conformation=H8_alt.protein_conformation, 
                                                                    sequence_number__in=range(first_res,last_res+1))))
-                # mid = (len(a.template_dict[temp_seg])-temp_seg_seq_len)/2+temp_seg_seq_len/2
                 mid = temp_seg_seq_len/2
 
             elif ref_seg[0]=='T':
@@ -2350,7 +2334,6 @@ class HelixEndsModeling(HomologyModeling):
                                                                                  main_structure.protein_conformation)).sequence_number
                 temp_seg_seq_len = len(list(Residue.objects.filter(protein_conformation=main_structure.protein_conformation, 
                                                                    sequence_number__in=range(first_res,last_res+1))))
-                # mid = (len(a.template_dict[temp_seg])-temp_seg_seq_len)/2+temp_seg_seq_len/2
                 mid = temp_seg_seq_len/2
             
             if ref_seg[0] not in ['T','H']:
@@ -2563,9 +2546,6 @@ class Loops(object):
                                     self.aligned = True
                                 else:
                                     self.aligned = False
-                                # if (len(self.helix_end_mods['added'][prev_seg][1])!=0 or 
-                                #     len(self.helix_end_mods['added'][next_seg][0])!=0):
-                                #     self.model_loop = True
                                 try:
                                     l_res = self.compare_parent_loop_to_child(self.loop_label,template)
                                     if l_res==False:
@@ -2687,8 +2667,7 @@ class Loops(object):
                                     len(loop_residues)!=len(ref_loop)):
                                     raise Exception()
                             else:
-                                loop_residues = Residue.objects.filter(protein_conformation=template.protein_conformation,
-                                                                       sequence_number__in=list(range(b_num+1,a_num)))
+                                loop_residues = Residue.objects.filter(protein_conformation=template.protein_conformation, protein_segment__slug=self.loop_label)
                                 loop_residues_test = Residue.objects.filter(protein_conformation=template.protein_conformation,
                                                                             protein_segment__slug=self.loop_label)
                                 p_c = ProteinConformation.objects.get(protein=template.protein_conformation.protein.parent)
@@ -2787,7 +2766,9 @@ class Loops(object):
                                                                   display_generic_number__label__in=['45.50x50','45.51x51','45.52x52'])
                                 alt1_x50 = alt_mid1.get(display_generic_number__label='45.50x50').sequence_number
                                 loop_res1 = Residue.objects.filter(protein_conformation=first_temp.protein_conformation,
-                                                                   sequence_number__in=list(range(b_num, alt1_x50)))
+                                                                   sequence_number__in=list(range(b_num+1, alt1_x50))).filter(protein_segment__slug=self.loop_label)
+                                print('LOOPRES1')
+                                print(loop_res1)
                                 before_gns = [x.sequence_number for x in before4]
                                 mid_gns1 = [x.sequence_number for x in loop_res1]
                                 alt_residues1 = parse.fetch_residues_from_pdb(first_temp,before_gns+mid_gns1+['45x50','45x51','45x52'])
@@ -2842,7 +2823,7 @@ class Loops(object):
                                                                   display_generic_number__label__in=['45.50x50','45.51x51','45.52x52'])
                                 alt2_x50 = alt_mid2.get(display_generic_number__label='45.50x50').sequence_number
                                 loop_res2 = Residue.objects.filter(protein_conformation=second_temp.protein_conformation,
-                                                                   sequence_number__in=list(range(alt2_x50+3, a_num)))
+                                                                   sequence_number__in=list(range(alt2_x50+3, a_num))).filter(protein_segment__slug=self.loop_label)
                                 mid_gns2 = [x.sequence_number for x in loop_res2]
                                 after_gns = [x.sequence_number for x in after4]
                                 alt_residues2 = parse.fetch_residues_from_pdb(second_temp,['45x50','45x51','45x52']+mid_gns2+after_gns)
@@ -3195,21 +3176,14 @@ class Loops(object):
                                                    protein_segment__slug='ECL2'))
         # correct for 1 res longer template
         ref_x50_i = ref_residues.index([i for i in ref_residues if i.generic_number!=None and ggn(i.display_generic_number.label)=='45x50'][0])
-        print(ref_residues)
-        print(self.main_pdb_array['ECL2'])
         if len(ref_residues)<len(self.main_pdb_array['ECL2']):
-            print(ref_residues)
             if loop_output_structure[0]!=None:
                 dif = len(list(self.main_pdb_array['ECL2'].keys())[:x50_i])-len(ref_residues[:ref_x50_i])
                 ref_residues = ref_residues[:ref_x50_i] + list(dif*'-') + ref_residues[ref_x50_i:]
             if loop_output_structure[2]!=None:
                 pdb_array_x50_i = list(self.main_pdb_array['ECL2'].keys()).index('45.50')
                 dif = len(list(self.main_pdb_array['ECL2'].keys())[pdb_array_x50_i+3:])-len(ref_residues[ref_x50_i+3:])
-                print(dif, pdb_array_x50_i, ref_x50_i)
-                print(list(self.main_pdb_array['ECL2'].keys()))
-                print(ref_residues[ref_x50_i+3:])
                 ref_residues = ref_residues[:ref_x50_i+3] + list(dif*'-') + ref_residues[ref_x50_i+3:]
-                print(ref_residues)
         elif len(ref_residues)>len(self.main_pdb_array['ECL2']):
             if loop_output_structure[0]==self.main_structure:
                 dif = len(ref_residues[:ref_x50_i])-len(list(self.main_pdb_array['ECL2'].keys())[:x50_i])

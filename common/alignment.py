@@ -946,7 +946,7 @@ class AlignedReferenceTemplate(Alignment):
             self.provide_similarity_table = provide_similarity_table
         if main_pdb_array!=None:
             self.main_pdb_array = main_pdb_array
-        if 'TM' in segment_type: #and ('IC' not in segment_type or 'EC' not in segment_type):
+        if 'TM' in segment_type:
             self.similarity_table = self.create_helix_similarity_table()
         elif 'IC' in segment_type or 'EC' in segment_type and 'TM' not in segment_type:
             self.loop_table = OrderedDict()            
@@ -963,9 +963,9 @@ class AlignedReferenceTemplate(Alignment):
         self.build_alignment()
         return self.enhance_alignment(self.proteins[0], self.proteins[1])
 
-    # def __repr__(self):
-    #     return '<AlignedReferenceTemplate: Ref: {} ; Temp: {}>'.format(self.reference_protein.protein.entry_name, 
-    #                                                                    self.main_template_structure)
+    def __repr__(self):
+        return '<AlignedReferenceTemplate: Ref: {} ; Temp: {}>'.format(self.reference_protein.protein.entry_name, 
+                                                                       self.main_template_structure)
 
     def load_proteins_by_structure(self):
         ''' Loads proteins into alignment based on available structures in the database.
@@ -1155,9 +1155,7 @@ class AlignedReferenceTemplate(Alignment):
                                                       display_generic_number__label=dgn(first_after_gn,
                                                                                         struct.protein_conformation))
                     temp_length = alt_first_gn.sequence_number-alt_last_gn.sequence_number-1
-                    alt_seq = Residue.objects.filter(protein_conformation=struct.protein_conformation, 
-                                           sequence_number__in=list(range(alt_last_gn.sequence_number+1,
-                                                                          alt_first_gn.sequence_number)))
+                    alt_seq = Residue.objects.filter(protein_conformation=struct.protein_conformation, protein_segment__slug=self.segment_labels[0])
                     if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
                         alt_ECL2 = self.ECL2_slicer(alt_seq)
                         alt_rota = [x for x in Rotamer.objects.filter(structure=struct, residue__in=alt_ECL2[1]) if x.pdbdata.pdb.startswith('COMPND')==False]
@@ -1200,6 +1198,7 @@ class AlignedReferenceTemplate(Alignment):
             ECL2_mid = self.order_sim_table(temp_list_mid, ref_ECL2[1], OrderedDict(), x50_ref, ECL2_part='_mid')
             ECL2_2 = self.order_sim_table(temp_list2, ref_ECL2[2], OrderedDict(), ECL2_part='_2')
             self.loop_table = OrderedDict([('ECL2_1',ECL2_1),('ECL2_mid',ECL2_mid),('ECL2_2',ECL2_2)])
+            print(ECL2_1)
             if len(ECL2_mid)==0:
                 self.loop_table=None
             return self.loop_table
