@@ -9,6 +9,7 @@ from django.core.management.base import BaseCommand
 from protein.models import Protein, ProteinConformation, ProteinSequenceType, ProteinSource, ProteinState
 from residue.models import Residue
 from structure.models import Structure, PdbData, StructureType
+from structure.sequence_parser import SequenceParser
 from construct.functions import *
 from common.models import WebResource, WebLink, Publication
 
@@ -18,6 +19,7 @@ import urllib
 import re
 import os
 import xmltodict
+import collections
 
 
 class Command(BaseCommand):
@@ -59,6 +61,13 @@ class QueryPDB():
         ''' List GPCR crystal structures missing from GPCRdb and the yaml files.
         '''
         db_list, yaml_list = [], []
+        # sts = [i.protein_conformation.protein.parent.accession for i in Structure.objects.all()]
+        # unis = []
+        # for st in sts:
+        #     if st not in unis:
+        #         unis.append(st)
+        # self.uniprots = unis
+        self.uniprots = ['P50052']
         for u in self.uniprots:
             structs = self.pdb_request_by_uniprot(u)
             try:
@@ -87,6 +96,13 @@ class QueryPDB():
                             check = 1
                         if check==1:
                             yaml_list.append(s)
+                    pcs = PdbChainSelector(s)
+                    pcs.run_dssp()
+                    preferred_chain = pcs.select_chain()
+                    try:
+                        print(s, preferred_chain, st_obj.preferred_chain)
+                    except:
+                        pass
                     if not missing_from_db:
                         continue
                     try:
@@ -161,8 +177,8 @@ class QueryPDB():
                                         p.update_from_pubmed_data(index=pubmed)
                                         p.save()
                                         publication = p
-                        except:
-                            pass
+                            except:
+                                pass
                         os.remove('./pdb{}.ent'.format(s).lower())
 
                         # Create new structure object
@@ -307,3 +323,67 @@ class QueryPDBClassifiedGPCR():
         self.num_struct = len(structures)
         self.new_structures = new_struct
         self.new_uniques = new_unique
+
+
+class PdbChainSelector():
+    def __init__(self, pdb_code):
+        self.pdb_code = pdb_code
+        self.chains = []
+        self.dssp_dict = OrderedDict()
+        self.dssp_info = OrderedDict()
+
+    def run_dssp(self):
+        pdb = PDB.PDBList()
+        pdb.retrieve_pdb_file(self.pdb_code, pdir='./')
+        p = PDB.PDBParser()
+        f = 'pdb{}.ent'.format(self.pdb_code.lower())
+        seqpar = SequenceParser(pdb_file=f)
+        seqpar.get_report()
+        structure = p.get_structure(self.pdb_code, f)
+        for chain in structure[0]:
+            ch = chain.get_id()
+            self.chains.append(ch)
+            self.dssp_dict[ch] = OrderedDict()
+            self.dssp_info[ch] = OrderedDict([('H',0),('B',0),('E',0),('G',0),('I',0),('T',0),('S',0),('-',0)])
+        if len(self.dssp_dict)>1:
+            dssp = PDB.DSSP(structure[0], f, dssp='/env/bin/dssp')
+            for key in dssp.keys():
+                self.dssp_dict[key[0]][key[1][1]] = dssp[key]
+                self.dssp_info[key[0]][dssp[key][2]] = self.dssp_info[key[0]][dssp[key][2]]+1
+        print(self.dssp_info)
+
+    def get_seqnums_by_secondary_structure(self, chain, secondary_structure):
+        ''' Returns list of sequence numbers that match the secondary structural property. \n
+            H: alpha helix, B: isolated beta-bridge, E: strand, G: 3-10 helix, I: pi-helix, T: turn, S: bend, -: Other
+        '''
+        if secondary_structure not in ['H','B','E','G','I','T','S','-']:
+            raise ValueError('Incorrect secondary_structure input. Input can be H, B, E, G, I, T, S, -')
+        output = []
+        for seqnum, val in self.dssp_dict[chain].items():
+            if val[2]==secondary_structure:
+                output.append(seqnum)
+        return output
+
+    def select_chain(self):
+        num_helix_res = []
+        for c, val in self.dssp_info.items():
+            num_helix_res.append(val['H']+val['G']+val['I'])
+        max_res = 0
+        max_i = 0
+        tie = []
+        for i in range(0,len(num_helix_res)):
+            if num_helix_res[i]>max_res:
+                max_res = num_helix_res[i]
+                max_i = i
+                tie = []
+            elif num_helix_res[i]==max_res:
+                tie.append(i)
+        if len(tie)>0:
+            all_seq = []
+            for t in tie:
+                all_seq.append(len(self.dssp_dict[self.chains[t]]))
+            return self.chains[tie[all_seq.index(max(all_seq))]]
+        else:
+            return self.chains[num_helix_res.index(max(num_helix_res))]
+
+

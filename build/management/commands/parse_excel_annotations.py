@@ -16,6 +16,7 @@ import xlrd
 import yaml
 from collections import OrderedDict
 
+
 _mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
 def dict_constructor(loader, node):
     return OrderedDict(loader.construct_pairs(node))
@@ -328,8 +329,8 @@ class Command(BaseCommand):
         output_csv = ''
         counter = 0
         for protein, values in self.data['Xtal_Templ'].items():
-            # protein = 'lpar5_human'
-            # values = self.data['Xtal_Templ'][protein]
+            protein = 'ccr9_human'
+            values = self.data['Xtal_Templ'][protein]
             print(protein,values)
             a = Alignment()
             p = Protein.objects.get(entry_name=protein)
@@ -344,7 +345,7 @@ class Command(BaseCommand):
                 changes[protein] = [values['Template'], a.proteins[1].protein.entry_name]
             output_csv+='{},{}\n'.format(protein, a.proteins[1].protein.entry_name)
             counter+=1
-            # break
+            break
         with open('../../data/protwis/gpcr/structure_data/annotation/xtal_templates.csv','w') as f:
             f.write(output_csv)
         print('Changed {} entries out of {}:'.format(len(changes), counter))
