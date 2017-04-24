@@ -153,23 +153,22 @@ class Command(BaseBuild):
             else:
                 post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_GPCRdb.pdb'.format(
                                 Homology_model.class_name,Homology_model.uniprot_id,Homology_model.main_structure))
-            hse = HSExposureCB(post_model, radius=8, check_chain_breaks=True)
-
-            try:
-                ref_list = list(Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein, protein_segment__slug='H8'))
-                if len(ref_list)==0:
-                    raise Exception
-            except:
-                ref_list = list(Residue.objects.filter(protein_conformation__protein=Homology_model.reference_protein, protein_segment__slug='TM7'))
+            hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True)
 
             # Check for residue shifts in model
             residue_shift = False
             db_res = ''
             for res in post_model[0][' ']:
-                db_res = Residue.objects.get(protein_conformation__protein=Homology_model.reference_protein, sequence_number=int(res.get_id()[1]))
-                if PDB.Polypeptide.three_to_one(res.get_resname())!=db_res.amino_acid:
-                    residue_shift = True
-                    break
+                try:
+                    if Homology_model.revise_xtal==False:
+                        db_res = Residue.objects.get(protein_conformation__protein=Homology_model.reference_protein, sequence_number=int(res.get_id()[1]))
+                    else:
+                        db_res = Residue.objects.get(protein_conformation__protein=Homology_model.reference_protein.parent, sequence_number=int(res.get_id()[1]))
+                    if PDB.Polypeptide.three_to_one(res.get_resname())!=db_res.amino_acid:
+                        residue_shift = True
+                        break
+                except:
+                    pass
             if residue_shift==True:
                 print('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
                 logger.info('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
@@ -1379,7 +1378,7 @@ class HomologyModeling(object):
         # correcting for side chain clashes
         p = PDB.PDBParser()
         post_model = p.get_structure('post', path+self.reference_entry_name+'_'+self.state+"_post.pdb")[0]
-        hse = HSExposureCB(post_model, radius=8)
+        hse = HSExposureCB(post_model, radius=11)
         clash_pairs = hse.clash_pairs
         for i in clash_pairs:
             gn1 = str(i[0][0]).replace('.','x')
@@ -2767,8 +2766,6 @@ class Loops(object):
                                 alt1_x50 = alt_mid1.get(display_generic_number__label='45.50x50').sequence_number
                                 loop_res1 = Residue.objects.filter(protein_conformation=first_temp.protein_conformation,
                                                                    sequence_number__in=list(range(b_num+1, alt1_x50))).filter(protein_segment__slug=self.loop_label)
-                                print('LOOPRES1')
-                                print(loop_res1)
                                 before_gns = [x.sequence_number for x in before4]
                                 mid_gns1 = [x.sequence_number for x in loop_res1]
                                 alt_residues1 = parse.fetch_residues_from_pdb(first_temp,before_gns+mid_gns1+['45x50','45x51','45x52'])
