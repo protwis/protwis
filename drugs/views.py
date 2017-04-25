@@ -26,7 +26,7 @@ def striphtml(data):
     p = re.compile(r'<.*?>')
     return p.sub('', data)
 
-@cache_page(60*60*24*1) #  1 day
+# @cache_page(60*60*24*10) #  1 day
 def drugstatistics(request):
 
     # ===== drugtargets =====
@@ -186,7 +186,7 @@ def drugstatistics(request):
 
     return render(request, 'drugstatistics.html', {'drugtypes_approved':drugtypes_approved,'drugtypes_trials':drugtypes_trials, 'drugtypes_estab':drugtypes_estab, 'drugtypes_not_estab':drugtypes_not_estab,'drugindications_approved':drugindications_approved, 'drugindications_trials':drugindications_trials, 'drugtargets_approved':drugtargets_approved, 'drugtargets_trials':drugtargets_trials, 'drugfamilies_approved':drugfamilies_approved, 'drugfamilies_trials':drugfamilies_trials, 'drugClasses_approved':drugClasses_approved, 'drugClasses_trials':drugClasses_trials, 'drugs_over_time':drugs_over_time, 'in_trial':len(in_trial), 'not_targeted':not_targeted})
 
-@cache_page(60*60*24*1) # 1 day
+@cache_page(60*60*24*10) # 1 day
 def drugbrowser(request):
     # Get drugdata from here somehow
 
@@ -215,7 +215,7 @@ def drugbrowser(request):
             for protein in target_list:
                 # targets.append(str(protein))
                 # jsondata = {'name':drugname, 'target': str(protein), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
-                
+
                 clas = str(protein.family.parent.parent.parent.name)
                 family = str(protein.family.parent.name)
 
@@ -228,7 +228,7 @@ def drugbrowser(request):
 
     return render(request, 'drugbrowser.html', {'drugdata':context})
 
-@cache_page(60*60*24*1) #  1 day
+@cache_page(60*60*24*10) #  1 day
 def drugmapping(request):
     context = dict()
 
@@ -238,12 +238,12 @@ def drugmapping(request):
         lookup[f.slug] = f.name.replace("receptors","").replace(" receptor","").replace(" hormone","").replace("/neuropeptide","/").replace(" (G protein-coupled)","").replace(" factor","").replace(" (LPA)","").replace(" (S1P)","").replace("GPR18, GPR55 and GPR119","GPR18/55/119").replace("-releasing","").replace(" peptide","").replace(" and oxytocin","/Oxytocin").replace("Adhesion class orphans","Adhesion orphans").replace("muscarinic","musc.").replace("-concentrating","-conc.")
 
     class_proteins = Protein.objects.filter(family__slug__startswith="00",source__name='SWISSPROT', species_id=1).prefetch_related('family').order_by('family__slug')
-    
+
     temp = OrderedDict([
-                    ('name',''), 
+                    ('name',''),
                     ('trials', 0),
                     ('approved', 0),
-                    ('family_sum_approved', 0), 
+                    ('family_sum_approved', 0),
                     ('family_sum_trials' , 0),
                     ('establishment', 2),
                     ('children', OrderedDict())
@@ -265,9 +265,9 @@ def drugmapping(request):
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]] = deepcopy(temp)
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['name'] = lookup[fid[0]+"_"+fid[1]+"_"+fid[2]][:28]
         if fid[3] not in coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children']:
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]] = deepcopy(temp)   
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]] = deepcopy(temp)
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['name'] = p.entry_name.split("_")[0] #[:10]
-    
+
     # # POULATE WITH DATA
     total_approved = 0
     drugtargets_approved_class = Protein.objects.filter(drugs__status='approved').values('family_id__parent__parent__parent__slug').annotate(value=Count('drugs__name', distinct = True))
@@ -310,7 +310,7 @@ def drugmapping(request):
     for i in drugtargets_trials_family:
         fid = i['family_id__parent__slug'].split("_")
         coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['family_sum_trials'] += i['value']
-    
+
     drugtargets_trials_target = Protein.objects.filter(drugs__status__in=['in trial','Phase IV','Phase III','Phase II','Phase I']).values('family_id__slug').annotate(value=Count('drugs__name', distinct = True))
     for i in drugtargets_trials_target:
         fid = i['family_id__slug'].split("_")
@@ -354,7 +354,7 @@ def drugmapping(request):
         i += 1
 
     jsontree = json.dumps(tree)
-    
+
     context["drugdata"] = jsontree
 
     return render(request, 'drugmapping.html', {'drugdata':context})

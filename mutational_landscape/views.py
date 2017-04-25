@@ -371,3 +371,18 @@ def statistics(request):
     context['stats'] = {'total_mv':total_mv,'total_av_rv':total_av_rv, 'total_av_cv':total_av_cv}
 
     return render(request, 'variation_statistics2.html', context)
+
+def economicburden(request):
+    data = [{'values': [{'y': 0.886, 'x': 1}], 'key': 'analgesics', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.118, 'x': 1}], 'key': 'antidepressant drugs', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.203, 'x': 1}], 'key': 'beta-adrenoceptor blocking drugs', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.524, 'x': 1}], 'key': 'bronchodilators', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.312, 'x': 1}], 'key': 'drugs used in diabetes', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.080, 'x': 1}], 'key': 'drugs used in parkinson/related disorders', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.205, 'x': 1}], 'key': 'drugs used in psychoses & relelated disorders', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.102, 'x': 1}], 'key': 'drugs used in substance dependence', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.080, 'x': 1}], 'key': 'hormones & antagonists in malignant disease', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.072, 'x': 1}], 'key': 'hypothalamic & pituitary hormones', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.257, 'x': 1}], 'key': 'other', 'yAxis': 'Scaling factor 1'}]
+
+    return render(request, 'economicburden.html', {'data':data})

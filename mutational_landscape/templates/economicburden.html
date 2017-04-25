@@ -1,0 +1,159 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<style>
+    text {
+        font: 12px sans-serif;
+    }
+    svg {
+        display: block;
+    }
+    html, body, #test1, svg {
+        margin: 0px;
+        padding: 0px;
+        height: 100%;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+{% block content %}
+
+<h3>Estimated economic burden</h3><br>
+<div id="burden" class="chart_container" style="display: none;">
+       <div id="burden"><svg id="burden" style="width:1050;height:500px;"></svg></div>
+
+<div class="row">
+<div class="col-sm-3"></div>
+  <div class="col-md-6">
+     <button id="update">add scaling / correction factor</button>
+     <input id="updater" type="text" maxlength="5" size="6" value="1.0" name="cutoff"
+  </div>
+  <div class="col-sm-3"></div>
+</div>
+<br><br><br><br><br><br><br><br><br>
+<h4>Calculations</h4>
+<p>The economic burden was estimated by:</p>
+<p style="text-align: center;"><em>estimated economic burden per drug (&pound;) <strong>=</strong> NHS cost per drug per year (&pound;) <strong>x</strong></em></p>
+<p style="text-align: center;"><em>% individuals with a MV in a functional site <strong>x</strong></em></p>
+<p style="text-align: center;"><em>correction or scaling factor&nbsp;</em></p>
+<p>where:</p>
+<ul style="list-style-type: circle;">
+<li>the NHS cost is the average yearly cost over a 5-year period (2012-2016) per drug that is listed</li>
+<li>% individuals is the percentage of affected individuals with a missense variant in a functional site of the respective drug target (2,504 individuals from 1,000 Genomes Project genotype data)</li>
+<li>the correction or scaling factor combines the contributing effects including other targets, metabolism ADR, dose/efficacy effects, buffering mutations, depletion of susceptible effects (decreased risk of adverse events over time, associated care costs such as for mental health illness) <em>etc</em>.</li>
+</ul>
+<p>For these estimates, we assume that for the NHS data each prescription is a unique individual.</p>
+
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script>
+// https://github.com/novus/nvd3/tree/master/examples
+var chart ;
+var chartData;
+
+window.onload = function () {
+
+  nv.addGraph(function() {
+      var datum = {{data|safe}}
+
+      chart = nv.models.multiBarChart()
+        .reduceXTicks(false)   //If 'false', every single x-axis tick label will be rendered.
+        .rotateLabels(0)      //Angle to rotate x-axis labels.
+        .showControls(true)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
+        .groupSpacing(0.1)    //Distance between each group of bars.
+        .stacked(true)
+      ;
+
+      chart.xAxis
+          .axisLabel("correction or scaling factor")
+          .showMaxMin(true)
+          .tickFormat(d3.format(',.1f'))
+
+      chart.yAxis
+          .axisLabel("estimated economic burden per year (GBP in billion)")
+          .tickFormat(d3.format(',.2f'));
+
+      chartData = d3.select('#burden svg').datum(datum)
+      chartData.transition().duration(500).call(chart);
+
+      nv.utils.windowResize(chart.update);
+
+      return chart;
+  });
+
+  var raw = {{data|safe}};
+  function update(cf) {
+    var cf = document.getElementById('updater').value
+
+    var rawLength = raw.length;
+    for (var i = 0; i < rawLength; i++) {
+
+      var kk = raw[i]['values'].length;
+      raw[i]['values'][kk] = {'y': raw[i]['values'][0]['y']*cf, 'x': cf}
+    }
+
+    console.log(raw)
+    // Update the SVG with the new data and call chart
+    chartData.datum(raw).transition().duration(5).call(chart);
+    nv.utils.windowResize(chart.update);
+};
+
+d3.select("#update").on("click", update);
+
+    /* Inspired by Lee Byron's test data generator. */
+    function stream_layers(n, m, o) {
+      if (arguments.length < 3) o = 0;
+      function bump(a) {
+        var x = 1 / (.1 + Math.random()),
+            y = 2 * Math.random() - .5,
+            z = 10 / (.1 + Math.random());
+        for (var i = 0; i < m; i++) {
+          var w = (i / m - y) * z;
+          a[i] += x * Math.exp(-w * w);
+        }
+      }
+      return d3.range(n).map(function() {
+          var a = [], i;
+          for (i = 0; i < m; i++) a[i] = o + o * Math.random();
+          for (i = 0; i < 5; i++) bump(a);
+          return a.map(stream_index);
+        });
+    }
+
+    /* Another layer generator using gamma distributions. */
+    function stream_waves(n, m) {
+      return d3.range(n).map(function(i) {
+        return d3.range(m).map(function(j) {
+            var x = 20 * j / m - i / 3;
+            return 2 * x * Math.exp(-.5 * x);
+          }).map(stream_index);
+        });
+    }
+
+    function stream_index(d, i) {
+      return {x: i, y: Math.max(0, d)};
+    }
+  //Generate some nice data.
+  function exampleData(sf) {
+    return stream_layers(10,sf,0.1).map(function(data, i) {
+      return {
+        key: 'Stream #' + i,
+        values: data
+      };
+    });
+  }
+
+  $(document).ready(function () {
+      $('#burden').css("fill", '#000000');
+      $('#burden').css("display", '');
+      // draw('1');
+
+  });
+};
+</script
+
+{% endblock %}

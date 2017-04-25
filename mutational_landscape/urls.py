@@ -8,6 +8,7 @@ urlpatterns = [
     url(r'^render', views.render_variants, name='render'),
     url(r'^(?P<download>download)', views.render_variants, name='render'),
     url(r'^statistics', views.statistics, name='statistics'),
+    url(r'^economicburden', views.economicburden, name='statistics'),
     url(r'^protein/(?P<protein>[^/]*?)/$', views.render_variants, name='render'),
     url(r'^ajax/NaturalMutation/(?P<slug>[-\w]+)/$', views.ajaxNaturalMutation, name='ajaxNaturalMutation'),
     url(r'^ajax/CancerMutation/(?P<slug>[-\w]+)/$', views.ajaxCancerMutation, name='ajaxCancerMutation'),
