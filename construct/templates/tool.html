@@ -400,7 +400,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       }
     }
 
-    other_inserts_dropdown = "Please see <a href='http://files.gpcrdb.org/Insert_sequences.xlsx'>here</a> for exact sequences use in inserts. They are based on sequences used in published constructs.<br><table><tr class='fusion_site_inserts'><th colspan=2 id=fusion_text>Fusion Protein</th></tr><tr class='fusion_site_inserts'><td colspan=2>"+fusion_protein_dropdown + "</td></tr><tr><th colspan=2>Other inserts</th></tr>";
+    other_inserts_dropdown = "Please see <a href='http://files.gpcrdb.org/Insert_sequences.xlsx'>here</a> for exact sequences used in inserts. They are based on sequences used in published crystals.<br><table><tr class='fusion_site_inserts'><th colspan=2 id=fusion_text>Fusion Protein</th></tr><tr class='fusion_site_inserts'><td colspan=2>"+fusion_protein_dropdown + "</td></tr><tr><th colspan=2>Other inserts</th></tr>";
     // other_inserts_dropdown += `<select id="insert_type_where"  class="form-control">
     //               <option value="" >Please select Type</option>
     //               <option value="nterm">N-term</option>
@@ -1303,7 +1303,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           range.push(i);
       }
       reset_fixed("deletion_n-term");
-      $('#myModal').modal('hide');
+      // $('#myModal').modal('hide');
+      $(elem).parent().parent().delay(100).fadeOut().fadeIn();
+      // $(elem).css('font-weight', 'bold');
       modi = {method: "n-term", type: "deletion", from: from, range: range, info: n_val+" from TM1 start. Based on "+from.join(", "), fixed: 'yes'};
       modifications.push(modi);
       overlay_modifications();
@@ -1324,7 +1326,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       }
 
       reset_fixed("deletion_n-term");
-      $('#myModal').modal('hide');
+      // $('#myModal').modal('hide');
       modi = {method: "n-term", type: "deletion", from: from, range: range, info: "Custom: "+n_val+" from TM1 start", fixed: 'yes'};
       modifications.push(modi);
       overlay_modifications();
@@ -1346,7 +1348,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       }
 
       reset_fixed("deletion_c-term");
-      $('#myModal').modal('hide');
+      // $('#myModal').modal('hide');
+      $(elem).parent().parent().delay(100).fadeOut().fadeIn();
       modi = {method: "c-term", type: "deletion", from: from, range: range, info: "Based on "+from.join(", "), fixed: 'yes'};
       modifications.push(modi);
       overlay_modifications();
@@ -1564,6 +1567,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
          sequence = insert_sequences["fusion_"+fusion];
       } else {
         sequence = "";
+        var sequence = prompt("We do not have a sequnce on record for this, please specify the sequence to use:", val['sequence']);
+      }
+      if (sequence === null) {
+        sequence = "";
       }
 
       inserts['fusion'].push({type: "fusion", name: fusion, order: order_in_icl_insert, sequence: sequence});
@@ -1590,6 +1597,13 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       if (insert_type=='linker') {
         sequence = insert_sub_type;
         insert_sub_type = 'custom';
+      }
+
+      if (sequence == "") {
+        var sequence = prompt("We do not have a sequnce on record for this, please specify the sequence to use:", val['sequence']);
+      }
+      if (sequence === null) {
+        sequence = "";
       }
 
       inserts[insert_location].push({type: insert_type, name: insert_sub_type, order: order_in_icl_insert, sequence: sequence});
@@ -1733,6 +1747,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       modifications.push(modi);
       overlay_modifications();
       modifications_overview();
+      $(elem).parent().parent().delay(100).fadeOut().fadeIn();
     }
 
     function glyco(elem) {
@@ -1761,6 +1776,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       overlay_modifications();
       modifications_overview();
+      $(elem).parent().parent().delay(100).fadeOut().fadeIn();
     }
 
     function palmi(elem) {
@@ -1779,6 +1795,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       overlay_modifications();
       modifications_overview();
+      $(elem).parent().parent().delay(100).fadeOut().fadeIn();
     }
 
     function modifications_overview() {
