@@ -1198,7 +1198,6 @@ class AlignedReferenceTemplate(Alignment):
             ECL2_mid = self.order_sim_table(temp_list_mid, ref_ECL2[1], OrderedDict(), x50_ref, ECL2_part='_mid')
             ECL2_2 = self.order_sim_table(temp_list2, ref_ECL2[2], OrderedDict(), ECL2_part='_2')
             self.loop_table = OrderedDict([('ECL2_1',ECL2_1),('ECL2_mid',ECL2_mid),('ECL2_2',ECL2_2)])
-            print(ECL2_1)
             if len(ECL2_mid)==0:
                 self.loop_table=None
             return self.loop_table
