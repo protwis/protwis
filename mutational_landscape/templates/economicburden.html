@@ -19,7 +19,7 @@
 {% endblock %}
 {% block content %}
 
-<h3>Estimated economic burden</h3><br>
+<h3>Estimated economic burden on the NHS of GPCR targeting drugs</h3><br>
 <div id="burden" class="chart_container" style="display: none;">
        <div id="burden"><svg id="burden" style="width:1050;height:500px;"></svg></div>
 
@@ -31,16 +31,16 @@
   </div>
   <div class="col-sm-3"></div>
 </div>
-<br><br><br><br><br><br><br><br><br>
+<br><br><br><br><br>
 <h4>Calculations</h4>
 <p>The economic burden was estimated by:</p>
 <p style="text-align: center;"><em>estimated economic burden per drug (&pound;) <strong>=</strong> NHS cost per drug per year (&pound;) <strong>x</strong></em></p>
-<p style="text-align: center;"><em>% individuals with a MV in a functional site <strong>x</strong></em></p>
+<p style="text-align: center;"><em>% individuals with a missense variant in a functional site <strong>x</strong></em></p>
 <p style="text-align: center;"><em>correction or scaling factor&nbsp;</em></p>
 <p>where:</p>
 <ul style="list-style-type: circle;">
 <li>the NHS cost is the average yearly cost over a 5-year period (2012-2016) per drug that is listed</li>
-<li>% individuals is the percentage of affected individuals with a missense variant in a functional site of the respective drug target (2,504 individuals from 1,000 Genomes Project genotype data)</li>
+<li>% individuals is the percentage of affected individuals with a missense variant in a functional site of the respective drug target (based 2,504 genotypes individuals from the 1,000 Genomes Project)</li>
 <li>the correction or scaling factor combines the contributing effects including other targets, metabolism ADR, dose/efficacy effects, buffering mutations, depletion of susceptible effects (decreased risk of adverse events over time, associated care costs such as for mental health illness) <em>etc</em>.</li>
 </ul>
 <p>For these estimates, we assume that for the NHS data each prescription is a unique individual.</p>
