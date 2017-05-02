@@ -4,7 +4,7 @@ Created on Mon Apr 25 15:50:57 2016
 
 @author: Gaspar Pandy
 """
-from django.core.management.base import BaseCommand
+from build.management.commands.base_build import Command as BaseBuild
 
 from protein.models import Protein, ProteinConformation, ProteinSequenceType, ProteinSource, ProteinState
 from residue.models import Residue
@@ -22,7 +22,7 @@ import os
 import xmltodict
 
 
-class Command(BaseCommand):
+class Command(BaseBuild):
         
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
@@ -40,156 +40,165 @@ class Command(BaseCommand):
             q = QueryPDBClassifiedGPCR()
             q.new_xtals(self.verbose)
         else:
-            q = QueryPDB()
-            q.new_xtals(self.verbose)
+            self.uniprots = self.get_all_GPCR_uniprots()
+            self.yamls = self.get_all_yamls()
+            self.prepare_input(options['proc'], self.uniprots)
+
+    def main_func(self, positions, iteration):
+        if not positions[1]:
+            uniprot_list = self.uniprots[positions[0]:]
+        else:
+            uniprot_list = self.uniprots[positions[0]:positions[1]]
+        
+        q = QueryPDB(self.uniprots, self.yamls)
+        for uni in uniprot_list:
+            q.new_xtals(uni)
+        if self.verbose:
+            print('Missing from db: ', q.db_list)
+            print('Missing yamls: ', q.yaml_list)
+
+    def get_all_GPCR_uniprots(self):
+        try:
+            uniprots = [i.accession for i in Protein.objects.filter(accession__isnull=False)]
+            if len(uniprots)<100:
+                raise Exception()
+        except:
+            uniprots = [i.split('.')[0] for i in os.listdir('/protwis/data/protwis/gpcr/protein_data/uniprot/')]
+        return uniprots
+
+    def get_all_yamls(self):
+        yamls = [i.split('.')[0] for i in os.listdir('/protwis/data/protwis/gpcr/structure_data/structures/')]
+        return yamls
 
 
 class QueryPDB():
     ''' Queries PDB using GPCRdb protein and structure entries. If those are not available, it uses the structure and uniprot data folders.
     '''
-    def __init__(self):
+    def __init__(self, uniprots, yamls):
         self.exceptions = []
-        try:
-            self.uniprots = [i.accession for i in Protein.objects.filter(accession__isnull=False)]
-            if len(self.uniprots)<100:
-                raise Exception()
-        except:
-            self.uniprots = [i.split('.')[0] for i in os.listdir('/protwis/data/protwis/gpcr/protein_data/uniprot/')]
-        self.yamls = [i.split('.')[0] for i in os.listdir('/protwis/data/protwis/gpcr/structure_data/structures/')]
+        self.uniprots = uniprots
+        self.yamls = yamls
+        self.db_list, self.yaml_list = [], []
 
-    def new_xtals(self, verbose=False):
-        ''' List GPCR crystal structures missing from GPCRdb and the yaml files.
+    def new_xtals(self, uniprot, verbose=False):
+        ''' List GPCR crystal structures missing from GPCRdb and the yaml files. Adds missing structures to DB.
         '''
-        db_list, yaml_list = [], []
-        # sts = [i.protein_conformation.protein.parent.accession for i in Structure.objects.all()]
-        # unis = []
-        # for st in sts:
-        #     if st not in unis:
-        #         unis.append(st)
-        # self.uniprots = unis
-        # self.uniprots = ['P02699']
-        for u in self.uniprots:
-            structs = self.pdb_request_by_uniprot(u)
-            try:
-                protein = Protein.objects.get(accession=u)
-            except:
-                protein = None
-            try:
-                x50s = Residue.objects.filter(protein_conformation__protein=protein,generic_number__label__in=['1x50','2x50','3x50','4x50','5x50','6x50','7x50'])
-            except:
-                x50s = None
-            if structs!=['null']:
-                for s in structs:
-                    missing_from_db = False
-                    try:
-                        st_obj = Structure.objects.get(pdb_code__index=s)
-                    except:
-                        if s not in self.exceptions:
-                            check = self.pdb_request_by_pdb(s)
-                            if check==1:
-                                db_list.append(s)
-                                missing_from_db = True
-                    if s not in self.yamls and s not in self.exceptions:
-                        if s not in db_list:
-                            check = self.pdb_request_by_pdb(s)
-                        else:
-                            check = 1
+        structs = self.pdb_request_by_uniprot(uniprot)
+        try:
+            protein = Protein.objects.get(accession=uniprot)
+        except:
+            protein = None
+        try:
+            x50s = Residue.objects.filter(protein_conformation__protein=protein,generic_number__label__in=['1x50','2x50','3x50','4x50','5x50','6x50','7x50'])
+        except:
+            x50s = None
+        if structs!=['null']:
+            for s in structs:
+                missing_from_db = False
+                try:
+                    st_obj = Structure.objects.get(pdb_code__index=s)
+                except:
+                    if s not in self.exceptions:
+                        check = self.pdb_request_by_pdb(s)
                         if check==1:
-                            yaml_list.append(s)
-                    if not missing_from_db:
-                        continue
-                    try:
-                        pdb_data_dict = fetch_pdb_info(s, protein)
-                        for d in pdb_data_dict['deletions']:
-                            presentx50s = []
-                            for x in x50s:
-                                if not d['start']<x.sequence_number<d['end']:
-                                    presentx50s.append(x)                                    
-                            # Filter out ones without all 7 x50 positions present in the xtal
-                            if len(presentx50s)!=7:
-                                try:
-                                    del db_list[db_list.index(s)]
-                                    missing_from_db = False
-                                    del yaml_list[yaml_list.index(s)]
-                                except:
-                                    pass
-                        if missing_from_db:
-                            pref_chain = ''
-                            resolution = pdb_data_dict['resolution']
-                            pdb_code, created = WebLink.objects.get_or_create(index=s, web_resource=WebResource.objects.get(slug='pdb'))
-                            pdbl = PDB.PDBList()
-                            pdbl.retrieve_pdb_file(s, pdir='./', file_format="pdb")
-                            with open('./pdb{}.ent'.format(s).lower(),'r') as f:
-                                lines = f.readlines()
-                            pdb_file = ''
-                            publication_date, pubmed, doi = '','',''
-                            state = ProteinState.objects.get(slug='inactive')
-                            new_prot, created = Protein.objects.get_or_create(entry_name=s.lower(), accession=None, name=s.lower(), sequence=pdb_data_dict['wt_seq'], family=protein.family,
-                                                                              parent=protein, residue_numbering_scheme=protein.residue_numbering_scheme, 
-                                                                              sequence_type=ProteinSequenceType.objects.get(slug='mod'), source=ProteinSource.objects.get(name='OTHER'), 
-                                                                              species=protein.species)
-                            new_prot_conf, created = ProteinConformation.objects.get_or_create(protein=new_prot, state=state, template_structure=None)
-                            for line in lines:
-                                if line.startswith('REVDAT   1'):
-                                    publication_date = line[13:22]
-                                if line.startswith('JRNL        PMID'):
-                                    pubmed = line[19:].strip()
-                                if line.startswith('JRNL        DOI'):
-                                    doi = line[19:].strip()
-                                pdb_file+=line
-                            pdb_data, created = PdbData.objects.get_or_create(pdb=pdb_file)
-                            d = datetime.strptime(publication_date,'%d-%b-%y')
-                            publication_date = d.strftime('%Y-%m-%d')
+                            self.db_list.append(s)
+                            missing_from_db = True
+                if s not in self.yamls and s not in self.exceptions:
+                    if s not in self.db_list:
+                        check = self.pdb_request_by_pdb(s)
+                    else:
+                        check = 1
+                    if check==1:
+                        self.yaml_list.append(s)
+                if not missing_from_db:
+                    continue
+                try:
+                    pdb_data_dict = fetch_pdb_info(s, protein)
+                    for d in pdb_data_dict['deletions']:
+                        presentx50s = []
+                        for x in x50s:
+                            if not d['start']<x.sequence_number<d['end']:
+                                presentx50s.append(x)                                    
+                        # Filter out ones without all 7 x50 positions present in the xtal
+                        if len(presentx50s)!=7:
                             try:
-                                if doi!='':
-                                    try:
-                                        publication = Publication.objects.get(web_link__index=doi)
-                                    except Publication.DoesNotExist as e:
-                                        p = Publication()
-                                        try:
-                                            p.web_link = WebLink.objects.get(index=doi, web_resource__slug='doi')
-                                        except WebLink.DoesNotExist:
-                                            wl = WebLink.objects.create(index=doi,
-                                                web_resource = WebResource.objects.get(slug='doi'))
-                                            p.web_link = wl
-                                        p.update_from_doi(doi=doi)
-                                        p.save()
-                                        publication = p
-                                elif pubmed!='':
-                                    try:
-                                        publication = Publication.objects.get(web_link__index=pubmed)
-                                    except Publication.DoesNotExist as e:
-                                        p = Publication()
-                                        try:
-                                            p.web_link = WebLink.objects.get(index=pubmed,
-                                                web_resource__slug='pubmed')
-                                        except WebLink.DoesNotExist:
-                                            wl = WebLink.objects.create(index=pubmed,
-                                                web_resource = WebResource.objects.get(slug='pubmed'))
-                                            p.web_link = wl
-                                        p.update_from_pubmed_data(index=pubmed)
-                                        p.save()
-                                        publication = p
+                                del self.db_list[self.db_list.index(s)]
+                                missing_from_db = False
+                                del self.yaml_list[self.yaml_list.index(s)]
                             except:
                                 pass
-                            pcs = PdbChainSelector(s, protein)
-                            pcs.run_dssp()
-                            preferred_chain = pcs.select_chain()
-                            os.remove('./pdb{}.ent'.format(s).lower())
+                    if missing_from_db:
+                        pref_chain = ''
+                        resolution = pdb_data_dict['resolution']
+                        pdb_code, created = WebLink.objects.get_or_create(index=s, web_resource=WebResource.objects.get(slug='pdb'))
+                        pdbl = PDB.PDBList()
+                        pdbl.retrieve_pdb_file(s, pdir='./', file_format="pdb")
+                        with open('./pdb{}.ent'.format(s).lower(),'r') as f:
+                            lines = f.readlines()
+                        pdb_file = ''
+                        publication_date, pubmed, doi = '','',''
+                        state = ProteinState.objects.get(slug='inactive')
+                        new_prot, created = Protein.objects.get_or_create(entry_name=s.lower(), accession=None, name=s.lower(), sequence=pdb_data_dict['wt_seq'], family=protein.family,
+                                                                          parent=protein, residue_numbering_scheme=protein.residue_numbering_scheme, 
+                                                                          sequence_type=ProteinSequenceType.objects.get(slug='mod'), source=ProteinSource.objects.get(name='OTHER'), 
+                                                                          species=protein.species)
+                        new_prot_conf, created = ProteinConformation.objects.get_or_create(protein=new_prot, state=state, template_structure=None)
+                        for line in lines:
+                            if line.startswith('REVDAT   1'):
+                                publication_date = line[13:22]
+                            if line.startswith('JRNL        PMID'):
+                                pubmed = line[19:].strip()
+                            if line.startswith('JRNL        DOI'):
+                                doi = line[19:].strip()
+                            pdb_file+=line
+                        pdb_data, created = PdbData.objects.get_or_create(pdb=pdb_file)
+                        d = datetime.strptime(publication_date,'%d-%b-%y')
+                        publication_date = d.strftime('%Y-%m-%d')
+                        try:
+                            if doi!='':
+                                try:
+                                    publication = Publication.objects.get(web_link__index=doi)
+                                except Publication.DoesNotExist as e:
+                                    p = Publication()
+                                    try:
+                                        p.web_link = WebLink.objects.get(index=doi, web_resource__slug='doi')
+                                    except WebLink.DoesNotExist:
+                                        wl = WebLink.objects.create(index=doi,
+                                            web_resource = WebResource.objects.get(slug='doi'))
+                                        p.web_link = wl
+                                    p.update_from_doi(doi=doi)
+                                    p.save()
+                                    publication = p
+                            elif pubmed!='':
+                                try:
+                                    publication = Publication.objects.get(web_link__index=pubmed)
+                                except Publication.DoesNotExist as e:
+                                    p = Publication()
+                                    try:
+                                        p.web_link = WebLink.objects.get(index=pubmed,
+                                            web_resource__slug='pubmed')
+                                    except WebLink.DoesNotExist:
+                                        wl = WebLink.objects.create(index=pubmed,
+                                            web_resource = WebResource.objects.get(slug='pubmed'))
+                                        p.web_link = wl
+                                    p.update_from_pubmed_data(index=pubmed)
+                                    p.save()
+                                    publication = p
+                        except:
+                            pass
+                        pcs = PdbChainSelector(s, protein)
+                        pcs.run_dssp()
+                        preferred_chain = pcs.select_chain()
+                        os.remove('./pdb{}.ent'.format(s).lower())
 
-                            # Create new structure object
-                            Structure.objects.get_or_create(preferred_chain=preferred_chain, resolution=resolution, publication_date=publication_date, representative='f', pdb_code=pdb_code,
-                                                            pdb_data=pdb_data, protein_conformation=new_prot_conf, publication=publication, state=state, 
-                                                            structure_type=StructureType.objects.get(slug='x-ray-diffraction'))
-                            print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
-                    
-                    except Exception as msg:
-                        print(msg)
-        if verbose:
-            print('Missing from db: ', db_list)
-            print('Missing yamls: ', yaml_list)
+                        # Create new structure object
+                        Structure.objects.get_or_create(preferred_chain=preferred_chain, resolution=resolution, publication_date=publication_date, representative='f', pdb_code=pdb_code,
+                                                        pdb_data=pdb_data, protein_conformation=new_prot_conf, publication=publication, state=state, 
+                                                        structure_type=StructureType.objects.get(slug='x-ray-diffraction'))
+                        print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
+                except Exception as msg:
+                    print(msg)
 
-        return db_list, yaml_list
 
     def pdb_request_by_uniprot(self, uniprot_id):
         url = 'http://www.rcsb.org/pdb/rest/search'
