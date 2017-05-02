@@ -39,8 +39,15 @@ def fetch_pdb_info(pdbname,protein):
     d['construct_crystal']['pdb_name'] = 'auto_'+pdbname
     try:
         d['construct_crystal']['uniprot'] = protein.parent.entry_name
+        d['protein'] = protein.parent.name
+        d['wt_seq'] = protein.parent.sequence
     except:
+        # if above fails, it's likely due to there being no child, and we are looking at top level
         d['construct_crystal']['uniprot'] = protein.entry_name
+        d['protein'] = protein.name
+        d['wt_seq'] = protein.sequence
+
+
     d['contact_info'] = {}
     d['contact_info']['name_cont'] = 'gpcrdb'
     d['contact_info']['pi_email'] = 'info@gpcrdb.org'
@@ -49,12 +56,6 @@ def fetch_pdb_info(pdbname,protein):
     d['contact_info']['date'] = time.strftime('%m/%d/%Y')
     d['contact_info']['address'] = ''
 
-    try:
-        d['protein'] = protein.parent.name
-        d['wt_seq'] = protein.parent.sequence
-    except:
-        d['protein'] = protein.name
-        d['wt_seq'] = protein.sequence
     d['pdb'] = pdbname
     d['links'] = []
     d['xml_not_observed'] = []
