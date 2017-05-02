@@ -21,6 +21,9 @@ import tempfile
 import logging
 import math
 import urllib
+from collections import OrderedDict
+import Bio.PDB as PDB
+
 
 logger = logging.getLogger("protwis")
 
@@ -678,15 +681,9 @@ class PdbChainSelector():
 
     def run_dssp(self):
         pdb = PDB.PDBList()
-        pdb.retrieve_pdb_file(self.pdb_code, pdir='./')
+        pdb.retrieve_pdb_file(self.pdb_code, pdir='./', file_format="pdb")
         p = PDB.PDBParser()
         f = 'pdb{}.ent'.format(self.pdb_code.lower())
-        # SequenceParser
-        # seqpar = SequenceParser(pdb_file=f)
-        # aux_dict = seqpar.get_fusions()
-        # for key, vals in aux_dict['auxiliary'].items():
-        #     self.aux_residues.append([vals['start'],vals['end']])
-        # print(self.aux_residues)
         wt_residues = [i.sequence_number for i in Residue.objects.filter(protein_conformation__protein=self.protein).exclude(protein_segment__slug__in=['N-term','C-term'])]
         structure = p.get_structure(self.pdb_code, f)
         for chain in structure[0]:
@@ -697,10 +694,6 @@ class PdbChainSelector():
         if len(self.dssp_dict)>1:
             dssp = PDB.DSSP(structure[0], f, dssp='/env/bin/dssp')
             for key in dssp.keys():
-                # for aux in self.aux_residues:
-                #     if aux[0]<=int(key[1][1])<=aux[1]:
-                #         continue
-                #     else:
                 if int(key[1][1]) in wt_residues:
                     self.dssp_dict[key[0]][key[1][1]] = dssp[key]
                     self.dssp_info[key[0]][dssp[key][2]] = self.dssp_info[key[0]][dssp[key][2]]+1

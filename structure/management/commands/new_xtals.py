@@ -20,7 +20,6 @@ import urllib
 import re
 import os
 import xmltodict
-import collections
 
 
 class Command(BaseCommand):
@@ -68,7 +67,7 @@ class QueryPDB():
         #     if st not in unis:
         #         unis.append(st)
         # self.uniprots = unis
-        self.uniprots = ['P50052']
+        # self.uniprots = ['P02699']
         for u in self.uniprots:
             structs = self.pdb_request_by_uniprot(u)
             try:
@@ -97,10 +96,6 @@ class QueryPDB():
                             check = 1
                         if check==1:
                             yaml_list.append(s)
-                    try:
-                        print(s, preferred_chain, st_obj.preferred_chain)
-                    except:
-                        pass
                     if not missing_from_db:
                         continue
                     try:
@@ -123,7 +118,7 @@ class QueryPDB():
                             resolution = pdb_data_dict['resolution']
                             pdb_code, created = WebLink.objects.get_or_create(index=s, web_resource=WebResource.objects.get(slug='pdb'))
                             pdbl = PDB.PDBList()
-                            pdbl.retrieve_pdb_file(s, pdir='./')
+                            pdbl.retrieve_pdb_file(s, pdir='./', file_format="pdb")
                             with open('./pdb{}.ent'.format(s).lower(),'r') as f:
                                 lines = f.readlines()
                             pdb_file = ''
@@ -177,17 +172,17 @@ class QueryPDB():
                                         publication = p
                             except:
                                 pass
-                        pcs = PdbChainSelector(s, protein)
-                        pcs.run_dssp()
-                        preferred_chain = pcs.select_chain()
-                        os.remove('./pdb{}.ent'.format(s).lower())
+                            pcs = PdbChainSelector(s, protein)
+                            pcs.run_dssp()
+                            preferred_chain = pcs.select_chain()
+                            os.remove('./pdb{}.ent'.format(s).lower())
 
-                        # Create new structure object
-                        Structure.objects.get_or_create(preferred_chain=preferred_chain, resolution=resolution, publication_date=publication_date, representative='f', pdb_code=pdb_code,
-                                                        pdb_data=pdb_data, protein_conformation=new_prot_conf, publication=publication, state=state, 
-                                                        structure_type=StructureType.objects.get(slug='x-ray-diffraction'))
-                        print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
-                        
+                            # Create new structure object
+                            Structure.objects.get_or_create(preferred_chain=preferred_chain, resolution=resolution, publication_date=publication_date, representative='f', pdb_code=pdb_code,
+                                                            pdb_data=pdb_data, protein_conformation=new_prot_conf, publication=publication, state=state, 
+                                                            structure_type=StructureType.objects.get(slug='x-ray-diffraction'))
+                            print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
+                    
                     except Exception as msg:
                         print(msg)
         if verbose:
@@ -225,7 +220,7 @@ class QueryPDB():
         polymer = dic['molDescription']['structureId']['polymer']
         if type(polymer)==type([]):
             for mol in polymer:
-                if 'receptor' in mol['polymerDescription']['@description']:
+                if 'receptor' in mol['polymerDescription']['@description'] or 'Rhodopsin' in mol['polymerDescription']['@description']:
                     if int(mol['@length'])<100:
                         return 0
                     else:
@@ -237,7 +232,9 @@ class QueryPDB():
                         except:
                             return 0
         else:
-            if 'receptor' in polymer['polymerDescription']['@description'] and int(polymer['@length'])>100:
+            if 'receptor' in polymer['polymerDescription']['@description'] or 'Rhodopsin' in polymer['polymerDescription']['@description']:
+                if int(polymer['@length'])<100:
+                    return 0
                 if type(polymer['macroMolecule'])==type([]):
                     for mM in polymer['macroMolecule']:
                         if mM['accession']['@id'] in self.uniprots:
