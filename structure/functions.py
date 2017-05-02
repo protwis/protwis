@@ -722,16 +722,13 @@ class PdbChainSelector():
 
         max_res = num_helix_res[0]
         max_i = 0
-        tie = []
         for i in range(1,len(num_helix_res)):
             if num_helix_res[i]>max_res:
                 if num_helix_res[i]-max_res>seq_lengths[max_i]-seq_lengths[i]:
                     max_res = num_helix_res[i]
                     max_i = i
-                    tie = []
             elif num_helix_res[i]==max_res:
                 if seq_lengths[max_i]<seq_lengths[i]:
                     max_res = num_helix_res[i]
                     max_i = i
-                    tie = []
         return self.chains[max_i]
