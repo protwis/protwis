@@ -26,13 +26,11 @@ class Command(BaseBuild):
         
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser=parser)
-        parser.add_argument('--verbose', help='Print output', default=False, 
-                            action='store_true')
         parser.add_argument('--classified', help="Use PDB's 'G protein-coupled receptors' classification", default=False, 
                             action='store_true')
 
     def handle(self, *args, **options):
-        if options['verbose']:
+        if options['verbosity'] in [0,1,2,3]:
             self.verbose = True
         else:
             self.verbose = False
@@ -80,7 +78,7 @@ class QueryPDB():
         self.yamls = yamls
         self.db_list, self.yaml_list = [], []
 
-    def new_xtals(self, uniprot, verbose=False):
+    def new_xtals(self, uniprot):
         ''' List GPCR crystal structures missing from GPCRdb and the yaml files. Adds missing structures to DB.
         '''
         structs = self.pdb_request_by_uniprot(uniprot)
@@ -110,6 +108,7 @@ class QueryPDB():
                         check = 1
                     if check==1:
                         self.yaml_list.append(s)
+                    print(check)
                 if not missing_from_db:
                     continue
                 try:
@@ -239,7 +238,13 @@ class QueryPDB():
                             else:
                                 raise Exception()
                         except:
-                            return 0
+                            try:
+                                for m in mol['macroMolecule']:
+                                    if m['accession']['@id'] in self.uniprots:
+                                        return 1
+                                raise Exception()
+                            except:
+                                return 0
         else:
             if 'receptor' in polymer['polymerDescription']['@description'] or 'Rhodopsin' in polymer['polymerDescription']['@description']:
                 if int(polymer['@length'])<100:
