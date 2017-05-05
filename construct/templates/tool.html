@@ -377,7 +377,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                         "fusion_BRIL (b562RIL)": "ADLEDNWETLNDNLKVIEKADNAAQVKDALTKMRAAALDAQKATPPKLEDKSPDSPEMKDFRHGFDILVGQIDDALKLANEGKVKEAQAAAEQLKTTRNAYIQKYL",
                         "fusion_Rubredoxin": "MKKYTCTVCGYIYNPEDGDPDNGVNPGTDFKDIPDDWVCPLCGVGKDQFEEVEE",
                         "fusion_Flavodoxin": "AKALIVYGSTTGNTEYTAETIARELADAGYEVDSRDAASVEAGGLFEGFDLVLLGCSTWGDDSIELQDDFIPLFDSLEETGAQGRKVACFGCGDSSWEYFCGAVDAIEEKLKNLGAEIVQDGLRIDGDPRAARDDIVGWAHDVRGAI",
-                        "signal_hemagglutinin" : "MKANLLVLLCALAAADADTICIGYHANNSTDTVDTVLEKNVTVTHSVNLLEDSHNGKLCRLKGIAPLQLGKCNIAGWLLGNPECDPLLPVRSWSYIVETPNSENGICYPGDFIDYEELREQLSSVSSFERFEIFPKESSWPNHNTNGVTAACSHEGKSSFYRNLLWLTEKEGSYPKLKNSYVNKKGKEVLVLWGIHHPPNSKEQQNLYQNENAYVSVVTSNYNRRFTPEIAERPKVRDQAGRMNYYWTLLKPGDTIIFEANGNLIAPMYAFALSRGFGSGIITSNASMHECNTKCQTPLGAINSSLPYQNIHPVTIGECPKYVRSAKLRMVTGLRNIPSIQSRGLFGAIAGFIEGGWTGMIDGWYGYHHQNEQGSGYAADQKSTQNAINGITNKVNTVIEKMNIQFTAVGKEFNKLEKRMENLNKKVDDGFLDIWTYNAELLVLLENERTLDFHDSNVKNLYEKVKSQLKNNAKEIGNGCFEFYHKCDNECMESVRNGTYDYPKYSEESKLNREKVDGVKLESMGIYQILAIYSTVASSLVLLVSLGAISFWMCSNGSLQCRICI",
+                        "signal_hemagglutinin" : "MKTIIALSYIFCLVFA",
                         "prot_cleavage_Thrombin": "LVPRGS",
                         "prot_cleavage_TEV protease": "ENLYFQG"};
 
@@ -2118,28 +2118,38 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       console.log("Fusion would be around "+fusion_site_location);
       sequence = "";
       sequence_short = "";
+      sequence_short_2 = "";
       sequence_long = "";
+      find_n_term = 0;
       $.each(inserts["nterm"], function(key,val) {
           sequence += "["+val['type']+":"+val['name']+"]";
           sequence_short += "["+val['type']+":"+val['name']+"]";
+          sequence_short_2 += "["+val['type']+":"+val['name']+"]";
           if (val['sequence']) {
-            sequence_long += val['sequence'];
+            sequence_long += val['sequence'].toLowerCase();
           } else {
             sequence_long += "["+val['type']+":"+val['name']+"]";
           }
+          find_n_term = 1;
       });
 
       if (fusionpos=='nterm') {
             $.each(inserts["fusion"], function(key,val) {
                 sequence += "["+val['type']+":"+val['name']+"]";
                 sequence_short += "["+val['type']+":"+val['name']+"]";
+                sequence_short_2 += "["+val['type']+":"+val['name']+"]";
                 if (val['sequence']) {
-                  sequence_long += val['sequence'];
+                  sequence_long += val['sequence'].toLowerCase();
                 } else {
                   sequence_long += "["+val['type']+":"+val['name']+"]";
                 }
             });
             fusion_site_location = 0;
+          find_n_term = 1;
+      }
+
+      if (find_n_term==0){
+          sequence_short_2 += "[ADD N-TERM INSERTS]";
       }
 
       add_wt_start = 1;
@@ -2156,7 +2166,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           if (track_pos[key]['type']=='mutation') {
             sequence += track_pos[key]['to'];
             sequence_short += "[MUT:"+val[0]+key+""+track_pos[key]['to']+"]";
-            sequence_long += track_pos[key]['to'];
+            sequence_short_2 += "[MUT:"+val[0]+key+""+track_pos[key]['to']+"]";
+            sequence_long += track_pos[key]['to'].toLowerCase();
 
           } else {
             // check for fusion site
@@ -2167,8 +2178,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                   $.each(inserts["fusion"], function(key,val) {
                       sequence += "["+val['type']+":"+val['name']+"]";
                       sequence_short += "["+val['type']+":"+val['name']+"]";
+                      sequence_short_2 += "["+val['type']+":"+val['name']+"]";
                       if (val['sequence']) {
-                        sequence_long += val['sequence'];
+                        sequence_long += val['sequence'].toLowerCase();
                       } else {
                         sequence_long += "["+val['type']+":"+val['name']+"]";
                       }
@@ -2180,7 +2192,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           add_wt_start = 1;
         } else {
           sequence += val[0];
-          sequence_long += val[0];
+          sequence_long += val[0].toUpperCase();
+          sequence_short_2 += val[0].toUpperCase();
           if (add_wt_start){
              sequence_short += "["+receptor_name+":"+key+"-";
              add_wt_start = 0;
@@ -2194,17 +2207,23 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
              sequence_short += last_key_in_stretch+"]";
           }
 
+      find_c_term = 0;
       $.each(inserts["cterm"], function(key,val) {
           sequence += "["+val['type']+":"+val['name']+"]";
           sequence_short += "["+val['type']+":"+val['name']+"]";
+          sequence_short_2 += "["+val['type']+":"+val['name']+"]";
           if (val['sequence']) {
-            sequence_long += val['sequence'];
+            sequence_long += val['sequence'].toLowerCase();
           } else {
             sequence_long += "["+val['type']+":"+val['name']+"]";
           }
+          find_c_term = 1;
       });
+      if (find_c_term==0){
+          sequence_short_2 += "[ADD C-TERM INSERTS]";
+      }
 
-      export_list['sequences'].push([include.sort(function (a, b) {  return a - b;  }),sequence_short,sequence_long]);
+      export_list['sequences'].push([include.sort(function (a, b) {  return a - b;  }),sequence_short,sequence_long,sequence_short_2]);
 
       return [sequence_short,sequence_long];
     }
