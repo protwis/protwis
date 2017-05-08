@@ -1044,7 +1044,7 @@ class HomologyModeling(object):
         if 'H8' in main_pdb_array and 'ICL4' not in main_pdb_array and len(self.helix_end_mods['removed']['TM7'][1])>0:
             unwind_num = math.ceil(len(self.helix_end_mods['removed']['TM7'][1])/2)
             trimmed_residues+=list(main_pdb_array['TM7'].keys())[(unwind_num*-1):]+list(main_pdb_array['H8'].keys())[:unwind_num]
-
+        
         # N- and C-termini
         if N_and_C_termini==True and self.prot_conf.protein==self.main_structure.protein_conformation.protein.parent:
             N_struct = self.template_source['TM1'][list(self.template_source['TM1'])[0]][0]
@@ -1201,7 +1201,7 @@ class HomologyModeling(object):
             if i.startswith('ICL3'):
                 label = i
                 break
-        
+
         try:
             if len(a.reference_dict[label])>10:
                 chain_break = False
@@ -1231,7 +1231,7 @@ class HomologyModeling(object):
                             del self.template_source['ICL3'][keys[icl3_c-1]]
         except:
             pass
-
+        
         # non-conserved residue switching
         if switch_rotamers==True:
             non_cons_switch = self.run_non_conserved_switcher(main_pdb_array,a.reference_dict,a.template_dict,
@@ -1345,7 +1345,7 @@ class HomologyModeling(object):
             ref_prot = self.reference_protein
         if ref_prot==self.main_structure.protein_conformation.protein.parent:
             pdb = PDB.PDBList()
-            pdb.retrieve_pdb_file(str(self.main_structure),pdir='./')
+            pdb.retrieve_pdb_file(str(self.main_structure), pdir='./', file_format='pdb')
             self.alternate_water_positions = OrderedDict()
             with open('./pdb{}.ent'.format(str(self.main_structure).lower()),'r') as f:
                 lines = f.readlines()
@@ -1462,7 +1462,7 @@ class HomologyModeling(object):
                                 trimmed_res_nums[segment2][gn2.replace('x','.')] = i[1][1]
             except Exception as msg:
                 print("Warning: Can't fix side chain clash on {}".format(msg))
-        
+
         self.statistics.add_info('clashing_residues', clash_pairs)
 
         # Model with MODELLER
