@@ -9,6 +9,165 @@
 
 <h2> Construct Statistics</h2>
 
+
+<br>
+Supplementary Table TruncationSites N-term
+<table width="1800" border=1>
+<tr><th colspan=3>Classification</th><th>GPCR</th><th colspan={{truncations_new_possibilties.nterm|length}}>N-term</th>
+</tr>
+<tr><th>Class</th><th>Lig</th><th>Rec</th><th>Entry name</th>
+{% for pos in truncations_new_possibilties.nterm %}
+<th width=25 style="text-align: center;">{{pos}}</th>
+{% endfor %}
+</tr>
+{% for class, values in truncations_new.nterm.items %}
+    {% for recp, t_pos in values.receptors.items %}
+    <tr><td>{{class}}</td><td></td><td></td><td>{{recp}}</td>
+    {% for pos in truncations_new_possibilties.nterm %}
+        {% if pos in t_pos.0 %}
+                <td bgcolor='green' align='center'> </td>
+        {% elif pos in t_pos.1 %}
+                <td bgcolor='red' align='center'> </td>
+        {% elif pos in t_pos.2 %}
+                <td bgcolor='blue' align='center'> </td>
+        {% else %}
+            <td></td>
+        {% endif %}
+    {% endfor %}
+
+    </tr>
+{% endfor %}
+    <tr><td colspan=3>&nbsp;</td><th>Frequency</th>
+        {% for class2, vals in truncations_new_sum.nterm.items %}
+            {% if class2 == class %}
+                {% for pos, val in vals.items %}
+                <td style="text-align: center;">{{val}}</td>
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    </tr>
+    <tr><td>&nbsp;</tr>
+{% endfor %}
+</table>
+
+
+<br>
+Supplementary Table TruncationSites C-term
+<table width="1800" border=1>
+<tr><th colspan=3>Classification</th><th>GPCR</th>
+<th colspan={{truncations_new_possibilties.cterm|length}}>C-term</th></tr>
+<tr><th>Class</th><th>Lig</th><th>Rec</th><th>Entry name</th>
+{% for pos in truncations_new_possibilties.cterm %}
+<th width=25 style="text-align: center;">{{pos}}</th>
+{% endfor %}
+</tr>
+{% for class, values in truncations_new.cterm.items %}
+    {% for recp, t_pos in values.receptors.items %}
+    <tr><td>{{class}}</td><td></td><td></td><td>{{recp}}</td>
+    {% for pos in truncations_new_possibilties.cterm %}
+        {% if pos in t_pos.0 %}
+                <td bgcolor='green' align='center'> </td>
+        {% elif pos in t_pos.1 %}
+                <td bgcolor='red' align='center'> </td>
+        {% elif pos in t_pos.2 %}
+                <td bgcolor='blue' align='center'> </td>
+        {% else %}
+            <td></td>
+        {% endif %}
+    {% endfor %}
+    </tr>
+{% endfor %}
+    <tr><td colspan=3>&nbsp;</td><th>Frequency</th>
+        {% for class2, vals in truncations_new_sum.cterm.items %}
+            {% if class2 == class %}
+                {% for pos, val in vals.items %}
+                <td style="text-align: center;">{{val}}</td>
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    </tr>
+    <tr><td>&nbsp;</tr>
+{% endfor %}
+</table>
+
+<br>
+Supplementary Table FusionSites (and loop deletion sites, typically active state structures) 
+<table width="1800" border=1>
+<tr><th colspan=3>Classification</th><th>GPCR</th>
+<th colspan={{truncations_new_possibilties.nterm_fusion|length}}>N-term</th>
+<th colspan={{truncations_new_possibilties.icl2_fusion_start|length}}>ICL2 Start</th>
+<th colspan={{truncations_new_possibilties.icl3_fusion_start|length}}>ICL3 Start</th>
+<th colspan={{truncations_new_possibilties.icl2_fusion_end|length}}>ICL2 End</th>
+<th colspan={{truncations_new_possibilties.icl3_fusion_end|length}}>ICL3 End</th>
+</tr>
+<tr><th>Class</th><th>Lig</th><th>Rec</th><th>Entry name</th>
+{% for pos in truncations_new_possibilties.nterm_fusion reversed %}
+<th width=25 style="text-align: center;">{{pos}}</th>
+{% endfor %}
+{% for pos in truncations_new_possibilties.icl2_fusion_start %}
+<th width=25 style="text-align: center;">{{pos}}</th>
+{% endfor %}
+{% for pos in truncations_new_possibilties.icl3_fusion_start %}
+<th width=25 style="text-align: center;">{{pos}}</th>
+{% endfor %}
+{% for pos in truncations_new_possibilties.icl2_fusion_end %}
+<th width=25 style="text-align: center;">{{pos}}</th>
+{% endfor %}
+{% for pos in truncations_new_possibilties.icl3_fusion_end %}
+<th width=25 style="text-align: center;">{{pos}}</th>
+{% endfor %}
+</tr>
+{% for class, values in test.items %}
+    {% for recp, vals in values.items %}
+        <tr><td>{{class}}</td><td></td><td></td><td>{{recp}}</td>
+        {% for pos in vals.for_print %}
+            {% if pos == 1 %}
+                <td bgcolor='green' align='center'> </td>
+            {% else %}
+                <td></td>
+            {% endif %}
+        {% endfor %}
+        </tr>
+    {% endfor %}
+{% endfor %}
+{% for fus, vals in test2.items %}
+    <tr><td> - </td><td></td><td></td><td>{{fus}}</td>
+    {% for pos in vals.for_print %}
+        {% if pos == 1 %}
+            <td bgcolor='green' align='center'> </td>
+        {% else %}
+            <td></td>
+        {% endif %}
+    {% endfor %}
+    </tr>
+{% endfor %}
+</table>
+
+<br>
+Supplementary Table StabMutAASubst. Frequencies (no. GPCRs) of mutant amino acid substitutions across all positions of the receptor sequences/structures.
+<table border=1>
+<tr><th>WT / MUT</th>
+{% for aa,vals in mutation_matrix.items %}
+<th width=25 style="text-align: center;">{{aa}}</th>
+{% endfor %}
+<th width=25 style="text-align: center;">WT SUM</th>
+</tr>
+{% for aa,vals in mutation_matrix.items %}
+<tr>
+<th width=25 style="text-align: center;">{{aa}}</th>
+{% for aa,vals2 in vals.items %}
+<td width=25 style="text-align: center;background: rgba(255,0,0,  {{vals2.0}})">{{vals2.1}}</td>
+{% endfor %}
+</tr>
+{% endfor %}
+<tr>
+<th width=25 style="text-align: center;">MUT AA</th>
+{% for aa,vals2 in mutation_matrix_sum_mut.items %}
+<td width=25 style="text-align: center;background: rgba(255,0,0,  {{vals2.0}})">{{vals2.1}}</td>
+{% endfor %}
+</tr>
+</table>
+
 <br>
 N-TERM (non fused)
 <table width="100%">
