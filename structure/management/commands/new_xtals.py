@@ -101,6 +101,7 @@ class QueryPDB():
                         if check==1:
                             self.db_list.append(s)
                             missing_from_db = True
+                        print(check)
                 if s not in self.yamls and s not in self.exceptions:
                     if s not in self.db_list:
                         check = self.pdb_request_by_pdb(s)
@@ -108,11 +109,15 @@ class QueryPDB():
                         check = 1
                     if check==1:
                         self.yaml_list.append(s)
-                    print(check)
                 if not missing_from_db:
                     continue
                 try:
                     pdb_data_dict = fetch_pdb_info(s, protein)
+                    exp_method = pdb_data_dict['experimental_method']
+                    if exp_method=='Electron Microscopy':
+                        st_type, cr = StructureType.objects.get_or_create(slug='electron-microscopy', name=exp_method)
+                    elif exp_method=='X-ray diffraction':
+                        st_type = StructureType.objects.get(slug='x-ray-diffraction')
                     for d in pdb_data_dict['deletions']:
                         presentx50s = []
                         for x in x50s:
@@ -193,7 +198,7 @@ class QueryPDB():
                         # Create new structure object
                         Structure.objects.get_or_create(preferred_chain=preferred_chain, resolution=resolution, publication_date=publication_date, representative='f', pdb_code=pdb_code,
                                                         pdb_data=pdb_data, protein_conformation=new_prot_conf, publication=publication, state=state, 
-                                                        structure_type=StructureType.objects.get(slug='x-ray-diffraction'))
+                                                        structure_type=st_type)
                         print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
                 except Exception as msg:
                     print(msg)
@@ -226,25 +231,37 @@ class QueryPDB():
         if pdb_code=='AAAA':
             return 0
         polymer = dic['molDescription']['structureId']['polymer']
+        description = ''
         if type(polymer)==type([]):
             for mol in polymer:
                 if 'receptor' in mol['polymerDescription']['@description'] or 'Rhodopsin' in mol['polymerDescription']['@description']:
-                    if int(mol['@length'])<100:
-                        return 0
-                    else:
+                    description = mol['polymerDescription']['@description']
+                elif 'receptor' in mol['polymerDescription']['@description'] or 'Rhodopsin' in mol['polymerDescription']['@description']:
+                    description = mol['polymerDescription']['@description']
+                if description=='' or int(mol['@length'])<100:
+                    pass
+                else:
+                    try:
+                        if polymer['macroMolecule'][0]['accession']['@id'] in self.uniprots:
+                            return 1
+                        else:
+                            raise Exception()
+                    except:
                         try:
-                            if polymer['macroMolecule'][0]['accession']['@id'] in self.uniprots:
-                                return 1
-                            else:
-                                raise Exception()
-                        except:
-                            try:
-                                for m in mol['macroMolecule']:
-                                    if m['accession']['@id'] in self.uniprots:
+                            for m in mol['macroMolecule']:
+                                try:
+                                    if mol['macroMolecule']['accession']['@id'] in self.uniprots:
                                         return 1
-                                raise Exception()
-                            except:
-                                return 0
+                                except:
+                                    try:
+                                        if m['accession']['@id'] in self.uniprots:
+                                            return 1
+                                    except:
+                                        pass
+                            raise Exception()
+                        except:
+                            pass
+            return 0
         else:
             if 'receptor' in polymer['polymerDescription']['@description'] or 'Rhodopsin' in polymer['polymerDescription']['@description']:
                 if int(polymer['@length'])<100:
