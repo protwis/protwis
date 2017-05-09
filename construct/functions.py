@@ -586,8 +586,11 @@ def fetch_pdb_info(pdbname,protein):
             insert_info = fetch_from_web_api(url, insert, cache_dir, xml = True)
             d['links'].append(Template(url).substitute(index=quote(str(insert), safe='')))
 
-            for elm in insert_info.findall('.//{http://uniprot.org/uniprot}recommendedName'):
-                inserts_fixed[insert]['alt_name'] = elm.find('{http://uniprot.org/uniprot}fullName').text
+            if insert_info:
+                for elm in insert_info.findall('.//{http://uniprot.org/uniprot}recommendedName'):
+                    inserts_fixed[insert]['alt_name'] = elm.find('{http://uniprot.org/uniprot}fullName').text
+            else:
+                inserts_fixed[insert]['alt_name'] = insert
             # print(insert_info.findall('.//.'))
 
             blocks_num = len(blocks)
