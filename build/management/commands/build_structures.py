@@ -804,7 +804,9 @@ class Command(BaseBuild):
 
                     # create a structure record
                     try:
-                        s = Structure.objects.get(protein_conformation__protein=con)
+                        #s = Structure.objects.get(protein_conformation__protein=con)
+                        s = Structure.objects.get(protein_conformation__protein=con).delete()
+                        s = Structure()
                     except Structure.DoesNotExist:
                         s = Structure()
                         s.representative = representative

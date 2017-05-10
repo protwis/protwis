@@ -89,15 +89,21 @@ def generate_schematic(c):
         if aux.start:
             if aux.start==19 and aux.insert_type.name=='auto':
                 continue
+            if aux.start in insert:    
+                print("ERROR Multiple inserts at same position",aux.start,c.name,aux)
+                if insert[aux.start].insert_type.name =='fusion':
+                    #continue to next
+                    continue
             for i in range(aux.start,aux.end+1):
                 annotations[i] = [aux.insert_type.name,'Insertion<br>Protein_type: '+aux.insert_type.name,aux]
                 json_annotations[i] = ['ins','Insertion<br>Protein_type: '+aux.insert_type.name,"purple","white"]
-                insert[aux.start] = aux
+            
+            insert[aux.start] = aux
+
         if aux.position.startswith('N-term'):
             n_term[aux.position] = aux
         summary['insertions'] += """{} - {} ({})<br>""".format(position_without_number,aux.insert_type.subtype,aux.insert_type.name)
     summary['insertions'] += '</div>'
-
     summary['deletions'] = ''
     for dele in c.deletions.all():
         deletion[dele.start] = ['del','deletion','Deleted from '+str(dele.start)+' to '+str(dele.end),dele]
