@@ -369,31 +369,27 @@ def fetch_pdb_info(pdbname,protein):
             ranges = []
             for k, g in groupby(enumerate(pos_list), lambda x:x[0]-x[1]):
                 group = list(map(itemgetter(1), g))
-<<<<<<< HEAD
                 ranges.append((group[0], group[-1]))
-            
-=======
                 if (group[0], group[-1]) not in ranges:
                     ranges.append((group[0], group[-1]))
 
             mutations = None
->>>>>>> 770673f995e5089005235696361d81bc65b3cfbe
+
             if receptor==False and u_id_source=='UniProt':
                 if seg_uniprot_ids[0] in d['construct_sequences']:
                     if 'mutations' in d['construct_sequences'][seg_uniprot_ids[0]]:
                         mutations = d['construct_sequences'][seg_uniprot_ids[0]]['mutations']
 
-<<<<<<< HEAD
                 if insert_info!=False:
                     for elm in insert_info.findall('.//{http://uniprot.org/uniprot}recommendedName'):
                         seg_uniprot_ids[0] = elm.find('{http://uniprot.org/uniprot}fullName').text
 
             d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list])
-=======
+
             # print("end of segment",elem.attrib['segId'],seg_uniprot_ids,max_pos)
             if [elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations] not in d['xml_segments']:
                 d['xml_segments'].append([elem.attrib['segId'],seg_uniprot_ids,min_pos,max_pos,ranges,insert_position,seg_resid_list,mutations])
->>>>>>> 770673f995e5089005235696361d81bc65b3cfbe
+
             if receptor == False and receptor_chain==chain: #not receptor, but is in same chain
                 if len(seg_uniprot_ids):
                     subtype =seg_uniprot_ids[0]
