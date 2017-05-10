@@ -41,6 +41,8 @@ class Alignment:
         self.states = [settings.DEFAULT_PROTEIN_STATE] # inactive, active etc
         self.use_residue_groups = False
         self.ignore_alternative_residue_numbering_schemes = False # set to true if no numbering is to be displayed
+        self.residues_to_delete = []
+        self.normalized_scores = OrderedDict()
         
         # refers to which ProteinConformation attribute to order by (identity, similarity or similarity score)
         self.order_by = 'similarity'
@@ -733,7 +735,7 @@ class Alignment:
         return generic_lookup_aa_freq
 
 
-    def calculate_similarity(self):
+    def calculate_similarity(self, normalized=False):
         """Calculate the sequence identity/similarity of every selected protein compared to a selected reference"""
         for i, protein in enumerate(self.proteins):
             # skip the first row, as it is the reference
@@ -741,14 +743,36 @@ class Alignment:
                 continue
 
             # calculate identity, similarity and similarity score to the reference
-            calc_values = self.pairwise_similarity(self.proteins[0], self.proteins[i])
-            
-            # update the protein
-            if calc_values:
-                self.proteins[i].identity = calc_values[0]
-                self.proteins[i].similarity = calc_values[1]
-                self.proteins[i].similarity_score = calc_values[2]
+            if not normalized:
+                calc_values = self.pairwise_similarity(self.proteins[0], self.proteins[i])
+                # update the protein
+                if calc_values:
+                    self.proteins[i].identity = calc_values[0]
+                    self.proteins[i].similarity = calc_values[1]
+                    self.proteins[i].similarity_score = calc_values[2]
+                    print(protein, calc_values[0], calc_values[1], calc_values[2])
+            else:
+                self.pairwise_similarity_normalized(self.proteins[0], self.proteins[i])
 
+        # calculate normalized identity, similarity and similarity score, removes columns where reference is gapped, gaps in templates are removed from the specific pairwise alignment
+        if normalized:
+            i = 1
+            for protein_2, values in self.normalized_scores.items():
+                for j in range(0, 3):
+                    for gn in list(values[j].keys()):
+                        if gn in self.residues_to_delete:
+                            del self.normalized_scores[protein_2][j][gn]            
+                identities = list(self.normalized_scores[protein_2][0].values())
+                similarities = list(self.normalized_scores[protein_2][1].values())
+                similarity_scores = list(self.normalized_scores[protein_2][2].values())
+                identity = "{:10.0f}".format(sum(identities) / len(identities) * 100)
+                similarity = "{:10.0f}".format(sum(similarities) / len(similarities) * 100)
+                similarity_score = sum(similarity_scores)
+                self.proteins[i].identity = identity
+                self.proteins[i].similarity = similarity
+                self.proteins[i].similarity_score = similarity_score
+                i+=1
+            
         # order protein list by similarity score
         ref = self.proteins.pop(0)
         order_by_value = int(getattr(self.proteins[0], self.order_by))
@@ -878,11 +902,67 @@ class Alignment:
         else:
             return False
 
+    def pairwise_similarity_normalized(self, protein_1, protein_2):
+        """Calculate the identity, similarity and similarity score between a pair of proteins but delete gaps and normalize. Used for finding closest
+           receptor homologue with crystal structure."""
+        identities = OrderedDict()
+        similarities = OrderedDict()
+        similarity_scores = OrderedDict()
+        ref_seq, temp_seq = '',''
+        for j, s in protein_2.alignment.items():
+            for k, p in enumerate(s):
+                reference_residue = protein_1.alignment[j][k][2]
+                protein_residue = protein_2.alignment[j][k][2]
+                ref_seq+=reference_residue
+                temp_seq+=protein_residue
+                if not (reference_residue in self.gaps and protein_residue in self.gaps):
+                    # identity
+                    if protein_residue == reference_residue:
+                        identities[p[0]] = 1
+                    else:
+                        identities[p[0]] = 0
+
+                    # similarity
+                    if reference_residue in self.gaps:
+                        if p[0] not in self.residues_to_delete:
+                            self.residues_to_delete.append(p[0])
+                    elif protein_residue in self.gaps:
+                        del identities[p[0]]
+                        pass
+                    else:
+                        pair = (protein_residue, reference_residue)
+                        similarity = self.score_match(pair, MatrixInfo.blosum62)
+                        if similarity > 0:
+                            similarities[p[0]] = 1
+                        else:
+                            similarities[p[0]] = 0
+                        similarity_scores[p[0]] = similarity
+                else:
+                    if p[0] not in self.residues_to_delete:
+                        self.residues_to_delete.append(p[0])
+        self.normalized_scores[protein_2] = [identities, similarities, similarity_scores]
+        # print(protein_1)
+        # print(ref_seq)
+        # print(protein_2)
+        # print(temp_seq)
+        # print(identities)
+        # print(similarities)
+        # print(similarity_scores)
+        # format the calculated values
+        # if identities and similarities:
+        #     identity = "{:10.0f}".format(sum(identities) / len(identities) * 100)
+        #     similarity = "{:10.0f}".format(sum(similarities) / len(similarities) * 100)
+        #     similarity_score = sum(similarity_scores)
+        #     return identity, similarity, similarity_score
+        # else:
+        #     return False
+
     def score_match(self, pair, matrix):
         if pair not in matrix:
             return matrix[(tuple(reversed(pair)))]
         else:
             return matrix[pair]
+
 
 class AlignedReferenceTemplate(Alignment):
     ''' Creates a structure based alignment between reference protein and target proteins that are made up from the 
@@ -1318,3 +1398,30 @@ class AlignedReferenceTemplate(Alignment):
                     del self.alignment_dict[a_seglab]
 
         return self
+
+
+class ClosestReceptorHomolog():
+    ''' Finds the closest receptor homolog that has a structure. Uses the pairwise_similarity_normalized function that deletes gaps.
+    '''
+    def __init__(self, protein, protein_segments=['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8'], normalized=True):
+        self.protein = protein
+        self.protein_segments = protein_segments
+        self.normalized = normalized
+        self.family_mapping = {'001':'001','002':'002','003':'002','004':'004','005':'005','006':'001','007':['001','002','004','005']}
+        self.all_proteins = []
+
+    def find_closest_receptor_homolog(self):
+        a = Alignment()
+        p = Protein.objects.get(entry_name=self.protein)
+        if p.family.slug[:3]=='007':
+            structures = Structure.objects.all()
+        else:
+            structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=self.family_mapping[p.family.slug[:3]]).exclude(preferred_chain='-')
+        structure_proteins = [i.protein_conformation.protein.parent for i in list(structures)]
+        a.load_reference_protein(p)
+        a.load_proteins(structure_proteins)
+        a.load_segments(ProteinSegment.objects.filter(slug__in=self.protein_segments))
+        a.build_alignment()
+        a.calculate_similarity(normalized=self.normalized)
+        self.all_proteins = a.proteins
+        return a.proteins[1]

@@ -3,7 +3,7 @@ from django.core.management import call_command
 from django.conf import settings
 from django.db import connection
 
-from common.alignment import Alignment
+from common.alignment import Alignment, ClosestReceptorHomolog
 from protein.models import Protein, ProteinSegment
 from structure.models import Structure
 
@@ -66,7 +66,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.data = self.parse_excel(self.annotation_source_file)
-        # self.dump_files()
+        self.dump_files()
         # self.analyse_annotation_consistency()
         self.main_template_search()
 
@@ -191,7 +191,7 @@ class Command(BaseCommand):
         #     yaml.dump(pdb_info, outfile)
 
     def dump_files(self):
-        structures = self.data["Xtal_SegEnds_Prot#"]
+        structures = self.data["SegEnds_Xtal_Prot#"]
         pdb_info = {}
         pdb_info_all = {}
         for structure,vals in structures.items():
@@ -223,7 +223,7 @@ class Command(BaseCommand):
                     continue
                 pdb_info_all[entry][key] = val
 
-        data = self.data["Xtal_SegEnds_BW#"]
+        data = self.data["SegEnds_Xtal_BW#"]
         Xtal_SegEnds_BW = {}
         for structure,vals in data.items():
             entry = structure
@@ -235,7 +235,7 @@ class Command(BaseCommand):
                     continue
                 Xtal_SegEnds_BW[entry][key] = val
 
-        data = self.data["NonXtal_SegEnds_BW#"]
+        data = self.data["SegEnds_NonXtal_BW#"]
         NonXtal_SegEnds_BW = {}
         for structure,vals in data.items():
             entry = structure
@@ -247,7 +247,7 @@ class Command(BaseCommand):
                     continue
                 NonXtal_SegEnds_BW[entry][key] = val
 
-        data = self.data["NonXtal_SegEnds_Prot#"]
+        data = self.data["SegEnds_NonXtal_Prot#"]
         NonXtal_SegEnds_Prot = {}
         for structure,vals in data.items():
             entry = structure
@@ -259,17 +259,17 @@ class Command(BaseCommand):
                     continue
                 NonXtal_SegEnds_Prot[entry][key] = val
 
-        data = self.data["Xtal_Bulges_Constr_GPCRdb#"]
-        Xtal_Bulges_Constr_GPCRdb = {}
-        for structure,vals in data.items():
-            entry = structure
-            Xtal_Bulges_Constr_GPCRdb[entry] = OrderedDict()
-            for key,val in vals.items():
-                if not key:
-                    continue
-                Xtal_Bulges_Constr_GPCRdb[entry][key] = val
+        # data = self.data["Xtal_Bulges_Constr_GPCRdb#"]
+        # Xtal_Bulges_Constr_GPCRdb = {}
+        # for structure,vals in data.items():
+        #     entry = structure
+        #     Xtal_Bulges_Constr_GPCRdb[entry] = OrderedDict()
+        #     for key,val in vals.items():
+        #         if not key:
+        #             continue
+        #         Xtal_Bulges_Constr_GPCRdb[entry][key] = val
 
-        data = self.data["NonXtal_Bulges_Constr_GPCRdb#"]
+        data = self.data["Bulges_Constr_NonXtal_GPCRdb#"]
         NonXtal_Bulges_Constr_GPCRdb = {}
         for structure,vals in data.items():
             entry = structure
@@ -311,9 +311,9 @@ class Command(BaseCommand):
         with open(self.non_xtal_seg_end_file, 'w') as outfile:
             yaml.dump(NonXtal_SegEnds_Prot, outfile, indent=4)
 
-        Xtal_Bulges_Constr_GPCRdb = OrderedDict(sorted(Xtal_Bulges_Constr_GPCRdb.items()))
-        with open(self.xtal_anomalities_file, 'w') as outfile:
-            yaml.dump(Xtal_Bulges_Constr_GPCRdb, outfile, indent=4)
+        # Xtal_Bulges_Constr_GPCRdb = OrderedDict(sorted(Xtal_Bulges_Constr_GPCRdb.items()))
+        # with open(self.xtal_anomalities_file, 'w') as outfile:
+        #     yaml.dump(Xtal_Bulges_Constr_GPCRdb, outfile, indent=4)
 
         NonXtal_Bulges_Constr_GPCRdb = OrderedDict(sorted(NonXtal_Bulges_Constr_GPCRdb.items()))
         with open(self.all_anomalities_file, 'w') as outfile:
@@ -324,31 +324,24 @@ class Command(BaseCommand):
             yaml.dump(Seqs, outfile, indent=4)
 
     def main_template_search(self):
-        family_mapping = {'001':'001','002':'002','003':'002','004':'004','005':'005','006':'001','007':'001'}
-        changes = {}
         output_csv = ''
+        changes = {}
         counter = 0
         for protein, values in self.data['Xtal_Templ'].items():
-            protein = 'ccr9_human'
+            # protein = 'gpr88_human'
             values = self.data['Xtal_Templ'][protein]
-            print(protein,values)
-            a = Alignment()
-            p = Protein.objects.get(entry_name=protein)
-            structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=family_mapping[p.family.slug[:3]]).exclude(preferred_chain='-')
-            structure_proteins = [i.protein_conformation.protein.parent for i in list(structures)]
-            a.load_reference_protein(p)
-            a.load_proteins(structure_proteins)
-            a.load_segments(ProteinSegment.objects.filter(slug__in=['TM1','TM2','TM3','TM4','TM5','TM6','TM7','H8']))
-            a.build_alignment()
-            a.calculate_similarity()
-            if values['Template']!=a.proteins[1].protein.entry_name:
-                changes[protein] = [values['Template'], a.proteins[1].protein.entry_name]
-            output_csv+='{},{}\n'.format(protein, a.proteins[1].protein.entry_name)
+            crh = ClosestReceptorHomolog(protein)
+            closest_hom = crh.find_closest_receptor_homolog()
+            if values['Template']!=closest_hom.protein.entry_name:
+                changes[protein] = [values['Template'], closest_hom.protein.entry_name]
+            output_csv+='{},{}\n'.format(protein, closest_hom.protein.entry_name)
             counter+=1
-            break
+            # break
         with open('../../data/protwis/gpcr/structure_data/annotation/xtal_templates.csv','w') as f:
             f.write(output_csv)
-        print('Changed {} entries out of {}:'.format(len(changes), counter))
-        print(changes)
+        if len(changes)>0:
+            print('Changed {} entries out of {} (reference: [changed_from, changed_to]):'.format(len(changes), counter))
+            print(changes)
+            print('INFO: xtal_templates.csv file updated. Please update Structural_Annotation.xlsx Xtal_Templ sheet with this .csv')
         return changes
 
