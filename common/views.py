@@ -1253,6 +1253,7 @@ def ResiduesUpload(request):
 
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
+@csrf_exempt
 def ReadTargetInput(request):
     """Receives the data from the input form nd adds the listed targets to the selection"""
 
