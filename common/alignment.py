@@ -941,21 +941,6 @@ class Alignment:
                     if p[0] not in self.residues_to_delete:
                         self.residues_to_delete.append(p[0])
         self.normalized_scores[protein_2] = [identities, similarities, similarity_scores]
-        # print(protein_1)
-        # print(ref_seq)
-        # print(protein_2)
-        # print(temp_seq)
-        # print(identities)
-        # print(similarities)
-        # print(similarity_scores)
-        # format the calculated values
-        # if identities and similarities:
-        #     identity = "{:10.0f}".format(sum(identities) / len(identities) * 100)
-        #     similarity = "{:10.0f}".format(sum(similarities) / len(similarities) * 100)
-        #     similarity_score = sum(similarity_scores)
-        #     return identity, similarity, similarity_score
-        # else:
-        #     return False
 
     def score_match(self, pair, matrix):
         if pair not in matrix:
