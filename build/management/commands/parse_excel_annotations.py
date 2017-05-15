@@ -328,7 +328,6 @@ class Command(BaseCommand):
         changes = {}
         counter = 0
         for protein, values in self.data['Xtal_Templ'].items():
-            # protein = 'gpr88_human'
             values = self.data['Xtal_Templ'][protein]
             crh = ClosestReceptorHomolog(protein)
             closest_hom = crh.find_closest_receptor_homolog()
@@ -336,8 +335,7 @@ class Command(BaseCommand):
                 changes[protein] = [values['Template'], closest_hom.protein.entry_name]
             output_csv+='{},{}\n'.format(protein, closest_hom.protein.entry_name)
             counter+=1
-            # break
-        with open('../../data/protwis/gpcr/structure_data/annotation/xtal_templates.csv','w') as f:
+        with open(os.sep.join([settings.DATA_DIR,'structure_data','annotation','xtal_templates.csv']),'w') as f:
             f.write(output_csv)
         if len(changes)>0:
             print('Changed {} entries out of {} (reference: [changed_from, changed_to]):'.format(len(changes), counter))
