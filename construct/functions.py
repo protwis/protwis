@@ -418,8 +418,8 @@ def fetch_pdb_info(pdbname,protein):
         for k, g in groupby(enumerate(non_accounted), lambda x:x[0]-x[1]):
             group = list(map(itemgetter(1), g))
             d['non_accounted'].append((group[0], group[-1]))
-        if len(d['non_accounted']):
-            print("non_accounted",d['non_accounted'])
+        # if len(d['non_accounted']):
+        #     print("non_accounted",d['non_accounted'])
         d['deletions'] = []
         for k, g in groupby(enumerate(pos_in_wt), lambda x:x[0]-x[1]):
             group = list(map(itemgetter(1), g))
