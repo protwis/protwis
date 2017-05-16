@@ -1960,12 +1960,13 @@ class SilentModeller(object):
 
         
 class HomologyMODELLER(automodel):
-    def __init__(self, env, alnfile, knowns, sequence, assess_methods, atom_selection, helix_restraints=[], icl3_mid=None):
+    def __init__(self, env, alnfile, knowns, sequence, assess_methods, atom_selection, helix_restraints=[], icl3_mid=None, disulfide=[]):
         super(HomologyMODELLER, self).__init__(env, alnfile=alnfile, knowns=knowns, sequence=sequence, 
                                                assess_methods=assess_methods)
         self.atom_dict = atom_selection
         self.helix_restraints = helix_restraints
         self.icl3_mid = icl3_mid
+        self.disulfide = disulfide
     
     def identify_chain(self, seq_num):
         if len(self.chains)==2:
@@ -2021,7 +2022,15 @@ class HomologyMODELLER(automodel):
                 elif i[1]==segment[-1][1]:
                     rsr.add(secondary_structure.alpha(self.residue_range('{}:{}'.format(i[0]-4,chain),'{}:{}'.format(i[1],chain))))
                     break
-    
+
+    # def special_patches(self, aln):
+    #     import pprint
+    #     pprint.pprint(self.atom_dict)
+    #     self.disulfide = [[82,172]]
+    #     for d in self.disulfide:
+    #         self.patch(residue_type='DISU', residues=(self.residues[str(d[0])],
+    #                                                   self.residues[str(d[1])]))
+
     def make(self):
         with SilentModeller():
             super(HomologyMODELLER, self).make()
