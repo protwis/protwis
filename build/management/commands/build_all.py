@@ -37,16 +37,16 @@ class Command(BaseCommand):
             ['build_construct_proteins'], #, {'proc': options['proc']}
             ['build_structures', {'proc': options['proc']}],
             ['build_construct_data'], #, {'proc': options['proc']}
-            # ['build_mutant_data', {'proc': options['proc']}],
+            ['build_mutant_data', {'proc': options['proc']}],
             # OLD ['find_protein_templates', {'proc': options['proc']}],
-            # # OLD['update_alignments', {'proc': options['proc']}],
-            # ['build_protein_sets'],
-            # ['build_consensus_sequences', {'proc': options['proc']}],
-            # ['build_g_proteins'],
-            # ['build_drugs'],
-            # ['build_residue_sets'],
-            # ['build_text'],
-            # ['build_release_notes'],
+            # OLD['update_alignments', {'proc': options['proc']}],
+            ['build_protein_sets'],
+            ['build_consensus_sequences', {'proc': options['proc']}],
+            ['build_g_proteins'],
+            ['build_drugs'],
+            ['build_residue_sets'],
+            ['build_text'],
+            ['build_release_notes'],
         ]
 
         for c in commands:
