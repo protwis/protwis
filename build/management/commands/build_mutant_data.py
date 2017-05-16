@@ -400,9 +400,13 @@ class Command(BaseBuild):
                         try:
                             pub_review.web_link = WebLink.objects.get(index=r['review'], web_resource__slug=pub_type)
                         except WebLink.DoesNotExist:
-                            wl = WebLink.objects.create(index=r['review'],
-                                web_resource = WebResource.objects.get(slug=pub_type))
-                            pub_review.web_link = wl
+                            try:
+                                wl = WebLink.objects.create(index=r['review'],
+                                    web_resource = WebResource.objects.get(slug=pub_type))
+                                pub_review.web_link = wl
+                            except IntegrityError:
+                                pub_review = Publication.objects.get(web_link__index=r['review'], web_link__web_resource__slug=pub_type)
+
 
                         if pub_type == 'doi':
                             pub_review.update_from_doi(doi=r['review'])
