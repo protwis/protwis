@@ -232,8 +232,23 @@ def fetch_pdb_info(pdbname,protein):
                                 seg_uniprot_ids.append(u_id)
                             uniprot_pos = int(node.attrib['dbResNum'])
                             uniprot_aa = node.attrib['dbResName']
+                            if pdbname == '5UZ7':
+                                #Special fix for 5UZ7 due to faulty annotation, there is an offset of 34 at the end of the isoforms
+                                if pos:
+                                    # print(uniprot_pos,d['wt_seq'][uniprot_pos-1-34],uniprot_aa,pos)
+                                    if uniprot_pos>452 and uniprot_aa==d['wt_seq'][uniprot_pos-1-34]:
+                                        #these are unmapped at this point, make sure the AA are the same, in case it gets fixed later
+                                        uniprot_pos = uniprot_pos-34
+                                        pos = uniprot_pos
+                                        # Assume we are talking about the non-observed residues
+                                        if uniprot_pos not in d['xml_not_observed']:
+                                            d['xml_not_observed'].append(uniprot_pos)
+                                    else:
+                                        uniprot_pos = int(pos)
+                                else:
+                                    receptor = False
                             # if receptor:
-                            #     print(receptor, uniprot_pos, pos,uniprot_aa, u_id,chain,node.attrib['dbResNum'],d['wt_seq'][uniprot_pos-1])
+                            #     print(receptor, uniprot_pos, pos,uniprot_aa, u_id,raw_u_id,chain,node.attrib['dbResNum'],d['wt_seq'][uniprot_pos-1])
                         elif source=='PDB' and node.attrib['dbResNum'].lstrip('-').isdigit(): #use instead of isinstance(node.attrib['dbResNum'], int):
                             pos = int(node.attrib['dbResNum'])
                             # print("PDB pos",pos)
@@ -251,6 +266,7 @@ def fetch_pdb_info(pdbname,protein):
                             if pos>max_pos: max_pos = pos
                             if pos<min_pos: min_pos = pos
                     elif pdb_aa and node.tag == '{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}residueDetail':
+                        # print(node.text)
                         if u_id!='N/A' and u_id not in d['construct_sequences']:
                             d['construct_sequences'][u_id] = OrderedDict()
                             d['construct_sequences'][u_id]['seq'] = ''
@@ -318,6 +334,7 @@ def fetch_pdb_info(pdbname,protein):
                 #                 d['mutations'].append({'mut':pdb_aa,'wt':wt_aa,'pos':pos,'type':'custom_maybe_wrong'})
 
                 if uniprot_pos:
+                    # print('hi')
                     pos_list.append(uniprot_pos) 
                     if receptor and uniprot_pos in pos_in_wt:
                         if uniprot_pos<len(d['wt_seq']):
@@ -1014,33 +1031,3 @@ def convert_ordered_to_disordered_annotation(d):
         i+=1
 
     return d
-    # uniprot
-    # d['protein']
-    #     "auxiliary": {
-    #     "aux2"
-    #         "deletions": [
-    #     {
-    #         "origin": "user",
-    #         "end": "189",
-    #         "start": "1",
-    #         "type": "range"
-    #     },
-    #     {
-    #         "origin": "user",
-    #         "end": "787",
-    #         "start": "556",
-    #         "type": "range"
-    #     }
-    #        "mutations": [],
-    # "modifications": [
-    #     {
-    #         "remark": "NA",
-    #         "type": "Disulfide bond",
-    #         "position": [
-    #             "pair",
-    #             [
-    #                 "193",
-    #                 "213"
-    #             ]
-    #         ]
-    #     },
