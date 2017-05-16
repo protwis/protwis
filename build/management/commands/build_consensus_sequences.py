@@ -100,11 +100,15 @@ class Command(BuildHumanProteins):
             a.build_alignment()
             a.calculate_statistics()
 
-            # Save alignment
-            AlignmentConsensus.objects.create(slug=family.slug, alignment=pickle.dumps(a))
+            try:
+                # Save alignment
+                AlignmentConsensus.objects.create(slug=family.slug, alignment=pickle.dumps(a))
 
-            # Load alignment to ensure it works
-            a = pickle.loads(AlignmentConsensus.objects.get(slug=family.slug).alignment)
+                # Load alignment to ensure it works
+                a = pickle.loads(AlignmentConsensus.objects.get(slug=family.slug).alignment)
+                self.logger.info('Succesfully pickled {}'.format(family))
+            except:
+                self.logger.error('Failed pickle for {}'.format(family))
 
             self.logger.info('Completed building alignment for {}'.format(family))
 
