@@ -99,6 +99,7 @@ class Command(BaseBuild):
 
     def purge_mutants(self):
         Mutation.objects.all().delete()
+        MutationRaw.objects.all().delete()
 
     def loaddatafromexcel(self,excelpath):
         workbook = xlrd.open_workbook(excelpath)
@@ -112,6 +113,8 @@ class Command(BaseBuild):
             elif worksheet.cell_value(0, 0) == "REFERENCE \nDOI or PMID": #new format
                 pass
             elif worksheet.cell_value(0, 0) == "REFERENCE \nDOI or PMID (original)": #newest format
+                pass
+            elif worksheet.cell_value(0, 1) == "REFERENCE \nDOI or PMID (original)": #newest format
                 pass
             else: #skip non-matching xls files
                 continue
@@ -130,51 +133,66 @@ class Command(BaseBuild):
                     curr_cell += 1
                     cell_type = worksheet.cell_type(curr_row, curr_cell)
                     cell_value = worksheet.cell_value(curr_row, curr_cell)
+
+                    # fix wrong spaced cells
+                    if cell_value==" ":
+                        cell_value = ""
+
                     temprow.append(cell_value)
                 temp.append(temprow)
                 #if curr_row>10: break
         return temp
 
     def analyse_rows(self,rows,source_file):
+        # Analyse the rows from excel and assign the right headers
         temp = []
         for i,r in enumerate(rows,1):
             d = {}
-            if r[6]!='':
+            if r[9]!='':
                 # if multi mutant group skip it
                 self.logger.info('Skipped row due to being a multi group ' + source_file + "_" + str(i))
                 continue
 
-            d['reference'] = r[0]
-            d['review'] = r[1]
-            d['protein'] = r[2].replace("__","_").lower()
-            d['mutation_pos'] = r[3]
-            d['mutation_from'] = r[4]
-            d['mutation_to'] = r[5]
-            #r[6] is new double multi mutant group #FIXME FOR LATER
-            d['ligand_name'] = r[7]
-            d['ligand_type'] = r[8]
-            d['ligand_id'] = r[9]
-            d['ligand_class'] = r[10]
+            d['submitting_group'] = r[0]
+            d['reference'] = r[1]
+            d['data_container'] = r[2]
+            d['data_container_number'] = r[3]
+            d['review'] = r[4]
+            d['protein'] = r[5].replace("__","_").lower()
+            d['mutation_pos'] = r[6]
+            d['mutation_from'] = r[7]
+            d['mutation_to'] = r[8]
+            #r[9] is new double multi mutant group #FIXME FOR LATER
+            d['ligand_name'] = r[10]
+            d['ligand_type'] = r[11]
+            d['ligand_id'] = r[12]
+            d['ligand_class'] = r[13]
+            d['exp_mu_ligand_ref'] = r[14] #check if correct?
             #r[10] is new reference ligand #FIXME FOR LATER
-            d['exp_type'] = r[12]
-            d['exp_func'] = r[13]
-            d['exp_wt_value'] = float(r[14]) if r[14] else 0
-            d['exp_wt_unit'] = r[15]
-            d['exp_mu_effect_sign'] = r[16]
-            d['exp_mu_value_raw'] = float(r[17]) if r[17] else 0
-            d['fold_effect'] = float(r[18]) if r[18] else 0
-            d['exp_mu_effect_qual'] = r[19]
+            d['exp_type'] = r[15]
+            d['exp_func'] = r[16]
+            d['exp_wt_value'] = float(r[17]) if r[17] else 0
+            d['exp_wt_unit'] = r[18]
+            d['exp_mu_effect_sign'] = r[19]
+            d['exp_mu_value_raw'] = float(r[20]) if r[20] else 0
+            d['fold_effect'] = float(r[21]) if r[21] else 0
+            d['exp_mu_effect_qual'] = r[22]
             d['exp_mu_effect_ligand_prop'] = '' #removed
-            d['exp_mu_ligand_ref'] = r[11] #check if correct?
-            d['opt_type'] = r[20]
-            d['opt_wt'] = float(r[21]) if r[21] else 0
-            d['opt_mu'] = float(r[23]) if r[23] else 0
-            d['opt_sign'] = r[22]
-            d['opt_percentage'] = float(r[24]) if r[24] else 0
-            d['opt_qual'] = r[25]
-            d['opt_agonist'] = r[26]
-            d['source_file'] = source_file + "_" + str(i)
 
+            d['opt_receptor_expression'] = float(r[23]) if r[23] else 0
+            d['opt_basal_activity'] = float(r[24]) if r[24] else 0
+            d['opt_gain_of_activity'] = r[25]
+            d['opt_ligand_emax'] = float(r[26]) if r[26] else 0
+            d['opt_agonist'] = r[27]
+
+            # d['opt_type'] = r[20]
+            # d['opt_wt'] = float(r[21]) if r[21] else 0
+            # d['opt_mu'] = float(r[23]) if r[23] else 0
+            # d['opt_sign'] = r[22]
+            # d['opt_percentage'] = float(r[24]) if r[24] else 0
+            # d['opt_qual'] = r[25]
+            # d['opt_agonist'] = r[26]
+            d['source_file'] = source_file + "_" + str(i)
 
             if len(d['mutation_to'])>1 or len(d['mutation_from'])>1: #if something is off with amino acid
                 continue
@@ -193,6 +211,9 @@ class Command(BaseBuild):
         obj = MutationRaw(
         reference=r['reference'],
         review=r['review'],
+        submitting_group = r['submitting_group'],
+        data_container = r['data_container'],
+        data_container_number = r['data_container_number'],
         protein=r['protein'],
         mutation_pos=r['mutation_pos'],
         mutation_from=r['mutation_from'],
@@ -211,13 +232,18 @@ class Command(BaseBuild):
         exp_mu_effect_qual=r['exp_mu_effect_qual'],
         exp_mu_effect_ligand_prop=r['exp_mu_effect_ligand_prop'],
         exp_mu_ligand_ref=r['exp_mu_ligand_ref'],
-        opt_type=r['opt_type'],
-        opt_wt=r['opt_wt'],
-        opt_mu=r['opt_mu'],
-        opt_sign=r['opt_sign'],
-        opt_percentage=r['opt_percentage'],
-        opt_qual=r['opt_qual'],
+        opt_receptor_expression=r['opt_receptor_expression'],
+        opt_basal_activity=r['opt_basal_activity'],
+        opt_gain_of_activity=r['opt_gain_of_activity'],
+        opt_ligand_emax=r['opt_ligand_emax'],
         opt_agonist=r['opt_agonist'],
+        # opt_type=r['opt_type'],
+        # opt_wt=r['opt_wt'],
+        # opt_mu=r['opt_mu'],
+        # opt_sign=r['opt_sign'],
+        # opt_percentage=r['opt_percentage'],
+        # opt_qual=r['opt_qual'],
+        # opt_agonist=r['opt_agonist'],
         added_by='munk',
         added_date=datetime.now()
         )
@@ -238,9 +264,13 @@ class Command(BaseBuild):
             source_file_path = os.sep.join([self.structure_data_dir, source_file])
             if os.path.isfile(source_file_path) and source_file[0] != '.':
                 self.logger.info('Reading file {}'.format(source_file_path))
+                print('Reading file {}'.format(source_file_path))
                 # read the yaml file
                 rows = []
                 if source_file[-4:]=='xlsx' or source_file[-3:]=='xls':
+                    if "~$" in source_file:
+                        # ignore open excel files
+                        continue
                     rows = self.loaddatafromexcel(source_file_path)
                     rows = self.analyse_rows(rows,source_file)
                 elif source_file[-4:]=='yaml':
@@ -249,6 +279,9 @@ class Command(BaseBuild):
                     for i,r in enumerate(rows):
                         d = {}
                         d['reference'] = r['pubmed']
+                        d['submitting_group'] = ''
+                        d['data_container'] = ''
+                        d['data_container_number'] = ''
                         d['review'] = ''
                         d['protein'] = r['entry_name'].replace("__","_").lower()
                         d['mutation_pos'] = r['seq']
@@ -268,12 +301,10 @@ class Command(BaseBuild):
                         d['exp_mu_effect_qual'] = ''
                         d['exp_mu_effect_ligand_prop'] = ''
                         d['exp_mu_ligand_ref'] = ''
-                        d['opt_type'] = ''
-                        d['opt_wt'] = 0
-                        d['opt_mu'] = 0
-                        d['opt_sign'] = ''
-                        d['opt_percentage'] = 0
-                        d['opt_qual'] = ''
+                        d['opt_receptor_expression'] = 0
+                        d['opt_basal_activity'] = 0
+                        d['opt_gain_of_activity'] = ''
+                        d['opt_ligand_emax'] = 0
                         d['opt_agonist'] = ''
                         d['source_file'] = source_file + "_" + str(i)
                         if len(d['mutation_to'])>1 or len(d['mutation_from'])>1: #if something is off with amino acid
@@ -477,7 +508,8 @@ class Command(BaseBuild):
                 try:
                     l_role, created = LigandRole.objects.get_or_create(name=r['ligand_class'],
                         defaults={'slug': slugify(r['ligand_class'])[:50]}) # FIXME this should not be needed
-                except:
+                except Exception as e:
+                    print(e)
                     print("Error with",r['ligand_class'],slugify(r['ligand_class'])[:50] )
                     l_role, created = LigandRole.objects.get_or_create(slug=slugify(r['ligand_class'])[:50]) # FIXME this should not be needed
             else:
@@ -498,10 +530,10 @@ class Command(BaseBuild):
             else:
                 exp_qual_id = None
 
-            if r['opt_type'] or r['opt_wt'] or r['opt_mu'] or r['opt_sign'] or r['opt_percentage'] or r['opt_qual'] or r['opt_agonist']:
-                exp_opt_id, created =  MutationOptional.objects.get_or_create(type=r['opt_type'], wt=r['opt_wt'], mu=r['opt_mu'], sign=r['opt_sign'], percentage=r['opt_percentage'], qual=r['opt_qual'], agonist=r['opt_agonist'])
-            else:
-                exp_opt_id = None
+            # if r['opt_type'] or r['opt_wt'] or r['opt_mu'] or r['opt_sign'] or r['opt_percentage'] or r['opt_qual'] or r['opt_agonist']:
+            #     exp_opt_id, created =  MutationOptional.objects.get_or_create(type=r['opt_type'], wt=r['opt_wt'], mu=r['opt_mu'], sign=r['opt_sign'], percentage=r['opt_percentage'], qual=r['opt_qual'], agonist=r['opt_agonist'])
+            # else:
+            #     exp_opt_id = None
 
             try:
                 mutation, created =  Mutation.objects.get_or_create(amino_acid=r['mutation_to'],protein=protein, residue=res)
@@ -529,16 +561,20 @@ class Command(BaseBuild):
 
 
             raw_experiment = self.insert_raw(r)
+            # raw_experiment.save()
             bulk = MutationExperiment(
             refs=pub,
             review=pub_review,
+            submitting_group = r['submitting_group'],
+            data_container = r['data_container'],
+            data_container_number = r['data_container_number'],
             protein=protein,
             residue=res,
             ligand=l,
             ligand_role=l_role,
             ligand_ref = l_ref,
-            #raw = raw_experiment, #raw_experiment, OR None
-            optional = exp_opt_id,
+            # raw = raw_experiment, #raw_experiment, OR None
+            # optional = exp_opt_id,
             exp_type=exp_type_id,
             exp_func=exp_func_id,
             exp_qual = exp_qual_id,
@@ -549,11 +585,27 @@ class Command(BaseBuild):
 
             mu_value = r['exp_mu_value_raw'],
             mu_sign = r['exp_mu_effect_sign'],
-            foldchange = foldchange
+            foldchange = foldchange,
+            opt_receptor_expression = r['opt_receptor_expression'],
+            opt_basal_activity = r['opt_basal_activity'],
+            opt_gain_of_activity = r['opt_gain_of_activity'],
+            opt_ligand_emax = r['opt_ligand_emax'],
+            opt_agonist =  r['opt_agonist'],
             )
+            # for line,val in r.items():
+            #     val = str(val)
+            #     if len(val)>100:
+            #         print(line,"too long",val)
             # mut_id = obj.id
             bulk_r.append(raw_experiment)
             bulk_m.append(bulk)
+            # try:
+            #     bulk.save()
+            # except Exception as e:
+            #     print(e)
+            #     print(r)
+            #     break
+            #print('saved ',r['source_file'])
             inserted += 1
             end = time.time()
             diff = round(end - current,2)
