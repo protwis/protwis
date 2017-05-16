@@ -118,7 +118,6 @@ class Command(BaseBuild):
                 pass
             else: #skip non-matching xls files
                 continue
-
             num_rows = worksheet.nrows - 1
             num_cells = worksheet.ncols - 1
             curr_row = 0 #skip first, otherwise -1
@@ -127,7 +126,7 @@ class Command(BaseBuild):
                 row = worksheet.row(curr_row)
                 curr_cell = -1
                 temprow = []
-                if worksheet.cell_value(curr_row, 0) == '': #if empty
+                if worksheet.cell_value(curr_row, 1) == '': #if empty reference
                     continue
                 while curr_cell < num_cells:
                     curr_cell += 1
@@ -509,9 +508,16 @@ class Command(BaseBuild):
                     l_role, created = LigandRole.objects.get_or_create(name=r['ligand_class'],
                         defaults={'slug': slugify(r['ligand_class'])[:50]}) # FIXME this should not be needed
                 except Exception as e:
-                    print(e)
-                    print("Error with",r['ligand_class'],slugify(r['ligand_class'])[:50] )
-                    l_role, created = LigandRole.objects.get_or_create(slug=slugify(r['ligand_class'])[:50]) # FIXME this should not be needed
+                    if LigandRole.objects.filter(slug=slugify(r['ligand_class'])[:50]).exists():
+                        l_role = LigandRole.objects.get(slug=slugify(r['ligand_class'])[:50])
+                        if l_role.name == slugify(r['ligand_class'])[:50]:
+                            #if name of role is same as slug, then it was created by constructs script, replace it
+                            l_role.name = r['ligand_class']
+                            l_role.save()
+                    else:
+                        print(e)
+                        print("Error with",r['ligand_class'],slugify(r['ligand_class'])[:50] )
+                        l_role, created = LigandRole.objects.get_or_create(slug=slugify(r['ligand_class'])[:50]) # FIXME this should not be needed
             else:
                 l_role = None
 
