@@ -104,7 +104,7 @@ def fetch_pdb_info(pdbname,protein):
     for elm in insert_info.findall('.//{http://uniprot.org/uniprot}sequence'):
         uniprot_seq = elm.text
     # print(variants_mapping)
-    print("gpcrdb seq",len(d['wt_seq']),'uniport len',len(uniprot_seq))
+    # print("gpcrdb seq",len(d['wt_seq']),'uniport len',len(uniprot_seq))
     #ftp://ftp.ebi.ac.uk/pub/databases/msd/sifts/xml/1xyz.xml.gz
     url = 'ftp://ftp.ebi.ac.uk/pub/databases/msd/sifts/xml/$index.xml.gz'
     sifts = fetch_from_web_api(url, pdbname.lower(), cache_dir, xml = True)
@@ -149,7 +149,7 @@ def fetch_pdb_info(pdbname,protein):
                 # pass
                 # print("skip ",elem.attrib['segId'])
                 continue
-            print(elem.attrib['segId'])
+            # print(elem.attrib['segId'])
             prev_elem_name = elem.attrib['segId']
             seg_uniprot_ids = []
             max_pos = 0
@@ -324,7 +324,7 @@ def fetch_pdb_info(pdbname,protein):
                             wt_aa = d['wt_seq'][uniprot_pos-1]
                             if wt_aa!=pdb_aa and pdb_aa:
                                 # mutation!
-                                print("MUTATION",u_id, uniprot_pos,pos ,uniprot_aa,"|",pdb_aa,"|",wt_aa)
+                                # print("MUTATION",u_id, uniprot_pos,pos ,uniprot_aa,"|",pdb_aa,"|",wt_aa)
                                 if uniprot_pos not in mutations_check: #prevent duplicates
                                     mut_type = "non_annotated_mutation"
                                     if str(uniprot_pos) in variants_mapping:
