@@ -101,7 +101,6 @@ class QueryPDB():
                         if check==1:
                             self.db_list.append(s)
                             missing_from_db = True
-                        print(check)
                 if s not in self.yamls and s not in self.exceptions:
                     if s not in self.db_list:
                         check = self.pdb_request_by_pdb(s)
