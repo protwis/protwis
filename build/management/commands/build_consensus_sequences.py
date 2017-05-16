@@ -7,10 +7,11 @@ from build.management.commands.build_human_proteins import Command as BuildHuman
 from residue.functions import *
 from protein.models import Protein, ProteinConformation, ProteinFamily, ProteinSegment, ProteinSequenceType
 from common.alignment import Alignment
+from alignment.models import AlignmentConsensus
 
 import os
 import yaml
-
+import pickle
 
 class Command(BuildHumanProteins):
     help = 'Builds consensus sequences for human proteins in all families'
@@ -40,6 +41,7 @@ class Command(BuildHumanProteins):
 
     def purge_consensus_sequences(self):
         Protein.objects.filter(sequence_type__slug='consensus').delete()
+        AlignmentConsensus.objects.all().delete()
 
     def get_segment_residue_information(self, consensus_sequence):
         ref_positions = dict()
@@ -97,6 +99,13 @@ class Command(BuildHumanProteins):
             a.load_segments(self.segments)
             a.build_alignment()
             a.calculate_statistics()
+
+            # Save alignment
+            AlignmentConsensus.objects.create(slug=family.slug, alignment=pickle.dumps(a))
+
+            # Load alignment to ensure it works
+            a = pickle.loads(AlignmentConsensus.objects.get(slug=family.slug).alignment)
+
             self.logger.info('Completed building alignment for {}'.format(family))
 
             # get (forced) consensus sequence from alignment object
