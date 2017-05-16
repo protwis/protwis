@@ -750,7 +750,6 @@ class Alignment:
                     self.proteins[i].identity = calc_values[0]
                     self.proteins[i].similarity = calc_values[1]
                     self.proteins[i].similarity_score = calc_values[2]
-                    print(protein, calc_values[0], calc_values[1], calc_values[2])
             else:
                 self.pairwise_similarity_normalized(self.proteins[0], self.proteins[i])
 
