@@ -27,12 +27,24 @@ class Command(BaseCommand):
     def create_protein_sets(self):
         self.logger.info('CREATING PROTEIN SETS')
 
+        ProteinSet.objects.all().delete()
+
+        class_dict = {'001': 'A', '002': 'B1', '003': 'B2', '004': 'C', '005': 'F'}
+
         # proteins with a structure
         structures = Structure.objects.order_by('protein_conformation__protein__parent__entry_name').distinct(
             'protein_conformation__protein__parent__entry_name')
         if structures:
-            ps = ProteinSet.objects.create(name='Crystallized') # David's request
+            ps = ProteinSet.objects.create(name='All') # David's request
+            ps_class = {}
             for structure in structures:
+                # Grab the class slug
+                pc = structure.protein_conformation.protein.parent.family.slug.split("_")[0]
+                print(pc,class_dict[pc])
+                if pc not in ps_class:
+                    ps_class[pc] = ProteinSet.objects.create(name='{}'.format(class_dict[pc])) # David's request
+
                 ps.proteins.add(structure.protein_conformation.protein.parent)
+                ps_class[pc].proteins.add(structure.protein_conformation.protein.parent)
 
         self.logger.info('COMPLETED CREATING PROTEIN SETS')
