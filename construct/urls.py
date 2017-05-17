@@ -5,9 +5,10 @@ from construct import views
 
 
 urlpatterns = [
-    url(r'^$', views.ConstructBrowser.as_view(), name='browse'), #no cache, for dev
-    #url(r'^$', cache_page(60*60*24*7)(views.ConstructBrowser.as_view()), name='browse'),
-    url(r'^experiments[/]?$', views.ExperimentBrowser.as_view(), name='browse'), #no cache, for dev
+    # url(r'^$', views.ConstructBrowser.as_view(), name='browse'), #no cache, for dev
+    url(r'^$', cache_page(60*30)(views.ConstructBrowser.as_view()), name='browse'),
+    # url(r'^experiments[/]?$', views.ExperimentBrowser.as_view(), name='browse'), #no cache version
+    url(r'^experiments[/]?$', cache_page(60*30)(views.ExperimentBrowser.as_view()), name='browse'), #cache
     url(r'^statistics[/]?$', views.ConstructStatistics.as_view(), name='statistics'),
     url(r'^mutations[/]?$', views.ConstructMutations.as_view(), name='mutations'),
     url(r'^residuetable[/]?$', views.ConstructTable.as_view(), name='residuetable'),
@@ -20,11 +21,13 @@ urlpatterns = [
     url(r'^tool/json/nterm/(?P<slug>[-\w]+)/$', views.json_nterm, name='nterm'),
     url(r'^tool/json/cterm/(?P<slug>[-\w]+)/$', views.json_cterm, name='cterm'),
     url(r'^tool/json/icl3/(?P<slug>[-\w]+)/$', views.json_icl3, name='icl3'),
+    url(r'^tool/json/icl2/(?P<slug>[-\w]+)/$', views.json_icl2, name='icl2'),
     url(r'^tool/json/glyco/(?P<slug>[-\w]+)/$', views.json_glyco, name='glyco'),
     url(r'^tool/json/palmi/(?P<slug>[-\w]+)/$', views.json_palmi, name='palmi'),
     url(r'^tool/json/mutations/(?P<slug>[-\w]+)/$', views.mutations, name='mutations'),
     url(r'^tool/json/fusion/(?P<slug>[-\w]+)/$', views.json_fusion, name='fusion'),
     url(r'^tool/json/termo/(?P<slug>[-\w]+)/$', views.thermostabilising, name='termo'),
+    url(r'^tool/json/struc_rules/(?P<slug>[-\w]+)/$', views.structure_rules, name='struc_rules'),
     url(r'^tool/json/cons_strucs/(?P<slug>[-\w]+)/$', views.cons_strucs, name='cons_strucs'),
     url(r'^tool/json/cons_rf/(?P<slug>[-\w]+)/$', views.cons_rf, name='cons_rf'),
     url(r'^tool/json/cons_rm_GP/(?P<slug>[-\w]+)/$', views.cons_rm_GP, name='cons_rm_GP'),

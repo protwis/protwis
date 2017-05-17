@@ -157,6 +157,9 @@ def render_mutations(request, protein = None, family = None, download = None, re
                 if len(re.sub('<[^>]*>', '', protein.name)+" "+name)>longest_name:
                     longest_name = len(re.sub('<[^>]*>', '', protein.name)+" "+name)
 
+        if len(alignment_proteins)==0:
+            alignment_proteins = proteins
+
         used_scheme = max(used_schemes, key=used_schemes.get)
 
         mutations = MutationExperiment.objects.filter(
@@ -226,7 +229,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
         consensus = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&consensus")
         generic_number_objs = cache.get(str(protein_hash)+"&"+str(segment_hash)+"&generic_number_objs")
-        if generic_number_objs == None or consensus == None:
+        if generic_number_objs == None or consensus == None or consensus == []:
             a = Alignment()
 
             a.load_proteins(alignment_proteins)
@@ -373,7 +376,8 @@ def render_mutations(request, protein = None, family = None, download = None, re
             data.append(values)
         headers = ['reference','review', 'protein', 'mutation_pos', 'generic', 'mutation_from', 'mutation_to',
         'ligand_name', 'ligand_idtype', 'ligand_id', 'ligand_class',
-        'exp_type', 'exp_func',  'exp_wt_value',  'exp_wt_unit','exp_mu_effect_sign', 'exp_mu_effect_type', 'exp_mu_effect_value',
+        'exp_type', 'exp_func',  'exp_wt_value',  'exp_wt_unit','exp_mu_effect_sign', 'exp_mu_effect_type', 'exp_mu_effect_value', 
+        'exp_fold_change',
         'exp_mu_effect_qual', 'exp_mu_effect_ligand_prop',  'exp_mu_ligand_ref', 'opt_type', 'opt_wt',
         'opt_mu', 'opt_sign', 'opt_percentage', 'opt_qual','opt_agonist', 'added_date'
          ] #'added_by',

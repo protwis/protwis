@@ -134,6 +134,8 @@ class Command(BaseCommand):
         for filename in filenames:
             filepath = os.sep.join([self.gprotein_data_path, filename])
 
+            self.logger.info('Reading filename' + filename)
+
             with open(filepath, 'r') as f:
                 reader = csv.reader(f)
                 for row in reader:
@@ -215,7 +217,7 @@ class Command(BaseCommand):
 
             try:
                 Residue.objects.get_or_create(sequence_number=row['Position'], protein_conformation=pc, amino_acid=row['Residue'], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
-                self.logger.info("Residues added to db")
+                # self.logger.info("Residues added to db")
 
             except:
                 self.logger.error("Failed to add residues")
@@ -224,7 +226,7 @@ class Command(BaseCommand):
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
                 ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme_id=12)
-                self.logger.info("Residues added to ResidueGenericNumberEquivalent")
+                # self.logger.info("Residues added to ResidueGenericNumberEquivalent")
 
             except:
                 self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
