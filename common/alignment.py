@@ -132,6 +132,8 @@ class Alignment:
 
     def load_segments(self, selected_segments):
         selected_residue_positions = []
+        segment_lookup = {}
+        unsorted_segments = OrderedDict()
         for s in selected_segments:
             if hasattr(s, 'item'):
                 selected_segment = s.item
@@ -159,10 +161,16 @@ class Alignment:
                 self.load_generic_numbers(segment.slug, segment_positions)
 
                 # segments
-                self.segments[segment.slug] = []
+                unsorted_segments[segment.pk] = []
+                segment_lookup[segment.pk] = segment.slug
                 for segment_residue in segment_positions:
-                    self.segments[segment.slug].append(segment_residue.label)
-        
+                    unsorted_segments[segment.pk].append(segment_residue.label)
+
+        # Use PK values of segments to sort them before making alignment to ensure logical order
+        sorted_segments = sorted(unsorted_segments)
+        for s in sorted_segments:
+            self.segments[segment_lookup[s]] = unsorted_segments[s]
+
         # combine individual residue positions into a custom segment
         if selected_residue_positions:
             if self.use_residue_groups:
@@ -412,7 +420,12 @@ class Alignment:
             if len(s) > 1:
                 del self.segments[segment]
             else:
-                self.segments[segment].sort()
+                # self.segments[segment].sort()
+                sorted_segment = []
+                for gn in sorted(self.segments[segment], key=lambda x: x.split('x')):
+                    sorted_segment.append(gn)
+                self.segments[segment] = sorted_segment
+                
 
         for pc in self.proteins:
             row = OrderedDict()

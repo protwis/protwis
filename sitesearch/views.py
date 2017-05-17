@@ -127,7 +127,6 @@ class SegmentSelectionPdb(SegmentSelection):
 def site_download(request):
 
     simple_selection = request.session.get('selection', False)
-
     outstream = BytesIO()
     wb = xlsxwriter.Workbook(outstream, {'in_memory': True})
     worksheet = wb.add_worksheet()
@@ -168,8 +167,6 @@ def site_upload(request):
     #Overwriting the existing selection
     selection.clear(selection_type)
 
-    #wb=load_workbook(filename=request.FILES['xml_file'].file)
-    #ws=wb.active
     workbook = xlrd.open_workbook(file_contents=request.FILES['xml_file'].read())
     worksheets = workbook.sheet_names()
     for worksheet_name in worksheets:
@@ -189,28 +186,34 @@ def site_upload(request):
             feature = row[4].value
 
             # update the selected group
-            selection.active_site_residue_group = group_id
-            print(selection.site_residue_groups)
+            if not selection.active_site_residue_group:
+                selection.active_site_residue_group = group_id
             if not selection.site_residue_groups:
                 selection.site_residue_groups = [[]]
-            selection.site_residue_groups[selection.active_site_residue_group - 1].append(1)
             if len(selection.site_residue_groups) < group_id:
                 for x in group_id - len(selection.site_residue_groups):
-                    selection.site_residue_groups.append([])
-            selection.site_residue_groups[group_id - 1][0] = min_match
-            selection_object = SelectionItem(selection_subtype, position)
-            selection_object.properties['feature'] = feature
-            selection_object.properties['site_residue_group'] = selection.active_site_residue_group
-            selection_object.properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS[feature])
+                    selection.site_residue_groups[x].append([])
+#            selection.site_residue_groups[group_id - 1].append(1)
+            properties = {}
+            properties['feature'] = feature
+            properties['site_residue_group'] = selection.active_site_residue_group
+            properties['amino_acids'] = ','.join(definitions.AMINO_ACID_GROUPS[feature])
+            selection_object = SelectionItem(selection_subtype, position, properties)
             selection.add(selection_type, selection_subtype, selection_object)
-
+            selection.site_residue_groups[group_id - 1][0] = min_match
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
-
     # add simple selection to session
     request.session['selection'] = simple_selection
-    
-    return render(request, 'common/selection_lists_sitesearch.html', selection.dict(selection_type))
+
+    context = selection.dict(selection_type)
+    # amino acid groups
+    amino_acid_groups = {
+        'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
+        'amino_acid_group_names': definitions.AMINO_ACID_GROUP_NAMES }
+    context.update(amino_acid_groups)
+
+    return render(request, 'common/selection_lists_sitesearch.html', context)
 
 
 def render_alignment(request):

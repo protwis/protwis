@@ -80,8 +80,10 @@ class MutationExperiment(models.Model):
 
     def getCalculation(self):
 
-        if self.exp_measure and self.exp_qual:
-            temp = ("Type: "+ self.exp_measure.measure + " <br> Measure: "+self.exp_type.type+" <br> Unit: " + str(self.wt_unit) +  " <br> WT: " + str(self.wt_value) + " <br> Mu: "+ str(self.mu_value) +" <br> Foldchange: "+str(self.foldchange))
+        if self.foldchange and self.exp_type:
+            
+            #"Type: "+ self.exp_measure.measure + " <br>
+            temp = (" Measure: "+self.exp_type.type+" <br> Unit: " + str(self.wt_unit) +  " <br> WT: " + str(self.wt_value) + " <br> Mu: "+ str(self.mu_value) +" <br> Foldchange: "+str(self.foldchange))
         else:
             temp = "No information"
         # if ($this->mut_effect_qual_id!=0) {
