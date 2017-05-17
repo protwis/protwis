@@ -40,7 +40,6 @@ class Command(BaseCommand):
             for structure in structures:
                 # Grab the class slug
                 pc = structure.protein_conformation.protein.parent.family.slug.split("_")[0]
-                print(pc,class_dict[pc])
                 if pc not in ps_class:
                     ps_class[pc] = ProteinSet.objects.create(name='{}'.format(class_dict[pc])) # David's request
 
