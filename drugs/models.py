@@ -26,10 +26,10 @@ class Drugs(models.Model):
     indication = models.CharField(max_length=150, null=True)
     approval = models.CharField(max_length=5)
 
-    # clinicalstatus = models.CharField(max_length=30, null=True,default=False)
-    # phasedate = models.CharField(max_length=15, null=True,default=True)
-    # phase = models.CharField(max_length=5, null=True,default=True)
-    # moa = models.CharField(max_length=30, null=True,default=True)
+    clinicalstatus = models.CharField(max_length=30, null=True,default=False)
+    phasedate = models.CharField(max_length=15, null=True,default=True)
+    phase = models.CharField(max_length=15, null=True,default=True)
+    moa = models.CharField(max_length=30, null=True,default=True)
 
     externallink = models.CharField(max_length=150, null=True) # Link Framework
 
