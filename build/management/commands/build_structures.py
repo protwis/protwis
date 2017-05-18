@@ -793,7 +793,9 @@ class Command(BaseBuild):
 
                     # create a structure record
                     try:
-                        s = Structure.objects.get(protein_conformation__protein=con)
+                        #s = Structure.objects.get(protein_conformation__protein=con)
+                        s = Structure.objects.get(protein_conformation__protein=con).delete()
+                        s = Structure()
                     except Structure.DoesNotExist:
                         s = Structure()
                         s.representative = representative
@@ -1259,21 +1261,21 @@ class Command(BaseBuild):
                     Residue.objects.filter(protein_conformation=s.protein_conformation).delete()
 
                     d = {}
-                    try:
-                        current = time.time()
-                        #protein = Protein.objects.filter(entry_name=s.protein_conformation).get()
-                        d = fetch_pdb_info(sd['pdb'],con)
-                        #delete before adding new
-                        #Construct.objects.filter(name=d['construct_crystal']['pdb_name']).delete()
-                        # add_construct(d)
-                        end = time.time()
-                        diff = round(end - current,1)
-                        self.logger.info('construction calculations done for {}. {} seconds.'.format(
-                                    s.protein_conformation.protein.entry_name, diff))
-                    except Exception as msg:
-                        print(msg)
-                        print('ERROR WITH CONSTRUCT FETCH {}'.format(sd['pdb']))
-                        self.logger.error('ERROR WITH CONSTRUCT FETCH for {}'.format(sd['pdb']))
+                    # try:
+                    current = time.time()
+                    #protein = Protein.objects.filter(entry_name=s.protein_conformation).get()
+                    d = fetch_pdb_info(sd['pdb'],con)
+                    #delete before adding new
+                    #Construct.objects.filter(name=d['construct_crystal']['pdb_name']).delete()
+                    # add_construct(d)
+                    end = time.time()
+                    diff = round(end - current,1)
+                    self.logger.info('construction calculations done for {}. {} seconds.'.format(
+                                s.protein_conformation.protein.entry_name, diff))
+                    # except Exception as msg:
+                    #     print(msg)
+                    #     print('ERROR WITH CONSTRUCT FETCH {}'.format(sd['pdb']))
+                    #     self.logger.error('ERROR WITH CONSTRUCT FETCH for {}'.format(sd['pdb']))
 
 
                     try:

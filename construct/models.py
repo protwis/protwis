@@ -13,6 +13,7 @@ import pickle
 class Construct(models.Model): 
     #overall class 
     name = models.TextField(max_length=100, unique=True)
+    # linked onto the WT protein
     protein = models.ForeignKey('protein.Protein')
     contributor = models.ForeignKey('ContributorInfo')
     #Modifications

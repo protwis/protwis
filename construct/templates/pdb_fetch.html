@@ -20,7 +20,7 @@
     <tr><td>xml</td><td>
     <table width=800 ><tr><th>SegRes position</th><th>Name</th><th>ResID range</th><th>WT seqpos range(s)</th></tr>
     {% for v in d.xml_segments %}
-    <tr><td>{{v.0}}</td><td>{{v.1.0}}</td><td>{{v.2}}-{{v.3}}</td><td>{{v.4}}</td></tr>
+    <tr><td>{{v.0}}</td><td>{{v.1}}</td><td>{{v.2}}-{{v.3}}</td><td>{{v.4}}</td></tr>
     {% endfor %}
     </table>
 
@@ -65,6 +65,11 @@
     {% endfor %}
     </td></tr>
 
+    <tr><td>Segments</td><td>
+    {% for k,v in d.construct_sequences.items %}
+    {{k}}<br>{{v}}<br>
+    {% endfor %}
+    </td></tr>
     
 
     <tr><td>modifications</td><td>
