@@ -206,12 +206,8 @@ def drugbrowser(request):
             approval = drug.approval
             phase = drug.phase
             moa = drug.moa
-
-            if approval=='0':
-                approval = '-'
             indication = drug.indication
             novelty = drug.novelty
-
 
             target_list = drug.target.all()
             targets = []
@@ -222,7 +218,7 @@ def drugbrowser(request):
                 clas = str(protein.family.parent.parent.parent.name)
                 family = str(protein.family.parent.name)
 
-                jsondata = {'name':drugname, 'target': str(protein), 'phase': phase, 'approval': approval, 'class':clas, 'family':family, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
+                jsondata = {'name':drugname, 'target': str(protein), 'phase': phase, 'approval': approval, 'class':clas, 'family':family, 'indication': indication, 'status':status, 'drugtype':drugtype, 'moa':moa,'novelty': novelty}
                 context.append(jsondata)
 
             # jsondata = {'name':drugname, 'target': ', '.join(set(targets)), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}

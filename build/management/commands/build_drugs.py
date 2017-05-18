@@ -56,13 +56,13 @@ class Command(BaseCommand):
             data = pd.read_csv(filepath, header=0, encoding = "ISO-8859-1")
 
             for index, row in enumerate(data.iterrows()):
-                print(row)
                 drugname = data[index:index+1]['Drug Name'].values[0]
                 entry_name = data[index:index+1]['EntryName'].values[0]
 
                 phase = data[index:index+1]['Phase'].values[0]
                 PhaseDate = data[index:index+1]['PhaseDate'].values[0]
                 ClinicalStatus = data[index:index+1]['ClinicalStatus'].values[0]
+                moa = data[index:index+1]['ModeOfAction'].values[0]
 
                 drugtype = data[index:index+1]['Drug Class'].values[0]
                 indication = data[index:index+1]['Indication(s)'].values[0]
@@ -71,7 +71,6 @@ class Command(BaseCommand):
                 status = data[index:index+1]['Status'].values[0]
 
                 if approval == 0:
-                    print(approval)
                     approval = '-'
 
                 # fetch protein
@@ -82,13 +81,10 @@ class Command(BaseCommand):
                     print('error', entry_name)
                     continue
 
-                drug, created = Drugs.objects.get_or_create(name=drugname, drugtype=drugtype, indication=indication, novelty=novelty, approval=approval, status=status)
+                drug, created = Drugs.objects.get_or_create(name=drugname, drugtype=drugtype, indication=indication, novelty=novelty, approval=approval, phase=phase, phasedate=PhaseDate, clinicalstatus=ClinicalStatus, moa=moa, status=status)
                 drug.target.add(p)
                 drug.save()
 
                 # target_list = drug.target.all()
-                # print('drug',target_list)
-                # drug_list = p.drugs_set.all()
-                # print('drug_list',drug_list)
 
         self.logger.info('COMPLETED CREATING DRUGDATA')
