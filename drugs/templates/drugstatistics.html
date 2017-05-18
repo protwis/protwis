@@ -7,7 +7,7 @@
 font-size: 10px;
 }
 body {
-  background-color:#ffffff; 
+  background-color:#ffffff;
 }
 #targetdistribution text {
   fill: #000;
@@ -26,7 +26,7 @@ body {
   <svg id="targetdistribution"></svg>
 </div>
 <br>
-<h2 align="center" style="font-family: open sans;position: relative; bottom:-50px;">Disease associations of GPCRs</h2>
+<!-- <h2 align="center" style="font-family: open sans;position: relative; bottom:-50px;">Disease associations of GPCRs</h2>
 <div class="row" style="position: relative; left: 65%; bottom:-50px;">
   <div class="col-xs-12">
 <select onchange="updateBubbles(this.value)" multiple class="form-control input-lg" size="3">
@@ -36,7 +36,7 @@ body {
 </select>
   </div>
 </div>
-<div id="bubbles"></div>
+<div id="bubbles"></div> -->
 
 <div class="row" style="position: relative; left: 75%; bottom:-100px;">
   <div class="col-xs-12">
@@ -179,7 +179,7 @@ bar.append("text")
   // .attr("text-anchor", "end")
   .data(dataset)
   .text(function(d) { return d.text; });
-    
+
 d3.select(window).on('resize', resize);
 
 function resize () {
@@ -195,8 +195,8 @@ function drawBubbleChart(root){
         format = d3.format(",d");
 
     var color = d3.scale.category10();
-    
-    // Create a bubble layout based on the tree of objects. 
+
+    // Create a bubble layout based on the tree of objects.
     // This adds properties x,y,r to each of our leaf objects
     // indicating where to draw them (x,y), and how big to draw them (r).
     var bubble = d3.layout.pack().sort(null).size([960,960]).padding(1.5);
@@ -207,7 +207,7 @@ function drawBubbleChart(root){
                 .attr("height", 960)
                 .attr("align","center")
                 .attr("class","bubble");
-    
+
     var tooltip = d3.select("#bubbles")
       .append("div")
       .style("position", "absolute")
@@ -239,7 +239,7 @@ function drawBubbleChart(root){
           return tooltip.style("top", (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");
       })
        .on("mouseout", function(){return tooltip.style("visibility", "hidden");});;
-  
+
   function wrap(text, width) {
         text.each(function () {
             var text = d3.select(this),
@@ -266,12 +266,12 @@ function drawBubbleChart(root){
 
    node.append("text")
        .attr("dy", ".35em")
-       .attr("y", -15)  
+       .attr("y", -15)
        .style("text-anchor", "middle")
        .style("font-family", "Palatino")
        .style("font", function(d) {
           if (d.value <= 1.5) {return "13px sans-serif"}
-          else if (d.value <= 3) {return "15px sans-serif"} 
+          else if (d.value <= 3) {return "15px sans-serif"}
           else {return "17px sans-serif"}
           })
        .text(function(d) {
@@ -305,7 +305,7 @@ function updaterbubbles(dataframe) {
 
   $("#bubbles").html("");
 
-  // Build a "tree" from each of the data rows 
+  // Build a "tree" from each of the data rows
   // Each leaf in the tree has a name, value and group
   var root =  {};
     root.name = "Interactions";
@@ -316,7 +316,7 @@ function updaterbubbles(dataframe) {
       item.value = Number(dataframe[i][1]);
       item.group = dataframe[i][2];
       root.children.push(item);
-    }    
+    }
     drawBubbleChart(root);
 }
 
@@ -380,8 +380,8 @@ function updaterbubbles(dataframe) {
     //         $(this).css("fill", '');
     //         $('#'+$(this).attr('id')+".container").css("display", 'none');
     //     });
-    // };   
- 
+    // };
+
     $(document).ready(function () {
         $('#unique.chart_type').css("fill", '#000000');
         $('#unique.chart_container').css("display", '');
@@ -398,7 +398,7 @@ function updateTypes(request) {
 
   var series = {{drugtypes_approved|safe}}
   text = "Approved and distinct drugs"
-  
+
   if (request == 'trials') {
     text = "Clinical trials agents"
     series = {{drugtypes_trials|safe}}
@@ -453,7 +453,7 @@ function updatertypes(series,text) {
         "value": 0.2
       },
       "content": series
-      // {{drugtypes|safe}} 
+      // {{drugtypes|safe}}
     },
     "labels": {
       "outer": {
@@ -509,13 +509,13 @@ function updatertypes(series,text) {
       }
     }
   });
-} 
+}
 
 updateClasses('approved')
 function updateClasses(request) {
   var series = {{drugClasses_approved|safe}}
   text = "Approved and distinct drugs"
-  
+
   if (request == 'trials') {
     text = "Clinical trials agents"
     series = {{drugClasses_trials|safe}}
@@ -527,7 +527,7 @@ function updateClasses(request) {
 
 function updaterclasses(series,text) {
 
-  $("#pie_classes").html(""); 
+  $("#pie_classes").html("");
 
   var pie = new d3pie("pie_classes", {
     "header": {
@@ -626,7 +626,7 @@ function updatefamilies(request) {
 
   var series = {{drugfamilies_approved|safe}}
   text = "Approved and distinct drugs"
-  
+
   if (request == 'trials') {
     text = "Clinical trials agents"
     series = {{drugfamilies_trials|safe}}
@@ -638,7 +638,7 @@ function updatefamilies(request) {
 
 function updaterfamilies(series,text) {
 
-  $("#pie_families").html(""); 
+  $("#pie_families").html("");
 
   var pie = new d3pie("pie_families", {
     "header": {
@@ -737,7 +737,7 @@ function updatediseases(request) {
 
   var series = {{drugindications_approved|safe}}
   text = "Approved and distinct drugs"
-  
+
   if (request == 'trials') {
     var text = "Clinical trials agents"
     var series = {{drugindications_trials|safe}}
@@ -847,7 +847,7 @@ function updatetargets(request) {
 
   var series = {{drugtargets_approved|safe}}
   text = "Approved and distinct drugs"
-  
+
   if (request == 'trials') {
     var text = "Clinical trials agents"
     var series = {{drugtargets_trials|safe}}
