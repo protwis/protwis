@@ -237,7 +237,11 @@
                     <td>{{ structure.protein_conformation.protein.parent.endogenous_ligands.all.0.properities.ligand_type }}</td>
                     <td>
                         {% for ligand in structure.ligands.all %}
-                        {{ ligand.ligand.name|safe }}<br />
+                        {{ ligand.ligand.name|safe }} 
+                        {% for link in ligand.ligand.properities.web_links.all %}
+                        <a href="{{ link}}" target="_blank">{{link.web_resource.slug}}</a>
+                        {% endfor %}
+                        <br />
                         {% empty %}
                         N/A
                         {% endfor %}

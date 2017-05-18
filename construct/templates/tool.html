@@ -373,9 +373,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     insert_sequences = {"tag_His(10)": "HHHHHHHHHH",
                         "tag_His(8)": "HHHHHHHH",
                         "tag_FLAG": "DYKDDDDK",
+                        "fusion_T4 Lysozyme (T4L)": "NIFEMLRIDEGLRLKIYKDTEGYYTIGIGHLLTKSPSLNAAKSELDKAIGRNTNGVITKDEAEKLFNQDVDAAVRGILRNAKLKPVYDSLDAVRRAALINMVFQMGETGVAGFTNSLRMLQQKRWDEAAVNLAKSRWYNQTPNRAKRVITTFRTGTWDAY",
                         "fusion_BRIL (b562RIL)": "ADLEDNWETLNDNLKVIEKADNAAQVKDALTKMRAAALDAQKATPPKLEDKSPDSPEMKDFRHGFDILVGQIDDALKLANEGKVKEAQAAAEQLKTTRNAYIQKYL",
+                        "fusion_Rubredoxin": "MKKYTCTVCGYIYNPEDGDPDNGVNPGTDFKDIPDDWVCPLCGVGKDQFEEVEE",
                         "fusion_Flavodoxin": "AKALIVYGSTTGNTEYTAETIARELADAGYEVDSRDAASVEAGGLFEGFDLVLLGCSTWGDDSIELQDDFIPLFDSLEETGAQGRKVACFGCGDSSWEYFCGAVDAIEEKLKNLGAEIVQDGLRIDGDPRAARDDIVGWAHDVRGAI",
-                        "signal_hemagglutinin" : "MKANLLVLLCALAAADADTICIGYHANNSTDTVDTVLEKNVTVTHSVNLLEDSHNGKLCRLKGIAPLQLGKCNIAGWLLGNPECDPLLPVRSWSYIVETPNSENGICYPGDFIDYEELREQLSSVSSFERFEIFPKESSWPNHNTNGVTAACSHEGKSSFYRNLLWLTEKEGSYPKLKNSYVNKKGKEVLVLWGIHHPPNSKEQQNLYQNENAYVSVVTSNYNRRFTPEIAERPKVRDQAGRMNYYWTLLKPGDTIIFEANGNLIAPMYAFALSRGFGSGIITSNASMHECNTKCQTPLGAINSSLPYQNIHPVTIGECPKYVRSAKLRMVTGLRNIPSIQSRGLFGAIAGFIEGGWTGMIDGWYGYHHQNEQGSGYAADQKSTQNAINGITNKVNTVIEKMNIQFTAVGKEFNKLEKRMENLNKKVDDGFLDIWTYNAELLVLLENERTLDFHDSNVKNLYEKVKSQLKNNAKEIGNGCFEFYHKCDNECMESVRNGTYDYPKYSEESKLNREKVDGVKLESMGIYQILAIYSTVASSLVLLVSLGAISFWMCSNGSLQCRICI",
+                        "signal_hemagglutinin" : "MKTIIALSYIFCLVFA",
                         "prot_cleavage_Thrombin": "LVPRGS",
                         "prot_cleavage_TEV protease": "ENLYFQG"};
 
@@ -398,7 +400,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       }
     }
 
-    other_inserts_dropdown = "<table><tr class='fusion_site_inserts'><th colspan=2 id=fusion_text>Fusion Protein</th></tr><tr class='fusion_site_inserts'><td colspan=2>"+fusion_protein_dropdown + "</td></tr><tr><th colspan=2>Other inserts</th></tr>";
+    other_inserts_dropdown = "Please see <a href='http://files.gpcrdb.org/Insert_sequences.xlsx'>here</a> for exact sequences used in inserts. They are based on sequences used in published crystals.<br><table><tr class='fusion_site_inserts'><th colspan=2 id=fusion_text>Fusion Protein</th></tr><tr class='fusion_site_inserts'><td colspan=2>"+fusion_protein_dropdown + "</td></tr><tr><th colspan=2>Other inserts</th></tr>";
     // other_inserts_dropdown += `<select id="insert_type_where"  class="form-control">
     //               <option value="" >Please select Type</option>
     //               <option value="nterm">N-term</option>
@@ -499,7 +501,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       if (typeof(datatable)!=='undefined'){
         default_sort["order"] = [];
         var db_table = $(datatable).DataTable(default_sort);
-        console.log("DATATABLE");
       }
 
         var title = $('#fusion_search').text();
@@ -790,7 +791,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         $.each(keysSorted, function(i,key) {
           t_fusion.push(key+'['+val['fusion_proteins_counts'][key]+']');
         })
-        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='nterm_tm1(this)' from='"+val['pdbs']+"' value='"+pos+"' from=''>Apply</a></tr>";
+
+        temp = "<tr val='"+pos+"'><td>"+pos+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='nterm_tm1(this)' from='"+val['pdbs']+"' value='"+pos+"' from=''>Apply</a></tr>";
         items_table.push( temp );
         export_list['nterm'].push([pos,val['hits'],val['levels'],val['fusion_proteins']])
       });
@@ -1301,7 +1303,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           range.push(i);
       }
       reset_fixed("deletion_n-term");
-      $('#myModal').modal('hide');
+      // $('#myModal').modal('hide');
+      $(elem).parent().parent().delay(100).fadeOut().fadeIn();
+      // $(elem).css('font-weight', 'bold');
       modi = {method: "n-term", type: "deletion", from: from, range: range, info: n_val+" from TM1 start. Based on "+from.join(", "), fixed: 'yes'};
       modifications.push(modi);
       overlay_modifications();
@@ -1322,7 +1326,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       }
 
       reset_fixed("deletion_n-term");
-      $('#myModal').modal('hide');
+      // $('#myModal').modal('hide');
       modi = {method: "n-term", type: "deletion", from: from, range: range, info: "Custom: "+n_val+" from TM1 start", fixed: 'yes'};
       modifications.push(modi);
       overlay_modifications();
@@ -1344,7 +1348,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       }
 
       reset_fixed("deletion_c-term");
-      $('#myModal').modal('hide');
+      // $('#myModal').modal('hide');
+      $(elem).parent().parent().delay(100).fadeOut().fadeIn();
       modi = {method: "c-term", type: "deletion", from: from, range: range, info: "Based on "+from.join(", "), fixed: 'yes'};
       modifications.push(modi);
       overlay_modifications();
@@ -1562,6 +1567,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
          sequence = insert_sequences["fusion_"+fusion];
       } else {
         sequence = "";
+        var sequence = prompt("We do not have a sequnce on record for this, please specify the sequence to use:", val['sequence']);
+      }
+      if (sequence === null) {
+        sequence = "";
       }
 
       inserts['fusion'].push({type: "fusion", name: fusion, order: order_in_icl_insert, sequence: sequence});
@@ -1588,6 +1597,13 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       if (insert_type=='linker') {
         sequence = insert_sub_type;
         insert_sub_type = 'custom';
+      }
+
+      if (sequence == "") {
+        var sequence = prompt("We do not have a sequnce on record for this, please specify the sequence to use:", val['sequence']);
+      }
+      if (sequence === null) {
+        sequence = "";
       }
 
       inserts[insert_location].push({type: insert_type, name: insert_sub_type, order: order_in_icl_insert, sequence: sequence});
@@ -1731,6 +1747,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       modifications.push(modi);
       overlay_modifications();
       modifications_overview();
+      $(elem).parent().parent().delay(100).fadeOut().fadeIn();
     }
 
     function glyco(elem) {
@@ -1759,6 +1776,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       overlay_modifications();
       modifications_overview();
+      $(elem).parent().parent().delay(100).fadeOut().fadeIn();
     }
 
     function palmi(elem) {
@@ -1777,6 +1795,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       overlay_modifications();
       modifications_overview();
+      $(elem).parent().parent().delay(100).fadeOut().fadeIn();
     }
 
     function modifications_overview() {
@@ -2099,28 +2118,38 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       console.log("Fusion would be around "+fusion_site_location);
       sequence = "";
       sequence_short = "";
+      sequence_short_2 = "";
       sequence_long = "";
+      find_n_term = 0;
       $.each(inserts["nterm"], function(key,val) {
           sequence += "["+val['type']+":"+val['name']+"]";
           sequence_short += "["+val['type']+":"+val['name']+"]";
+          sequence_short_2 += "["+val['type']+":"+val['name']+"]";
           if (val['sequence']) {
-            sequence_long += val['sequence'];
+            sequence_long += val['sequence'].toLowerCase();
           } else {
             sequence_long += "["+val['type']+":"+val['name']+"]";
           }
+          find_n_term = 1;
       });
 
       if (fusionpos=='nterm') {
             $.each(inserts["fusion"], function(key,val) {
                 sequence += "["+val['type']+":"+val['name']+"]";
                 sequence_short += "["+val['type']+":"+val['name']+"]";
+                sequence_short_2 += "["+val['type']+":"+val['name']+"]";
                 if (val['sequence']) {
-                  sequence_long += val['sequence'];
+                  sequence_long += val['sequence'].toLowerCase();
                 } else {
                   sequence_long += "["+val['type']+":"+val['name']+"]";
                 }
             });
             fusion_site_location = 0;
+          find_n_term = 1;
+      }
+
+      if (find_n_term==0){
+          sequence_short_2 += "[ADD N-TERM INSERTS]";
       }
 
       add_wt_start = 1;
@@ -2137,7 +2166,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           if (track_pos[key]['type']=='mutation') {
             sequence += track_pos[key]['to'];
             sequence_short += "[MUT:"+val[0]+key+""+track_pos[key]['to']+"]";
-            sequence_long += track_pos[key]['to'];
+            sequence_short_2 += "[MUT:"+val[0]+key+""+track_pos[key]['to']+"]";
+            sequence_long += track_pos[key]['to'].toLowerCase();
 
           } else {
             // check for fusion site
@@ -2148,8 +2178,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                   $.each(inserts["fusion"], function(key,val) {
                       sequence += "["+val['type']+":"+val['name']+"]";
                       sequence_short += "["+val['type']+":"+val['name']+"]";
+                      sequence_short_2 += "["+val['type']+":"+val['name']+"]";
                       if (val['sequence']) {
-                        sequence_long += val['sequence'];
+                        sequence_long += val['sequence'].toLowerCase();
                       } else {
                         sequence_long += "["+val['type']+":"+val['name']+"]";
                       }
@@ -2161,7 +2192,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           add_wt_start = 1;
         } else {
           sequence += val[0];
-          sequence_long += val[0];
+          sequence_long += val[0].toUpperCase();
+          sequence_short_2 += val[0].toUpperCase();
           if (add_wt_start){
              sequence_short += "["+receptor_name+":"+key+"-";
              add_wt_start = 0;
@@ -2175,17 +2207,23 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
              sequence_short += last_key_in_stretch+"]";
           }
 
+      find_c_term = 0;
       $.each(inserts["cterm"], function(key,val) {
           sequence += "["+val['type']+":"+val['name']+"]";
           sequence_short += "["+val['type']+":"+val['name']+"]";
+          sequence_short_2 += "["+val['type']+":"+val['name']+"]";
           if (val['sequence']) {
-            sequence_long += val['sequence'];
+            sequence_long += val['sequence'].toLowerCase();
           } else {
             sequence_long += "["+val['type']+":"+val['name']+"]";
           }
+          find_c_term = 1;
       });
+      if (find_c_term==0){
+          sequence_short_2 += "[ADD C-TERM INSERTS]";
+      }
 
-      export_list['sequences'].push([include.sort(function (a, b) {  return a - b;  }),sequence_short,sequence_long]);
+      export_list['sequences'].push([include.sort(function (a, b) {  return a - b;  }),sequence_short,sequence_long,sequence_short_2]);
 
       return [sequence_short,sequence_long];
     }

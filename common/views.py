@@ -1253,6 +1253,7 @@ def ResiduesUpload(request):
 
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
+@csrf_exempt
 def ReadTargetInput(request):
     """Receives the data from the input form nd adds the listed targets to the selection"""
 
@@ -1404,21 +1405,36 @@ def ExportExcelModifications(request):
         row += 1
 
 
-    worksheet2 = workbook.add_worksheet("sequence")
-    worksheet2.write(0, 0, "sequences")
-    row = 1
+    worksheet2 = workbook.add_worksheet("FASTA SEQUENCES")
+    # worksheet2.write(0, 0, "sequences")
+    row = 0
 
     sequences = request.POST['s']
     sequences = json.loads(sequences)
     for s in sequences:
-        worksheet2.write(row, 0, "Modifications # used")
-        worksheet2.write(row, 1, ' '.join(s[0]))
+        # worksheet2.write(row, 0, "Modifications # used")
+        # worksheet2.write(row, 1, ' '.join(s[0]))
+        # row += 1
+        worksheet2.write(row, 0, ">" + s[1] + "[Modifications:" + ' '.join(s[0]) +"]")
         row += 1
-        worksheet2.write(row, 0, "Short-hand")
-        worksheet2.write(row, 1, s[1])
+        #worksheet2.write(row, 0, "Sequence")
+        worksheet2.write(row, 0, s[2])
         row += 1
-        worksheet2.write(row, 0, "Sequence")
-        worksheet2.write(row, 1, s[2])
+
+    worksheet3 = workbook.add_worksheet("FASTA SEQUENCES BLOCK")
+    # worksheet2.write(0, 0, "sequences")
+    row = 0
+
+    sequences = request.POST['s']
+    sequences = json.loads(sequences)
+    for s in sequences:
+        # worksheet2.write(row, 0, "Modifications # used")
+        # worksheet2.write(row, 1, ' '.join(s[0]))
+        # row += 1
+        worksheet3.write(row, 0, ">" + s[1] + "[Modifications:" + ' '.join(s[0]) +"]")
+        row += 1
+        #worksheet2.write(row, 0, "Sequence")
+        worksheet3.write(row, 0, s[3])
         row += 1
 
     workbook.close()

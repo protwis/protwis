@@ -2,14 +2,10 @@
 {% load staticfiles %}
 {% load structure_extras %}
 
-{% block addon_css %}
-    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
-{% endblock %}
-
 {% block content %}
 <style>
-body {background-image:url("../../static/home/images/drd2_human.png"); background-size: 30%; 
-      background-repeat: no-repeat; background-attachment:scroll; margin-right:100px; background-position: right top; 
+body {background-image:url("../../static/home/images/drd2_human.png"); background-size: 30%;
+      background-repeat: no-repeat; background-attachment:scroll;  background-position: right top; 
       max-width: 100%; max-height: 100%;}
 </style>
 <h2><strong>Homology models - Less Model and More Crystal</strong></h2>
@@ -80,7 +76,11 @@ body {background-image:url("../../static/home/images/drd2_human.png"); backgroun
 </div>
 <br>
 <div align="center">
-    <div style="width:20%"> <a href="http://files.gpcrdb.org/homology_models_v1.0.zip" class="btn btn-success btn-lg btn-block"> Download </a> </div>
+    <div style="width:20%"> <a href="http://files.gpcrdb.org/homology_models_v2.0.zip" class="btn btn-success btn-lg btn-block"> Download </a> </div>
+</div>
+<br>
+<div align="center">
+    <a href="http://files.gpcrdb.org/homology_models_v1.0.zip"> Archived v1.0 </a>
 </div>
 <br>
 {% endblock %}

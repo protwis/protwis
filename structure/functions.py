@@ -21,6 +21,9 @@ import tempfile
 import logging
 import math
 import urllib
+from collections import OrderedDict
+import Bio.PDB as PDB
+
 
 logger = logging.getLogger("protwis")
 
@@ -665,3 +668,67 @@ class HSExposureCB(AbstractPropertyMap):
         # This is for PyMol visualization
         self.ca_cb_list.append((ca_v, cb_v))
         return cb_at_origin_v
+
+
+class PdbChainSelector():
+    def __init__(self, pdb_code, protein):
+        self.pdb_code = pdb_code
+        self.protein = protein
+        self.chains = []
+        self.dssp_dict = OrderedDict()
+        self.dssp_info = OrderedDict()
+        self.aux_residues = []
+
+    def run_dssp(self):
+        pdb = PDB.PDBList()
+        pdb.retrieve_pdb_file(self.pdb_code, pdir='./', file_format="pdb")
+        p = PDB.PDBParser()
+        f = 'pdb{}.ent'.format(self.pdb_code.lower())
+        wt_residues = [i.sequence_number for i in Residue.objects.filter(protein_conformation__protein=self.protein).exclude(protein_segment__slug__in=['N-term','C-term'])]
+        structure = p.get_structure(self.pdb_code, f)
+        for chain in structure[0]:
+            ch = chain.get_id()
+            self.chains.append(ch)
+            self.dssp_dict[ch] = OrderedDict()
+            self.dssp_info[ch] = OrderedDict([('H',0),('B',0),('E',0),('G',0),('I',0),('T',0),('S',0),('-',0)])
+        if len(self.dssp_dict)>1:
+            dssp = PDB.DSSP(structure[0], f, dssp='/env/bin/dssp')
+            for key in dssp.keys():
+                if int(key[1][1]) in wt_residues:
+                    self.dssp_dict[key[0]][key[1][1]] = dssp[key]
+                    self.dssp_info[key[0]][dssp[key][2]] = self.dssp_info[key[0]][dssp[key][2]]+1
+
+    def get_seqnums_by_secondary_structure(self, chain, secondary_structure):
+        ''' Returns list of sequence numbers that match the secondary structural property. \n
+            H: alpha helix, B: isolated beta-bridge, E: strand, G: 3-10 helix, I: pi-helix, T: turn, S: bend, -: Other
+        '''
+        if secondary_structure not in ['H','B','E','G','I','T','S','-']:
+            raise ValueError('Incorrect secondary_structure input. Input can be H, B, E, G, I, T, S, -')
+        output = []
+        for seqnum, val in self.dssp_dict[chain].items():
+            if val[2]==secondary_structure:
+                output.append(seqnum)
+        return output
+
+    def select_chain(self):
+        num_helix_res = []
+        seq_lengths = []
+        for c, val in self.dssp_info.items():
+            seq_length = 0
+            num_helix_res.append(val['H']+val['G']+val['I'])
+            for s, num in val.items():
+                seq_length+=num
+            seq_lengths.append(seq_length)
+
+        max_res = num_helix_res[0]
+        max_i = 0
+        for i in range(1,len(num_helix_res)):
+            if num_helix_res[i]>max_res:
+                if num_helix_res[i]-max_res>seq_lengths[max_i]-seq_lengths[i]:
+                    max_res = num_helix_res[i]
+                    max_i = i
+            elif num_helix_res[i]==max_res:
+                if seq_lengths[max_i]<seq_lengths[i]:
+                    max_res = num_helix_res[i]
+                    max_i = i
+        return self.chains[max_i]

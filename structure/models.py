@@ -4,6 +4,7 @@ from io import StringIO
 from Bio.PDB import PDBIO
 
 class Structure(models.Model):
+    # linked onto the Xtal ProteinConformation, which is linked to the Xtal protein
     protein_conformation = models.ForeignKey('protein.ProteinConformation')
     structure_type = models.ForeignKey('StructureType')
     pdb_code = models.ForeignKey('common.WebLink')
