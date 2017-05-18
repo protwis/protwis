@@ -28,7 +28,7 @@ class Command(BaseCommand):
             filenames = options['filename']
         else:
             filenames = False
-        
+
         try:
             self.purge_drugs()
             self.create_drug_data(filenames)
@@ -56,14 +56,23 @@ class Command(BaseCommand):
             data = pd.read_csv(filepath, header=0, encoding = "ISO-8859-1")
 
             for index, row in enumerate(data.iterrows()):
+                print(row)
                 drugname = data[index:index+1]['Drug Name'].values[0]
                 entry_name = data[index:index+1]['EntryName'].values[0]
+
+                phase = data[index:index+1]['Phase'].values[0]
+                PhaseDate = data[index:index+1]['PhaseDate'].values[0]
+                ClinicalStatus = data[index:index+1]['ClinicalStatus'].values[0]
 
                 drugtype = data[index:index+1]['Drug Class'].values[0]
                 indication = data[index:index+1]['Indication(s)'].values[0]
                 novelty = data[index:index+1]['Target_novelty'].values[0]
                 approval = data[index:index+1]['Approval'].values[0]
                 status = data[index:index+1]['Status'].values[0]
+
+                if approval == 0:
+                    print(approval)
+                    approval = '-'
 
                 # fetch protein
                 try:
