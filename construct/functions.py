@@ -31,6 +31,7 @@ AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
 
 
 def fetch_pdb_info(pdbname,protein):
+    SIFT_exceptions = {'5GLI':[395,403], '5GLH':[395,401]}
     logger = logging.getLogger('build')
     #d = {}
     d = OrderedDict()
@@ -372,6 +373,21 @@ def fetch_pdb_info(pdbname,protein):
                 ranges.append((group[0], group[-1]))
                 if (group[0], group[-1]) not in ranges:
                     ranges.append((group[0], group[-1]))
+                
+            if pdbname in SIFT_exceptions:
+                try:
+                    if ranges[0][1]==SIFT_exceptions[pdbname][0]:
+                        ranges=[(ranges[0][0],SIFT_exceptions[pdbname][1])]
+                        actually_present = list(range(max_pos+1,ranges[0][1]+1))
+                        seg_resid_list+=actually_present
+                        max_pos=SIFT_exceptions[pdbname][1]
+                except:
+                    pass
+            if len(seg_uniprot_ids)>0 and seg_uniprot_ids[0]=='Not_Observed' and 'actually_present' in locals():
+                if min_pos==SIFT_exceptions[pdbname][0]+1:
+                    min_pos=SIFT_exceptions[pdbname][1]+1
+                seg_resid_list = [i for i in seg_resid_list if i not in actually_present]
+                pos_in_wt = [i for i in pos_in_wt if i not in actually_present]
 
             mutations = None
 
@@ -424,7 +440,6 @@ def fetch_pdb_info(pdbname,protein):
         for k, g in groupby(enumerate(pos_in_wt), lambda x:x[0]-x[1]):
             group = list(map(itemgetter(1), g))
             d['deletions'].append({'start':group[0], 'end':group[-1], 'origin':'user'})
-
         d['not_observed'] = []
         if len(d['xml_not_observed']):
             # print(d['xml_not_observed'])
