@@ -121,8 +121,8 @@ class Command(BaseCommand):
         return d
 
     def analyse_annotation_consistency(self):
-        NonXtal = self.data["NonXtal_Bulges_Constr_GPCRdb#"]
-        Xtal = self.data["Xtal_Bulges_Constr_GPCRdb#"]
+        NonXtal = self.data["Bulges_Constr_NonXtal_GPCRdb#"]
+        Xtal = self.data["Bulges_Constr_Xtal_GPCRdb#"]
         output = {}
         counting_xtal = {}
         counting_non_xtal = {}
@@ -162,8 +162,8 @@ class Command(BaseCommand):
         print("Present in non-xtal, but not xtal",counting_xtal)
         print("Present in xtal, but not non-xtal",counting_non_xtal)
 
-        structures = self.data["Xtal_SegEnds_Prot#"]
-        structures_non_xtal = self.data["NonXtal_SegEnds_Prot#"]
+        structures = self.data["SegEnds_Xtal_Prot#"]
+        structures_non_xtal = self.data["SegEnds_NonXtal_Prot#"]
         info = {}
         for structure,vals in structures.items():
             if structure.split("_")[-1] == "wt":
@@ -259,7 +259,8 @@ class Command(BaseCommand):
                     continue
                 NonXtal_SegEnds_Prot[entry][key] = val
 
-        # data = self.data["Xtal_Bulges_Constr_GPCRdb#"]
+
+        # data = self.data["Bulges_Constr_Xtal_GPCRdb#"]
         # Xtal_Bulges_Constr_GPCRdb = {}
         # for structure,vals in data.items():
         #     entry = structure
