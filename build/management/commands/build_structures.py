@@ -809,7 +809,8 @@ class Command(BaseBuild):
                         s = Structure()
                     except Structure.DoesNotExist:
                         s = Structure()
-                        s.representative = representative
+                    
+                    s.representative = representative
 
                     # protein state
                     if 'state' not in sd:
