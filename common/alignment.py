@@ -1055,7 +1055,7 @@ class AlignedReferenceTemplate(Alignment):
                                                       "4XT1","4K5Y","4Z9G","4L6R","5EE7","4OR2","4OO9","5CGC","5CGD",
                                                       "4JKV","4N4W","5L7D","5L7I","4O9R","4QIM","4QIN","5T1A","5TVN",
                                                       "5UIG","5T04","4XT3","5LWE","5UEN","5U09","5UNF","5UNG","5UNH"
-                                                      "5NDD","5NDZ","5NJ6","5TE3","5TE5","5UZ7"])
+                                                      "5NDD","5NDZ","5NJ6","5TE3","5TE5","5UZ7","5VEX"])
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
   
