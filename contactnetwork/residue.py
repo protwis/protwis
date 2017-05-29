@@ -62,11 +62,8 @@ def get_ring_atom_name_lists(res):
     # Atom objects
     res_atoms = res.child_dict
 
-    # Check that all atoms are present
-    #for list in atom_name_lists:
-    #    if not all (k in res_atoms for k in list):
-    #        raise InvalidInputException
-
+    # Filter lists where all atoms are not present
+    atom_name_lists = [ l for l in atom_name_lists if all(k in res_atoms for k in l) ]
 
     # Get lists of atoms in for each ring; one list containing one list for TYR, PHE and HIS, two for TRP.
     return [[a for a in res_atoms.values() if a.name in a_l] for a_l in atom_name_lists]
