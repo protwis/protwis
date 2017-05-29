@@ -32,7 +32,7 @@
                             <div class="panel-body">
                                 <input type="hidden" class="interactions-input" value="[]" />
                                 <input class="crystal-pdb" type="hidden" value="[]" />
-                                <h5><span class="crystal-count">0</span> crystal(s) selected.</h5>
+                                <h5><span class="crystal-count">No crystal selected.</span></h5>
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal">Select PDB</button>
                             </div>
                         </div>
@@ -59,12 +59,12 @@
                                 <h5>Loops</h5>
                                 <div class="btn-group buttons-loops">
                                   <button type="button" class="btn btn-primary all-button">All</button>
-                                  <button type="button" class="btn btn-primary" data-segment="ECL1">ECL1</button>
-                                  <button type="button" class="btn btn-primary" data-segment="ECL2">ECL2</button>
-                                  <button type="button" class="btn btn-primary" data-segment="ECL3">ECL3</button>
                                   <button type="button" class="btn btn-primary" data-segment="ICL1">ICL1</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ECL1">ECL1</button>
                                   <button type="button" class="btn btn-primary" data-segment="ICL2">ICL2</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ECL2">ECL2</button>
                                   <button type="button" class="btn btn-primary" data-segment="ICL3">ICL3</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ECL3">ECL3</button>
                                 </div>
                                 <h5>Termini</h5>
                                 <div class="btn-group buttons-termini">
@@ -141,12 +141,12 @@
                                 <h5>Loops</h5>
                                 <div class="btn-group buttons-loops">
                                   <button type="button" class="btn btn-primary all-button">All</button>
-                                  <button type="button" class="btn btn-primary" data-segment="ECL1">ECL1</button>
-                                  <button type="button" class="btn btn-primary" data-segment="ECL2">ECL2</button>
-                                  <button type="button" class="btn btn-primary" data-segment="ECL3">ECL3</button>
                                   <button type="button" class="btn btn-primary" data-segment="ICL1">ICL1</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ECL1">ECL1</button>
                                   <button type="button" class="btn btn-primary" data-segment="ICL2">ICL2</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ECL2">ECL2</button>
                                   <button type="button" class="btn btn-primary" data-segment="ICL3">ICL3</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ECL3">ECL3</button>
                                 </div>
                                 <h5>Termini</h5>
                                 <div class="btn-group buttons-termini">
@@ -244,12 +244,12 @@
                                 <h5>Loops</h5>
                                 <div class="btn-group buttons-loops">
                                   <button type="button" class="btn btn-primary all-button">All</button>
-                                  <button type="button" class="btn btn-primary" data-segment="ECL1">ECL1</button>
-                                  <button type="button" class="btn btn-primary" data-segment="ECL2">ECL2</button>
-                                  <button type="button" class="btn btn-primary" data-segment="ECL3">ECL3</button>
                                   <button type="button" class="btn btn-primary" data-segment="ICL1">ICL1</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ECL1">ECL1</button>
                                   <button type="button" class="btn btn-primary" data-segment="ICL2">ICL2</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ECL2">ECL2</button>
                                   <button type="button" class="btn btn-primary" data-segment="ICL3">ICL3</button>
+                                  <button type="button" class="btn btn-primary" data-segment="ECL3">ECL3</button>
                                 </div>
                                 <h5>Termini</h5>
                                 <div class="btn-group buttons-termini">
@@ -314,8 +314,10 @@
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
+                        <p><strong>Legend:</strong></p>
+                        <p>(A): Active, (I): Inactive, (R): Representative, (N): Non-representative </p>
                         <div class="treeview"></div>
-                      </div>
+                        </div>
                       <div class="clearfix"></div>
                </div>
                 <div class="modal-footer">
@@ -337,6 +339,13 @@
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
+                        <label class="checkbox-inline"><input type="checkbox" value="" class="choose-active" checked>Choose active crystals (A)</label>
+                        <label class="checkbox-inline"><input type="checkbox" class="choose-inactive" value="" checked>Choose inactive crystals (I)</label>
+                        <br />
+                        <label class="checkbox-inline"><input type="checkbox" value="" class="choose-representative" checked>Choose representatives (R)</label>
+                        <label class="checkbox-inline"><input type="checkbox" class="choose-non-representative" value="" checked>Choose non-representatives (N)</label>
+                        <br />
+                        <br />
                         <div class="treeview"></div>
                       </div>
                       <div class="clearfix"></div>
@@ -382,6 +391,13 @@
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
+                        <label class="checkbox-inline"><input type="checkbox" value="" class="choose-active" checked>Choose active crystals (A)</label>
+                        <label class="checkbox-inline"><input type="checkbox" class="choose-inactive" value="" checked>Choose inactive crystals (I)</label>
+                        <br />
+                        <label class="checkbox-inline"><input type="checkbox" value="" class="choose-representative" checked>Choose representatives (R)</label>
+                        <label class="checkbox-inline"><input type="checkbox" class="choose-non-representative" value="" checked>Choose non-representatives (N)</label>
+                        <br />
+                        <br />
                         <div class="treeview"></div>
                       </div>
                       <div class="clearfix"></div>
@@ -405,6 +421,13 @@
                 </div>
                 <div class="modal-body">
                       <div class="col-md-12">
+                        <label class="checkbox-inline"><input type="checkbox" value="" class="choose-active" checked>Choose active crystals (A)</label>
+                        <label class="checkbox-inline"><input type="checkbox" class="choose-inactive" value="" checked>Choose inactive crystals (I)</label>
+                        <br />
+                        <label class="checkbox-inline"><input type="checkbox" value="" class="choose-representative" checked>Choose representatives (R)</label>
+                        <label class="checkbox-inline"><input type="checkbox" class="choose-non-representative" value="" checked>Choose non-representatives (N)</label>
+                        <br />
+                        <br />
                         <div class="treeview"></div>
                       </div>
                       <div class="clearfix"></div>
@@ -662,9 +685,138 @@
             return { r: r, g: g, b: b };
         }
 
+        function getAminoAcidOneLetterCode(threeLetterCode) {
+            switch (threeLetterCode.toUpperCase()) {
+                case 'ALA': 
+                    return 'A'; 
+                case 'ARG': 
+                    return 'R'; 
+                case 'ASN': 
+                    return 'N'; 
+                case 'ASP': 
+                    return 'D';
+                case 'CYS': 
+                    return 'C'; 
+                case 'GLN': 
+                    return 'Q'; 
+                case 'GLU': 
+                    return 'E'; 
+                case 'GLY': 
+                    return 'G';
+                case 'HIS': 
+                    return 'H'; 
+                case 'ILE': 
+                    return 'I'; 
+                case 'LEU': 
+                    return 'L'; 
+                case 'LYS': 
+                    return 'K';
+                case 'MET': 
+                    return 'M'; 
+                case 'PHE': 
+                    return 'F'; 
+                case 'PRO': 
+                    return 'P'; 
+                case 'SER': 
+                    return 'S';
+                case 'THR': 
+                    return 'T'; 
+                case 'TRP': 
+                    return 'W'; 
+                case 'TYR': 
+                    return 'Y'; 
+                case 'VAL': 
+                    return 'V';
+                default:
+                    return null;
+            }
+        }
+
         function downloadSVG(svgSelector, name) {
-            var escapedSVG = new XMLSerializer().serializeToString($(svgSelector).get(0));
-            downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), name);
+          var svgClone = $(svgSelector).clone();
+          svgClone.find('.svg-pan-zoom_viewport').attr('transform', 'matrix(2.2,0,0,2.2,295,140)');
+          
+          var escapedSVG = new XMLSerializer().serializeToString(svgClone.get(0));
+
+          downloadURI('data:image/svg+xml;base64,' + window.btoa(escapedSVG), name);
+        }
+
+        function downloadSingleCrystalCSV(singleCrystalSvgSelector, name) {
+            var data = [];
+            var header = ['Residue number 1', 'Residue number 2', 'Segment 1', 'Segment 2',  'Generic number 1', 'Generic number 2', 'Amino acid 1', 'Amino acid 2', 'Interaction type'];
+            data.push(header);
+
+            $(singleCrystalSvgSelector + ' rect[data-interaction-type]').each(function(e) {
+              var rect = $(this);
+              var resNo1 = rect.data('res-no-1');
+              var resNo2 = rect.data('res-no-2');
+              var seg1 = rect.data('seg-1');
+              var seg2 = rect.data('seg-2');
+              var genNo1 = rect.data('gen-no-1');
+              var genNo2 = rect.data('gen-no-2');
+              var aa1 = rect.data('aa-1');
+              var aa2 = rect.data('aa-2');
+              var iType = rect.data('interaction-type');
+              data.push([resNo1, resNo2, seg1, seg2, genNo1, genNo2, aa1, aa2, iType]);
+            });
+
+            // Convert to CSV
+            var csv = Papa.unparse(data);
+
+            // Download file
+            downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
+        }
+
+        function downloadSingleCrystalGroupCSV(singleGroupSvgSelector, name) {
+            var data = [];
+            var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2', 'Frequency',  'Number of interactions', 'Number of crystals'];
+            data.push(header);
+
+            $(singleGroupSvgSelector + ' rect[data-frequency]').each(function(e) {
+              var rect = $(this);
+              var genNo1 = rect.data('gen-no-1');
+              var genNo2 = rect.data('gen-no-2');
+              var seg1 = rect.data('seg-1');
+              var seg2 = rect.data('seg-2');
+              var nInteractions = rect.data('num-interactions');
+              var nTotalInteractions = rect.data('total-possible-interactions');
+              var frequency = rect.data('frequency');
+              data.push([genNo1, genNo2, seg1, seg2, nInteractions, nTotalInteractions, frequency]);
+            });
+
+            // Convert to CSV
+            var csv = Papa.unparse(data);
+
+            // Download file
+            downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
+        }
+
+        function downloadTwoCrystalGroupsCSV(twoGroupsSvgSelector, name) {
+            var data = [];
+            var header = ['Generic number 1', 'Generic number 2', 'Segment 1', 'Segment 2', 'Interactions group 1', 'Interactions group 2', 'Crystals group 1', 'Crystals group 2', 'Frequency group 1', 'Frequency group 2', 'Frequency Difference'];
+            data.push(header);
+
+            $(twoGroupsSvgSelector + ' rect[data-frequency-diff]').each(function(e) {
+              var rect = $(this);
+              var genNo1 = rect.data('gen-no-1');
+              var genNo2 = rect.data('gen-no-2');
+              var seg1 = rect.data('seg-1');
+              var seg2 = rect.data('seg-2');
+              var numIntsGroup1 = rect.data('group-1-num-ints');
+              var numIntsGroup2 = rect.data('group-2-num-ints');
+              var numPdbsGroup1 = rect.data('group-1-num-pdbs');
+              var numPdbsGroup2 = rect.data('group-2-num-pdbs');
+              var freqGroup1 = rect.data('group-1-freq');
+              var freqGroup2 = rect.data('group-2-freq');
+              var fDiff = rect.data('frequency-diff').toFixed(2);
+              data.push([genNo1, genNo2, seg1, seg2, numIntsGroup1, numIntsGroup2, numPdbsGroup1, numPdbsGroup2, freqGroup1, freqGroup2, fDiff]);
+            });
+
+            // Convert to CSV
+            var csv = Papa.unparse(data);
+
+            // Download file
+            downloadURI('data:text/csv;charset=UTF-8,' + encodeURI(csv), name);
         }
 
         function downloadURI(uri, name) {
@@ -696,6 +848,8 @@
             var interactions = data.interactions;
             var segment_map = data.segment_map;
             var sequence_numbers = data.sequence_numbers;
+            var aa_map = data.aa_map[Object.keys(data.aa_map)[0]];
+            var gen_map = data.generic_map;
             var num_seq_numbers = Object.keys(data.sequence_numbers).length;
 
             x = 0; wi = num_seq_numbers;
@@ -825,9 +979,67 @@
                             var rgb = getInteractionColor(interaction);
                             var cell = heatmap.rect(i, j, 1, 1);
 
-                            var content, title = 'Residues ' + seq_i + ', ' + seq_j + '<br />'
-                                    + 'Interaction: ' + getFriendlyInteractionName(interaction) + '<br />'
-                                    + segment_map[seq_j] + ', ' + segment_map[seq_i];
+                            var interactionsString = getInteractionTypesFromPdbObject(interactions[num]).map(getFriendlyInteractionName).filter(function(item, pos, self) {
+                                return self.indexOf(item) == pos;
+                            }).join(", ");
+
+                            var content, title = 'Residues ' + aa_map[seq_i] + seq_i + '-' + aa_map[seq_j] + seq_j + '<br />'
+                                    + 'Interactions: ' + interactionsString + '<br />'
+                                    + 'Segments: ' + segment_map[seq_i] + ', ' + segment_map[seq_j] + '<br />';
+
+                            // Add generic numbers where applicable
+                            if (seq_i in gen_map) {
+                                title += 'Res. 1 gen. no: ' + gen_map[seq_i] + '<br />';
+                            }
+
+                            if (seq_j in gen_map) {
+                                title += 'Res. 2 gen. no: ' + gen_map[seq_j] + '<br />';
+                            }
+
+                            var genStrI = gen_map[seq_i];
+                            var genStrJ = gen_map[seq_j];
+
+                            if (typeof gen_map[seq_i] == 'undefined') {
+                                genStrI = '-';
+                            }
+
+                            if (typeof gen_map[seq_j] == 'undefined') {
+                                genStrJ = '-';
+                            }
+
+                            var popoverTable = '<table class="table">'
+                            + '<thead>'
+                            + '<tr>'
+                            + '<th>Residue</th>'
+                            + '<th>' + aa_map[seq_i] + seq_i + '</th>'
+                            + '<th>' + aa_map[seq_j] + seq_j + '</th>'
+                            + '</tr>'
+                            + '</thead>'
+                            + '<tbody>'
+                            + '<td>Segment</td>'
+                            + '<td>' + segment_map[seq_i] + '</td>'
+                            + '<td>' + segment_map[seq_j] + '</td>'
+                            + '</tr>'
+                            + '<tr>'
+                            + '<td>Gen. no.</td>'
+                            + '<td>' + genStrI + '</td>'
+                            + '<td>' + genStrJ + '</td>'
+                            + '</tr>'
+                            + '</tbody>'
+                            + '</table>'
+                            + '<table class="table">'
+                            + '<thead>'
+                            + '<tr>'
+                            + '<th>Interactions</th>'
+                            + '</tr>'
+                            + '<tr>'
+                            + '</thead>'
+                            + '<tbody>'
+                            + '<tr>'
+                            + '<td>' + interactionsString + '</td>'
+                            + '</tr>'
+                            + '</tbody>'
+                            + '</table>'
 
                             var interactionId = 'single-i-' + num.replace(',','-');
 
@@ -835,6 +1047,14 @@
                             cell.attr({
                                 'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
                                 'data-interaction-type': interaction,
+                                'data-res-no-1': seq_i,
+                                'data-res-no-2': seq_j,
+                                'data-aa-1': aa_map[seq_i],
+                                'data-aa-2': aa_map[seq_j],
+                                'data-seg-1': segment_map[seq_i],
+                                'data-seg-2': segment_map[seq_j],
+                                'data-gen-no-1': genStrI,
+                                'data-gen-no-2': genStrJ,
                                 'class': 'heatmap-interaction' + ' ' + getFriendlyInteractionName(interaction).replace(/ /g,"-"),
                                 'id': interactionId
                             });
@@ -858,8 +1078,8 @@
                                 'placement': 'bottom',
                                 'animation': true,
                                 'html': true,
-                                'title': 'Interactions at ' + seq_i + ', ' + seq_j,
-                                'content': title,
+                                'title': 'Interactions at ' + aa_map[seq_i] + seq_i + ', ' + aa_map[seq_j] + seq_j,
+                                'content': popoverTable,
                                 'tabindex': '0'
                             });
 
@@ -917,6 +1137,10 @@
                             '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
                           '</button>';
 
+            // Add CSV download button
+            legendHtml += '<br /><button onclick="downloadSingleCrystalCSV(\'' + heatMapSelector + ' .heatmap\', \'interactions.csv\')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV' +
+              '</button>';
+
             $(heatMapSelector + ' .heatmap-legend').append(legendHtml);
 
             $(heatMapSelector + ' .heatmap-legend input[type=checkbox]').each(function() {
@@ -946,6 +1170,10 @@
                 beforeZoom: hidePopovers,
                 beforePan: hidePopovers
             });
+
+            // Set initial zoom level
+            window.zoomHeatmap[heatMapSelector].zoom(1);
+            window.zoomHeatmap[heatMapSelector].pan({x: 325, y: 140});
 
             // Close popovers on clicking elsewhere
             $('html').on('mousedown', function(e) {
@@ -1110,9 +1338,33 @@
                                 + 'Interaction count: ' + nInteractions + '<br />'
                                 + segment_map[seq_i] + ', ' + segment_map[seq_j];
 
+                        var popoverTable = '<table class="table">'
+                            + '<thead>'
+                            + '<tr>'
+                            + '<th>Residue #</th>'
+                            + '<th>' + seq_i + '</th>'
+                            + '<th>' + seq_j + '</th>'
+                            + '</tr>'
+                            + '</thead>'
+                            + '<tbody>'
+                            + '<td>Segment</td>'
+                            + '<td>' + segment_map[seq_i] + '</td>'
+                            + '<td>' + segment_map[seq_j] + '</td>'
+                            + '</tr>'
+                            + '</tbody>'
+                            + '</table>'
+                            + 'Interaction count: ' + nInteractions + '<br />'
+                            + 'Interaction frequency: ' + frequency.toFixed(2)
+
                         cell.attr({
                             'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
                             'data-num-interactions': nInteractions,
+                            'data-total-possible-interactions': data.pdbs.length,
+                            'data-frequency': frequency,
+                            'data-gen-no-1': seq_i,
+                            'data-gen-no-2': seq_j,
+                            'data-seg-1': segment_map[seq_i],
+                            'data-seg-2': segment_map[seq_j],
                             'class': 'heatmap-interaction'
                         });
 
@@ -1131,7 +1383,7 @@
                             'animation': true,
                             'html': true,
                             'title': 'Interactions at ' + seq_i + ', ' + seq_j,
-                            'content': title,
+                            'content': popoverTable,
                             'tabindex': '0'
                         });
 
@@ -1167,6 +1419,11 @@
             legendHtml += '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
                             '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
                           '</button>';
+
+            // Add CSV download button
+            legendHtml += '<br /><button onclick="downloadSingleCrystalGroupCSV(\'' + heatMapSelector + ' .heatmap\', \'interactions.csv\')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV' +
+              '</button>';
+
 
             $(heatMapSelector + ' .heatmap-legend').append(legendHtml); 
 
@@ -1205,8 +1462,14 @@
                 minZoom: 0.75,
                 maxZoom: 50,
                 zoomScaleSensitivity: 0.25,
-                dblClickZoomEnabled: true
+                dblClickZoomEnabled: true,
+                beforeZoom: hidePopovers,
+                beforePan: hidePopovers
             });
+
+            // Set initial zoom level
+            window.zoomHeatmap[heatMapSelector].zoom(1);
+            window.zoomHeatmap[heatMapSelector].pan({x: 325, y: 140});
 
             // Close popovers on clicking elsewhere
             $('html').on('mousedown', function(e) {
@@ -1390,9 +1653,38 @@
                                    + 'Frequency group 2: ' + f2.toFixed(2)+ '<br />' 
                                    + 'Frequency difference: ' + fDiff.toFixed(2)+ '<br />' ;
 
+                        var popoverTable = '<table class="table">'
+                            + '<thead>'
+                            + '<tr>'
+                            + '<th>Residue #</th>'
+                            + '<th>' + seq_i + '</th>'
+                            + '<th>' + seq_j + '</th>'
+                            + '</tr>'
+                            + '</thead>'
+                            + '<tbody>'
+                            + '<td>Segment</td>'
+                            + '<td>' + segment_map[seq_i] + '</td>'
+                            + '<td>' + segment_map[seq_j] + '</td>'
+                            + '</tr>'
+                            + '</tbody>'
+                            + '</table>'
+                            + 'Group 1 freq: ' + f1.toFixed(2) + '<br />'
+                            + 'Group 2 freq: ' + f2.toFixed(2) + '<br />'
+                            + 'Frequency difference: ' + fDiff.toFixed(2)
+
                         cell.attr({
                             'fill': "rgb(" + [rgb.r, rgb.g, rgb.b].join(',') + ")",
                             'data-frequency-diff': fDiff,
+                            'data-gen-no-1': seq_i,
+                            'data-gen-no-2': seq_j,
+                            'data-seg-1': segment_map[seq_i],
+                            'data-seg-2': segment_map[seq_j],
+                            'data-group-1-num-ints': n1,
+                            'data-group-2-num-ints': n2,
+                            'data-group-1-num-pdbs': data1.pdbs.length,
+                            'data-group-2-num-pdbs': data2.pdbs.length,
+                            'data-group-1-freq': f1.toFixed(2),
+                            'data-group-2-freq': f2.toFixed(2),
                             'class': 'heatmap-interaction'
                         });
 
@@ -1411,7 +1703,7 @@
                             'animation': true,
                             'html': true,
                             'title': 'Interactions at ' + seq_i + ', ' + seq_j,
-                            'content': title,
+                            'content': popoverTable,
                             'tabindex': '0'
                         });
 
@@ -1446,9 +1738,13 @@
                 + '</div>';
 
             // Add SVG download button
-            legendHtml += '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\')" type="button" class="btn btn-primary pull-right" aria-label="Left Align">' +
+            legendHtml += '<button onclick="downloadSVG(\'' + heatMapSelector + ' .heatmap\', \'interactions.svg\')" type="button" class="btn btn-primary pull-right svg-download-button" aria-label="Left Align">' +
                             '<span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download SVG' +
                           '</button>';
+
+            // Add CSV download button
+            legendHtml += '<br /><button onclick="downloadTwoCrystalGroupsCSV(\'' + heatMapSelector + ' .heatmap\', \'interactions.csv\')" type="button" class="btn btn-success pull-right csv-download-button" aria-label="Left Align"><span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download CSV' +
+              '</button>';
 
             $(heatMapSelector + ' .heatmap-legend').append(legendHtml); 
 
@@ -1487,8 +1783,14 @@
                 minZoom: 0.75,
                 maxZoom: 50,
                 zoomScaleSensitivity: 0.25,
-                dblClickZoomEnabled: true
+                dblClickZoomEnabled: true,
+                beforeZoom: hidePopovers,
+                beforePan: hidePopovers
             });
+
+            // Set initial zoom level
+            window.zoomHeatmap[heatMapSelector].zoom(1);
+            window.zoomHeatmap[heatMapSelector].pan({x: 325, y: 140});
 
             // Close popovers on clicking elsewhere
             $('html').on('mousedown', function(e) {
@@ -1703,52 +2005,73 @@
 
         function reshapeTreeData(node) {
 
+            var nodes = [];
+
             // Check if we are at a leaf-node, i.e. a list of PDB codes.
             if (Array.isArray(node)) {
-                var nodes = [];
                 for (var i in node) {
                     nodes.push({
-                        'text': node[i]
+                        'text': node[i],
+                        'slug': node[i]
                     });
                 }
-                return nodes;
+            } else {
+                for (var name in node) {
+                    if (node.hasOwnProperty(name)) {
+                        nodes.push({
+                            'text': name.split(',')[1],
+                            'slug': name.split(',')[0],
+                            'nodes': reshapeTreeData(node[name])
+                        });
+                    }
+                }
             }
 
-            var nodes = [];
-            for (var name in node) {
-                if (node.hasOwnProperty(name)) {
-                    nodes.push({
-                        'text': name,
-                        'nodes': reshapeTreeData(node[name])
-                    });
-                }
-            }
+            // Sort nodes
+            nodes.sort(function(a,b) {
+              return a.slug >= b.slug;
+            });
+
             return nodes;
         }
 
-        function initializePdbChooser(treeSelector, pdbsCountSelector, pdbsInputSelector, multiSelect=true) {
+        function initializePdbChooser(treeSelector, pdbsCountSelector, pdbsInputSelector, multiSelect=true, chooseActiveSelector='', chooseInactiveSelector='', chooseRepresentativeSelector='', chooseNonRepresentativeSelector='') {
             $.get('pdbtreedata', function ( data ) {
-                var json = reshapeTreeData(data);
+
+                var treeData = reshapeTreeData(data);
+
+                console.log(treeData);
 
                 var $searchableTree = $(treeSelector).treeview({
-                    data: json,
+                    data: treeData,
                     showIcon: false,
                     showCheckbox: multiSelect,
+                    propagateCheckEvent: true,
+                    hierarchicalCheck: true,
+                    levels: 1,
+
+                    // Single crystal selection.
                     onNodeSelected: function(event, node) {
                         if (!multiSelect && "undefined" === typeof node.nodes) {
                             var pdbs = JSON.parse($(pdbsInputSelector).val());
-                            pdbs.push(node.text);
+                            var pdbName = node.text.substring(0,4);
+                            pdbs.push(pdbName);
                             $(pdbsInputSelector).val(JSON.stringify(pdbs));
 
+                            // Get family name
+                            var domNode = $(treeSelector + ' *[data-nodeid="' + node.parentId +'"]');
+                            var html = domNode.html();
+                            var familyName = html.substring(html.lastIndexOf("</span>") + 7, html.length);
+
                             // Update view
-                            $(pdbsCountSelector).html(pdbs.length);
+                            $(pdbsCountSelector).html(familyName + ' - ' + pdbName + ' selected.');
                         }
                     },
                     onNodeUnselected: function(event, node) {
                         if (!multiSelect && "undefined" === typeof node.nodes) {
                             var pdbs = JSON.parse($(pdbsInputSelector).val());
                             for (var i=pdbs.length-1; i>=0; i--) {
-                                if (pdbs[i] === node.text) {
+                                if (pdbs[i] === node.text.substring(0,4)) {
                                     pdbs.splice(i, 1);
                                     break;
                                 }
@@ -1756,28 +2079,62 @@
                             $(pdbsInputSelector).val(JSON.stringify(pdbs));
 
                             // Update view
-                            $(pdbsCountSelector).html(pdbs.length);
+                            $(pdbsCountSelector).html('No crystal selected.');
                         }
                     },
+                    // Multiple crystal selection
                     onNodeChecked: function(event, node) {
+                        var chooseActive = $(chooseActiveSelector).is(':checked');
+                        var chooseInactive = $(chooseInactiveSelector).is(':checked');
+                        var chooseRepresentative = $(chooseRepresentativeSelector).is(':checked');
+                        var chooseNonRepresentative = $(chooseNonRepresentativeSelector).is(':checked');
+
+                        var domNode = $(treeSelector + ' *[data-nodeid="' + node.nodeId +'"]').find('span.icon.check-icon.glyphicon').first();
+
                         if ("undefined" === typeof node.nodes) {
+                            if (!chooseActive && (node.text.indexOf('(A)') !== -1)) {
+                                setTimeout(function(){
+                                    domNode.trigger('click');
+                                }, 1);
+                                return;
+                            }
+
+                            if (!chooseInactive && (node.text.indexOf('(I)') !== -1)) {
+                                setTimeout(function(){
+                                    domNode.trigger('click');
+                                }, 1);
+                                return;
+                            }
+
+                            if (!chooseRepresentative && (node.text.indexOf('(R)') !== -1)) {
+                                setTimeout(function(){
+                                    domNode.trigger('click');
+                                }, 1);
+                                return;
+                            }
+
+                            if (!chooseNonRepresentative && (node.text.indexOf('(N)') !== -1)) {
+                                setTimeout(function(){
+                                    domNode.trigger('click');
+                                }, 1);
+                                return;
+                            }
+                            
                             var pdbs = JSON.parse($(pdbsInputSelector).val());
-                            pdbs.push(node.text);
+                            pdbs.push(node.text.substring(0,4));
                             $(pdbsInputSelector).val(JSON.stringify(pdbs));
 
                             // Update view
                             $(pdbsCountSelector).html(pdbs.length);
-                        }
-                        for(var i in node.nodes) {
-                            var child = node.nodes[i];
-                            $(this).treeview(true).checkNode(child.nodeId);
                         }
                     },
                     onNodeUnchecked: function (event, node) {
+
+                        // Uncheck all child nodes
                         if ("undefined" === typeof node.nodes) {
                             var pdbs = JSON.parse($(pdbsInputSelector).val());
                             for (var i=pdbs.length-1; i>=0; i--) {
-                                if (pdbs[i] === node.text) {
+                                if (pdbs[i] === node.text.substring(0,4)) {
                                     pdbs.splice(i, 1);
                                     break;
                                 }
@@ -1787,12 +2144,7 @@
                             // Update view
                             $(pdbsCountSelector).html(pdbs.length);
                         }
-                        for(var i in node.nodes) {
-                            var child = node.nodes[i];
-                            $(this).treeview(true).uncheckNode(child.nodeId);
-                        }
-                    },
-                  levels: 0
+                    }
                 });
             });
         }
@@ -1806,7 +2158,7 @@
         }
 
         function initializeSingleGroupCrystalView() {
-            initializePdbChooser('#single-crystal-group-pdbs-modal .treeview', '#single-crystal-group-tab .crystal-count', '#single-crystal-group-tab .crystal-pdb');
+            initializePdbChooser('#single-crystal-group-pdbs-modal .treeview', '#single-crystal-group-tab .crystal-count', '#single-crystal-group-tab .crystal-pdb', true, '#single-crystal-group-pdbs-modal .choose-active', '#single-crystal-group-pdbs-modal .choose-inactive', '#single-crystal-group-pdbs-modal .choose-representative', '#single-crystal-group-pdbs-modal .choose-non-representative');
             initializeSegmentButtons('#single-crystal-group-tab');
             initializeGoButton('#single-crystal-group-tab', renderSingleCrystalGroupHeatmap, true);
             initializeFullscreenButton('#single-crystal-group-tab');
@@ -1814,8 +2166,8 @@
         }
 
         function initializeTwoCrystalGroupsView() {
-            initializePdbChooser('#two-crystal-group-pdbs-modal-1 .treeview', '#two-crystal-groups-tab .crystal-count-1', '#two-crystal-groups-tab .crystal-group-1-pdbs');
-            initializePdbChooser('#two-crystal-group-pdbs-modal-2 .treeview', '#two-crystal-groups-tab .crystal-count-2', '#two-crystal-groups-tab .crystal-group-2-pdbs');
+            initializePdbChooser('#two-crystal-group-pdbs-modal-1 .treeview', '#two-crystal-groups-tab .crystal-count-1', '#two-crystal-groups-tab .crystal-group-1-pdbs', true, '#two-crystal-group-pdbs-modal-1 .choose-active', '#two-crystal-group-pdbs-modal-1 .choose-inactive', '#two-crystal-group-pdbs-modal-1 .choose-representative', '#two-crystal-group-pdbs-modal-1 .choose-non-representative');
+            initializePdbChooser('#two-crystal-group-pdbs-modal-2 .treeview', '#two-crystal-groups-tab .crystal-count-2', '#two-crystal-groups-tab .crystal-group-2-pdbs', true, '#two-crystal-group-pdbs-modal-2 .choose-active', '#two-crystal-group-pdbs-modal-2 .choose-inactive', '#two-crystal-group-pdbs-modal-2 .choose-representative', '#two-crystal-group-pdbs-modal-2 .choose-non-representative');
             initializeSegmentButtons('#two-crystal-groups-tab');
             initializeGoButtonTwoCrystalGroups('#two-crystal-groups-tab', renderTwoCrystalGroupsHeatmap, true);
             initializeFullscreenButton('#two-crystal-groups-tab');
@@ -1846,9 +2198,11 @@
             height: 500px;
         }
 
-        .go-button {
-            width: 100%;
-            margin-bottom: 15px;
+        @media screen and (max-width: 992px) {
+            .go-button {
+                width: 100%;
+                margin-bottom: 15px;
+            }
         }
 
         .heatmap-container {
@@ -1962,6 +2316,10 @@
         }
 
         .svg-download-button {
+            margin-top: 6px;
+        }
+
+        .csv-download-button {
             margin-top: 6px;
         }
     </style>

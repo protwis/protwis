@@ -20,27 +20,50 @@ def Interactions(request):
 
 def PdbTreeData(request):
     data = Structure.objects.values(
+        'representative',
         'pdb_code__index',
         'protein_conformation__protein__parent__family__parent__parent__parent__name',
         'protein_conformation__protein__parent__family__parent__parent__name',
         'protein_conformation__protein__parent__family__parent__name',
         'protein_conformation__protein__parent__family__name',
+        'protein_conformation__protein__parent__family__parent__parent__parent__slug',
+        'protein_conformation__protein__parent__family__parent__parent__slug',
+        'protein_conformation__protein__parent__family__parent__slug',
+        'protein_conformation__protein__parent__family__slug',
+        'protein_conformation__state__slug'
         )
 
+    # TODO: Use ordereddict
     l = lambda:defaultdict(l)
     data_dict = l()
 
     for d in data:
         pdb = d['pdb_code__index']
+        rep = d['representative']
         l3 = d['protein_conformation__protein__parent__family__name']
         l2 = d['protein_conformation__protein__parent__family__parent__name']
         l1 = d['protein_conformation__protein__parent__family__parent__parent__name']
         l0 = d['protein_conformation__protein__parent__family__parent__parent__parent__name']
+        s3 = d['protein_conformation__protein__parent__family__slug']
+        s2 = d['protein_conformation__protein__parent__family__parent__slug']
+        s1 = d['protein_conformation__protein__parent__family__parent__parent__slug']
+        s0 = d['protein_conformation__protein__parent__family__parent__parent__parent__slug']
+        state = d['protein_conformation__state__slug']
 
-        if not data_dict[l0][l1][l2]:
-            data_dict[l0][l1][l2] = []
+        if rep:
+            rep = 'R'
+        else:
+            rep = 'N'
 
-        data_dict[l0][l1][l2].append(pdb)
+        if state == 'active':
+            state = 'A'
+        else:
+            state = 'I'
+
+        if not data_dict[s0 + ',' + l0][s1 + ',' + l1][s2 + ',' + l2][s3 + ',' + l3]:
+            data_dict[s0 + ',' + l0][s1 + ',' + l1][s2 + ',' + l2][s3 + ',' + l3] = []
+
+        data_dict[s0 + ',' + l0][s1 + ',' + l1][s2 + ',' + l2][s3 + ',' + l3].append(pdb + ' (' + state + ')'  + '(' + rep + ')')
 
     return JsonResponse(data_dict)
 
@@ -110,6 +133,8 @@ def InteractionData(request):
         interacting_pair__referenced_structure__protein_conformation__protein__entry_name__in=pdbs
     ).values(
         'interacting_pair__referenced_structure__protein_conformation__protein__entry_name',
+        'interacting_pair__res1__amino_acid',
+        'interacting_pair__res2__amino_acid',
         'interacting_pair__res1__sequence_number',
         'interacting_pair__res1__generic_number__label',
         'interacting_pair__res1__protein_segment__slug',
@@ -128,6 +153,11 @@ def InteractionData(request):
     data['generic'] = generic
     data['segments'] = set()
     data['segment_map'] = {}
+    data['aa_map'] = {}
+
+    # Map from ordinary residue numbers to generic where available
+    if (not generic):
+        data['generic_map'] = {}
 
     # Dict to keep track of which residue numbers are in use
     number_dict = set()
@@ -140,6 +170,8 @@ def InteractionData(request):
         res2_gen = i['interacting_pair__res2__generic_number__label']
         res1_seg = i['interacting_pair__res1__protein_segment__slug']
         res2_seg = i['interacting_pair__res2__protein_segment__slug']
+        res1_aa = i['interacting_pair__res1__amino_acid']
+        res2_aa = i['interacting_pair__res2__amino_acid']
         model = i['polymorphic_ctype__model']
 
         if generic and (not res1_gen or not res2_gen):
@@ -156,10 +188,23 @@ def InteractionData(request):
             res1 = res1_gen
             res2 = res2_gen
 
+        if not generic and res1_gen:
+            data['generic_map'][res1] = res1_gen
+
+        if not generic and res2_gen:
+            data['generic_map'][res2] = res2_gen
+
         # List which segments are available.
         data['segment_map'][res1] = res1_seg
         data['segment_map'][res2] = res2_seg
         data['segments'] |= {res1_seg} | {res2_seg}
+
+        # Populate the AA map
+        if pdb_name not in data['aa_map']:
+            data['aa_map'][pdb_name] = {}
+
+        data['aa_map'][pdb_name][res1] = res1_aa
+        data['aa_map'][pdb_name][res2] = res2_aa
 
         number_dict |= {res1, res2}
 

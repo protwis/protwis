@@ -4,7 +4,6 @@ from django.db import models
 
 from polymorphic.models import PolymorphicModel
 
-
 class InteractingResiduePair(PolymorphicModel):
     referenced_structure = models.ForeignKey('structure.Structure')
     res1 = models.ForeignKey('residue.Residue', related_name='residue1')
