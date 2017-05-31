@@ -50,7 +50,7 @@ class Command(BaseBuild):
                             default=False, type=str, nargs='+')
         parser.add_argument('-z', help='Create zip file of model directory containing all built models', default=False,
                             action='store_true')
-        parser.add_argument('--hmver', help='Homology modeling version', default=2.0, type=float)
+        parser.add_argument('--hmver', help='Homology modeling version', default=2.1, type=float)
         parser.add_argument('-s', help='Set activation state for model, default is inactive', default='inactive')
         parser.add_argument('-c', help='Select GPCR class (A, B1, B2, C, F)', default=False)
         parser.add_argument('-i', help='Number of MODELLER iterations for model building', default=1, type=int)
@@ -136,11 +136,10 @@ class Command(BaseBuild):
         try:
             print(receptor)
             seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX']
-            Homology_model = HomologyModeling(receptor, state, [state], update=self.update, version=self.version, iterations=self.modeller_iterations)
+            Homology_model = HomologyModeling(receptor, state, [state], version=self.version, iterations=self.modeller_iterations)
             alignment = Homology_model.run_alignment([state])
             Homology_model.build_homology_model(alignment)
-            if self.update==False:
-                Homology_model.format_final_model()
+            formatted_model = Homology_model.format_final_model()
             if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
                 args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
                 subprocess.call(args)
@@ -187,6 +186,12 @@ class Command(BaseBuild):
                 logger.info('Chain breaks in {}\n{}'.format(Homology_model.reference_entry_name,hse.chain_breaks))
             logger.info('Model built for {} {}'.format(receptor, state))
             
+            # Upload to db
+            if self.update and not residue_shift and len(hse.clash_pairs)==0 and len(hse.chain_breaks)==0:
+                Homology_model.upload_to_db(formatted_model)
+                logger.info('{} homology model uploaded to db'.format(Homology_model.reference_entry_name))
+                print('{} homology model uploaded to db'.format(Homology_model.reference_entry_name))
+
             with open('./structure/homology_models/done_models.txt','a') as f:
                 f.write(receptor+'\n')
         except Exception as msg:
@@ -215,17 +220,15 @@ class HomologyModeling(object):
         @param reference_entry_name: str, protein entry name \n
         @param state: str, endogenous ligand state of reference \n
         @param query_states: list, list of endogenous ligand states to be applied for template search, 
-        @param update: boolean, upload the StructureModel table, default=False
         @param version: float, version number of homology modeling pipeline, default=1.0
     '''
     segment_coding = {1:'TM1',2:'TM2',3:'TM3',4:'TM4',5:'TM5',6:'TM6',7:'TM7',8:'H8', 12:'ICL1', 23:'ECL1', 34:'ICL2', 
                       45:'ECL2'}
     
-    def __init__(self, reference_entry_name, state, query_states, update=False, version=2.0, iterations=1):
+    def __init__(self, reference_entry_name, state, query_states, version=2.1, iterations=1):
         self.reference_entry_name = reference_entry_name.lower()
         self.state = state
         self.query_states = query_states
-        self.update = update
         self.version = version
         self.modeller_iterations = iterations
         self.statistics = CreateStatistics(self.reference_entry_name)
@@ -266,12 +269,11 @@ class HomologyModeling(object):
     def __repr__(self):
         return "<Hommod: {}, {}>".format(self.reference_entry_name, self.state)
 
-    def upload_to_db(self, sections, rotamers):
+    def upload_to_db(self, formatted_model):
         ''' Upload to model to StructureModel and upload segment and rotamer info to StructureModelStatsSegment and
             StructureModelStatsRotamer.
         '''
         s_state=ProteinState.objects.get(name=self.state)
-        formatted_model = self.format_final_model()
         new_entry = False
         try:
             hommod = StructureModel.objects.get(protein=self.reference_protein, state=s_state)
@@ -286,21 +288,14 @@ class HomologyModeling(object):
                                                                       version=self.version)
             new_entry = True
         if not new_entry:
-            StructureModelStatsSegment.objects.filter(homology_model=hommod).delete()
             StructureModelStatsRotamer.objects.filter(homology_model=hommod).delete()
-        for s in sections:
-            segs, created = StructureModelStatsSegment.objects.update_or_create(homology_model=hommod, segment=s[0],
-                                                                                start=s[1],end=s[2],start_gn=s[3],
-                                                                                end_gn=s[4],backbone_template=s[6])
-        segs = StructureModelStatsSegment.objects.filter(homology_model=hommod)
         
-        for r in rotamers:
-            for s in segs:
-                if s.start<=r[1]<=s.end:
-                    m_seg = s
-            rots, created = StructureModelStatsRotamer.objects.update_or_create(homology_model=hommod, segment=r[0],
-                                                                                sequence_number=r[1],generic_number=r[2],
-                                                                                rotamer_template=r[4],model_segment=m_seg)
+        for r in self.template_stats:
+            if r[0] in ['N-term', 'C-term']:
+                continue
+            res = Residue.objects.get(protein_conformation__protein=self.reference_protein, sequence_number=r[1])
+            rots, created = StructureModelStatsRotamer.objects.update_or_create(homology_model=hommod, residue=res,
+                                                                                backbone_template=r[4],rotamer_template=r[5])
                                    
     def right_rotamer_select(self, rotamer):
         ''' Filter out compound rotamers.
@@ -646,7 +641,7 @@ class HomologyModeling(object):
             self.statistics.add_info('similarity_table', self.similarity_table)
             self.statistics.add_info('loops',self.loop_template_table)
             print('Loop alignment: ',datetime.now() - startTime)
-        
+
         return alignment, main_pdb_array
         
         
@@ -668,7 +663,7 @@ class HomologyModeling(object):
         main_pdb_array = ref_temp_alignment[1]
         ref_bulge_list, temp_bulge_list, ref_const_list, temp_const_list = [],[],[],[]
         parse = GPCRDBParsingPDB()
-        
+
         # Delete H8 from dictionaries if it's not present in reference (e.g. gnrhr_human)
         if len(Residue.objects.filter(protein_conformation__protein=self.reference_protein, protein_segment__slug='H8'))==0:
             del a.reference_dict['H8']
@@ -1267,7 +1262,7 @@ class HomologyModeling(object):
                             del self.template_source['ICL3'][keys[icl3_c-1]]
         except:
             pass
-        
+
         # non-conserved residue switching
         if switch_rotamers==True:
             non_cons_switch = self.run_non_conserved_switcher(main_pdb_array,a.reference_dict,a.template_dict,
@@ -1292,7 +1287,7 @@ class HomologyModeling(object):
                 if i not in trimmed_residues:
                     trimmed_residues.append(i)
         array_keys = list(main_pdb_array.keys())
-        
+
         for i,j in self.helix_end_mods['added'].items():
             try:
                 if j[0][-1].replace('x','.') not in trimmed_residues:
@@ -1552,15 +1547,8 @@ class HomologyModeling(object):
                         seq_num = int(gn)
                         curr_seqnum = seq_num
                         gn = None
-                    try:
-                        bb_st = res[0].pdb_code.index
-                    except:
-                        bb_st = res[0]
-                    try:
-                        rot_st = res[1].pdb_code.index
-                    except:
-                        rot_st = res[1]
-                    rot_table.append([seg,seq_num,gn,ref_prot.entry_name,bb_st,rot_st])
+
+                    rot_table.append([seg,seq_num,gn,ref_prot.entry_name,res[0],res[1]])
                     
                     seqnum_minus = False
                     if res[0]!=first_temp:
@@ -1604,10 +1592,20 @@ class HomologyModeling(object):
                     else:
                         if int(sec[1])<=int(rot[1])<=int(sec[2]):
                             s_file.write(str(rot).replace("'","").replace(" ","")[1:-1]+"\n")
+                            try:
+                                bb = rot[4].pdb_code.index
+                            except:
+                                bb = rot[4]
+                            try:
+                                rt = rot[5].pdb_code.index
+                            except:
+                                rt = rot[5]
+                            l = "{},{},{},{},{},{}".format(rot[0],rot[1],rot[2],rot[3],bb,rt)
         
-        if self.update==True:
-            print('UPDATING DB')
-            self.upload_to_db(sections, rot_table)
+        self.template_stats = rot_table
+        # if self.update==True:
+        #     print('UPDATING DB')
+        #     self.upload_to_db(sections, rot_table)
 
         print('MODELLER build: ',datetime.now() - startTime)
         pprint.pprint(self.statistics)
@@ -2303,7 +2301,6 @@ class HelixEndsModeling(HomologyModeling):
             H8_alt = None
         raw_helix_ends = self.fetch_struct_helix_ends_from_array(main_pdb_array)
         anno_helix_ends = self.fetch_struct_helix_ends_from_db(main_structure, H8_alt)
-        print(main_structure)
         
         for lab,seg in a.template_dict.items():
             if separate_H8==True:
@@ -2419,7 +2416,6 @@ class HelixEndsModeling(HomologyModeling):
                 mid = temp_seg_seq_len/2
 
             elif ref_seg[0]=='T':
-                print(raw_helix_ends[ref_seg])
                 first_res = Residue.objects.get(protein_conformation=main_structure.protein_conformation, 
                                                 display_generic_number__label=dgn(raw_helix_ends[ref_seg][0],
                                                                                   main_structure.protein_conformation)).sequence_number
@@ -3219,6 +3215,9 @@ class Loops(object):
                 ref_seq1 = list(Residue.objects.filter(protein_conformation__protein=self.reference_protein, protein_segment__slug='ECL2'))
                 ref_x50 = [i for i in ref_seq1 if i.generic_number!=None and i.generic_number.label=='45x50'][0]
                 ref_x50i = ref_seq1.index(ref_x50)
+                if loop_output_structure[0]!=loop_output_structure[1]:
+                    parent = ProteinConformation.objects.get(protein=loop_output_structure[0].protein_conformation.protein.parent)
+                    seq = list(Residue.objects.filter(protein_conformation=parent, protein_segment__slug='ECL2'))
                 t_dict1 = OrderedDict([('ECL2',OrderedDict())])
                 for i in seq[:ref_x50i]:
                     if i.sequence_number<x50.sequence_number:
@@ -3760,9 +3759,10 @@ class GPCRDBParsingPDB(object):
         
         assign_gn = as_gn.GenericNumbering(structure=pdb_struct)
         pdb_struct = assign_gn.assign_generic_numbers()
-        
         pref_chain = structure.preferred_chain
         parent_prot_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
+        parent_residues = Residue.objects.filter(protein_conformation=parent_prot_conf)
+        last_res = list(parent_residues)[-1].sequence_number
         if len(pref_chain)>1:
             pref_chain = pref_chain[0]
         for residue in pdb_struct[pref_chain]:
@@ -3817,6 +3817,10 @@ class GPCRDBParsingPDB(object):
                     if structure.pdb_code.index=='5VEX' and gn=='318' and res[0].get_parent().get_resname()=='ILE' and found_gn=='5.47':
                         found_gn = '5.48'
                     if -9.1 < float(found_gn) < 9.1:
+                        if len(res)==1:
+                            continue
+                        if int(gn)>last_res:
+                            continue
                         seg_label = self.segment_coding[int(found_gn.split('.')[0])]
                         output[seg_label][found_gn] = res
                 except:
