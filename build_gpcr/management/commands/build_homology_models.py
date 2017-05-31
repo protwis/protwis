@@ -177,6 +177,8 @@ class Command(BaseBuild):
                 print('Remaining clashes in {}:'.format(Homology_model.reference_entry_name))
                 for i in hse.clash_pairs:
                     print(i)
+                    if i[0][1]==i[1][1]-1 or i[0][1]==i[1][1]:
+                        hse.clash_pairs.remove(i)
                 logger.info('Remaining clashes in {}\n{}'.format(Homology_model.reference_entry_name,hse.clash_pairs))
             # Check for chain breaks in model
             if len(hse.chain_breaks)>0:
