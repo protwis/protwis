@@ -640,7 +640,7 @@ class Alignment:
         for i, s in most_freq_aa.items():
             self.consensus[i] = OrderedDict()
             self.forced_consensus[i] = OrderedDict()
-            for p in sorted(s):
+            for p in sorted(s, key=lambda x: (x.split("x")[0], x.split("x")[1])):
                 r = s[p]
                 conservation = str(round(r[1]/num_proteins*100))
                 if len(conservation) == 1:
@@ -683,7 +683,7 @@ class Alignment:
             for segment, segment_num in self.aa_count.items():
                 self.amino_acid_stats[i].append([])
                 k = 0
-                for gn in sorted(segment_num):
+                for gn in sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1])):
                     aas = segment_num[gn]
                     self.amino_acid_stats[i][j].append([])
                     for aa, freq in aas.items():
@@ -705,7 +705,7 @@ class Alignment:
             for segment, segment_num in feature_count.items():
                 self.feature_stats[i].append([])
                 k = 0
-                for gn in sorted(segment_num):
+                for gn in sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1])):
                     fs = segment_num[gn]
                     self.feature_stats[i][j].append([])
                     for f, freq in fs.items():
