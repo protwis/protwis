@@ -107,6 +107,7 @@ def fetch_pdb_info(pdbname,protein):
     # print(variants_mapping)
     # print("gpcrdb seq",len(d['wt_seq']),'uniport len',len(uniprot_seq))
     #ftp://ftp.ebi.ac.uk/pub/databases/msd/sifts/xml/1xyz.xml.gz
+    # Alternative : url = 'http://www.rcsb.org/pdb/files/$index.sifts.xml'
     url = 'ftp://ftp.ebi.ac.uk/pub/databases/msd/sifts/xml/$index.xml.gz'
     sifts = fetch_from_web_api(url, pdbname.lower(), cache_dir, xml = True)
     d['links'].append(Template(url).substitute(index=quote(str(pdbname.lower()), safe='')))
