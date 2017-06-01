@@ -8,7 +8,7 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
 from protein.models import Gene, ProteinSegment
-from structure.models import Structure
+from structure.models import Structure, StructureModel
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
@@ -69,8 +69,25 @@ class StructureBrowser(TemplateView):
 
         return context
 
-def ServeHomologyModels(request):
-    return render(request,"homology_models.html")
+# def ServeHomologyModels(request):
+#     return render(request,"homology_models.html")
+
+class ServeHomologyModels(TemplateView):
+
+    template_name = "homology_models.html"
+    def get_context_data(self, **kwargs):
+        context = super(ServeHomologyModels, self).get_context_data(**kwargs)
+        try:
+            context['structure_model'] = StructureModel.objects.all().select_related(
+                "protein__family",
+                "state",
+                "protein__family__parent__parent__parent",
+                "protein__species",
+                "main_template__pdb_code")
+        except StructureModel.DoesNotExist as e:
+            pass
+
+        return context
 
 def StructureDetails(request, pdbname):
     """
