@@ -2,85 +2,200 @@
 {% load staticfiles %}
 {% load structure_extras %}
 
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function () {
+            ClearSelection('targets');
+            ClearSelection('reference');
+            var table = $('#structure_model').DataTable({
+                'scrollX': true,
+                'scrollY': $(window).height()-300,
+                'bScrollCollapse': true,
+                'paging': false,
+                'orderCellsTop': true,
+                'autoWidth': true,
+                'dom': 'iTlfrt',
+                'order': [[1, "asc"]], // order by date
+                'aoColumnDefs': [
+                    { 'bSortable' : false, 'aTargets': [0] },
+                    { 'sType': 'string', 'aTargets': [1] },
+
+                ],
+                'tableTools': {
+                    "sRowSelect": "single",
+                    "aButtons": []
+                },
+                initComplete: function () {
+                    $('#structure_model').dataTable().columnFilter({
+                        sPlaceHolder: "head:after",
+                        sRangeFormat: "{from}:{to}",
+                        aoColumns: [
+                            null,
+                            { type: "select" }, // protein name
+                            { type: "select"}, // state
+                            { type: "select" }, // class
+                            { type: "select" }, // species
+                            { type: "text" }, // main template
+                            { type: "number" }, // model version
+
+                        ]
+                    });
+                }
+            });
+       //     $.datepicker.regional[""].dateFormat = "yy-mm-dd";
+       //     $.datepicker.setDefaults($.datepicker.regional['']);
+            $('.alt').change(function () {
+                $(this).parent().parent().toggleClass('alt_selected');
+            });
+            $('#superpose_btn').click(function () {
+                ClearSelection('targets');
+                ClearSelection('reference');
+                if (table.rows('.selected').data().length == 1) {
+                    var div = document.createElement("div");
+                    div.innerHTML = table.rows('.selected').data()[0][4];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('reference', 'structure', div.textContent.replace(/\s+/g, ''));
+                    }
+
+                }
+                var checked_data = table.rows('.alt_selected').data();
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][4];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                    }
+
+                }
+                window.location.href = '/structure/superposition_workflow_index';
+            });
+            $.fn.dataTable.ext.search.push(
+                function (settings, data, dataIndex) {
+                    if ($('#representative_btn').hasClass('toggled')) {
+                        if ($(table.row(dataIndex).node()).hasClass("repr-st")) {
+                            return true;
+                        }
+                        return false;
+                    }
+                    else {
+                        return true;
+                    }
+            });
+
+            $('#representative_btn').click(function () {
+                //class 'active' is conflicting with something else o.O
+                $(this).toggleClass('toggled');
+                table.draw();
+            });
+            $('#download_btn').click(function () {
+                ClearSelection('targets');
+                var checked_data = table.rows('.alt_selected').data();
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][4];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '') );
+                    } else {
+                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                    }
+                }
+                window.location.href = '/structure/pdb_download_index';
+            });
+            $('#align_btn').click(function () {
+                var checked_data = table.rows('.alt_selected').data();
+                ClearSelection('targets');
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][4];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                    }
+
+                }
+                window.location.href = '/structure/selection_convert';
+            });
+            $('.select-all').change(function () {
+                $('.alt').prop('checked', $(this).prop("checked"));
+                $('.alt').parent().parent().toggleClass('alt_selected');
+            });
+
+        });
+    </script> 
+{% endblock %}
+
 {% block content %}
-<style>
-body {background-image:url("../../static/home/images/drd2_human.png"); background-size: 30%;
-      background-repeat: no-repeat; background-attachment:scroll;  background-position: right top; 
-      max-width: 100%; max-height: 100%;}
-</style>
-<h2><strong>Homology models - Less Model and More Crystal</strong></h2>
-<br><br>
-<h3>Methods</h3>
-<div style="width:80%">
-    <ul>
-        <li>Automated pipeline for the method that gave the best 5-HT1B RMSD in GPCR Dock 2013 <a href="http://www.ncbi.nlm.nih.gov/pubmed/25066135" target="_blank">[PubMed]</a></li>
-        <li>Multiple (serial) local templates</li>
-        <li>In-house rotamer library (position-specific)</li>
-        <li>Incorporates helix bulges & constrictions <a href="http://www.ncbi.nlm.nih.gov/pubmed/25541108" target="_blank">[PubMed]</a></li>
-        <li>Loops modelled by aligned conserved secondary structures, or template chosen by length</li>
-	<li>Models updated continuously with new templates and alignments</li>
-        <br>
-    </ul>
-    <h3>Models</h3>
-    <ul>
-	<li>The models are currently in an expert review phase and the modeling pipeline is being optimized.</li>
-        <li>By clicking the download button you can get a .zip file of all class A inactive GPCR homology models that were possible to build with our automated homology model building pipeline.</li>
-        <li>Each model folder contains a .stats.txt file which contains information about the models.</li>
-            <ul>            
-                <li>Lines showing backbone templates - Segments</li>
-                <style>
-                    table { border-collapse: collapse; border: solid; }
-                    colgroup, tbody { border: solid medium; }
-                    td { border: solid thin; height: 1.4em; width: 10em; text-align: center; padding: 5; }
-                </style>
-                <table border="1">
-                    <tr align="center">
-                        <td> Segment</td>
-                        <td> Start num</td>
-                        <td> End num</td>
-                        <td> Start generic num</td>
-                        <td> End generic num</td>
-                        <td> Receptor target</td>
-                        <td> Backbone template</td>
-                    </tr>
-                    <tr align="center">
-                        <td>'TM1'</td>
-                        <td>42</td>
-                        <td>72</td>
-                        <td>'1x30'</td>
-                        <td>'1x60'</td>
-                        <td>'ssr3_human'</td>
-                        <td>&#60;Structure: 4DJH&#62;</td>
-                    </tr>
-                </table>
-                <br>
-                <li>Lines showing rotamer templates - Residues</li>
-                <table border="1">
-                    <tr align="center">
-                        <td> Segment</td>
-                        <td> Sequence num</td>
-                        <td> Generic num</td>
-                        <td> Receptor target</td>
-                        <td> Rotamer template</td>
-                    </tr>
-                    <tr align="center">
-                        <td>'TM1'</td>
-                        <td>42</td>
-                        <td>'1x30'</td>
-                        <td>'ssr3_human'</td>
-                        <td>&#60;Structure: 4DKL&#62;</td>
-                    </tr>
-                </table>
-            </ul><br>
-        <li>Find more information about the pipeline <a href="../static/home/poster/homology_models_poster.pdf" target="_blank">here</a>.</li>
-</div>
-<br>
-<div align="center">
-    <div style="width:20%"> <a href="http://files.gpcrdb.org/homology_models_v2.0.zip" class="btn btn-success btn-lg btn-block"> Download </a> </div>
-</div>
-<br>
-<div align="center">
-    <a href="http://files.gpcrdb.org/homology_models_v1.0.zip"> Archived v1.0 </a>
-</div>
-<br>
+    <div class="btn-group">
+        <a id="align_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Align</a>
+    </div>
+    <div class="btn-group">
+        <a id="download_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Download</a>
+    </div>
+    <div class="btn-group">
+        <a id="representative_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show representative</a>
+    </div>
+    <div class="btn-group">
+        <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
+    </div>
+    <div style="font-size: 10px;">For superimposition: Select (tick box) structures, and Highlight the reference template</div>
+    <br />
+    <br />
+
+    <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+        <table width="100%" class="display" id="structure_model">
+            <thead>
+                <tr>
+                    <th><input class="select-all" type="checkbox"> Select all</th>
+                    <th class="protein-th">Protein name</th>
+                    <th class="protein-th">State</th>
+                    <th class="protein-th">Protein class</th>
+                    <th class="protein-th">Species</th>
+                    <th class="pdb-th">Main template</th>
+                    <th class="pdb-th">Model version</th>
+
+                </tr>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                   
+                </tr>
+            </thead>
+            <tbody>
+            {% for model in structure_model.all %}
+                <tr>
+                    <td><input class="alt" type="checkbox"></td>
+                    <td>{{ model.protein.family.name|safe }}</td>
+                    <td>{{ model.state.name }}</td>
+                    <td>{{ model.protein.family.parent.parent.parent.name }}</td>
+                    <td>{{ model.protein.species.common_name }}</td>
+                    <td><a href="{{ model.main_template.pdb_code.index}}">{{ model.main_template.pdb_code.index}}
+                    </a></td>
+                    <td>{{ model.version|floatformat:"1" }}</td>
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
 {% endblock %}
