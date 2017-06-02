@@ -83,6 +83,7 @@ class ServeHomologyModels(TemplateView):
                 "state",
                 "protein__family__parent__parent__parent",
                 "protein__species",
+                "main_template__protein_conformation__protein__parent__family",
                 "main_template__pdb_code")
         except StructureModel.DoesNotExist as e:
             pass

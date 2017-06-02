@@ -56,6 +56,7 @@
                             { type: "text" }, // x-ray ligand type
                             { type: "text" }, // reference
                             { type: "date-range" }, // publication date
+                            { type: "select"} // annotated
                         ]
                     });
                 }
@@ -184,8 +185,10 @@
                     <th class="ligand-th">X-ray lig. type</th>
                     <th class="pub-th">Reference</th>
                     <th class="pub-th">Date</th>
+                    <th class="pub-th">Annotated</th>
                 </tr>
                 <tr>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -266,8 +269,15 @@
                         </a>
                     </td>
                     <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
+                    <td>
+                        {% if structure.annotated %}
+                        Yes
+                        {% else %}
+                        No
+                        {% endif %}
+                    </td>
                 </tr>
-                {% endfor %}
+            {% endfor %}
             </tbody>
         </table>
     </div>

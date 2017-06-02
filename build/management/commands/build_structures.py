@@ -984,6 +984,11 @@ class Command(BaseBuild):
                     except:
                         self.logger.error('Error saving publication'.format(ps.name))
 
+                    if source_file.split('.')[0] in self.xtal_seg_ends:
+                        s.annotated = True
+                    else:
+                        s.annotated = False
+
                     # save structure before adding M2M relations
                     s.save()
                     # StructureLigandInteraction.objects.filter(structure=s).delete()

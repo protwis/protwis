@@ -1516,7 +1516,7 @@ class HomologyModeling(object):
                           self.uniprot_id, self.modeller_iterations, path+modelname+'.pdb', 
                           atom_dict=trimmed_res_nums, helix_restraints=helix_restraints, icl3_mid=icl3_mid, disulfide_nums=disulfide_nums)
 
-        os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
+        # os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
 
         # stat file
         with open(path+modelname+'.templates.csv','w') as s_file:

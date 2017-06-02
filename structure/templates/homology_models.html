@@ -45,7 +45,8 @@
                             { type: "select"}, // state
                             { type: "select" }, // class
                             { type: "select" }, // species
-                            { type: "text" }, // main template
+                            { type: "text" }, // main template receptor
+                            { type: "text" }, // main template structure
                             { type: "number" }, // model version
 
                         ]
@@ -165,11 +166,13 @@
                     <th class="protein-th">State</th>
                     <th class="protein-th">Protein class</th>
                     <th class="protein-th">Species</th>
-                    <th class="pdb-th">Main template</th>
+                    <th class="pdb-th">Main template protein</th>
+                    <th class="pdb-th">Main template structure</th>
                     <th class="pdb-th">Model version</th>
 
                 </tr>
                 <tr>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -184,12 +187,12 @@
             {% for model in structure_model.all %}
                 <tr>
                     <td><input class="alt" type="checkbox"></td>
-                    <td>{{ model.protein.family.name|safe }}</td>
+                    <td><a href="/protein/{{ model.protein.entry_name }}">{{ model.protein.family.name|safe }}</a></td>
                     <td>{{ model.state.name }}</td>
                     <td>{{ model.protein.family.parent.parent.parent.name }}</td>
                     <td>{{ model.protein.species.common_name }}</td>
-                    <td><a href="{{ model.main_template.pdb_code.index}}">{{ model.main_template.pdb_code.index}}
-                    </a></td>
+                    <td><a href="/protein/{{ model.protein.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
+                    <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
                     <td>{{ model.version|floatformat:"1" }}</td>
 
                 </tr>
