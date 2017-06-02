@@ -198,7 +198,7 @@ class QueryPDB():
                         # Create new structure object
                         Structure.objects.get_or_create(preferred_chain=preferred_chain, resolution=resolution, publication_date=publication_date, representative='f', pdb_code=pdb_code,
                                                         pdb_data=pdb_data, protein_conformation=new_prot_conf, publication=publication, state=state, 
-                                                        structure_type=st_type)
+                                                        structure_type=st_type, annotated=False)
                         print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
                 except Exception as msg:
                     print(msg)
