@@ -223,11 +223,13 @@ class MutationQual(models.Model):
 
     class Meta():
         db_table = 'mutation_qual'
+        unique_together = ('qual','prop')
+
 
 
 class MutationFunc(models.Model):
 
-    func = models.CharField(max_length=100)
+    func = models.CharField(max_length=100, unique=True)
 
     class Meta():
         db_table = 'mutation_func'
@@ -235,7 +237,7 @@ class MutationFunc(models.Model):
 
 class MutationExperimentalType(models.Model):
 
-    type = models.CharField(max_length=100)
+    type = models.CharField(max_length=100, unique=True)
 
     class Meta():
         db_table = 'mutation_experimental_type'
@@ -243,7 +245,7 @@ class MutationExperimentalType(models.Model):
 
 class MutationLigandClass(models.Model):
 
-    classname = models.CharField(max_length=100)
+    classname = models.CharField(max_length=100, unique=True)
 
     class Meta():
         db_table = 'mutation_ligand_class'
@@ -251,7 +253,7 @@ class MutationLigandClass(models.Model):
 
 class MutationLigandRef(models.Model):
 
-    reference = models.CharField(max_length=100)
+    reference = models.CharField(max_length=100, unique=True)
 
     class Meta():
         db_table = 'mutation_ligand_reference'
