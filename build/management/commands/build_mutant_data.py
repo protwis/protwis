@@ -100,6 +100,7 @@ class Command(BaseBuild):
     def purge_mutants(self):
         Mutation.objects.all().delete()
         MutationRaw.objects.all().delete()
+        MutationExperiment.objects.all().delete()
 
     def loaddatafromexcel(self,excelpath):
         workbook = xlrd.open_workbook(excelpath)
@@ -361,15 +362,25 @@ class Command(BaseBuild):
 
             if r['reference'] not in self.publication_cache:
                 try:
-                    pub = Publication.objects.get(web_link__index=r['reference'], web_link__web_resource__slug=pub_type)
+                    wl = WebLink.objects.get(index=r['reference'], web_resource__slug=pub_type)
+                except WebLink.DoesNotExist:
+                    try:
+                        wl = WebLink.objects.create(index=r['reference'],
+                                web_resource = WebResource.objects.get(slug=pub_type))
+                    except IntegrityError:
+                        wl = WebLink.objects.get(index=r['reference'], web_resource__slug=pub_type)
+
+
+                try:
+                    pub = Publication.objects.get(web_link=wl)
                 except Publication.DoesNotExist:
                     pub = Publication()
                     try:
-                        pub.web_link = WebLink.objects.get(index=r['reference'], web_resource__slug=pub_type)
-                    except WebLink.DoesNotExist:
-                        wl = WebLink.objects.create(index=r['reference'],
-                            web_resource = WebResource.objects.get(slug=pub_type))
                         pub.web_link = wl
+                        pub.save()
+                    except IntegrityError:
+                        pub = Publication.objects.get(web_link=wl)
+
 
                     if pub_type == 'doi':
                         pub.update_from_doi(doi=r['reference'])
@@ -394,18 +405,23 @@ class Command(BaseBuild):
             if r['review']:
                 if r['review'] not in self.publication_cache:
                     try:
-                        pub_review = Publication.objects.get(web_link__index=r['review'], web_link__web_resource__slug=pub_type)
+                        wl = WebLink.objects.get(index=r['review'], web_resource__slug=pub_type)
+                    except WebLink.DoesNotExist:
+                        try:
+                            wl = WebLink.objects.create(index=r['review'],
+                                    web_resource = WebResource.objects.get(slug=pub_type))
+                        except IntegrityError:
+                            wl = WebLink.objects.get(index=r['review'], web_resource__slug=pub_type)
+
+                    try:
+                        pub_review = Publication.objects.get(web_link=wl)
                     except Publication.DoesNotExist:
                         pub_review = Publication()
                         try:
-                            pub_review.web_link = WebLink.objects.get(index=r['review'], web_resource__slug=pub_type)
-                        except WebLink.DoesNotExist:
-                            try:
-                                wl = WebLink.objects.create(index=r['review'],
-                                    web_resource = WebResource.objects.get(slug=pub_type))
-                                pub_review.web_link = wl
-                            except IntegrityError:
-                                pub_review = Publication.objects.get(web_link__index=r['review'], web_link__web_resource__slug=pub_type)
+                            pub_review.web_link = wl
+                            pub_review.save()
+                        except IntegrityError:
+                            pub_review = Publication.objects.get(web_link=wl)
 
 
                         if pub_type == 'doi':
