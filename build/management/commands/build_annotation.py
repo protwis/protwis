@@ -335,7 +335,7 @@ class Command(BaseBuild):
                                         missing_x50s.append(x50)
                                         if x50 in x50s_must_have:
                                             # print(entry_name,"tranlated ",x50," no index in ortholog, deleting pconf and protein")
-                                            self.logger.info('{} tranlated {} no index in ortholog, deleting pconf and protein'.format(entry_name,x50))
+                                            self.logger.error('{} tranlated {} no index in ortholog, deleting pconf and protein'.format(entry_name,x50))
                                             failed = True
                                             p.protein.delete()
                                             p.delete()
@@ -453,7 +453,7 @@ class Command(BaseBuild):
             ThroughModel.objects.bulk_create(bulk)
             end = time.time()
             diff = round(end - current,1)
-            self.logger.info('{} {} residues ({}) {}s alignemt {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
+            self.logger.info('{} {} residues ({}) {}s alignment {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
             if aligned_gn_mismatch_gap>20:
                 #print(p.protein.entry_name,len(rs),"residues","(",human_ortholog,")",diff,"s", " Unaligned generic numbers: ",aligned_gn_mismatch_gap)
                 self.logger.error('{} {} residues ({}) {}s MANY ERRORS IN ALIGNMENT {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
