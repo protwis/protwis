@@ -3814,7 +3814,7 @@ class GPCRDBParsingPDB(object):
                     found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
 
                     # Exception for res 318 in 5VEX
-                    if structure.pdb_code.index=='5VEX' and gn=='318' and res[0].get_parent().get_resname()=='ILE' and found_gn=='5.47':
+                    if structure.pdb_code.index in ['5VEX','5VEW'] and gn=='318' and res[0].get_parent().get_resname()=='ILE' and found_gn=='5.47':
                         found_gn = '5.48'
                     if -9.1 < float(found_gn) < 9.1:
                         if len(res)==1:
