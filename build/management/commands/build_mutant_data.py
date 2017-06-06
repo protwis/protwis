@@ -507,13 +507,23 @@ class Command(BaseBuild):
                     mutants_for_proteins[r['protein']] = 1
 
             else:
-                skipped += 1
-                if r['protein'] in missing_proteins:
-                    missing_proteins[r['protein']] += 1
+                # look for it as uniprot
+                protein=Protein.objects.filter(web_links__web_resource__slug='uniprot', web_links__index=r['protein'].upper())
+                if protein.exists():
+                    protein=protein.get()
+                    if r['protein'] in mutants_for_proteins:
+                        mutants_for_proteins[r['protein']] += 1
+                    else:
+                        mutants_for_proteins[r['protein']] = 1
                 else:
-                    missing_proteins[r['protein']] = 1
-                    self.logger.error('Skipped due to no protein '+ r['protein'])
-                continue
+                    skipped += 1
+                    if r['protein'] in missing_proteins:
+                        missing_proteins[r['protein']] += 1
+                    else:
+                        missing_proteins[r['protein']] = 1
+                        print('Skipped due to no protein '+ r['protein'])
+                        self.logger.error('Skipped due to no protein '+ r['protein'])
+                    continue
 
             res=Residue.objects.filter(protein_conformation__protein=protein,amino_acid=r['mutation_from'],sequence_number=r['mutation_pos']) #FIXME MAKE AA CHECK
             if res.exists():
