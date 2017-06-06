@@ -44,11 +44,10 @@
 </style>
 {% endblock %}
 {% block addon_js %}
-<script src="{% static 'home/js/jquery.dataTables.min.js' %}">
-</script>
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'home/js/selection.js' %}">
 </script>
-<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}">
+<!-- <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> -->
 </script>
 <script src="{% static 'home/js/select2.js' %}">
 </script>
@@ -57,108 +56,131 @@
 $(document).ready(function() {
     // 'use strict';
 
-    // var oTable;
-    var oTable = $('#mutations').DataTable({
+    $('#position_only').wrap('<div id="position_only_vis" style="display:block"/>');
+    var position_table = $('#position_only').DataTable({
         'scrollX': true,
+        "bScrollCollapse": true,
         // 'paging': true,
         // 'autoWidth': true,
 
+        // "columnDefs": [
+        //     { className: "", "targets": [12,13,14,15] }
+        //   ],
         scrollY: '80vh',
         scrollCollapse: true,
         paging: false
     });
 
-    yadcf.init(oTable, [{
-        column_number: 0,
-        filter_type: "multi_select",
-        select_type: 'select2',
-        column_data_type: "html",
-        html_data_type: "text",
-        filter_default_label: "Receptor",
-        filter_container_id: "external_filter_container1"
-    }, {
-        column_number: 1,
-        filter_type: "multi_select",
-        select_type: 'select2',
-        column_data_type: "html",
-        html_data_type: "text",
-        filter_default_label: "GNs",
-        filter_container_id: "external_filter_container2"
-    }, {
-        column_number: 3,
-        filter_type: "multi_select",
-        select_type: 'select2',
-        filter_default_label: "Segment",
-        filter_container_id: "external_filter_container3"
-    }, {
-        column_number: 4,
-        filter_type: "multi_select",
-        select_type: 'select2',
-        filter_default_label: "WT",
-        filter_container_id: "external_filter_container4"
-    }, {
-        column_number: 5,
-        filter_type: "multi_select",
-        select_type: 'select2',
-        filter_default_label: "MUT",
-        filter_container_id: "external_filter_container5"
-    }, {
-        column_number: 6,
-        filter_type: "text",
-                column_data_type: "text",
-        filter_default_label: "PDB",
-        filter_container_id: "external_filter_container6"
-    }, {
-        column_number: 7,
-        filter_type: "text",
-                column_data_type: "text",
-        filter_default_label: "Name",
-        filter_container_id: "external_filter_container7"
-    }, ], {
-        cumulative_filtering: false
+    $('#pos_and_mut').wrap('<div id="pos_and_mut_vis" style="display:none"/>');
+    var mut_table = $('#pos_and_mut').DataTable({
+        'scrollX': true,
+        "bScrollCollapse": true,
+        scrollY: '80vh',
+        scrollCollapse: true,
+        paging: false
     });
 
-    yadcf.exResetAllFilters(oTable);
+    $('#pos_and_wt').wrap('<div id="pos_and_wt_vis" style="display:none"/>');
+    var wt_table = $('#pos_and_wt').DataTable({
+        'scrollX': true,
+        "bScrollCollapse": true,
+        scrollY: '80vh',
+        scrollCollapse: true,
+        paging: false
+    });
 
-    // $.datepicker.regional[""].dateFormat = "yy-mm-dd";
-    // $.datepicker.setDefaults($.datepicker.regional['']);
+    $('#all').wrap('<div id="all_vis" style="display:none"/>');
+    var all_table = $('#all').DataTable({
+        'scrollX': true,
+        "bScrollCollapse": true,
+        scrollY: '80vh',
+        scrollCollapse: true,
+        paging: false
+    });
 
+    // yadcf.init(mut_table, [{
+    //     column_number: 0,
+    //     filter_type: "multi_select",
+    //     select_type: 'select2',
+    //     column_data_type: "html",
+    //     html_data_type: "text",
+    //     filter_default_label: "Receptor",
+    //     filter_container_id: "external_filter_container1"
+    // }, {
+    //     column_number: 1,
+    //     filter_type: "multi_select",
+    //     select_type: 'select2',
+    //     column_data_type: "html",
+    //     html_data_type: "text",
+    //     filter_default_label: "GNs",
+    //     filter_container_id: "external_filter_container2"
+    // }, {
+    //     column_number: 3,
+    //     filter_type: "multi_select",
+    //     select_type: 'select2',
+    //     filter_default_label: "Segment",
+    //     filter_container_id: "external_filter_container3"
+    // }, {
+    //     column_number: 4,
+    //     filter_type: "multi_select",
+    //     select_type: 'select2',
+    //     filter_default_label: "WT",
+    //     filter_container_id: "external_filter_container4"
+    // }, {
+    //     column_number: 5,
+    //     filter_type: "multi_select",
+    //     select_type: 'select2',
+    //     filter_default_label: "MUT",
+    //     filter_container_id: "external_filter_container5"
+    // }, {
+    //     column_number: 6,
+    //     filter_type: "text",
+    //             column_data_type: "text",
+    //     filter_default_label: "PDB",
+    //     filter_container_id: "external_filter_container6"
+    // }, {
+    //     column_number: 7,
+    //     filter_type: "text",
+    //             column_data_type: "text",
+    //     filter_default_label: "Name",
+    //     filter_container_id: "external_filter_container7"
+    // }, ], {
+    //     cumulative_filtering: false
+    // });
 
+    // yadcf.exResetAllFilters(mut_table);
 
-});
-$('#apply_filter').click(function() {
-    $("#filters").toggle();
-});
+    // $('#apply_filter').click(function() {
+    //     $("#filters").toggle();
+    // });
 
-$("#OpenFilters").click(function() {
-    $("#filters").toggle();
-});
-</script>
-<script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
-<script type="text/javascript">
-var groups = ["position_only", "pos_and_wt", "pos_and_mut", "all"]
-d3.select("#group_select")
+    // $("#OpenFilters").click(function() {
+    //     $("#filters").toggle();
+    // });
+
+groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
+$("#group_select")
     .on('change', function() {
         var selection = d3.select(this).property('value');
-        // if (selection == "position_only"){
-        //     d3.selectAll('.data_cols')
-        //         .style('display', 'none');
-        // }
-        // else {
-        //     d3.selectAll('.data_cols')
-        //         .style('display', 'table-column');
-        // }
         groups.forEach(function(d) {
             if (d == selection) {
-                d3.selectAll('.' + d)
-                    .style('display', 'table-row');
+                d3.selectAll('#' + d + '_vis')
+                    .style('display', 'block');
+                    position_table.columns.adjust().draw();
+                    all_table.columns.adjust().draw();
+                    mut_table.columns.adjust().draw();
+                    wt_table.columns.adjust().draw();
             } else {
-                d3.selectAll('.' + d)
+                d3.selectAll('#' + d + '_vis')
                     .style('display', 'none');
             }
         });
     })
+
+})
+
 </script>
+<script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
 
 <style type="text/css">
 table.dataTable thead th{
@@ -176,8 +198,8 @@ table.dataTable {
 
 {% block content %}
 <h2> Mutations</h2>
-<button class="btn btn-primary btn-group" id='OpenFilters'>Filters</button>
-<div id='filters'>
+<!-- <button class="btn btn-primary btn-group" id='OpenFilters'>Filters</button> -->
+<!-- <div id='filters'>
     <div><span style='width: 160px;display: inline-block;'>Class:</span><span style='width: 160px;display: inline-block;' id="external_filter_container3"></span></div>
     <div><span style='width: 160px;display: inline-block;'>Family:</span><span style='width: 160px;display: inline-block;' id="external_filter_container2"></span></div>
     <div><span style='width: 160px;display: inline-block;'>Receptor(s):</span><span style='width: 160px;display: inline-block;' id="external_filter_container1"></span></div>
@@ -188,41 +210,26 @@ table.dataTable {
     <div><span style='width: 160px;display: inline-block;'>Construct:</span><span style='width: 160px;display: inline-block;' id="external_filter_container7"></span></div>
     <div><span style='width: 160px;display: inline-block;'>PDB:</span><span style='width: 160px;display: inline-block;' id="external_filter_container6"></span></div>
     <button id='apply_filter'>Apply Filter</button>
-</div>
+</div> -->
 <div>Group By:
-    <select id="group_select">
+    <select style="margin-right: 20px" id="group_select">
         <option value="position_only">Position</option>
         <option value="pos_and_wt">Position and Wild Type</option>
         <option value="pos_and_mut">Position and Mutant</option>
         <option value="all">Position, WT, and Mut</option>
     </select>
+
+<!--     Display Ala Mutations: <input id='ala-mut' type="checkbox" name="ala-mut" />
+ -->
 </div>
-<table width="100%" class="display" id="mutations">
-<!--     <colgroup>
-       <col/>
-       <col/>
-       <col/>
-       <col/>
-       <col/>
-       <col/>
-       <col/>
-       <col/>
-       <col/>
-       <col/>
-       <col/>
-       <col/>
-       <col class="data_cols" />
-       <col class="data_cols" />
-       <col class="data_cols" />
-       <col class="data_cols" />
-    </colgroup> -->
+
+<table width="100%" class="display" id="position_only">
     <thead>
         <tr>
             <th class="seq-th" colspan="1">State</th>
             <th class="protein-th" colspan="3">Targets</th>
             <th class="seq-th" colspan="4">Mutations</th>
             <th class="protein-th" colspan="4">Frequency</th>
-            <th class="seq-th" colspan="4">Data (Fold Change (Mutant/Wild Type))</th>
         </tr>
         <tr>
             <th class="seq-th">State</th>
@@ -232,20 +239,16 @@ table.dataTable {
             <th class="seq-th">Segment</th>
             <th class="seq-th">Position (GN)</th>
             <th class="seq-th">WT</th>
-            <th class='seq-th'>Mut</th>
+            <th class="seq-th">Mut</th>
             <th class="protein-th">No. GPCRS</th>
-            <th class="protein-th">No. Receptor Families</th>
-            <th class="protein-th">No. Structures</th>
+            <th class="protein-th"><div style="max-width: 78px">No. Receptor Families</div></th>
+            <th class="protein-th"><div style="max-width: 70px">No. Structures</div></th>
             <th class="protein-th">GPCRs (PDB IDs)</th>
-            <th class="seq-th">Class Sequence Conservation</th>
-            <th class="seq-th">Receptor Family Sequence Conservation</th>
-            <th class="seq-th">Helix Propen- sity</th>
-            <th class='seq-th'>Hydroph- obicity</th>
         </tr>
     </thead>
     <tbody>
         {% for key, group in position_only.items %}
-        <tr class="{{group_id}} position_only">
+        <tr>
             <td>
                 <table>
                     {% for mutant in group.1.state %}
@@ -306,24 +309,52 @@ table.dataTable {
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
             <td>
-                {% for mutant in group.1.pdb %}
-                    {% if forloop.last %}
-                        {{mutant}}
-                    {% else %}
-                        {{mutant}},
-                    {% endif %}
-                {% endfor %}
+                <div style="max-width:100px">
+                    {% for mutant in group.1.pdb %}
+                        {% if forloop.last %}
+                            {{mutant}}
+                        {% else %}
+                            {{mutant}},
+                        {% endif %}
+                    {% endfor %}
+                </div>
             </td>
-            <td>&mdash;</td>
-            <td>&mdash;</td>
-            <td>&mdash;</td>
-            <td>&mdash;</td>
         </tr>
         {% endfor %}
+    </tbody>
+</table>
 
+<table width="100%" class="display" id="pos_and_mut">
+    <thead>
+        <tr>
+            <th class="seq-th" colspan="1">State</th>
+            <th class="protein-th" colspan="3">Targets</th>
+            <th class="seq-th" colspan="4">Mutations</th>
+            <th class="protein-th" colspan="4">Frequency</th>
+            <th class="seq-th " colspan="4">Data (Fold Change (Mutant/Wild Type))</th>
+        </tr>
+        <tr>
+            <th class="seq-th">State</th>
+            <th class="protein-th">Class</th>
+            <th class="protein-th">Ligand Type</th>
+            <th class="protein-th">Receptor Family</th>
+            <th class="seq-th">Segment</th>
+            <th class="seq-th">Position (GN)</th>
+            <th class="seq-th">WT</th>
+            <th class="seq-th">Mut</th>
+            <th class="protein-th">No. GPCRS</th>
+            <th class="protein-th">No. Receptor Families</th>
+            <th class="protein-th">No. Structures</th>
+            <th class="protein-th">GPCRs (PDB IDs)</th>
+            <th class="seq-th" >Class Sequence Conservation</th>
+            <th class="seq-th" >Receptor Family Sequence Conservation</th>
+            <th class="seq-th" >Helix Propen- sity</th>
+            <th class="seq-th" >Hydroph- obicity</th>
+        </tr>
+    </thead>
 
         {% for key, group in pos_and_mut.items %}
-        <tr style="display:none" class="{{group_id}} pos_and_mut">
+        <tr >
             <td>
                 <table>
                     {% for mutant in group.1.state %}
@@ -385,15 +416,46 @@ table.dataTable {
                     {% endfor %}
                 </table>
             </td>
-            <td>{{group.0.class_cons}}</td>
-            <td>{{group.0.receptor_fam_cons}}</td>
-            <td>{{group.0.propensity}}</td>
-            <td>{{group.0.hydro}}</td>
+            <td class="">{{group.0.class_cons}}</td>
+            <td class="">{{group.0.receptor_fam_cons}}</td>
+            <td class="">{{group.0.propensity}}</td>
+            <td class="">{{group.0.hydro}}</td>
         </tr>
         {% endfor %}
 
+    </tbody>
+</table>
+
+<table width="100%" class="display" id="pos_and_wt">
+    <thead>
+        <tr >
+            <th class="seq-th" colspan="1">State</th>
+            <th class="protein-th" colspan="3">Targets</th>
+            <th class="seq-th" colspan="4">Mutations</th>
+            <th class="protein-th" colspan="4">Frequency</th>
+            <th class="seq-th " colspan="4">Data (Fold Change (Mutant/Wild Type))</th>
+        </tr>
+        <tr>
+            <th class="seq-th">State</th>
+            <th class="protein-th">Class</th>
+            <th class="protein-th">Ligand Type</th>
+            <th class="protein-th">Receptor Family</th>
+            <th class="seq-th">Segment</th>
+            <th class="seq-th">Position (GN)</th>
+            <th class="seq-th">WT</th>
+            <th class="seq-th">Mut</th>
+            <th class="protein-th">No. GPCRS</th>
+            <th class="protein-th">No. Receptor Families</th>
+            <th class="protein-th">No. Structures</th>
+            <th class="protein-th">GPCRs (PDB IDs)</th>
+            <th class="seq-th" >Class Sequence Conservation</th>
+            <th class="seq-th" >Receptor Family Sequence Conservation</th>
+            <th class="seq-th" >Helix Propen- sity</th>
+            <th class="seq-th" >Hydroph- obicity</th>
+        </tr>
+    </thead>
         {% for key, group in pos_and_wt.items %}
-        <tr style="display:none" class="{{group_id}} pos_and_wt">
+        <tr >
             <td>
                 <table>
                     {% for mutant in group.1.state %}
@@ -455,15 +517,47 @@ table.dataTable {
                     {% endfor %}
                 </table>
             </td>
-            <td>{{group.0.class_cons}}</td>
-            <td>{{group.0.receptor_fam_cons}}</td>
-            <td>{{group.0.propensity}}</td>
-            <td>{{group.0.hydro}}</td>
+            <td class="">{{group.0.class_cons}}</td>
+            <td class="">{{group.0.receptor_fam_cons}}</td>
+            <td class="">{{group.0.propensity}}</td>
+            <td class="">{{group.0.hydro}}</td>
         </tr>
         {% endfor %}
 
+    </tbody>
+</table>
+
+<table width="100%" class="display" id="all">
+    <thead>
+        <tr>
+            <th class="seq-th" colspan="1">State</th>
+            <th class="protein-th" colspan="3">Targets</th>
+            <th class="seq-th" colspan="4">Mutations</th>
+            <th class="protein-th" colspan="4">Frequency</th>
+            <th class="seq-th " colspan="4">Data (Fold Change (Mutant/Wild Type))</th>
+        </tr>
+        <tr>
+            <th class="seq-th">State</th>
+            <th class="protein-th">Class</th>
+            <th class="protein-th">Ligand Type</th>
+            <th class="protein-th">Receptor Family</th>
+            <th class="seq-th">Segment</th>
+            <th class="seq-th">Position (GN)</th>
+            <th class="seq-th">WT</th>
+            <th class="seq-th">Mut</th>
+            <th class="protein-th">No. GPCRS</th>
+            <th class="protein-th">No. Receptor Families</th>
+            <th class="protein-th">No. Structures</th>
+            <th class="protein-th">GPCRs (PDB IDs)</th>
+            <th class="seq-th" >Class Sequence Conservation</th>
+            <th class="seq-th" >Receptor Family Sequence Conservation</th>
+            <th class="seq-th" >Helix Propen- sity</th>
+            <th class="seq-th" >Hydroph- obicity</th>
+        </tr>
+    </thead>
+
         {% for key, group in all.items %}
-        <tr style="display:none" class="{{group_id}} all">
+        <tr >
             <td>
                 <table>
                     {% for mutant in group.1.state %}
@@ -517,14 +611,16 @@ table.dataTable {
                     {% endfor %}
                 </table>
             </td>
-            <td>{{group.0.class_cons}}</td>
-            <td>{{group.0.receptor_fam_cons}}</td>
-            <td>{{group.0.propensity}}</td>
-            <td>{{group.0.hydro}}</td>
+            <td class="">{{group.0.class_cons}}</td>
+            <td class="">{{group.0.receptor_fam_cons}}</td>
+            <td class="">{{group.0.propensity}}</td>
+            <td class="">{{group.0.hydro}}</td>
         </tr>
         {% endfor %}
 
 
     </tbody>
 </table>
+
+
 {% endblock %}
