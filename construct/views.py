@@ -583,10 +583,10 @@ def thermostabilisation(request):
 
     # Define the data analysis modes.  TODO more info on the comment. what will these be used for - dont get it.
     groupings = {
-        "all":{"include_in_id":['gen_num', 'wild_type', 'mutant'], "exclude_from_info":['']},
-        "pos_and_wt":{"include_in_id":['gen_num', 'wild_type'], "exclude_from_info":['mutant']},
-        "pos_and_mut":{"include_in_id":['gen_num', 'mutant'], "exclude_from_info":['wild_type']},
-        "position_only":{"include_in_id":['gen_num'], "exclude_from_info":['wild_type', 'mutant']}
+        "all":{"include_in_id":['class', 'gen_num', 'wild_type', 'mutant'], "exclude_from_info":['']},
+        "pos_and_wt":{"include_in_id":['class', 'gen_num', 'wild_type'], "exclude_from_info":['mutant']},
+        "pos_and_mut":{"include_in_id":['class', 'gen_num', 'mutant'], "exclude_from_info":['wild_type']},
+        "position_only":{"include_in_id":['class', 'gen_num'], "exclude_from_info":['wild_type', 'mutant']}
         }
 
     # Set up dictionaries to record information.
@@ -617,16 +617,14 @@ def thermostabilisation(request):
 
             # Get the mutation info.
             mutant_id = {'gen_num':generic_number, 'wild_type':mutant.wild_type_amino_acid,
-                         'mutant':mutant.mutated_amino_acid, 'count':0, 'segment':segment}
+                         'mutant':mutant.mutated_amino_acid, 'count':0, 'segment':segment, 'class': p_class}
             mutant_info = {'pdb':pdb,
-                           'class': p_class,
                            'ligand': p_ligand,
                            'receptor': p_receptor,
                            'wild_type':mutant_id["wild_type"],
                            'mutant':mutant_id['mutant'],
                            'state':state,
-                           'struct_id':struct_id
-                          }
+                           'struct_id':struct_id}
 
             # For each group, add the required info.
             for group_name, attr in groupings.items():
@@ -647,13 +645,13 @@ def thermostabilisation(request):
                     group[0]['hydro'],\
                     group[0]["class_cons"],\
                     group[0]["receptor_fam_cons"]\
-                         = calc_data_cols(group_name,
-                                          mutant_info['mutant'],
-                                          mutant_info['wild_type'],
-                                          generic_number,
-                                          p_class,
-                                          p_receptor,
-                                          conservation)
+                         = get_data_columns(group_name,
+                                            mutant_info['mutant'],
+                                            mutant_info['wild_type'],
+                                            generic_number,
+                                            p_class,
+                                            p_receptor,
+                                            conservation)
 
                 # Edit group info as needed
                 group[0]['count'] += 1
@@ -728,7 +726,7 @@ def conservation_table(prot_classes, gen_nums):
 
     return table
 
-def calc_data_cols(group_name, mutant, wild_type, g_n, prot_class, rec_fam, conservation):
+def get_data_columns(group_name, mutant, wild_type, g_n, prot_class, rec_fam, conservation):
     ''' Calculate the propensity and hydrophobicity for the given mut & wt.'''
     if group_name == 'position_only':
         # No wt or mut grouping, so can't calc.
