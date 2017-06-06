@@ -733,68 +733,56 @@ def calc_data_cols(group_name, mutant, wild_type, g_n, prot_class, rec_fam, cons
     if group_name == 'position_only':
         # No wt or mut grouping, so can't calc.
         return (u'\u2014', u'\u2014', u'\u2014', u'\u2014')
-    elif group_name == 'pos_and_mut':
-        # Can only calc for mutant
-        try:
-            prot_cons = conservation[(prot_class, g_n)][mutant]
-        except KeyError:
-            prot_cons = u'\u2014'
-        try:
-            rec_cons = conservation[(rec_fam, g_n)][mutant]
-        except KeyError:
-            rec_cons = u'\u2014'
-        return (AA_PROPENSITY[mutant], HYDROPHOBICITY[mutant], prot_cons, rec_cons)
-    elif group_name == 'pos_and_wt':
-        # Can only calc for wt
-        try:
-            prot_cons = conservation[(prot_class, g_n)][wild_type]
-        except KeyError:
-            prot_cons = u'\u2014'
-        try:
-            rec_cons = conservation[(rec_fam, g_n)][wild_type]
-        except KeyError:
-            rec_cons = u'\u2014'
-        return (AA_PROPENSITY[wild_type], HYDROPHOBICITY[wild_type], prot_cons, rec_cons)
-    else:  # Then group_name = 'all'
-        # Can calc for all and get the difference between the mut & wt.
-        mut_prop = AA_PROPENSITY[mutant]
-        wt_prop = AA_PROPENSITY[wild_type]
-        mut_hydro = HYDROPHOBICITY[mutant]
-        wt_hydro = HYDROPHOBICITY[wild_type]
+    else:
+        # Default value of {} provided, so that .get can be used on *_cons later on.
+        class_cons = conservation.get((prot_class, g_n), {})
+        fam_cons = conservation.get((rec_fam, g_n), {})
+        if group_name == 'pos_and_mut':
+            # Can only calc for mutant
+            return (AA_PROPENSITY[mutant],
+                    HYDROPHOBICITY[mutant],
+                    class_cons.get(mutant, u'\u2014'),
+                    fam_cons.get(mutant, u'\u2014'))
+        elif group_name == 'pos_and_wt':
+            # Can only calc for wt
+            return (AA_PROPENSITY[wild_type],
+                    HYDROPHOBICITY[wild_type],
+                    class_cons.get(wild_type, u'\u2014'),
+                    fam_cons.get(wild_type, u'\u2014'))
+        else:  # Then group_name = 'all'
+            # Can calc for all and get the difference between the mut & wt.
 
-        # Get the rec_fam conservation.
-        try:
-            mut = conservation[(rec_fam, g_n)][mutant]
-        except KeyError:
-            mut = u'\u2014'
-        try:
-            w_t = conservation[(rec_fam, g_n)][wild_type]
-        except KeyError:
-            w_t = u'\u2014'
-        try:
-            rec_cons = str(round(mut-w_t, 2))
-        except TypeError:
-            rec_cons = u'\u2014'
-        rec_cons += ' ('+str(mut)+'/'+str(w_t)+')'
+            # Get propensity fol change
+            mut = AA_PROPENSITY[mutant]
+            w_t = AA_PROPENSITY[wild_type]
+            prop = str(mut-w_t)+' (' + str(mut) + '/'+ str(w_t) +')'
 
-        # Get the protein class conservation.
-        try:
-            mut = conservation[(prot_class, g_n)][mutant]
-        except KeyError:
-            mut = u'\u2014'
-        try:
-            w_t = conservation[(prot_class, g_n)][wild_type]
-        except KeyError:
-            w_t = u'\u2014'
-        try:
-            prot_cons = str(round(mut-w_t, 2))
-        except TypeError:
-            prot_cons = u'\u2014'
-        prot_cons += ' ('+str(mut)+'/'+str(w_t)+')'
-        return (str(mut_prop-wt_prop)+' (' + str(mut_prop) + '/'+ str(wt_prop) +')',
-                str(mut_hydro-wt_hydro)+' (' + str(mut_hydro) + '/'+ str(wt_hydro) +')',
-                prot_cons,
-                rec_cons)
+            # Get hydrophobicity fold change
+            mut = HYDROPHOBICITY[mutant]
+            w_t = HYDROPHOBICITY[wild_type]
+            hydro = str(mut-w_t)+' (' + str(mut) + '/'+ str(w_t) +')'
+
+            # Get the receptor family conservation fold change.
+            mut = fam_cons.get(mutant, u'\u2014')
+            w_t = fam_cons.get(wild_type, u'\u2014')
+            try:
+                rec_cons = str(round(mut-w_t, 2))
+            except TypeError:
+                rec_cons = u'\u2014'
+            rec_cons += ' ('+str(mut)+'/'+str(w_t)+')'
+
+            # Get the protein class conservation fold change.
+            mut = class_cons.get(mutant, u'\u2014')
+            w_t = class_cons.get(wild_type, u'\u2014')
+            try:
+                prot_cons = str(round(mut-w_t, 2))
+            except TypeError:
+                prot_cons = u'\u2014'
+            prot_cons += ' ('+str(mut)+'/'+str(w_t)+')'
+            return (prop,
+                    hydro,
+                    prot_cons,
+                    rec_cons)
 
 
 def fetch_all_pdb(request):
