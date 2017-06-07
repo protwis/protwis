@@ -587,9 +587,9 @@ class Alignment:
         feature_count = OrderedDict()
         most_freq_aa = OrderedDict()
         amino_acids = OrderedDict([(a, 0) for a in AMINO_ACIDS]) # from common.definitions
-        self.amino_acids = AMINO_ACIDS.keys()
+        self.amino_acids = list(AMINO_ACIDS.keys())
         features = OrderedDict([(a, 0) for a in AMINO_ACID_GROUPS])
-        self.features = AMINO_ACID_GROUP_NAMES.values()
+        self.features = list(AMINO_ACID_GROUP_NAMES.values())
         for i, p in enumerate(self.proteins):
             entry_name = p.protein.entry_name
             for j, s in p.alignment.items():
