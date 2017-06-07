@@ -31,8 +31,9 @@ class Command(BaseCommand):
         print('total:',len(ps))
         mapping = {}
         for p in ps:
-            uniprot = p.web_links.get(web_resource__slug='uniprot')
-            mapping[p.entry_name] = uniprot.index
+            uniprot = p.web_links.filter(web_resource__slug='uniprot').values_list('index', flat = True)
+            mapping[p.entry_name] = list(uniprot)
+
 
         json.dump(mapping,f, indent=4, separators=(',', ': '))
 

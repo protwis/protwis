@@ -135,6 +135,7 @@ class Alignment:
     def load_segments(self, selected_segments):
         selected_residue_positions = []
         segment_lookup = {}
+        segment_lookup_positions = {}
         unsorted_segments = OrderedDict()
         for s in selected_segments:
             if hasattr(s, 'item'):
@@ -159,12 +160,10 @@ class Alignment:
                 segment_positions = ResidueGenericNumber.objects.filter(protein_segment=segment,
                     scheme=self.default_numbering_scheme).order_by('label')
                 
-                # generic numbers in the schemes of all selected proteins
-                self.load_generic_numbers(segment.slug, segment_positions)
-
                 # segments
                 unsorted_segments[segment.pk] = []
                 segment_lookup[segment.pk] = segment.slug
+                segment_lookup_positions[segment.pk] = segment_positions
                 for segment_residue in segment_positions:
                     unsorted_segments[segment.pk].append(segment_residue.label)
 
@@ -172,6 +171,8 @@ class Alignment:
         sorted_segments = sorted(unsorted_segments)
         for s in sorted_segments:
             self.segments[segment_lookup[s]] = unsorted_segments[s]
+            # generic numbers in the schemes of all selected proteins
+            self.load_generic_numbers(segment_lookup[s], segment_lookup_positions[s])
 
         # combine individual residue positions into a custom segment
         if selected_residue_positions:
@@ -640,7 +641,11 @@ class Alignment:
         for i, s in most_freq_aa.items():
             self.consensus[i] = OrderedDict()
             self.forced_consensus[i] = OrderedDict()
-            for p in sorted(s, key=lambda x: (x.split("x")[0], x.split("x")[1])):
+            if i=='Custom':
+                sorted_res = sorted(s, key=lambda x: (x.split("x")[0], x.split("x")[1]))
+            else:
+                sorted_res = sorted(s)
+            for p in sorted_res:
                 r = s[p]
                 conservation = str(round(r[1]/num_proteins*100))
                 if len(conservation) == 1:
@@ -683,7 +688,11 @@ class Alignment:
             for segment, segment_num in self.aa_count.items():
                 self.amino_acid_stats[i].append([])
                 k = 0
-                for gn in sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1])):
+                if segment=='Custom':
+                    sorted_res = sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1]))
+                else:
+                    sorted_res = sorted(segment_num)
+                for gn in sorted_res:
                     aas = segment_num[gn]
                     self.amino_acid_stats[i][j].append([])
                     for aa, freq in aas.items():
@@ -705,7 +714,11 @@ class Alignment:
             for segment, segment_num in feature_count.items():
                 self.feature_stats[i].append([])
                 k = 0
-                for gn in sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1])):
+                if segment=='Custom':
+                    sorted_res = sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1]))
+                else:
+                    sorted_res = sorted(segment_num)
+                for gn in sorted_res:
                     fs = segment_num[gn]
                     self.feature_stats[i][j].append([])
                     for f, freq in fs.items():
