@@ -198,7 +198,7 @@ class Command(BuildHumanProteins):
                     skipped_due_to_swissprot += 1
                     continue
                 elif len(already_entry_names):
-                    print(up['entry_name'], accession, " swissprot orthologue already there?",already_entry_names)
+                    self.logger.error("{} {} swissprot orthologue already there? {}".format(up['entry_name'], accession,already_entry_names))
                 
                 # # check whether reference positions exist for this protein, and find them if they do not
                 # ref_position_file_path = os.sep.join([self.ref_position_source_dir, up['entry_name'] + '.yaml'])
