@@ -517,7 +517,7 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                         ligand = structureligandinteraction.ligand
                         if structureligandinteraction.ligand.properities.inchikey != output['inchikey'].strip():
                             logger.error(
-                                'inchikey for annotated ligand and PDB ligand mismatch' + output['prettyname'])
+                                'Ligand/PDB inchikey mismatch (PDB:' + pdbname + ' LIG:' + output['prettyname'] + '): '+structureligandinteraction.ligand.properities.inchikey+' vs '+ output['inchikey'].strip())
                     except:
                         print('error with dublication structureligand',temp[1])
                         break

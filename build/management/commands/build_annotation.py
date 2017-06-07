@@ -457,7 +457,7 @@ class Command(BaseBuild):
             self.logger.info('{} {} residues ({}) {}s alignment {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
             if aligned_gn_mismatch_gap>20:
                 #print(p.protein.entry_name,len(rs),"residues","(",human_ortholog,")",diff,"s", " Unaligned generic numbers: ",aligned_gn_mismatch_gap)
-                self.logger.error('{} {} residues ({}) {}s MANY ERRORS IN ALIGNMENT {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
+                self.logger.warning('{} {} residues ({}) {}s MANY ERRORS IN ALIGNMENT {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
 
         self.logger.info('COMPLETED ANNOTATIONS PROCESS {}'.format(positions))
 
