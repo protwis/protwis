@@ -301,8 +301,8 @@ class Command(BaseBuild):
                 parent_family[indent] = pf.id
 
                 self.logger.info('Created protein family ' + family_name)
-            except:
-                self.logger.error('Failed creating protein family' + family_name)
+            except Exception as msg:
+                self.logger.error('Failed creating protein family' + family_name,msg)
 
         return {
             'pf': pf,

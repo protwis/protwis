@@ -190,14 +190,16 @@ class Command(BuildHumanProteins):
                     continue
 
                 # check whether an entry already exists for this protein/species
-                try: 
-                    p = Protein.objects.get(family=p.family, species__common_name=up['species_common_name'], source__name="SWISSPROT")
+                # Skips unreviewed genes that have a matching SWISPROT - Some human orthologues
+                # can have several orthologues from same species. Eg: agtra_rat and agtrb_rat for AGTR1_HUMAN
+                already_entry_names = list(Protein.objects.filter(family=p.family, species__common_name=up['species_common_name'], source__name="SWISSPROT").exclude(entry_name=up['entry_name']).values_list('entry_name', flat = True))
+                if "SWISSPROT" != up['source'] and len(already_entry_names):
                     # print(up['entry_name'], accession, " swissprot already there?",p.family.slug, p, p.accession )
                     skipped_due_to_swissprot += 1
                     continue
-                except Protein.DoesNotExist:
-                    # go on to create otherwise
-                    pass 
+                elif len(already_entry_names):
+                    print(up['entry_name'], accession, " swissprot orthologue already there?",already_entry_names)
+                
                 # # check whether reference positions exist for this protein, and find them if they do not
                 # ref_position_file_path = os.sep.join([self.ref_position_source_dir, up['entry_name'] + '.yaml'])
                 # auto_ref_position_file_path = os.sep.join([self.auto_ref_position_source_dir, up['entry_name'] + '.yaml'])

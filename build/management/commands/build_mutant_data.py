@@ -329,6 +329,7 @@ class Command(BaseBuild):
 
         missing_proteins = {}
         mutants_for_proteins = {}
+        wrong_uniport_ids = {}
 
         c = 0
         skipped = 0
@@ -506,24 +507,46 @@ class Command(BaseBuild):
                 else:
                     mutants_for_proteins[r['protein']] = 1
 
+            elif r['protein'] not in missing_proteins:
+
+                try:
+                    r['protein'] = wrong_uniport_ids[r['protein']]
+                    real_uniprot = wrong_uniport_ids[r['protein']]
+                    protein=Protein.objects.get(entry_name=r['protein'])
+                    # print('fetched with lookup table',r['protein'])
+                except:
+                    # look for it as uniprot
+                    protein=Protein.objects.filter(web_links__web_resource__slug='uniprot', web_links__index=r['protein'].upper())
+                    if protein.exists():
+                        protein=protein.get()
+                        real_uniprot = protein.entry_name
+                        if r['protein'] in mutants_for_proteins:
+                            mutants_for_proteins[r['protein']] += 1
+                        else:
+                            mutants_for_proteins[r['protein']] = 1
+                    else:
+                        # Try to lookup in uniprot to catch typing errors / variants in entry_name
+                        url = 'http://www.uniprot.org/uniprot/$index.xml'
+                        cache_dir = ['uniprot', 'id']
+                        uniprot_protein = fetch_from_web_api(url, r['protein'], cache_dir, xml = True)
+                        try:
+                            real_uniprot = uniprot_protein.find('.//{http://uniprot.org/uniprot}name').text.lower()
+                            protein=Protein.objects.get(entry_name=real_uniprot)
+                        except:
+                            skipped += 1
+                            if r['protein'] in missing_proteins:
+                                missing_proteins[r['protein']] += 1
+                            else:
+                                missing_proteins[r['protein']] = 1
+                                # print('Skipped due to no protein '+ r['protein'])
+                                self.logger.error('Skipped due to no protein '+ r['protein'])
+                            continue
+                    wrong_uniport_ids[r['protein']] = protein.entry_name
+                    r['protein'] = real_uniprot
             else:
-                # look for it as uniprot
-                protein=Protein.objects.filter(web_links__web_resource__slug='uniprot', web_links__index=r['protein'].upper())
-                if protein.exists():
-                    protein=protein.get()
-                    if r['protein'] in mutants_for_proteins:
-                        mutants_for_proteins[r['protein']] += 1
-                    else:
-                        mutants_for_proteins[r['protein']] = 1
-                else:
-                    skipped += 1
-                    if r['protein'] in missing_proteins:
-                        missing_proteins[r['protein']] += 1
-                    else:
-                        missing_proteins[r['protein']] = 1
-                        print('Skipped due to no protein '+ r['protein'])
-                        self.logger.error('Skipped due to no protein '+ r['protein'])
-                    continue
+                missing_proteins[r['protein']] += 1
+                continue
+
 
             res=Residue.objects.filter(protein_conformation__protein=protein,amino_acid=r['mutation_from'],sequence_number=r['mutation_pos']) #FIXME MAKE AA CHECK
             if res.exists():
@@ -660,5 +683,6 @@ class Command(BaseBuild):
         current_sheet
         diff_2 = round(end - current_sheet,2)
         print("overall",diff_2,"bulk",diff,len(bulk_m),"skipped",str(skipped))
-        # sorted_missing_proteins = sorted(missing_proteins.items(), key=operator.itemgetter(1),reverse=True)
+        sorted_missing_proteins = sorted(missing_proteins.items(), key=operator.itemgetter(1),reverse=True)
+        # print(missing_proteins)
         # sorted_mutants_for_proteins = sorted(mutants_for_proteins.items(), key=operator.itemgetter(1),reverse=True)
