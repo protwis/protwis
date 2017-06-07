@@ -1067,8 +1067,9 @@ class AlignedReferenceTemplate(Alignment):
                                                       "3NYA","3PDS","4ZUD","4RWD","5D6L","5JQH","5TGZ","5GLH","5GLI",
                                                       "4XT1","4K5Y","4Z9G","4L6R","5EE7","4OR2","4OO9","5CGC","5CGD",
                                                       "4JKV","4N4W","5L7D","5L7I","4O9R","4QIM","4QIN","5T1A","5TVN",
-                                                      "5UIG","5T04","4XT3","5LWE","5UEN","5U09","5UNF","5UNG","5UNH"
-                                                      "5NDD","5NDZ","5NJ6","5TE3","5TE5","5UZ7"])
+                                                      "5UIG","5T04","4XT3","5LWE","5UEN","5U09","5UNF","5UNG","5UNH",
+                                                      "5NDD","5NDZ","5NJ6","5TE3","5TE5","5UZ7","5VEX","5VEW","5XEZ",
+                                                      "5XF1"])
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
   
@@ -1459,4 +1460,14 @@ class ClosestReceptorHomolog():
         a.build_alignment()
         a.calculate_similarity(normalized=self.normalized)
         self.all_proteins = a.proteins
-        return a.proteins[1]
+        max_sim, max_id, max_i = 0, 0, 1
+        for i, p in enumerate(self.all_proteins):
+            if int(p.similarity)>max_sim:
+                max_sim = int(p.similarity)
+                max_id = int(p.identity)
+                max_i = i
+            elif int(p.similarity)==max_sim and int(p.identity)>max_id:
+                max_sim = int(p.similarity)
+                max_id = int(p.identity)
+                max_i = i
+        return a.proteins[max_i]

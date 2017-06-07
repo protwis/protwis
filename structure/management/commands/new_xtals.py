@@ -117,19 +117,20 @@ class QueryPDB():
                         st_type, cr = StructureType.objects.get_or_create(slug='electron-microscopy', name=exp_method)
                     elif exp_method=='X-ray diffraction':
                         st_type = StructureType.objects.get(slug='x-ray-diffraction')
-                    for d in pdb_data_dict['deletions']:
-                        presentx50s = []
-                        for x in x50s:
-                            if not d['start']<x.sequence_number<d['end']:
-                                presentx50s.append(x)                                    
-                        # Filter out ones without all 7 x50 positions present in the xtal
-                        if len(presentx50s)!=7:
-                            try:
-                                del self.db_list[self.db_list.index(s)]
-                                missing_from_db = False
-                                del self.yaml_list[self.yaml_list.index(s)]
-                            except:
-                                pass
+                    if 'deletions' in pdb_data_dict:
+                        for d in pdb_data_dict['deletions']:
+                            presentx50s = []
+                            for x in x50s:
+                                if not d['start']<x.sequence_number<d['end']:
+                                    presentx50s.append(x)                                    
+                            # Filter out ones without all 7 x50 positions present in the xtal
+                            if len(presentx50s)!=7:
+                                try:
+                                    del self.db_list[self.db_list.index(s)]
+                                    missing_from_db = False
+                                    del self.yaml_list[self.yaml_list.index(s)]
+                                except:
+                                    pass
                     if missing_from_db:
                         pref_chain = ''
                         resolution = pdb_data_dict['resolution']
