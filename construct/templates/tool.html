@@ -219,7 +219,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                 console.log(mod);
                 if ( $.inArray(mod[0], ['Modifications # used','Short-hand','Sequence']) > -1 ) return true;
                 mod.splice(0, 1);
-                range_match = mod[2].match(/([\d]+)-([\d]+)/);
+                range_match = String(mod[2]).match(/([\d]+)-([\d]+)/);
                 console.log(range_match);
                 range = new Array;
                 if (range_match) {
@@ -1809,9 +1809,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       tables["overview"] = [];
       tables["overview"].push(info_text['current'] + "<table class='table-striped table table-bordered'><tr><th>Type</th><th>Modification</th><th>Pos/Range</th><th>Based on</th><th>Fix</th><th>Extra</th></tr>");
 
-
+      console.log(modifications);
       modifications.sort(function(a, b) {
 
+          console.log(a.type);
           var o1 = a.type.toLowerCase();
           var o2 = b.type.toLowerCase();
 

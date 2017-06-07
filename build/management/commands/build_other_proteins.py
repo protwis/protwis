@@ -65,7 +65,9 @@ class Command(BuildHumanProteins):
 
         # self.create_orthologs(constructs_only)
         filenames = os.listdir(self.local_uniprot_dir)
-        self.prepare_input(options['proc'], filenames)
+        iterations = 2
+        for i in range(1,iterations+1):
+            self.prepare_input(options['proc'], filenames, i)
 
 
     def purge_orthologs(self):
@@ -99,6 +101,10 @@ class Command(BuildHumanProteins):
 
             # parse files
             filenames = os.listdir(self.local_uniprot_dir)
+
+            # Keep track of first or second iteration
+            reviewed = ['SWISSPROT','TREMBL'][iteration-1]
+            skipped_due_to_swissprot = 0
             for i,source_file in enumerate(filenames):
                 if i<positions[0]: #continue if less than start
                     continue
@@ -115,6 +121,10 @@ class Command(BuildHumanProteins):
 
                 up = self.parse_uniprot_file(accession)
 
+                # Skip TREMBL on first loop, and SWISSPROT on second
+                if reviewed != up['source']:
+                    continue
+
                 # skip human proteins
                 if 'species_latin_name' in up and up['species_latin_name'] == 'Homo sapiens':
                     continue
@@ -129,6 +139,9 @@ class Command(BuildHumanProteins):
                 # is there already an entry for this protein?
                 try:
                     p = Protein.objects.get(entry_name=up['entry_name'])
+                    if "SWISSPROT" == up['source']:
+                        pass
+                       #  print(up['entry_name'], "already there?", accession )
                     continue
                 except Protein.DoesNotExist:
                     p = None
@@ -176,6 +189,17 @@ class Command(BuildHumanProteins):
                 if not p:
                     continue
 
+                # check whether an entry already exists for this protein/species
+                # Skips unreviewed genes that have a matching SWISPROT - Some human orthologues
+                # can have several orthologues from same species. Eg: agtra_rat and agtrb_rat for AGTR1_HUMAN
+                already_entry_names = list(Protein.objects.filter(family=p.family, species__common_name=up['species_common_name'], source__name="SWISSPROT").exclude(entry_name=up['entry_name']).values_list('entry_name', flat = True))
+                if "SWISSPROT" != up['source'] and len(already_entry_names):
+                    # print(up['entry_name'], accession, " swissprot already there?",p.family.slug, p, p.accession )
+                    skipped_due_to_swissprot += 1
+                    continue
+                elif len(already_entry_names):
+                    self.logger.error("{} {} swissprot orthologue already there? {}".format(up['entry_name'], accession,already_entry_names))
+                
                 # # check whether reference positions exist for this protein, and find them if they do not
                 # ref_position_file_path = os.sep.join([self.ref_position_source_dir, up['entry_name'] + '.yaml'])
                 # auto_ref_position_file_path = os.sep.join([self.auto_ref_position_source_dir, up['entry_name'] + '.yaml'])
@@ -224,7 +248,6 @@ class Command(BuildHumanProteins):
                         self.logger.info('Created protein family {}'.format(pf))
 
                     self.create_protein(up['genes'][0], pf, p.sequence_type, p.residue_numbering_scheme, accession, up)
-
             self.logger.info('COMPLETED CREATING OTHER PROTEINS')
         except Exception as msg:
             print(msg)
