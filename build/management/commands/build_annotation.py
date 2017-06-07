@@ -71,6 +71,7 @@ class Command(BaseBuild):
 
     pconfs = ProteinConformation.objects.all().order_by('protein__family')
 
+    pconfs = ProteinConformation.objects.filter(protein__sequence_type__slug='wt').all().order_by('protein__family')
     pw_aln_error = ['celr3_mouse','celr3_human','gpr98_human']
 
     track_rf_annotations = {}
@@ -289,7 +290,7 @@ class Command(BaseBuild):
             else:
                 # print(counter,p)
                 if p.protein.species.common_name != "Human" and entry_name not in proteins:
-                    human_ortholog = Protein.objects.filter(family=p.protein.family, species__common_name='Human')
+                    human_ortholog = Protein.objects.filter(family=p.protein.family, sequence_type__slug='wt', species__common_name='Human')
                     if human_ortholog.exists():
                         human_ortholog = human_ortholog.get()
                         if human_ortholog.entry_name not in proteins:
@@ -453,7 +454,7 @@ class Command(BaseBuild):
             ThroughModel.objects.bulk_create(bulk)
             end = time.time()
             diff = round(end - current,1)
-            self.logger.info('{} {} residues ({}) {}s alignemt {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
+            self.logger.info('{} {} residues ({}) {}s alignment {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
             if aligned_gn_mismatch_gap>20:
                 #print(p.protein.entry_name,len(rs),"residues","(",human_ortholog,")",diff,"s", " Unaligned generic numbers: ",aligned_gn_mismatch_gap)
                 self.logger.error('{} {} residues ({}) {}s MANY ERRORS IN ALIGNMENT {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
