@@ -1032,19 +1032,24 @@ class Command(BaseBuild):
                             peptide_chain = ""
                             if 'chain' in ligand:
                                 peptide_chain = ligand['chain']
-                                ligand['name'] = 'pep'
+                                # ligand['name'] = 'pep'
                             if ligand['name'] and ligand['name'] != 'None': # some inserted as none.
-
+                                ligand['type'] = ligand['type'].lower()
                                 # use annoted ligand type or default type
                                 if ligand['type']:
                                     lt, created = LigandType.objects.get_or_create(slug=slugify(ligand['type']),
                                         defaults={'name': ligand['type']})
+                                    print(lt)
                                 else:
                                     lt, created = LigandType.objects.get_or_create(
                                         slug=slugify(default_ligand_type), defaults={'name': default_ligand_type})
 
                                 # set pdb reference for structure-ligand interaction
-                                pdb_reference = ligand['name']
+                                print(ligand['name'], ligand['type'])
+                                if len(ligand['name'])>3 and ligand['type']=='peptide':
+                                    pdb_reference = 'pep'
+                                else:
+                                    pdb_reference = ligand['name']
 
                                 # use pubchem_id
                                 if 'pubchemId' in ligand and ligand['pubchemId'] and ligand['pubchemId'] != 'None':

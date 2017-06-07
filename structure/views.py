@@ -1187,8 +1187,9 @@ class PDBClean(TemplateView):
     template_name = "pdb_download.html"
 
     def post(self, request, *args, **kwargs):
-
         context = super(PDBClean, self).get_context_data(**kwargs)
+
+        class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
 
         self.posted = True
         pref = True
@@ -1211,21 +1212,33 @@ class PDBClean(TemplateView):
         io = PDBIO()
         zipf = zipfile.ZipFile(out_stream, 'w', zipfile.ZIP_DEFLATED)
         if selection.targets != []:
-            for selected_struct in [x for x in selection.targets if x.type == 'structure']:
-                struct_name = '{}_{}.pdb'.format(selected_struct.item.protein_conformation.protein.parent.entry_name, selected_struct.item.pdb_code.index)
-                if hets:
-                    lig_names = [x.pdb_reference for x in StructureLigandInteraction.objects.filter(structure=selected_struct.item, annotated=True)]
-                else:
-                    lig_names = None
-                gn_assigner = GenericNumbering(structure=PDBParser(QUIET=True).get_structure(struct_name, StringIO(selected_struct.item.get_cleaned_pdb(pref, water, lig_names)))[0])
-                tmp = StringIO()
-                io.set_structure(gn_assigner.assign_generic_numbers())
-                request.session['substructure_mapping'] = gn_assigner.get_substructure_mapping_dict()
-                io.save(tmp)
-                zipf.writestr(struct_name, tmp.getvalue())
-                del gn_assigner, tmp
-            for struct in selection.targets:
-                selection.remove('targets', 'structure', struct.item.id)
+            if selection.targets != [] and selection.targets[0].type == 'structure':
+                for selected_struct in [x for x in selection.targets if x.type == 'structure']:
+                    struct_name = '{}_{}.pdb'.format(selected_struct.item.protein_conformation.protein.parent.entry_name, selected_struct.item.pdb_code.index)
+                    if hets:
+                        lig_names = [x.pdb_reference for x in StructureLigandInteraction.objects.filter(structure=selected_struct.item, annotated=True)]
+                    else:
+                        lig_names = None
+                    gn_assigner = GenericNumbering(structure=PDBParser(QUIET=True).get_structure(struct_name, StringIO(selected_struct.item.get_cleaned_pdb(pref, water, lig_names)))[0])
+                    tmp = StringIO()
+                    io.set_structure(gn_assigner.assign_generic_numbers())
+                    request.session['substructure_mapping'] = gn_assigner.get_substructure_mapping_dict()
+                    io.save(tmp)
+                    zipf.writestr(struct_name, tmp.getvalue())
+                    del gn_assigner, tmp
+                for struct in selection.targets:
+                    selection.remove('targets', 'structure', struct.item.id)
+            elif selection.targets != [] and selection.targets[0].type == 'structure_model':
+                for hommod in [x for x in selection.targets if x.type == 'structure_model']:
+                    mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.item.protein.family.slug[:3]], hommod.item.protein.entry_name, 
+                                                                                  hommod.item.state.name, hommod.item.main_template.pdb_code.index, hommod.item.version)
+                    tmp = StringIO(hommod.item.pdb)
+                    request.session['substructure_mapping'] = 'full'
+                    zipf.writestr(mod_name, tmp.getvalue())
+                    del tmp
+                for mod in selection.targets:
+                    selection.remove('targets', 'structure_model', mod.item.id)
+
             # export simple selection that can be serialized
             simple_selection = selection.exporter()
 
@@ -1236,7 +1249,11 @@ class PDBClean(TemplateView):
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
-        return render(request, self.template_name, context)
+
+        if selection.targets != [] and selection.targets[0].type == 'structure_model':
+            return zipf
+        else:
+            return render(request, self.template_name, context)
 
 
     def get_context_data (self, **kwargs):
@@ -1314,7 +1331,7 @@ class PDBDownload(View):
     Serve the PDB (sub)structures depending on user's choice.
     """
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, hommods=False, *args, **kwargs):
 
         if self.kwargs['substructure'] == 'select':
             return HttpResponseRedirect('/structure/pdb_segment_selection')
@@ -1342,7 +1359,10 @@ class PDBDownload(View):
             del request.session['substructure_mapping']
         if len(out_stream.getvalue()) > 0:
             response = HttpResponse(content_type="application/zip")
-            response['Content-Disposition'] = 'attachment; filename="pdb_structures.zip"'
+            if hommods == False:
+                response['Content-Disposition'] = 'attachment; filename="pdb_structures.zip"'
+            else:
+                response['Content-Disposition'] = 'attachment; filename="GPCRDB_homology_models.zip"'
             response.write(out_stream.getvalue())
 
         return response
@@ -1369,6 +1389,39 @@ def ConvertStructuresToProteins(request):
     request.session['selection'] = simple_selection
 
     return HttpResponseRedirect('/alignment/segmentselection')
+
+
+def ConvertStructureModelsToProteins(request):
+    "For alignment from homology model browser"
+    simple_selection = request.session.get('selection', False)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+    if selection.targets != []:
+        for struct_mod in selection.targets:
+            prot = struct_mod.item.protein
+            selection.remove('targets', 'structure_model', struct_mod.item.id)
+            selection.add('targets', 'protein', SelectionItem('protein', prot))
+        if selection.reference != []:
+            selection.add('targets', 'protein', selection.reference[0])
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    return HttpResponseRedirect('/alignment/segmentselection')
+
+
+def HommodDownload(request):
+    "Download selected homology models in zip file"
+    p = PDBClean()
+    p.post(request)
+    p1 = PDBDownload()
+    p1.kwargs = {}
+    p1.kwargs['substructure'] = 'full'
+    p2 = p1.get(request, hommods=True)
+    return p2
 
 
 def ServePdbOutfile (request, outfile, replacement_tag):

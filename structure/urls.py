@@ -8,6 +8,8 @@ from django.views.decorators.cache import cache_page
 urlpatterns = [
     url(r'^$', cache_page(60*60*24*7)(StructureBrowser.as_view()), name='structure_browser'),
     url(r'^selection_convert$', ConvertStructuresToProteins, name='convert'),
+    url(r'^selection_convert_model$', ConvertStructureModelsToProteins, name='convert_mod'),
+    url(r'^hommod_download$', HommodDownload, name='hommod_download'),
     url(r'^template_browser', TemplateBrowser.as_view(), name='structure_browser'),
     url(r'^template_selection', TemplateTargetSelection.as_view(), name='structure_browser'),
     url(r'^template_segment_selection', TemplateSegmentSelection.as_view(), name='structure_browser'),
