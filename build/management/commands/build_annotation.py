@@ -336,7 +336,7 @@ class Command(BaseBuild):
                                         missing_x50s.append(x50)
                                         if x50 in x50s_must_have:
                                             # print(entry_name,"tranlated ",x50," no index in ortholog, deleting pconf and protein")
-                                            self.logger.error('{} tranlated {} no index in ortholog, deleting pconf and protein'.format(entry_name,x50))
+                                            self.logger.info('{} tranlated {} no index in ortholog, deleting pconf and protein'.format(entry_name,x50))
                                             failed = True
                                             p.protein.delete()
                                             p.delete()
