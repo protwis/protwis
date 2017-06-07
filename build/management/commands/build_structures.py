@@ -1039,13 +1039,11 @@ class Command(BaseBuild):
                                 if ligand['type']:
                                     lt, created = LigandType.objects.get_or_create(slug=slugify(ligand['type']),
                                         defaults={'name': ligand['type']})
-                                    print(lt)
                                 else:
                                     lt, created = LigandType.objects.get_or_create(
                                         slug=slugify(default_ligand_type), defaults={'name': default_ligand_type})
 
                                 # set pdb reference for structure-ligand interaction
-                                print(ligand['name'], ligand['type'])
                                 if len(ligand['name'])>3 and ligand['type']=='peptide':
                                     pdb_reference = 'pep'
                                 else:
