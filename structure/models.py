@@ -18,6 +18,7 @@ class Structure(models.Model):
     publication_date = models.DateField()
     pdb_data = models.ForeignKey('PdbData', null=True) #allow null for now, since dump file does not contain.
     representative = models.BooleanField(default=False)
+    annotated = models.BooleanField(default=True)
 
 
     def __str__(self):

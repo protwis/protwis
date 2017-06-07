@@ -984,6 +984,11 @@ class Command(BaseBuild):
                     except:
                         self.logger.error('Error saving publication'.format(ps.name))
 
+                    if source_file.split('.')[0] in self.xtal_seg_ends:
+                        s.annotated = True
+                    else:
+                        s.annotated = False
+
                     # save structure before adding M2M relations
                     s.save()
                     # StructureLigandInteraction.objects.filter(structure=s).delete()
@@ -1027,9 +1032,9 @@ class Command(BaseBuild):
                             peptide_chain = ""
                             if 'chain' in ligand:
                                 peptide_chain = ligand['chain']
-                                ligand['name'] = 'pep'
+                                # ligand['name'] = 'pep'
                             if ligand['name'] and ligand['name'] != 'None': # some inserted as none.
-
+                                ligand['type'] = ligand['type'].lower()
                                 # use annoted ligand type or default type
                                 if ligand['type']:
                                     lt, created = LigandType.objects.get_or_create(slug=slugify(ligand['type']),
@@ -1039,7 +1044,10 @@ class Command(BaseBuild):
                                         slug=slugify(default_ligand_type), defaults={'name': default_ligand_type})
 
                                 # set pdb reference for structure-ligand interaction
-                                pdb_reference = ligand['name']
+                                if len(ligand['name'])>3 and ligand['type']=='peptide':
+                                    pdb_reference = 'pep'
+                                else:
+                                    pdb_reference = ligand['name']
 
                                 # use pubchem_id
                                 if 'pubchemId' in ligand and ligand['pubchemId'] and ligand['pubchemId'] != 'None':
