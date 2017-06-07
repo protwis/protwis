@@ -48,7 +48,8 @@
                             { type: "text" }, // main template receptor
                             { type: "text" }, // main template structure
                             { type: "number" }, // model version
-
+                            null,
+                            null,
                         ]
                     });
                 }
@@ -107,29 +108,28 @@
                 var checked_data = table.rows('.alt_selected').data();
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][4];
+                    div.innerHTML = checked_data[i][9];
                     if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '') );
+                        AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '') );
                     } else {
-                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                        AddToSelection('targets', 'structure_model', div.textContent.replace(/\s+/g, ''));
                     }
                 }
-                window.location.href = '/structure/pdb_download_index';
+                window.location.href = '/structure/hommod_download';
             });
             $('#align_btn').click(function () {
                 var checked_data = table.rows('.alt_selected').data();
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][4];
+                    div.innerHTML = checked_data[i][9];
                     if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                        AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '') );
                     } else {
-                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                        AddToSelection('targets', 'structure_model', div.textContent.replace(/\s+/g, ''));
                     }
-
                 }
-                window.location.href = '/structure/selection_convert';
+                window.location.href = '/structure/selection_convert_model';
             });
             $('.select-all').change(function () {
                 $('.alt').prop('checked', $(this).prop("checked"));
@@ -147,13 +147,7 @@
     <div class="btn-group">
         <a id="download_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Download</a>
     </div>
-    <div class="btn-group">
-        <a id="representative_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show representative</a>
-    </div>
-    <div class="btn-group">
-        <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
-    </div>
-    <div style="font-size: 10px;">For superimposition: Select (tick box) structures, and Highlight the reference template</div>
+
     <br />
     <br />
 
@@ -169,6 +163,8 @@
                     <th class="pdb-th">Main template protein</th>
                     <th class="pdb-th">Main template structure</th>
                     <th class="pdb-th">Model version</th>
+                    <th class="pdb-th">Details</th>
+                    <th style="display:none;"></th>
 
                 </tr>
                 <tr>
@@ -180,6 +176,8 @@
                     <th></th>
                     <th></th>
                     <th></th>
+                    <th></th>
+                    <th style="display:none;"></th>
                    
                 </tr>
             </thead>
@@ -194,6 +192,8 @@
                     <td><a href="/protein/{{ model.protein.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
                     <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
                     <td>{{ model.version|floatformat:"1" }}</td>
+                    <td><a href="#">Details</a></td>
+                    <td style="display:none;">{{ model.protein.entry_name }}</td>
 
                 </tr>
                 {% endfor %}
