@@ -46,6 +46,10 @@ class Command(BaseCommand):
             action='store',
             dest='filename',
             help='Path to Uniprot text file')
+        parser.add_argument('-m',
+            action='store_true',
+            default=False,
+            help='Run main template search. Updates Xtal_Templ.csv with closest receptor homologs')
 
     annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Structural_Annotation.xlsx'])
     xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends.yaml'])
@@ -68,7 +72,8 @@ class Command(BaseCommand):
         self.data = self.parse_excel(self.annotation_source_file)
         self.dump_files()
         # self.analyse_annotation_consistency()
-        self.main_template_search()
+        if options['m']:
+            self.main_template_search()
 
     def parse_excel(self,path):
         workbook = xlrd.open_workbook(path)
