@@ -8,7 +8,7 @@ from django import forms
 from construct.models import *
 from structure.models import Structure
 from protein.models import ProteinConformation, Protein, ProteinSegment
-from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
+from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, STRUCTURAL_RULES
 
 import json
 from collections import OrderedDict
@@ -569,6 +569,8 @@ def thermostabilising(request, slug, **response_kwargs):
         pdb = mut['PDB']
         if mut['Effect'] != 'Thermostabilising':
             continue #only thermo!
+        if gn is "":
+            continue
         if (entry_name == slug) or (entry_name.split('_')[0] == slug.split('_')[0] and wt_aa == wt_lookup[gn][0]):
             if gn not in results['1']:
                 results['1'][gn] = {}
@@ -666,8 +668,9 @@ def structure_rules(request, slug, **response_kwargs):
     else:
         c_level = ''
 
-    path = os.sep.join([settings.DATA_DIR, 'structure_data', 'construct_data', 'structure_rules.xlsx'])
-    d = parse_excel(path)
+    # path = os.sep.join([settings.DATA_DIR, 'structure_data', 'construct_data', 'structure_rules.xlsx'])
+    # d = parse_excel(path)
+    d = STRUCTURAL_RULES
     if c_level in d:
         rules = d[c_level]
     else:
