@@ -577,7 +577,8 @@ def thermostabilisation(request):
                              for dic in constructs.values('protein__family__parent__parent__parent__name')}
     conservation_gen_nums = {dic['mutations__residue__generic_number__label']
                              for dic in constructs.values('mutations__residue__generic_number__label')}
-    # Calculate the conservation table values TODO what does this conceptually do?  obv calcs the table...
+    # Calculate the conservation values for the mutations across their receptor families and protein classes.
+    # Alignment performed using generic numbers.
     conservation = conservation_table(conservation_proteins, conservation_gen_nums)
 
 
@@ -726,7 +727,8 @@ def conservation_table(prot_classes, gen_nums):
 
     return table
 
-def get_data_columns(group_name, mutant, wild_type, g_n, prot_class, rec_fam, conservation):
+def get_data_columns(group_name, mutant, wild_type, g_n, prot_class, rec_fam, conservation): # pylint: disable=too-many-arguments
+
     ''' Calculate the propensity and hydrophobicity for the given mut & wt.'''
     if group_name == 'position_only':
         # No wt or mut grouping, so can't calc.
