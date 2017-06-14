@@ -34,8 +34,8 @@ def detail(request, slug):
 
     # get constructs
     c = Construct.objects.filter(name=slug).prefetch_related(
-                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type","expression","solubilization", "modifications", "deletions", 
-                "crystallization__crystal_method", "crystallization__crystal_type", 
+                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type","expression","solubilization", "modifications", "deletions",
+                "crystallization__crystal_method", "crystallization__crystal_type",
                 "crystallization__chemical_lists", "crystallization__chemical_lists__chemicals__chemical__chemical_type",
                 "protein__species","structure__pdb_code","structure__publication__web_link", "contributor").all()[0]
 
@@ -255,7 +255,7 @@ class ConstructStatistics(TemplateView):
                         truncations_new[position][p_class_name]['receptors'][entry_name][0].append(from_tm1)
                         if from_tm1 not in truncations_new_sum[position][p_class_name]:
                             truncations_new_sum[position][p_class_name][from_tm1] = 0
-                        truncations_new_sum[position][p_class_name][from_tm1] += 1  
+                        truncations_new_sum[position][p_class_name][from_tm1] += 1
                     # if from_tm1 not in truncations_new[position][p_class_name]['possiblities']:
                     #     truncations_new[position][p_class_name]['possiblities'].append(from_tm1)
                     #     truncations_new[position][p_class_name]['possiblities'] = sorted(truncations_new[position][p_class_name]['possiblities'])
@@ -267,7 +267,7 @@ class ConstructStatistics(TemplateView):
                     bw = x50s[entry_name]['8x50']-deletion.start
                     bw = "8."+str(50-x50s[entry_name]['8x50']+deletion.start)
 
-                    from_h8 = deletion.start - cterm_start[entry_name] 
+                    from_h8 = deletion.start - cterm_start[entry_name]
 
                     if p_class_name not in truncations['cterm']:
                         truncations['cterm'][p_class_name] = {}
@@ -294,7 +294,7 @@ class ConstructStatistics(TemplateView):
                         truncations_new_sum[position][p_class_name] = {}
 
 
-            
+
 
                     if p_class_name not in truncations_new[position]:
                         truncations_new[position][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
@@ -304,7 +304,7 @@ class ConstructStatistics(TemplateView):
                         truncations_new[position][p_class_name]['receptors'][entry_name][0].append(from_h8)
                         if from_h8 not in truncations_new_sum[position][p_class_name]:
                             truncations_new_sum[position][p_class_name][from_h8] = 0
-                        truncations_new_sum[position][p_class_name][from_h8] += 1  
+                        truncations_new_sum[position][p_class_name][from_h8] += 1
 
                 if deletion.start > x50s[entry_name]['5x50'] and deletion.start < x50s[entry_name]['6x50']:
                     # if fusion_icl3:
@@ -418,12 +418,12 @@ class ConstructStatistics(TemplateView):
                 truncations_new_possibilties[position] = []
 
 
-            from_h8 = cterm_end[entry_name] - cterm_start[entry_name] 
+            from_h8 = cterm_end[entry_name] - cterm_start[entry_name]
             if not found_cterm:
                 truncations_new[position][p_class_name]['receptors'][entry_name] = [[],[from_h8],[from_h8]]
             else:
                 truncations_new[position][p_class_name]['receptors'][entry_name][2].append(from_h8)
-                
+
             if from_h8 not in truncations_new_possibilties[position]:
                 truncations_new_possibilties[position].append(from_h8)
                 truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
@@ -454,7 +454,7 @@ class ConstructStatistics(TemplateView):
 
 
         fusion_possibilities = truncations_new_possibilties['nterm_fusion'][::-1] + truncations_new_possibilties['icl2_fusion_start'] + truncations_new_possibilties['icl3_fusion_start'] + truncations_new_possibilties['icl2_fusion_end'] + truncations_new_possibilties['icl3_fusion_end']
-        
+
         for pclass, receptors in track_fusions.items():
             for receptor, vals in receptors.items():
                 temp = []
@@ -1066,28 +1066,36 @@ def get_data_columns(group_name, mutant, wild_type, g_n, prot_class, rec_fam, co
         fam_cons = conservation.get((rec_fam, g_n), {})
         if group_name == 'pos_and_mut':
             # Can only calc for mutant
-            return (AA_PROPENSITY[mutant],
-                    HYDROPHOBICITY[mutant],
+            return (AA_PROPENSITY.get(mutant, u'\u2014'),
+                    HYDROPHOBICITY.get(mutant, u'\u2014'),
                     class_cons.get(mutant, u'\u2014'),
                     fam_cons.get(mutant, u'\u2014'))
         elif group_name == 'pos_and_wt':
             # Can only calc for wt
-            return (AA_PROPENSITY[wild_type],
-                    HYDROPHOBICITY[wild_type],
+            return (AA_PROPENSITY.get(wild_type, u'\u2014'),
+                    HYDROPHOBICITY.get(wild_type, u'\u2014'),
                     class_cons.get(wild_type, u'\u2014'),
                     fam_cons.get(wild_type, u'\u2014'))
         else:  # Then group_name = 'all'
             # Can calc for all and get the difference between the mut & wt.
 
             # Get propensity fol change
-            mut = AA_PROPENSITY[mutant]
-            w_t = AA_PROPENSITY[wild_type]
-            prop = str(mut-w_t)+' (' + str(mut) + '/'+ str(w_t) +')'
+            mut = AA_PROPENSITY.get(mutant, u'\u2014')
+            w_t = AA_PROPENSITY.get(wild_type, u'\u2014')
+            try:
+                prop = str(round(mut-w_t, 2))
+            except TypeError:
+                prop = u'\u2014'
+            prop = prop + ' (' + str(mut) + u'\u2212'+ str(w_t) +')'
 
             # Get hydrophobicity fold change
-            mut = HYDROPHOBICITY[mutant]
-            w_t = HYDROPHOBICITY[wild_type]
-            hydro = str(mut-w_t)+' (' + str(mut) + '/'+ str(w_t) +')'
+            mut = HYDROPHOBICITY.get(mutant, u'\u2014')
+            w_t = HYDROPHOBICITY.get(wild_type, u'\u2014')
+            try:
+                hydro = str(round(mut-w_t, 2))
+            except TypeError:
+                hydro = u'\u2014'
+            hydro = hydro + ' (' + str(mut) + u'\u2212'+ str(w_t) +')'
 
             # Get the receptor family conservation fold change.
             mut = fam_cons.get(mutant, u'\u2014')
@@ -1096,7 +1104,7 @@ def get_data_columns(group_name, mutant, wild_type, g_n, prot_class, rec_fam, co
                 rec_cons = str(round(mut-w_t, 2))
             except TypeError:
                 rec_cons = u'\u2014'
-            rec_cons += ' ('+str(mut)+'/'+str(w_t)+')'
+            rec_cons += ' ('+str(mut)+u'\u2212'+str(w_t)+')'
 
             # Get the protein class conservation fold change.
             mut = class_cons.get(mutant, u'\u2014')
@@ -1105,7 +1113,7 @@ def get_data_columns(group_name, mutant, wild_type, g_n, prot_class, rec_fam, co
                 prot_cons = str(round(mut-w_t, 2))
             except TypeError:
                 prot_cons = u'\u2014'
-            prot_cons += ' ('+str(mut)+'/'+str(w_t)+')'
+            prot_cons += ' ('+str(mut)+u'\u2212'+str(w_t)+')'
             return (prop,
                     hydro,
                     prot_cons,
@@ -1204,8 +1212,8 @@ class ExperimentBrowser(TemplateView):
         context = super(ExperimentBrowser , self).get_context_data(**kwargs)
         try:
             cons = Construct.objects.all().prefetch_related(
-                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type","expression","solubilization", "modifications", "deletions", 
-                "crystallization__crystal_method", "crystallization__crystal_type", 
+                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type","expression","solubilization", "modifications", "deletions",
+                "crystallization__crystal_method", "crystallization__crystal_type",
                 "crystallization__chemical_lists", "crystallization__chemical_lists__chemicals__chemical__chemical_type",
                 "protein__species","structure__pdb_code","structure__publication__web_link", "contributor").annotate(pur_count = Count('purification__steps')).annotate(sub_count = Count('solubilization__chemical_list__chemicals'))
 
