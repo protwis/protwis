@@ -53,7 +53,7 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False):
     if cache_dir:
         d = cache.get(cache_file_path)
         # d = fetch_from_cache(cache_dir, index_slug)
-        if d:
+        if not d is None:
             logger.info('Fetched {} from cache'.format(cache_file_path))
             return d
     
@@ -88,9 +88,11 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False):
             if e.code == 404:
                 logger.warning('Failed fetching {}, 404 - does not exist'.format(full_url))
                 tries = max_tries #skip more tries
+                return False
             elif e.code == 400:
                 logger.warning('Failed fetching {}, 400 - does not exist'.format(full_url))
                 tries = max_tries #skip more tries
+                return False
             else:
                 time.sleep(2)
         else:
