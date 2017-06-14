@@ -188,9 +188,16 @@ padding: 5px 5px;
 padding-right: 15px;
 border-bottom: 1px solid #111;
 }
+.internal-table {
+    width:100%;
+}
 table.dataTable {
     font-size: 12px;
     text-align: center;
+}
+.inner{
+    background-color: transparent;
+padding: 0 !important;
 }
 </style>
 
@@ -253,7 +260,7 @@ table.dataTable {
                 <table>
                     {% for mutant in group.1.state %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -262,19 +269,19 @@ table.dataTable {
                 {{group.0.class}}
             </td>
             <td>
-                <table>
+                <table class="internal-table">
                     {% for mutant in group.1.ligand %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
             </td>
             <td>
-                <table>
+                <table class="internal-table">
                     {% for mutant in group.1.receptor %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -282,19 +289,19 @@ table.dataTable {
             <td>{{group.0.segment}}</td>
             <td> {{group.0.gen_num}} </td>
             <td>
-                <table>
+                <table class="internal-table">
                     {% for mutant in group.1.wild_type %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
             </td>
             <td>
-                <table>
+                <table class="internal-table">
                     {% for mutant in group.1.mutant %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -353,7 +360,7 @@ table.dataTable {
                 <table>
                     {% for mutant in group.1.state %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -362,19 +369,19 @@ table.dataTable {
                 {{group.0.class}}
             </td>
             <td>
-                <table>
+                <table class="internal-table">
                     {% for mutant in group.1.ligand %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
             </td>
             <td>
-                <table>
+                <table class="internal-table">
                     {% for mutant in group.1.receptor %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -382,10 +389,10 @@ table.dataTable {
             <td>{{group.0.segment}}</td>
             <td> {{group.0.gen_num}} </td>
             <td>
-                <table>
+                <table class="internal-table">
                     {% for mutant in group.1.wild_type %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -396,10 +403,10 @@ table.dataTable {
             <td>{{group.1.struct_id | length}}</td>
 
             <td>
-                <table>
+                <table class="internal-table">
                     {% for mutant in group.1.pdb %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -448,7 +455,7 @@ table.dataTable {
                 <table>
                     {% for mutant in group.1.state %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -457,19 +464,19 @@ table.dataTable {
                 {{group.0.class}}
             </td>
             <td>
-                <table>
+                <table class="internal-table">
                     {% for mutant in group.1.ligand %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
             </td>
             <td>
-                <table>
+                <table class="internal-table">
                     {% for mutant in group.1.receptor %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -478,10 +485,10 @@ table.dataTable {
             <td> {{group.0.gen_num}} </td>
             <td>{{group.0.wild_type}}</td>
             <td>
-                <table>
+                <table class="internal-table">
                     {% for mutant in group.1.mutant %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -491,10 +498,10 @@ table.dataTable {
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
             <td>
-                <table>
+                <table class="internal-table">
                     {% for mutant in group.1.pdb %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -544,7 +551,7 @@ table.dataTable {
                 <table>
                     {% for mutant in group.1.state %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -553,19 +560,19 @@ table.dataTable {
                 {{group.0.class}}
             </td>
             <td>
-                <table>
+                <table class="internal-table">
                     {% for mutant in group.1.ligand %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
             </td>
             <td>
-                <table>
+                <table class="internal-table">
                     {% for mutant in group.1.receptor %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -579,10 +586,10 @@ table.dataTable {
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
             <td>
-                <table>
+                <table class="internal-table">
                     {% for mutant in group.1.pdb %}
                     <tr style='background-color: transparent;'>
-                        <td style='padding: 0 !important;'> {{ mutant }} </td>
+                        <td class='inner'> {{ mutant }} </td>
                     </tr>
                     {% endfor %}
                 </table>
