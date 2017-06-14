@@ -2,6 +2,12 @@
 from django.conf import settings
 from django.views.generic import TemplateView
 from django.db.models import Case, When
+from django.core.cache import cache
+from django.core.cache import caches
+try:
+    cache_alignment = caches['alignments']
+except:
+    cache_alignment = cache
 
 from common.views import AbsTargetSelection
 from common.views import AbsSegmentSelection
@@ -14,6 +20,7 @@ from protein.models import Protein, ProteinSegment,ProteinFamily, ProteinSet
 from residue.models import ResiduePositionSet
 
 import inspect, os
+import hashlib
 from collections import OrderedDict
 
 from common import definitions
@@ -165,18 +172,40 @@ def render_alignment(request):
     a.load_proteins_from_selection(simple_selection)
     a.load_segments_from_selection(simple_selection)
 
-    # build the alignment data matrix
-    check = a.build_alignment()
-    if check == 'Too large':
-        return render(request, 'alignment/error.html', {'proteins': len(a.proteins), 'residues':a.number_of_residues_total})
-    # calculate consensus sequence + amino acid and feature frequency
-    a.calculate_statistics()
+    #create unique proteins_id
+    protein_ids = []
+    for p in a.proteins:
+        protein_ids.append(p.pk)
+    protein_list = ','.join(str(x) for x in sorted(protein_ids))
 
-    num_of_sequences = len(a.proteins)
-    num_residue_columns = len(a.positions) + len(a.segments)
+    #create unique proteins_id
+    segments_ids = []
+    for s in a.segments:
+        segments_ids.append(s)
+    segments_list = ','.join(str(x) for x in sorted(segments_ids))
 
-    return render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
-        'num_residue_columns': num_residue_columns})
+    s = str(protein_list+"_"+segments_list)
+    key = "ALIGNMENT_"+hashlib.md5(s.encode('utf-8')).hexdigest()
+    return_html = cache_alignment.get(key)
+
+    if return_html==None or 'Custom' in segments_ids:
+        # build the alignment data matrix
+        check = a.build_alignment()
+        if check == 'Too large':
+            return render(request, 'alignment/error.html', {'proteins': len(a.proteins), 'residues':a.number_of_residues_total})
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
+
+        num_of_sequences = len(a.proteins)
+        num_residue_columns = len(a.positions) + len(a.segments)
+
+        return_html = render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
+            'num_residue_columns': num_residue_columns})
+    if 'Custom' not in segments_ids:
+        #update it if used
+        cache_alignment.set(key,return_html, 60*60*24*7) #set alignment cache one week
+
+    return return_html
 
 def render_family_alignment(request, slug):
     # create an alignment object
@@ -184,6 +213,10 @@ def render_family_alignment(request, slug):
 
     # fetch proteins and segments
     proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt')
+
+    if len(proteins)>50 and len(slug.split("_"))<4:
+        # If alignment is going to be too big, only pick human.
+        proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt', species__latin_name='Homo sapiens')
 
     if slug.startswith('100'):
 
@@ -193,22 +226,49 @@ def render_family_alignment(request, slug):
         segments = ProteinSegment.objects.filter(slug__in = gsegments['Full'], partial=False).order_by(preserved)
     else:
         segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False)
+        if len(proteins)>50:
+            # if a lot of proteins, exclude some segments
+            segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False).exclude(slug__in=['N-term','C-term'])
+        if len(proteins)>200:
+            # if many more proteins exluclude more segments
+            segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False).exclude(slug__in=['N-term','C-term']).exclude(category='loop')
 
-    # load data into the alignment
-    a.load_proteins(proteins)
-    a.load_segments(segments)
+    protein_ids = []
+    for p in proteins:
+        protein_ids.append(p.pk)
+    protein_list = ','.join(str(x) for x in sorted(protein_ids))
 
-    # build the alignment data matrix
-    a.build_alignment()
+    #create unique proteins_id
+    segments_ids = []
+    for s in segments:
+        segments_ids.append(s.slug)
+    segments_list = ','.join(str(x) for x in sorted(segments_ids))
 
-    # calculate consensus sequence + amino acid and feature frequency
-    a.calculate_statistics()
+    s = str(protein_list+"_"+segments_list)
+    key = "ALIGNMENT_"+hashlib.md5(s.encode('utf-8')).hexdigest()
+    return_html = cache_alignment.get(key)
 
-    num_of_sequences = len(a.proteins)
-    num_residue_columns = len(a.positions) + len(a.segments)
+    if return_html==None:
+        # load data into the alignment
+        a.load_proteins(proteins)
+        a.load_segments(segments)
 
-    return render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
+        # build the alignment data matrix
+        a.build_alignment()
+
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
+
+        num_of_sequences = len(a.proteins)
+        num_residue_columns = len(a.positions) + len(a.segments)
+
+        return_html = render(request, 'alignment/alignment.html', {'a': a, 'num_of_sequences': num_of_sequences,
         'num_residue_columns': num_residue_columns})
+
+    #update it if used
+    cache_alignment.set(key,return_html, 60*60*24*7) #set alignment cache one week
+
+    return return_html
 
 def render_fasta_alignment(request):
     # get the user selection from session

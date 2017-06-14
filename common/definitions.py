@@ -192,6 +192,52 @@ AMINO_ACID_GROUP_NAMES = OrderedDict([
         ('custom', 'Custom'),
     ])
 
+# Structural rules used to identify different sites
+STRUCTURAL_RULES = {    'All': [ 
+                                    # OrderedDict([('Class', 'All'), ('State', 'all'), ('Definition', 'Contract salt-bridge'), ('Generic Position', 'E in upper half of TM, not facing the membrane'), ('Wt AA', 'E'), ('Mut AA', 'D'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'All'), ('State', 'all'), ('Definition', 'Y7x53 switch removal'), ('Generic Position', '7x53'), ('Wt AA', 'Y'), ('Mut AA', 'L'), ('Note', '')]),
+                                    OrderedDict([('Class', 'All'), ('State', 'all'), ('Definition', 'Y7x53 switch removal'), ('Generic Position', '7x53'), ('Wt AA', 'Y'), ('Mut AA', 'A'), ('Note', '')])
+                                ], 
+                        'A': [ 
+                                    OrderedDict([('Class', 'A'), ('State', 'all'), ('Definition', 'Add W3x41'), ('Generic Position', '3x41'), ('Wt AA', 'X'), ('Mut AA', 'W'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'inactive'), ('Definition', 'Ionic lock (D/ERY) addition'), ('Generic Position', '3x49'), ('Wt AA', 'X'), ('Mut AA', 'D'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'inactive'), ('Definition', 'Ionic lock (D/ERY) addition'), ('Generic Position', '3x50'), ('Wt AA', 'X'), ('Mut AA', 'R'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'inactive'), ('Definition', 'Ionic lock (D/ERY) addition'), ('Generic Position', '6x30'), ('Wt AA', 'X'), ('Mut AA', 'E'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'inactive'), ('Definition', 'Ionic lock (D/ERY) contraction'), ('Generic Position', '3x49'), ('Wt AA', 'E'), ('Mut AA', 'D'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'active'), ('Definition', 'Ionic lock (D/ERY) removal'), ('Generic Position', '3x49'), ('Wt AA', 'D'), ('Mut AA', 'A'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'active'), ('Definition', 'Ionic lock (D/ERY) removal'), ('Generic Position', '3x50'), ('Wt AA', 'R'), ('Mut AA', 'A'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'active'), ('Definition', 'Ionic lock (D/ERY) removal'), ('Generic Position', '3x50'), ('Wt AA', 'R'), ('Mut AA', 'L'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'all'), ('Definition', 'N6x49 addition'), ('Generic Position', '6x49'), ('Wt AA', 'X'), ('Mut AA', 'N'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'active'), ('Definition', 'Sodium ion site addition'), ('Generic Position', '2x50'), ('Wt AA', 'X'), ('Mut AA', 'D'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'active'), ('Definition', 'Sodium ion site addition'), ('Generic Position', '3x39'), ('Wt AA', 'X'), ('Mut AA', 'S'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'active'), ('Definition', 'Sodium ion site addition'), ('Generic Position', '6x48'), ('Wt AA', 'X'), ('Mut AA', 'W'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'active'), ('Definition', 'Sodium ion site addition'), ('Generic Position', '7x49'), ('Wt AA', 'X'), ('Mut AA', 'N'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'active'), ('Definition', 'Sodium ion site addition'), ('Generic Position', '2x50'), ('Wt AA', 'X'), ('Mut AA', 'D'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'inactive'), ('Definition', 'Sodium ion site removal'), ('Generic Position', '2x50'), ('Wt AA', 'D/E'), ('Mut AA', 'A'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'inactive'), ('Definition', 'Sodium ion site removal'), ('Generic Position', '3x39'), ('Wt AA', 'S/T'), ('Mut AA', 'A'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'inactive'), ('Definition', 'Sodium ion site removal'), ('Generic Position', '6x48'), ('Wt AA', 'W'), ('Mut AA', 'A'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'inactive'), ('Definition', 'Sodium ion site removal'), ('Generic Position', '7x49'), ('Wt AA', 'N'), ('Mut AA', 'A'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'inactive'), ('Definition', 'Sodium ion site removal'), ('Generic Position', '2x50'), ('Wt AA', 'D'), ('Mut AA', 'N'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'A'), ('State', 'all'), ('Definition', 'Y7x53 addition'), ('Generic Position', '7x53'), ('Wt AA', 'X'), ('Mut AA', 'Y'), ('Note', '')])
+                            ],
+                        'B': [ 
+                                    OrderedDict([('Class', 'B'), ('State', 'active'), ('Definition', 'Ionic lock (D/ERY) removal'), ('Generic Position', '2x43'), ('Wt AA', 'H'), ('Mut AA', 'A'), ('Note', ' (GPCRdb-B# 2x50)')]), 
+                                    OrderedDict([('Class', 'B'), ('State', 'active'), ('Definition', 'Ionic lock (D/ERY) removal'), ('Generic Position', '3x46'), ('Wt AA', 'E'), ('Mut AA', 'A'), ('Note', ' (GPCRdb-B# 3x50)')]), 
+                                    OrderedDict([('Class', 'B'), ('State', 'inactive'), ('Definition', 'Sodium ion site removal'), ('Generic Position', '3x39'), ('Wt AA', 'N'), ('Mut AA', 'A'), ('Note', ' (GPCRdb-C# 4x43)')])],
+                        'C': [ 
+                                    OrderedDict([('Class', 'C'), ('State', 'all'), ('Definition', 'F7x48 addition'), ('Generic Position', '7x48'), ('Wt AA', 'X'), ('Mut AA', 'F'), ('Note', ' (GPCRdb-B# 7x53)')]), 
+                                    OrderedDict([('Class', 'C'), ('State', 'inactive'), ('Definition', 'Ionic lock (D/ERY) addition'), ('Generic Position', '3x50'), ('Wt AA', 'X'), ('Mut AA', 'R'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'C'), ('State', 'inactive'), ('Definition', 'Ionic lock (D/ERY) addition'), ('Generic Position', '3x50'), ('Wt AA', 'X'), ('Mut AA', 'K'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'C'), ('State', 'inactive'), ('Definition', 'Ionic lock (D/ERY) addition'), ('Generic Position', '6x33'), ('Wt AA', 'X'), ('Mut AA', 'E'), ('Note', ' (GPCRdb-C# 6x35)')]), 
+                                    OrderedDict([('Class', 'C'), ('State', 'inactive'), ('Definition', 'Ionic lock (D/ERY) contraction'), ('Generic Position', '6x33'), ('Wt AA', 'E'), ('Mut AA', 'D'), ('Note', ' (GPCRdb-C# 6x35)')]), 
+                                    OrderedDict([('Class', 'C'), ('State', 'active'), ('Definition', 'Ionic lock (D/ERY) removal'), ('Generic Position', '3x50'), ('Wt AA', 'R'), ('Mut AA', 'A'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'C'), ('State', 'active'), ('Definition', 'Ionic lock (D/ERY) removal'), ('Generic Position', '3x50'), ('Wt AA', 'R'), ('Mut AA', 'L'), ('Note', '')]), 
+                                    OrderedDict([('Class', 'C'), ('State', 'active'), ('Definition', 'Sodium ion site addition'), ('Generic Position', '6x48'), ('Wt AA', 'X'), ('Mut AA', 'W'), ('Note', ' (GPCRdb-C# 6x50)')]), 
+                                    OrderedDict([('Class', 'C'), ('State', 'inactive'), ('Definition', 'Sodium ion site removal'), ('Generic Position', '6x48'), ('Wt AA', 'W'), ('Mut AA', 'A'), ('Note', ' (GPCRdb-C# 6x50)')]), 
+                                    OrderedDict([('Class', 'C'), ('State', 'all'), ('Definition', 'Y7x53 addition'), ('Generic Position', '7x53'), ('Wt AA', 'X'), ('Mut AA', 'Y'), ('Note', ' (GPCRdb-B# 7x58)')])
+                            ],
+                    }
+
 G_PROTEIN_SEGMENTS = OrderedDict([
         ('Full', ['HN','hns1','S1','s1h1','H1','h1ha','HA','hahb','HB','hbhc','HC','hchd','HD','hdhe','HE','hehf','HF','hfs2','S2','s2s3','S3','s3h2','H2','h2s4','S4','s4h3','H3','h3s5','S5','s5hg','HG','hgh4','H4','h4s6','S6','s6h5','H5']),
         ('Structured', ['HN','S1','H1','HA','HB','HC','HD','HE','HF','S2','S3','H2','S4','H3','S5','HG','H4','S6','H5']),
