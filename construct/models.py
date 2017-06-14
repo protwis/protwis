@@ -154,7 +154,7 @@ class ConstructMutation(models.Model):
         '''Retrieve the residue connected to this mutation, and save it as a FK field.'''
         try:
             construct = self.construct_set.get().protein.entry_name
-        except Construct.DoesNotExist
+        except Construct.DoesNotExist:
             return None
         seq_no = self.sequence_number
         try:
