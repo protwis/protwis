@@ -1586,7 +1586,6 @@ class HomologyModeling(object):
                 if self.revise_xtal==False and 'term' in sec[0]:
                     pass
                 else:
-                    # s_file.write(str(sec)+"\n")
                     pass
                 for rot in rot_table:
                     if self.revise_xtal==False and 'term' in sec[0]:
@@ -1605,9 +1604,6 @@ class HomologyModeling(object):
                             l = "{},{},{},{},{},{}".format(rot[0],rot[1],rot[2],rot[3],bb,rt)
         
         self.template_stats = rot_table
-        # if self.update==True:
-        #     print('UPDATING DB')
-        #     self.upload_to_db(sections, rot_table)
 
         print('MODELLER build: ',datetime.now() - startTime)
         pprint.pprint(self.statistics)
@@ -3806,6 +3802,7 @@ class GPCRDBParsingPDB(object):
                     output[seg_label][gn] = res
             else:
                 try:
+                    found_res, found_gn = None, None
                     try:
                         found_res = Residue.objects.get(protein_conformation=structure.protein_conformation,
                                                         sequence_number=gn)
@@ -3815,8 +3812,9 @@ class GPCRDBParsingPDB(object):
                             found_res = Residue.objects.get(protein_conformation=parent_prot_conf,
                                                             sequence_number=gn)
                     found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
+
                     # Exception for res 318 in 5VEX
-                    if structure.pdb_code.index=='5VEX' and gn=='318' and res[0].get_parent().get_resname()=='ILE' and found_gn=='5.47':
+                    if structure.pdb_code.index in ['5VEX','5VEW'] and gn=='318' and res[0].get_parent().get_resname()=='ILE' and found_gn=='5.47':
                         found_gn = '5.48'
                     if -9.1 < float(found_gn) < 9.1:
                         if len(res)==1:
@@ -3860,4 +3858,3 @@ class CreateStatistics(object):
             @param info: object, any object as value
         '''
         self.info_dict[info_name] = info
-
