@@ -37,7 +37,7 @@
                         sRangeFormat: "{from}:{to}",
                         aoColumns: [
                             null,
-                            { type: "select" }, // protein name
+                            { type: "text" }, // protein name
                             { type: "select"}, // state
                             { type: "select" }, // class
                             { type: "select" }, // species
@@ -181,7 +181,7 @@
             {% for model in structure_model.all %}
                 <tr>
                     <td><input class="alt" type="checkbox"></td>
-                    <td><a href="/protein/{{ model.protein.entry_name }}">{{ model.protein.family.name|safe }}</a></td>
+                    <td><a href="/protein/{{ model.protein.entry_name|safe }}">{{ model.protein.family.name|safe }}</a></td>
                     <td>{{ model.state.name }}</td>
                     <td>{{ model.protein.family.parent.parent.parent.name }}</td>
                     <td>{{ model.protein.species.common_name }}</td>
