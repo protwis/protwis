@@ -98,65 +98,6 @@ $(document).ready(function() {
         paging: false
     });
 
-    // yadcf.init(mut_table, [{
-    //     column_number: 0,
-    //     filter_type: "multi_select",
-    //     select_type: 'select2',
-    //     column_data_type: "html",
-    //     html_data_type: "text",
-    //     filter_default_label: "Receptor",
-    //     filter_container_id: "external_filter_container1"
-    // }, {
-    //     column_number: 1,
-    //     filter_type: "multi_select",
-    //     select_type: 'select2',
-    //     column_data_type: "html",
-    //     html_data_type: "text",
-    //     filter_default_label: "GNs",
-    //     filter_container_id: "external_filter_container2"
-    // }, {
-    //     column_number: 3,
-    //     filter_type: "multi_select",
-    //     select_type: 'select2',
-    //     filter_default_label: "Segment",
-    //     filter_container_id: "external_filter_container3"
-    // }, {
-    //     column_number: 4,
-    //     filter_type: "multi_select",
-    //     select_type: 'select2',
-    //     filter_default_label: "WT",
-    //     filter_container_id: "external_filter_container4"
-    // }, {
-    //     column_number: 5,
-    //     filter_type: "multi_select",
-    //     select_type: 'select2',
-    //     filter_default_label: "MUT",
-    //     filter_container_id: "external_filter_container5"
-    // }, {
-    //     column_number: 6,
-    //     filter_type: "text",
-    //             column_data_type: "text",
-    //     filter_default_label: "PDB",
-    //     filter_container_id: "external_filter_container6"
-    // }, {
-    //     column_number: 7,
-    //     filter_type: "text",
-    //             column_data_type: "text",
-    //     filter_default_label: "Name",
-    //     filter_container_id: "external_filter_container7"
-    // }, ], {
-    //     cumulative_filtering: false
-    // });
-
-    // yadcf.exResetAllFilters(mut_table);
-
-    // $('#apply_filter').click(function() {
-    //     $("#filters").toggle();
-    // });
-
-    // $("#OpenFilters").click(function() {
-    //     $("#filters").toggle();
-    // });
 
 groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
 $("#group_select")
@@ -174,6 +115,18 @@ $("#group_select")
                 d3.selectAll('#' + d + '_vis')
                     .style('display', 'none');
             }
+            if(selection == 'pos_and_mut'){
+                d3.select('#ala_subset_choice').style('display', 'inline');
+                d3.select('#ala_leu_subset_choice').style('display', 'none');
+            }
+            else if (selection == 'all'){
+                d3.select('#ala_subset_choice').style('display', 'inline');
+                d3.select('#ala_leu_subset_choice').style('display', 'inline');
+            }
+            else {
+                d3.select('#ala_subset_choice').style('display', 'none');
+                d3.select('#ala_leu_subset_choice').style('display', 'none');
+            }
         });
     })
 
@@ -183,22 +136,28 @@ $("#group_select")
 <script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
 
 <style type="text/css">
-table.dataTable thead th{
-padding: 5px 5px;
-padding-right: 15px;
-border-bottom: 1px solid #111;
-}
-.internal-table {
-    width:100%;
-}
-table.dataTable {
-    font-size: 12px;
-    text-align: center;
-}
-.inner{
-    background-color: transparent;
-padding: 0 !important;
-}
+    table.dataTable thead th{
+    padding: 5px 5px;
+    padding-right: 15px;
+    border-bottom: 1px solid #111;
+    }
+    .internal-table {
+        width:100%;
+    }
+    table.dataTable {
+        font-size: 12px;
+        text-align: center;
+    }
+    .inner{
+        background-color: transparent;
+    padding: 0 !important;
+    }
+    .ala_subset {
+        display:none;
+    }
+    .ala_leu_subset {
+        display:none;
+    }
 </style>
 
 {% endblock %}
@@ -226,8 +185,13 @@ padding: 0 !important;
         <option value="all">Position, WT, and Mut</option>
     </select>
 
-<!--     Display Ala Mutations: <input id='ala-mut' type="checkbox" name="ala-mut" />
- -->
+    <span id='ala_subset_choice' style='display:none;'> Display Xaa to Ala Mutations:
+        <input style="margin-right: 20px" id='ala-mut' type="checkbox" name="ala-mut" />
+    </span>
+    <span id='ala_leu_subset_choice' style='display:none;'> Display Ala to Leu Mutations:
+        <input id='ala-to-leu' type="checkbox" name="ala-mut" />
+    </span>
+
 </div>
 
 <table width="100%" class="display" id="position_only">
@@ -355,7 +319,7 @@ padding: 0 !important;
     </thead>
 
         {% for key, group in pos_and_mut.items %}
-        <tr >
+        <tr class='{{group.0.ala_subset}}'>
             <td>
                 <table>
                     {% for mutant in group.1.state %}
@@ -546,7 +510,7 @@ padding: 0 !important;
     </thead>
 
         {% for key, group in all.items %}
-        <tr >
+        <tr class='{{group.0.ala_subset}} {{group.0.ala_leu_subset}}'>
             <td>
                 <table>
                     {% for mutant in group.1.state %}

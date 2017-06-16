@@ -900,10 +900,11 @@ def thermostabilisation(request):
                 "crystal")
 
     # Get a list of all relevant proteins and generic numbers
-    conservation_proteins = {dic['protein__family__parent__parent__parent__name']
-                             for dic in constructs.values('protein__family__parent__parent__parent__name')}
-    conservation_gen_nums = {dic['mutations__residue__generic_number__label']
-                             for dic in constructs.values('mutations__residue__generic_number__label')}
+    conservation_proteins = constructs.values_list('protein__family__parent__parent__parent__name',
+                                                   flat=True)\
+                            .distinct()
+    conservation_gen_nums = constructs.values_list('mutations__residue__generic_number__label', flat=True).distinct()
+
     # Calculate the conservation values for the mutations across their receptor families and protein classes.
     # Alignment performed using generic numbers.
     conservation = conservation_table(conservation_proteins, conservation_gen_nums)
@@ -912,15 +913,18 @@ def thermostabilisation(request):
     # Define the data analysis modes.  TODO more info on the comment. what will these be used for - dont get it.
     groupings = {
         "all":{"include_in_id":['class', 'gen_num', 'wild_type', 'mutant'], "exclude_from_info":['']},
-        "pos_and_wt":{"include_in_id":['class', 'gen_num', 'wild_type'], "exclude_from_info":['mutant']},
-        "pos_and_mut":{"include_in_id":['class', 'gen_num', 'mutant'], "exclude_from_info":['wild_type']},
-        "position_only":{"include_in_id":['class', 'gen_num'], "exclude_from_info":['wild_type', 'mutant']}
+        "pos_and_wt":{"include_in_id":['class', 'gen_num', 'wild_type'],
+                      "exclude_from_info":['ala_leu_subset', 'ala_subset', 'mutant']},
+        "pos_and_mut":{"include_in_id":['class', 'gen_num', 'mutant'],
+                       "exclude_from_info":['ala_leu_subset', 'wild_type']},
+        "position_only":{"include_in_id":['class', 'gen_num'],
+                         "exclude_from_info":['ala_leu_subset', 'ala_subset', 'wild_type', 'mutant']}
         }
 
     # Set up dictionaries to record information.
     mutation_groups = {"position_only":{}, "all":{}, "pos_and_wt":{}, "pos_and_mut":{}}
 
-
+    checking = 0
     # For each contruct, retrieve the correct information, and then add it to the context dictionary, mutation_list.
     for record in constructs:
         # Get info for the construct
@@ -954,6 +958,17 @@ def thermostabilisation(request):
                            'state':state,
                            'struct_id':struct_id}
 
+            # Check if the site info has been calculated for the wt & mut grouping.
+            # If so, all the other groups also already have site info added.
+            # If no, all other grouping info must be calculated anyway to retrieve the site info for the wt & mut
+            # grouping.
+            wt_mut_group_id = ",".join([str(val) for key, val in mutant_id.items()
+                                        if key in groupings['all']['include_in_id']])
+
+            if wt_mut_group_id not in mutation_groups['all']:
+                # In here: insert the code to find the site info
+                checking += 1
+
             # For each group, add the required info.
             for group_name, attr in groupings.items():
                 # Create a dictionary of information pertaining to the whole group to which the mutant belongs
@@ -961,6 +976,22 @@ def thermostabilisation(request):
                 # Create a group ID (which will be unique for each grouping)
                 group_id = ",".join([str(val) for key, val in mutant_id.items()
                                      if key in attr['include_in_id']])
+
+                # Add further information to group_info allow for fast filtering based on mutant aa where needed.
+                if group_name in {"pos_and_mut", "all"}:
+                    if mutant_id['mutant'] == 'A':
+                        in_ala_subset = 'ala_subset'
+                    else:
+                        in_ala_subset = 'no_subset'
+
+                    if group_name == 'all' and mutant_id['wild_type'] == 'A' and mutant_id['mutant']=='L':
+                        in_ala_leu_subset = 'ala_leu_subset'
+                    else:
+                        in_ala_leu_subset = 'no_subset'
+
+                    group_info['ala_subset'] = in_ala_subset
+                    group_info['ala_leu_subset'] = in_ala_leu_subset
+
                 # Set the default for the group id in each mutation_grouping.
                 group = mutation_groups[group_name].setdefault(group_id,
                                                                [group_info, {}]
@@ -980,6 +1011,8 @@ def thermostabilisation(request):
                                             p_class,
                                             p_receptor,
                                             conservation)
+                    # Add site information.
+                    # group[0]['site stuff'] = ...
 
                 # Edit group info as needed
                 group[0]['count'] += 1
@@ -999,6 +1032,7 @@ def thermostabilisation(request):
                         group[0]["receptor_fam_cons"] = u'\u2014'
 
 
+    print(mutation_groups['pos_and_mut'])
 
     return render(request, "construct/thermostablisation.html",
                   {'pos_and_mut': mutation_groups['pos_and_mut'],
