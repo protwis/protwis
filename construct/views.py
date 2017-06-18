@@ -928,7 +928,6 @@ def stabilisation_browser(request):
     # Set up dictionaries to record information.
     mutation_groups = {"position_only":{}, "all":{}, "pos_and_wt":{}, "pos_and_mut":{}}
 
-    checking = 0
     # For each construct, get the needed information, and add to the context dictionary called mutation_list.
     for record in constructs:
         # Get info for the construct
@@ -962,16 +961,21 @@ def stabilisation_browser(request):
                            'state':state,
                            'struct_id':struct_id}
 
-            # Check if the site info has been calculated for the wt & mut grouping.
-            # If so, all the other groups also already have site info added.
-            # If no, all other grouping info must be calculated anyway to retrieve the site info for the wt & mut
+            # Check if the calculated columns have been calculated for the pos, wt & mut grouping.
+            # If so, all groups already have the column calculations needed added.
+            # If not, all other grouping info must be calculated anyway to retrieve the site info for the wt & mut
             # grouping.
             wt_mut_group_id = ",".join([str(val) for key, val in mutant_id.items()
                                         if key in groupings['all']['include_in_id']])
 
             if wt_mut_group_id not in mutation_groups['all']:
                 # In here: insert the code to find the site info
-                checking += 1
+                calced_cols = get_calculated_columns(mutant_id['mutant'],
+                                                     mutant_id['wild_type'],
+                                                     generic_number,
+                                                     p_class,
+                                                     p_receptor,
+                                                     conservation)
 
             # For each group, add the required info.
             for group_name, attr in groupings.items():
@@ -1010,15 +1014,7 @@ def stabilisation_browser(request):
                     group[0]['hydro'],\
                     group[0]["class_cons"],\
                     group[0]["receptor_fam_cons"]\
-                         = get_data_columns(group_name,
-                                            mutant_info['mutant'],
-                                            mutant_info['wild_type'],
-                                            generic_number,
-                                            p_class,
-                                            p_receptor,
-                                            conservation)
-                    # Add site information.
-                    # group[0]['site stuff'] = ...
+                         = calced_cols[group_name]
 
                 # Edit group info as needed
                 group[0]['count'] += 1
@@ -1091,70 +1087,108 @@ def conservation_table(prot_classes, gen_nums):
 
     return table
 
-def get_data_columns(group_name, mutant, wild_type, g_n, prot_class, rec_fam, conservation): # pylint: disable=too-many-arguments
+def get_calculated_columns(mutant, wild_type, g_n, prot_class, rec_fam, conservation): # pylint: disable=too-many-arguments
 
-    ''' Calculate the propensity and hydrophobicity for the given mut & wt.'''
-    if group_name == 'position_only':
-        # No wt or mut grouping, so can't calc.
-        return (u'\u2014', u'\u2014', u'\u2014', u'\u2014')
-    else:
-        # Default value of {} provided, so that .get can be used on *_cons later on.
-        class_cons = conservation.get((prot_class, g_n), {})
-        fam_cons = conservation.get((rec_fam, g_n), {})
-        if group_name == 'pos_and_mut':
-            # Can only calc for mutant
-            return (AA_PROPENSITY.get(mutant, u'\u2014'),
-                    HYDROPHOBICITY.get(mutant, u'\u2014'),
-                    class_cons.get(mutant, u'\u2014'),
-                    fam_cons.get(mutant, u'\u2014'))
-        elif group_name == 'pos_and_wt':
-            # Can only calc for wt
-            return (AA_PROPENSITY.get(wild_type, u'\u2014'),
-                    HYDROPHOBICITY.get(wild_type, u'\u2014'),
-                    class_cons.get(wild_type, u'\u2014'),
-                    fam_cons.get(wild_type, u'\u2014'))
-        else:  # Then group_name = 'all'
-            # Can calc for all and get the difference between the mut & wt.
+    ''' Calculate the propensity, hydrophobicity and site info for the given mut & wt for each grouping'''
+    return {
+        'position_only': get_data_pos_grouping(mutant, wild_type, g_n, prot_class),
+        'pos_and_mut': get_data_mut_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation),
+        'pos_and_wt':get_data_wt_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation),
+        'all': get_data_all_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation)
+        }
 
-            # Get propensity fol change
-            mut = AA_PROPENSITY.get(mutant, u'\u2014')
-            w_t = AA_PROPENSITY.get(wild_type, u'\u2014')
-            try:
-                prop = str(round(mut-w_t, 2))
-            except TypeError:
-                prop = u'\u2014'
-            prop = prop + ' (' + str(mut) + u'\u2212'+ str(w_t) +')'
+    # if group_name == 'position_only':
+    #     # No wt or mut grouping, so can't calc.
+    #     return get_data_pos_grouping(mutant, wild_type, g_n, prot_class)
+    # else:
+    #     if group_name == 'pos_and_mut':
+    #         return get_data_mut_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation)
+    #     elif group_name == 'pos_and_wt':
+    #         return get_data_wt_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation)
 
-            # Get hydrophobicity fold change
-            mut = HYDROPHOBICITY.get(mutant, u'\u2014')
-            w_t = HYDROPHOBICITY.get(wild_type, u'\u2014')
-            try:
-                hydro = str(round(mut-w_t, 2))
-            except TypeError:
-                hydro = u'\u2014'
-            hydro = hydro + ' (' + str(mut) + u'\u2212'+ str(w_t) +')'
+    #     else:  # Then group_name = 'all'
+    #         return get_data_all_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation)
 
-            # Get the receptor family conservation fold change.
-            mut = fam_cons.get(mutant, u'\u2014')
-            w_t = fam_cons.get(wild_type, u'\u2014')
-            try:
-                rec_cons = str(round(mut-w_t, 2))
-            except TypeError:
-                rec_cons = u'\u2014'
-            rec_cons += ' ('+str(mut)+u'\u2212'+str(w_t)+')'
 
-            # Get the protein class conservation fold change.
-            mut = class_cons.get(mutant, u'\u2014')
-            w_t = class_cons.get(wild_type, u'\u2014')
-            try:
-                prot_cons = str(round(mut-w_t, 2))
-            except TypeError:
-                prot_cons = u'\u2014'
-            prot_cons += ' ('+str(mut)+u'\u2212'+str(w_t)+')'
-            return (prop,
-                    hydro,
-                    prot_cons,
-                    rec_cons)
+
+def get_data_pos_grouping(mutant, wild_type, g_n, prot_class):
+    '''
+    Calculate the Data and Site columns in the browser view for the position only analysis mode
+    '''
+    return (u'\u2014', u'\u2014', u'\u2014', u'\u2014')
+
+def get_data_mut_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation):
+    '''
+    Calculate the Data and Site columns in the browser view for the pos & mut analysis mode
+    '''
+    # Default value of {} provided, so that .get can be used on *_cons later on.
+    class_cons = conservation.get((prot_class, g_n), {})
+    fam_cons = conservation.get((rec_fam, g_n), {})
+    return (AA_PROPENSITY.get(mutant, u'\u2014'),
+            HYDROPHOBICITY.get(mutant, u'\u2014'),
+            class_cons.get(mutant, u'\u2014'),
+            fam_cons.get(mutant, u'\u2014'))
+
+
+def get_data_wt_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation):
+    '''
+    Calculate the Data and Site columns in the browser view for the pos & wt analysis mode
+    '''
+
+    # Default value of {} provided, so that .get can be used on *_cons later on.
+    class_cons = conservation.get((prot_class, g_n), {})
+    fam_cons = conservation.get((rec_fam, g_n), {})
+    return (AA_PROPENSITY.get(wild_type, u'\u2014'),
+            HYDROPHOBICITY.get(wild_type, u'\u2014'),
+            class_cons.get(wild_type, u'\u2014'),
+            fam_cons.get(wild_type, u'\u2014'))
+
+def get_data_all_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation):
+    '''
+    Calculate the Data and Site columns in the browser view for the pos, mut & wt analysis mode
+    '''
+    class_cons = conservation.get((prot_class, g_n), {})
+    fam_cons = conservation.get((rec_fam, g_n), {})
+    # Get propensity fold change
+    mut = AA_PROPENSITY.get(mutant, u'\u2014')
+    w_t = AA_PROPENSITY.get(wild_type, u'\u2014')
+    try:
+        prop = str(round(mut-w_t, 2))
+    except TypeError:
+        prop = u'\u2014'
+    prop = prop + ' (' + str(mut) + u'\u2212'+ str(w_t) +')'
+
+    # Get hydrophobicity fold change
+    mut = HYDROPHOBICITY.get(mutant, u'\u2014')
+    w_t = HYDROPHOBICITY.get(wild_type, u'\u2014')
+    try:
+        hydro = str(round(mut-w_t, 2))
+    except TypeError:
+        hydro = u'\u2014'
+    hydro = hydro + ' (' + str(mut) + u'\u2212'+ str(w_t) +')'
+
+    # Get the receptor family conservation fold change.
+    mut = fam_cons.get(mutant, u'\u2014')
+    w_t = fam_cons.get(wild_type, u'\u2014')
+    try:
+        rec_cons = str(round(mut-w_t, 2))
+    except TypeError:
+        rec_cons = u'\u2014'
+    rec_cons += ' ('+str(mut)+u'\u2212'+str(w_t)+')'
+
+    # Get the protein class conservation fold change.
+    mut = class_cons.get(mutant, u'\u2014')
+    w_t = class_cons.get(wild_type, u'\u2014')
+    try:
+        prot_cons = str(round(mut-w_t, 2))
+    except TypeError:
+        prot_cons = u'\u2014'
+    prot_cons += ' ('+str(mut)+u'\u2212'+str(w_t)+')'
+    return (prop,
+            hydro,
+            prot_cons,
+            rec_cons)
+
 
 def parse_rule_definition(rule_def):
     '''
