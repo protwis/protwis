@@ -881,7 +881,7 @@ def stabilisation_browser(request):
 
     # Set up: Restructure the STRUCTURAL_RULES for the constructs into a crude-tree like structure to enable
     # quick and concise searching within the for loops below.
-    structural_rule_tree = create_structural_rule_tree(STRUCTURAL_RULES)
+    structural_rule_tree = create_structural_rule_trees(STRUCTURAL_RULES)
 
     # Get a list of all constructs.
     constructs = Construct.objects.all()\
@@ -970,7 +970,8 @@ def stabilisation_browser(request):
 
             if wt_mut_group_id not in mutation_groups['all']:
                 # In here: insert the code to find the site info
-                calced_cols = get_calculated_columns(mutant_id['mutant'],
+                calced_cols = get_calculated_columns(structural_rule_tree,
+                                                     mutant_id['mutant'],
                                                      mutant_id['wild_type'],
                                                      generic_number,
                                                      p_class,
@@ -1086,110 +1087,173 @@ def conservation_table(prot_classes, gen_nums):
 
     return table
 
-def get_calculated_columns(mutant, wild_type, g_n, prot_class, rec_fam, conservation): # pylint: disable=too-many-arguments
+def get_calculated_columns(rule_tree, mutant, wild_type, g_n, prot_class, rec_fam, conservation): # pylint: disable=too-many-arguments
 
     ''' Calculate the propensity, hydrophobicity and site info for the given mut & wt for each grouping'''
+
+    # Get the conservation values for the protein class and receptor family
+    class_cons = conservation.get((prot_class, g_n), {})
+    fam_cons = conservation.get((rec_fam, g_n), {})
+
+    # Get the part of the structural_rule_tree relevant to all groups.
+
+    related_rules = {
+        'ionic_lock_tree':rule_tree["ionic_lock_tree"].get(prot_class[6], {}).get(g_n, {}),
+        'sodium_ion_tree':rule_tree["sodium_ion_tree"].get(prot_class[6], {}).get(g_n, {}),
+        'residue_switch_tree':rule_tree["residue_switch_tree"].get(prot_class[6], {}).get(g_n, {}),
+    }
+
     return {
-        'position_only': get_data_pos_grouping(mutant, wild_type, g_n, prot_class),
-        'pos_and_mut': get_data_mut_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation),
-        'pos_and_wt':get_data_wt_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation),
-        'all': get_data_all_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation)
+        'position_only': get_data_pos_grouping(related_rules),
+        'pos_and_mut':get_data_mut_grouping(related_rules, mutant, class_cons, fam_cons),
+        'pos_and_wt':get_data_wt_grouping(related_rules, mutant, class_cons, fam_cons),
+        'all': get_data_all_grouping(related_rules, mutant, wild_type, class_cons, fam_cons)
         }
 
-    # if group_name == 'position_only':
-    #     # No wt or mut grouping, so can't calc.
-    #     return get_data_pos_grouping(mutant, wild_type, g_n, prot_class)
-    # else:
-    #     if group_name == 'pos_and_mut':
-    #         return get_data_mut_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation)
-    #     elif group_name == 'pos_and_wt':
-    #         return get_data_wt_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation)
-
-    #     else:  # Then group_name = 'all'
-    #         return get_data_all_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation)
 
 
-
-def get_data_pos_grouping(mutant, wild_type, g_n, prot_class):
+def get_data_pos_grouping(rules):
     '''
     Calculate the Data and Site columns in the browser view for the position only analysis mode
     '''
-    return (u'\u2014', u'\u2014', u'\u2014', u'\u2014', u'\u2014', u'\u2014', u'\u2014')
+    # Note: an empty dictionary evaluates to False in an if statement,
+    ionic_lock = 'Pos Match' if rules['ionic_lock_tree'] else u'\u2014'
+    sodium_ion = 'Pos Match' if rules['sodium_ion_tree'] else u'\u2014'
+    residue_switch = 'Pos Match' if rules['residue_switch_tree'] else u'\u2014'
 
-def get_data_mut_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation):
+    # There is no mutant or wild type info, so all data cols are returned as u'\u2014'
+    return (u'\u2014', u'\u2014', u'\u2014', u'\u2014', ionic_lock, sodium_ion, residue_switch)
+
+def get_data_mut_grouping(rules, mutant, class_cons, fam_cons):
     '''
     Calculate the Data and Site columns in the browser view for the pos & mut analysis mode
     '''
-    # Default value of {} provided, so that .get can be used on *_cons later on.
-    class_cons = conservation.get((prot_class, g_n), {})
-    fam_cons = conservation.get((rec_fam, g_n), {})
+
+    # Note: an empty dictionary evaluates to False in an if statement,
+    if rules['ionic_lock_tree']:
+        if rules['ionic_lock_tree'].get(mutant, {}):
+            ionic_lock = 'Pos & AA Match'
+        else:
+            ionic_lock = 'Pos Match (But not AA)'
+    else:
+        ionic_lock = u'\u2014'
+
+
+    if rules['sodium_ion_tree']:
+        if rules['sodium_ion_tree'].get(mutant, {}):
+            sodium_ion = 'Pos & AA Match'
+        else:
+            sodium_ion = 'Pos Match (But not AA)'
+    else:
+        sodium_ion = u'\u2014'
+
+    if rules['residue_switch_tree']:
+        if rules['residue_switch_tree'].get(mutant, {}):
+            residue_switch = 'Pos & AA Match'
+        else:
+            residue_switch = 'Pos Match (But not AA)'
+    else:
+        residue_switch = u'\u2014'
+
+
     return (AA_PROPENSITY.get(mutant, u'\u2014'),
             HYDROPHOBICITY.get(mutant, u'\u2014'),
             class_cons.get(mutant, u'\u2014'),
             fam_cons.get(mutant, u'\u2014'),
-            u'\u2014', u'\u2014', u'\u2014')
+            ionic_lock, sodium_ion, residue_switch)
 
 
-def get_data_wt_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation):
+def get_data_wt_grouping(rules, wild_type, class_cons, fam_cons):
     '''
     Calculate the Data and Site columns in the browser view for the pos & wt analysis mode
     '''
+    # # Note: an empty dictionary evaluates to False in an if statement,
+    if rules['ionic_lock_tree']:
+        # Note:  This is the simpliest, but not the most concise code.
+        # However, okay as code is VERY rarely used.
+        ionic_lock_set = set()
+        for _, wt_rule_dict  in rules['ionic_lock_tree'].items():
+            for key in wt_rule_dict:
+                ionic_lock_set.add(key)
+        if wild_type in ionic_lock_set:
+            ionic_lock = 'Pos & AA Match'
+        else:
+            ionic_lock = 'Pos Match (But not AA)'
+    else:
+        ionic_lock = u'\u2014'
 
-    # Default value of {} provided, so that .get can be used on *_cons later on.
-    class_cons = conservation.get((prot_class, g_n), {})
-    fam_cons = conservation.get((rec_fam, g_n), {})
+
+    if rules['sodium_ion_tree']:
+        sodium_ion_set = set()
+        for _, wt_rule_dict  in rules['sodium_ion_tree'].items():
+            for key in wt_rule_dict:
+                sodium_ion_set.add(key)
+        if wild_type in sodium_ion_set:
+            sodium_ion = 'Pos & AA Match'
+        else:
+            sodium_ion = 'Pos Match (But not AA)'
+    else:
+        sodium_ion = u'\u2014'
+
+    if rules['residue_switch_tree']:
+        residue_switch_set = set()
+        for _, wt_rule_dict  in rules['residue_switch_tree'].items():
+            for key in wt_rule_dict:
+                residue_switch_set.add(key)
+        if wild_type in residue_switch_set:
+            residue_switch = 'Pos & AA Match'
+        else:
+            residue_switch = 'Pos Match (But not AA)'
+    else:
+        residue_switch = u'\u2014'
+
     return (AA_PROPENSITY.get(wild_type, u'\u2014'),
             HYDROPHOBICITY.get(wild_type, u'\u2014'),
             class_cons.get(wild_type, u'\u2014'),
             fam_cons.get(wild_type, u'\u2014'),
-            u'\u2014', u'\u2014', u'\u2014')
+            ionic_lock, sodium_ion, residue_switch)
 
-def get_data_all_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation):
+def get_data_all_grouping(rules, mutant, wild_type, class_cons, fam_cons):
     '''
     Calculate the Data and Site columns in the browser view for the pos, mut & wt analysis mode
     '''
-    class_cons = conservation.get((prot_class, g_n), {})
-    fam_cons = conservation.get((rec_fam, g_n), {})
-    # Get propensity fold change
+    # Get propensity fold change where possible
     mut = AA_PROPENSITY.get(mutant, u'\u2014')
     w_t = AA_PROPENSITY.get(wild_type, u'\u2014')
-    try:
-        prop = str(round(mut-w_t, 2))
-    except TypeError:
-        prop = u'\u2014'
+    prop = u'\u2014' if isinstance(mut, str) | isinstance(w_t, str) else str(round(mut-w_t, 2))
     prop = prop + ' (' + str(mut) + u'\u2212'+ str(w_t) +')'
 
-    # Get hydrophobicity fold change
+    # Get hydrophobicity fold change where possible
     mut = HYDROPHOBICITY.get(mutant, u'\u2014')
     w_t = HYDROPHOBICITY.get(wild_type, u'\u2014')
-    try:
-        hydro = str(round(mut-w_t, 2))
-    except TypeError:
-        hydro = u'\u2014'
+    hydro = u'\u2014' if isinstance(mut, str) | isinstance(w_t, str) else str(round(mut-w_t, 2))
     hydro = hydro + ' (' + str(mut) + u'\u2212'+ str(w_t) +')'
 
-    # Get the receptor family conservation fold change.
+    # Get the receptor family conservation fold change where possible
     mut = fam_cons.get(mutant, u'\u2014')
     w_t = fam_cons.get(wild_type, u'\u2014')
-    try:
-        rec_cons = str(round(mut-w_t, 2))
-    except TypeError:
-        rec_cons = u'\u2014'
+    rec_cons = u'\u2014' if isinstance(mut, str) | isinstance(w_t, str) else str(round(mut-w_t, 2))
     rec_cons += ' ('+str(mut)+u'\u2212'+str(w_t)+')'
 
-    # Get the protein class conservation fold change.
+    # Get the protein class conservation fold change where possible
     mut = class_cons.get(mutant, u'\u2014')
     w_t = class_cons.get(wild_type, u'\u2014')
-    try:
-        prot_cons = str(round(mut-w_t, 2))
-    except TypeError:
-        prot_cons = u'\u2014'
+    prot_cons = u'\u2014' if isinstance(mut, str) | isinstance(w_t, str) else str(round(mut-w_t, 2))
     prot_cons += ' ('+str(mut)+u'\u2212'+str(w_t)+')'
+
+    # Get site info from the structural site rules
+    ionic_lock = rules['ionic_lock_tree'].get(mutant, {}).get(wild_type, u'\u2014')
+    sodium_ion = rules['sodium_ion_tree'].get(mutant, {}).get(wild_type, u'\u2014')
+    residue_switch = rules['residue_switch_tree'].get(mutant, {}).get(wild_type, u'\u2014')
+
     return (prop,
             hydro,
             prot_cons,
             rec_cons,
-            u'\u2014', u'\u2014', u'\u2014')
+            ionic_lock,
+            sodium_ion,
+            residue_switch)
+
 
 
 def parse_rule_definition(rule_def):
@@ -1197,7 +1261,7 @@ def parse_rule_definition(rule_def):
         Take in a rule definition from the structural rules, and parse so that's it's suitable for display.
     '''
     # Get the type of action in the definition
-    if rule_def[:-7] == 'removal':
+    if rule_def[-7:] == 'removal':
         result = 'Removed'
     elif rule_def[-11:] == 'contraction':
         result = 'Contracted'
@@ -1206,56 +1270,61 @@ def parse_rule_definition(rule_def):
 
     # Get action placement from the definition
     if rule_def[:5] == 'Ionic':
-        site = 'ionic'
+        site = 'ionic_lock'
     elif rule_def[:6] == 'Sodium':
-        site = 'sodium'
+        site = 'sodium_ion'
     elif rule_def[:7] == 'Residue':
-        site = 'residue'
+        site = 'residue_switch'
     else: # Then there is no sensible way to understand this rule.
-        site = 'definition'
+        site = 'other'
         result = rule_def # Override previous rule finding.
 
     return (site, result)
 
 
-def create_structural_rule_tree(rule_dictionary):
+def create_structural_rule_trees(rule_dictionary):
     '''
      Restructure the structural rules from a list of dictionaries to a tree-like nested dictionary,
      so that they may be easily and quickly searched.
     '''
-    structural_rule_tree = {}
+    structural_rule_trees = {'ionic_lock_tree':{}, 'sodium_ion_tree':{}, 'residue_switch_tree':{}, 'other_tree':{}}
 
     classes = {'A', 'B', 'C'}
     amino_acids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S',
                    'T', 'V', 'W', 'Y', 'B', 'Z', 'J']
 
-    for prot_class in classes:
-        node = structural_rule_tree.setdefault(prot_class, {})
+    for _, tree in structural_rule_trees.items():
+        for prot_class in classes:
+            node = tree.setdefault(prot_class, {})
 
     for item in {'A', 'B', 'C', 'All'}:
         for rule in rule_dictionary[item]:
+            # Get the dictionary to which the rule pertains
+            site, definition = parse_rule_definition(rule['Definition'])
+            tree = structural_rule_trees[site+"_tree"]
+
             # Get a set of the classes and wild type aas that the rule affects
             rule_class = classes if rule['Class'] == 'All' else {rule['Class']}
             rule_wt = amino_acids if rule['Wt AA'] == 'X' else rule['Wt AA'].split('/')
 
             # Iterate through the keys in each rule, adding a 'branch' to the nested dictionary, as needed.
             for prot_class in rule_class:
-                node = structural_rule_tree.setdefault(prot_class, {})\
+                node = tree.setdefault(prot_class, {})\
                                            .setdefault(rule['Generic Position'], {})\
                                            .setdefault(rule['Mut AA'], {})
                 for acid in rule_wt:
                     # If the rule definition is already stored, append the next definition to it.
                     # Otherwise, create a new entry, consisting of the rule definiton.
-                    acid_node = node.setdefault(acid, {})
-                    site, definition = parse_rule_definition(rule['Definition'])
-                    if acid_node.get(site, "") == "":
+                    acid_node = node.get(acid, "")
+                    if acid_node == "":
                         # Then no previous rules.
-                        acid_node[site] = definition
-                    else:
-                        result = acid_node[site] + ", " + definition
-                        acid_node[site] = result
+                        node[acid] = definition
+                    else: # Add to the previous results
+                        node[acid] = acid_node + ", " + definition
 
-    return structural_rule_tree
+    return structural_rule_trees
+
+
 
 def fetch_all_pdb(request):
 
