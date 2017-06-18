@@ -990,16 +990,12 @@ def stabilisation_browser(request):
                 if group_name == "all":
                     if mutant_id['mutant'] == 'A':
                         in_ala_subset = 'ala_subset'
+                    elif mutant_id['wild_type'] == 'A' and mutant_id['mutant'] == 'L':
+                        in_ala_subset = 'ala_subset'
                     else:
                         in_ala_subset = 'no_subset'
 
-                    if mutant_id['wild_type'] == 'A' and mutant_id['mutant'] == 'L':
-                        in_ala_leu_subset = 'ala_leu_subset'
-                    else:
-                        in_ala_leu_subset = 'no_subset'
-
                     group_info['ala_subset'] = in_ala_subset
-                    group_info['ala_leu_subset'] = in_ala_leu_subset
 
                 # Get the context dict entry for which the mutant should be added.
                 # If none, create one with the group_info
@@ -1013,7 +1009,10 @@ def stabilisation_browser(request):
                     group[0]['propensity'],\
                     group[0]['hydro'],\
                     group[0]["class_cons"],\
-                    group[0]["receptor_fam_cons"]\
+                    group[0]["receptor_fam_cons"],\
+                    group[0]["ionic_lock"],\
+                    group[0]["sodium_ion"],\
+                    group[0]["res_switch"]\
                          = calced_cols[group_name]
 
                 # Edit group info as needed
@@ -1115,7 +1114,7 @@ def get_data_pos_grouping(mutant, wild_type, g_n, prot_class):
     '''
     Calculate the Data and Site columns in the browser view for the position only analysis mode
     '''
-    return (u'\u2014', u'\u2014', u'\u2014', u'\u2014')
+    return (u'\u2014', u'\u2014', u'\u2014', u'\u2014', u'\u2014', u'\u2014', u'\u2014')
 
 def get_data_mut_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation):
     '''
@@ -1127,7 +1126,8 @@ def get_data_mut_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservat
     return (AA_PROPENSITY.get(mutant, u'\u2014'),
             HYDROPHOBICITY.get(mutant, u'\u2014'),
             class_cons.get(mutant, u'\u2014'),
-            fam_cons.get(mutant, u'\u2014'))
+            fam_cons.get(mutant, u'\u2014'),
+            u'\u2014', u'\u2014', u'\u2014')
 
 
 def get_data_wt_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation):
@@ -1141,7 +1141,8 @@ def get_data_wt_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservati
     return (AA_PROPENSITY.get(wild_type, u'\u2014'),
             HYDROPHOBICITY.get(wild_type, u'\u2014'),
             class_cons.get(wild_type, u'\u2014'),
-            fam_cons.get(wild_type, u'\u2014'))
+            fam_cons.get(wild_type, u'\u2014'),
+            u'\u2014', u'\u2014', u'\u2014')
 
 def get_data_all_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservation):
     '''
@@ -1187,7 +1188,8 @@ def get_data_all_grouping(mutant, wild_type, g_n, prot_class, rec_fam, conservat
     return (prop,
             hydro,
             prot_cons,
-            rec_cons)
+            rec_cons,
+            u'\u2014', u'\u2014', u'\u2014')
 
 
 def parse_rule_definition(rule_def):
