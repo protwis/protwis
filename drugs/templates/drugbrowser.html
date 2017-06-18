@@ -16,6 +16,7 @@
                         <th style="background-color:#98df8a;text-align:center">Drug Name</th>
                         <th style="background-color:#98df8a;text-align:center">Indication</th>
                         <th style="background-color:#aec7e8;text-align:center">Target</th>
+                        <th style="background-color:#aec7e8;text-align:center">Target Level</th>
                         <th style="background-color:#aec7e8;text-align:center">Class</th>
                         <th style="background-color:#aec7e8;text-align:center">Family</th>
                         <th style="background-color:#ffbb78;text-align:center">Status</th>
@@ -37,6 +38,7 @@
                         <th style="text-align:center"> </th>
                         <th style="text-align:center"> </th>
                         <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -45,6 +47,7 @@
                 <td style="text-align:center">{{row.name|safe}}</td>
                 <td style="text-align:center">{{row.indication|safe}}</td>
                 <td style="text-align:center"> <a href='/protein/{{row.target|safe}} '> {{row.target|safe}} </a </td>
+                <td style="text-align:center">{{row.targetlevel|safe}}</td>
                 <td style="text-align:center">{{row.class|safe}}</td>
                 <td style="text-align:center">{{row.family|safe}}</td>
                 <td style="text-align:center">{{row.status|safe}}</td>
@@ -93,6 +96,7 @@
                         {"sClass": "center"},
                         {"sClass": "center"},
                         {"sClass": "center"},
+                        {"sClass": "center"},
                         {"sClass": "center"}],
                 'tableTools': {
                     "sRowSelect": "multi",
@@ -107,6 +111,7 @@
                             { type: "text" },
                             { type: "select" },
                             { type: "select" }, // Family
+                            { type: "select" },
                             { type: "select" },
                             { type: "select" },
                             { type: "select" },

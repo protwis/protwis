@@ -63,15 +63,13 @@ class Command(BaseCommand):
                 PhaseDate = data[index:index+1]['PhaseDate'].values[0]
                 ClinicalStatus = data[index:index+1]['ClinicalStatus'].values[0]
                 moa = data[index:index+1]['ModeOfAction'].values[0]
+                targetlevel = data[index:index+1]['TargetCategory'].values[0]
 
                 drugtype = data[index:index+1]['Drug Class'].values[0]
                 indication = data[index:index+1]['Indication(s)'].values[0]
                 novelty = data[index:index+1]['Target_novelty'].values[0]
                 approval = data[index:index+1]['Approval'].values[0]
                 status = data[index:index+1]['Status'].values[0]
-
-                if approval == 0:
-                    approval = '-'
 
                 # fetch protein
                 try:
@@ -81,7 +79,7 @@ class Command(BaseCommand):
                     print('error', entry_name)
                     continue
 
-                drug, created = Drugs.objects.get_or_create(name=drugname, drugtype=drugtype, indication=indication, novelty=novelty, approval=approval, phase=phase, phasedate=PhaseDate, clinicalstatus=ClinicalStatus, moa=moa, status=status)
+                drug, created = Drugs.objects.get_or_create(name=drugname, drugtype=drugtype, indication=indication, novelty=novelty, approval=approval, phase=phase, phasedate=PhaseDate, clinicalstatus=ClinicalStatus, moa=moa, status=status, targetlevel=targetlevel)
                 drug.target.add(p)
                 drug.save()
 

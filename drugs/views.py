@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
-from django.db.models import Count
+from django.db.models import Count, Max
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
@@ -26,7 +26,7 @@ def striphtml(data):
     p = re.compile(r'<.*?>')
     return p.sub('', data)
 
-@cache_page(60*60*24*1) #  1 day
+# @cache_page(60*60*24*1) #  1 day
 def drugstatistics(request):
 
     # ===== drugtargets =====
@@ -186,7 +186,7 @@ def drugstatistics(request):
 
     return render(request, 'drugstatistics.html', {'drugtypes_approved':drugtypes_approved,'drugtypes_trials':drugtypes_trials, 'drugtypes_estab':drugtypes_estab, 'drugtypes_not_estab':drugtypes_not_estab,'drugindications_approved':drugindications_approved, 'drugindications_trials':drugindications_trials, 'drugtargets_approved':drugtargets_approved, 'drugtargets_trials':drugtargets_trials, 'drugfamilies_approved':drugfamilies_approved, 'drugfamilies_trials':drugfamilies_trials, 'drugClasses_approved':drugClasses_approved, 'drugClasses_trials':drugClasses_trials, 'drugs_over_time':drugs_over_time, 'in_trial':len(in_trial), 'not_targeted':not_targeted})
 
-@cache_page(60*60*24*1) # 1 day
+# @cache_page(60*60*24*1) # 1 day
 def drugbrowser(request):
     # Get drugdata from here somehow
 
@@ -204,6 +204,7 @@ def drugbrowser(request):
             drugtype = drug.drugtype
             status = drug.status
             approval = drug.approval
+            targetlevel = drug.targetlevel
             phase = drug.phase
             moa = drug.moa
             indication = drug.indication
@@ -218,7 +219,7 @@ def drugbrowser(request):
                 clas = str(protein.family.parent.parent.parent.name)
                 family = str(protein.family.parent.name)
 
-                jsondata = {'name':drugname, 'target': str(protein), 'phase': phase, 'approval': approval, 'class':clas, 'family':family, 'indication': indication, 'status':status, 'drugtype':drugtype, 'moa':moa,'novelty': novelty}
+                jsondata = {'name':drugname, 'target': str(protein), 'phase': phase, 'approval': approval, 'class':clas, 'family':family, 'indication': indication, 'status':status, 'drugtype':drugtype, 'moa':moa,'novelty': novelty, 'targetlevel': targetlevel}
                 context.append(jsondata)
 
             # jsondata = {'name':drugname, 'target': ', '.join(set(targets)), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
@@ -227,7 +228,7 @@ def drugbrowser(request):
 
     return render(request, 'drugbrowser.html', {'drugdata':context})
 
-@cache_page(60*60*24*1) #  1 day
+# @cache_page(60*60*24*1) #  1 day
 def drugmapping(request):
     context = dict()
 
@@ -241,6 +242,7 @@ def drugmapping(request):
     temp = OrderedDict([
                     ('name',''),
                     ('trials', 0),
+                    ('maxphase', 0),
                     ('approved', 0),
                     ('family_sum_approved', 0),
                     ('family_sum_trials' , 0),
@@ -284,36 +286,39 @@ def drugmapping(request):
     for i in drugtargets_approved_family:
         fid = i['family_id__parent__slug'].split("_")
         coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['family_sum_approved'] += i['value']
-
-    drugtargets_approved_target = Protein.objects.filter(drugs__status='approved').values('family_id__slug').annotate(value=Count('drugs__name', distinct = True))
+    drugtargets_approved_target = Protein.objects.filter(drugs__status='approved').values('family_id__slug').annotate(value=Count('drugs__name', distinct = True)).annotate(maxphase=Max('drugs__phase'))
     for i in drugtargets_approved_target:
         fid = i['family_id__slug'].split("_")
-
         coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['approved'] += i['value']
+        if int(i['maxphase']) > coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['maxphase']:
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['maxphase'] = int(i['maxphase'])
         if i['value'] > 0:
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['establishment'] = 4
 
     total_trials = 0
-    drugtargets_trials_class = Protein.objects.filter(drugs__status__in=['in trial','Phase IV','Phase III','Phase II','Phase I']).values('family_id__parent__parent__parent__slug').annotate(value=Count('drugs__name', distinct = True))
+    drugtargets_trials_class = Protein.objects.filter(drugs__status__in=['in trial']).values('family_id__parent__parent__parent__slug').annotate(value=Count('drugs__name', distinct = True))
     for i in drugtargets_trials_class:
         fid = i['family_id__parent__parent__parent__slug'].split("_")
         coverage[fid[0]]['family_sum_trials'] += i['value']
         total_trials += i['value']
 
-    drugtargets_trials_type = Protein.objects.filter(drugs__status__in=['in trial','Phase IV','Phase III','Phase II','Phase I']).values('family_id__parent__parent__slug').annotate(value=Count('drugs__name', distinct = True))
+    drugtargets_trials_type = Protein.objects.filter(drugs__status__in=['in trial']).values('family_id__parent__parent__slug').annotate(value=Count('drugs__name', distinct = True))
     for i in drugtargets_trials_type:
         fid = i['family_id__parent__parent__slug'].split("_")
         coverage[fid[0]]['children'][fid[1]]['family_sum_trials'] += i['value']
 
-    drugtargets_trials_family = Protein.objects.filter(drugs__status__in=['in trial','Phase IV','Phase III','Phase II','Phase I']).values('family_id__parent__slug').annotate(value=Count('drugs__name', distinct = True))
+    drugtargets_trials_family = Protein.objects.filter(drugs__status__in=['in trial']).values('family_id__parent__slug').annotate(value=Count('drugs__name', distinct = True))
     for i in drugtargets_trials_family:
         fid = i['family_id__parent__slug'].split("_")
         coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['family_sum_trials'] += i['value']
 
-    drugtargets_trials_target = Protein.objects.filter(drugs__status__in=['in trial','Phase IV','Phase III','Phase II','Phase I']).values('family_id__slug').annotate(value=Count('drugs__name', distinct = True))
+    drugtargets_trials_target = Protein.objects.filter(drugs__status__in=['in trial']).values('family_id__slug').annotate(value=Count('drugs__name', distinct = True)).annotate(maxphase=Max('drugs__phase'))
+    # add highest reached trial here
     for i in drugtargets_trials_target:
         fid = i['family_id__slug'].split("_")
         coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['trials'] += i['value']
+        if int(i['maxphase']) > coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['maxphase']:
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['maxphase'] = int(i['maxphase'])
         if i['value'] > 0 and coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['establishment'] == 2:
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['establishment'] = 7
 
