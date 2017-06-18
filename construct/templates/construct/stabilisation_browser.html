@@ -143,23 +143,6 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             });
         });
 
-    // $('#ala-checkbox')
-    //     .on('change', function () {
-    //         //  if value is true, then display the mutant subsets.
-    //         if(d3.select('#ala-checkbox').property('checked')) {
-    //             d3.selectAll('.ala_subset').style('display', 'table-row');
-    //             d3.selectAll('.ala_leu_subset').style('display', 'table-row');
-    //         }
-    //         // Otherwise, hide them.
-    //         else {
-    //             d3.selectAll('.ala_subset').style('display', 'none');
-    //             d3.selectAll('.ala_leu_subset').style('display', 'none');
-    //         }
-    //     })
-
-
-// d3.select()
-
 })
 
 </script>
@@ -182,12 +165,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
         background-color: transparent;
     padding: 0 !important;
     }
-    /*.ala_subset {
-        display:none;
-    }
-    .ala_leu_subset {
-        display:none;
-    }*/
+
 </style>
 
 {% endblock %}
@@ -347,7 +325,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
     </thead>
 
         {% for key, group in pos_and_mut.items %}
-        <tr class='{{group.0.ala_subset}}'>
+        <tr >
             <td>
                 <table>
                     {% for mutant in group.1.state %}
