@@ -98,37 +98,67 @@ $(document).ready(function() {
         paging: false
     });
 
+    /* Custom filtering function to  filter data */
+    $.fn.dataTableExt.afnFiltering.push(function (oSettings, aData, iDataIndex) {
+        var myRowClasses = oSettings.aoData[iDataIndex].nTr.className.split(" ");
+        var sub = $('.subset-check:checked').data('sub');
+        if (sub == undefined) {result = true;}
+        else { result = myRowClasses.indexOf(sub) == -1; }
+        return result;
+    });
+
+     /* Add an event listener to the mutation subset input */
+    $('#ala-checkbox').change(function () {
+        all_table.draw();
+    });
+
+
 
 groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
-$("#group_select")
-    .on('change', function() {
-        var selection = d3.select(this).property('value');
-        groups.forEach(function(d) {
-            if (d == selection) {
-                d3.selectAll('#' + d + '_vis')
-                    .style('display', 'block');
-                    position_table.columns.adjust().draw();
-                    all_table.columns.adjust().draw();
-                    mut_table.columns.adjust().draw();
-                    wt_table.columns.adjust().draw();
-            } else {
-                d3.selectAll('#' + d + '_vis')
-                    .style('display', 'none');
-            }
-            if(selection == 'pos_and_mut'){
-                d3.select('#ala_subset_choice').style('display', 'inline');
-                d3.select('#ala_leu_subset_choice').style('display', 'none');
-            }
-            else if (selection == 'all'){
-                d3.select('#ala_subset_choice').style('display', 'inline');
-                d3.select('#ala_leu_subset_choice').style('display', 'inline');
-            }
-            else {
-                d3.select('#ala_subset_choice').style('display', 'none');
-                d3.select('#ala_leu_subset_choice').style('display', 'none');
-            }
+    $("#group_select")
+        .on('change', function() {
+            var selection = d3.select(this).property('value');
+
+            // Show and hide the tables for each analysis mode
+            groups.forEach(function(d) {
+                if (d == selection) {
+                    d3.selectAll('#' + d + '_vis')
+                        .style('display', 'block');
+                        position_table.columns.adjust().draw();
+                        all_table.columns.adjust().draw();
+                        mut_table.columns.adjust().draw();
+                        wt_table.columns.adjust().draw();
+                } else {
+                    d3.selectAll('#' + d + '_vis')
+                        .style('display', 'none');
+                }
+
+                // Show and hide the mutation subset checkbox
+                if (selection == 'all'){
+                    d3.select('#ala_subset_choice').style('display', 'inline');
+                }
+                else {
+                    d3.select('#ala_subset_choice').style('display', 'none');
+                }
+            });
         });
-    })
+
+    // $('#ala-checkbox')
+    //     .on('change', function () {
+    //         //  if value is true, then display the mutant subsets.
+    //         if(d3.select('#ala-checkbox').property('checked')) {
+    //             d3.selectAll('.ala_subset').style('display', 'table-row');
+    //             d3.selectAll('.ala_leu_subset').style('display', 'table-row');
+    //         }
+    //         // Otherwise, hide them.
+    //         else {
+    //             d3.selectAll('.ala_subset').style('display', 'none');
+    //             d3.selectAll('.ala_leu_subset').style('display', 'none');
+    //         }
+    //     })
+
+
+// d3.select()
 
 })
 
@@ -152,12 +182,12 @@ $("#group_select")
         background-color: transparent;
     padding: 0 !important;
     }
-    .ala_subset {
+    /*.ala_subset {
         display:none;
     }
     .ala_leu_subset {
         display:none;
-    }
+    }*/
 </style>
 
 {% endblock %}
@@ -185,11 +215,9 @@ $("#group_select")
         <option value="all">Position, WT, and Mut</option>
     </select>
 
-    <span id='ala_subset_choice' style='display:none;'> Display Xaa to Ala Mutations:
-        <input style="margin-right: 20px" id='ala-mut' type="checkbox" name="ala-mut" />
-    </span>
-    <span id='ala_leu_subset_choice' style='display:none;'> Display Ala to Leu Mutations:
-        <input id='ala-to-leu' type="checkbox" name="ala-mut" />
+    <span id='ala_subset_choice' style='display:none;'>
+        <span style="font-weight:bold">Mutant Subsets:</span> Hide Xaa to Ala and Ala to Leu Mutations
+        <input style="margin-right: 20px"  checked="checked" id='ala-checkbox' class="subset-check" data-sub="ala_subset" type="checkbox" />
     </span>
 
 </div>
@@ -524,22 +552,14 @@ $("#group_select")
                 {{group.0.class}}
             </td>
             <td>
-                <table class="internal-table">
                     {% for mutant in group.1.ligand %}
-                    <tr style='background-color: transparent;'>
-                        <td class='inner'> {{ mutant }} </td>
-                    </tr>
+                        {{ mutant }}
                     {% endfor %}
-                </table>
             </td>
             <td>
-                <table class="internal-table">
                     {% for mutant in group.1.receptor %}
-                    <tr style='background-color: transparent;'>
-                        <td class='inner'> {{ mutant }} </td>
-                    </tr>
+                        {{ mutant }}
                     {% endfor %}
-                </table>
             </td>
             <td>{{group.0.segment}}</td>
             <td> {{group.0.gen_num}} </td>
@@ -550,13 +570,9 @@ $("#group_select")
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
             <td>
-                <table class="internal-table">
                     {% for mutant in group.1.pdb %}
-                    <tr style='background-color: transparent;'>
-                        <td class='inner'> {{ mutant }} </td>
-                    </tr>
+                        {{ mutant }}
                     {% endfor %}
-                </table>
             </td>
             <td class="">{{group.0.class_cons}}</td>
             <td class="">{{group.0.receptor_fam_cons}}</td>
