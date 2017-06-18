@@ -925,7 +925,7 @@ def thermostabilisation(request):
     mutation_groups = {"position_only":{}, "all":{}, "pos_and_wt":{}, "pos_and_mut":{}}
 
     checking = 0
-    # For each contruct, retrieve the correct information, and then add it to the context dictionary, mutation_list.
+    # For each construct, get the needed information, and add to the context dictionary called mutation_list.
     for record in constructs:
         # Get info for the construct
         struct_id = record.structure_id
@@ -947,7 +947,7 @@ def thermostabilisation(request):
                 generic_number = u'\u2014'
                 segment = u'\u2014'
 
-            # Get the mutation info.
+            # Collect the mutation info needed to create a unique group id, and the info needed for user display.
             mutant_id = {'gen_num':generic_number, 'wild_type':mutant.wild_type_amino_acid,
                          'mutant':mutant.mutated_amino_acid, 'count':0, 'segment':segment, 'class': p_class}
             mutant_info = {'pdb':pdb,
@@ -972,19 +972,20 @@ def thermostabilisation(request):
             # For each group, add the required info.
             for group_name, attr in groupings.items():
                 # Create a dictionary of information pertaining to the whole group to which the mutant belongs
+                #
                 group_info = {key:item for key, item in mutant_id.items() if key not in attr['exclude_from_info']}
                 # Create a group ID (which will be unique for each grouping)
                 group_id = ",".join([str(val) for key, val in mutant_id.items()
                                      if key in attr['include_in_id']])
 
-                # Add further information to group_info allow for fast filtering based on mutant aa where needed.
-                if group_name in {"pos_and_mut", "all"}:
+                # Add further information to group_info allow for fast mutation subset filtering.
+                if group_name == "all":
                     if mutant_id['mutant'] == 'A':
                         in_ala_subset = 'ala_subset'
                     else:
                         in_ala_subset = 'no_subset'
 
-                    if group_name == 'all' and mutant_id['wild_type'] == 'A' and mutant_id['mutant']=='L':
+                    if mutant_id['wild_type'] == 'A' and mutant_id['mutant'] == 'L':
                         in_ala_leu_subset = 'ala_leu_subset'
                     else:
                         in_ala_leu_subset = 'no_subset'
@@ -992,7 +993,8 @@ def thermostabilisation(request):
                     group_info['ala_subset'] = in_ala_subset
                     group_info['ala_leu_subset'] = in_ala_leu_subset
 
-                # Set the default for the group id in each mutation_grouping.
+                # Get the context dict entry for which the mutant should be added.
+                # If none, create one with the group_info
                 group = mutation_groups[group_name].setdefault(group_id,
                                                                [group_info, {}]
                                                               )
@@ -1030,9 +1032,6 @@ def thermostabilisation(request):
                     # Remove receptor family conservation info if row refers to >1 receptor family
                     if len(group[1]['receptor']) != 1:
                         group[0]["receptor_fam_cons"] = u'\u2014'
-
-
-    print(mutation_groups['pos_and_mut'])
 
     return render(request, "construct/thermostablisation.html",
                   {'pos_and_mut': mutation_groups['pos_and_mut'],
