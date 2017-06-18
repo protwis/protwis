@@ -9,7 +9,7 @@ from django.conf import settings
 from common.diagrams_gpcr import DrawSnakePlot
 from common.definitions import AA_PROPENSITY, HYDROPHOBICITY
 from common.views import AbsTargetSelection
-from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
+from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, STRUCTURAL_RULES
 from construct.models import *
 from construct.functions import *
 from construct.tool import *
@@ -879,6 +879,10 @@ class ConstructMutations(TemplateView):
 def stabilisation_browser(request):
     ''' View to display and summarise mutation data for thermostabilising mutational constructs. '''
 
+    # Set up: Restructure the STRUCTURAL_RULES for the constructs into a crude-tree like structure to enable
+    # quick and concise searching within the for loops below.
+    structural_rule_tree = create_structural_rule_tree(STRUCTURAL_RULES)
+
     # Get a list of all constructs.
     constructs = Construct.objects.all()\
             .order_by().only(
@@ -1152,6 +1156,70 @@ def get_data_columns(group_name, mutant, wild_type, g_n, prot_class, rec_fam, co
                     prot_cons,
                     rec_cons)
 
+def parse_rule_definition(rule_def):
+    '''
+        Take in a rule definition from the structural rules, and parse so that's it's suitable for display.
+    '''
+    # Get the type of action in the definition
+    if rule_def[:-7] == 'removal':
+        result = 'Removed'
+    elif rule_def[-11:] == 'contraction':
+        result = 'Contracted'
+    else:
+        result = 'Added'
+
+    # Get action placement from the definition
+    if rule_def[:5] == 'Ionic':
+        site = 'ionic'
+    elif rule_def[:6] == 'Sodium':
+        site = 'sodium'
+    elif rule_def[:7] == 'Residue':
+        site = 'residue'
+    else: # Then there is no sensible way to understand this rule.
+        site = 'definition'
+        result = rule_def # Override previous rule finding.
+
+    return (site, result)
+
+
+def create_structural_rule_tree(rule_dictionary):
+    '''
+     Restructure the structural rules from a list of dictionaries to a tree-like nested dictionary,
+     so that they may be easily and quickly searched.
+    '''
+    structural_rule_tree = {}
+
+    classes = {'A', 'B', 'C'}
+    amino_acids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S',
+                   'T', 'V', 'W', 'Y', 'B', 'Z', 'J']
+
+    for prot_class in classes:
+        node = structural_rule_tree.setdefault(prot_class, {})
+
+    for item in {'A', 'B', 'C', 'All'}:
+        for rule in rule_dictionary[item]:
+            # Get a set of the classes and wild type aas that the rule affects
+            rule_class = classes if rule['Class'] == 'All' else {rule['Class']}
+            rule_wt = amino_acids if rule['Wt AA'] == 'X' else rule['Wt AA'].split('/')
+
+            # Iterate through the keys in each rule, adding a 'branch' to the nested dictionary, as needed.
+            for prot_class in rule_class:
+                node = structural_rule_tree.setdefault(prot_class, {})\
+                                           .setdefault(rule['Generic Position'], {})\
+                                           .setdefault(rule['Mut AA'], {})
+                for acid in rule_wt:
+                    # If the rule definition is already stored, append the next definition to it.
+                    # Otherwise, create a new entry, consisting of the rule definiton.
+                    acid_node = node.setdefault(acid, {})
+                    site, definition = parse_rule_definition(rule['Definition'])
+                    if acid_node.get(site, "") == "":
+                        # Then no previous rules.
+                        acid_node[site] = definition
+                    else:
+                        result = acid_node[site] + ", " + definition
+                        acid_node[site] = result
+
+    return structural_rule_tree
 
 def fetch_all_pdb(request):
 
