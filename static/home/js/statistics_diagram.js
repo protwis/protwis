@@ -27,7 +27,7 @@ var svg = d3.select("#coverage").append("svg")
     .attr("height", diameter)
     .attr("id", "coverage_svg")
     .attr("xmlns", "http://www.w3.org/2000/svg");
-    
+
     svg.append("rect")
     .attr("width", "100%")
     .attr("height", "100%")
@@ -43,21 +43,25 @@ var svg_g = svg.append("g")
 
 
 var nodes = tree.nodes(coverage)
-      
 
-    nodes.forEach(function(d) { 
+
+    nodes.forEach(function(d) {
     if (d.depth == 0) {
         d.y =  0
       } else if (d.depth == 1) {
         d.y =  130
+        // 130
       } else if (d.depth == 2  ) {
-        d.y =  300
+        d.y =  250
+        // 300
       } else if (d.depth == 3  ) {
-        d.y =  550
+        d.y =  500
+        // 550
       } else if (d.depth == 4  ) {
-        d.y =  600
+        d.y =  520
+        // 600
       }  else {
-        d.y =  d.depth*150
+        d.y =  d.depth*160
       }
     });
 
@@ -102,9 +106,9 @@ var link = svg_g.append("g")
   node.filter(function(d) {return (d.depth==4)}).append("circle")
       .attr("r", function(d) { if (d.name=='GPCRs' ) {return "0"} else { return "4.5" } })
       .style("fill", function(d) {
-          if (d.color && d.depth<4) {return d.color } 
+          if (d.color && d.depth<4) {return d.color }
           // else if (d.interactions > 0 && d.mutations_an > 0) {return "Olive" }
-          else if (d.interactions > 0) {return "FireBrick" }
+          else if (d.interactions >= 0) {return "#FireBrick" }
           // else if (d.mutations_an > 0) {return "Chocolate" }
           else {return "#eee"}; })
       .style("opacity",.99);
@@ -113,7 +117,7 @@ var link = svg_g.append("g")
       .attr("dy", ".31em")
       .attr("text-anchor", function(d) { return d.x < 180 ? "end" : "start"; })
       .attr("transform", function(d) { if (d.depth==4) {
-            return d.x < 180 ? "translate(50)" : "rotate(180)translate(-50)";
+            return d.x < 180 ? "translate(77)" : "rotate(180)translate(-77)";
         } else {
             return d.x < 180 ? "translate(-12)" : "rotate(180)translate(12)";
         }
@@ -121,10 +125,10 @@ var link = svg_g.append("g")
       .text(function(d) { if (d.depth==4) { return d.name.toUpperCase() ; } else if (d.depth>0) { return d.name;} else { return ""; } })
       // .style("font-size", function(d) { if (d.depth<3) {return "12px"} else { return "9px" } })
 
-      .style("font-size", function(d) { if (d.depth<3) {return "16px"} else if (d.depth==3) {return "14px"} else { return "12px" } })
+      .style("font-size", function(d) { if (d.depth<3) {return "20px"} else if (d.depth==3) {return "18px"} else { return "22px" } })
       .style("font-family", "Palatino")
       .style("fill", function(d) {
-          if (d.color) {return "#111" } 
+          if (d.color) {return "#111" }
           else if (d.interactions > 0 && d.mutations_an > 0 && 1==2) {return "green" }
           else if (d.interactions > 0 && 1==2) {return "Olive" }
           else if (d.mutations_an > 0 && 1==2) {return "palegreen" }
@@ -139,4 +143,3 @@ var link = svg_g.append("g")
 function getBB(selection) {
     selection.each(function(d){d.bbox = this.getBBox();})
 }
- 

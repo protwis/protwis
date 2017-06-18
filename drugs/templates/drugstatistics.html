@@ -11,7 +11,7 @@ body {
 }
 #targetdistribution text {
   fill: #000;
-  font: 14px open sans;
+  font: 14px Arial;
 }
 #targetdistribution {
   background-color: #fff;
@@ -21,12 +21,12 @@ body {
 {% endblock %}
 {% block content %}
 
-<h1 style="font-family: open sans">GPCRs as drug targets:</h1>
+<h1 style="font-family: Arial">GPCRs as drug targets:</h1>
 <div>
   <svg id="targetdistribution"></svg>
 </div>
 <br>
-<!-- <h2 align="center" style="font-family: open sans;position: relative; bottom:-50px;">Disease associations of GPCRs</h2>
+<!-- <h2 align="center" style="font-family: Arial;position: relative; bottom:-50px;">Disease associations of GPCRs</h2>
 <div class="row" style="position: relative; left: 65%; bottom:-50px;">
   <div class="col-xs-12">
 <select onchange="updateBubbles(this.value)" multiple class="form-control input-lg" size="3">
@@ -423,13 +423,13 @@ function updatertypes(series,text) {
       "title": {
         "text": "Drugtypes",
         "fontSize": 32,
-        "font": "open sans"
+        "font": "Arial"
       },
       "subtitle": {
         "text": " ",
         "color": "#999999",
-        "fontSize": 12,
-        "font": "open sans"
+        "fontSize": 16,
+        "font": "Arial"
       },
       "titleSubtitlePadding": 25
     },
@@ -437,7 +437,7 @@ function updatertypes(series,text) {
       "text": text,
       "color": "#999999",
       "fontSize": 10,
-      "font": "open sans",
+      "font": "Arial",
       "location": "center"
     },
     "size": {
@@ -463,15 +463,15 @@ function updatertypes(series,text) {
         "hideWhenLessThanPercentage": 3
       },
       "mainLabel": {
-        "fontSize": 12
+        "fontSize": 17
       },
       "percentage": {
         "color": "#ffffff",
-        "fontSize": 12
+        "fontSize": 16
       },
       "value": {
         "color": "#adadad",
-        "fontSize": 12
+        "fontSize": 16
       },
       "lines": {
         "enabled": true,
@@ -489,7 +489,7 @@ function updatertypes(series,text) {
         "fadeInSpeed": 0,
         "backgroundOpacity": 0.71,
         "borderRadius": 10,
-        "fontSize": 15
+        "fontSize": 16
       }
     },
     "effects": {
@@ -534,13 +534,13 @@ function updaterclasses(series,text) {
       "title": {
         "text": "Class targets",
         "fontSize": 32,
-        "font": "open sans"
+        "font": "Arial"
       },
       "subtitle": {
         "text": " ",
         "color": "#999999",
-        "fontSize": 12,
-        "font": "open sans"
+        "fontSize": 16,
+        "font": "Arial"
       },
       "titleSubtitlePadding": 25
     },
@@ -548,7 +548,7 @@ function updaterclasses(series,text) {
       "text": text,
       "color": "#999999",
       "fontSize": 10,
-      "font": "open sans",
+      "font": "Arial",
       "location": "center"
     },
     "size": {
@@ -573,15 +573,15 @@ function updaterclasses(series,text) {
         "hideWhenLessThanPercentage": 3
       },
       "mainLabel": {
-        "fontSize": 12
+        "fontSize": 17
       },
       "percentage": {
         "color": "#ffffff",
-        "fontSize": 12
+        "fontSize": 16
       },
       "value": {
         "color": "#adadad",
-        "fontSize": 12
+        "fontSize": 16
       },
       "lines": {
         "enabled": true,
@@ -599,7 +599,7 @@ function updaterclasses(series,text) {
         "fadeInSpeed": 0,
         "backgroundOpacity": 0.71,
         "borderRadius": 10,
-        "fontSize": 15
+        "fontSize": 16
       }
     },
     "effects": {
@@ -645,13 +645,13 @@ function updaterfamilies(series,text) {
       "title": {
         "text": "Receptor family targets",
         "fontSize": 32,
-        "font": "open sans"
+        "font": "Arial"
       },
       "subtitle": {
         "text": " ",
         "color": "#999999",
-        "fontSize": 12,
-        "font": "open sans"
+        "fontSize": 16,
+        "font": "Arial"
       },
       "titleSubtitlePadding": 25
     },
@@ -659,7 +659,7 @@ function updaterfamilies(series,text) {
       "text": text,
       "color": "#999999",
       "fontSize": 10,
-      "font": "open sans",
+      "font": "Arial",
       "location": "center"
     },
     "size": {
@@ -684,15 +684,15 @@ function updaterfamilies(series,text) {
         "hideWhenLessThanPercentage": 3
       },
       "mainLabel": {
-        "fontSize": 12
+        "fontSize": 17
       },
       "percentage": {
         "color": "#ffffff",
-        "fontSize": 12
+        "fontSize": 16
       },
       "value": {
         "color": "#ffffff",
-        "fontSize": 12
+        "fontSize": 16
       },
       "lines": {
         "enabled": true,
@@ -710,7 +710,7 @@ function updaterfamilies(series,text) {
         "fadeInSpeed": 0,
         "backgroundOpacity": 0.71,
         "borderRadius": 10,
-        "fontSize": 15
+        "fontSize": 16
       }
     },
     "effects": {
@@ -755,13 +755,13 @@ var pie = new d3pie("pie_disease", {
     "title": {
       "text": "Disease indications",
       "fontSize": 32,
-      "font": "open sans"
+      "font": "Arial"
     },
     "subtitle": {
       "text": " ",
       "color": "#999999",
-      "fontSize": 12,
-      "font": "open sans"
+      "fontSize": 16,
+      "font": "Arial"
     },
     "titleSubtitlePadding": 25
   },
@@ -769,7 +769,7 @@ var pie = new d3pie("pie_disease", {
     "text": text,
     "color": "#999999",
     "fontSize": 10,
-    "font": "open sans",
+    "font": "Arial",
     "location": "center"
   },
   "size": {
@@ -794,15 +794,15 @@ var pie = new d3pie("pie_disease", {
       "hideWhenLessThanPercentage": 3
     },
     "mainLabel": {
-      "fontSize": 12
+      "fontSize": 17
     },
     "percentage": {
       "color": "#ffffff",
-      "fontSize": 12
+      "fontSize": 16
     },
     "value": {
       "color": "#adadad",
-      "fontSize": 12
+      "fontSize": 16
     },
     "lines": {
       "enabled": true,
@@ -820,7 +820,7 @@ var pie = new d3pie("pie_disease", {
       "fadeInSpeed": 0,
       "backgroundOpacity": 0.71,
       "borderRadius": 10,
-      "fontSize": 15
+      "fontSize": 16
     }
   },
   "effects": {
@@ -865,13 +865,13 @@ var pie = new d3pie("pie_targets", {
     "title": {
       "text": "Receptor targets",
       "fontSize": 32,
-      "font": "open sans"
+      "font": "Arial"
     },
     "subtitle": {
       "text": " ",
       "color": "#999999",
-      "fontSize": 12,
-      "font": "open sans"
+      "fontSize": 16,
+      "font": "Arial"
     },
     "titleSubtitlePadding": 25
   },
@@ -879,7 +879,7 @@ var pie = new d3pie("pie_targets", {
     "text": text,
     "color": "#999999",
     "fontSize": 10,
-    "font": "open sans",
+    "font": "Arial",
     "location": "center"
   },
   "size": {
@@ -904,15 +904,15 @@ var pie = new d3pie("pie_targets", {
       "hideWhenLessThanPercentage": 3
     },
     "mainLabel": {
-      "fontSize": 12
+      "fontSize": 17
     },
     "percentage": {
       "color": "#ffffff",
-      "fontSize": 12
+      "fontSize": 16
     },
     "value": {
       "color": "#adadad",
-      "fontSize": 12
+      "fontSize": 16
     },
     "lines": {
       "enabled": true,
@@ -930,7 +930,7 @@ var pie = new d3pie("pie_targets", {
       "fadeInSpeed": 0,
       "backgroundOpacity": 0.71,
       "borderRadius": 10,
-      "fontSize": 15
+      "fontSize": 16
     }
   },
   "effects": {
