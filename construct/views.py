@@ -876,7 +876,7 @@ class ConstructMutations(TemplateView):
 
 
 
-def thermostabilisation(request):
+def stabilisation_browser(request):
     ''' View to display and summarise mutation data for thermostabilising mutational constructs. '''
 
     # Get a list of all constructs.
@@ -1033,7 +1033,7 @@ def thermostabilisation(request):
                     if len(group[1]['receptor']) != 1:
                         group[0]["receptor_fam_cons"] = u'\u2014'
 
-    return render(request, "construct/thermostablisation.html",
+    return render(request, "construct/stabilisation_browser.html",
                   {'pos_and_mut': mutation_groups['pos_and_mut'],
                    'pos_and_wt': mutation_groups['pos_and_wt'],
                    'all': mutation_groups['all'],
