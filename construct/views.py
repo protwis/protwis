@@ -914,7 +914,12 @@ def stabilisation_browser(request):
     conservation = conservation_table(conservation_proteins, conservation_gen_nums)
 
 
-    # Define the data analysis modes.  TODO more info on the comment. what will these be used for - dont get it.
+    # For each analysis mode, define the information that is to be used as a unique identifier for grouping data.
+    # I.e. for position_only, grouping is performed by class an position.  Hence each row will have a unique class &
+    # position.  This is used as the unique identifier, or ID. -- recorded in 'include_in_id'
+    # Each row has some calculated or 'unique' values, as well as the id. This is found below.  However, for example,
+    # the wild type AA is not unique accross the pos_and_mut group, as so this must be removed from the row-info.
+    # This is recorded in 'exclude_from_info'
     groupings = {
         "all":{"include_in_id":['class', 'gen_num', 'wild_type', 'mutant'], "exclude_from_info":['']},
         "pos_and_wt":{"include_in_id":['class', 'gen_num', 'wild_type'],
@@ -939,7 +944,10 @@ def stabilisation_browser(request):
         p_receptor = prot.family.parent.name
         pdb = record.crystal.pdb_code
 
+        # For each construct there may be many mutations.  Iterate through each one, adding it to the correct row in
+        # each analysis mode grouping in the context dictionary.
         for mutant in record.mutations.all():
+            # Get the generic number and segment, if known.
             try:
                 if mutant.residue.generic_number is None:
                     generic_number = u'\u2014'
@@ -950,9 +958,9 @@ def stabilisation_browser(request):
                 generic_number = u'\u2014'
                 segment = u'\u2014'
 
-            # Collect the mutation info needed to create a unique group id, and the info needed for user display.
+            # Collect the mutation info needed to create a unique group id, and the info relevant to the full row.
             mutant_id = {'gen_num':generic_number, 'wild_type':mutant.wild_type_amino_acid,
-                         'mutant':mutant.mutated_amino_acid, 'count':0, 'segment':segment, 'class': p_class}
+                         'mutant':mutant.mutated_amino_acid, 'GPCR_count':0, 'segment':segment, 'class': p_class}
             mutant_info = {'pdb':pdb,
                            'ligand': p_ligand,
                            'receptor': p_receptor,
@@ -987,17 +995,6 @@ def stabilisation_browser(request):
                 group_id = ",".join([str(val) for key, val in mutant_id.items()
                                      if key in attr['include_in_id']])
 
-                # Add further information to group_info allow for fast mutation subset filtering.
-                if group_name == "all":
-                    if mutant_id['mutant'] == 'A':
-                        in_ala_subset = 'ala_subset'
-                    elif mutant_id['wild_type'] == 'A' and mutant_id['mutant'] == 'L':
-                        in_ala_subset = 'ala_subset'
-                    else:
-                        in_ala_subset = 'no_subset'
-
-                    group_info['ala_subset'] = in_ala_subset
-
                 # Get the context dict entry for which the mutant should be added.
                 # If none, create one with the group_info
                 group = mutation_groups[group_name].setdefault(group_id,
@@ -1016,8 +1013,20 @@ def stabilisation_browser(request):
                     group[0]["res_switch"]\
                          = calced_cols[group_name]
 
-                # Edit group info as needed
-                group[0]['count'] += 1
+                    # Add further information to group_info allow for fast mutation subset filtering.
+                    if group_name == "all":
+                        if mutant_id['mutant'] == 'A':
+                            in_ala_subset = 'ala_subset'
+                        elif mutant_id['wild_type'] == 'A' and mutant_id['mutant'] == 'L':
+                            in_ala_subset = 'ala_subset'
+                        else:
+                            in_ala_subset = 'no_subset'
+
+                        group[0]['ala_subset'] = in_ala_subset
+
+
+                # Count the number of construct mutations recorded in the row.
+                group[0]['GPCR_count'] += 1
 
                 # Remove unnecessary items from the mutant info
                 info = {key:set((item,)) for key, item in mutant_info.items() if key not in attr['include_in_id']}
@@ -1033,6 +1042,7 @@ def stabilisation_browser(request):
                     if len(group[1]['receptor']) != 1:
                         group[0]["receptor_fam_cons"] = u'\u2014'
 
+    # Send the context dictionary to the template to be rendered
     return render(request, "construct/stabilisation_browser.html",
                   {'pos_and_mut': mutation_groups['pos_and_mut'],
                    'pos_and_wt': mutation_groups['pos_and_wt'],
@@ -1043,6 +1053,8 @@ def conservation_table(prot_classes, gen_nums):
     '''Calculate the conservation values needed for the thermostabilisation view'''
     table = {}
 
+    # Collect residue counts for all residues in the protein classes and at the generic number positions within the
+    # prot_classes and gen_nums set, grouped by amino acid, generic number, protein receptor family, and protein class.
     residues = Residue.objects.order_by()\
         .only(
             "amino_acid",
@@ -1066,6 +1078,8 @@ def conservation_table(prot_classes, gen_nums):
             "generic_number__label")\
         .annotate(Count('amino_acid'))
 
+    # Restructure the data into table format, where each row contains the count for an amino acid at generic number
+    # position, for either a given protein class or receptor family.
     for dic in residues:
         prot_row = table.setdefault(
             (dic['protein_conformation__protein__family__parent__parent__parent__name'], dic['generic_number__label']),
@@ -1080,6 +1094,7 @@ def conservation_table(prot_classes, gen_nums):
         rec_row.setdefault(dic['amino_acid'], 0)
         rec_row[dic['amino_acid']] += dic['amino_acid__count']
 
+    # Divide each row by it's total to get the frequency of each amino acid across the row (rather than it's count).
     for _, row in table.items():
         for amino_acid, count in row.items():
             if amino_acid != 'total':
@@ -1095,14 +1110,14 @@ def get_calculated_columns(rule_tree, mutant, wild_type, g_n, prot_class, rec_fa
     class_cons = conservation.get((prot_class, g_n), {})
     fam_cons = conservation.get((rec_fam, g_n), {})
 
-    # Get the part of the structural_rule_tree relevant to all groups.
-
+    # Get the part of the structural_rule_tree relevant to the position and generic number (& hence to all groupings).
     related_rules = {
         'ionic_lock_tree':rule_tree["ionic_lock_tree"].get(prot_class[6], {}).get(g_n, {}),
         'sodium_ion_tree':rule_tree["sodium_ion_tree"].get(prot_class[6], {}).get(g_n, {}),
         'residue_switch_tree':rule_tree["residue_switch_tree"].get(prot_class[6], {}).get(g_n, {}),
     }
 
+    # Return a dictionary consisting of the data and site column entries for each grouping / data analysis mode.
     return {
         'position_only': get_data_pos_grouping(related_rules),
         'pos_and_mut':get_data_mut_grouping(related_rules, mutant, class_cons, fam_cons),
@@ -1130,28 +1145,30 @@ def get_data_mut_grouping(rules, mutant, class_cons, fam_cons):
     '''
 
     # Note: an empty dictionary evaluates to False in an if statement,
+    # Check that rules exist that apply to the class, position and gn.
     if rules['ionic_lock_tree']:
+        #  If so, check if there is a rule relevant to the mutant
         if rules['ionic_lock_tree'].get(mutant, {}):
-            ionic_lock = 'Pos & AA Match'
+            ionic_lock = 'Pos & Mutant AA Match'
         else:
-            ionic_lock = 'Pos Match (But not AA)'
+            ionic_lock = 'Pos Match (But Not Mutant AA)'
     else:
         ionic_lock = u'\u2014'
 
 
     if rules['sodium_ion_tree']:
         if rules['sodium_ion_tree'].get(mutant, {}):
-            sodium_ion = 'Pos & AA Match'
+            sodium_ion = 'Pos & AA Mutant Match'
         else:
-            sodium_ion = 'Pos Match (But not AA)'
+            sodium_ion = 'Pos Match (But Not Mutant AA)'
     else:
         sodium_ion = u'\u2014'
 
     if rules['residue_switch_tree']:
         if rules['residue_switch_tree'].get(mutant, {}):
-            residue_switch = 'Pos & AA Match'
+            residue_switch = 'Pos & Mutant AA Match'
         else:
-            residue_switch = 'Pos Match (But not AA)'
+            residue_switch = 'Pos Match (But Not Mutant AA)'
     else:
         residue_switch = u'\u2014'
 
@@ -1176,22 +1193,25 @@ def get_data_wt_grouping(rules, wild_type, class_cons, fam_cons):
             for key in wt_rule_dict:
                 ionic_lock_set.add(key)
         if wild_type in ionic_lock_set:
-            ionic_lock = 'Pos & AA Match'
+            ionic_lock = 'Pos & Wild Type AA Match'
         else:
-            ionic_lock = 'Pos Match (But not AA)'
+            ionic_lock = 'Pos Match (But Not Wild Type AA)'
     else:
         ionic_lock = u'\u2014'
 
-
+    # Check that rules exist that apply to the class, position and gn.
     if rules['sodium_ion_tree']:
         sodium_ion_set = set()
+         # If so, check if there is a rule relevant to the wild type.  As the dictionary tree is constructed so that
+         # the mutant is in the 3rd level, and the wold type in the 4th.  Hence each mutant branch must be checked
+         # for the wild type.
         for _, wt_rule_dict  in rules['sodium_ion_tree'].items():
             for key in wt_rule_dict:
                 sodium_ion_set.add(key)
         if wild_type in sodium_ion_set:
-            sodium_ion = 'Pos & AA Match'
+            sodium_ion = 'Pos & Wild Type AA Match'
         else:
-            sodium_ion = 'Pos Match (But not AA)'
+            sodium_ion = 'Pos Match (But Not Wild Type AA)'
     else:
         sodium_ion = u'\u2014'
 
@@ -1201,9 +1221,9 @@ def get_data_wt_grouping(rules, wild_type, class_cons, fam_cons):
             for key in wt_rule_dict:
                 residue_switch_set.add(key)
         if wild_type in residue_switch_set:
-            residue_switch = 'Pos & AA Match'
+            residue_switch = 'Pos & Wild Type AA Match'
         else:
-            residue_switch = 'Pos Match (But not AA)'
+            residue_switch = 'Pos Match (But Not Wild Type AA)'
     else:
         residue_switch = u'\u2014'
 
@@ -1220,7 +1240,9 @@ def get_data_all_grouping(rules, mutant, wild_type, class_cons, fam_cons):
     # Get propensity fold change where possible
     mut = AA_PROPENSITY.get(mutant, u'\u2014')
     w_t = AA_PROPENSITY.get(wild_type, u'\u2014')
+        #  Where possible, calculate the fold change
     prop = u'\u2014' if isinstance(mut, str) | isinstance(w_t, str) else str(round(mut-w_t, 2))
+        # Append the mut and wt values to the end.
     prop = prop + ' (' + str(mut) + u'\u2212'+ str(w_t) +')'
 
     # Get hydrophobicity fold change where possible
@@ -1258,7 +1280,16 @@ def get_data_all_grouping(rules, mutant, wild_type, class_cons, fam_cons):
 
 def parse_rule_definition(rule_def):
     '''
-        Take in a rule definition from the structural rules, and parse so that's it's suitable for display.
+        Take in a rule definition from the structural rules, and parse so that's it's suitable both for display and
+        use in the rule dictionaries.
+
+        Args:
+        -  rule_def should be of the form:
+                        Ionic / Sodium / Residue + ... ... + removal / contraction / addition
+
+        Returns:
+          site - meaning type of site the definiton refers to.  to be 'ionic_lock', 'sodium_ion', or 'residue_switch'
+          definiton - the action at the site.  to be 'Removed', 'Contracted', or 'Added'
     '''
     # Get the type of action in the definition
     if rule_def[-7:] == 'removal':
@@ -1286,17 +1317,24 @@ def create_structural_rule_trees(rule_dictionary):
     '''
      Restructure the structural rules from a list of dictionaries to a tree-like nested dictionary,
      so that they may be easily and quickly searched.
+
+     I.e. each type of site gets its own tree/dictionary, as it has it's own column,
+     This allows for simplier code when querying the rules.
     '''
     structural_rule_trees = {'ionic_lock_tree':{}, 'sodium_ion_tree':{}, 'residue_switch_tree':{}, 'other_tree':{}}
 
-    classes = {'A', 'B', 'C'}
+    # List of classes included by the 'All' class designation.
+    classes = {'A', 'B', 'C', 'F'}
+    # List of amino acids included by the 'X' amino acid designation.
     amino_acids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S',
                    'T', 'V', 'W', 'Y', 'B', 'Z', 'J']
 
+    # For each tree, initiate the inner class dictionary, for each class.
     for _, tree in structural_rule_trees.items():
         for prot_class in classes:
-            node = tree.setdefault(prot_class, {})
+            tree.setdefault(prot_class, {})
 
+    # For each class type in the Structural rules list, iterate through the contained dictionaries.
     for item in {'A', 'B', 'C', 'All'}:
         for rule in rule_dictionary[item]:
             # Get the dictionary to which the rule pertains

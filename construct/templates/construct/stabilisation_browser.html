@@ -280,7 +280,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
                     {% endfor %}
                 </table>
             </td>
-            <td> {{group.0.count}} </td>
+            <td> {{group.0.GPCR_count}} </td>
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
             <td>
@@ -379,7 +379,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
                 </table>
             </td>
             <td>{{group.0.mutant}}</td>
-            <td> {{group.0.count}} </td>
+            <td> {{group.0.GPCR_count}} </td>
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
 
@@ -484,7 +484,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
                 </table>
             </td>
 
-            <td> {{group.0.count}} </td>
+            <td> {{group.0.GPCR_count}} </td>
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
             <td>
@@ -573,7 +573,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <td>{{group.0.wild_type}}</td>
             <td>{{group.0.mutant}}</td>
 
-            <td> {{group.0.count}} </td>
+            <td> {{group.0.GPCR_count}} </td>
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
             <td>
