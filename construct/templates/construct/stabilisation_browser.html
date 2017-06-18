@@ -66,7 +66,7 @@ $(document).ready(function() {
         // "columnDefs": [
         //     { className: "", "targets": [12,13,14,15] }
         //   ],
-        scrollY: '80vh',
+        scrollY: '60vh',
         scrollCollapse: true,
         paging: false
     });
@@ -75,7 +75,7 @@ $(document).ready(function() {
     var mut_table = $('#pos_and_mut').DataTable({
         'scrollX': true,
         "bScrollCollapse": true,
-        scrollY: '80vh',
+        scrollY: '60vh',
         scrollCollapse: true,
         paging: false
     });
@@ -84,7 +84,7 @@ $(document).ready(function() {
     var wt_table = $('#pos_and_wt').DataTable({
         'scrollX': true,
         "bScrollCollapse": true,
-        scrollY: '80vh',
+        scrollY: '60vh',
         scrollCollapse: true,
         paging: false
     });
@@ -93,7 +93,7 @@ $(document).ready(function() {
     var all_table = $('#all').DataTable({
         'scrollX': true,
         "bScrollCollapse": true,
-        scrollY: '80vh',
+        scrollY: '60vh',
         scrollCollapse: true,
         paging: false
     });
@@ -187,10 +187,10 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
 </div> -->
 <div>Group By:
     <select style="margin-right: 20px" id="group_select">
-        <option value="position_only">Position</option>
-        <option value="pos_and_wt">Position and Wild Type</option>
-        <option value="pos_and_mut">Position and Mutant</option>
-        <option value="all">Position, WT, and Mut</option>
+        <option value="position_only">Class and Position</option>
+        <option value="pos_and_wt">Class, Position, and Wild Type AA</option>
+        <option value="pos_and_mut">Class, Position, and Mutant AA</option>
+        <option value="all">Class, Position, Wild Type AA, and Mutant AA</option>
     </select>
 
     <span id='ala_subset_choice' style='display:none;'>
@@ -284,7 +284,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
             <td>
-                <div style="max-width:100px">
+                <div style="width:130px">
                     {% for mutant in group.1.pdb %}
                         {% if forloop.last %}
                             {{mutant}}
@@ -384,13 +384,15 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <td>{{group.1.struct_id | length}}</td>
 
             <td>
-                <table class="internal-table">
+                <div style="width:90px">
                     {% for mutant in group.1.pdb %}
-                    <tr style='background-color: transparent;'>
-                        <td class='inner'> {{ mutant }} </td>
-                    </tr>
+                        {% if forloop.last %}
+                            {{mutant}}
+                        {% else %}
+                            {{mutant}},
+                        {% endif %}
                     {% endfor %}
-                </table>
+                </div>
             </td>
             <td>{{group.0.class_cons}}</td>
             <td>{{group.0.receptor_fam_cons}}</td>
@@ -486,13 +488,15 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
             <td>
-                <table class="internal-table">
+                <div style="width:90px">
                     {% for mutant in group.1.pdb %}
-                    <tr style='background-color: transparent;'>
-                        <td class='inner'> {{ mutant }} </td>
-                    </tr>
+                        {% if forloop.last %}
+                            {{mutant}}
+                        {% else %}
+                            {{mutant}},
+                        {% endif %}
                     {% endfor %}
-                </table>
+                </div>
             </td>
             <td>{{group.0.class_cons}}</td>
             <td>{{group.0.receptor_fam_cons}}</td>
@@ -573,9 +577,15 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
             <td>
-                {% for mutant in group.1.pdb %}
-                    {{ mutant }}
-                {% endfor %}
+                <div style="width:90px">
+                    {% for mutant in group.1.pdb %}
+                        {% if forloop.last %}
+                            {{mutant}}
+                        {% else %}
+                            {{mutant}},
+                        {% endif %}
+                    {% endfor %}
+                </div>
             </td>
             <td>{{group.0.class_cons}}</td>
             <td>{{group.0.receptor_fam_cons}}</td>
@@ -590,6 +600,8 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
 
     </tbody>
 </table>
+
+<footer style="font-size: .75em">Note: All data in the frequency, data and site sections is calculated or matched with respect only to those columns selected for grouping.  All other columns are provided for information only. </footer>
 
 
 {% endblock %}
