@@ -73,7 +73,7 @@ class Command(BuildHumanProteins):
     def purge_orthologs(self):
         Protein.objects.filter(~Q(species__common_name="Human")).delete()
 
-    def main_func(self, positions, iteration):
+    def main_func(self, positions, iteration,count,lock):
         self.logger.info('CREATING OTHER PROTEINS')
         try:
             # go through constructs and finding their entry_names for lookup
@@ -105,13 +105,17 @@ class Command(BuildHumanProteins):
             # Keep track of first or second iteration
             reviewed = ['SWISSPROT','TREMBL'][iteration-1]
             skipped_due_to_swissprot = 0
-            for i,source_file in enumerate(filenames):
-                if i<positions[0]: #continue if less than start
-                    continue
-                if positions[1]: #if end is non-false
-                    if i>=positions[1]:
-                        #continue if i less than process
-                        continue
+            # for i,source_file in enumerate(filenames):
+            while count.value<len(filenames):
+                with lock:
+                    source_file = filenames[count.value]
+                    count.value +=1 
+                # if i<positions[0]: #continue if less than start
+                #     continue
+                # if positions[1]: #if end is non-false
+                #     if i>=positions[1]:
+                #         #continue if i less than process
+                #         continue
                 source_file_name = os.sep.join([self.local_uniprot_dir, source_file])
                 split_filename = source_file.split(".")
                 accession = split_filename[0]

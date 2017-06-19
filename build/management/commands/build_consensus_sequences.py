@@ -78,14 +78,18 @@ class Command(BuildHumanProteins):
 
         return ref_positions, segment_starts, segment_aligned_starts, segment_ends, segment_aligned_ends
 
-    def main_func(self, positions, iteration):
+    def main_func(self, positions, iteration,count,lock):
         # families
-        if not positions[1]:
-            families = self.families[positions[0]:]
-        else:
-            families = self.families[positions[0]:positions[1]]
-
-        for family in families:
+        # if not positions[1]:
+        #     families = self.families[positions[0]:]
+        # else:
+        #     families = self.families[positions[0]:positions[1]]
+        families = self.families
+        while count.value<len(families):
+            with lock:
+                family = families[count.value]
+                count.value +=1 
+        # for family in families:
             # get proteins in this family
             proteins = Protein.objects.filter(family__slug__startswith=family.slug, sequence_type__slug='wt',
                 species__common_name="Human").prefetch_related('species', 'residue_numbering_scheme')

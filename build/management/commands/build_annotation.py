@@ -28,6 +28,9 @@ import operator
 import traceback
 import numbers
 
+import datetime
+from random import randrange
+
 class Command(BaseBuild):
     help = 'Reads source data and creates annotations'
 
@@ -69,9 +72,7 @@ class Command(BaseBuild):
     all_segments = {ps.slug: ps for ps in ProteinSegment.objects.all()}  # all segments dict for faster lookups
     schemes = parse_scheme_tables(generic_numbers_source_dir)
 
-    pconfs = ProteinConformation.objects.all().order_by('protein__family')
-
-    pconfs = ProteinConformation.objects.filter(protein__sequence_type__slug='wt').all().order_by('protein__family')
+    pconfs = list(ProteinConformation.objects.filter(protein__sequence_type__slug='wt').all())
     pw_aln_error = ['celr3_mouse','celr3_human','gpr98_human']
 
     track_rf_annotations = {}
@@ -250,23 +251,22 @@ class Command(BaseBuild):
                 fail = True
         return fail
 
-
-    def main_func(self, positions, iteration):
+    def main_func(self, positions, iteration,count,lock):
         self.logger.info('STARTING ANNOTATION PROCESS {}'.format(positions))
-
-        if not positions[1]:
-            pconfs = self.pconfs[positions[0]:]
-        else:
-            pconfs = self.pconfs[positions[0]:positions[1]]
-
-
+        # if not positions[1]:
+        #     pconfs = self.pconfs[positions[0]:]
+        # else:
+        #     
+        pconfs = self.pconfs
         proteins = list(self.non_xtal_seg_end)
 
         # print(data)
         counter = 0
         lacking = []
-        # print('total',len(pconfs))
-        for p in pconfs:
+        while count.value<len(self.pconfs):
+            with lock:
+                p = self.pconfs[count.value]
+                count.value +=1
             entry_name = p.protein.entry_name
             ref_positions = None
             counter += 1
@@ -282,7 +282,6 @@ class Command(BaseBuild):
             #     continue
             # print(p.protein.entry_name)
             # continue
-            # print(counter,p.protein.entry_name)
             # Residue.objects.filter(protein_conformation=p).delete()
             if Residue.objects.filter(protein_conformation=p).count():
                 # print(counter,entry_name,"already done")
@@ -296,7 +295,7 @@ class Command(BaseBuild):
                         if human_ortholog.entry_name not in proteins:
                             if human_ortholog.entry_name not in lacking:
                                 lacking.append(human_ortholog.entry_name)
-                            print(counter,human_ortholog.entry_name, 'not in excel')
+                            print(counter,p,human_ortholog.entry_name, 'not in excel')
                             self.logger.error('Human ortholog ({}) of {} has no annotation in excel'.format(human_ortholog.entry_name,entry_name))
                             continue
                         if human_ortholog.entry_name in proteins:
@@ -412,7 +411,7 @@ class Command(BaseBuild):
             #     self.track_rf_annotations[p.protein.family.parent.slug]['anomalities'].append(b_and_c_mod)
 
             pconf = p
-
+            # print(pconf)
             al = []
             bulk = []
             bulk_alt = []
@@ -455,11 +454,14 @@ class Command(BaseBuild):
             end = time.time()
             diff = round(end - current,1)
             self.logger.info('{} {} residues ({}) {}s alignment {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
+            # print('{} {} residues ({}) {}s alignment {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
             if aligned_gn_mismatch_gap>20:
                 #print(p.protein.entry_name,len(rs),"residues","(",human_ortholog,")",diff,"s", " Unaligned generic numbers: ",aligned_gn_mismatch_gap)
                 self.logger.warning('{} {} residues ({}) {}s MANY ERRORS IN ALIGNMENT {}'.format(p.protein.entry_name,len(rs),human_ortholog,diff,aligned_gn_mismatch_gap))
 
         self.logger.info('COMPLETED ANNOTATIONS PROCESS {}'.format(positions))
+        # print('COMPLETED ANNOTATIONS PROCESS {} {} {}'.format(iteration,positions,datetime.datetime.strftime(
+        #     datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')))
 
     def compare_human_to_orthologue(self, human, ortholog, annotation,counter):
 
