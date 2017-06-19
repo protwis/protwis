@@ -758,14 +758,17 @@ class Command(BaseBuild):
         if debug: print("===============**================")
         return None
 
-    def main_func(self, positions, iteration):
+    def main_func(self, positions, iteration,count,lock):
         # filenames
-        if not positions[1]:
-            filenames = self.filenames[positions[0]:]
-        else:
-            filenames = self.filenames[positions[0]:positions[1]]
-
-        for source_file in filenames:
+        # if not positions[1]:
+        #     filenames = self.filenames[positions[0]:]
+        # else:
+        #     filenames = self.filenames[positions[0]:positions[1]]
+        filenames = self.filenames
+        while count.value<len(filenames):
+            with lock:
+                source_file = filenames[count.value]
+                count.value +=1 
             source_file_path = os.sep.join([self.structure_data_dir, source_file])
             # if source_file != "2RH1.yaml":
             #     continue

@@ -515,11 +515,13 @@ def parsecalculation(pdbname, debug=True, ignore_ligand_preset=False):
                         structureligandinteraction = structureligandinteraction.get()
                         structureligandinteraction.pdb_file = pdbdata
                         ligand = structureligandinteraction.ligand
-                        if structureligandinteraction.ligand.properities.inchikey != output['inchikey'].strip():
+                        if structureligandinteraction.ligand.properities.inchikey is None:
+                            structureligandinteraction.ligand.properities.inchikey = output['inchikey'].strip()
+                        elif structureligandinteraction.ligand.properities.inchikey != output['inchikey'].strip():
                             logger.error(
                                 'Ligand/PDB inchikey mismatch (PDB:' + pdbname + ' LIG:' + output['prettyname'] + '): '+structureligandinteraction.ligand.properities.inchikey+' vs '+ output['inchikey'].strip())
-                    except:
-                        print('error with dublication structureligand',temp[1])
+                    except Exception as msg:
+                        print('error with dublication structureligand',temp[1],msg)
                         break
                 elif StructureLigandInteraction.objects.filter(pdb_reference=temp[1], structure=structure).exists():
                     try:
