@@ -8,7 +8,7 @@ from django import forms
 from construct.models import *
 from structure.models import Structure
 from protein.models import ProteinConformation, Protein, ProteinSegment
-from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
+from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, STRUCTURAL_RULES
 
 import json
 from collections import OrderedDict
@@ -129,11 +129,36 @@ def tool(request):
 
         residues_pos[r.sequence_number] = [r.amino_acid,r.protein_segment.slug,label]
 
+
+    cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
+    
+    inserts = {}
+    inserts['fusions'] = []
+    inserts['other'] = {}
+    for ins in ConstructInsertionType.objects.all().order_by('name','subtype'):
+       # print(ins.name,ins.subtype,ins.sequence)
+        if ins.name == 'fusion':
+            inserts['fusions'].append(ins.subtype)
+        else:
+            if ins.name not in inserts['other']:
+                inserts['other'][ins.name] = []
+            if ins.subtype not in inserts['other'][ins.name]:
+                inserts['other'][ins.name].append(ins.subtype)
+        # fusion, f_results = c.fusion()
+        # if fusion:
+        #     f_protein = f_results[0][2]
+        #     if f_protein not in inserts['fusions']:
+        #         inserts['fusions'].append(f_protein)
+        # else:
+        #     for ins in c.insertions.all():
+        #         print(ins)
+    print(inserts)
     context['residues'] = residues
     context['residues_gn'] = residues_gn
     context['residues_pos'] = residues_pos
     context['class'] = c_level
     context['active_xtals'] = active_xtals
+    context['inserts'] = inserts
     context['form'] = FileUploadForm
     #print(residues)
 
@@ -237,8 +262,8 @@ def json_glyco(request, slug, **response_kwargs):
             mutations_mammalian.append([m.start()+1,pos0,m.start()+2,pos1,matches_seq[i],residues[m.start()+1]])
 
     glyco = OrderedDict()
-    glyco['o-linked']= mutations_all
-    glyco['n-linked'] = mutations_mammalian
+    glyco['n-linked']= mutations_all
+    glyco['o-linked'] = mutations_mammalian
 
     jsondata = glyco
     jsondata = json.dumps(jsondata)
@@ -307,6 +332,8 @@ def json_icl3(request, slug, **response_kwargs):
                     deletions[d_level_name][entry_name] = {}
                 #deletions[entry_name][pdb] = [tm5_end[entry_name],tm6_start[entry_name],deletion.start,deletion.end,deletion.start-tm5_end[entry_name],tm6_start[entry_name]-deletion.end]
                 deletions[d_level_name][entry_name][pdb] = [deletion.start-tm5_50[entry_name],tm6_50[entry_name]-deletion.end-1,state,str(fusion),f_protein]
+                # if (str(fusion)=='icl3'):
+                #     print(entry_name,pdb,50+deletion.start-tm5_50[entry_name],50-(tm6_50[entry_name]-deletion.end-1),str(fusion),f_protein)
 
     # for pdb,state in sorted(states.items()):
     #     print(pdb,"\t",state)
@@ -542,6 +569,8 @@ def thermostabilising(request, slug, **response_kwargs):
         pdb = mut['PDB']
         if mut['Effect'] != 'Thermostabilising':
             continue #only thermo!
+        if gn is "":
+            continue
         if (entry_name == slug) or (entry_name.split('_')[0] == slug.split('_')[0] and wt_aa == wt_lookup[gn][0]):
             if gn not in results['1']:
                 results['1'][gn] = {}
@@ -639,8 +668,9 @@ def structure_rules(request, slug, **response_kwargs):
     else:
         c_level = ''
 
-    path = os.sep.join([settings.DATA_DIR, 'structure_data', 'construct_data', 'structure_rules.xlsx'])
-    d = parse_excel(path)
+    # path = os.sep.join([settings.DATA_DIR, 'structure_data', 'construct_data', 'structure_rules.xlsx'])
+    # d = parse_excel(path)
+    d = STRUCTURAL_RULES
     if c_level in d:
         rules = d[c_level]
     else:

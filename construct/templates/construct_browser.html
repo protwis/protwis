@@ -683,7 +683,7 @@
                                 <tbody style='border-top: 1px solid #111;'>
                                 {% for construct in constructs %}
                                 <tr style='height: 32px' id="wt_sche2_{{ construct.pk }}">
-                                    {{construct.schematics.schematic_2_wt|safe}}
+                                    {{construct.wt_schematic|safe}}
                                 </tr>
                                 {% endfor %}
                                 </tbody>
@@ -766,7 +766,7 @@
                                 <tbody style='border-top: 1px solid #111;'>
                                 {% for construct in constructs %}
                                 <tr style='height: 32px' id="con_sche2_{{ construct.pk }}">
-                                    {{construct.schematics.schematic_2_c|safe}}
+                                    {{construct.cons_schematic|safe}}
                                 </tr>
                                 {% endfor %}
                                 </tbody>

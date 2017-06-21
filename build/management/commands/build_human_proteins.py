@@ -6,6 +6,7 @@ from django.db import IntegrityError
 from build.management.commands.base_build import Command as BaseBuild
 from protein.models import (Protein, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
+from common.models import WebResource, WebLink
 
 from residue.models import ResidueNumberingScheme
 
@@ -16,6 +17,7 @@ from urllib.request import urlopen
 import pandas as pd
 import numpy  as np
 import math
+import yaml
 
 
 class Command(BaseBuild):
@@ -23,6 +25,8 @@ class Command(BaseBuild):
 
     protein_source_file = os.sep.join([settings.DATA_DIR, 'protein_data', 'proteins_and_families.txt'])
     local_uniprot_dir = os.sep.join([settings.DATA_DIR, 'protein_data', 'uniprot'])
+    with open(os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'sequences.yaml']), 'r') as f:
+        excel_sequences = yaml.load(f)
     remote_uniprot_dir = 'http://www.uniprot.org/uniprot/'
 
     def handle(self, *args, **options):
@@ -222,6 +226,17 @@ class Command(BaseBuild):
 
         pc = ProteinConformation.objects.create(protein=p, state=ps)
 
+        # protein uniprot links
+        if accession:
+            for ac in uniprot['accessions'][1:]:
+                resource = WebResource.objects.get(slug='uniprot')
+
+                # create a link
+                link, created = WebLink.objects.get_or_create(web_resource=resource, index=ac)
+
+                # add the link to this protein
+                p.web_links.add(link)
+
         # protein aliases
         for i, alias in enumerate(uniprot['names']):
             a = ProteinAlias()
@@ -286,8 +301,8 @@ class Command(BaseBuild):
                 parent_family[indent] = pf.id
 
                 self.logger.info('Created protein family ' + family_name)
-            except:
-                self.logger.error('Failed creating protein family' + family_name)
+            except Exception as msg:
+                self.logger.error('Failed creating protein family' + family_name,msg)
 
         return {
             'pf': pf,
@@ -303,6 +318,8 @@ class Command(BaseBuild):
         up = {}
         up['genes'] = []
         up['names'] = []
+        up['accessions'] = []
+
 
         read_sequence = False
         remote = False
@@ -359,6 +376,12 @@ class Command(BaseBuild):
                         up['species_common_name'] = up['species_latin_name']
                     os_read = True
 
+                # accessions
+                elif line.startswith('AC'):
+                    sline = line.split()
+                    for ac in sline:
+                        up['accessions'].append(ac.strip(';'))
+
                 # names
                 elif line.startswith('DE'):
                     split_de_line = line.split('=')
@@ -388,6 +411,10 @@ class Command(BaseBuild):
 
             # close the Uniprot file
             uf.close()
+            try:
+                up['sequence'] = self.excel_sequences[up['entry_name']]['Sequence']
+            except:
+                pass
         except:
             return False
 

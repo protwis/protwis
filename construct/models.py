@@ -10,9 +10,10 @@ from common.diagrams_gpcr import DrawSnakePlot
 
 import pickle
 
-class Construct(models.Model): 
-    #overall class 
+class Construct(models.Model):
+    #overall class
     name = models.TextField(max_length=100, unique=True)
+    # linked onto the WT protein
     protein = models.ForeignKey('protein.Protein')
     contributor = models.ForeignKey('ContributorInfo')
     #Modifications
@@ -59,6 +60,40 @@ class Construct(models.Model):
             result.append([confirmed,insert.insert_type.name, insert.insert_type.subtype,insert.position])
         return position,result
 
+    def cons_schematic(self):
+        cache_key = self.name + "_cons_schematic"
+        schematic = cache.get(cache_key)
+        if schematic==None:
+            temp = self.schematic()
+            schematic = temp['schematic_2_c']
+            cache.set(cache_key,schematic,60*60*24*7)
+
+        return schematic
+
+    def wt_schematic(self):
+        cache_key = self.name + "_wt_schematic"
+        schematic = cache.get(cache_key)
+        if schematic==None:
+            temp = self.schematic()
+            schematic = temp['schematic_2_wt']
+            cache.set(cache_key,schematic,60*60*24*7)
+
+        return schematic
+
+    def chem_summary(self):
+        cache_key = self.name + "_chem_summary"
+        summary = cache.get(cache_key)
+        if summary==None:
+            temp = self.schematic()
+            summary = temp['summary']
+            cache.set(cache_key,summary,60*60*24*7)
+
+        return summary
+
+    def invalidate_schematics(self):
+        cache.delete_many([self.name + "_cons_schematic",self.name + "_wt_schematic",self.name + "_chem_summary"])
+
+
     def schematic(self):
         ## Use cache if possible
         temp = self.schematics
@@ -94,7 +129,7 @@ class CrystalInfo(models.Model):
     resolution = models.DecimalField(max_digits=5, decimal_places=3) #probably want more values
     pdb_data = models.ForeignKey('structure.PdbData', null=True) #if exists
     pdb_code = models.TextField(max_length=10, null=True) #if exists
-    #No not include ligands here, as they should be part of crystalization 
+    #No not include ligands here, as they should be part of crystalization
 
 
 class ContributorInfo(models.Model):
@@ -102,23 +137,46 @@ class ContributorInfo(models.Model):
     pi_email = models.TextField(max_length=50)
     pi_name = models.TextField(max_length=50)
     urls = models.TextField() #can be comma seperated if many
-    date = models.DateField() 
+    date = models.DateField()
     address = models.TextField()
 
 
 class ConstructMutation(models.Model):
+    # construct = models.ManyToManyField('ConstructMutation')
     sequence_number = models.SmallIntegerField()
     wild_type_amino_acid = models.CharField(max_length=1)
     mutated_amino_acid = models.CharField(max_length=1)
     mutation_type = models.CharField(max_length=30, null=True)
     remark = models.TextField(null=True)
+    residue = models.ForeignKey(Residue, null=True)
+
+    def get_res(self):
+        '''Retrieve the residue connected to this mutation, and save it as a FK field.'''
+        try:
+            construct = self.construct_set.get().protein.entry_name
+        except Construct.DoesNotExist:
+            return None
+        seq_no = self.sequence_number
+        try:
+            return Residue.objects.get(protein_conformation__protein__entry_name=construct, sequence_number=seq_no)
+        except Residue.DoesNotExist:
+            return None
+
+
+
+    def save(self, *args, **kwargs):
+        '''Modify save function to automatically get the associated residue, should it exist'''
+        self.residue_id = self.get_res()
+        super(ConstructMutation, self).save(*args, **kwargs)
+
 
     def __str__(self):
         return '{}{}{}'.format(self.wild_type_amino_acid, self.sequence_number,
-            self.mutated_amino_acid)
+                               self.mutated_amino_acid)
 
     class Meta():
         db_table = 'construct_mutation'
+
 
 
 class ConstructDeletion(models.Model):
@@ -216,7 +274,7 @@ class ChemicalConc(models.Model):
         return self.chemical.name
 
     class Meta():
-        db_table = 'construct_chemical_conc'    
+        db_table = 'construct_chemical_conc'
 
 
 # includes all chemicals, type & concentration. Chemicals can be from LCPlipid, detergent, etc.
