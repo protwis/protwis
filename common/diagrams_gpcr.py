@@ -382,7 +382,7 @@ class DrawSnakePlot(Diagram):
         for i in ['N','C']:
 
             name = i+"-term"
-            if name not in self.segments: break # break if no terminus
+            if name not in self.segments: continue # continue if no terminus
 
             rs = self.segments[name] # get residues
 

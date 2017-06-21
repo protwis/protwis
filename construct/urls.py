@@ -5,9 +5,10 @@ from construct import views
 
 
 urlpatterns = [
-    url(r'^$', views.ConstructBrowser.as_view(), name='browse'), #no cache, for dev
-    #url(r'^$', cache_page(60*60*24*7)(views.ConstructBrowser.as_view()), name='browse'),
-    url(r'^experiments[/]?$', views.ExperimentBrowser.as_view(), name='browse'), #no cache, for dev
+    # url(r'^$', views.ConstructBrowser.as_view(), name='browse'), #no cache, for dev
+    url(r'^$', cache_page(60*30)(views.ConstructBrowser.as_view()), name='browse'),
+    # url(r'^experiments[/]?$', views.ExperimentBrowser.as_view(), name='browse'), #no cache version
+    url(r'^experiments[/]?$', cache_page(60*30)(views.ExperimentBrowser.as_view()), name='browse'), #cache
     url(r'^statistics[/]?$', views.ConstructStatistics.as_view(), name='statistics'),
     url(r'^mutations[/]?$', views.ConstructMutations.as_view(), name='mutations'),
     url(r'^residuetable[/]?$', views.ConstructTable.as_view(), name='residuetable'),
@@ -31,5 +32,6 @@ urlpatterns = [
     url(r'^tool/json/cons_rf/(?P<slug>[-\w]+)/$', views.cons_rf, name='cons_rf'),
     url(r'^tool/json/cons_rm_GP/(?P<slug>[-\w]+)/$', views.cons_rm_GP, name='cons_rm_GP'),
     url(r'^tool/json/cons_rf_and_class/(?P<slug>[-\w]+)/$', views.cons_rf_and_class, name='cons_rf_and_class'),
+    url(r'^stabilisation_browser[/]?$', views.stabilisation_browser, name='stabilisation'),
     url(r'^(?P<slug>[-\w]+)/$', views.detail, name='detail'),
 ]

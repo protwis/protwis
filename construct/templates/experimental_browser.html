@@ -329,7 +329,7 @@
 
                     <td>
                         {% if construct.solubilization %}
-                            <a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.solubilization }}"> {{ construct.solubilization.chemical_list.chemicals.count}} chemicals</a>
+                            <a class='table_tooltip' href="#" data-original-title="{{ construct.summary.solubilization }}"> {{ construct.sub_count}} chemicals</a>
                         {% else %}
                             N/A
                         {% endif %}
@@ -337,7 +337,7 @@
 
                     <td>
                         {% if construct.purification %}
-                            <a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.purification }}">  {{ construct.purification.steps.count}} steps</a>
+                            <a class='table_tooltip' href="#" data-original-title="{{ construct.summary.purification }}">  {{ construct.pur_count}} steps</a>
                         {% else %}
                             N/A
                         {% endif %}
@@ -353,7 +353,7 @@
 
                     <td>
                         {% if construct.crystallization %}
-                            <a class='table_tooltip' href="#" data-original-title="{{ construct.schematics.summary.crystallization_chems }}"> {{ construct.crystallization.chemicals_total}} chems</a>
+                            <a class='table_tooltip' href="#" data-original-title="{{ construct.summary.crystallization_chems }}"> {{ construct.crystallization.chemicals_total}} chems</a>
                         {% else %}
                             N/A
                         {% endif %}
