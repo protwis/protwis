@@ -25,7 +25,7 @@
                 'orderCellsTop': true,
                 'autoWidth': true,
                 'dom': 'iTlfrt',
-                'order': [[3, "asc"],[1, "asc"]], // order by date
+                'order': [[4, "asc"],[1, "asc"]], // order by date
 
                 'tableTools': {
                     "sRowSelect": "single",
@@ -38,6 +38,7 @@
                         aoColumns: [
                             null,
                             { type: "text" }, // protein name
+                            { type: "select" }, // protein family
                             { type: "select"}, // state
                             { type: "select" }, // class
                             { type: "select" }, // species
@@ -60,7 +61,7 @@
                 ClearSelection('reference');
                 if (table.rows('.selected').data().length == 1) {
                     var div = document.createElement("div");
-                    div.innerHTML = table.rows('.selected').data()[0][4];
+                    div.innerHTML = table.rows('.selected').data()[0][5];
                     if (typeof div.innerText !== "undefined") {
                         AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, ''));
                     } else {
@@ -71,7 +72,7 @@
                 var checked_data = table.rows('.alt_selected').data();
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][4];
+                    div.innerHTML = checked_data[i][5];
                     if (typeof div.innerText !== "undefined") {
                         AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
                     } else {
@@ -104,7 +105,7 @@
                 var checked_data = table.rows('.alt_selected').data();
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][9];
+                    div.innerHTML = checked_data[i][10];
                     if (typeof div.innerText !== "undefined") {
                         AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '') );
                     } else {
@@ -118,7 +119,7 @@
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][9];
+                    div.innerHTML = checked_data[i][10];
                     if (typeof div.innerText !== "undefined") {
                         AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '') );
                     } else {
@@ -143,7 +144,19 @@
     <div class="btn-group">
         <a id="download_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Download</a>
     </div>
-
+    <div class="btn-group" style="float: right">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Archive <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+                <li>
+                    <a href="http://files.gpcrdb.org/homology_models_v1.0.zip"> v1.0 </a>
+                </li>
+                <li>
+                    <a href="http://files.gpcrdb.org/homology_models_v2.0.zip"> v2.0 </a>
+                </li>
+            </ul>
+    </div>
     <br />
     <br />
 
@@ -152,18 +165,20 @@
             <thead>
                 <tr>
                     <th><input class="select-all" type="checkbox"> Select all</th>
-                    <th class="protein-th">Protein name</th>
+                    <th class="protein-th">Receptor</th>
+                    <th class="protein-th">Receptor family</th>
                     <th class="protein-th">State</th>
-                    <th class="protein-th">Protein class</th>
+                    <th class="protein-th">Receptor class</th>
                     <th class="protein-th">Species</th>
                     <th class="pdb-th">Main template protein</th>
-                    <th class="pdb-th">Main template structure</th>
-                    <th class="pdb-th">Model version</th>
-                    <th class="pdb-th">Details</th>
+                    <th class="pdb-th">Xtal</th>
+                    <th class="pdb-th">Version</th>
+                    <th class="pub-th">Details</th>
                     <th style="display:none;"></th>
 
                 </tr>
                 <tr>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -182,13 +197,14 @@
                 <tr>
                     <td><input class="alt" type="checkbox"></td>
                     <td><a href="/protein/{{ model.protein.entry_name|safe }}">{{ model.protein.family.name|safe }}</a></td>
-                    <td>{{ model.state.name }}</td>
+                    <td>{{ model.protein.family.parent.name|safe }}</td>
+                    <td style="text-align: left;">{{ model.state.name }}</td>
                     <td>{{ model.protein.family.parent.parent.parent.name }}</td>
                     <td>{{ model.protein.species.common_name }}</td>
                     <td><a href="/protein/{{ model.protein.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
                     <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
                     <td>{{ model.version|floatformat:"1" }}</td>
-                    <td><a href="#">Details</a></td>
+                    <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">Details</a></td>
                     <td style="display:none;">{{ model.protein.entry_name }}</td>
 
                 </tr>

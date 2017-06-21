@@ -40,6 +40,10 @@ urlpatterns = [
     url(r'^webform/(?P<slug>[\w_]+)$', views.webform_download, name='webform_download'),
     url(r'^(?P<pdbname>\w+)$', StructureDetails, name='structure_details'),
     url(r'^pdb/(?P<pdbname>\w+)$', ServePdbDiagram, name='structure_serve_pdb'),
+    url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)$', HomologyModelDetails, name='homology_model_details'),
+    url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)/download_pdb$', SingleModelDownload, name='single_model_download'),
+    url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)/download_csv$', SingleModelDownload, {'csv':True}, name='single_model_download'),
+    url(r'^homology_models/view/(?P<modelname>\w+)$', ServeHomModDiagram, name='hommod_serve_view'),
     url(r'^pdb/(?P<pdbname>\w+)/ligand/(?P<ligand>.+)$', ServePdbLigandDiagram, name='structure_serve_pdb_ligand'),
 
 ]
