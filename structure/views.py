@@ -8,7 +8,7 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
 from protein.models import Gene, ProteinSegment
-from structure.models import Structure, StructureModel
+from structure.models import Structure, StructureModel, StructureModelStatsRotamer
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
@@ -89,6 +89,78 @@ class ServeHomologyModels(TemplateView):
             pass
 
         return context
+
+def HomologyModelDetails(request, modelname, state):
+    """
+    Show homology models details
+    """
+    modelname = modelname
+    color_palette = ["red","blue","yellow","aqua","lime","maroon","grey","fuchsia"]
+
+    model = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
+    rotamers = StructureModelStatsRotamer.objects.filter(homology_model=model).prefetch_related("homology_model", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
+    backbone_templates, rotamer_templates, segments_out = [],[],[]
+    segments, segments_formatted = {},{}
+
+    for r in rotamers:
+        if r.backbone_template not in backbone_templates and r.backbone_template!=None:
+            backbone_templates.append(r.backbone_template)
+        if r.rotamer_template not in rotamer_templates and r.rotamer_template!=None:
+            rotamer_templates.append(r.rotamer_template)
+        if r.backbone_template not in segments:
+            segments[r.backbone_template] = [r.residue.sequence_number]
+        else:
+            segments[r.backbone_template].append(r.residue.sequence_number)
+    for s, nums in segments.items():
+        for i, num in enumerate(nums):
+            if i==0:
+                segments_formatted[s] = [[num]]
+            elif nums[i-1]!=num-1:
+                if segments_formatted[s][-1][0]==nums[i-1]:
+                    segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], nums[i-1])
+                else:
+                    segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], nums[i-1])
+                segments_formatted[s].append([num])
+            elif i+1==len(segments[s]):
+                segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], nums[i-1]+1)
+        if len(nums)==1:
+            segments_formatted[s] = ['{}-{}'.format(segments_formatted[s][0][0], segments_formatted[s][0][0])]
+    colors = OrderedDict([(model.main_template,"*"), (None,"purple")])
+    i = 0
+    for s, nums in segments_formatted.items():
+        if len(nums)>1:
+            text = ''
+            for n in nums:
+                text+='{} or '.format(n)
+            segments_formatted[s] = text[:-5]
+        else:
+            segments_formatted[s] = segments_formatted[s][0]
+        if s==model.main_template:
+            segments_out.append(["#800080", segments_formatted[s]])
+        elif s==None:
+            segments_out.append(["#FFFFFF", segments_formatted[s]])
+        else:
+            segments_out.append([color_palette[i], segments_formatted[s]])
+            colors[s] = color_palette[i]
+        i+=1
+    print(colors)
+    print(segments_out)
+    
+    return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': backbone_templates, 
+                                                          'rotamer_templates': rotamer_templates, 'color_scheme': colors, 'color_residues': segments_out})
+
+def ServeHomModDiagram(request, modelname):
+    model=StructureModel.objects.filter(protein__entry_name=modelname)
+    if model.exists():
+        model=model.get()
+    else:
+         quit() #quit!
+
+    if model.pdb is None:
+        quit()
+
+    response = HttpResponse(model.pdb, content_type='text/plain')
+    return response
 
 def StructureDetails(request, pdbname):
     """
@@ -1423,6 +1495,38 @@ def HommodDownload(request):
     p2 = p1.get(request, hommods=True)
     return p2
 
+def SingleModelDownload(request, modelname, state, csv=False):
+    "Download single homology model"
+    class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+    hommod = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
+    if csv:
+        rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod).prefetch_related("homology_model", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
+        text_out = "Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n"
+        for r in rotamers:
+            if r.backbone_template:
+                bt = r.backbone_template.pdb_code.index
+            else:
+                bt = '-'
+            if r.rotamer_template:
+                rt = r.rotamer_template.pdb_code.index
+            else:
+                rt = '-'
+            if r.residue.generic_number:
+                gn = r.residue.generic_number.label
+            else:
+                gn = '-'
+            text_out+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
+        print(text_out)
+        response = HttpResponse(text_out, content_type="homology_models/csv")
+        file_name = 'Class{}_{}_{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+                                                                                 hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+    else:
+        response = HttpResponse(hommod.pdb, content_type="homology_models/model")
+        file_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+                                                                       hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+    response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
+
+    return response
 
 def ServePdbOutfile (request, outfile, replacement_tag):
 
