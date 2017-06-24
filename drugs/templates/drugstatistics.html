@@ -82,6 +82,16 @@ body {
 
 <div class="row" style="position: relative; left: 75%; bottom:-100px;">
   <div class="col-xs-12">
+<select onchange="updateMOA(this.value)" multiple class="form-control input-lg" size="2">
+  <option value="trials">In clinical trials</option>
+  <option selected="selected" value="approved">Approved</option>
+</select>
+  </div>
+</div>
+<div id="pie_moas"></div>
+
+<div class="row" style="position: relative; left: 75%; bottom:-100px;">
+  <div class="col-xs-12">
 <select onchange="updatediseases(this.value)" multiple class="form-control input-lg" size="2">
   <option value="trials">In clinical trials</option>
   <option selected="selected" value="approved">Approved</option>
@@ -411,10 +421,10 @@ function updateTypes(request) {
     text = "Agents targeting not established targets"
     series = {{drugtypes_not_estab|safe}}
   }
-  updatertypes(series,text)
+  updatermoas(series,text)
 }
 
-function updatertypes(series,text) {
+function updatermoas(series,text) {
 
   $("#pie_types").html("");
 
@@ -422,6 +432,116 @@ function updatertypes(series,text) {
     "header": {
       "title": {
         "text": "Drugtypes",
+        "fontSize": 32,
+        "font": "Arial"
+      },
+      "subtitle": {
+        "text": " ",
+        "color": "#999999",
+        "fontSize": 18,
+        "font": "Arial"
+      },
+      "titleSubtitlePadding": 25
+    },
+    "footer": {
+      "text": text,
+      "color": "#999999",
+      "fontSize": 10,
+      "font": "Arial",
+      "location": "center"
+    },
+    "size": {
+      "canvasHeight": 600,
+      "canvasWidth": 1100,
+      "pieInnerRadius": "50%",
+      "pieOuterRadius": "100%"
+    },
+    "data": {
+      "sortOrder": "value-asc",
+      "smallSegmentGrouping": {
+        "enabled": true,
+        "value": 0.2
+      },
+      "content": series
+      // {{drugtypes|safe}}
+    },
+    "labels": {
+      "outer": {
+        "pieDistance": 21
+      },
+      "inner": {
+        "hideWhenLessThanPercentage": 3
+      },
+      "mainLabel": {
+        "fontSize": 17
+      },
+      "percentage": {
+        "color": "#ffffff",
+        "fontSize": 18
+      },
+      "value": {
+        "color": "#adadad",
+        "fontSize": 18
+      },
+      "lines": {
+        "enabled": true,
+        "style": "straight"
+      },
+      "truncation": {
+        "enabled": true
+      }
+    },
+    "tooltips": {
+      "enabled": true,
+      "type": "placeholder",
+      "string": "{label}: {value}, {percentage}%",
+      "styles": {
+        "fadeInSpeed": 0,
+        "backgroundOpacity": 0.71,
+        "borderRadius": 10,
+        "fontSize": 18
+      }
+    },
+    "effects": {
+      "load": {
+        "speed": 800
+      },
+      "pullOutSegmentOnClick": {
+        "effect": "linear",
+        "speed": 400,
+        "size": 14
+      }
+    },
+    "misc": {
+      "gradient": {
+        "enabled": true,
+        "percentage": 65
+      }
+    }
+  });
+}
+
+updateMOA('approved')
+function updateMOA(request) {
+
+  var series = {{moas_approved|safe}}
+  text = "Approved and distinct drugs"
+
+  if (request == 'trials') {
+    text = "Clinical trials agents"
+    series = {{moas_trials|safe}}
+  }
+  updatertypes(series,text)
+}
+
+function updatertypes(series,text) {
+
+  $("#pie_moas").html("");
+
+  var pie = new d3pie("pie_moas", {
+    "header": {
+      "title": {
+        "text": "Mode of Action",
         "fontSize": 32,
         "font": "Arial"
       },
