@@ -684,8 +684,8 @@ def structure_rules(request, slug, **response_kwargs):
         gn = rule['Generic Position']
         mut_aa = rule['Mut AA']
         wt_aas = rule['Wt AA'].split("/")
-        definition = rule['Definition']
-        state = rule['State']
+        definition = rule['Design Principle']+" "+rule['Addition / Removal']
+        state = rule['State'].lower()
         valid = False
         if gn in wt_lookup:
             for wt_aa in wt_aas:
