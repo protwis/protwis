@@ -86,13 +86,96 @@ body {
 
 
 {% block content %}
-<h4>Structures overview</h4>
-<ul>
-    <li>{{ all_structures }} total crystal structures.</li>
-    <li>{{ unique_structures }} unique crystalized receptors.</li>
-    <li>{{ unique_complexes }} unique ligand-receptor complexes.</li>
-    <li>{% for class in unique_by_class.items %}{{ class.0 }} : {{ class.1 }} {% endfor %}</li>
-</ul>
+<h4>Number of structures, including multiple of same receptor (complex)</h4>
+<table width="75%" class="table table-stripped">
+    <thead>
+        <tr>
+            <td>Class(Family)</td>
+            <td align="center">Total</td>
+            {% for class in all_structures_by_class.items %}
+            <td align="center">{{ class.0 }}</td>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Receptors</td>
+            <td align="center">{{ all_structures }}</td>
+            {% for class in all_structures_by_class.items %}
+            <td align="center">{{ class.1 }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td>Receptor - ligand complexes</td>
+            <td align="center">{{ all_complexes }}</td>
+            {% for class in all_complexes_by_class.items %}
+            <td align="center">{{ class.1 }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td>Receptor - G protein complexes</td>
+            <td align="center">{{ all_gprots }}</td>
+            {% for class in all_gprots_by_class.items %}
+            <td align="center">{{ class.1 }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td>Active-state receptors</td>
+            <td align="center">{{ all_active }}</td>
+            {% for class in all_active_by_class.items %}
+            <td align="center">{{ class.1 }}</td>
+            {% endfor %}
+        </tr>
+    </tbody>
+    <tr> </tr>
+
+</table>
+
+<br />
+<h4>Number of unique receptor complexes</h4>
+<table width="75%" class="table table-stripped">
+    <thead>
+        <tr>
+            <td>Class(Family)</td>
+            <td align="center">Total</td>
+            {% for class in unique_structures_by_class.items %}
+                <td align="center">{{ class.0 }}</td>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Receptors</td>
+            <td align="center">{{ unique_structures }}</td>
+            {% for class in unique_structures_by_class.items %}
+            <td align="center">{{ class.1 }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td>Receptor - ligand complexes</td>
+            <td align="center">{{ unique_complexes }}</td>
+            {% for class in unique_complexes_by_class.items %}
+            <td align="center">{{ class.1 }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td>Receptor - G protein complexes</td>
+            <td align="center">{{ unique_gprots }}</td>
+            {% for class in unique_gprots_by_class.items %}
+            <td align="center">{{ class.1 }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td>Active-state receptors</td>
+            <td align="center">{{ unique_active }}</td>
+            {% for class in unique_active_by_class.items %}
+            <td align="center">{{ class.1 }}</td>
+            {% endfor %}
+        </tr>
+    </tbody>
+    <tr> </tr>
+
+</table>
 <br />
 <div id="charts" visibility="hidden">
     <?xml version="1.0" standalone="no" ?>
@@ -188,7 +271,7 @@ body {
 </div>
 <br />
 <br />
-<p>Resolution distribution of the available crystal structures</p>
+<h4>Resolution distribution of the available crystal structures</h4>
 <script>
     data_reso_container={{ chartdata_reso|safe }};
 </script>
@@ -214,8 +297,8 @@ body {
         </li>
     </ul>
 </div></p>
-
-Structural coverage of GPCR Classes<br />
+<br />
+<h4>Structural coverage of GPCR Classes</h4><br />
 <script type="text/javascript" charset="utf-8">
     coverage = {{ coverage|safe }};
 </script>
@@ -239,11 +322,39 @@ Structural coverage of GPCR Classes<br />
         </li>
     </ul>
 </div></p>
+<br />
+<h4>Crystal structures of GPCRs</h4><br />
+<script type="text/javascript" charset="utf-8">
+    crystals = {{ crystals|safe }};
+</script>
+<div id="crystals">
+</div>
+<p>
+    <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <a href="javascript:saveSvgAsPng(document.getElementById('crystals_svg'), 'xtals_tree.png');">PNG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsJpg(document.getElementById('crystals_svg'), 'xtals_tree.jpg');">JPG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsTiff(document.getElementById('crystals_svg'), 'xtals_tree.tiff');">TIFF</a>
+                </a>
+            </li>
+        </ul>
+    </div>
+</p>
 {% endblock %}
 
 {% block addon_js %}
 <script src="{% static 'home/js/d3.min.js' %}"></script>
 <script src="{% static 'home/js/statistics_diagram.js' %}"></script>
+<script src="{% static 'home/js/statistics_diagram_crystals.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 <script src="{% static 'home/js/statistics.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
