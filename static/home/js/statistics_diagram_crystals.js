@@ -17,15 +17,14 @@ var tree = d3.layout.tree()
     .size([360, diameter / 2 - 120])
     .sort(function(a,b) { return b.sort - a.sort; })
     .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
-    // .separation(function(a, b) { return ((a.parent == root) && (b.parent == root)) ? 3 : 1; });
 
 var diagonal = d3.svg.diagonal.radial()
     .projection(function(d) { return [d.y, d.x / 180 * Math.PI]; });
 
-var svg = d3.select("#coverage").append("svg")
+var svg = d3.select("#crystals").append("svg")
     .attr("width", diameter)
     .attr("height", diameter)
-    .attr("id", "coverage_svg")
+    .attr("id", "crystals_svg")
     .attr("xmlns", "http://www.w3.org/2000/svg");
     
     svg.append("rect")
@@ -36,13 +35,7 @@ var svg = d3.select("#coverage").append("svg")
 var svg_g = svg.append("g")
     .attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
 
-    // svg.append("rect")
-    // .attr("width", "100%")
-    // .attr("height", "100%")
-    // .attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
-
-
-var nodes = tree.nodes(coverage)
+var nodes = tree.nodes(crystals)
       
 
     nodes.forEach(function(d) { 
@@ -78,21 +71,6 @@ var link = svg_g.append("g")
           else if (d.target.mutations_an > 0) {return 0.5 }
           else {return 0.1}; });
 
-
- /// The more fluid version
-  // var link = svg.selectAll(".link")
-  //     .data(links)
-  //     .enter().append("path")
-  //     .attr("class", "link")
-  //     .attr("d", diagonal)
-  //     .style("stroke", function(d) { return d.target.color; })
-  //     .style("stroke-width", function(d) { if (d.target.depth>0) {return 17-d.target.depth*d.target.depth;} else { return 0;} })
-  //     .style("opacity", function(d) {
-  //         if ((d.target.interactions > 0 && d.target.mutations_an > 0) || 1==1) {return 0.8 } //|| 1==1
-  //         else if (d.target.interactions > 0) {return 0.5 }
-  //         else if (d.target.mutations_an > 0) {return 0.5 }
-  //         else {return 0.1}; })
-
   var node = svg_g.selectAll(".node")
       .data(nodes)
     .enter().append("g")
@@ -103,9 +81,6 @@ var link = svg_g.append("g")
       .attr("r", function(d) { if (d.name=='GPCRs' ) {return "0"} else { return "4.5" } })
       .style("fill", function(d) {
           if (d.color && d.depth<4) {return d.color } 
-          // else if (d.interactions > 0 && d.mutations_an > 0) {return "Olive" }
-          else if (d.interactions > 0) {return "FireBrick" }
-          // else if (d.mutations_an > 0) {return "Chocolate" }
           else {return "#eee"}; })
       .style("opacity",.99);
 
