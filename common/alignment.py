@@ -1095,10 +1095,10 @@ class AlignedReferenceTemplate(Alignment):
                 for m in matches:
                     if m.protein_conformation.protein.parent==self.reference_protein.protein and int(protein.similarity)==0:
                         continue
-                    temp_list.append((m, int(protein.similarity), float(m.resolution), protein))
+                    temp_list.append((m, int(protein.similarity), float(m.resolution), protein, m.representative))
             except:
                 pass
-        sorted_list = sorted(temp_list, key=lambda x: (-x[1],x[2]))
+        sorted_list = sorted(temp_list, key=lambda x: (-x[1],-x[4],x[2]))
         if self.revise_xtal!=None:
             temp_list = []
             for i in sorted_list:
@@ -1171,19 +1171,19 @@ class AlignedReferenceTemplate(Alignment):
                         rota = [x for x in Rotamer.objects.filter(structure=struct, residue__in=main_temp_ECL2[1]) if x.pdbdata.pdb.startswith('COMPND')==False]
                         rota = [x for x in rota if x.pdbdata.pdb[21:22] in x.structure.preferred_chain]
                         if len(rota)==3:
-                            temp_list_mid.append((struct, 3, similarity, float(struct.resolution), protein))  
-                        if len(ref_ECL2[0])==len(main_temp_ECL2[0]) and len(main_temp_ECL2[0])==len(main_parent_ECL2[0]):
-                            temp_list1.append((struct, len(main_temp_ECL2[0]), similarity, float(struct.resolution),protein))
+                            temp_list_mid.append((struct, 3, similarity, float(struct.resolution), protein, struct.representative))                        
+                        if len(main_temp_ECL2[0])-1<=len(ref_ECL2[0])<=len(main_temp_ECL2[0])+1 and len(main_temp_ECL2[0])==len(main_parent_ECL2[0]):
+                            temp_list1.append((struct, len(ref_ECL2[0]), similarity, float(struct.resolution),protein, struct.representative))
                         if len(ref_ECL2[2])==len(main_temp_ECL2[2]) and len(main_temp_ECL2[2])==len(main_parent_ECL2[2]):
-                            temp_list2.append((struct, len(main_temp_ECL2[2]), similarity, float(struct.resolution),protein))
+                            temp_list2.append((struct, len(ref_ECL2[2]), similarity, float(struct.resolution), protein, struct.representative))
 
                         # Allow for partial main loop template
                         if len(main_parent_ECL2[0])-1<=len(ref_ECL2[0])<=len(main_parent_ECL2[0])+1 and [i.sequence_number for i in main_temp_ECL2[0]]!=[i.sequence_number for i in main_parent_ECL2[0]]:
                             if abs(len(main_parent_ECL2[0])-len(main_temp_ECL2[0]))<=len(main_parent_ECL2[0])/2:
-                                temp_list1.append((struct, len(ref_ECL2[0]), 0, float(struct.resolution), protein))
-                        if len(main_parent_ECL2[2])-1<=len(ref_ECL2[2])<=len(main_parent_ECL2[2])+1 and [i.sequence_number for i in main_temp_ECL2[2]]!=[i.sequence_number for i in main_parent_ECL2[2]]:
+                                temp_list1.append((struct, len(ref_ECL2[0]), 0, float(struct.resolution), protein, struct.representative))
+                        if len(ref_ECL2[2])==len(main_parent_ECL2[2]) and [i.sequence_number for i in main_temp_ECL2[2]]!=[i.sequence_number for i in main_parent_ECL2[2]]:
                             if abs(len(main_parent_ECL2[2])-len(main_temp_ECL2[2]))<=len(main_parent_ECL2[2])/2:
-                                temp_list2.append((struct, len(ref_ECL2[2]), 0, float(struct.resolution), protein))
+                                temp_list2.append((struct, len(ref_ECL2[2]), 0, float(struct.resolution), protein, struct.representative))
                         
                     else:
                         raise Exception()
@@ -1194,11 +1194,11 @@ class AlignedReferenceTemplate(Alignment):
                         [i.sequence_number for i in main_temp_seq]==[i.sequence_number for i in main_temp_parent]) or 
                         self.segment_labels[0] in self.provide_alignment.reference_dict):
                         if len(main_temp_seq)!=len(main_temp_parent):
-                            temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
+                            temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein, struct.representative))
                         else:
                             similarity_table[self.main_template_structure] = self.provide_similarity_table[
                                                                                                 self.main_template_structure]
-                            temp_list.append((struct, len(main_temp_seq), similarity, float(struct.resolution), protein))
+                            temp_list.append((struct, len(main_temp_seq), similarity, float(struct.resolution), protein, struct.representative))
                     # Allow for partial main loop template
                     elif (len(ref_seq)>=len(main_temp_parent) and len(main_temp_parent)>len(main_temp_seq) and 
                           [i.sequence_number for i in main_temp_seq]!=[i.sequence_number for i in main_temp_parent]):
@@ -1206,9 +1206,9 @@ class AlignedReferenceTemplate(Alignment):
                             continue
                         if self.segment_labels[0]=='ICL3':
                             if len(main_temp_parent)<=10:
-                                temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
+                                temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein, struct.representative))
                         else:
-                            temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
+                            temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein, struct.representative))
             else:
                 temp_length, temp_length1, temp_length2 = [],[],[]
                 try:
@@ -1224,7 +1224,7 @@ class AlignedReferenceTemplate(Alignment):
                         alt_ECL2 = self.ECL2_slicer(alt_seq)
                         alt_rota = [x for x in Rotamer.objects.filter(structure=struct, residue__in=alt_ECL2[1]) if x.pdbdata.pdb.startswith('COMPND')==False]
                         if len(alt_rota)==3:
-                            temp_list_mid.append((struct, 3, similarity, float(struct.resolution), protein))
+                            temp_list_mid.append((struct, 3, similarity, float(struct.resolution), protein, struct.representative))
                         if len(ref_ECL2[0])==len(alt_ECL2[0]) and len(ref_ECL2[2])==len(alt_ECL2[2]):
                             temp_length1 = len(alt_ECL2[0])
                             temp_length2 = len(alt_ECL2[2])
@@ -1253,10 +1253,10 @@ class AlignedReferenceTemplate(Alignment):
                         raise Exception()
                 except:
                     temp_length, temp_length1, temp_length2 = -1,-1,-1
-                temp_list.append((struct, temp_length, similarity, float(struct.resolution), protein))
+                temp_list.append((struct, temp_length, similarity, float(struct.resolution), protein, struct.representative))
                 if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
-                    temp_list1.append((struct, temp_length1, similarity, float(struct.resolution), protein))
-                    temp_list2.append((struct, temp_length2, similarity, float(struct.resolution), protein))
+                    temp_list1.append((struct, temp_length1, similarity, float(struct.resolution), protein, struct.representative))
+                    temp_list2.append((struct, temp_length2, similarity, float(struct.resolution), protein, struct.representative))
         if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
             ECL2_1 = self.order_sim_table(temp_list1, ref_ECL2[0], OrderedDict(), ECL2_part='_1')
             ECL2_mid = self.order_sim_table(temp_list_mid, ref_ECL2[1], OrderedDict(), x50_ref, ECL2_part='_mid')
@@ -1281,8 +1281,8 @@ class AlignedReferenceTemplate(Alignment):
                     except:
                         pass
         alt_temps = [entry for entry in temp_list if entry[1]==len(ref_seq)]
-        sorted_list_gn = sorted(alt_temps_gn, key=lambda x: (-x[2],x[3]))
-        sorted_list = sorted(alt_temps, key=lambda x: (-x[2],x[3]))
+        sorted_list_gn = sorted(alt_temps_gn, key=lambda x: (-x[2],-x[5],x[3]))
+        sorted_list = sorted(alt_temps, key=lambda x: (-x[2],-x[5],x[3]))
         combined = sorted_list_gn+sorted_list
         if self.revise_xtal!=None:
             temp_list = []
@@ -1434,12 +1434,17 @@ class ClosestReceptorHomolog():
     def find_closest_receptor_homolog(self):
         a = Alignment()
         p = Protein.objects.get(entry_name=self.protein)
+        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva']
+        if self.protein in exclusion_list:
+            exclusion_list.remove(self.protein)
         if p.family.slug[:3]=='007':
-            structures = Structure.objects.all()
+            structures = Structure.objects.all().exclude(
+                                                  annotated=False).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
         else:
             structures = Structure.objects.filter(protein_conformation__protein__parent__family__slug__istartswith=self.family_mapping[p.family.slug[:3]]).exclude(
-                                                  annotated=False).exclude(protein_conformation__protein__parent__entry_name__in=['opsd_todpa', 'adrb1_melga'])
+                                                  annotated=False).exclude(protein_conformation__protein__parent__entry_name__in=exclusion_list)
         a.load_reference_protein(p)
+        structure_proteins = [i.protein_conformation.protein.parent for i in list(structures)]
         a.load_proteins(structure_proteins)
         a.load_segments(ProteinSegment.objects.filter(slug__in=self.protein_segments))
         a.build_alignment()
