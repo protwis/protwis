@@ -90,23 +90,33 @@ class ServeHomologyModels(TemplateView):
 
         return context
 
+
 def HomologyModelDetails(request, modelname, state):
     """
     Show homology models details
     """
     modelname = modelname
-    color_palette = ["red","blue","yellow","aqua","lime","maroon","grey","fuchsia"]
+    color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","maroon",]
 
     model = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
     rotamers = StructureModelStatsRotamer.objects.filter(homology_model=model).prefetch_related("homology_model", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
-    backbone_templates, rotamer_templates, segments_out = [],[],[]
-    segments, segments_formatted = {},{}
+    backbone_templates, rotamer_templates = [],[]
+    segments, segments_formatted, segments_out = {},{},{}
+    bb_temps, r_temps = OrderedDict(), OrderedDict()
 
     for r in rotamers:
         if r.backbone_template not in backbone_templates and r.backbone_template!=None:
             backbone_templates.append(r.backbone_template)
+            if r.backbone_template.protein_conformation.protein.parent not in bb_temps:
+                bb_temps[r.backbone_template.protein_conformation.protein.parent] = [r.backbone_template]
+            else:
+                bb_temps[r.backbone_template.protein_conformation.protein.parent].append(r.backbone_template)
         if r.rotamer_template not in rotamer_templates and r.rotamer_template!=None:
             rotamer_templates.append(r.rotamer_template)
+            if r.rotamer_template.protein_conformation.protein.parent not in r_temps:
+                r_temps[r.rotamer_template.protein_conformation.protein.parent] = [r.rotamer_template]
+            else:
+                r_temps[r.rotamer_template.protein_conformation.protein.parent].append(r.rotamer_template)
         if r.backbone_template not in segments:
             segments[r.backbone_template] = [r.residue.sequence_number]
         else:
@@ -121,38 +131,47 @@ def HomologyModelDetails(request, modelname, state):
                 else:
                     segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], nums[i-1])
                 segments_formatted[s].append([num])
+                if i+1==len(segments[s]):
+                    segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], segments_formatted[s][-1][0])
             elif i+1==len(segments[s]):
                 segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], nums[i-1]+1)
         if len(nums)==1:
             segments_formatted[s] = ['{}-{}'.format(segments_formatted[s][0][0], segments_formatted[s][0][0])]
-    colors = OrderedDict([(model.main_template,"*"), (None,"purple")])
+
+    colors = OrderedDict([(model.main_template,"darkorchid"), (None,"white")])
     i = 0
     for s, nums in segments_formatted.items():
         if len(nums)>1:
             text = ''
             for n in nums:
                 text+='{} or '.format(n)
-            segments_formatted[s] = text[:-5]
+            segments_formatted[s] = text[:-4]
         else:
             segments_formatted[s] = segments_formatted[s][0]
         if s==model.main_template:
-            segments_out.append(["#800080", segments_formatted[s]])
+            pass
         elif s==None:
-            segments_out.append(["#FFFFFF", segments_formatted[s]])
+            segments_out["white"] = segments_formatted[s]
         else:
-            segments_out.append([color_palette[i], segments_formatted[s]])
+            segments_out[color_palette[i]] = segments_formatted[s]
             colors[s] = color_palette[i]
         i+=1
-    print(colors)
-    print(segments_out)
-    
-    return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': backbone_templates, 
-                                                          'rotamer_templates': rotamer_templates, 'color_scheme': colors, 'color_residues': segments_out})
+    # for r in rotamers:
+    #     r.color = colors[r.backbone_template]
+    #     r.save()
+    for b, temps in bb_temps.items():
+        for i, t in enumerate(temps):
+            t.color = colors[t]
+            bb_temps[b][i] = t
+    print(colors, segments_out)
+    return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
+                                                          'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_scheme': colors, 'color_residues': segments_out})
 
-def ServeHomModDiagram(request, modelname):
-    model=StructureModel.objects.filter(protein__entry_name=modelname)
+def ServeHomModDiagram(request, modelname, state):
+    model=StructureModel.objects.filter(protein__entry_name=modelname, state__slug=state)
     if model.exists():
         model=model.get()
+        print(model)
     else:
          quit() #quit!
 
@@ -1308,6 +1327,25 @@ class PDBClean(TemplateView):
                     request.session['substructure_mapping'] = 'full'
                     zipf.writestr(mod_name, tmp.getvalue())
                     del tmp
+                    rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod.item).prefetch_related('residue','backbone_template','rotamer_template').order_by('residue__sequence_number')
+                    stats_data = 'Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n'
+                    for r in rotamers:
+                        try:
+                            gn = r.residue.generic_number.label
+                        except:
+                            gn = '-'
+                        if r.backbone_template:
+                            bt = r.backbone_template.pdb_code.index
+                        else:
+                            bt = '-'
+                        if r.rotamer_template:
+                            rt = r.rotamer_template.pdb_code.index
+                        else:
+                            rt = '-'
+                        stats_data+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
+                    stats_name = mod_name[:-3]+'templates.csv'
+                    zipf.writestr(stats_name, stats_data)
+                    del stats_data
                 for mod in selection.targets:
                     selection.remove('targets', 'structure_model', mod.item.id)
 
@@ -1404,7 +1442,6 @@ class PDBDownload(View):
     """
 
     def get(self, request, hommods=False, *args, **kwargs):
-
         if self.kwargs['substructure'] == 'select':
             return HttpResponseRedirect('/structure/pdb_segment_selection')
 

@@ -81,7 +81,7 @@ class StructureModelStatsRotamer(models.Model):
     backbone_template = models.ForeignKey('structure.Structure', related_name='+', null=True)
 
     def __repr__(self):
-        return '<StructureModelStatsRotamer: seqnum '+str(self.sequence_number)+' hommod '+str(self.homology_model.protein)+'>'
+        return '<StructureModelStatsRotamer: seqnum '+str(self.residue.sequence_number)+' hommod '+str(self.homology_model.protein)+'>'
 
     class Meta():
         db_table = 'structure_model_stats_rotamer'

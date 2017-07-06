@@ -9,7 +9,7 @@ from Bio.PDB.Vector import rotaxis
 from django.conf import settings
 from common.selection import SimpleSelection
 from common.alignment import Alignment
-from protein.models import ProteinSegment
+from protein.models import Protein, ProteinSegment
 from residue.models import Residue
 from structure.models import Structure
 
@@ -716,6 +716,10 @@ class HSExposureCB(AbstractPropertyMap):
 class PdbChainSelector():
     def __init__(self, pdb_code, protein):
         self.pdb_code = pdb_code
+        try:
+            protein.entry_name
+        except:
+            protein = Protein.objects.get(entry_name=protein)
         self.protein = protein
         self.chains = []
         self.dssp_dict = OrderedDict()
@@ -727,7 +731,8 @@ class PdbChainSelector():
         pdb.retrieve_pdb_file(self.pdb_code, pdir='./', file_format="pdb")
         p = PDB.PDBParser()
         f = 'pdb{}.ent'.format(self.pdb_code.lower())
-        wt_residues = [i.sequence_number for i in Residue.objects.filter(protein_conformation__protein=self.protein).exclude(protein_segment__slug__in=['N-term','C-term'])]
+        wt_residues = [i for i in Residue.objects.filter(protein_conformation__protein=self.protein).exclude(protein_segment__slug__in=['N-term','C-term'])]
+        gn_residues = [i.sequence_number for i in wt_residues if i.generic_number and i.protein_segment.slug not in ['ECL1','ECL2','ICL3','ECL3']]
         structure = p.get_structure(self.pdb_code, f)
         for chain in structure[0]:
             ch = chain.get_id()
@@ -737,9 +742,10 @@ class PdbChainSelector():
         if len(self.dssp_dict)>1:
             dssp = PDB.DSSP(structure[0], f, dssp='/env/bin/dssp')
             for key in dssp.keys():
-                if int(key[1][1]) in wt_residues:
+                if int(key[1][1]) in gn_residues:
                     self.dssp_dict[key[0]][key[1][1]] = dssp[key]
                     self.dssp_info[key[0]][dssp[key][2]] = self.dssp_info[key[0]][dssp[key][2]]+1
+        os.remove(f)
 
     def get_seqnums_by_secondary_structure(self, chain, secondary_structure):
         ''' Returns list of sequence numbers that match the secondary structural property. \n
@@ -765,9 +771,15 @@ class PdbChainSelector():
 
         max_res = num_helix_res[0]
         max_i = 0
+        print(self.chains[0], num_helix_res[0], seq_lengths[0])
         for i in range(1,len(num_helix_res)):
+            print(self.chains[i], num_helix_res[i], seq_lengths[i])
             if num_helix_res[i]>max_res:
-                if num_helix_res[i]-max_res>seq_lengths[max_i]-seq_lengths[i]:
+                if num_helix_res[i]-max_res>=seq_lengths[max_i]-seq_lengths[i]:
+                    max_res = num_helix_res[i]
+                    max_i = i
+            elif num_helix_res[i]<max_res:
+                if max_res-num_helix_res[i]<seq_lengths[i]-seq_lengths[max_i]:
                     max_res = num_helix_res[i]
                     max_i = i
             elif num_helix_res[i]==max_res:
