@@ -1,4 +1,5 @@
 from django.utils.text import slugify
+from django.db import IntegrityError
 
 from common.models import WebResource
 from common.models import WebLink
@@ -72,7 +73,10 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
                                 l.properities = lp
                                 l.canonical = True #maybe false, but that would break stuff.
                                 l.ambigious_alias = False
-                                l.save()
+                                try:
+                                    l.save()
+                                except IntegrityError:
+                                    l = Ligand.objects.get(name=ligand_name, canonical=True)
             
     elif name:
         
@@ -109,8 +113,11 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
             l.name = str(name)
             l.canonical = True
             l.ambigious_alias = False
-            l.save()
-            l.load_by_name(str(name))
+            try:
+                l.save()
+                l.load_by_name(str(name))
+            except IntegrityError:
+                l = Ligand.objects.get(name=str(name), canonical=True)
     else:
         l = None
 
