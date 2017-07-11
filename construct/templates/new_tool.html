@@ -289,7 +289,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     <!-- <th rowspan="1" class='possiblities_icl'>ICL3-TM6 linker (non-wt)</th> -->
   {% elif class == 'B' or class == 'C' %}      
     <!-- <th rowspan="1" class='possiblities_icl'>TM3-ICL2 linker (non-wt)</th> -->
-    <th rowspan="1" class='possiblities_icl'>Fusion<!-- ICL2 modification (Fusion / Deletion / Wt -->)</th>
+    <th rowspan="1" class='possiblities_icl'>Fusion<!-- ICL2 modification (Fusion / Deletion / Wt) --></th>
     <!-- <th rowspan="1" class='possiblities_icl'>ICL2-TM4 linker (non-wt)</th> -->
   {% endif %}
 
@@ -355,7 +355,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                   range.push(parseInt(mod[2]));
                 }
 
-                if (mod[0]=='Insert') {
+                if (mod[0]=='Insert' || mod[0]=='fusion') {
                   insert_location = mod[4];
                   order_in_icl_insert = mod[5];
                   insert_type = mod[1].split(":")[0];
