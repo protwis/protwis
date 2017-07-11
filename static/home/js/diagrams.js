@@ -182,11 +182,11 @@ function toggleLoop(id,type, skipmaxmin) {
     //     if (!curr) $(this).css("display", "none");
     // });
     // console.log('draw c', (+new Date()) - start);
-    if (id == ".ICL3" || id == ".ICL2" || id == ".ICL1" ) {
+    if (id == ".ICL3" || id == ".ICL2" || id == ".ICL1" || id == ".C-term" ) {
       if (skipmaxmin!=1) redraw_terminus("C");
     }
     // console.log('draw n', (+new Date()) - start);
-    if (id == ".ECL3" || id == ".ECL2" || id == ".ECL1" ) {
+    if (id == ".ECL3" || id == ".ECL2" || id == ".ECL1" || id == ".N-term" ) {
       if (skipmaxmin!=1) redraw_terminus("N");
     }
     // console.log('maxmin', (+new Date()) - start);
