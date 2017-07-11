@@ -144,3 +144,10 @@ input.form-control {
     -moz-border-radius: 6px 0 6px 6px;
     border-radius: 6px 0 6px 6px;
 }
+
+rect.segment {
+    cursor: pointer;
+}
+text.segment {
+    cursor: pointer;
+}
