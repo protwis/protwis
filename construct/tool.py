@@ -8,6 +8,7 @@ from django import forms
 from construct.models import *
 from structure.models import Structure
 from protein.models import ProteinConformation, Protein, ProteinSegment
+from alignment.models import AlignmentConsensus
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, STRUCTURAL_RULES
 
 import json
@@ -17,6 +18,7 @@ import xlrd
 import yaml
 import os
 import time
+import pickle
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -77,6 +79,92 @@ def compare_family_slug(a,b):
         return 3,"Receptor Family"
     else:
         return 4,"Receptor"
+
+def new_tool(request):
+
+    simple_selection = request.session.get('selection', False)
+    proteins = []
+    for target in simple_selection.targets:
+        if target.type == 'protein':
+            proteins.append(target.item)
+    context = {}
+
+    context['target'] = proteins[0]
+
+    level = proteins[0].family.slug
+    if level.split("_")[0]=='001':
+        c_level = 'A'
+    elif level.split("_")[0]=='002':
+        c_level = 'B'
+    elif level.split("_")[0]=='003':
+        c_level = 'B'
+    elif level.split("_")[0]=='004':
+        c_level = 'C'
+    elif level.split("_")[0]=='005':
+        c_level = 'F'
+    else:
+        c_level = ''
+
+    states = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith=level.split("_")[0]).all().values_list('state__slug', flat = True).distinct())
+    if 'active' in states:
+        active_xtals = True
+    else:
+        active_xtals = False
+
+
+    rs = Residue.objects.filter(protein_conformation__protein=proteins[0]).prefetch_related('protein_segment','display_generic_number','generic_number')
+
+    residues = {}
+    residues_gn = {}
+    residues_pos = {}
+    for r in rs:
+        segment = r.protein_segment.slug
+        segment = segment.replace("-","")
+        if segment not in residues:
+            residues[segment] = []
+        residues[segment].append(r)
+        label = ''
+        if r.generic_number:
+            residues_gn[r.generic_number.label] = r
+            label = r.display_generic_number.label
+
+        residues_pos[r.sequence_number] = [r.amino_acid,r.protein_segment.slug,label]
+
+
+    cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
+    
+    inserts = {}
+    inserts['fusions'] = []
+    inserts['other'] = {}
+    for ins in ConstructInsertionType.objects.all().order_by('name','subtype'):
+       # print(ins.name,ins.subtype,ins.sequence)
+        if ins.name == 'fusion':
+            inserts['fusions'].append(ins.subtype)
+        else:
+            if ins.name not in inserts['other']:
+                inserts['other'][ins.name] = []
+            if ins.subtype not in inserts['other'][ins.name]:
+                inserts['other'][ins.name].append(ins.subtype)
+        # fusion, f_results = c.fusion()
+        # if fusion:
+        #     f_protein = f_results[0][2]
+        #     if f_protein not in inserts['fusions']:
+        #         inserts['fusions'].append(f_protein)
+        # else:
+        #     for ins in c.insertions.all():
+        #         print(ins)
+    context['ICL_max'] = {'ICL2': residues['ICL2'][-1].sequence_number, 'ICL3': residues['ICL3'][-1].sequence_number}
+    context['ICL_min'] = {'ICL2': residues['ICL2'][0].sequence_number,'ICL3': residues['ICL3'][0].sequence_number}
+    context['residues'] = residues
+    context['residues_gn'] = residues_gn
+    context['residues_pos'] = residues_pos
+    context['class'] = c_level
+    context['active_xtals'] = active_xtals
+    context['inserts'] = inserts
+    context['form'] = FileUploadForm
+    #print(residues)
+
+    return render(request,'new_tool.html',context)
 
 def tool(request):
 
@@ -331,7 +419,7 @@ def json_icl3(request, slug, **response_kwargs):
                 if p.entry_name not in deletions[d_level_name]:
                     deletions[d_level_name][entry_name] = {}
                 #deletions[entry_name][pdb] = [tm5_end[entry_name],tm6_start[entry_name],deletion.start,deletion.end,deletion.start-tm5_end[entry_name],tm6_start[entry_name]-deletion.end]
-                deletions[d_level_name][entry_name][pdb] = [deletion.start-tm5_50[entry_name],tm6_50[entry_name]-deletion.end-1,state,str(fusion),f_protein]
+                deletions[d_level_name][entry_name][pdb] = [deletion.start-tm5_50[entry_name]-1,tm6_50[entry_name]-deletion.end-1,state,str(fusion),f_protein]
                 # if (str(fusion)=='icl3'):
                 #     print(entry_name,pdb,50+deletion.start-tm5_50[entry_name],50-(tm6_50[entry_name]-deletion.end-1),str(fusion),f_protein)
 
@@ -404,7 +492,7 @@ def json_icl2(request, slug, **response_kwargs):
                 if p.entry_name not in deletions[d_level_name]:
                     deletions[d_level_name][entry_name] = {}
                 #deletions[entry_name][pdb] = [tm5_end[entry_name],tm6_start[entry_name],deletion.start,deletion.end,deletion.start-tm5_end[entry_name],tm6_start[entry_name]-deletion.end]
-                deletions[d_level_name][entry_name][pdb] = [deletion.start-tm3_50[entry_name],tm4_50[entry_name]-deletion.end-1,state,str(fusion),f_protein]
+                deletions[d_level_name][entry_name][pdb] = [deletion.start-tm3_50[entry_name]-1,tm4_50[entry_name]-deletion.end-1,state,str(fusion),f_protein]
 
     # for pdb,state in sorted(states.items()):
     #     print(pdb,"\t",state)
@@ -454,7 +542,7 @@ def json_nterm(request, slug, **response_kwargs):
             if deletion.start < tm1_start[entry_name]:
                 if p.entry_name not in deletions[d_level_name]:
                     deletions[d_level_name][entry_name] = {}
-                deletions[d_level_name][entry_name][pdb] = [deletion.start,deletion.end, tm1_start[entry_name]-deletion.end,state,str(fusion),f_protein]
+                deletions[d_level_name][entry_name][pdb] = [deletion.start,deletion.end-1, tm1_start[entry_name]-deletion.end-1,state,str(fusion),f_protein]
 
     jsondata = deletions
     jsondata = json.dumps(jsondata)
@@ -670,7 +758,32 @@ def structure_rules(request, slug, **response_kwargs):
 
     # path = os.sep.join([settings.DATA_DIR, 'structure_data', 'construct_data', 'structure_rules.xlsx'])
     # d = parse_excel(path)
+    # d_clean = {}
+    # regex = r"(\d+)x(\d+)"
+    # for rule_class, values in d.items():
+    #     d_clean[rule_class] = []
+    #     for rule in values:
+    #         if rule['Type']!="Structure-based":
+    #             # Only use structure based ones in this function
+    #             continue
+    #         if re.search(regex, rule['Definition']):
+    #             match = re.search(regex, rule['Definition'])
+    #             gn = match.group(1) + "x" + match.group(2)
+    #             print(rule['Definition'],gn)
+    #         else:
+    #             continue
+    #         regex = r"(\d+)x(\d+)"
+    #         if re.search(regex, rule['Definition']):
+    #             match = re.search(regex, rule['Definition'])
+    #             rule['Generic Position'] = match.group(1) + "x" + match.group(2)
+    #         else:
+    #             continue
+    #         d_clean[rule_class].append(rule)
+
+    # # print(d)
+    # print(json.dumps(d_clean,sort_keys=True, indent=4))
     d = STRUCTURAL_RULES
+    # print(d)
     if c_level in d:
         rules = d[c_level]
     else:
@@ -681,11 +794,21 @@ def structure_rules(request, slug, **response_kwargs):
     results['inactive'] = {} #fixed mut
 
     for rule in rules:
+        # if rule['Type']!="Structure-based":
+        #     # Only use structure based ones in this function
+        #     continue
+        # regex = r"(\d+)x(\d+)"
+        # if re.search(regex, rule['Definition']):
+        #     match = re.search(regex, rule['Definition'])
+        #     gn = match.group(1) + "x" + match.group(2)
+        #     print(rule['Definition'],gn)
+        # else:
+        #     continue
         gn = rule['Generic Position']
         mut_aa = rule['Mut AA']
         wt_aas = rule['Wt AA'].split("/")
-        definition = rule['Definition']
-        state = rule['State']
+        definition = rule['Design Principle']+" "+rule['Addition / Removal']
+        state = rule['State'].lower()
         valid = False
         if gn in wt_lookup:
             for wt_aa in wt_aas:
@@ -951,17 +1074,23 @@ def cons_rf(request, slug, **response_kwargs):
 
     print(len(rf_proteins))
 
-    a = Alignment()
+    try:
 
-    a.load_proteins(rf_proteins)
+        # Load alignment 
+        a = pickle.loads(AlignmentConsensus.objects.get(slug="_".join(level.split("_")[0:3])).alignment)
+    except:
+        print('failed!')
+        a = Alignment()
 
-    a.load_segments(align_segments) #get all segments to make correct diagrams
+        a.load_proteins(rf_proteins)
 
-    # build the alignment data matrix
-    a.build_alignment()
+        a.load_segments(align_segments) #get all segments to make correct diagrams
 
-    # calculate consensus sequence + amino acid and feature frequency
-    a.calculate_statistics()
+        # build the alignment data matrix
+        a.build_alignment()
+
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
 
     s_id = 0
     a_id = 0
@@ -1014,17 +1143,22 @@ def cons_rf_and_class(request, slug, **response_kwargs):
     amino_acids_stats = {}
     amino_acids_groups_stats = {}
         
-    a = Alignment()
+    try:
+        # Load alignment 
+        a = pickle.loads(AlignmentConsensus.objects.get(slug="_".join(level.split("_")[0:3])).alignment)
+    except:
+        print('failed!')
+        a = Alignment()
 
-    a.load_proteins(rf_proteins)
+        a.load_proteins(rf_proteins)
 
-    a.load_segments(align_segments) #get all segments to make correct diagrams
+        a.load_segments(align_segments) #get all segments to make correct diagrams
 
-    # build the alignment data matrix
-    a.build_alignment()
+        # build the alignment data matrix
+        a.build_alignment()
 
-    # calculate consensus sequence + amino acid and feature frequency
-    a.calculate_statistics()
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
 
     s_id = 0
     a_id = 0
@@ -1058,18 +1192,23 @@ def cons_rf_and_class(request, slug, **response_kwargs):
         amino_acids_stats = {}
         amino_acids_groups_stats = {}
             
+        try:
+            # Load alignment 
+            a = pickle.loads(AlignmentConsensus.objects.get(slug="_".join(level.split("_")[0:1])).alignment)
+        except:
+            print('failed!')
 
-        a = Alignment()
+            a = Alignment()
 
-        a.load_proteins(class_proteins)
+            a.load_proteins(class_proteins)
 
-        a.load_segments(align_segments) #get all segments to make correct diagrams
+            a.load_segments(align_segments) #get all segments to make correct diagrams
 
-        # build the alignment data matrix
-        a.build_alignment()
+            # build the alignment data matrix
+            a.build_alignment()
 
-        # calculate consensus sequence + amino acid and feature frequency
-        a.calculate_statistics()
+            # calculate consensus sequence + amino acid and feature frequency
+            a.calculate_statistics()
 
         s_id = 0
         a_id = 0
