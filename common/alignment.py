@@ -1049,6 +1049,8 @@ class AlignedReferenceTemplate(Alignment):
         '''
         if self.reference_protein.family.parent.parent.parent.slug=='003':
             template_family = ProteinFamily.objects.get(slug='002')
+        elif self.reference_protein.family.parent.parent.parent.slug=='006':
+            template_family = ProteinFamily.objects.get(slug='001')
         else:
             template_family = self.reference_protein.family.parent.parent.parent
         self.structures_data = Structure.objects.filter(

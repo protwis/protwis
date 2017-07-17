@@ -42,7 +42,7 @@ class Command(BaseBuild):
             self.yamls = self.get_all_yamls()
             self.prepare_input(options['proc'], self.uniprots)
 
-    def main_func(self, positions, iteration):
+    def main_func(self, positions, iteration, count, lock):
         if not positions[1]:
             uniprot_list = self.uniprots[positions[0]:]
         else:

@@ -103,7 +103,7 @@
     </div>
     <div class="col-md-10">
         {% for structure in structures %}
-        <p style="display: inline;"><a href="/structure/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a>, </p>
+        <p style="display: inline;"><a href="/structure/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
         {% empty %}
         No structures available
         {% endfor %}
@@ -117,7 +117,7 @@
         </div>
         <div class="col-md-10">
             {% for hommod in homology_models %}
-                <p style="display: inline;"><a href="/structure/homology_models/{{ hommod.protein.entry_name }}_{{ hommod.state.slug }}">{{ hommod.protein.entry_name }} {{ hommod.state.slug }}, </a></p>
+                <p style="display: inline;"><a href="/structure/homology_models/{{ hommod.protein.entry_name }}_{{ hommod.state.slug }}">{{ hommod.protein.entry_name }} {{ hommod.state.slug }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
             {% empty %}
             No homology models available
             {% endfor %}
