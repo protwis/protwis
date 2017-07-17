@@ -9,7 +9,7 @@ from django.views.decorators.cache import cache_page
 
 from protein.models import Gene, ProteinSegment
 from structure.models import Structure, StructureModel, StructureModelStatsRotamer
-from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn
+from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, convert_csv_to_xlsx
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from structure.forms import *
@@ -156,14 +156,10 @@ def HomologyModelDetails(request, modelname, state):
             segments_out[color_palette[i]] = segments_formatted[s]
             colors[s] = color_palette[i]
         i+=1
-    # for r in rotamers:
-    #     r.color = colors[r.backbone_template]
-    #     r.save()
     for b, temps in bb_temps.items():
         for i, t in enumerate(temps):
             t.color = colors[t]
             bb_temps[b][i] = t
-    print(colors, segments_out)
     return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
                                                           'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_scheme': colors, 'color_residues': segments_out})
 
@@ -171,7 +167,6 @@ def ServeHomModDiagram(request, modelname, state):
     model=StructureModel.objects.filter(protein__entry_name=modelname, state__slug=state)
     if model.exists():
         model=model.get()
-        print(model)
     else:
          quit() #quit!
 
