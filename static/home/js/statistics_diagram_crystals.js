@@ -11,10 +11,10 @@ function step(startAngle, startRadius, endAngle, endRadius) {
 
 var color = d3.scale.category20();
 
-var diameter = 1350;
+var diameter = 1000;
 
 var tree = d3.layout.tree()
-    .size([360, diameter / 2 - 120])
+    .size([360, diameter / 2 - 60])
     .sort(function(a,b) { return b.sort - a.sort; })
     .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
 
@@ -42,13 +42,13 @@ var nodes = tree.nodes(crystals)
     if (d.depth == 0) {
         d.y =  0
       } else if (d.depth == 1) {
-        d.y =  130
+        d.y =  100
       } else if (d.depth == 2  ) {
-        d.y =  300
+        d.y =  200
       } else if (d.depth == 3  ) {
-        d.y =  550
+        d.y =  390
       } else if (d.depth == 4  ) {
-        d.y =  600
+        d.y =  430
       }  else {
         d.y =  d.depth*150
       }
