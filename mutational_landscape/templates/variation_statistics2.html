@@ -64,6 +64,7 @@ body {
 .labels {
   font: 14px Palatino;
   font-weight: bold;
+  pointer-events: none;
 }
 
 .link--active {
@@ -252,10 +253,10 @@ var path = svg3.datum(interactions).selectAll("path")
       })
       .on('mouseout', function(d) {
         tip.hide(d)
-        d3.select(this).style("cursor", "default")
+        d3.select(this).style("cursor", "cursor")
       })
       .on("click",  function(d) {
-        window.location.assign("/mutational_landscape/protein/"+d.name+"_human", '_blank');
+        if (d.depth === 4) {window.location.assign("/mutational_landscape/protein/"+d.name+"_human", '_blank')};
         })
       .each(stash);
 
@@ -332,12 +333,28 @@ var path = svg3.datum(interactions).selectAll("path")
          .attr("dy", ".35em") // vertical-align
 
         // .style("font", function () { return (d.depth==1 ? "14px" : d.depth!=4 ? "12px" : "10px") + " Palatino" ;})
-
+//
         // .style("font", "Palatino")
         .style("font", function() { if (d.depth<2) {return "21px"+ " Palatino";}
         else if (d.depth==2) {return "17px"+ " Palatino";}
         else if (d.depth==3) {return "16px"+ " Palatino";}
         else { return "14px"+ " Palatino";} })
+
+        .style("cursor", function() { if (d.depth==4) {return "pointer";}
+        else { return "cursor";} })
+
+        .on('mouseover', function() {
+          tip.show(d)
+          if (d.depth === 4) {d3.select(this).style("cursor", "pointer")}
+        })
+        .on('mouseout', function() {
+          tip.hide(d)
+          d3.select(this).style("cursor", "cursor")
+        })
+
+        .on("click", function() {
+          if (d.depth === 4) {window.location.assign("/mutational_landscape/protein/"+d.name+"_human", '_blank')};
+        })
 
         .style("fill", function() { return "#000" })
 })
