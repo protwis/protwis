@@ -267,7 +267,13 @@ class StructureStatistics(TemplateView):
         for f in families:
             lookup[f.slug] = f.name.replace("receptors","")
 
-        class_proteins = Protein.objects.filter(family__slug__startswith="00", source__name='SWISSPROT').prefetch_related('family').order_by('family__slug')
+        ### only crystallised
+        crystallised_proteins = Structure.objects.all().prefetch_related('protein_conformation__protein')
+        cs = []
+        for i in crystallised_proteins:
+            cs.append(i.protein_conformation.protein.parent.entry_name)
+
+        class_proteins = Protein.objects.filter(family__slug__startswith="00", source__name='SWISSPROT').prefetch_related('family').order_by('family__slug').filter(entry_name__in=cs)
 
         coverage = OrderedDict()
 
@@ -352,7 +358,8 @@ class StructureStatistics(TemplateView):
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_i'] = 1
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['interactions'] += 1
 
-        CSS_COLOR_NAMES = ["SteelBlue","SlateBlue","LightCoral","Orange","LightGreen","LightGray","PeachPuff","PaleGoldenRod"]
+        CSS_COLOR_NAMES = ["SteelBlue","SlateBlue","LightCoral","Orange","LightGreen","LightGray","LightGray","PaleGoldenRod"]
+        # PeachPuff
 
         tree = OrderedDict({'name':'GPCRs','children':[]})
         i = 0
@@ -1535,7 +1542,7 @@ def webformdata(request) :
                 if 'chemical_components' not in crystallization:
                     crystallization['chemical_components'] = []
 
-                # print(key)    
+                # print(key)
                 if key!='chemical_comp': #not first
                     comp_id = key.replace('chemical_comp','')
                 else:
