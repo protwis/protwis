@@ -39,7 +39,7 @@ class WebLink(models.Model):
 
 
 class Publication(models.Model):
-    web_link = models.ForeignKey('common.WebLink', null=True)
+    web_link = models.OneToOneField('common.WebLink')
     journal = models.ForeignKey('PublicationJournal', null=True)
     title = models.TextField(null=True)
     authors = models.TextField(null=True)

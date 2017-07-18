@@ -7,10 +7,11 @@ from build.management.commands.build_human_proteins import Command as BuildHuman
 from residue.functions import *
 from protein.models import Protein, ProteinConformation, ProteinFamily, ProteinSegment, ProteinSequenceType
 from common.alignment import Alignment
+from alignment.models import AlignmentConsensus
 
 import os
 import yaml
-
+import pickle
 
 class Command(BuildHumanProteins):
     help = 'Builds consensus sequences for human proteins in all families'
@@ -40,6 +41,7 @@ class Command(BuildHumanProteins):
 
     def purge_consensus_sequences(self):
         Protein.objects.filter(sequence_type__slug='consensus').delete()
+        AlignmentConsensus.objects.all().delete()
 
     def get_segment_residue_information(self, consensus_sequence):
         ref_positions = dict()
@@ -76,14 +78,18 @@ class Command(BuildHumanProteins):
 
         return ref_positions, segment_starts, segment_aligned_starts, segment_ends, segment_aligned_ends
 
-    def main_func(self, positions, iteration):
+    def main_func(self, positions, iteration,count,lock):
         # families
-        if not positions[1]:
-            families = self.families[positions[0]:]
-        else:
-            families = self.families[positions[0]:positions[1]]
-
-        for family in families:
+        # if not positions[1]:
+        #     families = self.families[positions[0]:]
+        # else:
+        #     families = self.families[positions[0]:positions[1]]
+        families = self.families
+        while count.value<len(families):
+            with lock:
+                family = families[count.value]
+                count.value +=1 
+        # for family in families:
             # get proteins in this family
             proteins = Protein.objects.filter(family__slug__startswith=family.slug, sequence_type__slug='wt',
                 species__common_name="Human").prefetch_related('species', 'residue_numbering_scheme')
@@ -97,6 +103,17 @@ class Command(BuildHumanProteins):
             a.load_segments(self.segments)
             a.build_alignment()
             a.calculate_statistics()
+
+            try:
+                # Save alignment
+                AlignmentConsensus.objects.create(slug=family.slug, alignment=pickle.dumps(a))
+
+                # Load alignment to ensure it works
+                a = pickle.loads(AlignmentConsensus.objects.get(slug=family.slug).alignment)
+                self.logger.info('Succesfully pickled {}'.format(family))
+            except:
+                self.logger.error('Failed pickle for {}'.format(family))
+
             self.logger.info('Completed building alignment for {}'.format(family))
 
             # get (forced) consensus sequence from alignment object

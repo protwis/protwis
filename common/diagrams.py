@@ -59,6 +59,7 @@ class Diagram:
             white-space:pre-wrap;
             max-width:none;
         }
+
         </style>
         """
 
@@ -141,10 +142,10 @@ class Diagram:
         # }
         output =  """
             <circle class='{} rcircle' cx='{}' cy='{}' r='{}' stroke='black' stroke-width='2' fill='{}'
-            fill-opacity='1' id='{}' title='{}' original_title='{}'/>
+            fill-opacity='1' id='{}' title='{}' original_title='{}' original_cx='{}' original_cy='{}'/>
             <text x='{}' y='{}' text-anchor='middle' font-family='helvetica' font-size='16' fill=''
-            id='{}' class='rtext {}' title='{}' original_title='{}'> {} </text>
-            """.format(resclass,x,y,radius,cfill,id,label,label,x,y+6,idtext,resclass,label,label,aa) #aa
+            id='{}' class='rtext {}' title='{}' original_title='{}' original_x='{}' original_y='{}'> {} </text>
+            """.format(resclass,x,y,radius,cfill,id,label,label,x,y,x,y+6,idtext,resclass,label,label,x,y+6,aa) #aa
         return output
 
     def DrawResidueSquare(self, x,y,aa,residue_number,label,radius, resclass = '',cfill="white", precolor = False):
