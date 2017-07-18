@@ -5,7 +5,7 @@ from django.db import connection
 
 import datetime
 import logging
-from multiprocessing import Queue, Process
+from multiprocessing import Queue, Process, Value, Lock
 
 
 class Command(BaseCommand):
@@ -30,6 +30,8 @@ class Command(BaseCommand):
         q = Queue()
         procs = list()
         num_items = len(items)
+        num = Value('i', 0)
+        lock = Lock()
 
         if not num_items:
             return False
@@ -47,7 +49,7 @@ class Command(BaseCommand):
             else:
                 last = chunk_size * (i + 1)
     
-            p = Process(target=self.main_func, args=([(first, last), iteration]))
+            p = Process(target=self.main_func, args=([(first, last), iteration,num,lock]))
             procs.append(p)
             p.start()
 

@@ -140,7 +140,7 @@ class Command(BaseCommand):
             if filename[-4:]!='json':
                 continue
             filepath = os.sep.join([self.construct_data_dir, filename])
-            print('Adding '+filepath)
+            # print('Adding '+filepath)
             with open(filepath) as json_file:
                 d = json.load(json_file)
                 add_construct(d)
@@ -157,7 +157,8 @@ class Command(BaseCommand):
                         d = fetch_pdb_info(pdbname,protein)
                         add_construct(d)
                     else:
-                        print("Entry for",pdbname,"already there")
+                        pass
+                        # print("Entry for",pdbname,"already there")
                 except:
                     print(pdbname,'failed')
 

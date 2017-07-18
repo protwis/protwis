@@ -46,6 +46,10 @@ class Command(BaseCommand):
             action='store',
             dest='filename',
             help='Path to Uniprot text file')
+        parser.add_argument('-m',
+            action='store_true',
+            default=False,
+            help='Run main template search. Updates Xtal_Templ.csv with closest receptor homologs')
 
     annotation_source_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'Structural_Annotation.xlsx'])
     xtal_seg_end_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'xtal_segends.yaml'])
@@ -68,7 +72,8 @@ class Command(BaseCommand):
         self.data = self.parse_excel(self.annotation_source_file)
         self.dump_files()
         # self.analyse_annotation_consistency()
-        self.main_template_search()
+        if options['m']:
+            self.main_template_search()
 
     def parse_excel(self,path):
         workbook = xlrd.open_workbook(path)
@@ -121,8 +126,8 @@ class Command(BaseCommand):
         return d
 
     def analyse_annotation_consistency(self):
-        NonXtal = self.data["NonXtal_Bulges_Constr_GPCRdb#"]
-        Xtal = self.data["Xtal_Bulges_Constr_GPCRdb#"]
+        NonXtal = self.data["Bulges_Constr_NonXtal_GPCRdb#"]
+        Xtal = self.data["Bulges_Constr_Xtal_GPCRdb#"]
         output = {}
         counting_xtal = {}
         counting_non_xtal = {}
@@ -162,8 +167,8 @@ class Command(BaseCommand):
         print("Present in non-xtal, but not xtal",counting_xtal)
         print("Present in xtal, but not non-xtal",counting_non_xtal)
 
-        structures = self.data["Xtal_SegEnds_Prot#"]
-        structures_non_xtal = self.data["NonXtal_SegEnds_Prot#"]
+        structures = self.data["SegEnds_Xtal_Prot#"]
+        structures_non_xtal = self.data["SegEnds_NonXtal_Prot#"]
         info = {}
         for structure,vals in structures.items():
             if structure.split("_")[-1] == "wt":
@@ -259,7 +264,8 @@ class Command(BaseCommand):
                     continue
                 NonXtal_SegEnds_Prot[entry][key] = val
 
-        # data = self.data["Xtal_Bulges_Constr_GPCRdb#"]
+
+        # data = self.data["Bulges_Constr_Xtal_GPCRdb#"]
         # Xtal_Bulges_Constr_GPCRdb = {}
         # for structure,vals in data.items():
         #     entry = structure

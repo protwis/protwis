@@ -135,6 +135,7 @@ class Alignment:
     def load_segments(self, selected_segments):
         selected_residue_positions = []
         segment_lookup = {}
+        segment_lookup_positions = {}
         unsorted_segments = OrderedDict()
         for s in selected_segments:
             if hasattr(s, 'item'):
@@ -159,12 +160,10 @@ class Alignment:
                 segment_positions = ResidueGenericNumber.objects.filter(protein_segment=segment,
                     scheme=self.default_numbering_scheme).order_by('label')
                 
-                # generic numbers in the schemes of all selected proteins
-                self.load_generic_numbers(segment.slug, segment_positions)
-
                 # segments
                 unsorted_segments[segment.pk] = []
                 segment_lookup[segment.pk] = segment.slug
+                segment_lookup_positions[segment.pk] = segment_positions
                 for segment_residue in segment_positions:
                     unsorted_segments[segment.pk].append(segment_residue.label)
 
@@ -172,6 +171,8 @@ class Alignment:
         sorted_segments = sorted(unsorted_segments)
         for s in sorted_segments:
             self.segments[segment_lookup[s]] = unsorted_segments[s]
+            # generic numbers in the schemes of all selected proteins
+            self.load_generic_numbers(segment_lookup[s], segment_lookup_positions[s])
 
         # combine individual residue positions into a custom segment
         if selected_residue_positions:
@@ -586,9 +587,9 @@ class Alignment:
         feature_count = OrderedDict()
         most_freq_aa = OrderedDict()
         amino_acids = OrderedDict([(a, 0) for a in AMINO_ACIDS]) # from common.definitions
-        self.amino_acids = AMINO_ACIDS.keys()
+        self.amino_acids = list(AMINO_ACIDS.keys())
         features = OrderedDict([(a, 0) for a in AMINO_ACID_GROUPS])
-        self.features = AMINO_ACID_GROUP_NAMES.values()
+        self.features = list(AMINO_ACID_GROUP_NAMES.values())
         for i, p in enumerate(self.proteins):
             entry_name = p.protein.entry_name
             for j, s in p.alignment.items():
@@ -640,7 +641,11 @@ class Alignment:
         for i, s in most_freq_aa.items():
             self.consensus[i] = OrderedDict()
             self.forced_consensus[i] = OrderedDict()
-            for p in sorted(s):
+            if i=='Custom':
+                sorted_res = sorted(s, key=lambda x: (x.split("x")[0], x.split("x")[1]))
+            else:
+                sorted_res = sorted(s)
+            for p in sorted_res:
                 r = s[p]
                 conservation = str(round(r[1]/num_proteins*100))
                 if len(conservation) == 1:
@@ -683,7 +688,11 @@ class Alignment:
             for segment, segment_num in self.aa_count.items():
                 self.amino_acid_stats[i].append([])
                 k = 0
-                for gn in sorted(segment_num):
+                if segment=='Custom':
+                    sorted_res = sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1]))
+                else:
+                    sorted_res = sorted(segment_num)
+                for gn in sorted_res:
                     aas = segment_num[gn]
                     self.amino_acid_stats[i][j].append([])
                     for aa, freq in aas.items():
@@ -705,7 +714,11 @@ class Alignment:
             for segment, segment_num in feature_count.items():
                 self.feature_stats[i].append([])
                 k = 0
-                for gn in sorted(segment_num):
+                if segment=='Custom':
+                    sorted_res = sorted(segment_num, key=lambda x: (x.split("x")[0], x.split("x")[1]))
+                else:
+                    sorted_res = sorted(segment_num)
+                for gn in sorted_res:
                     fs = segment_num[gn]
                     self.feature_stats[i][j].append([])
                     for f, freq in fs.items():
@@ -750,7 +763,6 @@ class Alignment:
                     self.proteins[i].identity = calc_values[0]
                     self.proteins[i].similarity = calc_values[1]
                     self.proteins[i].similarity_score = calc_values[2]
-                    print(protein, calc_values[0], calc_values[1], calc_values[2])
             else:
                 self.pairwise_similarity_normalized(self.proteins[0], self.proteins[i])
 
@@ -967,9 +979,12 @@ class AlignedReferenceTemplate(Alignment):
         self.alignment_dict = OrderedDict()
         self.code_dict = {'ICL1':'12x50','ECL1':'23x50','ICL2':'34x50'}
         self.changes_on_db = []
+        self.loop_partial_except_list = {'ICL1':[],'ECL1':[],'ICL2':[],'ECL2':[],'ECL2_1':['3UZA','3UZC','3RFM'],
+                                         'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':[],'ICL4':[]}
+        self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000}
         
     def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
-                             provide_similarity_table=None, main_pdb_array=None, provide_alignment=None):
+                             provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None):
         self.logger = logging.getLogger('homology_modeling')
         self.segment_labels = segments
         if len(str(reference_protein))==4:
@@ -983,13 +998,18 @@ class AlignedReferenceTemplate(Alignment):
             self.query_states = query_states
             self.order_by = order_by
             self.load_reference_protein(self.reference_protein)
-            self.load_proteins_by_structure()
+            if only_output_alignment!=None:
+                self.load_proteins([only_output_alignment])
+            else:
+                self.load_proteins_by_structure()
             self.load_segments(ProteinSegment.objects.filter(slug__in=segments))
             self.build_alignment()
             self.calculate_similarity()
             self.reference_protein = self.proteins[0]
             self.main_template_protein = None
             self.ordered_proteins = []
+            if only_output_alignment!=None:
+                return self.proteins
         if provide_main_template_structure==None:
             self.main_template_structure = None
             self.provide_main_template_structure = False
@@ -1003,14 +1023,23 @@ class AlignedReferenceTemplate(Alignment):
             self.provide_similarity_table = provide_similarity_table
         if main_pdb_array!=None:
             self.main_pdb_array = main_pdb_array
-        if 'TM' in segment_type: #and ('IC' not in segment_type or 'EC' not in segment_type):
+        if 'TM' in segment_type:
             self.similarity_table = self.create_helix_similarity_table()
         elif 'IC' in segment_type or 'EC' in segment_type and 'TM' not in segment_type:
             self.loop_table = OrderedDict()            
             self.similarity_table = self.create_loop_similarity_table()
         if self.main_template_structure==None:
             self.main_template_structure = self.get_main_template()
-            
+        
+    def local_pairwise_alignment(self, reference, template, segment):
+        '''
+        '''
+        self.load_reference_protein(reference)
+        self.load_proteins(template)
+        self.load_segments(ProteinSegment.objects.get(slug__in=segment))
+        self.build_alignment()
+        return self.enhance_alignment(self.proteins[0], self.proteins[1])
+
     def __repr__(self):
         return '<AlignedReferenceTemplate: Ref: {} ; Temp: {}>'.format(self.reference_protein.protein.entry_name, 
                                                                        self.main_template_structure)
@@ -1026,38 +1055,48 @@ class AlignedReferenceTemplate(Alignment):
             state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
             template_family).order_by('protein_conformation__protein__parent',
             'resolution').filter(pdb_code__index__in=["4IAQ","4IAR","4IB4","4NC3","2YDO","2YDV","3QAK","3REY","3RFM",
-                                                      "3UZA","3UZC","4EIY","4UHR","5G53","3VG9","5CXV","3UON","4MQS",
-                                                      "4MQT","4U15","4U16","5DSG","2Y00","2Y02","2Y03","2Y04","2YCW",
+                                                      "3UZA","3UZC","4EIY","4UHR","5IU4","5IU7","5IU8","5IUA","5IUB",
+                                                      "5K2A","5K2B","5K2C","5K2D","5G53","3VG9","5CXV","3UON","4MQS",
+                                                      "4MQT","4U15","4U16","5DSG","5F8U","2Y00","2Y02","2Y03","2Y04","2YCW",
                                                       "2YCZ","3ZPQ","3ZPR","4AMI","4AMJ","4BVN","4GPO","5A8E","2RH1",
                                                       "3D4S","3NY9","3P0G","3SN6","4LDE","4LDL","4LDO","4QKX","4YAY",
                                                       "4MBS","3ODU","3OE0","4RWS","3PBL","4PHU","3RZE","4Z34","4Z35",
-                                                      "4Z36","4BOU","4GRV","4N6H","4EJ4","4DJH","4DKL","5C1M","4EA3",
-                                                      "1U19","3DQB","3PQR","4J4Q","4ZWJ","2Z73","4ZJ8","4ZJC","4S0V",
+                                                      "4Z36","4BOU","4XEE","4XES","4GRV","4N6H","4EJ4","4DJH","4DKL","5C1M","4EA3","5DHG","5DHH",
+                                                      "1U19","3DQB","5DYS","5EN0","3PQR","4J4Q","4ZWJ","2Z73","4ZJ8","4ZJC","4S0V",
                                                       "4XNV","4XNW","4NTJ","4PXZ","4PY0","3VW7","3V2Y","1GZM","3NY8",
-                                                      "3NYA","3PDS","4ZUD","4RWD",
+                                                      "3NYA","3PDS","4ZUD","4RWD","5D6L","5JQH","5TGZ","5GLH","5GLI",
                                                       "4XT1","4K5Y","4Z9G","4L6R","5EE7","4OR2","4OO9","5CGC","5CGD",
-                                                      "4JKV","4N4W","4O9R","4QIM","4QIN"])
-       
+                                                      "4JKV","4N4W","5L7D","5L7I","4O9R","4QIM","4QIN","5T1A","5TVN",
+                                                      "5UIG","5T04","4XT3","5LWE","5UEN","5U09","5UNF","5UNG","5UNH",
+                                                      "5NDD","5NDZ","5NJ6","5TE3","5TE5","5UZ7","5VEX","5VEW","5XEZ",
+                                                      "5XF1"])
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
   
     def get_main_template(self):
         ''' Returns main template structure after checking for matching helix start and end positions.
         '''
+        i = 1
         try:
             for st in self.similarity_table:
-                if st.protein_conformation.protein.parent==self.ordered_proteins[1].protein:
-                    self.main_template_protein = self.ordered_proteins[1]
-                    if st.pdb_code.index=='4PHU':
-                        resis = Residue.objects.filter(protein_conformation=st.protein_conformation, 
-                                                       sequence_number__gte=2000)
-                        for r in resis:
-                            r.sequence_number = int(str(r.sequence_number)[1:])
-                            r.save()
-                            self.changes_on_db.append(r.sequence_number)
+                if st.pdb_code.index=='5LWE' and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
+                    i+=1
+                    continue
+                if st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
+                    self.main_template_protein = self.ordered_proteins[i]
+                    if st.pdb_code.index in self.seq_nums_overwrite_cutoff_dict:
+                        self.overwrite_db_seq_nums(st, self.seq_nums_overwrite_cutoff_dict[st.pdb_code.index])
                     return st
         except:
             pass
+
+    def overwrite_db_seq_nums(self, structure, cutoff):
+        resis = Residue.objects.filter(protein_conformation=structure.protein_conformation, 
+                                       sequence_number__gte=cutoff)
+        for r in resis:
+            r.sequence_number = int(str(r.sequence_number)[1:])
+            r.save()
+            self.changes_on_db.append(r.sequence_number)
 
     def create_helix_similarity_table(self):
         ''' Creates an ordered dictionary of structure objects, where templates are sorted by similarity and resolution.
@@ -1145,26 +1184,29 @@ class AlignedReferenceTemplate(Alignment):
                         main_temp_ECL2 = self.ECL2_slicer(main_temp_seq)
                         main_parent_ECL2 = self.ECL2_slicer(main_temp_parent)
                         rota = [x for x in Rotamer.objects.filter(structure=struct, residue__in=main_temp_ECL2[1]) if x.pdbdata.pdb.startswith('COMPND')==False]
+                        rota = [x for x in rota if x.pdbdata.pdb[21:22] in x.structure.preferred_chain]
                         if len(rota)==3:
                             temp_list_mid.append((struct, 3, similarity, float(struct.resolution), protein))  
                         if len(ref_ECL2[0])==len(main_temp_ECL2[0]) and len(main_temp_ECL2[0])==len(main_parent_ECL2[0]):
                             temp_list1.append((struct, len(main_temp_ECL2[0]), similarity, float(struct.resolution),protein))
-                        if len(ref_ECL2[0])!=len(main_temp_ECL2[0]) and len(main_temp_ECL2[2])==len(main_parent_ECL2[2]):
+                        if len(ref_ECL2[2])==len(main_temp_ECL2[2]) and len(main_temp_ECL2[2])==len(main_parent_ECL2[2]):
                             temp_list2.append((struct, len(main_temp_ECL2[2]), similarity, float(struct.resolution),protein))
 
                         # Allow for partial main loop template
                         if len(main_parent_ECL2[0])-1<=len(ref_ECL2[0])<=len(main_parent_ECL2[0])+1 and [i.sequence_number for i in main_temp_ECL2[0]]!=[i.sequence_number for i in main_parent_ECL2[0]]:
-                            if len(main_parent_ECL2[0])-len(main_temp_ECL2[0])<=len(main_parent_ECL2[0])/2:
+                            if abs(len(main_parent_ECL2[0])-len(main_temp_ECL2[0]))<=len(main_parent_ECL2[0])/2:
                                 temp_list1.append((struct, len(ref_ECL2[0]), 0, float(struct.resolution), protein))
                         if len(main_parent_ECL2[2])-1<=len(ref_ECL2[2])<=len(main_parent_ECL2[2])+1 and [i.sequence_number for i in main_temp_ECL2[2]]!=[i.sequence_number for i in main_parent_ECL2[2]]:
-                            if len(main_parent_ECL2[2])-len(main_temp_ECL2[2])<=len(main_parent_ECL2[2])/2:
+                            if abs(len(main_parent_ECL2[2])-len(main_temp_ECL2[2]))<=len(main_parent_ECL2[2])/2:
                                 temp_list2.append((struct, len(ref_ECL2[2]), 0, float(struct.resolution), protein))
+                        
                     else:
                         raise Exception()
                 except:
                     if len(main_temp_seq)==0:
                         continue
-                    if ((len(ref_seq)==len(main_temp_seq) and len(main_temp_seq)==len(main_temp_parent)) or 
+                    if ((len(ref_seq)==len(main_temp_seq) and len(main_temp_seq)==len(main_temp_parent) and 
+                        [i.sequence_number for i in main_temp_seq]==[i.sequence_number for i in main_temp_parent]) or 
                         self.segment_labels[0] in self.provide_alignment.reference_dict):
                         if len(main_temp_seq)!=len(main_temp_parent):
                             temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
@@ -1172,12 +1214,16 @@ class AlignedReferenceTemplate(Alignment):
                             similarity_table[self.main_template_structure] = self.provide_similarity_table[
                                                                                                 self.main_template_structure]
                             temp_list.append((struct, len(main_temp_seq), similarity, float(struct.resolution), protein))
-                        
                     # Allow for partial main loop template
                     elif (len(ref_seq)>=len(main_temp_parent) and len(main_temp_parent)>len(main_temp_seq) and 
-                          [i.sequence_number for i in main_temp_seq]!=[i.sequence_number for i in main_temp_parent] and
-                          self.segment_labels[0]!='ICL3'):
-                        temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
+                          [i.sequence_number for i in main_temp_seq]!=[i.sequence_number for i in main_temp_parent]):
+                        if x50_ref==False and len(ref_seq)!=len(main_temp_parent):
+                            continue
+                        if self.segment_labels[0]=='ICL3':
+                            if len(main_temp_parent)<=10:
+                                temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
+                        else:
+                            temp_list.append((struct, len(ref_seq), 0, float(struct.resolution), protein))
             else:
                 temp_length, temp_length1, temp_length2 = [],[],[]
                 try:
@@ -1188,9 +1234,7 @@ class AlignedReferenceTemplate(Alignment):
                                                       display_generic_number__label=dgn(first_after_gn,
                                                                                         struct.protein_conformation))
                     temp_length = alt_first_gn.sequence_number-alt_last_gn.sequence_number-1
-                    alt_seq = Residue.objects.filter(protein_conformation=struct.protein_conformation, 
-                                           sequence_number__in=list(range(alt_last_gn.sequence_number+1,
-                                                                          alt_first_gn.sequence_number)))
+                    alt_seq = Residue.objects.filter(protein_conformation=struct.protein_conformation, protein_segment__slug=self.segment_labels[0])
                     if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
                         alt_ECL2 = self.ECL2_slicer(alt_seq)
                         alt_rota = [x for x in Rotamer.objects.filter(structure=struct, residue__in=alt_ECL2[1]) if x.pdbdata.pdb.startswith('COMPND')==False]
@@ -1228,19 +1272,18 @@ class AlignedReferenceTemplate(Alignment):
                 if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
                     temp_list1.append((struct, temp_length1, similarity, float(struct.resolution), protein))
                     temp_list2.append((struct, temp_length2, similarity, float(struct.resolution), protein))
-        
         if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
-            ECL2_1 = self.order_sim_table(temp_list1, ref_ECL2[0], OrderedDict())
-            ECL2_mid = self.order_sim_table(temp_list_mid, ref_ECL2[1], OrderedDict(), x50_ref)
-            ECL2_2 = self.order_sim_table(temp_list2, ref_ECL2[2], OrderedDict())
+            ECL2_1 = self.order_sim_table(temp_list1, ref_ECL2[0], OrderedDict(), ECL2_part='_1')
+            ECL2_mid = self.order_sim_table(temp_list_mid, ref_ECL2[1], OrderedDict(), x50_ref, ECL2_part='_mid')
+            ECL2_2 = self.order_sim_table(temp_list2, ref_ECL2[2], OrderedDict(), ECL2_part='_2')
             self.loop_table = OrderedDict([('ECL2_1',ECL2_1),('ECL2_mid',ECL2_mid),('ECL2_2',ECL2_2)])
             if len(ECL2_mid)==0:
                 self.loop_table=None
             return self.loop_table
         else:
-            return self.order_sim_table(temp_list, ref_seq, similarity_table, x50_ref)
+            return self.order_sim_table(temp_list, ref_seq, OrderedDict(), x50_ref)
                     
-    def order_sim_table(self, temp_list, ref_seq, similarity_table, x50_ref=None):
+    def order_sim_table(self, temp_list, ref_seq, similarity_table, x50_ref=None, ECL2_part=''):
         alt_temps_gn = []
         if self.segment_labels[0]!='ECL2' or self.segment_labels[0]=='ECL2' and x50_ref==True:
             for entry in temp_list:
@@ -1262,8 +1305,16 @@ class AlignedReferenceTemplate(Alignment):
                 if self.revise_xtal==i[0].pdb_code.index.lower():
                     temp_list.append(i)
                     break
+            main_t = None
+            if self.revise_xtal.upper() in self.loop_partial_except_list[self.segment_labels[0]+ECL2_part]:
+                main_t = temp_list[0]
+                temp_list = []
+            main_t_added = False
             for i in combined:
                 if self.revise_xtal!=i[0].pdb_code.index.lower():
+                    if main_t!=None and main_t_added==False and i[2]==0:
+                        temp_list.append(main_t)
+                        main_t_added = True
                     temp_list.append(i)
             combined = temp_list
         for i in combined:
@@ -1409,4 +1460,14 @@ class ClosestReceptorHomolog():
         a.build_alignment()
         a.calculate_similarity(normalized=self.normalized)
         self.all_proteins = a.proteins
-        return a.proteins[1]
+        max_sim, max_id, max_i = 0, 0, 1
+        for i, p in enumerate(self.all_proteins):
+            if int(p.similarity)>max_sim:
+                max_sim = int(p.similarity)
+                max_id = int(p.identity)
+                max_i = i
+            elif int(p.similarity)==max_sim and int(p.identity)>max_id:
+                max_sim = int(p.similarity)
+                max_id = int(p.identity)
+                max_i = i
+        return a.proteins[max_i]

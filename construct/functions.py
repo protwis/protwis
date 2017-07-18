@@ -31,6 +31,7 @@ AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
 
 
 def fetch_pdb_info(pdbname,protein):
+    SIFT_exceptions = {'5GLI':[395,403], '5GLH':[395,401]}
     logger = logging.getLogger('build')
     #d = {}
     d = OrderedDict()
@@ -106,6 +107,7 @@ def fetch_pdb_info(pdbname,protein):
     # print(variants_mapping)
     # print("gpcrdb seq",len(d['wt_seq']),'uniport len',len(uniprot_seq))
     #ftp://ftp.ebi.ac.uk/pub/databases/msd/sifts/xml/1xyz.xml.gz
+    # Alternative : url = 'http://www.rcsb.org/pdb/files/$index.sifts.xml'
     url = 'ftp://ftp.ebi.ac.uk/pub/databases/msd/sifts/xml/$index.xml.gz'
     sifts = fetch_from_web_api(url, pdbname.lower(), cache_dir, xml = True)
     d['links'].append(Template(url).substitute(index=quote(str(pdbname.lower()), safe='')))
@@ -232,8 +234,23 @@ def fetch_pdb_info(pdbname,protein):
                                 seg_uniprot_ids.append(u_id)
                             uniprot_pos = int(node.attrib['dbResNum'])
                             uniprot_aa = node.attrib['dbResName']
+                            if pdbname == '5UZ7':
+                                #Special fix for 5UZ7 due to faulty annotation, there is an offset of 34 at the end of the isoforms
+                                if pos:
+                                    # print(uniprot_pos,d['wt_seq'][uniprot_pos-1-34],uniprot_aa,pos)
+                                    if uniprot_pos>452 and uniprot_aa==d['wt_seq'][uniprot_pos-1-34]:
+                                        #these are unmapped at this point, make sure the AA are the same, in case it gets fixed later
+                                        uniprot_pos = uniprot_pos-34
+                                        pos = uniprot_pos
+                                        # Assume we are talking about the non-observed residues
+                                        if uniprot_pos not in d['xml_not_observed']:
+                                            d['xml_not_observed'].append(uniprot_pos)
+                                    else:
+                                        uniprot_pos = int(pos)
+                                else:
+                                    receptor = False
                             # if receptor:
-                            #     print(receptor, uniprot_pos, pos,uniprot_aa, u_id,chain,node.attrib['dbResNum'],d['wt_seq'][uniprot_pos-1])
+                            #     print(receptor, uniprot_pos, pos,uniprot_aa, u_id,raw_u_id,chain,node.attrib['dbResNum'],d['wt_seq'][uniprot_pos-1])
                         elif source=='PDB' and node.attrib['dbResNum'].lstrip('-').isdigit(): #use instead of isinstance(node.attrib['dbResNum'], int):
                             pos = int(node.attrib['dbResNum'])
                             # print("PDB pos",pos)
@@ -251,6 +268,7 @@ def fetch_pdb_info(pdbname,protein):
                             if pos>max_pos: max_pos = pos
                             if pos<min_pos: min_pos = pos
                     elif pdb_aa and node.tag == '{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}residueDetail':
+                        # print(node.text)
                         if u_id!='N/A' and u_id not in d['construct_sequences']:
                             d['construct_sequences'][u_id] = OrderedDict()
                             d['construct_sequences'][u_id]['seq'] = ''
@@ -318,6 +336,7 @@ def fetch_pdb_info(pdbname,protein):
                 #                 d['mutations'].append({'mut':pdb_aa,'wt':wt_aa,'pos':pos,'type':'custom_maybe_wrong'})
 
                 if uniprot_pos:
+                    # print('hi')
                     pos_list.append(uniprot_pos) 
                     if receptor and uniprot_pos in pos_in_wt:
                         if uniprot_pos<len(d['wt_seq']):
@@ -372,6 +391,21 @@ def fetch_pdb_info(pdbname,protein):
                 ranges.append((group[0], group[-1]))
                 if (group[0], group[-1]) not in ranges:
                     ranges.append((group[0], group[-1]))
+                
+            if pdbname in SIFT_exceptions:
+                try:
+                    if ranges[0][1]==SIFT_exceptions[pdbname][0]:
+                        ranges=[(ranges[0][0],SIFT_exceptions[pdbname][1])]
+                        actually_present = list(range(max_pos+1,ranges[0][1]+1))
+                        seg_resid_list+=actually_present
+                        max_pos=SIFT_exceptions[pdbname][1]
+                except:
+                    pass
+            if len(seg_uniprot_ids)>0 and seg_uniprot_ids[0]=='Not_Observed' and 'actually_present' in locals():
+                if min_pos==SIFT_exceptions[pdbname][0]+1:
+                    min_pos=SIFT_exceptions[pdbname][1]+1
+                seg_resid_list = [i for i in seg_resid_list if i not in actually_present]
+                pos_in_wt = [i for i in pos_in_wt if i not in actually_present]
 
             mutations = None
 
@@ -418,13 +452,12 @@ def fetch_pdb_info(pdbname,protein):
         for k, g in groupby(enumerate(non_accounted), lambda x:x[0]-x[1]):
             group = list(map(itemgetter(1), g))
             d['non_accounted'].append((group[0], group[-1]))
-        if len(d['non_accounted']):
-            print("non_accounted",d['non_accounted'])
+        # if len(d['non_accounted']):
+        #     print("non_accounted",d['non_accounted'])
         d['deletions'] = []
         for k, g in groupby(enumerate(pos_in_wt), lambda x:x[0]-x[1]):
             group = list(map(itemgetter(1), g))
             d['deletions'].append({'start':group[0], 'end':group[-1], 'origin':'user'})
-
         d['not_observed'] = []
         if len(d['xml_not_observed']):
             # print(d['xml_not_observed'])
@@ -1014,33 +1047,3 @@ def convert_ordered_to_disordered_annotation(d):
         i+=1
 
     return d
-    # uniprot
-    # d['protein']
-    #     "auxiliary": {
-    #     "aux2"
-    #         "deletions": [
-    #     {
-    #         "origin": "user",
-    #         "end": "189",
-    #         "start": "1",
-    #         "type": "range"
-    #     },
-    #     {
-    #         "origin": "user",
-    #         "end": "787",
-    #         "start": "556",
-    #         "type": "range"
-    #     }
-    #        "mutations": [],
-    # "modifications": [
-    #     {
-    #         "remark": "NA",
-    #         "type": "Disulfide bond",
-    #         "position": [
-    #             "pair",
-    #             [
-    #                 "193",
-    #                 "213"
-    #             ]
-    #         ]
-    #     },
