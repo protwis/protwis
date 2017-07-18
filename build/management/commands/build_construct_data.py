@@ -47,15 +47,15 @@ class Command(BaseCommand):
         else:
             local_fill = False
 
-        try:
-            # self.purge_construct_data()
-            if not local_fill:
-                self.create_construct_data(filenames)
-            else:
-                self.create_construct_local_data()
-        except Exception as msg:
-            print("ERROR: "+str(msg))
-            self.logger.error(msg)
+        # try:
+        #     # self.purge_construct_data()
+        if not local_fill:
+            self.create_construct_data(filenames)
+        else:
+            self.create_construct_local_data()
+        # except Exception as msg:
+        #     print("ERROR: "+str(msg))
+        #     self.logger.error(msg)
 
 
     def purge_construct_data(self):
@@ -84,11 +84,10 @@ class Command(BaseCommand):
     def create_construct_local_data(self, filenames=False):
         self.logger.info('ADDING EXPERIMENTAL CONSTRUCT DATA')
 
-        #delete existing
-        self.purge_construct_data()
-
         # read source files
         if not filenames:
+            #delete existing if nothing specific is defined
+            self.purge_construct_data()
             filenames = os.listdir(self.construct_data_dir)
 
         for filename in sorted(filenames):
@@ -111,57 +110,56 @@ class Command(BaseCommand):
                 d = json.load(json_file)
                 add_construct(d)
 
-        structures = Structure.objects.all()
-
-        for s in structures:
-            pdbname = str(s)
-            try:
-                exists = Construct.objects.filter(structure__pdb_code__index=pdbname).exists()
-                if not exists:
-                    print(pdbname)
-                    protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
-                    d = fetch_pdb_info(pdbname,protein)
-                    add_construct(d)
-                else:
-                    print("Entry for",pdbname,"already there")
-            except:
-                print(pdbname,'failed')
+        if not filenames:
+            structures = Structure.objects.all()
+            for s in structures:
+                pdbname = str(s)
+                try:
+                    exists = Construct.objects.filter(structure__pdb_code__index=pdbname).exists()
+                    if not exists:
+                        print(pdbname)
+                        protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
+                        d = fetch_pdb_info(pdbname,protein)
+                        add_construct(d)
+                    else:
+                        print("Entry for",pdbname,"already there")
+                except:
+                    print(pdbname,'failed')
 
     def create_construct_data(self, filenames=False):
         self.logger.info('ADDING EXPERIMENTAL CONSTRUCT DATA')
 
-        self.purge_construct_data()
-
         # read source files
+        do_all = False
         if not filenames:
+            do_all = True
+            self.purge_construct_data()
             filenames = os.listdir(self.construct_data_dir)
 
         for filename in filenames:
             if filename[-4:]!='json':
                 continue
             filepath = os.sep.join([self.construct_data_dir, filename])
-            print('Adding '+filepath)
+            # print('Adding '+filepath)
             with open(filepath) as json_file:
                 d = json.load(json_file)
-
                 add_construct(d)
 
-        structures = Structure.objects.all()
-
-        for s in structures:
-            pdbname = str(s)
-            try:
-                exists = Construct.objects.filter(structure__pdb_code__index=pdbname).exists()
-                if not exists:
-                    print(pdbname)
-                    protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
-                    d = fetch_pdb_info(pdbname,protein)
-                    add_construct(d)
-                else:
-                    print("Entry for",pdbname,"already there")
-            except:
-                print(pdbname,'failed')
-
-
+        if do_all:
+            structures = Structure.objects.all()
+            for s in structures:
+                pdbname = str(s)
+                try:
+                    exists = Construct.objects.filter(structure__pdb_code__index=pdbname).exists()
+                    if not exists:
+                        print(pdbname)
+                        protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
+                        d = fetch_pdb_info(pdbname,protein)
+                        add_construct(d)
+                    else:
+                        pass
+                        # print("Entry for",pdbname,"already there")
+                except:
+                    print(pdbname,'failed')
 
         self.logger.info('COMPLETED CREATING EXPERIMENTAL CONSTRUCT DATA')

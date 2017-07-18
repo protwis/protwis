@@ -33,6 +33,50 @@
     font-weight: lighter;
   }
 
+    @media (min-width: 1600px){
+        #content {
+            width: 90%;
+        }
+    }
+
+  #possibilities td, #possibilities th {
+    text-align:center; 
+    vertical-align:middle;
+  }
+
+  .table-condensed{
+    font-size: 10px;
+  }
+
+  tr.error {
+    background-color: red;
+  }
+
+  .fadeMe {
+  background: #000; 
+  width:      100%;
+  height:     100%; 
+  z-index:    1001;
+  top:        0; 
+  left:       0; 
+  position:   fixed; 
+}
+#close {
+    padding:25px 35px;
+    background:#F00;
+    display: none;
+    position:   absolute;
+    top: 15px;
+    left: 15px;
+    cursor: pointer; cursor: hand;  
+}
+#fullscreensvg {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    cursor: pointer; cursor: hand;  
+    opacity: 0.8;
+}
   </style>
 
 <div class="modal bd-example-modal-lg" id="myModal"  tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -54,21 +98,20 @@
   </div>
 </div>
 
+<div id="dialog" title="Reset">
+  <p>You sure you want to reset this construct?</p>
+</div>
+
+<div class="row">
+  <div class="col-sm-8">
 <h2> Construct Design Tool  </h2>
 
 <p> This is a tool to help aid crystallographers design crystal constructs.<a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool1.mp4" type="button" class="videoLink btn btn-xs btn-default">
                           <span class="glyphicon glyphicon-film"></span>
                         </button></p>
 
-<p>
 Target: {{target.entry_name}} | 
-Class: {{class}}
-</p>
-
-<div id="dialog" title="Reset">
-  <p>You sure you want to reset this construct?</p>
-</div>
-
+Class: {{class}} | 
 {% if active_xtals  %}
   State: <div class="btn-group" data-toggle="buttons">
     <label class="btn btn-default active">
@@ -96,6 +139,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     <input type="radio" name="fusionpos" value="icl3" checked=""> ICL2
   </label>
   {% endif %}
+  <!-- <label class="btn btn-default">
+    <input type="radio" name="fusionpos" value="both"> Both
+  </label> -->
 
   <label class="btn btn-default">
     <input type="radio" name="fusionpos" value="None"> None
@@ -115,95 +161,169 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 <span id='load'>
 <span id=loadstatus>Please wait for the dataset to load</span>
 <span id='method_options' style='display: none;'>
-<div class="row">
-  <div class="col-sm-2">
-  Deletions:
-  </div>
-  <div class="col-sm-8">
-    <button type="button" id="nterm_button" class="btn btn-primary" onclick='showModal("N-term",tables["nterm"],"#nterm_sug");'>
-      N-term
-    </button>
-
-      {% if class == 'A'  or class == 'F' %}
-        <button type="button" id="icl3_start_button" class="btn btn-primary" onclick='showModal("ICL3 (Start)",tables["icl3_start"],"#icl3_sug_start");'>
-        ICL3
+    
+    <div class="row">
+      <div class="col-sm-2">
+      Mutations:
+      </div>
+      <div class="col-sm-8">
+        <button type="button" id="mutations_button" class="btn btn-primary" onclick='build_mutations();showModal("Thermostabilisation",tables["mutations"],"#mut_sug");'>
+          Thermostabilisation
         </button>
-      {% elif class == 'B' or class == 'C' %}
-        <button type="button" id="icl2_start_button" class="btn btn-primary" onclick='showModal("ICL2 (Start)",tables["icl2_start"],"#icl2_sug_start");'>
-        ICL2
+        <button type="button" id="removals_button" class="btn btn-primary" onclick='build_site_removals();showModal("Site removals",tables["site_removals"],"#site_sug");'>
+          Site Removal
         </button>
-      {% endif %}
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-2">
+      Other:
+      </div>
+      <div class="col-sm-8">
+        <button type="button" id="mutations_button" class="btn btn-primary" onclick='showModal("Custom",tables["custom"]);'>
+          Custom modification
+        </button>
+        <button type="button" id="removals_button" class="btn btn-primary" onclick='
+          modifications_overview("no refresh");showModal("Overview",tables["overview"]);'>
+          Current modifications
+        </button>
 
-    <button type="button" id="cterm_button" class="btn btn-primary" onclick='showModal("C-term",tables["cterm"],"#cterm_sug");'>
-      C-term
-    </button>
-  </div>
-</div>
-<div class="row">
-  <div class="col-sm-2">
-  Inserts:
-  </div>
-  <div class="col-sm-8">
-    <button type="button" id="other_inserts_button" class="btn btn-primary" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper();inserts_overview();'>
-      Manage
-    </button>
-  </div>
-</div>
-<div class="row">
-  <div class="col-sm-2">
-  Mutations:
-  </div>
-  <div class="col-sm-8">
-    <button type="button" id="mutations_button" class="btn btn-primary" onclick='build_mutations();showModal("Thermostabilisation",tables["mutations"],"#mut_sug");'>
-      Thermostabilisation
-    </button>
-    <button type="button" id="removals_button" class="btn btn-primary" onclick='build_site_removals();showModal("Site removals",tables["site_removals"],"#site_sug");'>
-      Site Removal
-    </button>
-  </div>
-</div>
-<div class="row">
-  <div class="col-sm-2">
-  Other:
-  </div>
-  <div class="col-sm-8">
-    <button type="button" id="mutations_button" class="btn btn-primary" onclick='showModal("Custom",tables["custom"]);'>
-      Custom modification
-    </button>
-    <button type="button" id="removals_button" class="btn btn-primary" onclick='
-      overlay_modifications();modifications_overview();showModal("Overview",tables["overview"]);'>
-      Current modifications
-    </button>
+        <button class="btn btn-info" onclick='exportToExcel();'>Export modifications</button>
+        <button class="btn btn-warning" onclick='auto_generate();''>Auto</button>
 
-    <button class="btn btn-info" onclick='exportToExcel();'>Export modifications</button>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-2" style="max-width: 300px;">
 
-  </div>
-</div>
-</span>
-<div class="row">
-  <div class="col-sm-12">
-  {{ target.get_snake_plot_no_buttons }}
-  </div>
-</div>
-<div class="row">
-  <div class="col-sm-12">
-    <div id="overview">
+    <div id="snakeplot_div">
+  <!--   <span id='close' <button class="btn btn-info btn-xs" onclick='fullscreensvg();'><span class="glyphicon glyphicon-fullscreen"></span></button></span> -->
+    <span id='fullscreensvg'><button id='fullscreenbutton' class="btn btn-info btn-xs" onclick='fullscreensvg();'><span class="glyphicon glyphicon-fullscreen"></span> Fullscreen </button></span>
+    {{ target.get_snake_plot_no_buttons }}
     </div>
   </div>
 </div>
+
+</span>
+<br><br>
+
+<table width=100%  id='possibilities' class='table table-bordered table-condensed'>
+<thead>
+<tr>
+  <th rowspan="2">No</th>
+  <th rowspan="2">Display snake-plot <!-- / mut scan / ref constr --></th>
+  <th rowspan="2">Add</th>
+  <th rowspan="2">
+  <button type="button" id="other_inserts_button" class="btn btn-primary btn-xs" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper("nterm");inserts_overview(true);'>
+          N-term Inserts
+  </button>
+  </th>
+  <th rowspan="1" colspan="1" class='possiblities_nterm'>
+
+    <button type="button" id="other_inserts_button" class="btn btn-primary btn-xs" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper("fusion");inserts_overview(true);'>
+      Fusion
+    </button>
+  </th>   
+  <th rowspan="1" colspan="3">
+  <button type="button" id="nterm_button" class="btn btn-primary btn-xs" onclick='build_nterm_menu();showModal("N-term",tables["nterm"],"#nterm_sug");'>
+      N-term truncation 
+    </button>
+    </th>
+  <th rowspan="1" colspan="3">
+    {% if class == 'A'  or class == 'F' %}
+        <button type="button" id="icl3_start_button" class="btn btn-primary btn-xs" onclick='build_icl3_menu();showModal("ICL3 (Start)",tables["icl3_start"],"#icl3_sug_start");'>
+        Fusion/Deletion site start (last kept Rec res)*
+        </button>
+      {% elif class == 'B' or class == 'C' %}
+        <button type="button" id="icl2_start_button" class="btn btn-primary btn-xs" onclick='build_icl2_menu();showModal("ICL2 (Start)",tables["icl2_start"],"#icl2_sug_start");'>
+        Fusion/Deletion site start (last kept Rec res)*
+        </button>
+      {% endif %}
+  
+  </th>
+  <th rowspan="1" colspan="1" class='possiblities_icl'>
+
+        <button type="button" id="other_inserts_button" class="btn btn-primary btn-xs" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper("fusion");inserts_overview(true);'>
+          Fusion
+        </button>
+  
+  </th>      
+  <th rowspan="1" colspan="3">
+
+    {% if class == 'A'  or class == 'F' %}
+        <button type="button" id="icl3_end_button" class="btn btn-primary btn-xs" onclick='build_icl3_menu();showModal("ICL3 (End)",tables["icl3_end"],"#icl3_sug_end");'>
+        Fusion/Deletion site end (first kept Rec res)*
+        </button>
+      {% elif class == 'B' or class == 'C' %}
+       <button type="button" id="icl2_end_button" class="btn btn-primary btn-xs" onclick='build_icl2_menu();showModal("ICL2 (End)",tables["icl2_end"],"#icl2_sug_start");'>
+        Fusion/Deletion site end (first kept Rec res)*
+        </button>
+      {% endif %}
+
+
+    </th>
+  <th rowspan="1" colspan="3">
+  <button type="button" id="cterm_button" class="btn btn-primary btn-xs" onclick='build_cterm_menu();showModal("C-term",tables["cterm"],"#cterm_sug");'>
+      C-term truncation
+    </button>
+    </th>
+  <th rowspan="2">
+  <button type="button" id="other_inserts_button" class="btn btn-primary btn-xs" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper("cterm");inserts_overview(true);'>
+          C-term Inserts
+  </button>
+  </th>
+</tr>
+<tr>
+  <th rowspan="1" class='possiblities_nterm'>N-term fusion***</th>
+  <!-- <th rowspan="1" class='possiblities_nterm'>N-term linker</th> -->
+  <th>N-term res kept rel. to TM1*</th>
+  <th>Pos</th>
+  <th>AA</th>
+  <th>BW**</th>
+  <th>Pos</th>
+  <th>AA</th>
+
+  {% if class == 'A'  or class == 'F' %}      
+    <!-- <th rowspan="1" class='possiblities_icl'>TM5-ICL3 linker (non-wt)</th> -->
+    <th rowspan="1" class='possiblities_icl'>Fusion<!-- ICL3 modification (Fusion / Deletion / Wt) --></th>
+    <!-- <th rowspan="1" class='possiblities_icl'>ICL3-TM6 linker (non-wt)</th> -->
+  {% elif class == 'B' or class == 'C' %}      
+    <!-- <th rowspan="1" class='possiblities_icl'>TM3-ICL2 linker (non-wt)</th> -->
+    <th rowspan="1" class='possiblities_icl'>Fusion<!-- ICL2 modification (Fusion / Deletion / Wt) --></th>
+    <!-- <th rowspan="1" class='possiblities_icl'>ICL2-TM4 linker (non-wt)</th> -->
+  {% endif %}
+
+  <th>BW**</th>
+  <th>Pos</th>
+  <th>AA</th>
+  <th>C-term res kept rel. to h8*</th>
+  <th>Pos</th>
+  <th>AA</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<div class="row">
+</div>
+
+
+
 <iframe id="my_iframe" style="display:none;"></iframe>
 {% endblock %}
 
 {% block addon_js %}
-    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
-    <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
-    <script src="{% static 'home/js/diagrams.js' %}"></script> 
-    <script type="text/javascript" charset="utf-8">
 
-    function upload() {
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/diagrams.js' %}"></script> 
+<script type="text/javascript" charset="utf-8">
+
+  function upload() {
       event.preventDefault();
       var data = new FormData($('#file-upload-form').get(0));
-      console.log(data);
+      // console.log(data);
       $.ajax({
           url: $(this).attr('action'),
           type: $(this).attr('method'),
@@ -212,7 +332,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           processData: false,
           contentType: false,
           success: function(data) {
-              console.log(data);
+              // console.log(data);
               modifications = new Array;
               resetModifications();
               $.each(data, function(i,mod){
@@ -220,7 +340,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                 if ( $.inArray(mod[0], ['Modifications # used','Short-hand','Sequence']) > -1 ) return true;
                 mod.splice(0, 1);
                 range_match = String(mod[2]).match(/([\d]+)-([\d]+)/);
-                console.log(range_match);
+                // console.log(range_match);
                 range = new Array;
                 if (range_match) {
                   // for (var i = range_match[1]; 1 > 0 ? i <= range_match[2] : i > range_match[2]; i += 1) {
@@ -235,13 +355,13 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                   range.push(parseInt(mod[2]));
                 }
 
-                if (mod[0]=='Insert') {
+                if (mod[0]=='Insert' || mod[0]=='fusion') {
                   insert_location = mod[4];
                   order_in_icl_insert = mod[5];
                   insert_type = mod[1].split(":")[0];
                   insert_sub_type = mod[1].split(":")[1];
                   if (mod[2]){
-                    console.log('ICLCUT INFO, SET IT!');
+                    // console.log('ICLCUT INFO, SET IT!');
                     icl_cut = mod[2];
                   }
                   inserts[insert_location].push({type: insert_type, name: insert_sub_type, order: order_in_icl_insert, sequence: mod[8]});
@@ -249,13 +369,14 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
                 if (mod[9]!="yes"){
                   mod[9]="no";
                 }
-                modi = {method: mod[1], type: mod[0], to: mod[7], from:mod[6], range: range, info: mod[3], fixed: mod[9]};
+                modi = {method: mod[1], type: mod[0], to: mod[7], from:mod[6], range: range, info: mod[3], fixed: mod[9],extra: mod[10]};
+                console.log(modi);
                 modifications.push(modi);
               });
-
+              console.log(modifications);
               rebuild_insert_order();
-              overlay_modifications();
               modifications_overview();
+              // overlay_modifications();
           }
       });
       return false;
@@ -316,6 +437,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     var icl_cut = 0; //track where an ICL cut/insert starts to use for where to start ICL inserts
     var inserts = new Array;
     var possible_combinations = 1;
+    var table_rows = new Array;
+    var possible = new Array; //track the actual combinations
+    var ICL_min = {{ICL_min|safe}}; // array to track min values of ICL2 and ICL3
+    var ICL_max = {{ICL_max|safe}}; // array to track max values of ICL2 and ICL3
     inserts['fusion'] = [];
     inserts['cterm'] = [];
     inserts['nterm'] = [];
@@ -345,6 +470,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     info_text['sites'] = '<p class=info_text>The tool recognizes possible site motifs. These can be attempted to be removed using the following mutations.</p>';
     info_text['custom'] = '<p class=info_text>Use options below to insert custom mutations or truncations not suggested by tool. You will be asked to confirm modification.</p>';
     info_text['current'] = '<p class=info_text>See current modifications below. These will be included if you export to excel.<br> If there are several modfications chosen for the same form of deletion then you can either generate multiple construct sequences with combinations of the choices. Alternatively you can fix to a chosen modification by ticking the Fix box.<br> In the same fashion mutations can be fixed or used to make multiple sequences</p>';
+    info_text['inserts_general'] = '<p class=info_text>See current inserts below. For inserts in N- or C-term you can change the order they come in. If you choose several fusion proteins, they will be used for combinations.</p>';
 
 
 
@@ -400,7 +526,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       }
     }
 
-    other_inserts_dropdown = "Please see <a href='http://files.gpcrdb.org/Insert_sequences.xlsx'>here</a> for exact sequences used in inserts. They are based on sequences used in published crystals.<br><table><tr class='fusion_site_inserts'><th colspan=2 id=fusion_text>Fusion Protein</th></tr><tr class='fusion_site_inserts'><td colspan=2>"+fusion_protein_dropdown + "</td></tr><tr><th colspan=2>Other inserts</th></tr>";
+    other_inserts_dropdown = "Please see <a href='http://files.gpcrdb.org/Insert_sequences.xlsx'>here</a> for exact sequences used in inserts. They are based on sequences used in published crystals.<br><table><tr class='fusion_inserts fusion fusion_site_inserts'><th colspan=2 id=fusion_text>Fusion Protein</th></tr><tr class='fusion_inserts fusion fusion_site_inserts'><td colspan=2>"+fusion_protein_dropdown + "</td></tr>";
     // other_inserts_dropdown += `<select id="insert_type_where"  class="form-control">
     //               <option value="" >Please select Type</option>
     //               <option value="nterm">N-term</option>
@@ -409,8 +535,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     //             </select>`;
     // other_inserts_dropdown += "<table>"; 
     var segment_pretty = ['N-term','FusionSite','C-term']
-     $.each(['nterm','fusion','cterm'], function(key,segment) {
-    other_inserts_dropdown += "<tr class='"+segment+"_site_inserts'><th width=75>"+segment_pretty[key] + "</th><td>";
+     $.each(['nterm','fusionsite','cterm'], function(key,segment) {
+    other_inserts_dropdown += "<tr class='fusion_inserts "+segment+" "+segment+"_site_inserts'><th width=75>"+segment_pretty[key] + "</th><td>";
     other_inserts_dropdown += `<select id="`+segment+`_insert_type" name="protein_type" class='form-control'>
                   <option value="" >Please select Type</option>
                   <option value="`+segment+`_signal">Signal Peptide</option>
@@ -516,6 +642,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     function resetAll() {
       modifications = new Array;
+      inserts['fusion'] = [];
+      inserts['cterm'] = [];
+      inserts['nterm'] = [];
       resetModifications();
       modifications_overview();
     }
@@ -545,7 +674,17 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     }
 
-    function inserts_helper() {
+    function inserts_helper(position_insert) {
+
+      if (typeof(position_insert)!=='undefined'){
+        current_position_insert = position_insert;
+        $(".fusion_inserts").hide();
+        $(".fusion_inserts."+current_position_insert).show();
+      } else {
+        // allow all
+        current_position_insert = false;
+        $(".fusion_inserts").show();
+      }
 
       fusionpos = $('input:radio[name=fusionpos]:checked').val();
 
@@ -557,7 +696,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       $("#fusion_text").html("Select the Fusion Protein to add in "+fusionpos_pretty);
 
       if (fusionpos == 'None') {
-        console.log("REMOVE FUSION OPTIONS");
+        // console.log("REMOVE FUSION OPTIONS");
         $(".fusion_site_inserts").hide();
       }
 
@@ -586,7 +725,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           this_id = "#"+$(this).attr("id");
           this_segment = $(this).attr("id").split("_")[0]
 
-          console.log(this_segment);
+          // console.log(this_segment);
           $("."+this_segment+"_insert_type").hide();
 
           insert_type = $( this_id+" option:selected" ).val();
@@ -601,22 +740,22 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             // return if linker, as there is not supposed to be change event
             return 
           }
-          console.log("#"+insert_type);
+          // console.log("#"+insert_type);
           $("#"+insert_type).change(function () {
-            console.log("changed #"+insert_type);
-            console.log("changed #"+$(this).attr("id"));
+            // console.log("changed #"+insert_type);
+            // console.log("changed #"+$(this).attr("id"));
             changed_id = $(this).attr("id");
             this_segment = $(this).attr("id").split("_")[0]
             $("#"+this_segment+"_insert_other").hide();
             sub_insert_type = $( "#"+changed_id+" option:selected" ).val();
-            console.log("changed to "+sub_insert_type)
+            // console.log("changed to "+sub_insert_type)
             if (sub_insert_type=='other'){
                 $("#"+this_segment+"_insert_submit").hide();
                 $("#"+this_segment+"_insert_other").show();
-                console.log("show " +"#"+this_segment+"insert_other");
+                // console.log("show " +"#"+this_segment+"insert_other");
             } else if (sub_insert_type) {
                 $("#"+this_segment+"_insert_submit").show();
-                console.log("show submit for " +"#"+this_segment+"_insert_submit");
+                // console.log("show submit for " +"#"+this_segment+"_insert_submit");
             } else {
                 $("#"+this_segment+"_insert_submit").hide();
             }
@@ -633,7 +772,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         });
         $("#nterm_insert_submit").add('#fusion_insert_submit').add('#cterm_insert_submit')
           .click(function() {
-            console.log("PRESSED");
+            // console.log("PRESSED");
             this_segment = $(this).attr("id").split("_")[0]
             insert_location = this_segment;
             insert_type = $( "#"+this_segment+"_insert_type option:selected" ).val();
@@ -712,6 +851,28 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     });
   }
 
+  function fullscreensvg() {
+    if ($( "#snakeplot_div" ).hasClass( "fadeMe" )) {
+        $("#snakeplot_div").removeClass("fadeMe");
+        $("#fullscreenbutton").addClass("btn-xs");
+        $("#close").hide();
+    } else {
+        $("#snakeplot_div").addClass("fadeMe");
+        $("#fullscreenbutton").removeClass("btn-xs");
+        $("#close").show();
+    }
+
+  }
+
+  $(document).keyup(function(e) {
+     if (e.keyCode == 27) { // escape key maps to keycode `27`
+      if ($( "#snakeplot_div" ).hasClass( "fadeMe" )) {
+        $("#snakeplot_div").removeClass("fadeMe");
+        $("#close").hide();
+      }
+    }
+});
+
   function getSortedKeys_advanced(obj) {
 
     var keys = []; for(var key in obj) keys.push(key);
@@ -743,7 +904,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           $.each(pdbs, function(pdb, vals){
             // Do checks!
             if (state==vals[3]) {
-              if (fusionpos==vals[4] || (fusionpos=='None' && vals[4]!='nterm') || (fusionpos!='nterm' && vals[4]=='None') || 1==1) { //include all data regardless of fusion
+              if (fusionpos==vals[4] || (fusionpos=='None' && vals[4]!='nterm') || (fusionpos!='nterm' && vals[4]=='None') ) { //|| 1==1 include NOT all data regardless of fusion
                 // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
                 // TABLE
                 if(!show_table[vals[2]]) { show_table[vals[2]] = {'gn': vals[2], 'levels':[], 'levels_num': [0,0,0,0], 'proteins': [],'pdbs': [], 'hits':0, 'fusion_proteins':[], 'fusion_proteins_counts':{}}; }
@@ -780,10 +941,21 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         })
         level_num += 1;
       }) 
+      // console.log('check existing nterm!');
+      var existing_nterms = [];
+      $.each(modifications, function(key,val) {
+        if (val['method']=='n-term') existing_nterms.push(parseInt(val['extra']));
+      });
+
+      export_list['nterm'] = [];
 
       var items_table = [info_text['nterm']];
-      items_table.push( "Custom: <input type='text' id='custom_nterm' placeholder='From Helix 1'><input type=button value=Add onclick='custom_nterm()'>");
-      items_table.push( "<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>Freq</th><th>Levels</th><th id=fusion_search>Fusion proteins</th><th>Use</th></tr></thead><tbody>");
+      items_table.push( "Custom: <input type='text' id='custom_nterm' placeholder='From Helix 1'> or <input type='text' id='custom_nterm_pos' placeholder='Position'><input type=button value=Add onclick='custom_nterm()'>");
+      if (fusionpos=='nterm') {
+        items_table.push( "<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>AA</th><th>Freq</th><th>Levels</th><th id=fusion_search>Fusion proteins</th><th>Use</th></tr></thead><tbody>");
+      } else {
+        items_table.push( "<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>AA</th><th>Freq</th><th>Levels</th><th>Use</th></tr></thead><tbody>");
+      }
       $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
         val = show_table[pos];
         t_fusion = [];
@@ -791,16 +963,31 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         $.each(keysSorted, function(i,key) {
           t_fusion.push(key+'['+val['fusion_proteins_counts'][key]+']');
         })
+        seq_pos = {{residues.TM1.0.sequence_number}}-(pos);
+        if (!(seq_pos in residues_pos)) {
+          seq_pos = "N/A";
+          aa = "";
+        } else {
+          aa = residues_pos[seq_pos][0];
+        }
+        selected_row = "";
+        if ($.inArray( parseInt(pos), existing_nterms )!==-1 ) selected_row = "checked";
+        fusion_cols = "";
+        if (fusionpos=='nterm') fusion_cols = "<td>"+t_fusion+"</td>";
 
-        temp = "<tr val='"+pos+"'><td>"+pos+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='nterm_tm1(this)' from='"+val['pdbs']+"' value='"+pos+"' from=''>Apply</a></tr>";
+        temp = "<tr val='"+pos+"'><td>"+pos+"</td><td>" + aa + "" + seq_pos +"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td>"+fusion_cols+"<td><input type=checkbox id='nterm_sug_"+pos+"'  onclick='nterm_tm1(this)' from='"+val['pdbs']+"' value='"+pos+"' "+selected_row+"></tr>";
         items_table.push( temp );
-        export_list['nterm'].push([pos,val['hits'],val['levels'],val['fusion_proteins']])
+        export_list['nterm'].push([pos,val['hits'],val['levels'],val['fusion_proteins'],val['pdbs']])
       });
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
       tables['nterm'] = result;
       $("#nterm_button").html("N-term ("+Object.keys(show_table).length+")");
       // $("#ModalBody").html(result);
+    }
+
+    function nterm_helper() {
+      build_nterm_menu();
     }
 
     function build_cterm_menu() {
@@ -847,14 +1034,29 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         level_num += 1;
       }) 
 
+      var existing_cterms = [];
+      $.each(modifications, function(key,val) {
+        if (val['method']=='c-term') existing_cterms.push(parseInt(val['extra']));
+      });
+      console.log('existing_cterms',existing_cterms);
+      export_list['cterm'] = [];
       var items_table = [info_text['cterm']];
-      items_table.push( "Custom: <input type='text' id='custom_cterm' placeholder='From Helix 8'><input type=button value=Add onclick='custom_cterm()'>");
-      items_table.push("<table id=cterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix8 End</th><th>Freq</th><th>Levels</th><th>Use</th></tr></thead><tbody>");
+      items_table.push( "Custom: <input type='text' id='custom_cterm' placeholder='From Helix 8'> or <input type='text' id='custom_cterm_pos' placeholder='Position'><input type=button value=Add onclick='custom_cterm()'>");
+      items_table.push("<table id=cterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix8 End</th><th>AA</th><th>Freq</th><th>Levels</th><th>Use</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
         val = show_table[pos];
-        temp = "<tr><td>"+(pos)+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td><a href='#' onclick='cterm(this)' from='"+val['pdbs']+"' value='"+pos+"' from=''>Apply</a></tr>";
+        seq_pos = {{residues.Cterm.0.sequence_number}}+parseInt(pos)-1;
+        if (!(seq_pos in residues_pos)) {
+          seq_pos = "N/A";
+          aa = "";
+        } else {
+          aa = residues_pos[seq_pos][0];
+        }
+        selected_row = "";
+        if ($.inArray( parseInt(pos), existing_cterms )!==-1 ) selected_row = "checked";
+        temp = "<tr><td>"+(pos)+"</td><td>" + aa + "" + seq_pos +"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td><input type=checkbox id='cterm_sug_"+pos+"'  onclick='cterm(this)' from='"+val['pdbs']+"' value='"+pos+"' "+selected_row+"></tr>";
         items_table.push( temp );
-        export_list['cterm'].push([pos,val['hits'],val['levels']])
+        export_list['cterm'].push([pos,val['hits'],val['levels'],val['pdbs']])
       });
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
@@ -949,9 +1151,20 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         level_num += 1;
       }) 
 
+      var existing_icl_start = [];
+      $.each(modifications, function(key,val) {
+        if (val['method']=='ICL3_start') existing_icl_start.push(parseInt(val['extra']));
+      });
+      var existing_icl_end = [];
+      $.each(modifications, function(key,val) {
+        if (val['method']=='ICL3_end') existing_icl_end.push(parseInt(val['extra']));
+      });
+
+      export_list['icl3_start'] = [];
+      export_list['icl3_end'] = [];
        var items_table = [info_text['icl3_start']];
       items_table.push( "Custom: 5.<input type='text' id='custom_icl' placeholder='Generic number'><input type=button value=Add onclick='custom_icl(3)'>");
-      items_table.push("<table id=icl3_sug_start class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Freq</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>");
+      items_table.push("<table id=icl3_sug_start class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
         val = show_table_start[pos];
         t_fusion = [];
@@ -959,21 +1172,20 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         $.each(keysSorted, function(i,key) {
           t_fusion.push(key+'['+val['fusion_proteins_counts'][key]+']');
         })
-        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl3_start(this)' from='"+val['pdbs']+"' tm5='"+val['start']+"'  tm6='"+val['end']+"' from=''>Apply</a></tr>";
+        seq_pos = {{residues_gn.5x50.sequence_number}}-(-val['start']);
+        aa = residues_pos[seq_pos][0];
+        selected_row = "";
+        if ($.inArray( parseInt(val['start']), existing_icl_start )!==-1 ) selected_row = "checked";
+        temp = "<tr><td>"+pos+"</td><td>" + aa + "" + seq_pos +"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td>"+t_fusion+"</td><td><input type=checkbox onclick='icl3_start(this)' from='"+val['pdbs']+"' tm5='"+val['start']+"'  tm6='"+val['end']+"' from='' "+selected_row+"></tr>";
         items_table.push( temp );
-        export_list['icl3_start'].push([pos,val['hits'],val['levels'],val['pdbs']]) //,val['start'],val['end']
+        export_list['icl3_start'].push([pos,val['hits'],val['levels'],val['pdbs'],val['start']]) //,val['start'],val['end']
       });
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
       tables['icl3_start'] = result;
-      {% if class == 'A' and residues.ICL3|length < 9 %}
-      if (fusionpos!='icl3'){
-        tables['icl3_start'] = "Loop is too short to require a truncation without a fusion protein";
-      }
-      {% endif %}
       var items_table = [info_text['icl3_end']];
       items_table.push( "Custom: 6.<input type='text' id='custom_icl_end' placeholder='Generic number'><input type=button value=Add onclick='custom_icl_end(3)'>");
-      items_table.push( "<div id=icl3_start_info></div><table id=icl3_sug_end class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Freq</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>");
+      items_table.push( "<div id=icl3_start_info></div><table id=icl3_sug_end class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
         val = show_table_end[pos];
         t_fusion = [];
@@ -981,14 +1193,26 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         $.each(keysSorted, function(i,key) {
           t_fusion.push(key+'['+val['fusion_proteins_counts'][key]+']');
         })
-        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl3(this)' from='"+val['pdbs']+"' tm5='"+val['start']+"'  tm6='"+val['end']+"' from=''>Apply</a></tr>";
+        seq_pos = {{residues_gn.6x50.sequence_number}}-(val['end']);
+        aa = residues_pos[seq_pos][0];
+        selected_row = "";
+        if ($.inArray( parseInt(val['end']), existing_icl_end )!==-1 ) selected_row = "checked";
+        temp = "<tr><td>"+pos+"</td><td>" + aa + "" + seq_pos +"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><input type=checkbox onclick='icl3(this)' from='"+val['pdbs']+"' tm5='"+val['start']+"'  tm6='"+val['end']+"' from='' "+selected_row+"></tr>";
         items_table.push( temp );
-        export_list['icl3_end'].push([pos,val['hits'],val['levels'],val['pdbs']]) //,val['start'],val['end']
+        export_list['icl3_end'].push([pos,val['hits'],val['levels'],val['pdbs'],val['end']]) //,val['start'],val['end']
       });
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
       tables['icl3_end'] = result;
       
+      {% if class == 'A' and residues.ICL3|length < 9 %}
+      if (fusionpos!='icl3'){
+        tables['icl3_start'] = "Loop is too short to require a truncation without a fusion protein";
+        tables['icl3_end'] = "Loop is too short to require a truncation without a fusion protein";
+        export_list['icl3_start'] = [];
+        export_list['icl3_end'] = [];
+      }
+      {% endif %}
 
       $("#icl3_start_button").html("ICL3 ("+Object.keys(show_table_start).length+")");
     }
@@ -1076,9 +1300,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       }) 
 
 
+      export_list['icl2_start'] = [];
+      export_list['icl2_end'] = [];
        var items_table = [info_text['icl2_start']];
       items_table.push( "Custom: 3.<input type='text' id='custom_icl' placeholder='Generic number'><input type=button value=Add onclick='custom_icl(2)'>");
-      items_table.push("<table id=icl2_sug_start class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Freq</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>");
+      items_table.push("<table id=icl2_sug_start class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
         val = show_table_start[pos];
         t_fusion = [];
@@ -1086,9 +1312,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         $.each(keysSorted, function(i,key) {
           t_fusion.push(key+'['+val['fusion_proteins_counts'][key]+']');
         })
-        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl2_start(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from=''>Apply</a></tr>";
+        seq_pos = {{residues_gn.3x50.sequence_number}}-(-val['start']);
+        aa = residues_pos[seq_pos][0];
+        temp = "<tr><td>"+pos+"</td><td>" + aa + "" + seq_pos +"</td><td>"+val['hits']+"</td><td>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl2_start(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from=''>Apply</a></tr>";
         items_table.push( temp );
-        export_list['icl2_start'].push([pos,val['hits'],val['levels'],val['pdbs']]) //,val['start'],val['end']
+        export_list['icl2_start'].push([pos,val['hits'],val['levels'],val['pdbs'],val['start']]) //,val['start'],val['end']
       });
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
@@ -1096,7 +1324,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
        var items_table = [info_text['icl2_end']];
       items_table.push( "Custom: 4.<input type='text' id='custom_icl_end' placeholder='Generic number'><input type=button value=Add onclick='custom_icl_end(2)'>");
-      items_table.push("<div id=icl2_start_info></div><table  id=icl2_sug_end class='table-striped table table-bordered'><thead><tr><th>Range</th><th>Freq</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>");
+      items_table.push("<div id=icl2_start_info></div><table  id=icl2_sug_end class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
         val = show_table_end[pos];
         t_fusion = [];
@@ -1104,9 +1332,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         $.each(keysSorted, function(i,key) {
           t_fusion.push(key+'['+val['fusion_proteins_counts'][key]+']');
         })
-        temp = "<tr><td>"+pos+"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl2(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from=''>Apply</a></tr>";
+        seq_pos = {{residues_gn.4x50.sequence_number}}-(val['end']);
+        aa = residues_pos[seq_pos][0];
+        temp = "<tr><td>"+pos+"</td><td>" + aa + "" + seq_pos +"</td><td>"+val['hits']+"</td><td data-order='"+i+"'>"+val['levels']+"</td><td>"+t_fusion+"</td><td><a href='#' onclick='icl2(this)' from='"+val['pdbs']+"' tm3='"+val['start']+"'  tm4='"+val['end']+"' from=''>Apply</a></tr>";
         items_table.push( temp );
-        export_list['icl2_end'].push([pos,val['hits'],val['levels'],val['pdbs']]) //,val['start'],val['end']
+        export_list['icl2_end'].push([pos,val['hits'],val['levels'],val['pdbs'],val['end']]) //,val['start'],val['end']
       });
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
@@ -1280,6 +1510,102 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     // ON CLICK FUNCTIONS
 
+    function auto_generate() {
+      console.log('reset!');
+      var n_terms = 1;
+      var icl_start = 2;
+      var icl_end = 2;
+      var c_terms = 1;
+
+      //reset current
+      resetAll();
+      // console.log('nterms!');
+      for(var i = 0; i < n_terms; i++) {
+        // console.log(i,export_list['nterm'][i]);
+        if (i>=export_list['nterm'].length) break;
+        entry = export_list['nterm'][i];
+        from = entry[4];
+        n_val = entry[0];
+        until = {{residues.TM1.0.sequence_number}}-n_val-1;
+        range = new Array;
+        for (var ii = 1; 1 > 0 ? ii <= until : ii > until; ii += 1) {
+            range.push(ii);
+        }
+        modi = {method: "n-term", type: "deletion", from: from, range: range, info: n_val+" from TM1 start. Based on "+from.join(", "), fixed: 'no', extra: n_val};
+        modifications.push(modi);
+      } 
+
+      // console.log('¨cterms!');
+      for(var i = 0; i < c_terms; i++) {
+        // console.log(i,export_list['cterm'][i]);
+        if (i>=export_list['cterm'].length) break;
+        entry = export_list['cterm'][i];
+        from = entry[3];
+        n_val = entry[0];
+        start = {{residues.Cterm.0.sequence_number}}+parseInt(n_val);
+        {% with residues.Cterm|last as last %}
+         end =   {{ last.sequence_number }};
+        {% endwith %}
+        range = new Array;
+        for (var ii = start; 1 > 0 ? ii <= end : ii > end; ii += 1) {
+            range.push(ii);
+        }
+        modi = {method: "c-term", type: "deletion", from: from, range: range, info: "Based on "+from.join(", "), fixed: 'no', extra: n_val};
+        modifications.push(modi);
+      } 
+
+
+      // console.log('ICL_start');
+
+      {% if class == 'A' or class == 'F' %}
+      ICL_name = "icl3";
+      {% elif class == 'B' or class == 'C' %}
+      ICL_name = "icl2";
+      {% endif %}
+      for(var i = 0; i < icl_start; i++) {
+        // console.log(i,export_list[ICL_name+'_start'][i]);
+        if (i>=export_list[ICL_name+'_start'].length) break;
+        entry = export_list[ICL_name+'_start'][i];
+        from = entry[3];
+        {% if class == 'A' or class == 'F' %}
+        icl3_del_start = {{residues_gn.5x50.sequence_number}}-(-entry[4])+1;
+        modi = {method: "ICL3_start", type: "deletion", from: from, range: [icl3_del_start], info: "Based on "+from, fixed: 'no', extra: entry[4]};
+        {% elif class == 'B' or class == 'C' %}
+        icl2_del_start = {{residues_gn.3x50.sequence_number}}-(-entry[4])+1;
+        modi = {method: "ICL2_start", type: "deletion", from: from, range: [icl2_del_start], info: "Based on "+from, fixed: 'no', extra: entry[4]};
+        {% endif %}
+        
+        modifications.push(modi);
+      } 
+
+
+      // console.log('ICL_end');
+
+      {% if class == 'A' or class == 'F' %}
+      ICL_name = "icl3";
+      {% elif class == 'B' or class == 'C' %}
+      ICL_name = "icl2";
+      {% endif %}
+      for(var i = 0; i < icl_end; i++) {
+        // console.log(i,export_list[ICL_name+'_end'][i]);
+        if (i>=export_list[ICL_name+'_end'].length) break;
+        entry = export_list[ICL_name+'_end'][i];
+        from = entry[3];
+        {% if class == 'A' or class == 'F' %}
+        end = {{residues_gn.6x50.sequence_number}}-entry[4]-1;
+        modi = {method: "ICL3_end", type: "deletion", from: from, range: [end], info: "Based on "+from, fixed: 'no', extra: entry[4]};
+        {% elif class == 'B' or class == 'C' %}
+        end = {{residues_gn.4x50.sequence_number}}-entry[4]-1;
+        modi = {method: "ICL2_end", type: "deletion", from: from, range: [end], info: "Based on "+from, fixed: 'no', extra: entry[4]};
+        {% endif %}
+        
+        modifications.push(modi);
+      } 
+
+      // finall overview
+      modifications_overview();
+    }
+
     function reset_fixed(modi_type) {
 
       $.each(modifications, function(key,val) {
@@ -1292,76 +1618,115 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
 
     function nterm_tm1(elem) {
+      checked = $(elem).prop("checked");
+      // console.log('checked',checked);
       n_val = $(elem).attr("value");
-      from = $(elem).attr("from").split(',');
-      // until = {{residues_gn.1x50.sequence_number}}-n_val;
+      if (checked) {
+        from = $(elem).attr("from").split(',');
+        // until = {{residues_gn.1x50.sequence_number}}-n_val;
 
-      until = {{residues.TM1.0.sequence_number}}-n_val;
+        until = {{residues.TM1.0.sequence_number}}-n_val-1;
 
-      range = new Array;
-      for (var i = 1; 1 > 0 ? i <= until : i > until; i += 1) {
-          range.push(i);
+        range = new Array;
+        for (var i = 1; 1 > 0 ? i <= until : i > until; i += 1) {
+            range.push(i);
+        }
+        // reset_fixed("deletion_n-term");
+        // $('#myModal').modal('hide');
+        // $(elem).parent().parent().delay(100).fadeOut().fadeIn();
+        // $(elem).css('font-weight', 'bold');
+        modi = {method: "n-term", type: "deletion", from: from, range: range, info: n_val+" from TM1 start. Based on "+from.join(", "), fixed: 'no', extra: n_val};
+        modifications.push(modi);
+      } else {
+        id_to_remove = false;
+        $.each(modifications, function(key,val) {
+        if (val['method']=='n-term') {
+          if (parseInt(val['extra'])==parseInt(n_val)) id_to_remove = key;
+        }
+        });
+        if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
       }
-      reset_fixed("deletion_n-term");
-      // $('#myModal').modal('hide');
-      $(elem).parent().parent().delay(100).fadeOut().fadeIn();
-      // $(elem).css('font-weight', 'bold');
-      modi = {method: "n-term", type: "deletion", from: from, range: range, info: n_val+" from TM1 start. Based on "+from.join(", "), fixed: 'yes'};
-      modifications.push(modi);
-      overlay_modifications();
       modifications_overview();
+      // overlay_modifications();
     }
 
 
     function custom_nterm(elem) {
       n_val = $("#custom_nterm").val();
+      n_val_pos = $("#custom_nterm_pos").val();
       from = ["custom"];
       // until = {{residues_gn.1x50.sequence_number}}-n_val;
-
-      until = {{residues.TM1.0.sequence_number}}-n_val;
+      if (n_val_pos) {
+        until = n_val_pos-1;
+        n_val = {{residues.TM1.0.sequence_number}}-n_val_pos;
+      } else {
+        until = {{residues.TM1.0.sequence_number}}-n_val-1;
+      }
 
       range = new Array;
       for (var i = 1; 1 > 0 ? i <= until : i > until; i += 1) {
           range.push(i);
       }
 
-      reset_fixed("deletion_n-term");
+      // reset_fixed("deletion_n-term");
       // $('#myModal').modal('hide');
-      modi = {method: "n-term", type: "deletion", from: from, range: range, info: "Custom: "+n_val+" from TM1 start", fixed: 'yes'};
+      modi = {method: "n-term", type: "deletion", from: from, range: range, info: "Custom: "+n_val+" from TM1 start", fixed: 'no', extra: n_val};
       modifications.push(modi);
-      overlay_modifications();
       modifications_overview();
+      // overlay_modifications();
+      $("#custom_nterm").val('');
+      $("#custom_nterm_pos").val('');
     }
 
     function cterm(elem) {
+      checked = $(elem).prop("checked");
       n_val = $(elem).attr("value");
-      from = $(elem).attr("from").split(',');
-      // start = {{residues_gn.8x50.sequence_number}}-n_val;
-      start = {{residues.Cterm.0.sequence_number}}+parseInt(n_val);
-      {% with residues.Cterm|last as last %}
-       end =   {{ last.sequence_number }};
-      {% endwith %}
+      if (checked) {
+        from = $(elem).attr("from").split(',');
+        // start = {{residues_gn.8x50.sequence_number}}-n_val;
+        start = {{residues.Cterm.0.sequence_number}}+parseInt(n_val);
+        {% with residues.Cterm|last as last %}
+         end =   {{ last.sequence_number }};
+        {% endwith %}
 
-      range = new Array;
-      for (var i = start; 1 > 0 ? i <= end : i > end; i += 1) {
-          range.push(i);
+        range = new Array;
+        for (var i = start; 1 > 0 ? i <= end : i > end; i += 1) {
+            range.push(i);
+        }
+
+        // reset_fixed("deletion_c-term");
+        // $('#myModal').modal('hide');
+        // $(elem).parent().parent().delay(100).fadeOut().fadeIn();
+        modi = {method: "c-term", type: "deletion", from: from, range: range, info: "Based on "+from.join(", "), fixed: 'no', extra: n_val};
+        modifications.push(modi);
+      } else {
+        id_to_remove = false;
+        $.each(modifications, function(key,val) {
+        if (val['method']=='c-term') {
+          if (parseInt(val['extra'])==parseInt(n_val)) id_to_remove = key;
+        }
+        });
+        if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
+
       }
-
-      reset_fixed("deletion_c-term");
-      // $('#myModal').modal('hide');
-      $(elem).parent().parent().delay(100).fadeOut().fadeIn();
-      modi = {method: "c-term", type: "deletion", from: from, range: range, info: "Based on "+from.join(", "), fixed: 'yes'};
-      modifications.push(modi);
-      overlay_modifications();
       modifications_overview();
+      // overlay_modifications();
     }
 
     function custom_cterm(elem) {
       n_val = $("#custom_cterm").val();
-      from = ["custom"];
+      from = ["custom"];      
+      n_val_pos = $("#custom_cterm_pos").val();
+      // until = {{residues_gn.1x50.sequence_number}}-n_val;
+      if (n_val_pos) {
+        start = n_val_pos-1;
+        n_val = n_val_pos-{{residues.Cterm.0.sequence_number}};
+      } else {
+        start = {{residues.Cterm.0.sequence_number}}+parseInt(n_val)+1;
+      }
       // until = {{residues_gn.1x50.sequence_number}}-n_val;
 
-      start = {{residues.Cterm.0.sequence_number}}+parseInt(n_val);
+      start = {{residues.Cterm.0.sequence_number}}+parseInt(n_val)+1;
       {% with residues.Cterm|last as last %}
        end =   {{ last.sequence_number }};
       {% endwith %}
@@ -1371,12 +1736,12 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           range.push(i);
       }
 
-      reset_fixed("deletion_c-term");
+      // reset_fixed("deletion_c-term");
       $('#myModal').modal('hide');
-      modi = {method: "c-term", type: "deletion", from: from, range: range, info: "Custom: "+n_val+" from TM8 end", fixed: 'yes'};
+      modi = {method: "c-term", type: "deletion", from: from, range: range, info: "Custom: "+n_val+" from TM8 end", fixed: 'no', extra: n_val};
       modifications.push(modi);
-      overlay_modifications();
       modifications_overview();
+      // overlay_modifications();
     }
 
     var icl3_del_start = 0;
@@ -1387,13 +1752,22 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       icl_del_start = $("#custom_icl").val();
       if (icl_number=='3'){
         icl3_del_start =parseInt(icl_del_start)-50;
+        icl_del_start = {{residues_gn.5x50.sequence_number}}-(-parseInt(icl_del_start))+1-50;
+        method = 'ICL3_start';
       } else if (icl_number=='2'){
         icl2_del_start =parseInt(icl_del_start)-50;
+        icl_del_start = {{residues_gn.3x50.sequence_number}}-(-parseInt(icl_del_start))+1-50;
+        method = 'ICL2_start';
       }
       icl_start_from = "Custom";
 
-      showModal("ICL"+icl_number+" (End)",tables["icl"+icl_number+"_end"],"#icl"+icl_number+"_sug_end");
-      $("#icl"+icl_number+"_start_info").html("Start selected: ."+(parseInt(icl_del_start)) );
+      // showModal("ICL"+icl_number+" (End)",tables["icl"+icl_number+"_end"],"#icl"+icl_number+"_sug_end");
+      // $("#icl"+icl_number+"_start_info").html("Start selected: ."+(parseInt(icl_del_start)) );
+
+      modi = {method: method, type: "deletion", from: icl_start_from, range: [icl_del_start], info: "Based on "+icl_start_from, fixed: 'no',extra : icl_del_start};
+      modifications.push(modi);
+      modifications_overview();
+      // overlay_modifications();
 
     }
 
@@ -1402,95 +1776,148 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       icl_del_end = $("#custom_icl_end").val();
       // make it be positions from 50
       icl_del_end =50-parseInt(icl_del_end);
-      console.log("distance "+icl_del_end);
+      // console.log("distance "+icl_del_end);
 
       from = "Custom";
       if (icl_number=="3") {
         end = {{residues_gn.6x50.sequence_number}}-icl_del_end;
-        start = {{residues_gn.5x50.sequence_number}}-(-icl3_del_start);
-        icl_cut = start;
       } else if (icl_number=="2") {
         end = {{residues_gn.4x50.sequence_number}}-icl_del_end;
-        start = {{residues_gn.3x50.sequence_number}}-(-icl2_del_start);
-        icl_cut = start;
-
-      }
-      // console.log(start+" "+end);
-
-      range = new Array;
-      for (var i = start; 1 > 0 ? i < end : i > end; i += 1) {
-          range.push(i);
       }
 
-      reset_fixed("deletion_ICL"+icl_number);
-      modi = {method: "ICL"+icl_number, type: "deletion", from: from, range: range, info: from, fixed: 'yes'};
+      // reset_fixed("deletion_ICL"+icl_number);
+      modi = {method: "ICL"+icl_number+"_end", type: "deletion", from: from, range: [end], info: from, fixed: 'yes'};
       modifications.push(modi);
-      overlay_modifications();
       modifications_overview();
-      $('#myModal').modal('hide');
+      // overlay_modifications();
+      // $('#myModal').modal('hide');
 
     }
 
     function icl3_start(elem) {
-      icl3_del_start = $(elem).attr("tm5");
-      icl_start_from = $(elem).attr("from");
+      checked = $(elem).prop("checked");
+      if (checked) {
+        icl_start_from = $(elem).attr("from");
+        icl3_del_start = {{residues_gn.5x50.sequence_number}}-(-$(elem).attr("tm5"))+1;
+        // showModal("ICL3 (End)",tables["icl3_end"],"#icl3_sug_end");
+        // $("#icl3_start_info").html("Start selected: 5."+(50+parseInt(icl3_del_start)) );
+        modi = {method: "ICL3_start", type: "deletion", from: icl_start_from, range: [icl3_del_start], info: "Based on "+icl_start_from, fixed: 'no', extra: $(elem).attr("tm5")};
+        console.log('ENTER ICL3 START');
+        modifications.push(modi);
+      } else {
+        id_to_remove = false;
+        $.each(modifications, function(key,val) {
+        if (val['method']=='ICL3_start') {
+          if (parseInt(val['extra'])==parseInt($(elem).attr("tm5"))) id_to_remove = key;
+        }
+        });
+        if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
 
-      showModal("ICL3 (End)",tables["icl3_end"],"#icl3_sug_end");
-      $("#icl3_start_info").html("Start selected: 5."+(50+parseInt(icl3_del_start)) );
-
+      }
+      modifications_overview();
+      // overlay_modifications();
+      // $('#myModal').modal('hide');
     }
 
     function icl3(elem) {
-      from = icl_start_from+","+$(elem).attr("from");
-      from = Array.from(new Set(from.split(',')));
-      end = {{residues_gn.6x50.sequence_number}}-$(elem).attr("tm6");
-      start = {{residues_gn.5x50.sequence_number}}-(-icl3_del_start);
-      icl_cut = start;
-      // console.log(start+" "+end);
+      checked = $(elem).prop("checked");
+      if (checked) {
+        // from = icl_start_from+","+$(elem).attr("from");
+        // from = Array.from(new Set(from.split(',')));
+        icl_start_from = $(elem).attr("from");
+        end = {{residues_gn.6x50.sequence_number}}-$(elem).attr("tm6")-1;
+        // start = {{residues_gn.5x50.sequence_number}}-(-icl3_del_start);
+        // icl_cut = start;
+        // console.log(start+" "+end);
 
-      range = new Array;
-      for (var i = start; 1 > 0 ? i < end : i > end; i += 1) {
-          range.push(i);
+        // range = new Array;
+        // for (var i = start; 1 > 0 ? i < end : i > end; i += 1) {
+        //     range.push(i);
+        // }
+
+        // reset_fixed("deletion_ICL3");
+        //modi = {method: "ICL3", type: "deletion", from: from, range: range, info: "Based on "+from.join(", "), fixed: 'yes'};
+        modi = {method: "ICL3_end", type: "deletion", from: icl_start_from, range: [end], info: "Based on "+icl_start_from, fixed: 'no',extra: $(elem).attr("tm6")};
+        modifications.push(modi);
+      } else {
+        id_to_remove = false;
+        $.each(modifications, function(key,val) {
+        if (val['method']=='ICL3_end') {
+          if (parseInt(val['extra'])==parseInt($(elem).attr("tm6"))) id_to_remove = key;
+        }
+        });
+        if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
+
       }
-
-      reset_fixed("deletion_ICL3");
-      modi = {method: "ICL3", type: "deletion", from: from, range: range, info: "Based on "+from.join(", "), fixed: 'yes'};
-      modifications.push(modi);
-      overlay_modifications();
       modifications_overview();
-      $('#myModal').modal('hide');
+      // overlay_modifications();
+      // $('#myModal').modal('hide');
     }
 
 
     var icl2_del_start = 0;
     function icl2_start(elem) {
-      icl2_del_start = $(elem).attr("tm3");
-      icl_start_from = $(elem).attr("from");
+      checked = $(elem).prop("checked");
+      if (checked) {
 
-      showModal("ICL2 (End)",tables["icl2_end"],"#icl2_sug_end");
-      $("#icl2_start_info").html("Start selected: 3."+(50+parseInt(icl2_del_start)) );
+        icl2_del_start = {{residues_gn.3x50.sequence_number}}-(-$(elem).attr("tm3"))+1;
+        icl_start_from = $(elem).attr("from");
+
+        // showModal("ICL2 (End)",tables["icl2_end"],"#icl2_sug_end");
+        // $("#icl2_start_info").html("Start selected: 3."+(50+parseInt(icl2_del_start)) );
+        modi = {method: "ICL2_start", type: "deletion", from: icl_start_from, range: [icl2_del_start], info: "Based on "+icl_start_from, fixed: 'no', extra: $(elem).attr("tm3")};
+        modifications.push(modi);
+      } else {
+        id_to_remove = false;
+        $.each(modifications, function(key,val) {
+        if (val['method']=='ICL2_start') {
+          if (parseInt(val['extra'])==parseInt($(elem).attr("tm3"))) id_to_remove = key;
+        }
+        });
+        if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
+
+      }
+      modifications_overview();
+      // overlay_modifications();
+      // $('#myModal').modal('hide');
 
     }
 
     function icl2(elem) {
-      from = icl_start_from+$(elem).attr("from");
-      from = Array.from(new Set(from.split(',')));
+      checked = $(elem).prop("checked");
+      if (checked) {
+        // from = icl_start_from+$(elem).attr("from");
+        // from = Array.from(new Set(from.split(',')));
 
-      end = {{residues_gn.4x50.sequence_number}}-$(elem).attr("tm4");
-      start = {{residues_gn.3x50.sequence_number}}-(-icl2_del_start);
-      icl_cut = start;
-      // console.log(start+" "+end);
+        // end = {{residues_gn.4x50.sequence_number}}-$(elem).attr("tm4");
+        // start = {{residues_gn.3x50.sequence_number}}-(-icl2_del_start);
+        // icl_cut = start;
+        // // console.log(start+" "+end);
 
-      range = new Array;
-      for (var i = start; 1 > 0 ? i < end : i > end; i += 1) {
-          range.push(i);
+        // range = new Array;
+        // for (var i = start; 1 > 0 ? i < end : i > end; i += 1) {
+        //     range.push(i);
+        // }
+
+        from = $(elem).attr("from");
+        end = {{residues_gn.4x50.sequence_number}}-$(elem).attr("tm4")-1;
+
+        reset_fixed("deletion_ICL2");
+        modi = {method: "ICL2_end", type: "deletion", from: from, range: [end], info: "Based on "+from, fixed: 'no', extra: $(elem).attr("tm4")};
+        modifications.push(modi);
+      } else {
+        id_to_remove = false;
+        $.each(modifications, function(key,val) {
+        if (val['method']=='ICL2_end') {
+          if (parseInt(val['extra'])==parseInt($(elem).attr("tm4"))) id_to_remove = key;
+        }
+        });
+        if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
+
       }
-      reset_fixed("deletion_ICL2");
-      modi = {method: "ICL2", type: "deletion", from: from, range: range, info: "Based on "+from.join(", "), fixed: 'yes'};
-      modifications.push(modi);
-      overlay_modifications();
       modifications_overview();
-      $('#myModal').modal('hide');
+      // overlay_modifications();
+      // $('#myModal').modal('hide');
     }
 
     function custom_del(confirm) {
@@ -1516,8 +1943,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         }
         modi = {method: label, type: "deletion", to: to, range: range, info: "Custom deletion. Reason:"+reason, fixed: 'yes'};
         modifications.push(modi);
-        overlay_modifications();
         modifications_overview();
+        // overlay_modifications();
         $('#confirm_cus_del').html('Added '+label);
         pos = $('#custom_del_end').val('');
         to = $('#custom_del_start').val('');
@@ -1542,8 +1969,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         range.push(pos);
         modi = {method: label+" "+gn, type: "mutation", to: to, range: range, info: "Custom mutation. Reason:"+reason, fixed: 'yes'};
         modifications.push(modi);
-        overlay_modifications();
         modifications_overview();
+        // overlay_modifications();
         $('#confirm_cus_mut').html('Added '+label);
         pos = $('#custom_pos').val('');
         to = $('#custom_mut').val('');
@@ -1551,12 +1978,52 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       }
     }
 
+
+    function change_fusionpos(){
+      fusionpos = $('input:radio[name=fusionpos]:checked').val();
+      // console.log(fusionpos);
+      if (fusionpos == 'nterm') {
+        // nterm
+        $(".possiblities_icl").hide();
+        $(".possiblities_nterm").show();
+        $("#icl3_start_button").html("Deletion site start (last kept Rec res)*");
+        $("#icl2_start_button").html("Deletion site start (last kept Rec res)*");
+        $("#icl2_end_button").html("Deletion site end (first kept Rec res)*");
+        $("#icl3_end_button").html("Deletion site end (first kept Rec res)*");
+      } else if (fusionpos =='None') {
+        // None
+        $(".possiblities_nterm").hide();
+        $(".possiblities_icl").hide();
+        $("#icl3_start_button").html("Deletion site start (last kept Rec res)*");
+        $("#icl2_start_button").html("Deletion site start (last kept Rec res)*");
+        $("#icl2_end_button").html("Deletion site end (first kept Rec res)*");
+        $("#icl3_end_button").html("Deletion site end (first kept Rec res)*");
+      } else if (fusionpos =='both') {
+        // None
+        $(".possiblities_nterm").show();
+        $(".possiblities_icl").show();
+        $("#icl3_start_button").html("Fusion site start (last kept Rec res)*");
+        $("#icl2_start_button").html("Fusion site start (last kept Rec res)*");
+        $("#icl2_end_button").html("Fusion site end (first kept Rec res)*");
+        $("#icl3_end_button").html("Fusion site end (first kept Rec res)*");
+
+      } else {
+        // ICL
+        $(".possiblities_nterm").hide();
+        $(".possiblities_icl").show();
+        $("#icl3_start_button").html("Fusion site start (last kept Rec res)*");
+        $("#icl2_start_button").html("Fusion site start (last kept Rec res)*");
+        $("#icl2_end_button").html("Fusion site end (first kept Rec res)*");
+        $("#icl3_end_button").html("Fusion site end (first kept Rec res)*");
+      }
+    }
+
     function add_fusion(elem){
 
       fusion = $( "#fusion_choice option:selected" ).val();
 
-      console.log($(elem).parent());
-      console.log(fusion);
+      // console.log($(elem).parent());
+      // console.log(fusion);
 
       range = new Array;
       range.push("");
@@ -1614,7 +2081,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       // insert = {method: insert_type+":"+insert_sub_type, type: "Insert", range: range, info: "", order: order_in_icl_insert, insert_location: insert_location};
       // modifications.push(insert);
       // modifications_overview();
-      console.log(inserts);
+      // console.log(inserts);
       inserts_overview();
 
 
@@ -1660,18 +2127,18 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           })
         }
       } else if (direction == "down"){
-        console.log('move '+order+' down'+(order+1));
+        // console.log('move '+order+' down'+(order+1));
         if ((order+1)<inserts[location].length) { //dont go too far
-          console.log('move '+order+' down');
+          // console.log('move '+order+' down');
           $.each(inserts[location], function(key,val) {
             valorder = parseInt(val['order']);
-            console.log(val);
+            // console.log(val);
             if (valorder==order) { //this is the one to replace
               val['order'] += 1;
             } else if (valorder==(order+1)) { //this is the one to replace
               val['order'] -= 1;
             }
-            console.log(val);
+            // console.log(val);
           })
         }
       }
@@ -1690,7 +2157,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       // });
       for(var i = 0; i < modifications.length; i++) {
           type =  modifications[i]['type'];
-          if (type == 'Fusion' || type == 'Insert' ){
+          if (type == 'fusion' || type == 'Insert' ){
             modifications.splice(i, 1);
               i--;
           }
@@ -1703,9 +2170,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         })
         $.each(inserts[segment], function(key,val) {
           val['order'] = key;
-          console.log("segment"+segment);
-          console.log(val);
-          console.log("icl_cut"+icl_cut);
+          // console.log("segment"+segment);
+          // console.log(val);
+          // console.log("icl_cut"+icl_cut);
           if (segment=='fusion' && icl_cut) {
             range = icl_cut;
           } else if (val['range']) {
@@ -1716,14 +2183,15 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           if (fusionpos =='None' ||  fusionpos =='nterm') {
             range = "";
           }
-
-          insert = {method: val['type']+":"+val['name'], type: "Insert", range: [range], info: "", order: val['order'], insert_location: segment, sequence: val['sequence']};
-          console.log('CHECK INSERT' + insert);
+          modi_type = 'Insert';
+          if (val['type']=='fusion') modi_type = 'fusion'
+          insert = {method: val['type']+":"+val['name'], type: modi_type, range: [range], info: "", order: val['order'], insert_location: segment, sequence: val['sequence']};
+          // console.log('CHECK INSERT' + insert);
           modifications.push(insert);
-          console.log(modifications);
+          // console.log(modifications);
         });
       });
-
+      console.log('reorder done');
     }
 
     function mut(elem) {
@@ -1737,16 +2205,16 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       origin = $(elem).parent().attr("origin");
 
 
-      console.log(origin);
+      // console.log(origin);
 
       range = new Array;
       range.push(pos);
 
 
-      modi = {method: wt+pos+to+" "+gn, type: "mutation", to: to, range: range, info: "Based on: "+origin.split(',').join(', ')};
+      modi = {method: wt+pos+to+" "+gn, type: "mutation", to: to, range: range, info: "Based on: "+origin.split(',').join(', '), fixed: 'yes'};
       modifications.push(modi);
-      overlay_modifications();
       modifications_overview();
+      // overlay_modifications();
       $(elem).parent().parent().delay(100).fadeOut().fadeIn();
     }
 
@@ -1774,8 +2242,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       modifications.push(modi);
       }
 
-      overlay_modifications();
       modifications_overview();
+      // overlay_modifications();
       $(elem).parent().parent().delay(100).fadeOut().fadeIn();
     }
 
@@ -1793,17 +2261,15 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       modi = {method: wt+pos+to + " Palmitoylation site removal", type: "mutation", to: to, range: range, info: "Based on "+origin};
       modifications.push(modi);
 
-      overlay_modifications();
       modifications_overview();
+      // overlay_modifications();
       $(elem).parent().parent().delay(100).fadeOut().fadeIn();
     }
 
-    function modifications_overview() {
-      console.log("Start modifications_overview");
+    function modifications_overview(no_refresh) {
+      console.log("Start modifications_overview",no_refresh);
 
       rebuild_insert_order();
-      overlay_modifications();
-      make_combinations();
 
       // $("#overview").html("");
       tables["overview"] = [];
@@ -1812,7 +2278,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       console.log(modifications);
       modifications.sort(function(a, b) {
 
-          console.log(a.type);
           var o1 = a.type.toLowerCase();
           var o2 = b.type.toLowerCase();
 
@@ -1835,8 +2300,12 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           if (q1 > q2) return 1;
         })
 
+      if (typeof(no_refresh)==='undefined') {
+        make_combinations();
+        overlay_modifications();
+      }
       $.each(modifications, function(key,val) {
-
+        // console.log(val);
         type = val['type'];
         range = val['range'];
         method = val['method'];
@@ -1871,7 +2340,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           range = val['range'][0]+" - "+val['range'][val['range'].length - 1];
         }
 
-        if (type == 'Fusion' || type == 'Insert' ) {
+        if (type == 'fusion' || type == 'Insert' ) {
           range = val['insert_location']+":"+val['order'];
         }
 
@@ -1904,20 +2373,27 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     }
 
 
-    function inserts_overview() {
-      console.log("Start inserts_overview");
-
+    function inserts_overview(initial) {
+      // console.log("Start inserts_overview");
       // $("#overview").html("");
+
+      position = current_position_insert;
+      console.log('current pos',position,current_position_insert)
+
       tables["inserts"] = [];
-      tables["inserts"].push(info_text['current'] + "<table class='table-striped table table-bordered'><tr><th>Segment</th><th>Type</th><th>Subtype</th><th>Sequence</th><th>Order</th></tr>");
+      tables["inserts"].push(info_text['inserts_general'] + "<table class='table-striped table table-bordered'><tr><th>Type</th><th>Subtype</th><th>Sequence</th><th>Order</th></tr>");
       $.each(['nterm','fusion','cterm'], function(key,segment) {
 
+        // if specific segment, only show those
+        if (position!==false){
+          if (segment!=position) return;
+        }
         //console.log(segment);
         inserts[segment].sort(function(a, b) {
             return a.order - b.order
         })
         $.each(inserts[segment], function(key2,val) {
-          console.log(val);
+          // console.log(val);
           type = val['type'];
           subtype = val['name'];
           order = val['order'];
@@ -1925,8 +2401,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           if (sequence.length>18) {
             sequence = sequence.substring(0, 16)+"...";
           }
-
-          row =  "<tr><td>"+segment_pretty[key]+"</td><td>"+type+"</td><td>"+subtype+"</td><td>"+sequence+" <a href=# onclick=edit_sequence('"+segment+"','"+order+"');><span class='glyphicon glyphicon-edit'></span></a></td><td>"+order+" <a href=# onclick=change_insert('up','"+segment+"','"+order+"');><span class='glyphicon glyphicon-arrow-up'></span></a> <a href=# onclick=change_insert('down','"+segment+"','"+order+"');><span class='glyphicon glyphicon-arrow-down'></a> <a href=# onclick=remove_insert('"+segment+"','"+order+"');><span class='glyphicon glyphicon-remove-sign'></a> </td></tr>";
+          //<td>"+segment_pretty[key]+"</td>
+          row =  "<tr><td>"+type+"</td><td>"+subtype+"</td><td>"+sequence+" <a href=# onclick=edit_sequence('"+segment+"','"+order+"');><span class='glyphicon glyphicon-edit'></span></a></td><td>"+order+" <a href=# onclick=change_insert('up','"+segment+"','"+order+"');><span class='glyphicon glyphicon-arrow-up'></span></a> <a href=# onclick=change_insert('down','"+segment+"','"+order+"');><span class='glyphicon glyphicon-arrow-down'></a> <a href=# onclick=remove_insert('"+segment+"','"+order+"');><span class='glyphicon glyphicon-remove-sign'></a> </td></tr>";
           tables["inserts"].push(row);
 
         });
@@ -1934,9 +2410,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       }) 
       tables["inserts"].push("</table>");
 
-      overlay_modifications();
-
-      tables["inserts"].push("Sequence: "+sequence_short);
+      if (initial!=true) {
+          modifications_overview();
+      }
+      if ($('.snakechoice:checked').length) tables["inserts"].push("Sequence: "+export_list['sequences'][$('.snakechoice:checked').val()][1]);
 
       tables["inserts"] = tables["inserts"].join( "" );
       $("#inserts_table").html(tables["inserts"]);
@@ -1952,17 +2429,20 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     function make_combinations() {
 
       // groups that can only have on choice -- so if any is fixed, then ignore the rest
-      unique_groups = {"deletion_c-term":[0,0,[],[]],"deletion_n-term":[0,0,[],[]],"deletion_ICL2":[0,0,[],[]],"deletion_ICL3":[0,0,[],[]],"mutation":[0,0,[],[],[]]};
+      unique_groups = {"deletion_c-term":[0,0,[],[]],"deletion_n-term":[0,0,[],[]],"deletion_ICL2_start":[0,0,[],[]],"deletion_ICL2_end":[0,0,[],[]],"deletion_ICL3_start":[0,0,[],[]],"deletion_ICL3_end":[0,0,[],[]],"mutation":[0,0,[],[],[]],"fusion":[0,0,[],[],[]]};
       //0 is combination options
       //1 is amount of fixed in this type (normally 1 but more for mutations)
       //2 is the key that is fixed
       //3 is the options to ignore from making
       //4 is the mutations that are fixed, to differenciate the ones that are combi
 
-      combination_groups = [[],[],[],[],[]];
+      combination_groups = [[],[],[],[],[],[]];
 
       $.each(modifications, function(key,val) {
           fix_type = val['type']+"_"+val['method'];
+          if (val['type'] == 'fusion') {
+            fix_type="fusion";
+          }
           val['ignored'] = "false";
           if (fix_type in unique_groups) {
             if(val['fixed']=='yes') {
@@ -1992,7 +2472,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           }
       });
 
-      // console.log(unique_groups);
+      console.log(unique_groups);
       possible_combinations = 1;
       modifications_to_do = []
       $.each(unique_groups, function(key,val) {
@@ -2005,9 +2485,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             modifications_to_do.push([val[2]]);
           } else {
             // add the combination possibilities to its own array
-            if (val[2]) {
+            if (val[2].length) {
+              console.log('add mutations',val[1],"fixed",val[0],"combi");
               modifications_to_do.push(val[2]);
-              possible_combinations *= val[0];
+              if (val[0]) possible_combinations *= val[0];
             }
 
             $.each(val[4], function(key,val) {
@@ -2034,28 +2515,162 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
 
       possible = allPossibleCases(modifications_to_do);
-      console.log("Do comb");
+      console.log("Do comb",possible);
+      // console.log(possible);
       // console.log(modifications_to_do);
       // console.log(possible);
       export_list['sequences'] = [];
+      table_rows = [];
+      // console.log('start generation');
       $.each(possible, function(key,val) {
         // ensure it is a string
         val = String(val);
         generate_sequence(val);
       });
-      console.log(export_list['sequences']);
+      // console.log('done generation');
+      build_table_rows();
+      // console.log(export_list['sequences']);
+    }
+
+    function build_table_rows() {
+
+       $("#possibilities > tbody").html("");
+       // console.log('table rows',table_rows.length);
+       $.each(table_rows, function(key,val) {
+            tr_class = '';
+          icl_end_pos = false;
+          icl_start_pos = false;
+          if (val["nterm_pos"]){
+            n_val = val["nterm_pos"]
+            nterm_pos = {{residues.TM1.0.sequence_number}}-n_val;
+            if (nterm_pos>0) {
+              nterm_aa = residues_pos[nterm_pos][0];
+            } else {
+              nterm_aa = "N/A";
+            }
+            nterm_cols = "<td>"+n_val+"</td><td>"+nterm_pos+"</td><td>"+nterm_aa+"</td>";
+          } else {
+            nterm_cols = "<td></td><td></td><td></td>";
+          }
+
+          if (val["cterm_pos"]){
+            c_val = val["cterm_pos"]
+            cterm_pos = {{residues.Cterm.0.sequence_number}}+parseInt(c_val)-1;
+
+            if (cterm_pos-1>residues_pos.length) {
+              cterm_aa = "N/A";
+            } else {
+              cterm_aa = residues_pos[cterm_pos][0];
+            }
+
+            cterm_cols = "<td>"+c_val+"</td><td>"+cterm_pos+"</td><td>"+cterm_aa+"</td>";
+          } else {
+            cterm_cols = "<td></td><td></td><td></td>";
+          }
+
+          if (val["icl3_start_pos"]){
+            icl_start_pos = parseInt(val["icl3_start_pos"])-1
+            icl_start_val = "5."+(50+icl_start_pos-{{residues_gn.5x50.sequence_number}});
+            icl_start_aa = residues_pos[icl_start_pos][0];
+            icl_start_cols = "<td>"+icl_start_val+"</td><td>"+icl_start_pos+"</td><td>"+icl_start_aa+"</td>";
+          } else if (val["icl2_start_pos"]){
+            icl_start_pos = parseInt(val["icl2_start_pos"])-1
+            console.log('icl2!',icl_start_pos);
+            icl_start_val = "3."+(50+icl_start_pos-{{residues_gn.3x50.sequence_number}});
+            icl_start_aa = residues_pos[icl_start_pos][0];
+            icl_start_cols = "<td>"+icl_start_val+"</td><td>"+icl_start_pos+"</td><td>"+icl_start_aa+"</td>";
+          } else {
+            icl_start_cols = "<td></td><td></td><td></td>";
+          }
+
+          if (val["icl3_end_pos"]){
+            icl_end_pos = parseInt(val["icl3_end_pos"])+1
+            icl_end_val = "6."+(50+parseInt(icl_end_pos)-{{residues_gn.6x50.sequence_number}});
+            icl_end_aa = residues_pos[icl_end_pos][0];
+            icl_end_cols = "<td>"+icl_end_val+"</td><td>"+icl_end_pos+"</td><td>"+icl_end_aa+"</td>";
+          } else if (val["icl2_end_pos"]){
+            icl_end_pos = parseInt(val["icl2_end_pos"])+1
+            icl_end_val = "4."+(50+parseInt(icl_end_pos)-{{residues_gn.4x50.sequence_number}});
+            icl_end_aa = residues_pos[icl_end_pos][0];
+            icl_end_cols = "<td>"+icl_end_val+"</td><td>"+icl_end_pos+"</td><td>"+icl_end_aa+"</td>";
+          } else {
+            icl_end_cols = "<td></td><td></td><td></td>";
+          }
+
+          if (icl_end_pos && icl_start_pos && icl_end_pos<=icl_start_pos) {
+            tr_class = 'error';
+          } 
+
+          nfusion_cols = "<td class='possiblities_nterm'></td><td class='possiblities_nterm'></td>";
+          nfusion_cols = "<td class='possiblities_nterm'></td>";
+          icl_start_linker = "<td class='possiblities_icl'></td>";
+          icl_mod = "<td class='possiblities_icl'></td>";
+          icl_end_linker = "<td class='possiblities_icl'></td>";
+
+
+          checked = "";
+          if (key==0) checked = "checked";
+
+          if (val["fusion"]){
+            if (fusionpos == 'nterm') {
+                nfusion_cols = "<td class='possiblities_nterm'>"+val["fusion"]['name']+"</td><td class='possiblities_nterm'></td>";
+                nfusion_cols = "<td class='possiblities_nterm'>"+val["fusion"]['name']+"</td>";
+
+
+            } else if (fusionpos =='None') {
+              // None
+
+            } else {
+              // ICL
+                      linker_count = 0;
+                      icl_mod = "<td>"+val["fusion"]['name']+"</td>";
+                      $.each(inserts["fusion"], function(key,val) {
+                        if (val['type']=='fusion') {
+                          linker_count += 1; // tracker to know when it is after
+                        } else if (val['type']=='linker') {
+                          if (linker_count==0) {
+                            icl_start_linker = "<td>"+val['sequence']+"</td>";
+                          } else{
+                            icl_end_linker = "<td>"+val['sequence']+"</td>";
+                          }
+                        }
+                      });
+            }
+          }
+
+          // ignore for now
+          icl_start_linker = '';
+          icl_end_linker = '';
+
+          icl_total_cols = icl_start_cols + icl_start_linker + icl_mod + icl_end_linker + icl_end_cols;
+
+
+          row_html = "<tr class='"+tr_class+"'><td>" + (key+1) + "</td><td style='cursor: pointer;' onclick='selectTD(this);'><input type='radio' onclick='changesnakeplot(this)' class='snakechoice' value='"+key+"' "+checked+"></td><td><input type='checkbox' onclick='toogle_keep(this)' value='"+key+"' checked><td>"+inserts['nterm'].length+"</td></td>"+nfusion_cols+nterm_cols+icl_total_cols+cterm_cols+"<td>"+inserts['cterm'].length+"</td></tr>";
+          $('#possibilities tbody').append(row_html);
+       });
+        change_fusionpos();
+    }
+
+    function changesnakeplot(elem) {
+      $(".snakechoice").not(elem).prop("checked", false);
+      overlay_modifications($(elem).attr("value"));
+    }
+
+    function selectTD(elem){
+      changesnakeplot($(elem).find('input:radio'));
+      $(elem).find('input:radio').prop("checked", true);
     }
 
     function update_fix(elem) {
       id = $(elem).attr("mod_id");
       fix_group = $(elem).attr("fix_type");
       fix_checked = elem.checked;
-      console.log("check update "+fix_checked+" "+id+" reset: "+fix_group);
+      // console.log("check update "+fix_checked+" "+id+" reset: "+fix_group);
 
       reset_fixed(fix_group);
       if (fix_checked){
         // if checked
-        console.log("TRUE NOW "+fix_checked);
+        // console.log("TRUE NOW "+fix_checked);
         modifications[id]['fixed'] = 'yes';
       }
 
@@ -2069,42 +2684,108 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       // console.log('remove id'+id)
       //delete modifications[id];
 
-      if (modifications[id]['type'] == 'Fusion' || modifications[id]['type'] == 'Insert') {
+      if (modifications[id]['type'] == 'fusion' || modifications[id]['type'] == 'Insert') {
         // if fusion/insert
         inserts[modifications[id]['insert_location']].splice(modifications[id]['order'], 1);
       }
 
       modifications.splice(id, 1);
       resetModifications();
-      overlay_modifications();
       modifications_overview();
+      // overlay_modifications();
       $("#ModalBody").html(tables["overview"]);
 
     }
 
+    function remove_mod_by_id(id) {
+
+      if (modifications[id]['type'] == 'fusion' || modifications[id]['type'] == 'Insert') {
+        // if fusion/insert
+        inserts[modifications[id]['insert_location']].splice(modifications[id]['order'], 1);
+      }
+
+      modifications.splice(id, 1);
+      // resetModifications();
+      // modifications_overview();
+      // // overlay_modifications();
+      // $("#ModalBody").html(tables["overview"]);
+
+    }
+
     function generate_sequence(include) {
-      console.log("Start generating a sequence");
-      console.log(include);
+      console.log("Start generating a sequence",include);
+      // console.log(include);
       include = include.split(",");
       track_pos = {};
       fusion_site_location = -1;
 
+      table_row = {}
+
       fusionpos = $('input:radio[name=fusionpos]:checked').val();
+
+      fusion_in_sequence = false;
         
       $.each(modifications, function(key,val) {
 
-        if ($.inArray(String(key), include)==-1 && val['type']!="Insert") {
+        if ($.inArray(String(key), include)==-1) { //&& val['type']!="Insert"
           return true;
         }
+        // console.log(val);
         type = val['type'];
         range = val['range'];
 
-        if (type == 'Insert') {
+        if (val['method']=='n-term' && val['type']=='deletion') {
+            table_row['nterm_pos'] = val['extra'];
+        }
+
+        if (val['method']=='c-term' && val['type']=='deletion') {
+            table_row['cterm_pos'] = val['extra'];
+        }
+
+        if (val['method']=='ICL3_start' && val['type']=='deletion') {
+            table_row['icl3_start_pos'] = val['range'][0];
+        }
+
+        if (val['method']=='ICL3_end' && val['type']=='deletion') {
+            table_row['icl3_end_pos'] = val['range'][0];
+        }
+
+        if (val['method']=='ICL2_start' && val['type']=='deletion') {
+            table_row['icl2_start_pos'] = val['range'][0];
+        }
+
+        if (val['method']=='ICL2_end' && val['type']=='deletion') {
+            table_row['icl2_end_pos'] = val['range'][0];
+        }
+
+        if (type == 'fusion') {
           if (val['insert_location']=='fusion'){
 
-            console.log('fusion! ');
-            console.log(val);
-            fusion_site_location = val['range'][0];
+            // console.log('fusion! ');
+            // console.log(val);
+            val['name'] = val['method'].replace("fusion:", "");
+            fusion_in_sequence = val;
+            // fusion_in_sequence['type'] = 'Fusion';
+            table_row['fusion'] = val;
+          }
+        }
+
+        if (val['method']=='ICL3_start' || val['method']=='ICL2_start') {
+          // do not color / track 
+          ICL_start = range[0];
+            if (fusionpos!='nterm' && fusionpos!='None') {
+              fusion_site_location = range[0];
+            }
+          return 
+        }
+
+        if (val['method']=='ICL3_end' || val['method']=='ICL2_end') {
+          if (ICL_start==0) return //do not color if no start selected
+          // do not color / track 
+          ICL_end = range[0];
+          range = new Array;
+          for (var i = ICL_start; 1 > 0 ? i <= ICL_end : i > ICL_end; i += 1) {
+              range.push(i);
           }
         }
 
@@ -2116,7 +2797,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         })
 
       })
-      console.log("Fusion would be around "+fusion_site_location);
+      // console.log("Fusion would be around "+fusion_site_location);
       sequence = "";
       sequence_short = "";
       sequence_short_2 = "";
@@ -2134,24 +2815,26 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           find_n_term = 1;
       });
 
-      if (fusionpos=='nterm') {
-            $.each(inserts["fusion"], function(key,val) {
-                sequence += "["+val['type']+":"+val['name']+"]";
-                sequence_short += "["+val['type']+":"+val['name']+"]";
-                sequence_short_2 += "["+val['type']+":"+val['name']+"]";
-                if (val['sequence']) {
-                  sequence_long += val['sequence'].toLowerCase();
-                } else {
-                  sequence_long += "["+val['type']+":"+val['name']+"]";
-                }
-            });
-            fusion_site_location = 0;
+      if (fusionpos=='nterm' && fusion_in_sequence) {
+        var val = fusion_in_sequence;
+        val['name'] = val['method'].replace("fusion:", "");
+        sequence += "["+val['type']+":"+val['name']+"]";
+        sequence_short += "["+val['type']+":"+val['name']+"]";
+        sequence_short_2 += "["+val['type']+":"+val['name']+"]";
+        if (val['sequence']) {
+          sequence_long += val['sequence'].toLowerCase();
+        } else {
+          sequence_long += "["+val['type']+":"+val['name']+"]";
+        }
+            
+          fusion_site_location = 0;
           find_n_term = 1;
       }
 
       if (find_n_term==0){
           sequence_short_2 += "[ADD N-TERM INSERTS]";
       }
+      // console.log('fusion is at ' +fusion_site_location);
 
       add_wt_start = 1;
       $.each(residues_pos, function(key,val) {
@@ -2159,10 +2842,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         // console.log(val);
         if (track_pos[key]){
           // if in here, either delete or add mutation
-          // console.log(track_pos[key]);
+          // console.log(key +" "+track_pos[key]);
           if (add_wt_start==0){
             //if we were in a strech and got cut off
-             sequence_short += key+"]";
+             sequence_short += (key-1)+"]";
           }
           if (track_pos[key]['type']=='mutation') {
             sequence += track_pos[key]['to'];
@@ -2173,25 +2856,43 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           } else {
             // check for fusion site
             // console.log(key);
-            if (fusion_site_location!=-1) {
+            if (fusion_site_location!=-1 && fusion_in_sequence) {
               if (key==fusion_site_location && fusionpos!='None') {
-                console.log('WE ARE AT FUSION SITE!');
-                  $.each(inserts["fusion"], function(key,val) {
-                      sequence += "["+val['type']+":"+val['name']+"]";
-                      sequence_short += "["+val['type']+":"+val['name']+"]";
-                      sequence_short_2 += "["+val['type']+":"+val['name']+"]";
-                      if (val['sequence']) {
-                        sequence_long += val['sequence'].toLowerCase();
-                      } else {
-                        sequence_long += "["+val['type']+":"+val['name']+"]";
-                      }
-                  });
+                  // console.log('WE ARE AT FUSION SITE!');
+                  
+                  val = fusion_in_sequence;
+                  val['name'] = val['method'].replace("fusion:", "");
+                  sequence += "["+val['type']+":"+val['name']+"]";
+                  sequence_short += "["+val['type']+":"+val['name']+"]";
+                  sequence_short_2 += "["+val['type']+":"+val['name']+"]";
+                  if (val['sequence']) {
+                    sequence_long += val['sequence'].toLowerCase();
+                  } else {
+                    sequence_long += "["+val['type']+":"+val['name']+"]";
+                  }
               }
             }
 
           }
           add_wt_start = 1;
         } else {
+
+          if (key==fusion_site_location && fusion_in_sequence) {
+            // If fusion without a deletion
+              sequence_short += (key-1)+"]";
+              val_fusion = fusion_in_sequence;
+              val_fusion['name'] = val_fusion['method'].replace("fusion:", "");
+              sequence += "["+val_fusion['type']+":"+val_fusion['name']+"]";
+              sequence_short += "["+val_fusion['type']+":"+val_fusion['name']+"]";
+              sequence_short_2 += "["+val_fusion['type']+":"+val_fusion['name']+"]";
+              if (val_fusion['sequence']) {
+                sequence_long += val_fusion['sequence'].toLowerCase();
+              } else {
+                sequence_long += "["+val_fusion['type']+":"+val_fusion['name']+"]";
+              }
+              add_wt_start = 1;
+          }
+
           sequence += val[0];
           sequence_long += val[0].toUpperCase();
           sequence_short_2 += val[0].toUpperCase();
@@ -2225,133 +2926,609 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       }
 
       export_list['sequences'].push([include.sort(function (a, b) {  return a - b;  }),sequence_short,sequence_long,sequence_short_2]);
-
+      table_rows.push(table_row);
+      // console.log(sequence_short);
       return [sequence_short,sequence_long];
     }
 
-    function overlay_modifications() {
+    function generate_new_path(pos1,pos2,type) {
+          cut_pos = [pos1,pos2];
+          // fix to first
+          if (parseInt(pos1)>ICL_min[type]) pos1 = ICL_min[type];
+          if (parseInt(pos2)<ICL_max[type]) pos2 = ICL_max[type];
+          x1 = parseInt($('#'+pos1).attr('cx'));
+          y1 = parseInt($('#'+pos1).attr('cy'));
+
+          x2 = parseInt($('#'+pos2).attr('cx'));
+          y2 = parseInt($('#'+pos2).attr('cy'));
+
+          // mirror py function
+          y_indent = 90;
+          y_offset = 50;
+          boxY = Math.max(y1,y2)+y_offset;
+
+          p2 = [Math.round(x1-y_indent*0.5),Math.round(boxY+y_indent*0.5)];
+          p3 = [Math.round(parseInt(x2)+(y_indent)*0.5),Math.round(boxY+y_indent*0.5)]
+          red_length = lengthbezier([x1,y1],p2,p3,0.01,[x2,y2]);
+
+          extra_boxes = 0;
+          if (fusionpos == 'nterm') {
+            // nterm
+          } else if (fusionpos =='None') {
+            // None
+          } else {
+            // ICL
+            if (fusion_in_sequence) extra_boxes += 1;
+            // $.each(inserts["fusion"], function(key,val) {
+            //   extra_boxes += 1;
+            // });
+          }
+
+          tries = 0; // adjust size
+          length_surplus = 50+ extra_boxes*50;
+          old_length = 0;
+          length_of_residues_in_loop = $( "circle."+type+".long:visible" ).length*18-18+length_surplus;
+          // console.log('lenght',length_of_residues_in_loop,'resides',$( "circle."+type+".long:visible" ).length);
+          while (Math.abs(red_length-length_of_residues_in_loop)>5){
+
+              if (red_length-length_of_residues_in_loop>5){
+                  y_indent *=0.9;
+                } else{
+                  y_indent *=1.1;
+                }
+                p2 = [Math.round(x1-y_indent*0.5),Math.round(boxY+y_indent*0.5)];
+                p3 = [Math.round(parseInt(x2)+(y_indent)*0.5),Math.round(boxY+y_indent*0.5)]
+                red_length = lengthbezier([x1,y1],p2,p3,0.01,[x2,y2]);
+                if (old_length==red_length) {
+                  break;
+                }
+                old_length = red_length;
+                // console.log('new length',length);
+              tries += 1;
+              if (tries>100) break;
+          }
+          // console.log(y_indent,'tries',tries,length,fusion_in_sequence);
+
+
+          points_red = "M "+x1+","+y1+" C"+p2[0]+","+p2[1]+" "+p3[0]+","+p3[1]+" "+(x2)+","+(y2);
+          max_replace_y = 0;
+          replace_loop_residues([x1,y1],[x2,y2],p2,p3,type,pos1,pos2,cut_pos);
+
+            current_insert = 1;
+            length_availiable = length_used_last-length_used_first;
+
+            // PRINT FIRST AND LAST FOR DEBUG
+            // where_on_line = length_used_first;
+            // [where,cur_length] = wherebezier([x1,y1],p2,p3,step,where_on_line,[x2,y2],true );
+            // $("#snake").append(add_box(where[0],where[1],'S','red'));
+            // where_on_line = length_used_last;
+            // [where,cur_length] = wherebezier([x1,y1],p2,p3,step,where_on_line,[x2,y2],true );
+            // $("#snake").append(add_box(where[0],where[1],'E','red'));
+
+          if ( (fusionpos == 'icl2' || fusionpos == 'icl3') && fusion_in_sequence ) {
+            // $.each(inserts["fusion"], function(key,val) {
+            // fusion_in_sequence
+            $.each([fusion_in_sequence], function(key,val) {
+              where_on_line = length_used_first+length_availiable*current_insert/(extra_boxes+1);
+              [where,cur_length] = wherebezier([x1,y1],p2,p3,step,where_on_line,[x2,y2],true );
+              color = 'blue';
+              if (val['type']=='fusion') color = 'purple';
+              if (val['type']=='linker') color = 'black';
+              $("#snake").append(add_box(where[0],where[1],val['type'],color));
+              current_insert += 1;
+            });
+          }
+
+          path = "<path id='path_custom_"+type+"' class='"+type+" long construct_custom' d='" + points_red + "' stroke='red' stroke-dasharray='5,10,5' fill='none' stroke-width='2' />"
+          $("#snake").prepend(path);
+
+          [where,cur_length] = wherebezier([x1,y1],p2,p3,step,red_length/2,[x2,y2],true );
+          if (where[1]<max_replace_y) where[1] = max_replace_y;
+          $("rect."+type+".long").attr('x',-17+(x2+x1)/2);
+          $("rect."+type+".long").next().attr('x',-17+18+(x2+x1)/2);
+          $("rect."+type+".long").attr('y',where[1]+20);
+          $("rect."+type+".long").next().attr('y',13+where[1]+20);
+          redraw_terminus("C");
+          // $("#snake").html($("#snake").html());
+          // reload_tooltips();
+          redraw_snake_after = true;
+    }
+
+    function generate_new_path_simple(pos1,pos2,indent,type) {
+          var x1 = parseInt($('#'+pos1).attr('cx'));
+          var y1 = parseInt($('#'+pos1).attr('cy'));
+
+          var x2 = parseInt($('#'+pos2).attr('cx'));
+          var y2 = parseInt($('#'+pos2).attr('cy'));
+          points = "M "+x1+" "+y1+" Q"+(x1+indent)+" "+y2+" "+(x2)+" "+y2
+                
+          path = "<path id='path_custom_"+type+"' class='"+type+" long construct_custom' d='" + points + "' stroke='black' fill='none' stroke-width='2' />"
+          $("#snake").prepend(path);
+          // $("#snake").html($("#snake").html());
+          // reload_tooltips();
+    }
+
+    function generate_term_boxes(term) {
+        console.log('generate term box',term);
+            if (term=='C') {
+              orientation = 1;
+              first_visible_residue = parseInt($( "circle."+term+"-term.long:visible" ).last().attr('id'));
+              term_full = "cterm";
+              first_res = parseInt($( "circle.H8:visible" ).last().attr('id'));
+              each_boxes = $(inserts[term_full]).toArray();
+              var x_min = 0;
+              var y2 = 0;
+              $( "rect.ICL1:visible,rect.ICL2:visible,rect.ICL3:visible" ).each(function() {
+                this_y = parseInt($(this).attr('y'));
+                if (this_y>y2) y2 = this_y;
+              });
+              y2 = y2+50;
+            } else {
+              // N
+              orientation = -1;
+              first_visible_residue = parseInt($( "circle."+term+"-term.long:visible" ).first().attr('id'));
+              term_full = "nterm";
+              first_res = parseInt($( "circle.TM1:visible" ).first().attr('id'));
+              each_boxes = $(inserts[term_full]).toArray().reverse();
+              if (fusionpos=='nterm' && fusion_in_sequence) {
+                each_boxes = $(inserts[term_full].concat([fusion_in_sequence])).toArray().reverse();
+              }
+              var x_max = x_svgmax; //from minmax function
+              var y2 = 0;
+              $( "rect.ECL1:visible,rect.ECL2:visible,rect.ECL3:visible" ).each(function() {
+                this_y = parseInt($(this).attr('y'));
+                if (this_y<y2) y2 = this_y;
+              });
+              y2 = y2-50;
+            }
+            new_orientation = orientation;
+
+
+
+            // console.log('short visible?',$("rect."+term+"-term.short").is(':visible'));
+            if ($("rect."+term+"-term.short").is(':visible')) {
+              check_short_residues = $( "circle."+term+"-term.long:not(.svg_construct_hidden)" ).length;
+              // console.log('check',check_short_residues);
+              $("."+term+"-term.long").hide();
+            }
+            // if ($(term+"-term.short:visible").length) {
+            //   // do not do stuff if it's short
+            //   return
+            // }
+
+            if (isNaN(first_visible_residue)) {
+              // $("."+term+"-term").hide();
+              $("line."+term+"-term.long:visible").addClass('svg_construct_hidden');
+              $("line."+term+"-term.long:visible").hide();
+              if (inserts["nterm"].length==0) {
+                $(".long."+term+"-term:visible").addClass('svg_construct_hidden');
+                $(".long."+term+"-term:visible").hide();
+              }
+              first_visible_residue = first_res;
+            }
+
+
+              var x1 = parseInt($('#'+first_visible_residue).attr('cx'));
+              var y1 = parseInt($('#'+first_visible_residue).attr('cy'));
+
+              // if ($("rect."+term+"-term.short").is(':visible')) {
+              //   var x1 = parseInt($("rect."+term+"-term.short").attr('x'))+30;
+              //   var y1 = parseInt($("rect."+term+"-term.short").attr('y'));
+              // }
+
+              // define boundaries for bends
+              if (term=='C') var x_max = parseInt($('#'+first_res).attr('cx'))-90*orientation;
+              if (term=='N') var x_min = parseInt($('#'+first_res).attr('cx'))-90*orientation;
+
+              // console.log(term,'min',x_min,'max',x_max);
+
+              if ((term=='C' && (y1-y2)>0) || (term=='N' && (y2-y1)>0)) {
+                // is after the first bend, consider reversing direction
+                bends = Math.round(Math.abs(y1-y2)/30);
+                // console.log('term',term,'starts after first bend?',bends,y1,y2);
+                new_orientation = orientation* Math.pow(-1,bends); //reverse amount of bends
+              }
+
+              var boxx = x1+20*(-1)*new_orientation;
+              var boxy = y1;
+
+              var length = 0;
+              var pos = 0;
+              var prev_box = x1;
+              var prev_boxY = y1;
+              var distance_between_rows = 30;
+              // make sure we're up where we need to be
+              if (y1-4>svgmin && term=='N') {
+
+
+                x1 = parseInt($('#'+first_res).attr('cx'));
+                y1 = parseInt($('#'+first_res).attr('cy'));
+
+                // if ($("rect."+term+"-term.short").is(':visible')) {
+                //   var x1 = parseInt($("rect."+term+"-term.short").attr('x'));
+                //   var y1 = parseInt($("rect."+term+"-term.short").attr('y'));
+                // }
+                // console.log('Last',y1,'min',svgmin,'residues_between',first_res-first_visible_residue);
+
+
+                bezierX = x1+60*orientation
+                bezierY = (y2+y1)/2+60*orientation;
+
+                x2 = x1-90*orientation;
+                // y2 = svgmin;
+                points = "M "+(x1)+" "+(y1)+" Q"+(bezierX)+" "+(bezierY)+" "+(x2)+" "+(y2);
+                path = "<path class='"+term+"-term long construct_custom' d='" + points + "' stroke='black' fill='none' stroke-width='4' />";
+                // $("#snake"  ).append(path);
+                length = lengthbezier([x1,y1],[bezierX,bezierY],[x2,y2],0.001);
+                pos = 40 + 18*(first_res-first_visible_residue)+18;
+
+
+
+                if ($("rect."+term+"-term.short").is(':visible') && each_boxes.length) {
+                  if (check_short_residues){
+                    [[boxx,boxy],cur_length] = wherebezier([x1,y1],[bezierX,bezierY],[x2,y2],0.001,60);
+                    prev_box = boxx;
+                    prev_boxY = boxy;
+                    $("#snake").append(add_box(boxx,boxy,"N-term","black"));
+                  } 
+
+                  if (!$("rect."+term+"-term.short").attr('original_x')) {
+                    $("rect."+term+"-term.short").attr('original_x',$("rect."+term+"-term.short").attr('x'));
+                    $("rect."+term+"-term.short").next().attr('original_x',$("rect."+term+"-term.short").next().attr('x'));
+                    $("rect."+term+"-term.short").attr('original_y',$("rect."+term+"-term.short").attr('y'));
+                    $("rect."+term+"-term.short").next().attr('original_y',$("rect."+term+"-term.short").next().attr('y'));
+                    $("path."+term+"-term.short").attr('original_d',$("path."+term+"-term.short").attr('d'));
+                  }
+                  $("rect."+term+"-term.short").attr('x',x1+30);
+                  $("rect."+term+"-term.short").next().attr('x',x1+55);
+                  $("rect."+term+"-term.short").attr('y',y1-100);
+                  $("rect."+term+"-term.short").next().attr('y',y1-87);
+                  $("path."+term+"-term.short").attr('d',"M "+x1+" "+y1+" L "+boxx+" "+boxy);
+                  pos = 100;
+                }
+              } else if (y1<y2 && term=='C') {
+                // console.log('H8',first_res,'term last',first_visible_residue,'Last',y1,'max',y2,'residues_between',first_visible_residue-first_res);
+                x1 = parseInt($('#'+first_res).attr('cx'));
+                y1 = parseInt($('#'+first_res).attr('cy'));
+
+
+                bezierX = x1+60*orientation
+                bezierY = (y2+y1)/2+60*orientation;
+
+                x2 = x1-90*orientation;
+                // y2 = y_max;
+                points = "M "+(x1)+" "+(y1)+" Q"+(bezierX)+" "+(bezierY)+" "+(x2)+" "+(y2);
+                path = "<path class='"+term+"-term long construct_custom' d='" + points + "' stroke='black' fill='none' stroke-width='4' />";
+                // $("#snake"  ).append(path);
+                length = lengthbezier([x1,y1],[bezierX,bezierY],[x2,y2],0.001);
+                pos = 40 + 18*(first_visible_residue-first_res)+18;
+
+
+                if ($("rect."+term+"-term.short").is(':visible') && each_boxes.length) {
+                  if (check_short_residues){
+                    [[boxx,boxy],cur_length] = wherebezier([x1,y1],[bezierX,bezierY],[x2,y2],0.001,60);
+                    prev_box = boxx;
+                    prev_boxY = boxy;
+                    $("#snake").append(add_box(boxx,boxy,"C-term","black"));
+                    pos = 100;
+                  } 
+
+                  if (!$("rect."+term+"-term.short").attr('original_x')) {
+                    $("rect."+term+"-term.short").attr('original_x',$("rect."+term+"-term.short").attr('x'));
+                    $("rect."+term+"-term.short").next().attr('original_x',$("rect."+term+"-term.short").next().attr('x'));
+                    $("rect."+term+"-term.short").attr('original_y',$("rect."+term+"-term.short").attr('y'));
+                    $("rect."+term+"-term.short").next().attr('original_y',$("rect."+term+"-term.short").next().attr('y'));
+                    $("path."+term+"-term.short").attr('original_d',$("path."+term+"-term.short").attr('d'));
+                  }
+                  $("rect."+term+"-term.short").attr('x',x1-70);
+                  $("rect."+term+"-term.short").next().attr('x',x1-45);
+                  $("rect."+term+"-term.short").attr('y',y1+77);
+                  $("rect."+term+"-term.short").next().attr('y',y1+90);
+                  $("path."+term+"-term.short").attr('d',"M "+x1+" "+y1+" L "+boxx+" "+boxy);
+                }
+
+              } 
+            $.each(each_boxes, function(key,val) {
+              // console.log('put box ',val,'attach to id',first_visible_residue,x1,y1,key,"min y",y_min,length,pos);
+              redraw_snake_after = true;
+              color = 'purple';
+              if (pos+40<length) {
+                // console.log('put on curve',pos);
+                // Means we should use curve
+                pos += (val['type'].substring(0, 6).length*7+2)*0.5;
+                [[boxx,boxy],cur_length] = wherebezier([x1,y1],[bezierX,bezierY],[x2,y2],0.001,pos);
+                
+                // line = "<line class='"+term+"-term long construct_custom' x1="+prev_box+" y1="+prev_boxY+" x2="+boxx+" y2="+boxy+" stroke='black' fill='none' stroke-width='2' />"
+                // $("#snake").prepend(line);
+
+
+                points = "M "+prev_box+" "+prev_boxY+" Q"+(prev_box+boxx)/2+" "+(prev_boxY+boxy)/2+" "+boxx+" "+(boxy);
+                path = "<path class='"+term+"-term long construct_custom' d='" + points + "' stroke='black' fill='none' stroke-width='2' />";
+                $("#snake"  ).prepend(path);
+
+                pos += (val['type'].substring(0, 6).length*7+2)*0.5;
+                $("#snake").append(add_box(boxx,boxy,val['type'],color));
+                prev_box = boxx;
+                prev_boxY = boxy;
+                boxx = boxx+ (val['type'].substring(0, 6).length*7+10)*0.5*(-1)*new_orientation;
+              } else {
+                if (term=='C' && (boxy)<y2) boxy = y2;
+                if (term=='N' && (boxy)>y2) boxy = y2;
+
+                bends = 0;
+                if ((term=='C' && (boxy-y2)>0) || (term=='N' && (y2-boxy)>0)) {
+                  // is after the first bend, consider reversing direction
+                  bends = Math.round(Math.abs(boxy-y2)/30);
+                  new_orientation = orientation* Math.pow(-1,bends); //reverse amount of bends
+                  // console.log('orientation',orientation,bends,'current boxY',boxy,'first line',y2);
+                }
+
+                mid_bend = (bends*30-Math.abs(boxy-y2)==15 ? true : false);
+                console.log('y curve end',y2,'last y',boxy,'length from curve end',Math.abs(boxy-y2),bends,bends*30-Math.abs(boxy-y2),"mid_bend",mid_bend);
+
+                // console.log('RIGHT CHECK max:',x_max,"Current",boxx,"Last",prev_box);
+                // console.log('LEFT CHECK max:',x_min,"Current",boxx,"Last",prev_box);
+                at_bend = false;
+                if (boxx<x_min+60 && prev_box>boxx) {
+                  // Gone too far left and is moving left
+                  // console.log("min",x_min,"current x",boxx);
+                  boxy += distance_between_rows*orientation;
+                  bezierX = prev_box-(50);
+                  bezierY = (boxy-distance_between_rows*orientation*0.5);
+                  points = "M "+(prev_box-(orientation*10))+" "+(boxy-distance_between_rows*orientation)+" Q"+(bezierX)+" "+(bezierY)+" "+(prev_box-(orientation*10))+" "+(boxy);
+                  // line = "<line class='"+term+"-term long construct_custom' x1="+prev_box+" y1="+(boxy-distance_between_rows*orientation)+" x2="+prev_box+" y2="+boxy+" stroke='black' fill='none' stroke-width='2' />"
+                  path = "<path class='"+term+"-term long construct_custom' d='" + points + "' stroke='black' fill='none' stroke-width='2' />";
+                  if (!mid_bend) $("#snake"  ).prepend(path);
+                  // console.log('gone too far left',orientation,(x_min+40))
+                  at_bend = true;
+                } else if (boxx>x_max-60 && prev_box<boxx) {
+                  // Gone too far right and is going right
+                  boxy += distance_between_rows*orientation;
+                  bezierX = prev_box+(50);
+                  bezierY = (boxy-distance_between_rows*orientation*0.5);
+                  points = "M "+(prev_box+(orientation*10))+" "+(boxy-distance_between_rows*orientation)+" Q"+(bezierX)+" "+(bezierY)+" "+(prev_box+(orientation*10))+" "+(boxy);
+                  // line = "<line class='"+term+"-term long construct_custom' x1="+prev_box+" y1="+(boxy-distance_between_rows*orientation)+" x2="+prev_box+" y2="+boxy+" stroke='black' fill='none' stroke-width='2' />"
+                  path = "<path class='"+term+"-term long construct_custom' d='" + points + "' stroke='black' fill='none' stroke-width='2' />";
+                  if (!mid_bend) $("#snake"  ).prepend(path);
+                  // console.log('gone too far right',orientation,(boxy-y2))
+                  at_bend = true;
+                }
+
+                boxx += (val['type'].substring(0, 6).length*7+15)*0.5*(-1)*new_orientation;
+                boxy = boxy;
+
+
+                if (mid_bend) {
+                  // if at mid-bend correct
+                  if (prev_box<boxx) {
+                    // going right
+                    boxy += 0.5*distance_between_rows*orientation;
+                  } else {
+                    boxy += 0.5*distance_between_rows*orientation;
+                  }
+                }
+
+                points = "M "+prev_box+" "+prev_boxY+" Q"+(prev_box+boxx)/2+" "+(prev_boxY+boxy)/2+" "+boxx+" "+(boxy);
+                
+                path = "<path class='"+term+"-term long construct_custom' d='" + points + "' stroke='black' fill='none' stroke-width='2' />";
+                if (!(at_bend && !mid_bend)) $("#snake"  ).prepend(path);
+                // line = "<line class='"+term+"-term long construct_custom' x1="+prev_box+" y1="+prev_boxY+" x2="+boxx+" y2="+boxy+" stroke='black' fill='none' stroke-width='2' />"
+                // $("#snake").prepend(line);
+
+                $("#snake").append(add_box(boxx,boxy,val['type'],color));
+                prev_box = boxx;
+                prev_boxY = boxy;
+                boxx += (val['type'].substring(0, 6).length*7+15)*0.5*(-1)*new_orientation;
+              }
+            });
+    }
+
+
+    function replace_loop_residues(x1y1,x2y2,p2,p3,type,pos1,pos2,cut_pos) {
+      step = 0.01;
+      between_residues = 18;
+      total_length = lengthbezier(x1y1,p2,p3,step,x2y2);
+      pos = 0;
+      // console.log("Replace loop residues!",x1y1,x2y2,p1,p2,type,pos1,pos2,cut_pos);
+      bezier_cache = [];
+      length_used_first = 0;
+      length_used_last = 0;
+      // console.log('length of cache',Object.keys(bezier_cache).length);
+      $( "circle."+type+".long:visible" ).each(function() {
+        id = parseInt($(this).attr('id'));
+        if (parseInt(id)>cut_pos[0]) {
+          if (id == ICL_max[type]) {
+            // console.log(id,'is last ICL residue, genereate path to TM');
+            generate_new_path_simple(id,id+1,30,type);
+          }
+          // this is on the right side of the cut
+          from_edge = pos2-parseInt(id);
+          stop = total_length-from_edge*between_residues;
+          [where,cur_length] = wherebezier(x1y1,p2,p3,step,stop,x2y2,true );
+          $(this).attr('cx',where[0]);
+          $(this).attr('cy',where[1]);
+          $("#"+id+"t").attr('x',where[0]);
+          $("#"+id+"t").attr('y',where[1]+6);
+          if (where[1]>max_replace_y) max_replace_y = where[1];
+          if (length_used_last==0) {
+            length_used_last=cur_length-18;
+          }
+        } else {
+          if (id == ICL_min[type]) {
+            // console.log(id,'is first ICL residue, genereate path to TM');
+            generate_new_path_simple(id-1,id,-30,type);
+          }
+          // this is on the left side of the cut
+          from_edge = parseInt(id)-pos1;
+          stop = from_edge*between_residues;
+          [where,cur_length] = wherebezier(x1y1,p2,p3,step,stop,x2y2,true);
+          length_used_first = cur_length+9;
+          $(this).attr('cx',where[0]);
+          $(this).attr('cy',where[1]);
+          $("#"+id+"t").attr('x',where[0]);
+          $("#"+id+"t").attr('y',where[1]+6);
+          if (where[1]>max_replace_y) max_replace_y = where[1];
+        }
+      });
+      if (length_used_last==0) length_used_last=total_length;
+
+      // where = wherebezier(p0,p2,p3,0.001,pos,p1);
+    }
+
+
+    function overlay_modifications(possible_id) {
       console.log("Start overlay_modifications");
+      redraw_snake_after = false;
+      if (typeof(possible_id)=='undefined'){
+        possible_id = 0;
+
+        possible_id = $('.snakechoice:checked').val();
+      }
+      // console.log(possible_id)
+      // console.log(possible[possible_id])
 
       track_pos = {};
       fusion_site_location = -1;
-
       fusionpos = $('input:radio[name=fusionpos]:checked').val();
       // console.log("fusionpost"+fusionpos);
-        
+      
+      $( "circle.ICL3.long:visible" ).each(function() {
+        $(this).attr('cx',$(this).attr('original_cx'));
+        $(this).attr('cy',$(this).attr('original_cy'));
+      });
+
+      $( "text.ICL3.long:visible" ).each(function() {
+        $(this).attr('x',$(this).attr('original_x'));
+        $(this).attr('y',$(this).attr('original_y'));
+      });
+
+      // fix short n/c term 
+      $( "text.short:visible" ).each(function() {
+        if ($(this).attr('original_x')) {
+            $(this).attr('x',$(this).attr('original_x'));
+            $(this).attr('y',$(this).attr('original_y'));
+        }
+      });
+
+      $( "rect.short:visible" ).each(function() {
+        if ($(this).attr('original_x')) {
+            $(this).attr('x',$(this).attr('original_x'));
+            $(this).attr('y',$(this).attr('original_y'));
+        }
+      });
+
+      $( "path.short:visible" ).each(function() {
+        if ($(this).attr('original_d')) {
+            $(this).attr('d',$(this).attr('original_d'));
+        }
+      });
+
+      $( "text.mutated" ).each(function() {
+        if ($(this).attr('original_aa')) {
+            $(this).html($(this).attr('original_aa'));
+            $(this).removeClass('mutated');
+        }
+      });
+
+
+      // console.log('reset almost done');
+      $('.svg_construct_hidden').show();
+      $('.construct_custom').remove();
+      resetColors("snakeplot");
+      $('.svg_construct_hidden').removeClass('svg_construct_hidden');
+      // console.log('reset almost done 2');
+      redraw_terminus("N");
+      redraw_terminus("C");
+      ICL_start = 0;
+      ICL_end = 0;
+      // console.log('reset done');
+      fusion_in_sequence = false;
       $.each(modifications, function(key,val) {
+
+        console.log("key is " + key + " look in " + possible[possible_id]);
+        //  && String(key)!=possible[possible_id]
+        if ($.inArray(String(key), String(possible[possible_id]).split(","))==-1 && String(key)!=possible[possible_id]) {
+          return true;
+        }
+        // console.log("use it!");
+
         type = val['type'];
         range = val['range'];
-        // console.log(val);
+        // console.log(val,val['method']);
 
-        if (type == 'Insert') {
+        if (type == 'fusion') {
           if (val['insert_location']=='fusion'){
             fusion_site_location = val['range'][0];
-            console.log('fusionsite:'+fusion_site_location);
+            val['name'] = val['method'].replace("fusion:", "");
+            fusion_in_sequence = val;
+            // console.log('fusionsite:'+fusion_site_location);
           }
+        }
+
+        if (val['method']=='ICL3_start' || val['method']=='ICL2_start') {
+          // do not color / track 
+          ICL_start = range[0];
+          return 
+        }
+
+        if (val['method']=='ICL3_end' || val['method']=='ICL2_end') {
+          if (ICL_start==0) return //do not color if no start selected
+          // do not color / track 
+          ICL_end = range[0];
+          range = new Array;
+          for (var i = ICL_start; 1 > 0 ? i <= ICL_end : i > ICL_end; i += 1) {
+              range.push(i);
+          }
+
+          if (val['method']=='ICL3_end') {
+            $('#path_ICL3').addClass('svg_construct_hidden');
+            $('#path_ICL3').hide();
+            $('#path_ICL3_end').addClass('svg_construct_hidden');
+            $('#path_ICL3_end').hide();
+            $('#path_ICL3_first').addClass('svg_construct_hidden');
+            $('#path_ICL3_first').hide();
+            icl_name = "ICL3";
+          } else if (val['method']=='ICL2_end') {
+            $('#path_ICL2').addClass('svg_construct_hidden');
+            $('#path_ICL2').hide();
+            $('#path_ICL2_end').addClass('svg_construct_hidden');
+            $('#path_ICL2_end').hide();
+            $('#path_ICL2_first').addClass('svg_construct_hidden');
+            $('#path_ICL2_first').hide();
+            icl_name = "ICL2";
+          }
+
+          
+
         }
 
         $.each(range, function(i, ii){
           // console.log(ii,type);
           if (ii){
-            color_residue(ii,type);
             track_pos[ii] = val;
+            color_residue(ii,type);
           }
         })
 
       })
-      // console.log(track_pos);
-      sequence = "";
-      sequence_short = "";
-      sequence_long = "";
-      $.each(inserts["nterm"], function(key,val) {
-          sequence += "["+val['type']+":"+val['name']+"]";
-          sequence_short += "["+val['type']+":"+val['name']+"]";
-          if (val['sequence']) {
-            sequence_long += val['sequence'];
-          } else {
-            sequence_long += "["+val['type']+":"+val['name']+"]";
-          }
-      });
 
-      if (fusionpos=='nterm') {
-            $.each(inserts["fusion"], function(key,val) {
-                sequence += "["+val['type']+":"+val['name']+"]";
-                sequence_short += "["+val['type']+":"+val['name']+"]";
-                if (val['sequence']) {
-                  sequence_long += val['sequence'];
-                } else {
-                  sequence_long += "["+val['type']+":"+val['name']+"]";
-                }
-            });
-            fusion_site_location = 0;
+      if (ICL_start>0 && ICL_end>0) {
+        // console.log('Generate new loop');
+        generate_new_path((ICL_start-1),(ICL_end+1),icl_name);
       }
 
-      add_wt_start = 1;
-      $.each(residues_pos, function(key,val) {
-        // console.log(key);
-        // console.log(val);
-        if (track_pos[key]){
-          // if in here, either delete or add mutation
-          // console.log(track_pos[key]);
-          if (add_wt_start==0){
-            //if we were in a strech and got cut off
-             sequence_short += key+"]";
-          }
-          if (track_pos[key]['type']=='mutation') {
-            sequence += track_pos[key]['to'];
-            // console.log('mutation'+track_pos[key]);
-            sequence_short += "[MUT:"+val[0]+key+""+track_pos[key]['to']+"]";
-            sequence_long += track_pos[key]['to'];
+      generate_term_boxes("N");
+      generate_term_boxes("C");
 
-          } else {
-            // check for fusion site
-            // console.log(key);
-            if (fusion_site_location!=-1) {
-              if (key==fusion_site_location && fusionpos!='None') {
-                console.log('WE ARE AT FUSION SITE!');
-                  $.each(inserts["fusion"], function(key,val) {
-                      sequence += "["+val['type']+":"+val['name']+"]";
-                      sequence_short += "["+val['type']+":"+val['name']+"]";
-                      if (val['sequence']) {
-                        sequence_long += val['sequence'];
-                      } else {
-                        sequence_long += "["+val['type']+":"+val['name']+"]";
-                      }
-                  });
-              }
-            }
+      if (redraw_snake_after)
+      { 
+        // console.log('redraw snake');
+        $("#snake").html($("#snake").html());
+        reload_tooltips();
+        // console.log('redrawn done');
+      }
 
-          }
-          add_wt_start = 1;
-        } else {
-          sequence += val[0];
-          sequence_long += val[0];
-          if (add_wt_start){
-             sequence_short += "["+receptor_name+":"+key+"-";
-             add_wt_start = 0;
-          }
-          last_key_in_stretch = key;
-          // console.log('added'); 
-        }
-      });
-      if (add_wt_start==0){
-            //if we were in a strech and got cut off
-             sequence_short += last_key_in_stretch+"]";
-          }
-
-      $.each(inserts["cterm"], function(key,val) {
-          sequence += "["+val['type']+":"+val['name']+"]";
-          sequence_short += "["+val['type']+":"+val['name']+"]";
-          if (val['sequence']) {
-            sequence_long += val['sequence'];
-          } else {
-            sequence_long += "["+val['type']+":"+val['name']+"]";
-          }
-      });
-          // console.log(sequence.length); 
-          // console.log(sequence); 
-          // console.log(sequence_short); 
-
+      maxmin();
     }
 
     function color_residue(pos, type) {
@@ -2359,16 +3536,39 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
      if (type == 'deletion') {
         bg = 'red';
         fill = 'white';
+        hide_residue(pos);
+        // console.log('hiding',pos);
      } else if (type == 'mutation') {
         bg = 'yellow';
         fill = 'red';
+        console.log("mutate to this",track_pos[pos],track_pos[pos]['to'])
+        $('#'+pos+'t').addClass('mutated');
+        $('#'+pos+'t').attr('original_aa',$('#'+pos+'t').html());
+        $('#'+pos+'t').html(track_pos[pos]['to']);
      }
 
      $('#'+pos+'t').css("fill", fill);
      $('#'+pos+'t').prev().css("fill", bg);
 
-
     }
+
+    function hide_residue(pos) {
+       $('#'+pos+'t').addClass('svg_construct_hidden');
+       $('#'+pos+'t').prev().addClass('svg_construct_hidden');
+       $('#path_'+pos).addClass('svg_construct_hidden');
+       // console.log($('#'+pos+'t').prev().html());
+       $('#'+pos+'t').hide();
+       $('#'+pos+'t').prev().hide();
+       $('#path_'+pos).hide();
+       $('#path_'+(pos+1)).hide();
+    }
+
+</script>
+
+<script type="text/javascript" charset="utf-8">
+  
+  /// Start up ///
+
 
   // Make snake plot big
   $(document).ready(function() {
@@ -2381,6 +3581,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           {% elif class == 'B' or class == 'C' %}
               build_icl2_menu();
           {% endif %}
+          change_fusionpos();
+          build_table_rows();
+          modifications_overview();
     });
 
     $( "#overview" ).accordion({
@@ -2388,7 +3591,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       active: false,
     });
 
-        $( "#dialog" ).dialog({
+    $( "#dialog" ).dialog({
       autoOpen: false,
       show: {
         effect: "blind",
@@ -2412,6 +3615,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         $(".long").show();
         $(".short").hide();
         maxmin();
+        change_fusionpos();
 
       // http://localhost:8000/construct/tool/json/nterm/adrb2_human/
       $.getJSON( "/construct/tool/json/nterm/{{target.entry_name}}/", function( data ) {
@@ -2620,23 +3824,24 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           });
           result = items.join( "" );
           $("#thermo").html(result);
-        });
           build_mutations();
           load_status += 1;
           updateLoadStatus();
-
-    });
+        });
 
       $.getJSON( "/construct/tool/json/struc_rules/{{target.entry_name}}/", function( data ) {
           var items = [];
           $.each( data, function( level, gns ) {
             mutations_browser['struc_rules_'+level] = gns;
-        });
+          });
           build_mutations();
           load_status += 1;
           updateLoadStatus();
+      });
 
     });
-</script>
-{% endblock %}
 
+
+</script>
+
+{% endblock %}

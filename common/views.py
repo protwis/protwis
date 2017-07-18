@@ -1253,6 +1253,7 @@ def ResiduesUpload(request):
 
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
+@csrf_exempt
 def ReadTargetInput(request):
     """Receives the data from the input form nd adds the listed targets to the selection"""
 
@@ -1370,7 +1371,7 @@ def ExportExcelSuggestions(request):
 @csrf_exempt
 def ExportExcelModifications(request):
     """Convert json file to excel file"""
-    headers = ['#','type', 'method', 'range', 'info','insert_location','order','from','to','sequence','fixed']
+    headers = ['#','type', 'method', 'range', 'info','insert_location','order','from','to','sequence','fixed','extra']
 
     data = request.POST['d']
     data = json.loads(data)
@@ -1404,21 +1405,36 @@ def ExportExcelModifications(request):
         row += 1
 
 
-    worksheet2 = workbook.add_worksheet("sequence")
-    worksheet2.write(0, 0, "sequences")
-    row = 1
+    worksheet2 = workbook.add_worksheet("FASTA SEQUENCES")
+    # worksheet2.write(0, 0, "sequences")
+    row = 0
 
     sequences = request.POST['s']
     sequences = json.loads(sequences)
     for s in sequences:
-        worksheet2.write(row, 0, "Modifications # used")
-        worksheet2.write(row, 1, ' '.join(s[0]))
+        # worksheet2.write(row, 0, "Modifications # used")
+        # worksheet2.write(row, 1, ' '.join(s[0]))
+        # row += 1
+        worksheet2.write(row, 0, ">" + s[1] + "[Modifications:" + ' '.join(s[0]) +"]")
         row += 1
-        worksheet2.write(row, 0, "Short-hand")
-        worksheet2.write(row, 1, s[1])
+        #worksheet2.write(row, 0, "Sequence")
+        worksheet2.write(row, 0, s[2])
         row += 1
-        worksheet2.write(row, 0, "Sequence")
-        worksheet2.write(row, 1, s[2])
+
+    worksheet3 = workbook.add_worksheet("FASTA SEQUENCES BLOCK")
+    # worksheet2.write(0, 0, "sequences")
+    row = 0
+
+    sequences = request.POST['s']
+    sequences = json.loads(sequences)
+    for s in sequences:
+        # worksheet2.write(row, 0, "Modifications # used")
+        # worksheet2.write(row, 1, ' '.join(s[0]))
+        # row += 1
+        worksheet3.write(row, 0, ">" + s[1] + "[Modifications:" + ' '.join(s[0]) +"]")
+        row += 1
+        #worksheet2.write(row, 0, "Sequence")
+        worksheet3.write(row, 0, s[3])
         row += 1
 
     workbook.close()
@@ -1450,7 +1466,9 @@ def ImportExcel(request, **response_kwargs):
             worksheets = workbook.sheet_names()
             for worksheet_name in worksheets:
                 worksheet = workbook.sheet_by_name(worksheet_name)
-
+                # Only load modifications
+                if worksheet_name!='modifications':
+                    continue
                 num_rows = worksheet.nrows - 1
                 num_cells = worksheet.ncols - 1
                 curr_row = 0 #skip first, otherwise -1

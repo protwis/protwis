@@ -18,10 +18,14 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('files', help='Add any number of files as arguments. First one has to be the reference file.',
                             type=str, nargs='+')
+        parser.add_argument('-r', help='Specify residue sequence numbers to compare.', type=str, default=False, nargs='+')
         
     def handle(self, *args, **options):
         v = Validation()
-        v.run_RMSD_list(options['files'])
+        if options['r']==False:
+            v.run_RMSD_list(options['files'])
+        else:
+            v.run_RMSD_list(options['files'], seq_nums=options['r'])
         self.stdout.write('\nNumber of superposed residues:\n')
         for i,j in v.number_of_residues_superposed.items():
             self.stdout.write('{}: {}'.format(i,j))
@@ -96,7 +100,7 @@ class Validation():
             for residue in p[chain]:
                 if residue.get_full_id()[3][0]!=' ':
                     continue
-                if seq_nums!=None and int(residue.get_id()[1]) in seq_nums:
+                if seq_nums!=None and str(residue.get_id()[1]) in seq_nums:
                     pdb_array1[int(residue.get_id()[1])] = residue
                 elif seq_nums==None:
                     pdb_array1[int(residue.get_id()[1])] = residue
@@ -105,7 +109,7 @@ class Validation():
                         pdb_array2[int(residue.get_id()[1])] = residue
                 except:
                     pass
-            arrays.append([pdb_array1,pdb_array2])    
+            arrays.append([pdb_array1,pdb_array2])   
         
         all_deletes, TM_deletes = [], []
         all_keep, TM_keep = [], []
