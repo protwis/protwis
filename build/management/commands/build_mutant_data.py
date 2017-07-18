@@ -74,7 +74,7 @@ class Command(BaseBuild):
     publication_cache = {}
     ligand_cache = {}
     ref_ligand_cache = {}
-    data = []
+    data_all = []
 
     def handle(self, *args, **options):
         # delete any existing structure data
@@ -89,7 +89,13 @@ class Command(BaseBuild):
             #self.create_mutant_data(options['filename'])
             self.logger.info('CREATING MUTANT DATA')
             self.prepare_all_data(options['filename'])
-            self.prepare_input(options['proc'], self.data)
+            import random
+            # self.data_all = random.shuffle(self.data_all) 
+            # split into 10 runs to average out slow ones
+            #n = 5
+            #for d in [ self.data_all[i::n] for i in range(n) ]:
+            #    self.data = d
+            self.prepare_input(options['proc'], self.data_all)
             self.logger.info('COMPLETED CREATING MUTANTS')
 
         except Exception as msg:
@@ -100,6 +106,7 @@ class Command(BaseBuild):
     def purge_mutants(self):
         Mutation.objects.all().delete()
         MutationRaw.objects.all().delete()
+        MutationExperiment.objects.all().delete()
 
     def loaddatafromexcel(self,excelpath):
         workbook = xlrd.open_workbook(excelpath)
@@ -118,7 +125,6 @@ class Command(BaseBuild):
                 pass
             else: #skip non-matching xls files
                 continue
-
             num_rows = worksheet.nrows - 1
             num_cells = worksheet.ncols - 1
             curr_row = 0 #skip first, otherwise -1
@@ -127,7 +133,7 @@ class Command(BaseBuild):
                 row = worksheet.row(curr_row)
                 curr_cell = -1
                 temprow = []
-                if worksheet.cell_value(curr_row, 0) == '': #if empty
+                if worksheet.cell_value(curr_row, 1) == '': #if empty reference
                     continue
                 while curr_cell < num_cells:
                     curr_cell += 1
@@ -315,20 +321,21 @@ class Command(BaseBuild):
                     self.logger.info('unknown format'.source_file)
                     continue
 
-                self.data += rows
-        print(len(self.data)," total data points")
+                self.data_all += rows
+        print(len(self.data_all)," total data points")
 
     #def create_mutant_data(self, filenames):
-    def main_func(self, positions, iteration):
+    def main_func(self, positions, iteration,count,lock):
         # filenames
-        if not positions[1]:
-            rows = self.data[positions[0]:]
-        else:
-            rows = self.data[positions[0]:positions[1]]
+        # if not positions[1]:
+        #     rows = self.data[positions[0]:]
+        # else:
+        #     rows = self.data[positions[0]:positions[1]]
 
 
         missing_proteins = {}
         mutants_for_proteins = {}
+        wrong_uniport_ids = {}
 
         c = 0
         skipped = 0
@@ -337,7 +344,12 @@ class Command(BaseBuild):
         bulk_r = []
         current_sheet = time.time()
 
-        for r in rows:
+        rows = self.data_all
+        while count.value<len(rows):
+            with lock:
+                r = rows[count.value]
+                count.value +=1 
+        # for r in rows:
             # print(source_file,c)
             # PRINT IF ERRORS OCCUR
             # self.logger.info('File '+str(r['source_file'])+' number '+str(c))
@@ -362,15 +374,25 @@ class Command(BaseBuild):
 
             if r['reference'] not in self.publication_cache:
                 try:
-                    pub = Publication.objects.get(web_link__index=r['reference'], web_link__web_resource__slug=pub_type)
+                    wl = WebLink.objects.get(index=r['reference'], web_resource__slug=pub_type)
+                except WebLink.DoesNotExist:
+                    try:
+                        wl = WebLink.objects.create(index=r['reference'],
+                                web_resource = WebResource.objects.get(slug=pub_type))
+                    except IntegrityError:
+                        wl = WebLink.objects.get(index=r['reference'], web_resource__slug=pub_type)
+
+
+                try:
+                    pub = Publication.objects.get(web_link=wl)
                 except Publication.DoesNotExist:
                     pub = Publication()
                     try:
-                        pub.web_link = WebLink.objects.get(index=r['reference'], web_resource__slug=pub_type)
-                    except WebLink.DoesNotExist:
-                        wl = WebLink.objects.create(index=r['reference'],
-                            web_resource = WebResource.objects.get(slug=pub_type))
                         pub.web_link = wl
+                        pub.save()
+                    except IntegrityError:
+                        pub = Publication.objects.get(web_link=wl)
+
 
                     if pub_type == 'doi':
                         pub.update_from_doi(doi=r['reference'])
@@ -395,15 +417,24 @@ class Command(BaseBuild):
             if r['review']:
                 if r['review'] not in self.publication_cache:
                     try:
-                        pub_review = Publication.objects.get(web_link__index=r['review'], web_link__web_resource__slug=pub_type)
+                        wl = WebLink.objects.get(index=r['review'], web_resource__slug=pub_type)
+                    except WebLink.DoesNotExist:
+                        try:
+                            wl = WebLink.objects.create(index=r['review'],
+                                    web_resource = WebResource.objects.get(slug=pub_type))
+                        except IntegrityError:
+                            wl = WebLink.objects.get(index=r['review'], web_resource__slug=pub_type)
+
+                    try:
+                        pub_review = Publication.objects.get(web_link=wl)
                     except Publication.DoesNotExist:
                         pub_review = Publication()
                         try:
-                            pub_review.web_link = WebLink.objects.get(index=r['review'], web_resource__slug=pub_type)
-                        except WebLink.DoesNotExist:
-                            wl = WebLink.objects.create(index=r['review'],
-                                web_resource = WebResource.objects.get(slug=pub_type))
                             pub_review.web_link = wl
+                            pub_review.save()
+                        except IntegrityError:
+                            pub_review = Publication.objects.get(web_link=wl)
+
 
                         if pub_type == 'doi':
                             pub_review.update_from_doi(doi=r['review'])
@@ -463,13 +494,20 @@ class Command(BaseBuild):
                     l_ref.name = r['exp_mu_ligand_ref']
                     l_ref.canonical = True
                     l_ref.ambigious_alias = False
-                    l_ref.save()
-                    l_ref.load_by_name(r['exp_mu_ligand_ref'])
+                    try:
+                        l_ref.save()
+                        l_ref.load_by_name(r['exp_mu_ligand_ref'])
+                    except IntegrityError:
+                        if Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=True).exists():
+                            l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=True)
+                        else:
+                            l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False)
+                        # print("error failing ligand, duplicate?")
                     try:
                         l_ref.save()
                     except IntegrityError:
                         l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False)
-                        print("error failing ligand, duplicate?")
+                        # print("error failing ligand, duplicate?")
                         # logger.error("FAILED SAVING LIGAND, duplicate?")
                 else:
                     l_ref = None
@@ -487,14 +525,46 @@ class Command(BaseBuild):
                 else:
                     mutants_for_proteins[r['protein']] = 1
 
+            elif r['protein'] not in missing_proteins:
+
+                try:
+                    r['protein'] = wrong_uniport_ids[r['protein']]
+                    real_uniprot = wrong_uniport_ids[r['protein']]
+                    protein=Protein.objects.get(entry_name=r['protein'])
+                    # print('fetched with lookup table',r['protein'])
+                except:
+                    # look for it as uniprot
+                    protein=Protein.objects.filter(web_links__web_resource__slug='uniprot', web_links__index=r['protein'].upper())
+                    if protein.exists():
+                        protein=protein.get()
+                        real_uniprot = protein.entry_name
+                        if r['protein'] in mutants_for_proteins:
+                            mutants_for_proteins[r['protein']] += 1
+                        else:
+                            mutants_for_proteins[r['protein']] = 1
+                    else:
+                        # Try to lookup in uniprot to catch typing errors / variants in entry_name
+                        url = 'http://www.uniprot.org/uniprot/$index.xml'
+                        cache_dir = ['uniprot', 'id']
+                        uniprot_protein = fetch_from_web_api(url, r['protein'], cache_dir, xml = True)
+                        try:
+                            real_uniprot = uniprot_protein.find('.//{http://uniprot.org/uniprot}name').text.lower()
+                            protein=Protein.objects.get(entry_name=real_uniprot)
+                        except:
+                            skipped += 1
+                            if r['protein'] in missing_proteins:
+                                missing_proteins[r['protein']] += 1
+                            else:
+                                missing_proteins[r['protein']] = 1
+                                # print('Skipped due to no protein '+ r['protein'])
+                                self.logger.error('Skipped due to no protein '+ r['protein'])
+                            continue
+                    wrong_uniport_ids[r['protein']] = protein.entry_name
+                    r['protein'] = real_uniprot
             else:
-                skipped += 1
-                if r['protein'] in missing_proteins:
-                    missing_proteins[r['protein']] += 1
-                else:
-                    missing_proteins[r['protein']] = 1
-                    self.logger.error('Skipped due to no protein '+ r['protein'])
+                missing_proteins[r['protein']] += 1
                 continue
+
 
             res=Residue.objects.filter(protein_conformation__protein=protein,amino_acid=r['mutation_from'],sequence_number=r['mutation_pos']) #FIXME MAKE AA CHECK
             if res.exists():
@@ -509,9 +579,16 @@ class Command(BaseBuild):
                     l_role, created = LigandRole.objects.get_or_create(name=r['ligand_class'],
                         defaults={'slug': slugify(r['ligand_class'])[:50]}) # FIXME this should not be needed
                 except Exception as e:
-                    print(e)
-                    print("Error with",r['ligand_class'],slugify(r['ligand_class'])[:50] )
-                    l_role, created = LigandRole.objects.get_or_create(slug=slugify(r['ligand_class'])[:50]) # FIXME this should not be needed
+                    if LigandRole.objects.filter(slug=slugify(r['ligand_class'])[:50]).exists():
+                        l_role = LigandRole.objects.get(slug=slugify(r['ligand_class'])[:50])
+                        if l_role.name == slugify(r['ligand_class'])[:50]:
+                            #if name of role is same as slug, then it was created by constructs script, replace it
+                            l_role.name = r['ligand_class']
+                            l_role.save()
+                    else:
+                        print(e)
+                        print("Error with",r['ligand_class'],slugify(r['ligand_class'])[:50] )
+                        l_role, created = LigandRole.objects.get_or_create(slug=slugify(r['ligand_class'])[:50]) # FIXME this should not be needed
             else:
                 l_role = None
 
@@ -624,5 +701,6 @@ class Command(BaseBuild):
         current_sheet
         diff_2 = round(end - current_sheet,2)
         print("overall",diff_2,"bulk",diff,len(bulk_m),"skipped",str(skipped))
-        # sorted_missing_proteins = sorted(missing_proteins.items(), key=operator.itemgetter(1),reverse=True)
+        sorted_missing_proteins = sorted(missing_proteins.items(), key=operator.itemgetter(1),reverse=True)
+        # print(missing_proteins)
         # sorted_mutants_for_proteins = sorted(mutants_for_proteins.items(), key=operator.itemgetter(1),reverse=True)

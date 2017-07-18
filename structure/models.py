@@ -18,6 +18,7 @@ class Structure(models.Model):
     publication_date = models.DateField()
     pdb_data = models.ForeignKey('PdbData', null=True) #allow null for now, since dump file does not contain.
     representative = models.BooleanField(default=False)
+    annotated = models.BooleanField(default=True)
 
 
     def __str__(self):
@@ -75,33 +76,15 @@ class StructureModel(models.Model):
 
 class StructureModelStatsRotamer(models.Model):
     homology_model = models.ForeignKey('structure.StructureModel')
-    segment = models.CharField(max_length=6)
-    sequence_number = models.IntegerField()
-    generic_number = models.CharField(max_length=5, null=True)
-    rotamer_template = models.ForeignKey('structure.Structure', null=True)
-    model_segment = models.ForeignKey('structure.StructureModelStatsSegment')
+    residue = models.ForeignKey('residue.Residue', null=True)
+    rotamer_template = models.ForeignKey('structure.Structure', related_name='+', null=True)
+    backbone_template = models.ForeignKey('structure.Structure', related_name='+', null=True)
 
     def __repr__(self):
         return '<StructureModelStatsRotamer: seqnum '+str(self.sequence_number)+' hommod '+str(self.homology_model.protein)+'>'
 
     class Meta():
         db_table = 'structure_model_stats_rotamer'
-
-
-class StructureModelStatsSegment(models.Model):
-    homology_model = models.ForeignKey('structure.StructureModel')
-    segment = models.CharField(max_length=6)
-    start = models.IntegerField()
-    end = models.IntegerField()
-    start_gn = models.CharField(max_length=5, null=True)
-    end_gn = models.CharField(max_length=5, null=True)
-    backbone_template = models.ForeignKey('structure.Structure', null=True)
-
-    def __repr__(self):
-        return '<StructureModelStatsSegment: '+str(self.start)+'-'+str(self.end)+' hommod '+str(self.homology_model.protein)+'>'
-
-    class Meta():
-        db_table = 'structure_model_stats_segment'
 
 
 class StructureModelRMSD(models.Model):

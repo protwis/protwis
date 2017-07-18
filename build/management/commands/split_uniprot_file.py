@@ -38,13 +38,14 @@ class Command(BaseCommand):
             acs = []
             for line in input_file:
                 if line.startswith('//'):
-                    for ac in acs:
-                        output_filename = ac + '.txt'
-                        output_file_path = os.sep.join([self.local_uniprot_dir, output_filename])
-                        with open(output_file_path, "w") as output_file:
-                            for bline in line_buffer:
-                                output_file.write(bline)
-                            output_file.write(line)
+                    # Only pick the first one
+                    ac = acs[1]
+                    output_filename = ac + '.txt'
+                    output_file_path = os.sep.join([self.local_uniprot_dir, output_filename])
+                    with open(output_file_path, "w") as output_file:
+                        for bline in line_buffer:
+                            output_file.write(bline)
+                        output_file.write(line)
                     line_buffer = []
                     acs = []
                 else:
