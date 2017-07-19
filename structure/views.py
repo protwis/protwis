@@ -20,6 +20,8 @@ from construct.functions import convert_ordered_to_disordered_annotation,add_con
 from common.views import AbsSegmentSelection,AbsReferenceSelection
 from common.selection import Selection, SelectionItem
 from common.extensions import MultiFileField
+from common.models import ReleaseNotes
+
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 import inspect
@@ -160,7 +162,7 @@ class StructureStatistics(TemplateView):
         context['unique_gprots_by_class'] = self.count_by_class(unique_gprots, lookup)
         context['unique_active'] = len(unique_active)
         context['unique_active_by_class'] = self.count_by_class(unique_active, lookup)
-        
+        context['release_notes'] = ReleaseNotes.objects.all()[0]
 
         context['chartdata'] = self.get_per_family_cumulative_data_series(years, unique_structs, lookup)
         context['chartdata_y'] = self.get_per_family_data_series(years, unique_structs, lookup)
