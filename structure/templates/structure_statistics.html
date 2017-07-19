@@ -90,10 +90,10 @@ body {
 <table style="width:75% !important" class="table table-stripped">
     <thead>
         <tr>
-            <td>Class(Family)</td>
-            <td align="center">Total</td>
+            <td><b>Class (Family)</b></td>
+            <td align="center"><b>Total</b></td>
             {% for class in all_structures_by_class.items %}
-            <td align="center">{% if class.0 == "Taste 2" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</td>
+            <td align="center"><b>{% if class.0 == "Taste 2" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
             {% endfor %}
         </tr>
     </thead>
@@ -120,7 +120,7 @@ body {
             {% endfor %}
         </tr>
         <tr>
-            <td>Active-state receptors</td>
+            <td>Active-state receptors*</td>
             <td align="center" style="vertical-align:middle !important">{{ all_active }}</td>
             {% for class in all_active_by_class.items %}
             <td align="center"  style="vertical-align:middle !important">{{ class.1 }}</td>
@@ -130,16 +130,16 @@ body {
     <tr> </tr>
 
 </table>
-
+<br />
 <br />
 <h4>Number of unique receptor complexes</h4>
 <table style="width:75% !important" class="table table-stripped">
     <thead>
         <tr>
-            <td>Class(Family)</td>
+            <td><b>Class (Family)</b></td>
             <td align="center">Total</td>
             {% for class in unique_structures_by_class.items %}
-            <td align="center">{% if class.0 == "Taste 2" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</td>
+            <td align="center"><b>{% if class.0 == "Taste 2" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
             {% endfor %}
         </tr>
     </thead>
@@ -166,7 +166,7 @@ body {
             {% endfor %}
         </tr>
         <tr>
-            <td>Active-state receptors</td>
+            <td>Active-state receptors*</td>
             <td align="center" style="vertical-align:middle !important">{{ unique_active }}</td>
             {% for class in unique_active_by_class.items %}
             <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
@@ -176,8 +176,13 @@ body {
     <tr> </tr>
 
 </table>
+*Active state is defined as agonist-bound and opened intracellular TM bundle.
 <br />
-Specific sets of structures can be downloaded from the <a href="/structure">structure browser</a><br /><br />
+<br />
+Specific sets of structures can be downloaded from the <a href="/structure">structure browser</a><br />
+Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d" }}</strong><br />
+<br />
+<br />
 <br />
 <div id="charts" visibility="hidden">
     <?xml version="1.0" standalone="no" ?>
@@ -300,7 +305,7 @@ Specific sets of structures can be downloaded from the <a href="/structure">stru
     </ul>
 </div></p>
 <br />-->
-<h4>Crystal structures of GPCRs</h4><br />
+<h4>GPCRs with structure</h4><br />
 <script type="text/javascript" charset="utf-8">
     crystals = {{ crystals|safe }};
 </script>
