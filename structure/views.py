@@ -103,6 +103,8 @@ def HomologyModelDetails(request, modelname, state):
     backbone_templates, rotamer_templates = [],[]
     segments, segments_formatted, segments_out = {},{},{}
     bb_temps, r_temps = OrderedDict(), OrderedDict()
+    bb_main, bb_alt, bb_none = 0,0,0
+    sc_main, sc_alt, sc_none = 0,0,0
 
     for r in rotamers:
         if r.backbone_template not in backbone_templates and r.backbone_template!=None:
@@ -121,6 +123,18 @@ def HomologyModelDetails(request, modelname, state):
             segments[r.backbone_template] = [r.residue.sequence_number]
         else:
             segments[r.backbone_template].append(r.residue.sequence_number)
+        if r.backbone_template==model.main_template:
+            bb_main+=1
+        elif r.backbone_template!=None:
+            bb_alt+=1
+        elif r.backbone_template==None:
+            bb_none+=1
+        if r.rotamer_template==model.main_template:
+            sc_main+=1
+        elif r.rotamer_template!=None:
+            sc_alt+=1
+        elif r.rotamer_template==None:
+            sc_none+=1
     for s, nums in segments.items():
         for i, num in enumerate(nums):
             if i==0:
@@ -160,8 +174,11 @@ def HomologyModelDetails(request, modelname, state):
         for i, t in enumerate(temps):
             t.color = colors[t]
             bb_temps[b][i] = t
+
     return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
-                                                          'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_scheme': colors, 'color_residues': segments_out})
+                                                          'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(rotamers)*100, 1),
+                                                          'bb_alt': round(bb_alt/len(rotamers)*100, 1), 'bb_none': round(bb_none/len(rotamers)*100, 1), 'sc_main': round(sc_main/len(rotamers)*100, 1), 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
+                                                          'sc_none': round(sc_none/len(rotamers)*100, 1)})
 
 def ServeHomModDiagram(request, modelname, state):
     model=StructureModel.objects.filter(protein__entry_name=modelname, state__slug=state)
@@ -1503,9 +1520,14 @@ def ConvertStructureModelsToProteins(request):
         selection.importer(simple_selection)
     if selection.targets != []:
         for struct_mod in selection.targets:
-            prot = struct_mod.item.protein
-            selection.remove('targets', 'structure_model', struct_mod.item.id)
-            selection.add('targets', 'protein', SelectionItem('protein', prot))
+            try:
+                prot = struct_mod.item.protein
+                selection.remove('targets', 'structure_model', struct_mod.item.id)
+                selection.add('targets', 'protein', SelectionItem('protein', prot))
+            except:
+                prot = struct_mod.item.protein_conformation.protein.parent
+                selection.remove('targets', 'structure', struct_mod.item.id)
+                selection.add('targets', 'protein', SelectionItem('protein', prot))
         if selection.reference != []:
             selection.add('targets', 'protein', selection.reference[0])
     # export simple selection that can be serialized

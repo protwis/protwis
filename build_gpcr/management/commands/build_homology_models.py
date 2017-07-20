@@ -26,7 +26,7 @@ import zipfile
 import shutil
 import math
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, date
 
 
 startTime = datetime.now()
@@ -287,7 +287,7 @@ class HomologyModeling(object):
             hommod, created = StructureModel.objects.update_or_create(protein=self.reference_protein, state=s_state, 
                                                                       main_template=self.main_structure, 
                                                                       pdb=formatted_model, 
-                                                                      version=self.version)
+                                                                      version=date.today())
             new_entry = True
         if not new_entry:
             StructureModelStatsRotamer.objects.filter(homology_model=hommod).delete()
@@ -445,7 +445,7 @@ class HomologyModeling(object):
         io.save(path+modelname+'.pdb')
         with open (path+modelname+'.pdb', 'r+') as f:
             content = f.read()
-            first_line  = 'REMARK    1 MODEL FOR {} CREATED WITH GPCRDB HOMOLOGY MODELING PIPELINE, VERSION {}\n'.format(self.reference_entry_name, self.version)
+            first_line  = 'REMARK    1 MODEL FOR {} CREATED WITH GPCRDB HOMOLOGY MODELING PIPELINE, VERSION {}\n'.format(self.reference_entry_name, date.today())
             second_line = 'REMARK    2 MAIN TEMPLATE: {}\n'.format(self.main_structure)
             f.seek(0,0)
             f.write(first_line+second_line+content)
