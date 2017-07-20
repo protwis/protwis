@@ -120,7 +120,8 @@
                 ClearSelection('targets');
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][10];
+                    div.innerHTML = checked_data[i][9];
+                    window.alert(div.innerHTML)
                     if (typeof div.innerText !== "undefined") {
                         AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '') );
                     } else {
