@@ -32,8 +32,12 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
                 # if exists under different name
                 l_canonical = Ligand.objects.get(properities__web_links__web_resource=web_resource,
                     properities__web_links__index=ligand_id, canonical=True)
-                l, created = Ligand.objects.get_or_create(properities = l_canonical.properities,
-                    name = ligand_name, canonical = False)
+                try:
+                    l, created = Ligand.objects.get_or_create(properities = l_canonical.properities,
+                        name = ligand_name, canonical = False)
+                except IntegrityError:
+                    l = Ligand.objects.get(properities = l_canonical.properities,
+                        name = ligand_name, canonical = False)
             except Ligand.DoesNotExist:
                 # fetch ligand from pubchem
                 default_ligand_type = 'Small molecule'
