@@ -90,6 +90,7 @@ class Command(BaseBuild):
             self.logger.info('CREATING MUTANT DATA')
             self.prepare_all_data(options['filename'])
             import random
+            random.shuffle(self.data_all)
             # self.data_all = random.shuffle(self.data_all) 
             # split into 10 runs to average out slow ones
             #n = 5
@@ -350,9 +351,9 @@ class Command(BaseBuild):
                 r = rows[count.value]
                 count.value +=1 
         # for r in rows:
-            # print(source_file,c)
+            # print(r['source_file'],c)
             # PRINT IF ERRORS OCCUR
-            # self.logger.info('File '+str(r['source_file'])+' number '+str(c))
+            #self.logger.info('File '+str(r['source_file'])+' number '+str(c))
             current = time.time()
             c += 1
             # if c%100==0:
@@ -459,7 +460,13 @@ class Command(BaseBuild):
                 self.ligand_cache[str(r['ligand_name'])] = {}
 
             if not l:
-                l = get_or_make_ligand(r['ligand_id'],r['ligand_type'],str(r['ligand_name']))
+                try:
+                    l = get_or_make_ligand(r['ligand_id'],r['ligand_type'],str(r['ligand_name']))
+                except Exception as msg:
+                    print('Something errored with ligand, aborting entry of mutation',r['ligand_name'],r['ligand_type'],r['ligand_id'],r['source_file'])
+                    print(msg)
+                    traceback.print_exc()
+                    continue
                 self.ligand_cache[str(r['ligand_name'])][r['ligand_id']] = l
 
 
