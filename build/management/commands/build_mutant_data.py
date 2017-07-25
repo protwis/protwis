@@ -74,7 +74,7 @@ class Command(BaseBuild):
     publication_cache = {}
     ligand_cache = {}
     ref_ligand_cache = {}
-    data = []
+    data_all = []
 
     def handle(self, *args, **options):
         # delete any existing structure data
@@ -89,7 +89,13 @@ class Command(BaseBuild):
             #self.create_mutant_data(options['filename'])
             self.logger.info('CREATING MUTANT DATA')
             self.prepare_all_data(options['filename'])
-            self.prepare_input(options['proc'], self.data)
+            import random
+            # self.data_all = random.shuffle(self.data_all) 
+            # split into 10 runs to average out slow ones
+            #n = 5
+            #for d in [ self.data_all[i::n] for i in range(n) ]:
+            #    self.data = d
+            self.prepare_input(options['proc'], self.data_all)
             self.logger.info('COMPLETED CREATING MUTANTS')
 
         except Exception as msg:
@@ -315,16 +321,16 @@ class Command(BaseBuild):
                     self.logger.info('unknown format'.source_file)
                     continue
 
-                self.data += rows
-        print(len(self.data)," total data points")
+                self.data_all += rows
+        print(len(self.data_all)," total data points")
 
     #def create_mutant_data(self, filenames):
-    def main_func(self, positions, iteration):
+    def main_func(self, positions, iteration,count,lock):
         # filenames
-        if not positions[1]:
-            rows = self.data[positions[0]:]
-        else:
-            rows = self.data[positions[0]:positions[1]]
+        # if not positions[1]:
+        #     rows = self.data[positions[0]:]
+        # else:
+        #     rows = self.data[positions[0]:positions[1]]
 
 
         missing_proteins = {}
@@ -338,7 +344,12 @@ class Command(BaseBuild):
         bulk_r = []
         current_sheet = time.time()
 
-        for r in rows:
+        rows = self.data_all
+        while count.value<len(rows):
+            with lock:
+                r = rows[count.value]
+                count.value +=1 
+        # for r in rows:
             # print(source_file,c)
             # PRINT IF ERRORS OCCUR
             # self.logger.info('File '+str(r['source_file'])+' number '+str(c))
@@ -483,13 +494,20 @@ class Command(BaseBuild):
                     l_ref.name = r['exp_mu_ligand_ref']
                     l_ref.canonical = True
                     l_ref.ambigious_alias = False
-                    l_ref.save()
-                    l_ref.load_by_name(r['exp_mu_ligand_ref'])
+                    try:
+                        l_ref.save()
+                        l_ref.load_by_name(r['exp_mu_ligand_ref'])
+                    except IntegrityError:
+                        if Ligand.objects.filter(name=r['exp_mu_ligand_ref'], canonical=True).exists():
+                            l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=True)
+                        else:
+                            l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False)
+                        # print("error failing ligand, duplicate?")
                     try:
                         l_ref.save()
                     except IntegrityError:
                         l_ref = Ligand.objects.get(name=r['exp_mu_ligand_ref'], canonical=False)
-                        print("error failing ligand, duplicate?")
+                        # print("error failing ligand, duplicate?")
                         # logger.error("FAILED SAVING LIGAND, duplicate?")
                 else:
                     l_ref = None
