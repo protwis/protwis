@@ -10,8 +10,8 @@ from common.diagrams_gpcr import DrawSnakePlot
 
 import pickle
 
-class Construct(models.Model): 
-    #overall class 
+class Construct(models.Model):
+    #overall class
     name = models.TextField(max_length=100, unique=True)
     # linked onto the WT protein
     protein = models.ForeignKey('protein.Protein')
@@ -129,7 +129,7 @@ class CrystalInfo(models.Model):
     resolution = models.DecimalField(max_digits=5, decimal_places=3) #probably want more values
     pdb_data = models.ForeignKey('structure.PdbData', null=True) #if exists
     pdb_code = models.TextField(max_length=10, null=True) #if exists
-    #No not include ligands here, as they should be part of crystalization 
+    #No not include ligands here, as they should be part of crystalization
 
 
 class ContributorInfo(models.Model):
@@ -137,24 +137,46 @@ class ContributorInfo(models.Model):
     pi_email = models.TextField(max_length=50)
     pi_name = models.TextField(max_length=50)
     urls = models.TextField() #can be comma seperated if many
-    date = models.DateField() 
+    date = models.DateField()
     address = models.TextField()
 
 
 class ConstructMutation(models.Model):
+    # construct = models.ManyToManyField('ConstructMutation')
     sequence_number = models.SmallIntegerField()
     wild_type_amino_acid = models.CharField(max_length=1)
     mutated_amino_acid = models.CharField(max_length=1)
     mutation_type = models.CharField(max_length=30, null=True)
     remark = models.TextField(null=True)
+    residue = models.ForeignKey(Residue, null=True)
+
+    def get_res(self):
+        '''Retrieve the residue connected to this mutation, and save it as a FK field.'''
+        try:
+            construct = self.construct_set.get().protein.entry_name
+        except Construct.DoesNotExist:
+            return None
+        seq_no = self.sequence_number
+        try:
+            return Residue.objects.get(protein_conformation__protein__entry_name=construct, sequence_number=seq_no)
+        except Residue.DoesNotExist:
+            return None
+
+
+
+    def save(self, *args, **kwargs):
+        '''Modify save function to automatically get the associated residue, should it exist'''
+        self.residue_id = self.get_res()
+        super(ConstructMutation, self).save(*args, **kwargs)
 
 
     def __str__(self):
         return '{}{}{}'.format(self.wild_type_amino_acid, self.sequence_number,
-            self.mutated_amino_acid)
+                               self.mutated_amino_acid)
 
     class Meta():
         db_table = 'construct_mutation'
+
 
 
 class ConstructDeletion(models.Model):
@@ -252,7 +274,7 @@ class ChemicalConc(models.Model):
         return self.chemical.name
 
     class Meta():
-        db_table = 'construct_chemical_conc'    
+        db_table = 'construct_chemical_conc'
 
 
 # includes all chemicals, type & concentration. Chemicals can be from LCPlipid, detergent, etc.
