@@ -66,6 +66,7 @@ input.form-control {
                         sPlaceHolder: "head:after",
                         aoColumns: [
                             { type: "select" }, //protein name
+                            { type: "select" }, //protein name
                             { type: "select" }, //Alt Position
                             { type: "select" }, //Position
                             { type: "select" }, //Segment
@@ -112,6 +113,7 @@ input.form-control {
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="generic numbering" data-placement="top">GPCRdb</th>
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="structural segment" data-placement="top">Segment</th>
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="amino acid substitution, wildtype to mutant" data-placement="top">Variant</th>
+                        <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="Category of mutation" data-placement="top">Mutation type</th>
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="ExAC allele frequencies, as calculated as allele count/allele number" data-placement="top">Allele Frequency</th>
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="number of alleles with this variant" data-placement="top">Allele Count</th>
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="total number of alleles that were able to be called" data-placement="top">Allele Number</th>
@@ -131,8 +133,10 @@ input.form-control {
                         <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
+                        <th style="text-align:center"></th>
                     </tr>
                     <tr>
+                        <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
@@ -153,6 +157,7 @@ input.form-control {
                       <th style="text-align:center">GPCRdb</th>
                       <th style="text-align:center">Segment</th>
                       <th style="text-align:center">Variant</th>
+                      <th style="text-align:center">Mutation Type</th>
                       <th style="text-align:center">Allele Frequency</th>
                       <th style="text-align:center">Allele Count</th>
                       <th style="text-align:center">Allele Number</th>
@@ -168,6 +173,7 @@ input.form-control {
                   <td>{{mutation.residue.display_generic_number.label}}</td>
                   <td>{{mutation.residue.protein_segment.slug}}</td>
                   <td>{{mutation.residue.amino_acid}} => {{mutation.amino_acid}}</td>
+                  <td>{{mutation.type}}</td>
                   <td>{{mutation.allele_frequency}}</td>
                   <td>{{mutation.allele_count}}</td>
                   <td>{{mutation.allele_number}}</td>
@@ -182,6 +188,11 @@ input.form-control {
 
 {% if HelixBox %}
 <h2>Residue</h2>
+<ul>
+    <li>deleterious missense variants are shown in <font color=#e30e0e>red</font></li>
+    <li>tolerated missense variants are shown in <font color=#70c070>green</font></li>
+    <li>loss of function mutations ('stop gained' or 'frameshift' in the coding region) are shown in <font color=#575c9d>blue</font></li>
+</ul>
 <div class="col-md-2 text-right text-info">
     <h4>Diagrams</h4>
 </div>

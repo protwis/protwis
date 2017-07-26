@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 import math, os
 import logging
+import re
 from decimal import *
 getcontext().prec = 20
 
@@ -67,15 +68,23 @@ class Command(BaseCommand):
 
                 entry_name = snp_data[index:index+1]['EntryName'].values[0]
                 sequence_number = snp_data[index:index+1]['SequenceNumber'].values[0]
-                amino_acid = snp_data[index:index+1]['NMaa'].values[0]
                 allele_frequency = float(snp_data[index:index+1]['Allele Frequency'].values[0])
                 allele_count = int(snp_data[index:index+1]['Allele Count'].values[0])
                 allele_number = int(snp_data[index:index+1]['Allele Number'].values[0])
                 number_homozygotes = int(snp_data[index:index+1]['Number of Homozygotes'].values[0])
                 type = snp_data[index:index+1]['type'].values[0]
 
-                sift_score = float(snp_data[index:index+1]['sift_score'].values[0])
-                polyphen_score = float(snp_data[index:index+1]['polyphen_score'].values[0])
+                if 'lof' in filename:
+                    prot_con = snp_data[index:index+1]['Protein Consequence'].values[0]
+                    splitterm = re.findall(r'\d+', prot_con)[0]
+                    amino_acid = prot_con.split(splitterm)[1]
+                    sift_score = None
+                    polyphen_score = None
+                else:
+                    amino_acid = snp_data[index:index+1]['NMaa'].values[0]
+                    sift_score = float(snp_data[index:index+1]['sift_score'].values[0])
+                    polyphen_score = float(snp_data[index:index+1]['polyphen_score'].values[0])
+
 
                 try:
                     p = Protein.objects.get(entry_name=entry_name)
@@ -91,7 +100,7 @@ class Command(BaseCommand):
                 if res:
                     # try:
                     snp, created = NaturalMutations.objects.get_or_create(protein=p, residue=res, amino_acid=amino_acid, allele_frequency=allele_frequency, allele_count=allele_count, allele_number=allele_number, number_homozygotes=number_homozygotes,
-                    sift_score=sift_score, type=type, polyphen_score=polyphen_score) # 
+                    sift_score=sift_score, type=type, polyphen_score=polyphen_score) #
                         # if created:
                             # self.logger.info('Created SNP for ' + str(sequence_number) + ' for protein ' + str(p.name))
                     # except:

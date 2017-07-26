@@ -365,11 +365,12 @@ var path = svg3.datum(interactions).selectAll("path")
 
 {% block content %}
 
-<h4>Missense variation overview</h4>
+<h4>Genetic variation overview</h4>
 <ul>
     <li>{{ stats.total_mv }} total missense variations.</li>
-    <li>{{ stats.total_av_rv }} average rare variants per receptor.</li>
-    <li>{{ stats.total_av_cv }} average common variants per receptor.</li>
+    <li>{{ stats.total_av_rv }} average rare missense variants per receptor.</li>
+    <li>{{ stats.total_av_cv }} average common missense variants per receptor.</li>
+    <li>{{ stats.total_lof }} total loss-of-function variants (frameshift and stop-gained mutations).</li>
 </ul>
 <br />
 
@@ -393,7 +394,7 @@ var path = svg3.datum(interactions).selectAll("path")
         </li>
     </ul>
 </div></p> -->
-The classification tree highlights receptor missense variation density (fraction of receptor length).
+The classification tree highlights receptor variants (missense and loss-of-function) and variation density (fraction of receptor length).
 <br>
 Clicking on the receptor level links to a more detailed table of variant information.
 <br>

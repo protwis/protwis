@@ -6,14 +6,14 @@ class NaturalMutations(models.Model):
 
     protein = models.ForeignKey('protein.Protein')
     residue = models.ForeignKey('residue.Residue')
-    amino_acid = models.CharField(max_length=3)
+    amino_acid = models.CharField(max_length=20)
     type = models.CharField(max_length=30)
     allele_frequency = models.FloatField()
     allele_count = models.IntegerField()
     allele_number = models.IntegerField()
     number_homozygotes = models.IntegerField()
-    sift_score = models.FloatField()
-    polyphen_score = models.FloatField()
+    sift_score = models.FloatField(null=True)
+    polyphen_score = models.FloatField(null=True)
 
     def __str__(self):
         return self.protein.name + '_' + str(self.residue.sequence_number) + '_' + self.residue.amino_acid

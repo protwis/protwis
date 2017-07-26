@@ -95,10 +95,16 @@ def render_variants(request, protein = None, family = None, download = None, rec
     for NM in NMs:
 
         SN = NM.residue.sequence_number
+        type = NM.type
+
+        if type == 'missense':
+            effect = 'deleterious' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else 'tolerated'
+            color = '#e30e0e' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else '#70c070'
+        else:
+            effect = 'deleterious'
+            color = '#575c9d'
         # account for multiple mutations at this position!
-        effect = 'deleterious' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else 'tolerated'
-        color = '#e30e0e' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else '#70c070'
-        jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes, effect, color]
+        jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes, NM.type, effect, color]
 
     residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=proteins[0].entry_name).prefetch_related('protein_segment','display_generic_number','generic_number')
     SnakePlot = DrawSnakePlot(
@@ -154,10 +160,16 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
         for NM in NMs:
 
             SN = NM.residue.sequence_number
+            type = NM.type
+
+            if type == 'missense':
+                effect = 'deleterious' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else 'tolerated'
+                color = '#e30e0e' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else '#70c070'
+            else:
+                effect = 'deleterious'
+                color = '#575c9d'
             # account for multiple mutations at this position!
-            effect = 'deleterious' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else 'tolerated'
-            color = '#e30e0e' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else '#70c070'
-            jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes, effect, color]
+            jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes, NM.type, effect, color]
 
         jsondata = json.dumps(jsondata)
         response_kwargs['content_type'] = 'application/json'
@@ -364,11 +376,12 @@ def statistics(request):
     context['tree'] = json.dumps(tree)
 
     ## Overview statistics
-    total_receptors = NaturalMutations.objects.all().values('protein_id').distinct().count()
-    total_mv = len(NaturalMutations.objects.all())
-    total_av_rv = round(len(NaturalMutations.objects.filter(allele_frequency__lt=0.001))/ total_receptors,1)
-    total_av_cv = round(len(NaturalMutations.objects.filter(allele_frequency__gte=0.001))/ total_receptors,1)
-    context['stats'] = {'total_mv':total_mv,'total_av_rv':total_av_rv, 'total_av_cv':total_av_cv}
+    total_receptors = NaturalMutations.objects.filter(type='missense').values('protein_id').distinct().count()
+    total_mv = len(NaturalMutations.objects.filter(type='missense'))
+    total_lof = len(NaturalMutations.objects.exclude(type='missense'))
+    total_av_rv = round(len(NaturalMutations.objects.filter(type='missense', allele_frequency__lt=0.001))/ total_receptors,1)
+    total_av_cv = round(len(NaturalMutations.objects.filter(type='missense', allele_frequency__gte=0.001))/ total_receptors,1)
+    context['stats'] = {'total_mv':total_mv,'total_lof':total_lof,'total_av_rv':total_av_rv, 'total_av_cv':total_av_cv}
 
     return render(request, 'variation_statistics2.html', context)
 
