@@ -17,10 +17,10 @@ class Construct(models.Model):
     protein = models.ForeignKey('protein.Protein')
     contributor = models.ForeignKey('ContributorInfo')
     #Modifications
-    mutations = models.ManyToManyField('ConstructMutation')
-    deletions = models.ManyToManyField('ConstructDeletion')
-    modifications = models.ManyToManyField('ConstructModification')
-    insertions = models.ManyToManyField('ConstructInsertion')
+    # mutations = models.ManyToManyField('ConstructMutation') ## MOVE TO ONETOMANY FIELDS in children
+    # deletions = models.ManyToManyField('ConstructDeletion')
+    # modifications = models.ManyToManyField('ConstructModification')
+    # insertions = models.ManyToManyField('ConstructInsertion')
 
     expression = models.ForeignKey('ExpressionSystem', null=True)  #method description if present
     solubilization = models.ForeignKey('Solubilization', null=True)  #method description if present
@@ -143,31 +143,39 @@ class ContributorInfo(models.Model):
 
 class ConstructMutation(models.Model):
     # construct = models.ManyToManyField('ConstructMutation')
+    construct = models.ForeignKey('Construct', related_name = 'mutations')
     sequence_number = models.SmallIntegerField()
     wild_type_amino_acid = models.CharField(max_length=1)
     mutated_amino_acid = models.CharField(max_length=1)
     mutation_type = models.CharField(max_length=30, null=True)
     remark = models.TextField(null=True)
-    residue = models.ForeignKey(Residue, null=True)
+    residue = models.ForeignKey('residue.Residue', null=True)
 
     def get_res(self):
         '''Retrieve the residue connected to this mutation, and save it as a FK field.'''
-        try:
-            construct = self.construct_set.get().protein.entry_name
-        except Construct.DoesNotExist:
-            return None
+        # try:
+        #     construct = self.construct_set.get().structure.protein_conformation.protein
+        # except Construct.DoesNotExist:
+        #     print('no construct for this mutation')
+        #     return None
         seq_no = self.sequence_number
         try:
-            return Residue.objects.get(protein_conformation__protein__entry_name=construct, sequence_number=seq_no)
+            # res_cons = Residue.objects.get(protein_conformation__protein=construct, sequence_number=seq_no)
+            res_wt = Residue.objects.get(protein_conformation__protein=self.construct.structure.protein_conformation.protein.parent, sequence_number=seq_no)
+            if res_wt.amino_acid != self.wild_type_amino_acid:
+                print('aa dont match',construct,seq_no,"annotated wt:", self.wild_type_amino_acid, "DB wt:",res_wt.amino_acid, "Annotated Mut",self.mutated_amino_acid)
+            #     print('records wt',res_wt.amino_acid,'construct res',res_cons.amino_acid)
+            return res_wt
         except Residue.DoesNotExist:
+            print('no residue for',construct,seq_no)
             return None
 
 
 
-    def save(self, *args, **kwargs):
-        '''Modify save function to automatically get the associated residue, should it exist'''
-        self.residue_id = self.get_res()
-        super(ConstructMutation, self).save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     '''Modify save function to automatically get the associated residue, should it exist'''
+    #     self.residue_id = self.get_res()
+    #     super(ConstructMutation, self).save(*args, **kwargs)
 
 
     def __str__(self):
@@ -180,6 +188,7 @@ class ConstructMutation(models.Model):
 
 
 class ConstructDeletion(models.Model):
+    construct = models.ForeignKey('Construct', related_name = 'deletions')
     start = models.SmallIntegerField()
     end = models.SmallIntegerField()
 
@@ -191,6 +200,7 @@ class ConstructDeletion(models.Model):
 
 
 class ConstructModification(models.Model):
+    construct = models.ForeignKey('Construct', related_name = 'modifications')
     modification = models.TextField(max_length=50)
     position_type = models.TextField(max_length=20)
     pos_start = models.SmallIntegerField()
@@ -205,6 +215,7 @@ class ConstructModification(models.Model):
 
 
 class ConstructInsertion(models.Model):
+    construct = models.ForeignKey('Construct', related_name = 'insertions')
     insert_type = models.ForeignKey('ConstructInsertionType')
     position = models.TextField(max_length=20, null=True) #N-term1, N-term2 etc -- to track order
     presence = models.TextField(max_length=20, null=True) #YES or NO (presence in crystal)

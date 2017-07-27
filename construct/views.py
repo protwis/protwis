@@ -887,13 +887,13 @@ def stabilisation_browser(request):
     constructs = Construct.objects.all()\
             .order_by().only(
                 "protein__entry_name",
-                "mutations__sequence_number",
-                "mutations__residue__generic_number",
-                "mutations__residue__protein_segment__slug",
+                # "mutations__sequence_number",
+                # "mutations__residue__generic_number",
+                # "mutations__residue__protein_segment__slug",
+                # "mutations__mutated_amino_acid",
+                # "mutations__wild_type_amino_acid",
                 "protein__family__slug",
                 "protein__family__parent__parent__parent__name",
-                "mutations__mutated_amino_acid",
-                "mutations__wild_type_amino_acid",
                 "structure__state__name",
                 "crystal__pdb_code")\
             .prefetch_related(
@@ -902,7 +902,7 @@ def stabilisation_browser(request):
                 "mutations__residue__protein_segment",
                 "protein__family__parent__parent__parent",
                 "crystal")
-
+    print('hi')
     # Get a list of all relevant proteins and generic numbers
     conservation_proteins = constructs.values_list('protein__family__parent__parent__parent__name',
                                                    flat=True)\
