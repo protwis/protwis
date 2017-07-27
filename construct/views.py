@@ -902,7 +902,7 @@ def stabilisation_browser(request):
                 "mutations__residue__protein_segment",
                 "protein__family__parent__parent__parent",
                 "crystal")
-    print('hi')
+                
     # Get a list of all relevant proteins and generic numbers
     conservation_proteins = constructs.values_list('protein__family__parent__parent__parent__name',
                                                    flat=True)\
