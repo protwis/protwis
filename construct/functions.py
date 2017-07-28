@@ -711,9 +711,13 @@ def add_construct(d):
         if 'remark' not in mutation:
             mutation['remark'] = ''
 
+        res_wt = Residue.objects.get(protein_conformation__protein=protein_conformation.protein.parent, sequence_number=mutation['pos'])
+        if res_wt.amino_acid != mutation['wt']:
+            print('aa dont match',construct,mutation['pos'],"annotated wt:", mutation['wt'], "DB wt:",res_wt.amino_acid, "Annotated Mut",mutation['mut'])
+
         #construct=construct, TODO: create a unique one for each mutation per construct to avoid unambiguity 
-        mut = ConstructMutation.objects.create(sequence_number=mutation['pos'],wild_type_amino_acid=mutation['wt'],mutated_amino_acid=mutation['mut'],mutation_type=mutation['type'],remark=mutation['remark'])
-        construct.mutations.add(mut)
+        mut = ConstructMutation.objects.create(construct=construct, sequence_number=mutation['pos'],wild_type_amino_acid=mutation['wt'],mutated_amino_acid=mutation['mut'],mutation_type=mutation['type'],remark=mutation['remark'], residue=res_wt)
+        #construct.mutations.add(mut)
 
     #print(d['raw_data'])
     #make sure to order auxiliary correct
@@ -741,12 +745,12 @@ def add_construct(d):
         # if a 'deletion' is a single type and of non-user origin, assume its an insert and the pos is not actually deleted (3odu)
         dele = False
         if 'start' in deletion:
-            dele, created = ConstructDeletion.objects.get_or_create(start=deletion['start'],end=deletion['end'])
+            dele, created = ConstructDeletion.objects.get_or_create(construct=construct, start=deletion['start'],end=deletion['end'])
         else:
             if deletion['origin']=='user':
-                dele, created = ConstructDeletion.objects.get_or_create(start=deletion['pos'],end=deletion['pos'])
-        if dele:
-            construct.deletions.add(dele)
+                dele, created = ConstructDeletion.objects.get_or_create(construct=construct, start=deletion['pos'],end=deletion['pos'])
+        # if dele:
+        #     construct.deletions.add(dele)
         if deletion['origin']!='user':
             id = deletion['origin'].split('_')[1]
             if id in ip_lookup:
@@ -759,7 +763,7 @@ def add_construct(d):
     for name,aux in d['auxiliary'].items():
         id = name.replace('aux','')
         aux_type, created = ConstructInsertionType.objects.get_or_create(name=aux['type'],subtype=aux['subtype'])
-        insert = ConstructInsertion.objects.create(insert_type=aux_type,presence=aux['presence'],position=aux['position']+"_"+id)
+        insert = ConstructInsertion.objects.create(construct=construct, insert_type=aux_type,presence=aux['presence'],position=aux['position']+"_"+id)
 
         if insert.presence == 'YES' and insert.position.startswith('Within Receptor'):
             #need to fetch range
@@ -775,14 +779,14 @@ def add_construct(d):
                     insert.end = insert_deletions[id]['pos']
             insert.save()
 
-        construct.insertions.add(insert)
+        # construct.insertions.add(insert)
 
     #MODIFICATIONS
     for modification in d['modifications']:
-        mod, created = ConstructModification.objects.get_or_create(modification=modification['type'],position_type=modification['position'][0],
+        mod, created = ConstructModification.objects.get_or_create(construct=construct, modification=modification['type'],position_type=modification['position'][0],
                                                    pos_start=modification['position'][1][0],
                                                    pos_end=modification['position'][1][1],remark=modification['remark'] )
-        construct.modifications.add(mod)
+        # construct.modifications.add(mod)
 
 
     #EXPRESSION

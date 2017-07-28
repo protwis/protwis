@@ -7,22 +7,23 @@ from django.conf import settings
 
 
 from common.diagrams_gpcr import DrawSnakePlot
+from common.definitions import AA_PROPENSITY, HYDROPHOBICITY
 from common.views import AbsTargetSelection
-from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
+from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, STRUCTURAL_RULES
 from construct.models import *
 from construct.functions import *
-from protein.models import Protein, ProteinConformation,ProteinSegment
+from construct.tool import *
+from protein.models import Protein, ProteinConformation, ProteinSegment
 from structure.models import Structure
 from mutation.models import Mutation
 from residue.models import ResiduePositionSet
-from construct.tool import *
+
 
 
 from datetime import datetime
 import json
 import copy
 from collections import OrderedDict
-
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
@@ -33,8 +34,8 @@ def detail(request, slug):
 
     # get constructs
     c = Construct.objects.filter(name=slug).prefetch_related(
-                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type","expression","solubilization", "modifications", "deletions", 
-                "crystallization__crystal_method", "crystallization__crystal_type", 
+                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type","expression","solubilization", "modifications", "deletions",
+                "crystallization__crystal_method", "crystallization__crystal_type",
                 "crystallization__chemical_lists", "crystallization__chemical_lists__chemicals__chemical__chemical_type",
                 "protein__species","structure__pdb_code","structure__publication__web_link", "contributor").all()[0]
 
@@ -254,7 +255,7 @@ class ConstructStatistics(TemplateView):
                         truncations_new[position][p_class_name]['receptors'][entry_name][0].append(from_tm1)
                         if from_tm1 not in truncations_new_sum[position][p_class_name]:
                             truncations_new_sum[position][p_class_name][from_tm1] = 0
-                        truncations_new_sum[position][p_class_name][from_tm1] += 1  
+                        truncations_new_sum[position][p_class_name][from_tm1] += 1
                     # if from_tm1 not in truncations_new[position][p_class_name]['possiblities']:
                     #     truncations_new[position][p_class_name]['possiblities'].append(from_tm1)
                     #     truncations_new[position][p_class_name]['possiblities'] = sorted(truncations_new[position][p_class_name]['possiblities'])
@@ -266,7 +267,7 @@ class ConstructStatistics(TemplateView):
                     bw = x50s[entry_name]['8x50']-deletion.start
                     bw = "8."+str(50-x50s[entry_name]['8x50']+deletion.start)
 
-                    from_h8 = deletion.start - cterm_start[entry_name] 
+                    from_h8 = deletion.start - cterm_start[entry_name]
 
                     if p_class_name not in truncations['cterm']:
                         truncations['cterm'][p_class_name] = {}
@@ -293,7 +294,7 @@ class ConstructStatistics(TemplateView):
                         truncations_new_sum[position][p_class_name] = {}
 
 
-            
+
 
                     if p_class_name not in truncations_new[position]:
                         truncations_new[position][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
@@ -303,7 +304,7 @@ class ConstructStatistics(TemplateView):
                         truncations_new[position][p_class_name]['receptors'][entry_name][0].append(from_h8)
                         if from_h8 not in truncations_new_sum[position][p_class_name]:
                             truncations_new_sum[position][p_class_name][from_h8] = 0
-                        truncations_new_sum[position][p_class_name][from_h8] += 1  
+                        truncations_new_sum[position][p_class_name][from_h8] += 1
 
                 if deletion.start > x50s[entry_name]['5x50'] and deletion.start < x50s[entry_name]['6x50']:
                     # if fusion_icl3:
@@ -417,12 +418,12 @@ class ConstructStatistics(TemplateView):
                 truncations_new_possibilties[position] = []
 
 
-            from_h8 = cterm_end[entry_name] - cterm_start[entry_name] 
+            from_h8 = cterm_end[entry_name] - cterm_start[entry_name]
             if not found_cterm:
                 truncations_new[position][p_class_name]['receptors'][entry_name] = [[],[from_h8],[from_h8]]
             else:
                 truncations_new[position][p_class_name]['receptors'][entry_name][2].append(from_h8)
-                
+
             if from_h8 not in truncations_new_possibilties[position]:
                 truncations_new_possibilties[position].append(from_h8)
                 truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
@@ -445,7 +446,7 @@ class ConstructStatistics(TemplateView):
             #print(segment)
             ordered_truncations[segment] = OrderedDict()
             for p_class, c_vals in sorted(s_vals.items()):
-                #print(p_class) 
+                #print(p_class)
                 ordered_truncations[segment][p_class] = OrderedDict()
                 for pos, p_vals in sorted(c_vals.items(),key=lambda x: (len(x[1]),x[0]), reverse=True):
                     #print(pos, len(p_vals))
@@ -453,7 +454,7 @@ class ConstructStatistics(TemplateView):
 
 
         fusion_possibilities = truncations_new_possibilties['nterm_fusion'][::-1] + truncations_new_possibilties['icl2_fusion_start'] + truncations_new_possibilties['icl3_fusion_start'] + truncations_new_possibilties['icl2_fusion_end'] + truncations_new_possibilties['icl3_fusion_end']
-        
+
         for pclass, receptors in track_fusions.items():
             for receptor, vals in receptors.items():
                 temp = []
@@ -565,7 +566,7 @@ class ConstructStatistics(TemplateView):
                 mutation_list[p_class][gn] = {'proteins':[], 'hits':0, 'mutation':[]}
             if entry_name not in mutation_list[p_class][gn]['proteins']:
                 mutation_list[p_class][gn]['proteins'].append(entry_name)
-                mutation_list[p_class][gn]['hits'] += 1  
+                mutation_list[p_class][gn]['hits'] += 1
                 mutation_list[p_class][gn]['mutation'].append((mutation[0].wild_type_amino_acid,mutation[0].mutated_amino_acid))
 
 
@@ -865,12 +866,503 @@ class ConstructMutations(TemplateView):
 
 
             mutation_list.append({'entry_name':entry_name,'pdb':pdb,'cname':cname, 'segment':segment,'pos': pos, 'gn': gn, 'wt': wt, 'mut': mut,'p_class': p_class, 'type': mut_type})
+            if (pdb == 'adrb1_melga'): print(gn)
 
 
         context['mutation_list'] = mutation_list
-        print(mutation_list)
+        # print(mutation_list)
 
         return context
+
+
+
+def stabilisation_browser(request):
+    ''' View to display and summarise mutation data for thermostabilising mutational constructs. '''
+
+    # Set up: Restructure the STRUCTURAL_RULES for the constructs into a crude-tree like structure to enable
+    # quick and concise searching within the for loops below.
+    structural_rule_tree = create_structural_rule_trees(STRUCTURAL_RULES)
+
+    # Get a list of all constructs.
+    constructs = Construct.objects.all()\
+            .order_by().only(
+                "protein__entry_name",
+                # "mutations__sequence_number",
+                # "mutations__residue__generic_number",
+                # "mutations__residue__protein_segment__slug",
+                # "mutations__mutated_amino_acid",
+                # "mutations__wild_type_amino_acid",
+                "protein__family__slug",
+                "protein__family__parent__parent__parent__name",
+                "structure__state__name",
+                "crystal__pdb_code")\
+            .prefetch_related(
+                "structure__state",
+                "mutations__residue__generic_number",
+                "mutations__residue__protein_segment",
+                "protein__family__parent__parent__parent",
+                "crystal")
+                
+    # Get a list of all relevant proteins and generic numbers
+    conservation_proteins = constructs.values_list('protein__family__parent__parent__parent__name',
+                                                   flat=True)\
+                            .distinct()
+    conservation_gen_nums = constructs.values_list('mutations__residue__generic_number__label', flat=True).distinct()
+
+    # Calculate the conservation values for the mutations across their receptor families and protein classes.
+    # Alignment performed using generic numbers.
+    conservation = conservation_table(conservation_proteins, conservation_gen_nums)
+
+
+    # For each analysis mode, define the information that is to be used as a unique identifier for grouping data.
+    # I.e. for position_only, grouping is performed by class an position.  Hence each row will have a unique class &
+    # position.  This is used as the unique identifier, or ID. -- recorded in 'include_in_id'
+    # Each row has some calculated or 'unique' values, as well as the id. This is found below.  However, for example,
+    # the wild type AA is not unique accross the pos_and_mut group, as so this must be removed from the row-info.
+    # This is recorded in 'exclude_from_info'
+    groupings = {
+        "all":{"include_in_id":['class', 'gen_num', 'wild_type', 'mutant'], "exclude_from_info":['']},
+        "pos_and_wt":{"include_in_id":['class', 'gen_num', 'wild_type'],
+                      "exclude_from_info":['ala_leu_subset', 'ala_subset', 'mutant']},
+        "pos_and_mut":{"include_in_id":['class', 'gen_num', 'mutant'],
+                       "exclude_from_info":['ala_leu_subset', 'wild_type']},
+        "position_only":{"include_in_id":['class', 'gen_num'],
+                         "exclude_from_info":['ala_leu_subset', 'ala_subset', 'wild_type', 'mutant']}
+        }
+
+    # Set up dictionaries to record information.
+    mutation_groups = {"position_only":{}, "all":{}, "pos_and_wt":{}, "pos_and_mut":{}}
+
+    # For each construct, get the needed information, and add to the context dictionary called mutation_list.
+    for record in constructs:
+        # Get info for the construct
+        struct_id = record.structure_id
+        state = record.structure.state.name
+        prot = record.protein
+        p_class = prot.family.parent.parent.parent.name
+        p_ligand = prot.family.parent.parent.name
+        p_receptor = prot.family.parent.name
+        pdb = record.crystal.pdb_code
+
+        # For each construct there may be many mutations.  Iterate through each one, adding it to the correct row in
+        # each analysis mode grouping in the context dictionary.
+        for mutant in record.mutations.all():
+            # Get the generic number and segment, if known.
+            try:
+                if mutant.residue.generic_number is None:
+                    generic_number = u'\u2014'
+                else:
+                    generic_number = mutant.residue.generic_number.label
+                segment = mutant.residue.protein_segment.slug
+            except AttributeError:
+                generic_number = u'\u2014'
+                segment = u'\u2014'
+
+            # Collect the mutation info needed to create a unique group id, and the info relevant to the full row.
+            mutant_id = {'gen_num':generic_number, 'wild_type':mutant.wild_type_amino_acid,
+                         'mutant':mutant.mutated_amino_acid, 'GPCR_count':0, 'segment':segment, 'class': p_class}
+            mutant_info = {'pdb':pdb,
+                           'ligand': p_ligand,
+                           'receptor': p_receptor,
+                           'wild_type':mutant_id["wild_type"],
+                           'mutant':mutant_id['mutant'],
+                           'state':state,
+                           'struct_id':struct_id}
+
+            # Check if the calculated columns have been calculated for the pos, wt & mut grouping.
+            # If so, all groups already have the column calculations needed added.
+            # If not, all other grouping info must be calculated anyway to retrieve the site info for the wt & mut
+            # grouping.
+            wt_mut_group_id = ",".join([str(val) for key, val in mutant_id.items()
+                                        if key in groupings['all']['include_in_id']])
+
+            if wt_mut_group_id not in mutation_groups['all']:
+                # In here: insert the code to find the site info
+                calced_cols = get_calculated_columns(structural_rule_tree,
+                                                     mutant_id['mutant'],
+                                                     mutant_id['wild_type'],
+                                                     generic_number,
+                                                     p_class,
+                                                     p_receptor,
+                                                     conservation)
+
+            # For each group, add the required info.
+            for group_name, attr in groupings.items():
+                # Create a dictionary of information pertaining to the whole group to which the mutant belongs
+                #
+                group_info = {key:item for key, item in mutant_id.items() if key not in attr['exclude_from_info']}
+                # Create a group ID (which will be unique for each grouping)
+                group_id = ",".join([str(val) for key, val in mutant_id.items()
+                                     if key in attr['include_in_id']])
+
+                # Get the context dict entry for which the mutant should be added.
+                # If none, create one with the group_info
+                group = mutation_groups[group_name].setdefault(group_id,
+                                                               [group_info, {}]
+                                                              )
+
+                # If the group is newly created, calculate the values for the Frequency and Conservation Cols
+                if group[1] == {}:
+                    # Get propensity and hydrophobicity values.
+                    group[0]['propensity'],\
+                    group[0]['hydro'],\
+                    group[0]["class_cons"],\
+                    group[0]["receptor_fam_cons"],\
+                    group[0]["ionic_lock"],\
+                    group[0]["sodium_ion"],\
+                    group[0]["res_switch"]\
+                         = calced_cols[group_name]
+
+                    # Add further information to group_info allow for fast mutation subset filtering.
+                    if group_name == "all":
+                        if mutant_id['mutant'] == 'A':
+                            in_ala_subset = 'ala_subset'
+                        elif mutant_id['wild_type'] == 'A' and mutant_id['mutant'] == 'L':
+                            in_ala_subset = 'ala_subset'
+                        else:
+                            in_ala_subset = 'no_subset'
+
+                        group[0]['ala_subset'] = in_ala_subset
+
+
+                # Count the number of construct mutations recorded in the row.
+                group[0]['GPCR_count'] += 1
+
+                # Remove unnecessary items from the mutant info
+                info = {key:set((item,)) for key, item in mutant_info.items() if key not in attr['include_in_id']}
+
+                if group[1] == {}:
+                    # Initialise the dict with the first mutant.
+                    group[1].update(info)
+                else:
+                     # Add the specific mutant info.
+                    for key, item in info.items():
+                        group[1][key].update(item)
+                    # Remove receptor family conservation info if row refers to >1 receptor family
+                    if len(group[1]['receptor']) != 1:
+                        group[0]["receptor_fam_cons"] = u'\u2014'
+
+    # Send the context dictionary to the template to be rendered
+    return render(request, "construct/stabilisation_browser.html",
+                  {'pos_and_mut': mutation_groups['pos_and_mut'],
+                   'pos_and_wt': mutation_groups['pos_and_wt'],
+                   'all': mutation_groups['all'],
+                   'position_only': mutation_groups["position_only"]})
+
+def conservation_table(prot_classes, gen_nums):
+    '''Calculate the conservation values needed for the thermostabilisation view'''
+    table = {}
+
+    # Collect residue counts for all residues in the protein classes and at the generic number positions within the
+    # prot_classes and gen_nums set, grouped by amino acid, generic number, protein receptor family, and protein class.
+    residues = Residue.objects.order_by()\
+        .only(
+            "amino_acid",
+            "generic_number__label",
+            "protein_conformation__protein__species_id",
+            "protein_conformation__protein__source_id",
+            "protein_conformation__protein__family__parent__parent__parent__name")\
+        .prefetch_related(
+            "protein_conformation__protein__family__parent__parent__parent",
+            "protein_conformation__protein__species",
+            "protein_conformation__protein__source",
+            "generic_number")\
+        .filter(
+            protein_conformation__protein__family__parent__parent__parent__name__in=list(prot_classes),
+            protein_conformation__protein__species_id="1", protein_conformation__protein__source_id="1",
+            generic_number__label__in=list(gen_nums))\
+        .values(
+            'amino_acid',
+            'protein_conformation__protein__family__parent__parent__parent__name',
+            "protein_conformation__protein__family__parent__name",
+            "generic_number__label")\
+        .annotate(Count('amino_acid'))
+
+    # Restructure the data into table format, where each row contains the count for an amino acid at generic number
+    # position, for either a given protein class or receptor family.
+    for dic in residues:
+        prot_row = table.setdefault(
+            (dic['protein_conformation__protein__family__parent__parent__parent__name'], dic['generic_number__label']),
+            {'total':0})
+        prot_row['total'] += dic['amino_acid__count']
+        prot_row.setdefault(dic['amino_acid'], 0)
+        prot_row[dic['amino_acid']] += dic['amino_acid__count']
+
+        rec_row = table.setdefault(
+            (dic['protein_conformation__protein__family__parent__name'], dic['generic_number__label']), {'total':0})
+        rec_row['total'] += dic['amino_acid__count']
+        rec_row.setdefault(dic['amino_acid'], 0)
+        rec_row[dic['amino_acid']] += dic['amino_acid__count']
+
+    # Divide each row by it's total to get the frequency of each amino acid across the row (rather than it's count).
+    for _, row in table.items():
+        for amino_acid, count in row.items():
+            if amino_acid != 'total':
+                row[amino_acid] = round(count/row['total'], 2)
+
+    return table
+
+def get_calculated_columns(rule_tree, mutant, wild_type, g_n, prot_class, rec_fam, conservation): # pylint: disable=too-many-arguments
+
+    ''' Calculate the propensity, hydrophobicity and site info for the given mut & wt for each grouping'''
+
+    # Get the conservation values for the protein class and receptor family
+    class_cons = conservation.get((prot_class, g_n), {})
+    fam_cons = conservation.get((rec_fam, g_n), {})
+
+    # Get the part of the structural_rule_tree relevant to the position and generic number (& hence to all groupings).
+    related_rules = {
+        'ionic_lock_tree':rule_tree["ionic_lock_tree"].get(prot_class[6], {}).get(g_n, {}),
+        'sodium_ion_tree':rule_tree["sodium_ion_tree"].get(prot_class[6], {}).get(g_n, {}),
+        'residue_switch_tree':rule_tree["residue_switch_tree"].get(prot_class[6], {}).get(g_n, {}),
+    }
+
+    # Return a dictionary consisting of the data and site column entries for each grouping / data analysis mode.
+    return {
+        'position_only': get_data_pos_grouping(related_rules),
+        'pos_and_mut':get_data_mut_grouping(related_rules, mutant, class_cons, fam_cons),
+        'pos_and_wt':get_data_wt_grouping(related_rules, mutant, class_cons, fam_cons),
+        'all': get_data_all_grouping(related_rules, mutant, wild_type, class_cons, fam_cons)
+        }
+
+
+
+def get_data_pos_grouping(rules):
+    '''
+    Calculate the Data and Site columns in the browser view for the position only analysis mode
+    '''
+    # Note: an empty dictionary evaluates to False in an if statement,
+    ionic_lock = 'Pos Match' if rules['ionic_lock_tree'] else u'\u2014'
+    sodium_ion = 'Pos Match' if rules['sodium_ion_tree'] else u'\u2014'
+    residue_switch = 'Pos Match' if rules['residue_switch_tree'] else u'\u2014'
+
+    # There is no mutant or wild type info, so all data cols are returned as u'\u2014'
+    return (u'\u2014', u'\u2014', u'\u2014', u'\u2014', ionic_lock, sodium_ion, residue_switch)
+
+def get_data_mut_grouping(rules, mutant, class_cons, fam_cons):
+    '''
+    Calculate the Data and Site columns in the browser view for the pos & mut analysis mode
+    '''
+
+    # Note: an empty dictionary evaluates to False in an if statement,
+    # Check that rules exist that apply to the class, position and gn.
+    if rules['ionic_lock_tree']:
+        #  If so, check if there is a rule relevant to the mutant
+        if rules['ionic_lock_tree'].get(mutant, {}):
+            ionic_lock = 'Pos & Mutant AA Match'
+        else:
+            ionic_lock = 'Pos Match (But Not Mutant AA)'
+    else:
+        ionic_lock = u'\u2014'
+
+
+    if rules['sodium_ion_tree']:
+        if rules['sodium_ion_tree'].get(mutant, {}):
+            sodium_ion = 'Pos & AA Mutant Match'
+        else:
+            sodium_ion = 'Pos Match (But Not Mutant AA)'
+    else:
+        sodium_ion = u'\u2014'
+
+    if rules['residue_switch_tree']:
+        if rules['residue_switch_tree'].get(mutant, {}):
+            residue_switch = 'Pos & Mutant AA Match'
+        else:
+            residue_switch = 'Pos Match (But Not Mutant AA)'
+    else:
+        residue_switch = u'\u2014'
+
+
+    return (AA_PROPENSITY.get(mutant, u'\u2014'),
+            HYDROPHOBICITY.get(mutant, u'\u2014'),
+            class_cons.get(mutant, u'\u2014'),
+            fam_cons.get(mutant, u'\u2014'),
+            ionic_lock, sodium_ion, residue_switch)
+
+
+def get_data_wt_grouping(rules, wild_type, class_cons, fam_cons):
+    '''
+    Calculate the Data and Site columns in the browser view for the pos & wt analysis mode
+    '''
+    # # Note: an empty dictionary evaluates to False in an if statement,
+    if rules['ionic_lock_tree']:
+        # Note:  This is the simpliest, but not the most concise code.
+        # However, okay as code is VERY rarely used.
+        ionic_lock_set = set()
+        for _, wt_rule_dict  in rules['ionic_lock_tree'].items():
+            for key in wt_rule_dict:
+                ionic_lock_set.add(key)
+        if wild_type in ionic_lock_set:
+            ionic_lock = 'Pos & Wild Type AA Match'
+        else:
+            ionic_lock = 'Pos Match (But Not Wild Type AA)'
+    else:
+        ionic_lock = u'\u2014'
+
+    # Check that rules exist that apply to the class, position and gn.
+    if rules['sodium_ion_tree']:
+        sodium_ion_set = set()
+         # If so, check if there is a rule relevant to the wild type.  As the dictionary tree is constructed so that
+         # the mutant is in the 3rd level, and the wold type in the 4th.  Hence each mutant branch must be checked
+         # for the wild type.
+        for _, wt_rule_dict  in rules['sodium_ion_tree'].items():
+            for key in wt_rule_dict:
+                sodium_ion_set.add(key)
+        if wild_type in sodium_ion_set:
+            sodium_ion = 'Pos & Wild Type AA Match'
+        else:
+            sodium_ion = 'Pos Match (But Not Wild Type AA)'
+    else:
+        sodium_ion = u'\u2014'
+
+    if rules['residue_switch_tree']:
+        residue_switch_set = set()
+        for _, wt_rule_dict  in rules['residue_switch_tree'].items():
+            for key in wt_rule_dict:
+                residue_switch_set.add(key)
+        if wild_type in residue_switch_set:
+            residue_switch = 'Pos & Wild Type AA Match'
+        else:
+            residue_switch = 'Pos Match (But Not Wild Type AA)'
+    else:
+        residue_switch = u'\u2014'
+
+    return (AA_PROPENSITY.get(wild_type, u'\u2014'),
+            HYDROPHOBICITY.get(wild_type, u'\u2014'),
+            class_cons.get(wild_type, u'\u2014'),
+            fam_cons.get(wild_type, u'\u2014'),
+            ionic_lock, sodium_ion, residue_switch)
+
+def get_data_all_grouping(rules, mutant, wild_type, class_cons, fam_cons):
+    '''
+    Calculate the Data and Site columns in the browser view for the pos, mut & wt analysis mode
+    '''
+    # Get propensity fold change where possible
+    mut = AA_PROPENSITY.get(mutant, u'\u2014')
+    w_t = AA_PROPENSITY.get(wild_type, u'\u2014')
+        #  Where possible, calculate the fold change
+    prop = u'\u2014' if isinstance(mut, str) | isinstance(w_t, str) else str(round(mut-w_t, 2))
+        # Append the mut and wt values to the end.
+    prop = prop + ' (' + str(mut) + u'\u2212'+ str(w_t) +')'
+
+    # Get hydrophobicity fold change where possible
+    mut = HYDROPHOBICITY.get(mutant, u'\u2014')
+    w_t = HYDROPHOBICITY.get(wild_type, u'\u2014')
+    hydro = u'\u2014' if isinstance(mut, str) | isinstance(w_t, str) else str(round(mut-w_t, 2))
+    hydro = hydro + ' (' + str(mut) + u'\u2212'+ str(w_t) +')'
+
+    # Get the receptor family conservation fold change where possible
+    mut = fam_cons.get(mutant, u'\u2014')
+    w_t = fam_cons.get(wild_type, u'\u2014')
+    rec_cons = u'\u2014' if isinstance(mut, str) | isinstance(w_t, str) else str(round(mut-w_t, 2))
+    rec_cons += ' ('+str(mut)+u'\u2212'+str(w_t)+')'
+
+    # Get the protein class conservation fold change where possible
+    mut = class_cons.get(mutant, u'\u2014')
+    w_t = class_cons.get(wild_type, u'\u2014')
+    prot_cons = u'\u2014' if isinstance(mut, str) | isinstance(w_t, str) else str(round(mut-w_t, 2))
+    prot_cons += ' ('+str(mut)+u'\u2212'+str(w_t)+')'
+
+    # Get site info from the structural site rules
+    ionic_lock = rules['ionic_lock_tree'].get(mutant, {}).get(wild_type, u'\u2014')
+    sodium_ion = rules['sodium_ion_tree'].get(mutant, {}).get(wild_type, u'\u2014')
+    residue_switch = rules['residue_switch_tree'].get(mutant, {}).get(wild_type, u'\u2014')
+
+    return (prop,
+            hydro,
+            prot_cons,
+            rec_cons,
+            ionic_lock,
+            sodium_ion,
+            residue_switch)
+
+
+
+def parse_rule_definition(rule_def):
+    '''
+        Take in a rule definition from the structural rules, and parse so that's it's suitable both for display and
+        use in the rule dictionaries.
+
+        Args:
+        -  rule_def should be of the form:
+                        Ionic / Sodium / Residue + ... ... + removal / contraction / addition
+
+        Returns:
+          site - meaning type of site the definiton refers to.  to be 'ionic_lock', 'sodium_ion', or 'residue_switch'
+          definiton - the action at the site.  to be 'Removed', 'Contracted', or 'Added'
+    '''
+    # Get the type of action in the definition
+    if rule_def[-7:] == 'removal':
+        result = 'Removed'
+    elif rule_def[-11:] == 'contraction':
+        result = 'Contracted'
+    else:
+        result = 'Added'
+
+    # Get action placement from the definition
+    if rule_def[:5] == 'Ionic':
+        site = 'ionic_lock'
+    elif rule_def[:6] == 'Sodium':
+        site = 'sodium_ion'
+    elif rule_def[:7] == 'Residue':
+        site = 'residue_switch'
+    else: # Then there is no sensible way to understand this rule.
+        site = 'other'
+        result = rule_def # Override previous rule finding.
+
+    return (site, result)
+
+
+def create_structural_rule_trees(rule_dictionary):
+    '''
+     Restructure the structural rules from a list of dictionaries to a tree-like nested dictionary,
+     so that they may be easily and quickly searched.
+
+     I.e. each type of site gets its own tree/dictionary, as it has it's own column,
+     This allows for simplier code when querying the rules.
+    '''
+    structural_rule_trees = {'ionic_lock_tree':{}, 'sodium_ion_tree':{}, 'residue_switch_tree':{}, 'other_tree':{}}
+
+    # List of classes included by the 'All' class designation.
+    classes = {'A', 'B', 'C', 'F'}
+    # List of amino acids included by the 'X' amino acid designation.
+    amino_acids = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S',
+                   'T', 'V', 'W', 'Y', 'B', 'Z', 'J']
+
+    # For each tree, initiate the inner class dictionary, for each class.
+    for _, tree in structural_rule_trees.items():
+        for prot_class in classes:
+            tree.setdefault(prot_class, {})
+
+    # For each class type in the Structural rules list, iterate through the contained dictionaries.
+    for item in {'A', 'B', 'C', 'All'}:
+        for rule in rule_dictionary[item]:
+            # Get the dictionary to which the rule pertains
+            site, definition = parse_rule_definition(rule['Definition'])
+            tree = structural_rule_trees[site+"_tree"]
+
+            # Get a set of the classes and wild type aas that the rule affects
+            rule_class = classes if rule['Class'] == 'All' else {rule['Class']}
+            rule_wt = amino_acids if rule['Wt AA'] == 'X' else rule['Wt AA'].split('/')
+
+            # Iterate through the keys in each rule, adding a 'branch' to the nested dictionary, as needed.
+            for prot_class in rule_class:
+                node = tree.setdefault(prot_class, {})\
+                                           .setdefault(rule['Generic Position'], {})\
+                                           .setdefault(rule['Mut AA'], {})
+                for acid in rule_wt:
+                    # If the rule definition is already stored, append the next definition to it.
+                    # Otherwise, create a new entry, consisting of the rule definiton.
+                    acid_node = node.get(acid, "")
+                    if acid_node == "":
+                        # Then no previous rules.
+                        node[acid] = definition
+                    else: # Add to the previous results
+                        node[acid] = acid_node + ", " + definition
+
+    return structural_rule_trees
+
+
 
 def fetch_all_pdb(request):
 
@@ -964,8 +1456,8 @@ class ExperimentBrowser(TemplateView):
         context = super(ExperimentBrowser , self).get_context_data(**kwargs)
         try:
             cons = Construct.objects.all().prefetch_related(
-                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type","expression","solubilization", "modifications", "deletions", 
-                "crystallization__crystal_method", "crystallization__crystal_type", 
+                "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type","expression","solubilization", "modifications", "deletions",
+                "crystallization__crystal_method", "crystallization__crystal_type",
                 "crystallization__chemical_lists", "crystallization__chemical_lists__chemicals__chemical__chemical_type",
                 "protein__species","structure__pdb_code","structure__publication__web_link", "contributor").annotate(pur_count = Count('purification__steps')).annotate(sub_count = Count('solubilization__chemical_list__chemicals'))
 
