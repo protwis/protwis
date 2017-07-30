@@ -784,7 +784,11 @@ class DrugList(views.APIView):
         for drug in drugs:
             drugname = drug.name
             drugtype = drug.drugtype
-            status = drug.status
+            clinical = drug.clinicalstatus
+            if clinical != '-':
+                status = drug.status + ' (' + drug.clinicalstatus + ')'
+            else:
+                status = drug.status
             approval = drug.approval
             indication = drug.indication
             moa = drug.moa
