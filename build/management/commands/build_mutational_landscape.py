@@ -6,7 +6,7 @@ from django.db import IntegrityError
 from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
 from residue.models import (ResidueNumberingScheme, ResidueGenericNumber, Residue, ResidueGenericNumberEquivalent)
-from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations
+from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations, PTMs
 
 import pandas as pd
 import numpy as np
@@ -36,6 +36,7 @@ class Command(BaseCommand):
 
         try:
             self.purge_data()
+            self.create_PTMs()
             self.create_natural_mutations()
             # self.create_cancer_mutations()
             # self.create_disease_mutations()
@@ -45,6 +46,7 @@ class Command(BaseCommand):
 
     def purge_data(self):
         try:
+            PTMs.objects.all().delete()
             NaturalMutations.objects.all().delete()
             # CancerMutations.objects.all().delete()
             # DiseaseMutations.objects.all().delete()
@@ -194,3 +196,38 @@ class Command(BaseCommand):
                         # self.logger.error('Failed creating SNP for ' + sequence_number + ' for protein ' + p.name)
 
         self.logger.info('COMPLETED CREATING DISEASE MUTATIONS')
+
+    def create_PTMs(self, filenames=False):
+        self.logger.info('CREATING PTM SITES')
+
+        # read source files
+        if not filenames:
+            filenames = [fn for fn in os.listdir(self.mutation_data_path) if fn.endswith('ptms.csv')]
+
+        for filename in filenames:
+            filepath = os.sep.join([self.mutation_data_path, filename])
+
+            ptm_data =  pd.read_csv(filepath, low_memory=False)
+
+            for index, entry in enumerate(ptm_data.iterrows()):
+
+                entry_name = ptm_data[index:index+1]['EntryName'].values[0]
+                sequence_number = ptm_data[index:index+1]['SequenceNumber'].values[0]
+                modification = ptm_data[index:index+1]['Type'].values[0]
+                # source = ptm_data[index:index+1]['Source'].values[0]
+
+                try:
+                    p = Protein.objects.get(entry_name=entry_name)
+                except Protein.DoesNotExist:
+                    self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
+                    continue
+
+                try:
+                    res=Residue.objects.get(protein_conformation__protein=p, sequence_number=sequence_number)
+                except:
+                    continue
+                if res:
+                    # g = PTMsType.objects.get_or_create(modification=modification)
+                    snp, created = PTMs.objects.get_or_create(protein=p, residue=res, modification=modification) #
+
+        self.logger.info('COMPLETED CREATING PTM SITES')

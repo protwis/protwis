@@ -7,12 +7,15 @@ from django.views.decorators.cache import cache_page
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinGProtein, ProteinGProteinPair
 from residue.models import Residue, ResiduePositionSet
-from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations
+from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations, PTMs
 
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 
 from mutation.functions import *
 from mutation.models import *
+
+from interaction.models import *
+from interaction.views import ajax #import x-tal interactions
 
 from common import definitions
 from collections import OrderedDict
@@ -89,14 +92,55 @@ def render_variants(request, protein = None, family = None, download = None, rec
                     proteins.append(fp)
 
     NMs = NaturalMutations.objects.filter(Q(protein__in=proteins)).prefetch_related('residue')
+    ptms = PTMs.objects.filter(Q(protein__in=proteins)).prefetch_related('residue')
+    ptms_dict = {}
+
+    for ptm in ptms:
+        ptms_dict[ptm.residue.sequence_number] = ptm.modification
+
+    ### GET LB INTERACTION DATA FROM interaction/ajax??
+    # interactions = ajax('snakeplot','adrb2_human')
+
+    # residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=slug).prefetch_related('protein_segment','display_generic_number','generic_number')
+    # lookup = {}
+    #
+    # for r in residuelist:
+    #     if r.generic_number:
+    #         lookup[r.generic_number.label] = r.sequence_number
+
+    # pf = ProteinFamily.objects.get(slug=slug)
+
+    # number of proteins
+    orthologs = Protein.objects.filter(family__slug__startswith=proteins[0].family.parent.slug, sequence_type__slug='wt')
+
+    interactions = ResidueFragmentInteraction.objects.filter(
+        structure_ligand_pair__structure__protein_conformation__protein__parent__in=orthologs, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').order_by('rotamer__residue__sequence_number')
+    interaction_data = {}
+    for interaction in interactions:
+        if interaction.rotamer.residue.generic_number:
+            sequence_number = interaction.rotamer.residue.sequence_number
+            # sequence_number = lookup[interaction.rotamer.residue.generic_number.label]
+            label = interaction.rotamer.residue.generic_number.label
+            aa = interaction.rotamer.residue.amino_acid
+            interactiontype = interaction.interaction_type.name
+            if sequence_number not in interaction_data:
+                interaction_data[sequence_number] = []
+            if interactiontype not in interaction_data[sequence_number]:
+                interaction_data[sequence_number].append(interactiontype)
+    print(orthologs, interaction_data)
+    ## G PROTEIN INTERACTION
+
 
     jsondata = {}
-
     for NM in NMs:
-
+        functional_annotation = ''
         SN = NM.residue.sequence_number
-        type = NM.type
+        if SN in ptms_dict:
+            functional_annotation +=  'PTM (' + ptms_dict[SN] + ')'
+        if SN in interaction_data:
+            functional_annotation +=  'LB (' + ','.join(interaction_data[SN]) + ')'
 
+        type = NM.type
         if type == 'missense':
             effect = 'deleterious' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else 'tolerated'
             color = '#e30e0e' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else '#70c070'
@@ -104,7 +148,9 @@ def render_variants(request, protein = None, family = None, download = None, rec
             effect = 'deleterious'
             color = '#575c9d'
         # account for multiple mutations at this position!
-        jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes, NM.type, effect, color]
+        NM.functional_annotation = functional_annotation
+        # print(NM.functional_annotation)
+        jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes, NM.type, effect, color, functional_annotation]
 
     residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=proteins[0].entry_name).prefetch_related('protein_segment','display_generic_number','generic_number')
     SnakePlot = DrawSnakePlot(
@@ -143,7 +189,6 @@ def render_variants(request, protein = None, family = None, download = None, rec
         response = HttpResponse(xlsx_data,content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response['Content-Disposition'] = 'attachment; filename=GPCRdb_'+proteins[0].entry_name+'_variant_data.xlsx' #% 'mutations'
         return response
-
     return render(request, 'browser.html', {'mutations': NMs, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'receptor': str(proteins[0].entry_name),'mutations_pos_list' : json.dumps(jsondata)})
 
 def ajaxNaturalMutation(request, slug, **response_kwargs):

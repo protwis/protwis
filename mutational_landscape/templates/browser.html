@@ -77,6 +77,7 @@ input.form-control {
                             { type: "select" }, //reference
                             { type: "text" }, //review
                             { type: "text" }, //review
+                            { type: "text" }, //review
                         ]
                     });
                 }
@@ -120,6 +121,7 @@ input.form-control {
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="number of individuals, where both alleles are the same" data-placement="top">Homozygotes</th>
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="deleterious: <= 0.05<br>tolerated: > 0.05" data-placement="top">SIFT score</th>
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="probably damaging: >=0.2 <br>possibly damaging: >= 0.1<br>benign: < 0.1" data-placement="top">PolyPhen score</th>
+                        <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="known Ligand-binding site (LB), G-protein interaction site (GP) or PTM-site" data-placement="top">Functional annotation</th>
                     </tr>
                     <tr>
                         <th style="text-align:center"></th>
@@ -134,8 +136,10 @@ input.form-control {
                         <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
+                        <th style="text-align:center"></th>
                     </tr>
                     <tr>
+                        <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
@@ -164,9 +168,11 @@ input.form-control {
                       <th style="text-align:center">Homozygotes</th>
                       <th style="text-align:center">SIFT score</th>
                       <th style="text-align:center">PolyPhen score</th>
+                      <th style="text-align:center">Functional annotation</th>
                     </tr>
                 </tfoot>
-                {% for mutation in mutations.select_related.all %}
+                {% for mutation in mutations %}
+                <!-- add: .select_related.all -->
                 <tr>
                   <td><a href="/protein/{{mutation.protein.entry_name}}">{{mutation.protein.entry_name}}</a></td>
                   <td>{{mutation.residue.sequence_number}}</td>
@@ -180,6 +186,7 @@ input.form-control {
                   <td>{{mutation.number_homozygotes}}</td>
                   <td>{{mutation.sift_score}}</td>
                   <td>{{mutation.polyphen_score}}</td>
+                  <td>{{mutation.functional_annotation}}</td>
                 </tr>
                 {% endfor %}
             </table>
