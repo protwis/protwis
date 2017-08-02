@@ -104,6 +104,7 @@ body {
 <br>
  <div id="unique" class="chart_container" style="display: none;">
         <div id="unique_year"><svg id="unique_cryst" style="width:1050;height:500px;"></svg></div>
+<center>Data only shown for drugs with an annotated approval year</center>
 <br>
 <br>
 <br>
@@ -119,8 +120,8 @@ body {
 <script>
 console.log({{in_trial}})
 var dataset =  [{text:"Established", value: {{drugtargets_approved|length}}},
-                {text:"In trials", value: {{in_trial}}},
-                {text:"Not targeted", value: {{not_targeted}}}];
+                {text:"Reached clinical trials", value: {{in_trial}}},
+                {text:"Non-targeted", value: {{not_targeted}}}];
 // data.sort(function(a, b){return a-b});
 //data.sort(d3.descending());
 var width = "90%",
@@ -138,7 +139,7 @@ var chart_width = parseInt(d3.select("#targetdistribution").style("width"));
 
 var color = d3.scale.ordinal()
   .domain(["New York", "San Francisco", "Austin"])
-  .range(["#de5d5e", "#83be86" , "#c4c4c4"]);
+  .range(["#d62728", "#43A047" , "#c4c4c4"]);
 
 var bar = chart.selectAll("g")
   .data(dataset)
@@ -182,7 +183,7 @@ bar.append("text")
     var prev_perc = perc_so_far;
     var this_perc = 100*(d.value/total_time);
     perc_so_far = perc_so_far + this_perc;
-    return prev_perc + this_perc/4 + "%";
+    return prev_perc + this_perc/8 + "%";
   })
   .attr("y", 11)
   .attr("dy", "1.35em")
@@ -195,7 +196,6 @@ d3.select(window).on('resize', resize);
 function resize () {
   var width = parseInt(d3.select("#targetdistribution").style("width"));
 }
-
 </script>
 
 <script>

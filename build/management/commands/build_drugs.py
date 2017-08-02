@@ -57,6 +57,12 @@ class Command(BaseCommand):
 
             for index, row in enumerate(data.iterrows()):
                 drugname = data[index:index+1]['Drug Name'].values[0]
+                trialname = data[index:index+1]['Trial name'].values[0]
+                drugalias_raw = data[index:index+1]['DrugAliases'].values[0]
+                drugalias = ['' if str(drugalias_raw) == 'nan' else ', '+str(drugalias_raw)]
+                # trialadd = ['' if str(trialname) == drugname else ' ('+str(trialname)+')']
+                drugname = drugname + drugalias[0]
+
                 entry_name = data[index:index+1]['EntryName'].values[0]
 
                 phase = data[index:index+1]['Phase'].values[0]

@@ -26,7 +26,7 @@ def striphtml(data):
     p = re.compile(r'<.*?>')
     return p.sub('', data)
 
-# @cache_page(60*60*24*7)
+@cache_page(60*60*24*7)
 def drugstatistics(request):
 
     # ===== drugtargets =====
@@ -40,7 +40,7 @@ def drugstatistics(request):
         del drugtarget['entry_name']
         drugtargets_approved.append(drugtarget)
 
-    drugtargets_raw_trials = Protein.objects.filter(drugs__status__in=['in trial'], drugs__clinicalstatus__in=['Completed','Not open yet','Ongoing','recruiting','suspended']).values('entry_name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
+    drugtargets_raw_trials = Protein.objects.filter(drugs__status__in=['in trial'], drugs__clinicalstatus__in=['completed','not open yet','ongoing','recruiting','suspended']).values('entry_name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
 
     list_of_hec_colors = get_spaced_colors(len(drugtargets_raw_trials))
     drugtargets_trials = []
@@ -53,7 +53,7 @@ def drugstatistics(request):
 
     all_human_GPCRs = Protein.objects.filter(species_id=1, sequence_type_id=1, family__slug__startswith='00').distinct()
 
-    in_trial = Protein.objects.filter(drugs__status__in=['in trial'], drugs__clinicalstatus__in=['Completed','Not open yet','Ongoing','recruiting','suspended']).exclude(drugs__status='approved').distinct()
+    in_trial = Protein.objects.filter(drugs__status__in=['in trial'] ).exclude(drugs__status='approved').distinct() #drugs__clinicalstatus__in=['completed','not open yet','ongoing','recruiting','suspended']
 
     not_targeted = len(all_human_GPCRs) - len(drugtargets_approved) - len(in_trial)
 
@@ -89,7 +89,7 @@ def drugstatistics(request):
         del drugclas['family_id__parent__parent__parent__name']
         drugClasses_approved.append(drugclas)
 
-    drugclasses_raw_trials = Protein.objects.filter(drugs__status__in=['in trial'], drugs__clinicalstatus__in=['Completed','Not open yet','Ongoing','recruiting','suspended']).values('family_id__parent__parent__parent__name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
+    drugclasses_raw_trials = Protein.objects.filter(drugs__status__in=['in trial'], drugs__clinicalstatus__in=['completed','not open yet','ongoing','recruiting','suspended']).values('family_id__parent__parent__parent__name').annotate(value=Count('drugs__name', distinct = True)).order_by('-value')
 
     list_of_hec_colors = get_spaced_colors(len(drugclasses_raw_trials)+1)
     drugClasses_trials = []
@@ -102,7 +102,7 @@ def drugstatistics(request):
     # ===== drugtypes =====
     drugtypes_raw_approved = Drugs.objects.values('drugtype').filter(status='approved').annotate(value=Count('name', distinct = True)).order_by('-value')
 
-    list_of_hec_colors = get_spaced_colors(len(drugtypes_raw_approved)+10)
+    list_of_hec_colors = get_spaced_colors(len(drugtypes_raw_approved)+20)
     drugtypes_approved = []
     for i, drugtype in enumerate(drugtypes_raw_approved):
         drugtype['label'] = drugtype['drugtype']
@@ -110,7 +110,7 @@ def drugstatistics(request):
         del drugtype['drugtype']
         drugtypes_approved.append(drugtype)
 
-    drugtypes_raw_trials = Drugs.objects.values('drugtype').filter(status='in trial', clinicalstatus__in=['Completed','Not open yet','Ongoing','recruiting','suspended']).annotate(value=Count('name', distinct = True)).order_by('-value')
+    drugtypes_raw_trials = Drugs.objects.values('drugtype').filter(status='in trial', clinicalstatus__in=['completed','not open yet','ongoing','recruiting','suspended']).annotate(value=Count('name', distinct = True)).order_by('-value')
 
     # list_of_hec_colors = get_spaced_colors(len(drugtypes_raw_trials)+5)
     drugtypes_trials = []
@@ -151,7 +151,7 @@ def drugstatistics(request):
         del moa['moa']
         moas_approved.append(moa)
 
-    moa_raw_trials = Drugs.objects.values('moa').filter(status='in trial', clinicalstatus__in=['Completed','Not open yet','Ongoing','recruiting','suspended']).annotate(value=Count('name', distinct = True)).order_by('-value')
+    moa_raw_trials = Drugs.objects.values('moa').filter(status='in trial', clinicalstatus__in=['completed','not open yet','ongoing','recruiting','suspended']).annotate(value=Count('name', distinct = True)).order_by('-value')
 
     # list_of_hec_colors = get_spaced_colors(len(moa_raw_trials)+5)
     moas_trials = []
@@ -172,7 +172,7 @@ def drugstatistics(request):
         del drugindication['indication']
         drugindications_approved.append(drugindication)
 
-    drugindications_raw_trials = Drugs.objects.values('indication').filter(status='in trial', clinicalstatus__in=['Completed','Not open yet','Ongoing','recruiting','suspended']).annotate(value=Count('name', distinct = True)).order_by('-value')
+    drugindications_raw_trials = Drugs.objects.values('indication').filter(status='in trial', clinicalstatus__in=['completed','not open yet','ongoing','recruiting','suspended']).annotate(value=Count('name', distinct = True)).order_by('-value')
 
     # list_of_hec_colors = get_spaced_colors(len(drugindications_raw_trials))
     drugindications_trials = []
