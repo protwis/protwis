@@ -57,6 +57,7 @@ class TargetSelection(AbsTargetSelection):
     default_species = False
 
 def render_variants(request, protein = None, family = None, download = None, receptor_class = None, gn = None, aa = None, **response_kwargs):
+
     simple_selection = request.session.get('selection', False)
     proteins = []
 
@@ -99,6 +100,7 @@ def render_variants(request, protein = None, family = None, download = None, rec
         ptms_dict[ptm.residue.sequence_number] = ptm.modification
 
     ## G PROTEIN INTERACTION POSITIONS
+    # THIS SHOULD BE CLASS SPECIFIC (different set)
     rset = ResiduePositionSet.objects.get(name='Signalling protein pocket')
     gprotein_generic_set = []
     for residue in rset.residue_position.all():
@@ -316,7 +318,7 @@ def mutant_extract(request):
         # jsondata[mutation.residue.sequence_number].append([mutation.foldchange,ligand,qual])
     # print(jsondata)
 
-# @cache_page(60*60*24*2) #  2 days
+@cache_page(60*60*24*7) #  2 days
 def statistics(request):
 
     context = dict()
@@ -430,6 +432,7 @@ def statistics(request):
 
     return render(request, 'variation_statistics2.html', context)
 
+@cache_page(60*60*24*7) #  2 days
 def economicburden(request):
     data = [{'values': [{'y': 0.886, 'x': 1}], 'key': 'analgesics', 'yAxis': 'Scaling factor 1'},
     {'values': [{'y': 0.118, 'x': 1}], 'key': 'antidepressant drugs', 'yAxis': 'Scaling factor 1'},
