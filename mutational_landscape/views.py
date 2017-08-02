@@ -6,7 +6,7 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinGProtein, ProteinGProteinPair
-from residue.models import Residue, ResiduePositionSet
+from residue.models import Residue, ResiduePositionSet, ResidueSet
 from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations, PTMs
 
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
@@ -98,20 +98,16 @@ def render_variants(request, protein = None, family = None, download = None, rec
     for ptm in ptms:
         ptms_dict[ptm.residue.sequence_number] = ptm.modification
 
-    ### GET LB INTERACTION DATA FROM interaction/ajax??
-    # interactions = ajax('snakeplot','adrb2_human')
+    ## G PROTEIN INTERACTION POSITIONS
+    rset = ResiduePositionSet.objects.get(name='Signalling protein pocket')
+    gprotein_generic_set = []
+    for residue in rset.residue_position.all():
+        gprotein_generic_set.append(residue.label)
 
-    # residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=slug).prefetch_related('protein_segment','display_generic_number','generic_number')
-    # lookup = {}
-    #
-    # for r in residuelist:
-    #     if r.generic_number:
-    #         lookup[r.generic_number.label] = r.sequence_number
-
-    # pf = ProteinFamily.objects.get(slug=slug)
-
-    # number of proteins
-    orthologs = Protein.objects.filter(family__slug__startswith=proteins[0].family.parent.slug, sequence_type__slug='wt')
+    ### GET LB INTERACTION DATA
+    # get also ortholog proteins, which might have been crystallised to extract
+    # interaction data also from those
+    orthologs = Protein.objects.filter(family__slug__startswith=proteins[0].family.slug, sequence_type__slug='wt')
 
     interactions = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__protein_conformation__protein__parent__in=orthologs, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').order_by('rotamer__residue__sequence_number')
@@ -127,18 +123,22 @@ def render_variants(request, protein = None, family = None, download = None, rec
                 interaction_data[sequence_number] = []
             if interactiontype not in interaction_data[sequence_number]:
                 interaction_data[sequence_number].append(interactiontype)
-    print(orthologs, interaction_data)
-    ## G PROTEIN INTERACTION
-
 
     jsondata = {}
     for NM in NMs:
         functional_annotation = ''
         SN = NM.residue.sequence_number
+        if NM.residue.generic_number:
+            GN = NM.residue.generic_number.label
+        else:
+            GN = ''
+
         if SN in ptms_dict:
             functional_annotation +=  'PTM (' + ptms_dict[SN] + ')'
         if SN in interaction_data:
-            functional_annotation +=  'LB (' + ','.join(interaction_data[SN]) + ')'
+            functional_annotation +=  'LB (' + ', '.join(interaction_data[SN]) + ')'
+        if GN in gprotein_generic_set:
+            functional_annotation +=  'GP (contact)'
 
         type = NM.type
         if type == 'missense':
