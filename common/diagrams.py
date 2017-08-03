@@ -106,20 +106,23 @@ class Diagram:
             output += '<br><button style="width:220px;" onclick="ajaxMutantsPos(\''+self.type+'\');">Show Invitro Mutants</button>'
             output += ' <button style="width:220px;" onclick="ajaxInteractionsPos(\''+self.type+'\')">Show Interactions from Crystals</button>'
             output += '<br><button style="width:220px;" onclick="ajaxNaturalMutationPos(\''+self.type+'\')">Show Natural Genetic Variations</button>'
+            output += ' <button style="width:120px;" onclick="ajaxPTMPos(\''+self.type+'\')">Show PTM sites</button>'
             # output += ' <button style="width:220px;" onclick="ajaxCancerMutationPos(\''+self.type+'\')">Show Cancer Mutations</button>'
             # output += ' <button style="width:220px;" onclick="ajaxDiseaseMutationPos(\''+self.type+'\')">Show Disease Mutations</button>'
         else:
             if nobuttons == 'gprotein':
                 output += ' <button style="width:220px;" onclick="ajaxInterface(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Receptor Interface</button>'
                 output += '<br><button style="width:220px;" onclick="ajaxNaturalMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Natural Genetic Variations</button>'
+                output += ' <button style="width:220px;" onclick="ajaxPTMs(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show PTM sites</button>'
                 # output += ' <button style="width:220px;" onclick="ajaxCancerMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Cancer Mutations</button>'
                 # output += ' <button style="width:220px;" onclick="ajaxDiseaseMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Disease Mutations</button>'
-                output += '<br><button style="width:220px;" onclick="ajaxBarcode(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Barcode</button>'
+                output += '<br><button style="width:120px;" onclick="ajaxBarcode(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Barcode</button>'
 
             else:
                 output += '<br><button style="width:220px;" onclick="ajaxMutants(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Invitro Mutants</button>'
                 output += ' <button style="width:220px;" onclick="ajaxInteractions(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Interactions from Crystals</button>'
                 output += '<br><button style="width:220px;" onclick="ajaxNaturalMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Natural Genetic Variations</button>'
+                output += ' <button style="width:120px;" onclick="ajaxPTMs(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show PTM sites</button>'
                 # output += ' <button style="width:220px;" onclick="ajaxCancerMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Cancer Mutations</button>'
                 # output += ' <button style="width:220px;" onclick="ajaxDiseaseMutation(\''+self.type+'\',\''+str(self.receptorId)+'\')">Show Disease Mutations</button>'
 
