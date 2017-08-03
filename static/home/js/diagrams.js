@@ -680,13 +680,57 @@ function ajaxNaturalMutationPos(plotid) {
          original_title = $('#'+plotid).find("#"+key).attr('original_title')
          $('#'+plotid).find("#"+key).css("fill", color);
          $('#'+plotid).find("#"+key).attr('title',original_title+extra);
-        //  $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+         $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+      });
+    $("circle").tooltip('fixTitle');
+    $("text").tooltip('fixTitle');
+}
+
+function ajaxPTMs(plotid, protein) {
+
+  resetColors(plotid);
+
+    $.getJSON( '/mutational_landscape/ajax/PTM/'+protein+'/', function( data ) {
+      $.each( data, function( key, val ) {
+         extra = "\nModification: " + String(val[0]);
+
+         $('#'+plotid).find("#"+key).next().css("fill", "#fefdfd");
+         original_title = $('#'+plotid).find("#"+key).attr('original_title')
+         $('#'+plotid).find("#"+key).css("fill", "#000000");
+         $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+         $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
 
 
       });
     $("circle").tooltip('fixTitle');
     $("text").tooltip('fixTitle');
 
+    });
+}
+
+function ajaxPTMPos(plotid) {
+
+  resetColors(plotid);
+
+    var pos = jQuery.parseJSON(ptms_json);
+
+    var color_code = pos['color']
+
+      $.each(pos, function( key, val ) {
+
+         extra = "\nModifications: " + String(val['mod']);
+
+         $('#'+plotid).find("#"+key).next().css("fill", "#fefdfd");
+
+         original_title = $('#'+plotid).find("#"+key).attr('original_title')
+         $('#'+plotid).find("#"+key).css("fill", "#000000");
+         $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+         $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+      });
+    $("circle").tooltip('fixTitle');
+    $("text").tooltip('fixTitle');
 }
 
 function ajaxCancerMutationPos(plotid) {

@@ -164,9 +164,8 @@ def render_variants(request, protein = None, family = None, download = None, rec
         data = []
         for r in NMs:
             values = r.__dict__
-            print(values)
             data.append(values)
-        headers = ['amino_acid', 'allele_count','allele_number', 'allele_frequency', 'polyphen_score', 'sift_score', 'number_homozygotes']
+        headers = ['type','amino_acid', 'allele_count','allele_number', 'allele_frequency', 'polyphen_score', 'sift_score', 'number_homozygotes']
 
         #EXCEL SOLUTION
         output = BytesIO()
@@ -225,49 +224,74 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
 
     return HttpResponse(jsondata, **response_kwargs)
 
-def ajaxCancerMutation(request, slug, **response_kwargs):
+def ajaxPTMs(request, slug, **response_kwargs):
 
-    name_of_cache = 'ajaxCancerMutation_'+slug
-
-    jsondata = cache.get(name_of_cache)
-
-    if jsondata == None:
-        jsondata = {}
-
-        CMs = CancerMutations.objects.filter(protein__entry_name=slug).prefetch_related('residue')
-
-        for CM in CMs:
-            SN = CM.residue.sequence_number
-            jsondata[SN] = [CM.amino_acid]
-
-        jsondata = json.dumps(jsondata)
-        response_kwargs['content_type'] = 'application/json'
-
-        cache.set(name_of_cache, jsondata, 20) #two days timeout on cache
-
-    return HttpResponse(jsondata, **response_kwargs)
-
-def ajaxDiseaseMutation(request, slug, **response_kwargs):
-
-    name_of_cache = 'ajaxDiseaseMutation_'+slug
+    name_of_cache = 'ajaxPTMs_'+slug
 
     jsondata = cache.get(name_of_cache)
 
     if jsondata == None:
         jsondata = {}
 
-        DMs = DiseaseMutations.objects.filter(protein__entry_name=slug).prefetch_related('residue')
+        NMs = PTMs.objects.filter(protein__entry_name=slug).prefetch_related('residue')
 
-        for DM in DMs:
-            SN = DM.residue.sequence_number
-            jsondata[SN] = [DM.amino_acid]
+        for NM in NMs:
+
+            SN = NM.residue.sequence_number
+            mod = NM.modification
+
+            jsondata[SN] = [mod]
 
         jsondata = json.dumps(jsondata)
         response_kwargs['content_type'] = 'application/json'
 
-        cache.set(name_of_cache, jsondata, 20) #two days timeout on cache
+        cache.set(name_of_cache, jsondata, 20) # 60*60*24*2 two days timeout on cache
 
     return HttpResponse(jsondata, **response_kwargs)
+
+# def ajaxCancerMutation(request, slug, **response_kwargs):
+#
+#     name_of_cache = 'ajaxCancerMutation_'+slug
+#
+#     jsondata = cache.get(name_of_cache)
+#
+#     if jsondata == None:
+#         jsondata = {}
+#
+#         CMs = CancerMutations.objects.filter(protein__entry_name=slug).prefetch_related('residue')
+#
+#         for CM in CMs:
+#             SN = CM.residue.sequence_number
+#             jsondata[SN] = [CM.amino_acid]
+#
+#         jsondata = json.dumps(jsondata)
+#         response_kwargs['content_type'] = 'application/json'
+#
+#         cache.set(name_of_cache, jsondata, 20) #two days timeout on cache
+#
+#     return HttpResponse(jsondata, **response_kwargs)
+#
+# def ajaxDiseaseMutation(request, slug, **response_kwargs):
+#
+#     name_of_cache = 'ajaxDiseaseMutation_'+slug
+#
+#     jsondata = cache.get(name_of_cache)
+#
+#     if jsondata == None:
+#         jsondata = {}
+#
+#         DMs = DiseaseMutations.objects.filter(protein__entry_name=slug).prefetch_related('residue')
+#
+#         for DM in DMs:
+#             SN = DM.residue.sequence_number
+#             jsondata[SN] = [DM.amino_acid]
+#
+#         jsondata = json.dumps(jsondata)
+#         response_kwargs['content_type'] = 'application/json'
+#
+#         cache.set(name_of_cache, jsondata, 20) #two days timeout on cache
+#
+#     return HttpResponse(jsondata, **response_kwargs)
 
 def mutant_extract(request):
     import pandas as pd
