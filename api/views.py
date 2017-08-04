@@ -785,8 +785,9 @@ class DrugList(views.APIView):
             drugname = drug.name
             drugtype = drug.drugtype
             clinical = drug.clinicalstatus
+            phasedate = drug.phasedate
             if clinical != '-':
-                status = drug.status + ' (' + drug.clinicalstatus + ')'
+                status = drug.status + ' (' + drug.clinicalstatus + ', ' + phasedate + ')'
             else:
                 status = drug.status
             approval = drug.approval
