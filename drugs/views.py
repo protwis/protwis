@@ -26,7 +26,7 @@ def striphtml(data):
     p = re.compile(r'<.*?>')
     return p.sub('', data)
 
-@cache_page(60*60*24*7)
+# @cache_page(60*60*24*7)
 def drugstatistics(request):
 
     # ===== drugtargets =====
@@ -161,6 +161,28 @@ def drugstatistics(request):
         del moa['moa']
         moas_trials.append(moa)
 
+    # ===== Phase distributions =====
+    # Distinguish between different Clinical Status
+    phases_raw_active = Drugs.objects.values('phase').filter(status='in trial', clinicalstatus__in=['completed','not open yet','ongoing','recruiting','suspended']).annotate(value=Count('name', distinct = True)).order_by('-value')
+
+    phase_trials = []
+    list_of_hec_colors = ["#88df8c", "#43A047", "#b0f2b2"]
+    for i, phase in enumerate(phases_raw_active):
+        phase['label'] = 'Phase ' + phase['phase']
+        phase['color'] = str(list_of_hec_colors[i])
+        del phase['phase']
+        phase_trials.append(phase)
+
+    phases_raw_inactive = Drugs.objects.values('phase').filter(status='in trial', clinicalstatus__in=['terminated','discontinued','unknown','withdrawn']).annotate(value=Count('name', distinct = True)).order_by('-value')
+
+    phase_trials_inactive = []
+    list_of_hec_colors = ["#88df8c", "#43A047", "#b0f2b2"]
+    for i, phase in enumerate(phases_raw_inactive):
+        phase['label'] = 'Phase ' + phase['phase']
+        phase['color'] = str(list_of_hec_colors[i])
+        del phase['phase']
+        phase_trials_inactive.append(phase)
+
     # ===== drugindications =====
     drugindications_raw_approved = Drugs.objects.values('indication').filter(status='approved').annotate(value=Count('name', distinct = True)).order_by('-value')
 
@@ -204,7 +226,7 @@ def drugstatistics(request):
     # ===== drugtimes =====
 
 
-    return render(request, 'drugstatistics.html', {'drugtypes_approved':drugtypes_approved, 'drugtypes_trials':drugtypes_trials,  'drugtypes_estab':drugtypes_estab,  'drugtypes_not_estab':drugtypes_not_estab, 'drugindications_approved':drugindications_approved, 'drugindications_trials':drugindications_trials, 'drugtargets_approved':drugtargets_approved, 'drugtargets_trials':drugtargets_trials, 'moas_trials':moas_trials, 'moas_approved':moas_approved, 'drugfamilies_approved':drugfamilies_approved, 'drugfamilies_trials':drugfamilies_trials, 'drugClasses_approved':drugClasses_approved, 'drugClasses_trials':drugClasses_trials, 'drugs_over_time':drugs_over_time, 'in_trial':len(in_trial), 'not_targeted':not_targeted})
+    return render(request, 'drugstatistics.html', {'drugtypes_approved':drugtypes_approved, 'drugtypes_trials':drugtypes_trials,  'drugtypes_estab':drugtypes_estab,  'drugtypes_not_estab':drugtypes_not_estab, 'drugindications_approved':drugindications_approved, 'drugindications_trials':drugindications_trials, 'drugtargets_approved':drugtargets_approved, 'drugtargets_trials':drugtargets_trials, 'phase_trials':phase_trials, 'phase_trials_inactive': phase_trials_inactive, 'moas_trials':moas_trials, 'moas_approved':moas_approved, 'drugfamilies_approved':drugfamilies_approved, 'drugfamilies_trials':drugfamilies_trials, 'drugClasses_approved':drugClasses_approved, 'drugClasses_trials':drugClasses_trials, 'drugs_over_time':drugs_over_time, 'in_trial':len(in_trial), 'not_targeted':not_targeted})
 
 @cache_page(60*60*24*17)
 def drugbrowser(request):

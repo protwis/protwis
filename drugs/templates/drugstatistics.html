@@ -48,6 +48,7 @@ body {
 </div>
 <div id="pie_classes" onload="updatetypes('approved')"></div>
 
+
 <div class="row" style="position: relative; left: 75%; bottom:-100px;">
   <div class="col-xs-12">
 <select onchange="updatefamilies(this.value)" multiple class="form-control input-lg" size="2">
@@ -99,6 +100,16 @@ body {
   </div>
 </div>
 <div id="pie_disease"></div>
+
+<div class="row" style="position: relative; left: 75%; bottom:-100px;">
+  <div class="col-xs-12">
+<select onchange="updatePhases(this.value)" multiple class="form-control input-lg" size="2">
+  <option selected="selected" value="active">Active</option>
+  <option value="inactive">Inactive</option>
+</select>
+  </div>
+</div>
+<div id="pie_phases"></div>
 
 <br>
 <br>
@@ -631,6 +642,114 @@ function updatertypes(series,text) {
   });
 }
 
+updatePhases('active')
+function updatePhases(request) {
+  var series = {{phase_trials|safe}}
+  text = "Active agents (ongoing, recruiting, planned or completed trials)"
+
+  if (request == 'inactive') {
+    text = "Inactive agents (terminated, discontinued, or withdrawn trials)"
+    series = {{phase_trials_inactive|safe}}
+    updaterphases(series,text)
+  }
+  updaterphases(series,text)
+}
+
+function updaterphases(series,text) {
+
+  $("#pie_phases").html("");
+  var pie = new d3pie("pie_phases", {
+    "header": {
+      "title": {
+        "text": "Phase distribution of clinical agents",
+        "fontSize": 32,
+        "font": "Arial"
+      },
+      "subtitle": {
+        "text": " ",
+        "color": "#999999",
+        "fontSize": 18,
+        "font": "Arial"
+      },
+      "titleSubtitlePadding": 25
+    },
+    "footer": {
+      "text": text,
+      "color": "#999999",
+      "fontSize": 10,
+      "font": "Arial",
+      "location": "center"
+    },
+    "size": {
+      "canvasHeight": 600,
+      "canvasWidth": 1100,
+      "pieInnerRadius": "50%",
+      "pieOuterRadius": "100%"
+    },
+    "data": {
+      "sortOrder": "value-desc",
+      "smallSegmentGrouping": {
+        "enabled": false,
+        "value": 1
+      },
+      "content": series
+    },
+    "labels": {
+      "outer": {
+        "pieDistance": 21
+      },
+      "inner": {
+        "hideWhenLessThanPercentage": 3
+      },
+      "mainLabel": {
+        "fontSize": 17
+      },
+      "percentage": {
+        "color": "#ffffff",
+        "fontSize": 18
+      },
+      "value": {
+        "color": "#adadad",
+        "fontSize": 18
+      },
+      "lines": {
+        "enabled": true,
+        "style": "straight"
+      },
+      "truncation": {
+        "enabled": true
+      }
+    },
+    "tooltips": {
+      "enabled": true,
+      "type": "placeholder",
+      "string": "{label}: {value}, {percentage}%",
+      "styles": {
+        "fadeInSpeed": 0,
+        "backgroundOpacity": 0.71,
+        "borderRadius": 10,
+        "fontSize": 18
+      }
+    },
+    "effects": {
+      "load": {
+        "speed": 800
+      },
+      "pullOutSegmentOnClick": {
+        "effect": "linear",
+        "speed": 400,
+        "size": 14
+      }
+    },
+    "misc": {
+      "gradient": {
+        "enabled": true,
+        "percentage": 65
+      }
+    }
+  });
+}
+
 updateClasses('approved')
 function updateClasses(request) {
   var series = {{drugClasses_approved|safe}}
@@ -642,7 +761,6 @@ function updateClasses(request) {
     updaterclasses(series,text)
   }
   updaterclasses(series,text)
-
 }
 
 function updaterclasses(series,text) {
