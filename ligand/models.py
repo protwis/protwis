@@ -67,8 +67,10 @@ class Ligand(models.Model):
             try:
                 ligand_name = pubchem['InformationList']['Information'][0]['Synonym'][0]
             except:
-                logger.warning('Ligand {} not found in PubChem'.format(pubchem_id))
-                return None
+                ## Some compounds do not have a name but are still a valid pubchem entry. (Peptides)
+                logger.warning('Ligand {} does not have a name in PubChem'.format(pubchem_id))
+                ligand_name = lookup_type + ' ' + pubchem_id
+                # return None
 
         # fetch ligand properties from pubchem
         properties = {}

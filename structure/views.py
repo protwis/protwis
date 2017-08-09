@@ -245,49 +245,84 @@ class StructureStatistics(TemplateView):
     def get_context_data (self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-
         families = ProteinFamily.objects.all()
         lookup = {}
         for f in families:
             lookup[f.slug] = f.name
 
-        #Prepare chart with unique crystallized receptors by year
-        all_structs = list(Structure.objects.all().prefetch_related('protein_conformation__protein__family'))
+        all_structs = Structure.objects.all().prefetch_related('protein_conformation__protein__family')
+        all_complexes = all_structs.exclude(ligands=None)
+        #FIXME G protein list is hard-coded for now. Table structure needs to be expanded for fully automatic approach.
+        all_gprots = all_structs.filter(stabilizing_agents__slug='gs')
+        all_active = all_structs.filter(protein_conformation__state__slug = 'active')        
+
         years = self.get_years_range(list(set([x.publication_date.year for x in all_structs])))
-        unique_structs = list(Structure.objects.order_by('protein_conformation__protein__parent', 'state',
-            'publication_date', 'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__family'))
-        # families = list(set([x.protein_conformation.protein.get_protein_family() for x in unique_structs]))
+        
+        unique_structs = Structure.objects.order_by('protein_conformation__protein__family__name', 'state',
+            'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family')
+        unique_complexes = unique_structs.exclude(ligands=None)
+        #FIXME G protein list is hard-coded for now. Table structure needs to be expanded for fully automatic approach.
+        unique_gprots = unique_structs.filter(stabilizing_agents__slug='gs')
+        unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
+        
+        #Stats
+        struct_count = Structure.objects.all().annotate(Count('id'))
+        struct_lig_count = Structure.objects.exclude(ligands=None)
+                
+        context['all_structures'] = len(all_structs)
+        context['all_structures_by_class'] = self.count_by_class(all_structs, lookup)
+        context['all_complexes'] = len(all_complexes)
+        context['all_complexes_by_class'] = self.count_by_class(all_complexes, lookup)
+        context['all_gprots'] = len(all_gprots)
+        context['all_gprots_by_class'] = self.count_by_class(all_gprots, lookup)
+        context['all_active'] = len(all_active)
+        context['all_active_by_class'] = self.count_by_class(all_active, lookup)
+
+        context['unique_structures'] = len(unique_structs)
+        context['unique_structures_by_class'] = self.count_by_class(unique_structs, lookup)
+        context['unique_complexes'] = len(unique_complexes)
+        context['unique_complexes_by_class'] = self.count_by_class(unique_complexes, lookup)
+        context['unique_gprots'] = len(unique_gprots)
+        context['unique_gprots_by_class'] = self.count_by_class(unique_gprots, lookup)
+        context['unique_active'] = len(unique_active)
+        context['unique_active_by_class'] = self.count_by_class(unique_active, lookup)
+        
+
+        context['chartdata'] = self.get_per_family_cumulative_data_series(years, unique_structs, lookup)
+        context['chartdata_y'] = self.get_per_family_data_series(years, unique_structs, lookup)
+        context['chartdata_all'] = self.get_per_family_cumulative_data_series(years, all_structs, lookup)
+        context['chartdata_reso'] = self.get_resolution_coverage_data_series(all_structs)
+        context['coverage'] = self.get_diagram_coverage()
+        context['crystals'] = self.get_diagram_crystals()
+
+        return context
+
+    def get_families_dict(self, queryset, lookup):
 
         families = []
-        classes = []
-        for s in unique_structs:
+        for s in queryset:
             fid = s.protein_conformation.protein.family.slug.split("_")
             fname = lookup[fid[0]+"_"+fid[1]]
             cname = lookup[fid[0]]
             if fname not in families:
                 families.append(fname)
-            # if cname not in classes:
-            classes.append(cname)
+        return families
 
-        # classes = [x.protein_conformation.protein.get_protein_class() for x in unique_structs]
+    def count_by_class(self, queryset, lookup):
+
+        #Ugly walkaround
+        classes = [lookup[x] for x in lookup.keys() if x in ['001', '002', '003', '004', '005', '006']]
+        records = []
+        for s in queryset:
+            fid = s.protein_conformation.protein.family.slug.split("_")
+            cname = lookup[fid[0]]
+            records.append(cname)
 
         tmp = OrderedDict()
-        for x in sorted(list(set(classes))):
-            tmp[x] = classes.count(x)
-        #Basic stats
-        context['all_structures'] = len(all_structs)
-        context['unique_structures'] = len(unique_structs)
-        context['unique_by_class'] = tmp
-        context['unique_complexes'] = len(StructureLigandInteraction.objects.filter(annotated=True).distinct('structure__protein_conformation__protein__family__name', 'ligand__name'))
+        for x in sorted(classes):
+            tmp[x] = records.count(x)
 
-        context['chartdata'] = self.get_per_family_cumulative_data_series(years, families, unique_structs,lookup)
-        context['chartdata_y'] = self.get_per_family_data_series(years, families, unique_structs,lookup)
-        context['chartdata_all'] = self.get_per_family_cumulative_data_series(years, families, all_structs,lookup)
-        context['chartdata_reso'] = self.get_resolution_coverage_data_series(all_structs)
-        context['coverage'] = self.get_diagram_coverage()
-
-        return context
-
+        return tmp
 
     def get_years_range(self, years_list):
 
@@ -296,10 +331,11 @@ class StructureStatistics(TemplateView):
         return range(min_y, max_y+1)
 
 
-    def get_per_family_data_series(self, years, families, structures,lookup):
+    def get_per_family_data_series(self, years, structures, lookup):
         """
         Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
         """
+        families = self.get_families_dict(structures, lookup)
         series = []
         data = {}
         for year in years:
@@ -324,10 +360,11 @@ class StructureStatistics(TemplateView):
         return json.dumps(series)
 
 
-    def get_per_family_cumulative_data_series(self, years, families, structures,lookup):
+    def get_per_family_cumulative_data_series(self, years, structures, lookup):
         """
         Prepare data for multiBarGraph of unique crystallized receptors. Returns data series for django-nvd3 wrapper.
         """
+        families = self.get_families_dict(structures, lookup)
         series = []
         data = {}
         for year in years:
@@ -413,7 +450,6 @@ class StructureStatistics(TemplateView):
                             ])
 
         for p in class_proteins:
-            #print(p,p.family.slug)
             fid = p.family.slug.split("_")
             if fid[0] not in coverage:
                 coverage[fid[0]] = deepcopy(temp)
@@ -442,33 +478,6 @@ class StructureStatistics(TemplateView):
 
         score_copy = {'score': {'a':0,'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0} , 'interaction' : {},'mutation': {}}
 
-        # for i in class_interactions:
-        #     fid = i.structure_ligand_pair.structure.protein_conformation.protein.parent.family.slug.split("_")
-        #     interaction_type = i.interaction_type.slug
-        #     interaction_type_class = i.interaction_type.type
-        #     if i.rotamer.residue.display_generic_number:
-        #         dgn = i.rotamer.residue.display_generic_number.label
-        #     else:
-        #         dgn = 'N/A'
-        #     if interaction_type=='polar_backbone':
-        #         continue
-        #     if interaction_type=='acc':
-        #         continue
-        #     coverage[fid[0]]['interactions'] += 1
-        #     coverage[fid[0]]['children'][fid[1]]['interactions'] += 1
-        #     coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['interactions'] += 1
-        #     coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['interactions'] += 1
-
-        #     if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['interactions']==1: #if first time receptor gets a point
-        #         coverage[fid[0]]['receptor_i'] += 1
-        #         coverage[fid[0]]['children'][fid[1]]['receptor_i'] += 1
-        #         coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_i'] += 1
-        #         coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_i'] = 1
-
-        #         coverage[fid[0]]['fraction_i'] = coverage[fid[0]]['receptor_i']/coverage[fid[0]]['receptor_t']
-        #         coverage[fid[0]]['children'][fid[1]]['fraction_i'] = coverage[fid[0]]['children'][fid[1]]['receptor_i']/coverage[fid[0]]['children'][fid[1]]['receptor_t']
-        #         coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['fraction_i'] = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_i']/coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t']
-
         # Replace above as fractions etc is not required and it was missing xtals that didnt have interactions.
         unique_structs = list(Structure.objects.order_by('protein_conformation__protein__parent', 'state',
             'publication_date', 'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__family'))
@@ -486,13 +495,10 @@ class StructureStatistics(TemplateView):
         for c,c_v in coverage.items():
             c_v['name'] = c_v['name'].split("(")[0]
             if c_v['name'].strip() == 'Other GPCRs':
-                # i += 1
                 continue
-                # pass
             children = []
             for lt,lt_v in c_v['children'].items():
                 if lt_v['name'].strip() == 'Orphan' and c_v['name'].strip()=="Class A":
-                    # $pass
                     continue
                 children_rf = []
                 for rf,rf_v in lt_v['children'].items():
@@ -517,14 +523,122 @@ class StructureStatistics(TemplateView):
             c_v['sort'] = n
             c_v['color'] = CSS_COLOR_NAMES[i]
             tree['children'].append(c_v)
-            #tree = c_v
-            #break
             i += 1
 
         return json.dumps(tree)
 
 
+    def get_diagram_crystals(self):
+        """
+        Prepare data for coverage diagram.
+        """
 
+        crystal_proteins = [x.protein_conformation.protein.parent for x in Structure.objects.order_by('protein_conformation__protein__parent', 'state',
+            'publication_date', 'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__parent__family')]
+
+        families = []
+        for cryst_prot in crystal_proteins:
+            families.append(cryst_prot.family)
+            tmp = cryst_prot.family
+            while tmp.parent is not None:
+                tmp = tmp.parent
+                families.append(tmp)
+        lookup = {}
+        for f in families:
+            lookup[f.slug] = f.name.replace("receptors","")
+
+        coverage = OrderedDict()
+        temp = OrderedDict([
+                            ('name',''),
+                            ('interactions', 0),
+                            ('receptor_i', 0) ,
+                            ('mutations' , 0),
+                            ('receptor_m', 0),
+                            ('mutations_an' , 0),
+                            ('receptor_m_an', 0),
+                            ('receptor_t',0),
+                            ('children', OrderedDict()) ,
+                            ('fraction_i',0),
+                            ('fraction_m',0),
+                            ('fraction_m_an',0)
+                            ])
+
+        for p in crystal_proteins:
+            fid = p.family.slug.split("_")
+            if fid[0] not in coverage:
+                coverage[fid[0]] = deepcopy(temp)
+                coverage[fid[0]]['name'] = lookup[fid[0]]
+            if fid[1] not in coverage[fid[0]]['children']:
+                coverage[fid[0]]['children'][fid[1]] = deepcopy(temp)
+                coverage[fid[0]]['children'][fid[1]]['name'] = lookup[fid[0]+"_"+fid[1]]
+            if fid[2] not in coverage[fid[0]]['children'][fid[1]]['children']:
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]] = deepcopy(temp)
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['name'] = lookup[fid[0]+"_"+fid[1]+"_"+fid[2]][:28]
+            if fid[3] not in coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children']:
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]] = deepcopy(temp)
+                coverage[fid[0]]['receptor_t'] += 1
+                coverage[fid[0]]['children'][fid[1]]['receptor_t'] += 1
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t'] += 1
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['name'] = p.entry_name.split("_")[0] #[:10]
+                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_t'] = 1
+
+
+        class_interactions = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__annotated=True).prefetch_related(
+            'rotamer__residue__display_generic_number','interaction_type',
+            'structure_ligand_pair__structure__protein_conformation__protein__parent__family',
+            'structure_ligand_pair__ligand__properities',
+            )
+
+        score_copy = {'score': {'a':0,'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0} , 'interaction' : {},'mutation': {}}
+
+        # Replace above as fractions etc is not required and it was missing xtals that didnt have interactions.
+        unique_structs = list(Structure.objects.order_by('protein_conformation__protein__family__name', 'state',
+            'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family'))
+
+        for s in unique_structs:
+            fid = s.protein_conformation.protein.family.slug.split("_")
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_i'] = 1
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['interactions'] += 1
+
+        CSS_COLOR_NAMES = ["SteelBlue","SlateBlue","LightCoral","Orange","LightGreen","LightGray","PeachPuff","PaleGoldenRod"]
+
+        tree = OrderedDict({'name':'GPCRs','children':[]})
+        i = 0
+        n = 0
+        for c,c_v in coverage.items():
+            c_v['name'] = c_v['name'].split("(")[0]
+            if c_v['name'].strip() == 'Other GPCRs':
+                continue
+            children = []
+            for lt,lt_v in c_v['children'].items():
+                if lt_v['name'].strip() == 'Orphan' and c_v['name'].strip()=="Class A":
+                    continue
+                children_rf = []
+                for rf,rf_v in lt_v['children'].items():
+                    rf_v['name'] = rf_v['name'].split("<")[0]
+                    if rf_v['name'].strip() == 'Taste 2':
+                        continue
+                    children_r = []
+                    for r,r_v in rf_v['children'].items():
+                        r_v['color'] = CSS_COLOR_NAMES[i]
+                        r_v['sort'] = n
+                        children_r.append(r_v)
+                        n += 1
+                    rf_v['children'] = children_r
+                    rf_v['sort'] = n
+                    rf_v['color'] = CSS_COLOR_NAMES[i]
+                    children_rf.append(rf_v)
+                lt_v['children'] = children_rf
+                lt_v['sort'] = n
+                lt_v['color'] = CSS_COLOR_NAMES[i]
+                children.append(lt_v)
+            c_v['children'] = children
+            c_v['sort'] = n
+            c_v['color'] = CSS_COLOR_NAMES[i]
+            tree['children'].append(c_v)
+            i += 1
+
+        return json.dumps(tree)
 
 
 class GenericNumberingIndex(TemplateView):

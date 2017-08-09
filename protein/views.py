@@ -60,6 +60,8 @@ def detail(request, slug):
 
     mutations = MutationExperiment.objects.filter(protein=p)
 
+    protein_links = p.web_links.all().distinct('web_resource__slug')
+
     # process residues and return them in chunks of 10
     # this is done for easier scaling on smaller screens
     chunk_size = 10
@@ -98,7 +100,7 @@ def detail(request, slug):
     homology_models = StructureModel.objects.filter(protein=p)
 
     context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
-        'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations, 'homology_models': homology_models}
+        'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations, 'protein_links': protein_links,'homology_models': homology_models}
 
     return render(request, 'protein/protein_detail.html', context)
 
