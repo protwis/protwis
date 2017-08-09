@@ -1,4 +1,5 @@
 from build.management.commands.base_build import Command as BaseBuild
+from django.db.models import Q
 
 from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState
 from residue.models import Residue
@@ -37,6 +38,8 @@ hdlr.setFormatter(formatter)
 logger.addHandler(hdlr) 
 logger.setLevel(logging.INFO)
 
+build_date = date.today()
+
 
 class Command(BaseBuild):  
     help = 'Build automated chimeric GPCR homology models'
@@ -50,7 +53,6 @@ class Command(BaseBuild):
                             default=False, type=str, nargs='+')
         parser.add_argument('-z', help='Create zip file of model directory containing all built models', default=False,
                             action='store_true')
-        parser.add_argument('--hmver', help='Homology modeling version', default=2.1, type=float)
         parser.add_argument('-s', help='Set activation state for model, default is inactive', default='inactive')
         parser.add_argument('-c', help='Select GPCR class (A, B1, B2, C, F)', default=False)
         parser.add_argument('-i', help='Number of MODELLER iterations for model building', default=1, type=int)
@@ -65,24 +67,33 @@ class Command(BaseBuild):
             self.update = True
         else:
             self.update = False
-        if options['hmver']!=1.0:
-            self.version = options['hmver']
-        else:
-            self.version = 1.0
         if options['s']=='inactive':
             self.state = 'Inactive'
         elif options['s']=='active':
             self.state = 'Active'
         GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'F':'005', 'T':'006'}
         self.modeller_iterations = options['i']
+        self.build_all = False
         if options['r']==False:
-            if options['c']==False or options['c'].upper() not in GPCR_class_codes:
-                raise AssertionError('Error: Incorrect class name given. Use argument -c with class name A, B1, B2, C of F')
             structures = Structure.objects.all()
             struct_parent = [i.protein_conformation.protein.parent for i in structures]
-            GPCR_class = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
-                                            family__slug__istartswith=GPCR_class_codes[options['c'].upper()])
-            self.receptor_list = [i.entry_name for i in GPCR_class if i not in struct_parent]
+            # Build all
+            if options['c']==False:
+                self.build_all = True
+                GPCR_class = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human').filter(Q(family__slug__istartswith='001') |
+                                                                                                                                       Q(family__slug__istartswith='002') |
+                                                                                                                                       Q(family__slug__istartswith='003') |
+                                                                                                                                       Q(family__slug__istartswith='004') |
+                                                                                                                                       Q(family__slug__istartswith='005') |
+                                                                                                                                       Q(family__slug__istartswith='006'))
+            elif options['c'].upper() not in GPCR_class_codes:
+                raise AssertionError('Error: Incorrect class name given. Use argument -c with class name A, B1, B2, C, F or T')
+            # Build one class
+            else:
+                GPCR_class = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
+                                                family__slug__istartswith=GPCR_class_codes[options['c'].upper()])
+            self.receptor_list = [i for i in GPCR_class if i not in struct_parent]
+            self.receptor_list_entry_names = [i.entry_name for i in self.receptor_list]
 
             print(self.receptor_list)
             
@@ -102,7 +113,7 @@ class Command(BaseBuild):
         missing_models = []
         with open('./structure/homology_models/done_models.txt') as f:
             for i in f.readlines():
-                if i.split('\n')[0] not in self.receptor_list:
+                if i.split('\n')[0] not in self.receptor_list_entry_names:
                     missing_models.append(i.split('\n')[0])
         if len(missing_models)==0:
             print('All models were run')
@@ -115,7 +126,7 @@ class Command(BaseBuild):
 
         os.chdir('./structure/')
         if options['z']==True:
-            zipf = zipfile.ZipFile('../static/homology_models/homology_models_v{}.zip'.format(str(self.version)),'w',zipfile.ZIP_DEFLATED)
+            zipf = zipfile.ZipFile('../static/homology_models/GPCRdb_homology_models_{}.zip'.format(str(build_date)),'w',zipfile.ZIP_DEFLATED)
             for root, dirs, files in os.walk('homology_models'):
                 for f in files:
                     zipf.write(os.path.join(root, f))
@@ -130,13 +141,15 @@ class Command(BaseBuild):
             receptor_list = self.receptor_list[positions[0]:positions[1]]
         
         for receptor in receptor_list:
-            self.run_HomologyModeling(receptor, self.state)
+            self.run_HomologyModeling(receptor.entry_name, self.state)
+            if self.build_all and receptor.family.slug[:3] in ['001','002','003','006']:
+                self.run_HomologyModeling(receptor.entry_name, 'Active')
     
     def run_HomologyModeling(self, receptor, state):
         try:
             print(receptor)
             seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX']
-            Homology_model = HomologyModeling(receptor, state, [state], version=self.version, iterations=self.modeller_iterations)
+            Homology_model = HomologyModeling(receptor, state, [state], iterations=self.modeller_iterations)
             alignment = Homology_model.run_alignment([state])
             Homology_model.build_homology_model(alignment)
             formatted_model = Homology_model.format_final_model()
@@ -189,7 +202,7 @@ class Command(BaseBuild):
             logger.info('Model built for {} {}'.format(receptor, state))
             
             # Upload to db
-            if self.update and not residue_shift and len(hse.clash_pairs)==0 and len(hse.chain_breaks)==0:
+            if self.update and not residue_shift:
                 Homology_model.upload_to_db(formatted_model)
                 logger.info('{} homology model uploaded to db'.format(Homology_model.reference_entry_name))
                 print('{} homology model uploaded to db'.format(Homology_model.reference_entry_name))
@@ -221,17 +234,17 @@ class HomologyModeling(object):
     
         @param reference_entry_name: str, protein entry name \n
         @param state: str, endogenous ligand state of reference \n
-        @param query_states: list, list of endogenous ligand states to be applied for template search, 
-        @param version: float, version number of homology modeling pipeline, default=1.0
+        @param query_states: list, list of endogenous ligand states to be applied for template search \n
+        @param iterations: int, number of MODELLER iterations
     '''
     segment_coding = {1:'TM1',2:'TM2',3:'TM3',4:'TM4',5:'TM5',6:'TM6',7:'TM7',8:'H8', 12:'ICL1', 23:'ECL1', 34:'ICL2', 
                       45:'ECL2'}
     
-    def __init__(self, reference_entry_name, state, query_states, version=2.1, iterations=1):
+    def __init__(self, reference_entry_name, state, query_states, iterations=1):
+        self.version = build_date
         self.reference_entry_name = reference_entry_name.lower()
         self.state = state
         self.query_states = query_states
-        self.version = version
         self.modeller_iterations = iterations
         self.statistics = CreateStatistics(self.reference_entry_name)
         self.reference_protein = Protein.objects.get(entry_name=self.reference_entry_name)        
@@ -287,7 +300,7 @@ class HomologyModeling(object):
             hommod, created = StructureModel.objects.update_or_create(protein=self.reference_protein, state=s_state, 
                                                                       main_template=self.main_structure, 
                                                                       pdb=formatted_model, 
-                                                                      version=date.today())
+                                                                      version=self.version)
             new_entry = True
         if not new_entry:
             StructureModelStatsRotamer.objects.filter(homology_model=hommod).delete()
@@ -298,6 +311,14 @@ class HomologyModeling(object):
             res = Residue.objects.get(protein_conformation__protein=self.reference_protein, sequence_number=r[1])
             rots, created = StructureModelStatsRotamer.objects.update_or_create(homology_model=hommod, residue=res,
                                                                                 backbone_template=r[4],rotamer_template=r[5])
+
+        # Upload sequence similarity of templates that were used
+        if not new_entry:
+            db_seqsim = StructureModelSeqSim.objects.filter(homology_model=hommod).delete()
+
+        for struct, sim in self.similarity_table_all.items():
+            if struct in self.template_list:
+                db_seqsim, created = StructureModelSeqSim.objects.get_or_create(homology_model=hommod, template=struct, similarity=sim)
                                    
     def right_rotamer_select(self, rotamer):
         ''' Filter out compound rotamers.
@@ -445,7 +466,7 @@ class HomologyModeling(object):
         io.save(path+modelname+'.pdb')
         with open (path+modelname+'.pdb', 'r+') as f:
             content = f.read()
-            first_line  = 'REMARK    1 MODEL FOR {} CREATED WITH GPCRDB HOMOLOGY MODELING PIPELINE, VERSION {}\n'.format(self.reference_entry_name, date.today())
+            first_line  = 'REMARK    1 MODEL FOR {} CREATED WITH GPCRDB HOMOLOGY MODELING PIPELINE, VERSION {}\n'.format(self.reference_entry_name, build_date)
             second_line = 'REMARK    2 MAIN TEMPLATE: {}\n'.format(self.main_structure)
             f.seek(0,0)
             f.write(first_line+second_line+content)
@@ -467,7 +488,7 @@ class HomologyModeling(object):
                     pass
         
     def run_alignment(self, query_states, core_alignment=True,  
-                      segments=['TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','ECL2','TM5','TM6','TM7','H8'], 
+                      segments=['TM1','ICL1','TM2','ECL1','TM3','ICL2','TM4','TM5','TM6','TM7','H8'], 
                       order_by='similarity'):
         ''' Creates pairwise alignment between reference and target receptor(s).
             Returns Alignment object.
@@ -1597,7 +1618,7 @@ class HomologyModeling(object):
                         pass
                     else:
                         if int(sec[1])<=int(rot[1])<=int(sec[2]):
-                            s_file.write(str(rot).replace("'","").replace(" ","")[1:-1]+"\n")
+                            # s_file.write(str(rot).replace("'","").replace(" ","")[1:-1]+"\n")
                             try:
                                 bb = rot[4].pdb_code.index
                             except:
@@ -1606,9 +1627,26 @@ class HomologyModeling(object):
                                 rt = rot[5].pdb_code.index
                             except:
                                 rt = rot[5]
-                            l = "{},{},{},{},{},{}".format(rot[0],rot[1],rot[2],rot[3],bb,rt)
+                            l = "{},{},{},{},{},{}\n".format(rot[0],rot[1],rot[2],rot[3],bb,rt) 
+                            s_file.write(l)
         
         self.template_stats = rot_table
+
+        # template seq sim file
+        with open(path+modelname+'.template_similarities.csv','w') as s_file:
+            template_list, self.template_list = [], OrderedDict()
+            for r in self.template_stats:
+                if r[4] not in template_list and r[4]!=None:
+                    template_list.append(r[4])
+                if r[5] not in template_list and r[5]!=None:
+                    template_list.append(r[5])
+            s_file.write('Template,Sequence_similarity,Resolution,Representative,State\n')
+            for temp, sim in self.similarity_table_all.items():
+                if temp in template_list:
+                    self.template_list[temp] = sim
+            for t, s in self.template_list.items():
+                s_file.write('{},{},{},{},{}\n'.format(t.pdb_code.index, s, t.resolution, t.representative, t.state.slug))
+
 
         print('MODELLER build: ',datetime.now() - startTime)
         pprint.pprint(self.statistics)

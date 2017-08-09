@@ -15,8 +15,11 @@
 
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
-            ClearSelection('targets');
-            ClearSelection('reference');
+            if(window.location.hash === "#keepselection") {}
+            else {
+                ClearSelection('targets');
+                ClearSelection('reference');
+            }
             var table = $('#structures').DataTable({
                 'scrollX': true,
                 'scrollY': $(window).height()-300,
@@ -67,8 +70,11 @@
                 $(this).parent().parent().toggleClass('alt_selected');
             });
             $('#superpose_btn').click(function () {
-                ClearSelection('targets');
-                ClearSelection('reference');
+                if(window.location.hash === "#keepselection") {}
+                else {
+                    ClearSelection('targets');
+                    ClearSelection('reference');
+                }
                 if (table.rows('.selected').data().length == 1) {
                     var div = document.createElement("div");
                     div.innerHTML = table.rows('.selected').data()[0][5];
