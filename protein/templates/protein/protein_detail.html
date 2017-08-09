@@ -22,7 +22,7 @@
         <h4>LINKS</h4>
     </div>
     <div class="col-md-10">
-        {% for link in p.web_links.all %}
+        {% for link in protein_links %}
         <p><a href="{{ link }}">{{ link.web_resource.name }}</a></p>
         {% empty %}
         No links available
