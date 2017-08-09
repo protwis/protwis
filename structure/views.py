@@ -8,7 +8,7 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
 from protein.models import Gene, ProteinSegment
-from structure.models import Structure, StructureModel, StructureModelStatsRotamer
+from structure.models import Structure, StructureModel, StructureModelStatsRotamer, StructureModelSeqSim
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, convert_csv_to_xlsx
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
@@ -42,6 +42,8 @@ from email.mime.multipart import MIMEMultipart
 from smtplib import SMTP
 import smtplib
 import sys
+
+class_tree = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T'}
 
 class StructureBrowser(TemplateView):
     """
@@ -170,15 +172,18 @@ def HomologyModelDetails(request, modelname, state):
             segments_out[color_palette[i]] = segments_formatted[s]
             colors[s] = color_palette[i]
         i+=1
+    template_list = []
     for b, temps in bb_temps.items():
         for i, t in enumerate(temps):
             t.color = colors[t]
             bb_temps[b][i] = t
+            template_list.append(t.pdb_code.index)
+    main_template_seqsim = StructureModelSeqSim.objects.get(homology_model=model, template=model.main_template).similarity
 
     return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
                                                           'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(rotamers)*100, 1),
                                                           'bb_alt': round(bb_alt/len(rotamers)*100, 1), 'bb_none': round(bb_none/len(rotamers)*100, 1), 'sc_main': round(sc_main/len(rotamers)*100, 1), 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
-                                                          'sc_none': round(sc_none/len(rotamers)*100, 1)})
+                                                          'sc_none': round(sc_none/len(rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 'template_list': template_list})
 
 def ServeHomModDiagram(request, modelname, state):
     model=StructureModel.objects.filter(protein__entry_name=modelname, state__slug=state)
@@ -755,12 +760,12 @@ class SuperpositionWorkflowIndex(TemplateView):
         # get selection from session and add to context
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)
-
+        # print(simple_selection)
         # create full selection and import simple selection (if it exists)
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
-
+        print(self.kwargs.keys())
         #Clearing selections for fresh run
         if 'clear' in self.kwargs.keys():
             selection.clear('reference')
@@ -905,13 +910,18 @@ class SuperpositionWorkflowResults(TemplateView):
         if 'alt_files' in self.request.session.keys():
             alt_files = [StringIO(alt_file.file.read().decode('UTF-8')) for alt_file in self.request.session['alt_files']]
         elif selection.targets != []:
-            alt_files = [StringIO(x.item.get_cleaned_pdb()) for x in selection.targets if x.type == 'structure']
+            alt_files = [StringIO(x.item.get_cleaned_pdb()) for x in selection.targets if x.type in ['structure', 'structure_model']]
         superposition = ProteinSuperpose(deepcopy(ref_file),alt_files, selection)
         out_structs = superposition.run()
         if 'alt_files' in self.request.session.keys():
             alt_file_names = [x.name for x in self.request.session['alt_files']]
         else:
-            alt_file_names = ['{}_{}.pdb'.format(x.item.protein_conformation.protein.parent.entry_name, x.item.pdb_code.index) for x in selection.targets if x.type == 'structure']
+            alt_file_names = []
+            for x in selection.targets:
+                if x.type=='structure':
+                    alt_file_names.append('{}_{}.pdb'.format(x.item.protein_conformation.protein.parent.entry_name, x.item.pdb_code.index))
+                elif x.type=='structure_model':
+                    alt_file_names.append('Class{}_{}_{}_{}_GPCRdb.pdb'.format(class_tree[x.item.protein.family.slug[:3]], x.item.protein.entry_name, x.item.state.name, x.item.main_template.pdb_code.index))
         if len(out_structs) == 0:
             self.success = False
         elif len(out_structs) >= 1:
@@ -963,7 +973,11 @@ class SuperpositionWorkflowDownload(View):
             gn_assigner = GenericNumbering(structure=ref_struct)
             gn_assigner.assign_generic_numbers()
             self.ref_substructure_mapping = gn_assigner.get_substructure_mapping_dict()
-            ref_name = '{}_{}_ref.pdb'.format(selection.reference[0].item.protein_conformation.protein.parent.entry_name, selection.reference[0].item.pdb_code.index)
+            if selection.reference[0].type=='structure':
+                ref_name = '{}_{}_ref.pdb'.format(selection.reference[0].item.protein_conformation.protein.parent.entry_name, selection.reference[0].item.pdb_code.index)
+            elif selection.reference[0].type=='structure_model':
+                ref_name = 'Class{}_{}_{}_{}_GPCRdb_ref.pdb'.format(class_tree[selection.reference[0].item.protein.family.slug[:3]], selection.reference[0].item.protein.entry_name, 
+                                                                    selection.reference[0].item.state.name, selection.reference[0].item.main_template.pdb_code.index)
 
         alt_structs = {}
         for alt_id, st in self.request.session['alt_structs'].items():
@@ -1004,6 +1018,7 @@ class SuperpositionWorkflowDownload(View):
             io.set_structure(ref_struct)
             tmp = StringIO()
             io.save(tmp, SubstructureSelector(self.ref_substructure_mapping, parsed_selection=SelectionParser(selection)))
+            print('ref')
             zipf.writestr(ref_name, tmp.getvalue())
             for alt_name in self.request.session['alt_structs']:
                 tmp = StringIO()

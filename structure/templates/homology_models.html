@@ -134,6 +134,32 @@
                 $('.alt').prop('checked', $(this).prop("checked"));
                 $('.alt').parent().parent().toggleClass('alt_selected');
             });
+            $('#superpose_btn').click(function () {
+                ClearSelection('targets');
+                ClearSelection('reference');
+                if (table.rows('.selected').data().length == 1) {
+                    var div = document.createElement("div");
+                    div.innerHTML = table.rows('.selected').data()[0][9];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, ''));
+                    }
+
+                }
+                var checked_data = table.rows('.alt_selected').data();
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][9];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure_model', div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('targets', 'structure_model', div.textContent.replace(/\s+/g, ''));
+                    }
+
+                }
+                window.location.href = '/structure/superposition_workflow_index';
+            });
 
         });
     </script> 
@@ -147,6 +173,9 @@
     <div class="btn-group">
         <a id="download_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Download</a>
     </div>
+    <div class="btn-group">
+        <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
+    </div>
     <div class="btn-group" style="float: right">
         <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="glyphicon glyphicon-download"></span> Archive <span class="caret"></span>
@@ -156,12 +185,14 @@
                     <a href="http://files.gpcrdb.org/homology_models_v1.0.zip"> v1.0 </a>
                 </li>
                 <li>
-                    <a href="http://files.gpcrdb.org/homology_models_v2.0.zip"> v2.0 </a>
+                    <a href="http://files.gpcrdb.org/homology_models_v2.0.zip"> 2017-04-10 models </a>
                 </li>
             </ul>
     </div>
-    <br />
-    <br />
+    <div>
+        <p style="font-size: 12px; padding: 3px;">PDB files contain GPCRdb generic numbers in the B-factor field of CA atoms</p>
+    </div>
+    
 
     <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 100%;">
         <table class="display" id="structure_model">
@@ -204,7 +235,7 @@
                     <td>{{ model.protein.species.common_name }}</td>
                     <td><a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a></td>
                     <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
-                    <td>{{ model.version|floatformat:"1" }}</td>
+                    <td>{{ model.version|date:"Y-m-d" }}</td>
                     <td style="display:none;">{{ model.protein.entry_name }}</td>
 
                 </tr>

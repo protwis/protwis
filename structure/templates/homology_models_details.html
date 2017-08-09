@@ -14,10 +14,10 @@ canvas {
 }
 </style>
 
- <script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script> 
+<script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script> 
 <div class="row text-success">
 <div class="text-center">
-        <h2>{{ model.protein.family.name|safe }} homology model v{{ model.version }}</h2>
+        <h2>{{ model.protein.family.name|safe }} homology model</h2>
     </div>
 </div>
 
@@ -62,7 +62,7 @@ canvas {
         <h4>VERSION</h4>
     </div>
     <div class="col-md-9">
-    ...
+    {{ model.version|date:"Y-m-d" }}
     </div>
 </div>
 
@@ -71,7 +71,7 @@ canvas {
         <h4>MAIN TEMPLATE</h4>
     </div>
     <div class="col-md-9">
-        <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
+        <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
         
         <div class="btn-group", style="padding: 0px 0px 5px 5px;">
             <a id="align_btn" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
@@ -131,22 +131,30 @@ canvas {
 <br>
 <style>
 .inline {display:inline;}
-.graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 2px 5px; text-align: center}
+.graphcolor { display:inline-block; border-style:solid; border-width: 1px; padding: 1px 5px; text-align: center}
 </style>
 
 <div class="inline">
     <div>
         <div style="float: left; width: 50%;">
             <div id="viewport" style="width:500px; height:400px;background-color: white;"></div>
-            <div> 
-                <button id="fullscreen">Full Screen</button>
-                {% for prot, bts in backbone_templates.items %}
-                    {% for bt in bts %}
-                        <div class="graphcolor" style="background-color:{{ bt.color }};">{{ bt.pdb_code.index }}</div>
-                    {% endfor %}
-                {% endfor %}
-                        <div class="graphcolor" style="background-color:white;">None</div>
+            <div style="width:500px; background-color:#eaeaea; border-radius: 0px 0px 5px 5px;">
+                <p style="padding: 2px 0px 2px 5px; font-size: 10px;"><a href="https://github.com/arose/ngl">NGL</a> is a WebGL based 3D viewer powered by <a href="http://mmtf.rcsb.org">MMTF</a>.</p>
             </div>
+            <div style='width: 90%; display:table; position:relative;'>
+                <div style='width: 20%; display: table-cell;'>
+                    <button id="fullscreen">Full Screen</button>
+                </div>
+                <div style='display: table-cell;'>
+                    {% for prot, bts in backbone_templates.items %}
+                        {% for bt in bts %}
+                            <div class="graphcolor" style="background-color:{{ bt.color }}; width: 12%; margin-top: 5px;">{{ bt.pdb_code.index }}</div>
+                        {% endfor %}
+                    {% endfor %}
+                            <div class="graphcolor" style="background-color:white; width: 12%;">None</div>
+                </div>
+            </div>
+            
         </div>
     </div>
     
@@ -157,6 +165,15 @@ canvas {
         <div class="btn-group">
             <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_csv">Download .csv</a>
         </div>
+        <div class="btn-group">
+            <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
+        </div>
+        <div>
+            <p>PDB file contains GPCRdb generic numbers in the B-factor field of CA atoms</p>
+        </div>
+        <style>
+            table.dataTable thead th {padding: 3px 1px 3px 3px;}
+        </style>
         <table class="display" id="rotamers">
             <thead>
                 <tr>
@@ -312,6 +329,35 @@ canvas {
                     }
                 }
                 window.location.href = '/structure/selection_convert_model';
+            });
+            $('#superpose_btn').click(function () {
+                var table2 = Array.from("{{template_list}}".split(","));
+                var template_list = []
+                for (i=0; i<table2.length; i++) {
+                    template_list.push(table2[i].replace("&#39;","").replace("&#39;",""))
+                }
+                ClearSelection('targets');
+                ClearSelection('reference');
+                var div = document.createElement("div");
+                div.innerHTML = "{{model.protein.entry_name}}";
+                
+                if (typeof div.innerText !== "undefined") {
+                    AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, ''));
+                } else {
+                    AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, ''));
+                }
+                
+                for (i = 0; i < template_list.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = template_list[i];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                    }
+
+                }
+                window.location.href = '/structure/superposition_workflow_index';
             });
         });
     </script>

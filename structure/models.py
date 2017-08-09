@@ -71,7 +71,10 @@ class StructureModel(models.Model):
         return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
 
     class Meta():
-        db_table = 'structure_model'      
+        db_table = 'structure_model'
+
+    def get_cleaned_pdb(self):
+        return self.pdb 
 
 
 class StructureModelStatsRotamer(models.Model):

@@ -277,7 +277,7 @@ def AddToSelection(request):
     selection_type = request.GET['selection_type']
     selection_subtype = request.GET['selection_subtype']
     selection_id = request.GET['selection_id']
-
+    
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
     
