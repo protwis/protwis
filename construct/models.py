@@ -53,6 +53,8 @@ class Construct(models.Model):
             confirmed = False
             if insert.insert_type.name=='fusion' or insert.insert_type.subtype in list_of_comfirmed_fusion:
                 confirmed = True
+                if position != None:
+                    print("new fusion??",position,insert.position,self.name)
                 if insert.position.startswith('N-term'):
                     position = 'nterm'
                 else:
@@ -147,9 +149,10 @@ class ConstructMutation(models.Model):
     sequence_number = models.SmallIntegerField()
     wild_type_amino_acid = models.CharField(max_length=1)
     mutated_amino_acid = models.CharField(max_length=1)
-    mutation_type = models.CharField(max_length=30, null=True)
+    # mutation_type = models.CharField(max_length=30, null=True)
     remark = models.TextField(null=True)
     residue = models.ForeignKey('residue.Residue', null=True)
+    effects = models.ManyToManyField('ConstructMutationType', related_name="bar")
 
     def get_res(self):
         '''Retrieve the residue connected to this mutation, and save it as a FK field.'''
@@ -185,6 +188,17 @@ class ConstructMutation(models.Model):
     class Meta():
         db_table = 'construct_mutation'
 
+class ConstructMutationType(models.Model):
+    slug = models.SlugField(max_length=100)
+    name = models.CharField(max_length=100)
+    effect = models.CharField(max_length=100, null=True)
+
+    def __str__(self):
+        return self.slug
+
+    class Meta():
+        db_table = 'construct_mutation_type'
+        unique_together = ('slug', 'name','effect')
 
 
 class ConstructDeletion(models.Model):
