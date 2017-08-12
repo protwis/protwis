@@ -33,5 +33,6 @@ urlpatterns = [
     url(r'^tool/json/cons_rf/(?P<slug>[-\w]+)/$', views.cons_rf, name='cons_rf'),
     url(r'^tool/json/cons_rm_GP/(?P<slug>[-\w]+)/$', views.cons_rm_GP, name='cons_rm_GP'),
     url(r'^tool/json/cons_rf_and_class/(?P<slug>[-\w]+)/$', views.cons_rf_and_class, name='cons_rf_and_class'),
+    url(r'^stabilisation[/]?$', views.stabilisation_browser, name='stabilisation'),
     url(r'^(?P<slug>[-\w]+)/$', views.detail, name='detail'),
 ]
