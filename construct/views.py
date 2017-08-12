@@ -23,6 +23,7 @@ from residue.models import ResiduePositionSet
 from datetime import datetime
 import json
 import copy
+import re
 from collections import OrderedDict
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
@@ -89,7 +90,7 @@ class ConstructStatistics(TemplateView):
             x50s[pc[0]][pc[2]] = pc[1]
 
         pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__protein_segment__slug__in=['TM3','TM4','TM5','TM6']).values('protein__entry_name','residue__protein_segment__slug').annotate(start=Min('residue__sequence_number'),GN=Max('residue__generic_number__label'),GN2=Min('residue__generic_number__label'),end=Max('residue__sequence_number'))
-        print(pconfs)
+        # print(pconfs)
         # x50s = {}
         track_anamalities = {}
         for pc in pconfs:
@@ -110,17 +111,17 @@ class ConstructStatistics(TemplateView):
             gn_range_start = 50-gn_start
             gn_range_end = gn_end-50
             if seq_range_start!=gn_range_start:
-                print(entry_name,"Helix",helix, "has anamolity in start",gn_range_start-seq_range_start)
+                # print(entry_name,"Helix",helix, "has anamolity in start",gn_range_start-seq_range_start)
                 track_anamalities[entry_name][helix][0] = gn_range_start-seq_range_start
             if seq_range_end!=gn_range_end:
-                print(entry_name,"Helix",helix, "has anamolity in end",gn_range_end-seq_range_end)
+                # print(entry_name,"Helix",helix, "has anamolity in end",gn_range_end-seq_range_end)
                 track_anamalities[entry_name][helix][1] = gn_range_end-seq_range_end
             #print(pc,helix,x50,gn_start,gn_end,seq_start,seq_end,,x50-seq_start,50-gn_start,gn_end-50)
             #print(x50s[entry_name])
             # if pc[0] not in x50s:
             #     x50s[pc[0]] = {}
             # x50s[pc[0]][pc[2]] = pc[1]
-        print(track_anamalities)
+        # print(track_anamalities)
         pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).prefetch_related('protein').filter(residue__protein_segment__slug='TM1').annotate(start=Min('residue__sequence_number'))
         #pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__generic_number__label__in=['1x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
         tm1_start = {}
@@ -143,7 +144,8 @@ class ConstructStatistics(TemplateView):
             entry_name = p.entry_name
             p_class = p.family.slug.split('_')[0]
             pdb = c.crystal.pdb_code
-            for mutation in c.mutations.all():
+            pdb = '' # do not count same mutation many times
+            for mutation in c.mutations.filter(effects__slug='thermostabilising').all():
                 if p.entry_name not in proteins:
                     proteins.append(entry_name)
                 mutations.append((mutation,entry_name,pdb,p_class))
@@ -174,6 +176,7 @@ class ConstructStatistics(TemplateView):
         truncations_new['icl2_fusion'] = OrderedDict()
         track_fusions = OrderedDict()
         track_fusions2 = OrderedDict()
+        track_without_fusions = OrderedDict()
         truncations_new_possibilties = {}
         truncations_new_sum = {}
         truncations['cterm'] = {}
@@ -189,7 +192,7 @@ class ConstructStatistics(TemplateView):
             #print(c.structure.state.slug)
             p_class = p.family.slug.split('_')[0]
             if p_class not in class_names:
-                class_names[p_class] = p.family.parent.parent.parent.name
+                class_names[p_class] =  re.sub(r'\([^)]*\)', '', p.family.parent.parent.parent.name)
             p_class_name = class_names[p_class]
             if state=='active':
                 p_class_name += "_active"
@@ -202,6 +205,7 @@ class ConstructStatistics(TemplateView):
 
             if p_class_name not in track_fusions:
                 track_fusions[p_class_name] = OrderedDict()
+
             if entry_name not in track_fusions[p_class_name]:
                 track_fusions[p_class_name][entry_name] = {'found':[],'for_print':[]}
 
@@ -209,9 +213,10 @@ class ConstructStatistics(TemplateView):
                 fusion_name = fusions[0][2]
                 if fusion_name not in track_fusions2:
                     track_fusions2[fusion_name] = {'found':[],'for_print':[]}
-
+            # if entry_name=='aa2ar_human':
+            #     print(state,p_class_name)
             for deletion in c.deletions.all():
-                # if entry_name=='acm2_human':
+                # if entry_name=='aa2ar_human':
                 #     print(entry_name,deletion.start,cterm_start[entry_name],c.name) # lpar1_human
 
                 if deletion.end <= x50s[entry_name]['1x50']:
@@ -219,7 +224,8 @@ class ConstructStatistics(TemplateView):
                     bw = "1."+str(50-x50s[entry_name]['1x50']+deletion.end)
                     #bw = bw + " " + str(x50s[entry_name]['1x50']-deletion.end)
                     from_tm1 = tm1_start[entry_name] - deletion.end
-                    #print(from_tm1,entry_name)
+                    # if entry_name=='aa2ar_human':
+                    #     print(from_tm1,entry_name)
 
                     position = 'nterm'
                     if fusion_position=='nterm':
@@ -251,15 +257,17 @@ class ConstructStatistics(TemplateView):
                         truncations_new[position][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
                     if entry_name not in truncations_new[position][p_class_name]['receptors']:
                         truncations_new[position][p_class_name]['receptors'][entry_name] = [[],[],[tm1_start[entry_name]]]
-                    if from_tm1 not in truncations_new[position][p_class_name]['receptors'][entry_name][0]:
-                        truncations_new[position][p_class_name]['receptors'][entry_name][0].append(from_tm1)
-                        if from_tm1 not in truncations_new_sum[position][p_class_name]:
-                            truncations_new_sum[position][p_class_name][from_tm1] = 0
-                        truncations_new_sum[position][p_class_name][from_tm1] += 1
+                    if fusion_position!='nterm':
+                        if from_tm1 not in truncations_new[position][p_class_name]['receptors'][entry_name][0]:
+                            truncations_new[position][p_class_name]['receptors'][entry_name][0].append(from_tm1)
+                            if from_tm1 not in truncations_new_sum[position][p_class_name]:
+                                truncations_new_sum[position][p_class_name][from_tm1] = 0
+                            truncations_new_sum[position][p_class_name][from_tm1] += 1
                     # if from_tm1 not in truncations_new[position][p_class_name]['possiblities']:
                     #     truncations_new[position][p_class_name]['possiblities'].append(from_tm1)
                     #     truncations_new[position][p_class_name]['possiblities'] = sorted(truncations_new[position][p_class_name]['possiblities'])
-
+                    # if from_tm1==0:
+                    #     print(state,entry_name,p_class_name,truncations_new[position][p_class_name]['receptors'][entry_name])
 
                 if deletion.start >= x50s[entry_name]['8x50']:
                     found_cterm = True
@@ -322,11 +330,26 @@ class ConstructStatistics(TemplateView):
                         if bw2 not in track_fusions2[fusion_name]['found']:
                             track_fusions2[fusion_name]['found'].append(bw2)
 
-
-                    if bw not in track_fusions[p_class_name][entry_name]['found']:
+                    if fusion_position=='icl3':
+                        #Track those with fusion
+                        if bw not in track_fusions[p_class_name][entry_name]['found']:
                             track_fusions[p_class_name][entry_name]['found'].append(bw)
-                    if bw2 not in track_fusions[p_class_name][entry_name]['found']:
+                        if bw2 not in track_fusions[p_class_name][entry_name]['found']:
                             track_fusions[p_class_name][entry_name]['found'].append(bw2)
+                    else:
+                        print('ICL3 CUT WITHOUT FUSION',bw_combine,entry_name,c.name)
+                        if p_class_name not in track_without_fusions:
+                            track_without_fusions[p_class_name] = OrderedDict()
+
+                        if entry_name not in track_without_fusions[p_class_name]:
+                            track_without_fusions[p_class_name][entry_name] = {'found':[],'for_print':[]}
+
+                        #Track those without fusion
+                        if bw not in track_without_fusions[p_class_name][entry_name]['found']:
+                            track_without_fusions[p_class_name][entry_name]['found'].append(bw)
+                        if bw2 not in track_without_fusions[p_class_name][entry_name]['found']:
+                            track_without_fusions[p_class_name][entry_name]['found'].append(bw2)
+
 
                     if p_class_name not in truncations[position]:
                         truncations[position][p_class_name] = {}
@@ -346,6 +369,7 @@ class ConstructStatistics(TemplateView):
                     if bw2 not in truncations_new_possibilties[position+"_end"]:
                         truncations_new_possibilties[position+"_end"].append(bw2)
                         truncations_new_possibilties[position+"_end"] = sorted(truncations_new_possibilties[position+"_end"])
+                    
 
 
                 if deletion.start > x50s[entry_name]['3x50'] and deletion.start < x50s[entry_name]['4x50']:
@@ -395,19 +419,34 @@ class ConstructStatistics(TemplateView):
                 truncations_new[position][p_class_name] = {'receptors':OrderedDict(),'no_cut':[], 'possiblities':[]}
 
 
-            # if entry_name=='acm2_human':
-            #     print(entry_name,found_nterm,position,p_class_name)
+            # if entry_name=='aa2ar_human':
+            #     print(found_nterm,entry_name,position,p_class_name)
 
             from_tm1 = tm1_start[entry_name]
             if not found_nterm:
+                if position not in truncations_new_sum:
+                    truncations_new_sum[position] = {}
+                if p_class_name not in truncations_new_sum[position]:
+                    truncations_new_sum[position][p_class_name] = {}
+                if from_tm1 not in truncations_new_sum[position][p_class_name]:
+                        truncations_new_sum[position][p_class_name][from_tm1] = 0
                 #if full receptor in xtal
-                truncations_new[position][p_class_name]['receptors'][entry_name] = [[],[from_tm1],[from_tm1]]
-            else:
-                #if full was found, fill in the max
-                #print(entry_name,found_nterm)
-                truncations_new[position][p_class_name]['receptors'][entry_name][2].append(from_tm1)
+                if entry_name not in truncations_new[position][p_class_name]['receptors']:
+                    truncations_new[position][p_class_name]['receptors'][entry_name] = [[],[from_tm1],[from_tm1]]
 
-            if from_tm1 not in truncations_new_possibilties[position] and position!='nterm_fusion':
+                    # add one for this position if it is first time receptor is mentioned
+                    truncations_new_sum[position][p_class_name][from_tm1] += 1
+                else:
+                    if from_tm1 not in truncations_new[position][p_class_name]['receptors'][entry_name][1]:
+                        truncations_new[position][p_class_name]['receptors'][entry_name][1].append(from_tm1)
+                        truncations_new_sum[position][p_class_name][from_tm1] += 1
+            # else:
+            #     #if full was found, fill in the max
+            #     #print(entry_name,found_nterm)
+            #     if from_tm1 not in truncations_new[position][p_class_name]['receptors'][entry_name][1]:
+            #         truncations_new[position][p_class_name]['receptors'][entry_name][2].append(from_tm1)
+
+            if position!='nterm_fusion' and from_tm1 not in truncations_new_possibilties[position]:
                 truncations_new_possibilties[position].append(from_tm1)
                 truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
 
@@ -420,13 +459,27 @@ class ConstructStatistics(TemplateView):
 
             from_h8 = cterm_end[entry_name] - cterm_start[entry_name]
             if not found_cterm:
-                truncations_new[position][p_class_name]['receptors'][entry_name] = [[],[from_h8],[from_h8]]
-            else:
-                truncations_new[position][p_class_name]['receptors'][entry_name][2].append(from_h8)
+                if position not in truncations_new_sum:
+                    truncations_new_sum[position] = {}
+                if p_class_name not in truncations_new_sum[position]:
+                    truncations_new_sum[position][p_class_name] = {}
+                if from_h8 not in truncations_new_sum[position][p_class_name]:
+                        truncations_new_sum[position][p_class_name][from_h8] = 0
+                if entry_name not in truncations_new[position][p_class_name]['receptors']:
+                    truncations_new[position][p_class_name]['receptors'][entry_name] = [[],[from_h8],[from_h8]]
+                    # add one for this position if it is first time receptor is mentioned
+                    truncations_new_sum[position][p_class_name][from_h8] += 1
+                else:
+                    if from_h8 not in truncations_new[position][p_class_name]['receptors'][entry_name][1]:
+                        truncations_new[position][p_class_name]['receptors'][entry_name][1].append(from_h8)
+                        truncations_new_sum[position][p_class_name][from_h8] += 1
+            # else:
+            #     if from_h8 not in truncations_new[position][p_class_name]['receptors'][entry_name][1]:
+            #         truncations_new[position][p_class_name]['receptors'][entry_name][1].append(from_h8)
 
             if from_h8 not in truncations_new_possibilties[position]:
                 truncations_new_possibilties[position].append(from_h8)
-                truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
+            truncations_new_possibilties[position] = sorted(truncations_new_possibilties[position])
 
 
         for pos, p_vals in truncations_new_sum.items():
@@ -439,7 +492,7 @@ class ConstructStatistics(TemplateView):
                         new_list[position] = ''
                 # print(pclass,c_vals,new_list)
                 truncations_new_sum[pos][pclass] = new_list
-        #print(truncations_new_sum)
+        # print(truncations_new)
         #truncations = OrderedDict(truncations)
         ordered_truncations = OrderedDict()
         for segment, s_vals in sorted(truncations.items()):
@@ -454,17 +507,36 @@ class ConstructStatistics(TemplateView):
 
 
         fusion_possibilities = truncations_new_possibilties['nterm_fusion'][::-1] + truncations_new_possibilties['icl2_fusion_start'] + truncations_new_possibilties['icl3_fusion_start'] + truncations_new_possibilties['icl2_fusion_end'] + truncations_new_possibilties['icl3_fusion_end']
-
+        # fusion_possibilities = truncations_new_possibilties['nterm_fusion'][::-1]  + truncations_new_possibilties['icl3_start'] + truncations_new_possibilties['icl3_end']
+        track_fusion_sums = OrderedDict()
+        track_without_fusion_sums = OrderedDict()
         for pclass, receptors in track_fusions.items():
+            track_fusion_sums[pclass] = OrderedDict()
+            for p in fusion_possibilities:
+                track_fusion_sums[pclass][p] = 0
             for receptor, vals in receptors.items():
                 temp = []
                 for p in fusion_possibilities:
                     if p in vals['found']:
                         temp.append(1)
+                        track_fusion_sums[pclass][p] += 1
                     else:
                         temp.append(0)
                 vals['for_print'] = temp
-
+        for pclass, receptors in track_without_fusions.items():
+            track_without_fusion_sums[pclass] = OrderedDict()
+            for p in truncations_new_possibilties['icl3_start'] + truncations_new_possibilties['icl3_end']:
+                track_without_fusion_sums[pclass][p] = 0
+            for receptor, vals in receptors.items():
+                temp = []
+                for p in truncations_new_possibilties['icl3_start'] + truncations_new_possibilties['icl3_end']:
+                    if p in vals['found']:
+                        temp.append(1)
+                        track_without_fusion_sums[pclass][p] += 1
+                    else:
+                        temp.append(0)
+                vals['for_print'] = temp
+        # print(track_fusion_sums)
         for fusion, vals in track_fusions2.items():
             temp = []
             for p in fusion_possibilities:
@@ -473,7 +545,7 @@ class ConstructStatistics(TemplateView):
                 else:
                     temp.append(0)
             vals['for_print'] = temp
-
+        # print(track_without_fusions)
         #truncations =  OrderedDict(sorted(truncations.items(), key=lambda x: x[1]['hits'],reverse=True))
         #print(ordered_truncations)
         # print(track_fusions2)
@@ -484,6 +556,8 @@ class ConstructStatistics(TemplateView):
         context['fusion_possibilities'] = fusion_possibilities
         context['test'] = track_fusions
         context['test2'] = track_fusions2
+        context['track_fusion_sums'] = track_fusion_sums
+        context['track_without_fusions'] = track_without_fusions
 
         mutation_list = OrderedDict()
         mutation_type = OrderedDict()
@@ -518,6 +592,7 @@ class ConstructStatistics(TemplateView):
             mut_uniq = entry_name+'_'+str(pos)+'_'+wt+'_'+mut
 
             if mut_uniq not in mutation_track:
+                # print(mut_uniq)
                 #do not count the same mutation (from different Xtals) multiple times
                 mutation_track.append(mut_uniq)
                 mutation_matrix[wt][mut][1] += 1
@@ -803,7 +878,7 @@ class ConstructMutations(TemplateView):
 
         context = super(ConstructMutations, self).get_context_data(**kwargs)
         cons = Construct.objects.all().prefetch_related(
-            "crystal","mutations","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
+            "crystal","mutations__effects","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
             "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
 
         #PREPARE DATA
@@ -815,6 +890,7 @@ class ConstructMutations(TemplateView):
         proteins = []
         class_names = {}
         for c in cons:
+            # print(c)
             p = c.protein
             entry_name = p.entry_name
             p_class = p.family.slug.split('_')[0]
@@ -830,6 +906,7 @@ class ConstructMutations(TemplateView):
         rs_lookup = {}
         gns = []
         for r in rs:
+            # print("r",r)
             entry_name = r.protein_conformation.protein.entry_name
             pos = r.sequence_number
             segment = r.protein_segment.slug
@@ -840,9 +917,19 @@ class ConstructMutations(TemplateView):
 
         mutation_list = []
         for mutation in mutations:
+            # print("m",mutation)
             wt = mutation[0].wild_type_amino_acid
             mut = mutation[0].mutated_amino_acid
-            mut_type = mutation[0].mutation_type
+
+            mut_type = mutation[0].effects.all().values('slug')
+            mut_types = []
+            for eff in mut_type:
+                mut_types.append(eff['slug'])
+            mut_type = ",".join(mut_types)
+            # # for
+            # print(mut_type)
+            # mut_type = ''
+
             entry_name = mutation[1]
             pdb = mutation[2]
             cname = mutation[4]
@@ -870,7 +957,7 @@ class ConstructMutations(TemplateView):
 
 
         context['mutation_list'] = mutation_list
-        # print(mutation_list)
+        print(mutation_list)
 
         return context
 
@@ -900,6 +987,7 @@ def stabilisation_browser(request):
                 "structure__state",
                 "mutations__residue__generic_number",
                 "mutations__residue__protein_segment",
+                "mutations__effects__bar",
                 "protein__family__parent__parent__parent",
                 "crystal")
                 
@@ -933,114 +1021,122 @@ def stabilisation_browser(request):
     # Set up dictionaries to record information.
     mutation_groups = {"position_only":{}, "all":{}, "pos_and_wt":{}, "pos_and_mut":{}}
 
+    # Grab thermostabilising mutations
+    mutations_thermo = ConstructMutation.objects.filter(effects__slug='thermostabilising').all()\
+                .prefetch_related(
+                    "construct__structure__state",
+                    "residue__generic_number",
+                    "residue__protein_segment",
+                    "construct__protein__family__parent__parent__parent",
+                    "construct__crystal")
+
+
     # For each construct, get the needed information, and add to the context dictionary called mutation_list.
-    for record in constructs:
+    for mutant in mutations_thermo:
+
         # Get info for the construct
-        struct_id = record.structure_id
-        state = record.structure.state.name
-        prot = record.protein
+        struct_id = mutant.construct.structure_id
+        state = mutant.construct.structure.state.name
+        prot = mutant.construct.protein
         p_class = prot.family.parent.parent.parent.name
         p_ligand = prot.family.parent.parent.name
         p_receptor = prot.family.parent.name
-        pdb = record.crystal.pdb_code
+        pdb = mutant.construct.crystal.pdb_code
 
-        # For each construct there may be many mutations.  Iterate through each one, adding it to the correct row in
-        # each analysis mode grouping in the context dictionary.
-        for mutant in record.mutations.all():
-            # Get the generic number and segment, if known.
-            try:
-                if mutant.residue.generic_number is None:
-                    generic_number = u'\u2014'
-                else:
-                    generic_number = mutant.residue.generic_number.label
-                segment = mutant.residue.protein_segment.slug
-            except AttributeError:
+        # Get the generic number and segment, if known.
+        try:
+            if mutant.residue.generic_number is None:
                 generic_number = u'\u2014'
-                segment = u'\u2014'
+            else:
+                generic_number = mutant.residue.generic_number.label
+            segment = mutant.residue.protein_segment.slug
+        except AttributeError:
+            generic_number = u'\u2014'
+            segment = u'\u2014'
 
-            # Collect the mutation info needed to create a unique group id, and the info relevant to the full row.
-            mutant_id = {'gen_num':generic_number, 'wild_type':mutant.wild_type_amino_acid,
-                         'mutant':mutant.mutated_amino_acid, 'GPCR_count':0, 'segment':segment, 'class': p_class}
-            mutant_info = {'pdb':pdb,
-                           'ligand': p_ligand,
-                           'receptor': p_receptor,
-                           'wild_type':mutant_id["wild_type"],
-                           'mutant':mutant_id['mutant'],
-                           'state':state,
-                           'struct_id':struct_id}
+        # Collect the mutation info needed to create a unique group id, and the info relevant to the full row.
+        mutant_id = {'gen_num':generic_number, 'wild_type':mutant.wild_type_amino_acid,
+                     'mutant':mutant.mutated_amino_acid, 'GPCR_count':0, 'segment':segment, 'class': p_class}
+        mutant_info = {'pdb':pdb,
+                       'ligand': p_ligand,
+                       'receptor': p_receptor,
+                       'wild_type':mutant_id["wild_type"],
+                       'mutant':mutant_id['mutant'],
+                       'state':state,
+                       'struct_id':struct_id}
 
-            # Check if the calculated columns have been calculated for the pos, wt & mut grouping.
-            # If so, all groups already have the column calculations needed added.
-            # If not, all other grouping info must be calculated anyway to retrieve the site info for the wt & mut
-            # grouping.
-            wt_mut_group_id = ",".join([str(val) for key, val in mutant_id.items()
-                                        if key in groupings['all']['include_in_id']])
+        # Check if the calculated columns have been calculated for the pos, wt & mut grouping.
+        # If so, all groups already have the column calculations needed added.
+        # If not, all other grouping info must be calculated anyway to retrieve the site info for the wt & mut
+        # grouping.
+        wt_mut_group_id = ",".join([str(val) for key, val in mutant_id.items()
+                                    if key in groupings['all']['include_in_id']])
 
-            if wt_mut_group_id not in mutation_groups['all']:
-                # In here: insert the code to find the site info
-                calced_cols = get_calculated_columns(structural_rule_tree,
-                                                     mutant_id['mutant'],
-                                                     mutant_id['wild_type'],
-                                                     generic_number,
-                                                     p_class,
-                                                     p_receptor,
-                                                     conservation)
+        if wt_mut_group_id not in mutation_groups['all']:
+            # In here: insert the code to find the site info
+            calced_cols = get_calculated_columns(structural_rule_tree,
+                                                 mutant_id['mutant'],
+                                                 mutant_id['wild_type'],
+                                                 generic_number,
+                                                 p_class,
+                                                 p_receptor,
+                                                 conservation)
 
-            # For each group, add the required info.
-            for group_name, attr in groupings.items():
-                # Create a dictionary of information pertaining to the whole group to which the mutant belongs
-                #
-                group_info = {key:item for key, item in mutant_id.items() if key not in attr['exclude_from_info']}
-                # Create a group ID (which will be unique for each grouping)
-                group_id = ",".join([str(val) for key, val in mutant_id.items()
-                                     if key in attr['include_in_id']])
+        # For each group, add the required info.
+        for group_name, attr in groupings.items():
+            # Create a dictionary of information pertaining to the whole group to which the mutant belongs
+            #
+            group_info = {key:item for key, item in mutant_id.items() if key not in attr['exclude_from_info']}
+            # Create a group ID (which will be unique for each grouping)
+            group_id = ",".join([str(val) for key, val in mutant_id.items()
+                                 if key in attr['include_in_id']])
 
-                # Get the context dict entry for which the mutant should be added.
-                # If none, create one with the group_info
-                group = mutation_groups[group_name].setdefault(group_id,
-                                                               [group_info, {}]
-                                                              )
+            # Get the context dict entry for which the mutant should be added.
+            # If none, create one with the group_info
+            group = mutation_groups[group_name].setdefault(group_id,
+                                                           [group_info, {}]
+                                                          )
 
-                # If the group is newly created, calculate the values for the Frequency and Conservation Cols
-                if group[1] == {}:
-                    # Get propensity and hydrophobicity values.
-                    group[0]['propensity'],\
-                    group[0]['hydro'],\
-                    group[0]["class_cons"],\
-                    group[0]["receptor_fam_cons"],\
-                    group[0]["ionic_lock"],\
-                    group[0]["sodium_ion"],\
-                    group[0]["res_switch"]\
-                         = calced_cols[group_name]
+            # If the group is newly created, calculate the values for the Frequency and Conservation Cols
+            if group[1] == {}:
+                # Get propensity and hydrophobicity values.
+                group[0]['propensity'],\
+                group[0]['hydro'],\
+                group[0]["class_cons"],\
+                group[0]["receptor_fam_cons"],\
+                group[0]["ionic_lock"],\
+                group[0]["sodium_ion"],\
+                group[0]["res_switch"]\
+                     = calced_cols[group_name]
 
-                    # Add further information to group_info allow for fast mutation subset filtering.
-                    if group_name == "all":
-                        if mutant_id['mutant'] == 'A':
-                            in_ala_subset = 'ala_subset'
-                        elif mutant_id['wild_type'] == 'A' and mutant_id['mutant'] == 'L':
-                            in_ala_subset = 'ala_subset'
-                        else:
-                            in_ala_subset = 'no_subset'
+                # Add further information to group_info allow for fast mutation subset filtering.
+                if group_name == "all":
+                    if mutant_id['mutant'] == 'A':
+                        in_ala_subset = 'ala_subset'
+                    elif mutant_id['wild_type'] == 'A' and mutant_id['mutant'] == 'L':
+                        in_ala_subset = 'ala_subset'
+                    else:
+                        in_ala_subset = 'no_subset'
 
-                        group[0]['ala_subset'] = in_ala_subset
+                    group[0]['ala_subset'] = in_ala_subset
 
 
-                # Count the number of construct mutations recorded in the row.
-                group[0]['GPCR_count'] += 1
+            # Count the number of construct mutations recorded in the row.
+            group[0]['GPCR_count'] += 1
 
-                # Remove unnecessary items from the mutant info
-                info = {key:set((item,)) for key, item in mutant_info.items() if key not in attr['include_in_id']}
+            # Remove unnecessary items from the mutant info
+            info = {key:set((item,)) for key, item in mutant_info.items() if key not in attr['include_in_id']}
 
-                if group[1] == {}:
-                    # Initialise the dict with the first mutant.
-                    group[1].update(info)
-                else:
-                     # Add the specific mutant info.
-                    for key, item in info.items():
-                        group[1][key].update(item)
-                    # Remove receptor family conservation info if row refers to >1 receptor family
-                    if len(group[1]['receptor']) != 1:
-                        group[0]["receptor_fam_cons"] = u'\u2014'
+            if group[1] == {}:
+                # Initialise the dict with the first mutant.
+                group[1].update(info)
+            else:
+                 # Add the specific mutant info.
+                for key, item in info.items():
+                    group[1][key].update(item)
+                # Remove receptor family conservation info if row refers to >1 receptor family
+                if len(group[1]['receptor']) != 1:
+                    group[0]["receptor_fam_cons"] = u'\u2014'
 
     # Send the context dictionary to the template to be rendered
     return render(request, "construct/stabilisation_browser.html",
