@@ -38,7 +38,7 @@ class Command(BaseCommand):
 
         # changes deletions to match PDB
         # Custom rules exist in the function
-        # self.replace_deletions()
+        self.replace_deletions()
 
         # Make sure json file is correct
         # self.json_check_for_mutations_deletions()
