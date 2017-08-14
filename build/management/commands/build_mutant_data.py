@@ -113,18 +113,22 @@ class Command(BaseBuild):
         workbook = xlrd.open_workbook(excelpath)
         worksheets = workbook.sheet_names()
         temp = []
+        old = 0
         for worksheet_name in worksheets:
             worksheet = workbook.sheet_by_name(worksheet_name)
-
-            if worksheet.cell_value(0, 0) == "REFERENCE \nDOI (or PMID)": #old format FIXME
-                pass
-            elif worksheet.cell_value(0, 0) == "REFERENCE \nDOI or PMID": #new format
-                pass
-            elif worksheet.cell_value(0, 0) == "REFERENCE \nDOI or PMID (original)": #newest format
-                pass
-            elif worksheet.cell_value(0, 1) == "REFERENCE \nDOI or PMID (original)": #newest format
-                pass
-            else: #skip non-matching xls files
+            try:
+                if worksheet.cell_value(0, 0) == "REFERENCE \nDOI (or PMID)": #old format FIXME
+                    pass
+                elif worksheet.cell_value(0, 0) == "REFERENCE \nDOI or PMID": #new format
+                    pass
+                    old = 1
+                elif worksheet.cell_value(0, 0) == "REFERENCE \nDOI or PMID (original)": #newest format
+                    pass
+                elif worksheet.cell_value(0, 1) == "REFERENCE \nDOI or PMID (original)": #newest format
+                    pass
+                else: #skip non-matching xls files
+                    continue
+            except:
                 continue
             num_rows = worksheet.nrows - 1
             num_cells = worksheet.ncols - 1
@@ -134,7 +138,9 @@ class Command(BaseBuild):
                 row = worksheet.row(curr_row)
                 curr_cell = -1
                 temprow = []
-                if worksheet.cell_value(curr_row, 1) == '': #if empty reference
+                if not old and worksheet.cell_value(curr_row, 1) == '': #if empty reference
+                    continue
+                elif old and worksheet.cell_value(curr_row, 0) == '': #if empty reference
                     continue
                 while curr_cell < num_cells:
                     curr_cell += 1
@@ -148,49 +154,86 @@ class Command(BaseBuild):
                     temprow.append(cell_value)
                 temp.append(temprow)
                 #if curr_row>10: break
-        return temp
+        return [temp, old]
 
-    def analyse_rows(self,rows,source_file):
+    def analyse_rows(self,rows,source_file, old):
         # Analyse the rows from excel and assign the right headers
         temp = []
         for i,r in enumerate(rows,1):
             d = {}
-            if r[9]!='':
+            if not old and r[9]!='':
                 # if multi mutant group skip it
                 self.logger.info('Skipped row due to being a multi group ' + source_file + "_" + str(i))
                 continue
+            if old:
+                if r[6] !='':
+                    continue
+                d['reference'] = r[0]
+                d['protein'] = r[2].replace("__","_").lower()
+                d['mutation_pos'] = r[3]
+                d['mutation_from'] = r[4]
+                d['mutation_to'] = r[5]
+                #r[6] is new double multi mutant group #FIXME FOR LATER
+                d['ligand_name'] = r[7]
+                d['ligand_type'] = r[8]
+                d['ligand_id'] = r[9]
+                d['ligand_class'] = r[10]
+                #r[10] is new reference ligand #FIXME FOR LATER
+                d['exp_type'] = r[12]
+                d['exp_func'] = r[13]
+                d['exp_wt_value'] = float(r[14]) if r[14] else 0
+                d['exp_wt_unit'] = r[15]
+                d['exp_mu_effect_sign'] = r[16]
+                d['exp_mu_value_raw'] = float(r[17]) if r[17] else 0
+                d['fold_effect'] = float(r[18]) if r[18] else 0
+                d['exp_mu_effect_qual'] = r[19]
+                d['exp_mu_effect_ligand_prop'] = '' #removed
+                d['exp_mu_ligand_ref'] = r[11] #check if correct
 
-            d['submitting_group'] = r[0]
-            d['reference'] = r[1]
-            d['data_container'] = r[2]
-            d['data_container_number'] = r[3]
-            d['review'] = r[4]
-            d['protein'] = r[5].replace("__","_").lower()
-            d['mutation_pos'] = r[6]
-            d['mutation_from'] = r[7]
-            d['mutation_to'] = r[8]
-            #r[9] is new double multi mutant group #FIXME FOR LATER
-            d['ligand_name'] = r[10]
-            d['ligand_type'] = r[11]
-            d['ligand_id'] = r[12]
-            d['ligand_class'] = r[13]
-            d['exp_mu_ligand_ref'] = r[14] #check if correct?
-            #r[10] is new reference ligand #FIXME FOR LATER
-            d['exp_type'] = r[15]
-            d['exp_func'] = r[16]
-            d['exp_wt_value'] = float(r[17]) if r[17] else 0
-            d['exp_wt_unit'] = r[18]
-            d['exp_mu_effect_sign'] = r[19]
-            d['exp_mu_value_raw'] = float(r[20]) if r[20] else 0
-            d['fold_effect'] = float(r[21]) if r[21] else 0
-            d['exp_mu_effect_qual'] = r[22]
-            d['exp_mu_effect_ligand_prop'] = '' #removed
+                d['review'] =''
+                d['submitting_group'] =''
+                d['data_container'] =''
+                d['data_container_number'] = ''
 
-            d['opt_receptor_expression'] = float(r[23]) if r[23] else 0
-            d['opt_basal_activity'] = float(r[24]) if r[24] else 0
-            d['opt_gain_of_activity'] = r[25]
-            d['opt_ligand_emax'] = float(r[26]) if r[26] else 0
-            d['opt_agonist'] = r[27]
+                d['opt_receptor_expression'] =  0
+                d['opt_basal_activity'] =  0
+                d['opt_gain_of_activity'] =  0
+                d['opt_ligand_emax'] =  0
+                d['opt_agonist'] =  0
+
+            else:
+
+                d['submitting_group'] = r[0]
+                d['reference'] = r[1]
+                d['data_container'] = r[2]
+                d['data_container_number'] = r[3]
+                d['review'] = r[4]
+                d['protein'] = r[5].replace("__","_").lower()
+                d['mutation_pos'] = r[6]
+                d['mutation_from'] = r[7]
+                d['mutation_to'] = r[8]
+                #r[9] is new double multi mutant group #FIXME FOR LATER
+                d['ligand_name'] = r[10]
+                d['ligand_type'] = r[11]
+                d['ligand_id'] = r[12]
+                d['ligand_class'] = r[13]
+                d['exp_mu_ligand_ref'] = r[14] #check if correct?
+                #r[10] is new reference ligand #FIXME FOR LATER
+                d['exp_type'] = r[15]
+                d['exp_func'] = r[16]
+                d['exp_wt_value'] = float(r[17]) if r[17] else 0
+                d['exp_wt_unit'] = r[18]
+                d['exp_mu_effect_sign'] = r[19]
+                d['exp_mu_value_raw'] = float(r[20]) if r[20] else 0
+                d['fold_effect'] = float(r[21]) if r[21] else 0
+                d['exp_mu_effect_qual'] = r[22]
+                d['exp_mu_effect_ligand_prop'] = '' #removed
+
+                d['opt_receptor_expression'] = float(r[23]) if r[23] else 0
+                d['opt_basal_activity'] = float(r[24]) if r[24] else 0
+                d['opt_gain_of_activity'] = r[25]
+                d['opt_ligand_emax'] = float(r[26]) if r[26] else 0
+                d['opt_agonist'] = r[27]
 
             # d['opt_type'] = r[20]
             # d['opt_wt'] = float(r[21]) if r[21] else 0
@@ -278,8 +321,8 @@ class Command(BaseBuild):
                     if "~$" in source_file:
                         # ignore open excel files
                         continue
-                    rows = self.loaddatafromexcel(source_file_path)
-                    rows = self.analyse_rows(rows,source_file)
+                    rows, old = self.loaddatafromexcel(source_file_path)
+                    rows = self.analyse_rows(rows,source_file, old)
                 elif source_file[-4:]=='yaml':
                     rows = yaml.load(open(source_file_path, 'r'))
                     temp = []
@@ -578,6 +621,7 @@ class Command(BaseBuild):
                 res=res.get()
             else:
                 self.logger.error('Skipped due to no residue or mismatch AA ' + r['protein'] + ' pos:'+str(r['mutation_pos']) + ' AA:'+r['mutation_from'])
+                print('Skipped due to no residue or mismatch AA ' + r['protein'] + ' pos:'+str(r['mutation_pos']) + ' AA:'+r['mutation_from'],r['source_file'])
                 skipped += 1
                 continue
 
