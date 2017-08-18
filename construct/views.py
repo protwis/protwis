@@ -1121,7 +1121,7 @@ def get_calculated_columns(rule_tree, mutant, wild_type, g_n, prot_class, rec_fa
     return {
         'position_only': get_data_pos_grouping(related_rules),
         'pos_and_mut':get_data_mut_grouping(related_rules, mutant, class_cons, fam_cons),
-        'pos_and_wt':get_data_wt_grouping(related_rules, mutant, class_cons, fam_cons),
+        'pos_and_wt':get_data_wt_grouping(related_rules, wild_type, class_cons, fam_cons),
         'all': get_data_all_grouping(related_rules, mutant, wild_type, class_cons, fam_cons)
         }
 
