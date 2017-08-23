@@ -96,6 +96,28 @@ def render_variants(request, protein = None, family = None, download = None, rec
     ptms = PTMs.objects.filter(Q(protein__in=proteins)).prefetch_related('residue')
     ptms_dict = {}
 
+    ## MICROSWITCHES
+    micro_switches_rset = ResiduePositionSet.objects.get(name="Microswitches")
+    ms_label = []
+    for residue in micro_switches_rset.residue_position.all():
+        ms_label.append(residue.label)
+
+    ms_object = Residue.objects.filter(protein_conformation__protein__entry_name=proteins[0], generic_number__label__in=ms_label)
+    ms_sequence_numbers = []
+    for ms in ms_object:
+        ms_sequence_numbers.append(ms.sequence_number)
+
+    ## SODIUM POCKET
+    sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium pocket")
+    sp_label = []
+    for residue in sodium_pocket_rset.residue_position.all():
+        sp_label.append(residue.label)
+
+    sp_object = Residue.objects.filter(protein_conformation__protein__entry_name=proteins[0], generic_number__label__in=ms_label)
+    sp_sequence_numbers = []
+    for sp in sp_object:
+        sp_sequence_numbers.append(sp.sequence_number)
+
     for ptm in ptms:
         ptms_dict[ptm.residue.sequence_number] = ptm.modification
 
@@ -134,13 +156,16 @@ def render_variants(request, protein = None, family = None, download = None, rec
             GN = NM.residue.generic_number.label
         else:
             GN = ''
-
+        if SN in sp_sequence_numbers:
+            functional_annotation +=  'SodiumPocket '
+        if SN in ms_sequence_numbers:
+            functional_annotation +=  'MicroSwitch '
         if SN in ptms_dict:
-            functional_annotation +=  'PTM (' + ptms_dict[SN] + ')'
+            functional_annotation +=  'PTM (' + ptms_dict[SN] + ') '
         if SN in interaction_data:
-            functional_annotation +=  'LB (' + ', '.join(interaction_data[SN]) + ')'
+            functional_annotation +=  'LB (' + ', '.join(interaction_data[SN]) + ') '
         if GN in gprotein_generic_set:
-            functional_annotation +=  'GP (contact)'
+            functional_annotation +=  'GP (contact) '
 
         type = NM.type
         if type == 'missense':
