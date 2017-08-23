@@ -8,6 +8,8 @@ from django.views.decorators.cache import cache_page
 from drugs.models import Drugs
 from protein.models import Protein, ProteinFamily
 
+from mutational_landscape.models import NHSPrescribings
+
 import re
 import json
 import numpy as np
@@ -240,6 +242,8 @@ def drugbrowser(request):
         context = list()
 
         drugs = Drugs.objects.all().prefetch_related('target__family__parent__parent__parent')
+        # NHS data
+        NHS_names = NHSPrescribings.objects.all().values_list('drugname__name', flat=True).distinct()
 
         for drug in drugs:
             drugname = drug.name
@@ -252,6 +256,10 @@ def drugbrowser(request):
             indication = drug.indication
             novelty = drug.novelty
             clinicalstatus = drug.clinicalstatus
+            if drugname in NHS_names:
+                NHS = 'yes'
+            else:
+                NHS = 'no'
 
             target_list = drug.target.all()
             targets = []
@@ -262,7 +270,7 @@ def drugbrowser(request):
                 clas = str(protein.family.parent.parent.parent.name)
                 family = str(protein.family.parent.name)
 
-                jsondata = {'name':drugname, 'target': str(protein), 'phase': phase, 'approval': approval, 'class':clas, 'family':family, 'indication': indication, 'status':status, 'drugtype':drugtype, 'moa':moa,'novelty': novelty, 'targetlevel': targetlevel, 'clinicalstatus': clinicalstatus}
+                jsondata = {'name':drugname, 'target': str(protein), 'phase': phase, 'approval': approval, 'class':clas, 'family':family, 'indication': indication, 'status':status, 'drugtype':drugtype, 'moa':moa,'novelty': novelty, 'targetlevel': targetlevel, 'clinicalstatus': clinicalstatus, 'NHS': NHS}
                 context.append(jsondata)
 
             # jsondata = {'name':drugname, 'target': ', '.join(set(targets)), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
@@ -405,3 +413,62 @@ def drugmapping(request):
     context["drugdata"] = jsontree
 
     return render(request, 'drugmapping.html', {'drugdata':context})
+
+@cache_page(60*60*24*7)
+def nhs_drug(request, slug):
+
+    nhs_data = NHSPrescribings.objects.filter(drugname__name=slug.lower()).order_by('date')
+
+    data_dic = {}
+
+    sections = []
+    for i in nhs_data:
+        prescription_name = i.op_name +' (' + i.drugCode + ')'
+        if not prescription_name in data_dic:
+            data_dic[prescription_name] = []
+            sections.append(i.bnf_section)
+        dic = {}
+        dic['x'] = str(i.date)
+        dic['y'] = int(i.actual_cost)
+        # list_of_values.append(dic)
+        data_dic[prescription_name].append(dic)
+
+        # op_name_dic['values'] = list_of_values
+        # op_name_dic['key'] = prescription_name
+        # data.append()
+
+    data = []
+    for nhs_name in data_dic.keys():
+        data.append({'values': data_dic[nhs_name], 'key':nhs_name})
+
+    return render(request, 'nhs.html', {'data':data, 'drug':slug, 'section':list(set(sections))})
+
+@cache_page(60*60*24*7)
+def nhs_section(request, slug):
+
+    nhs_data = NHSPrescribings.objects.filter(bnf_section=slug).order_by('date')
+
+    data_dic = {}
+
+    sections = []
+    for i in nhs_data:
+        prescription_name = i.op_name +' (' + i.drugCode + ')'
+
+        if not prescription_name in data_dic:
+            data_dic[prescription_name] = []
+            sections.append(i.bnf_section)
+        dic = {}
+        dic['x'] = str(i.date)
+        dic['y'] = int(i.actual_cost)
+        # list_of_values.append(dic)
+        data_dic[prescription_name].append(dic)
+
+        # op_name_dic['values'] = list_of_values
+        # op_name_dic['key'] = prescription_name
+        # data.append()
+
+    data = []
+    for nhs_name in data_dic.keys():
+        # print (len(data_dic[nhs_name]), nhs_name)
+        data.append({'values': data_dic[nhs_name], 'key':nhs_name})
+    return render(request, 'nhs.html', {'data':data, 'drug':slug, 'section':list(set(sections))})
