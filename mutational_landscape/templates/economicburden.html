@@ -77,6 +77,11 @@ window.onload = function () {
           .axisLabel("estimated economic burden per year (GBP in billion)")
           .tickFormat(d3.format(',.2f'));
 
+      chart.multibar.dispatch.on("elementClick", function(e) {
+        link = e['data']['key']
+          window.open ('/drugs/nhs/section/'+link,'_self',false)
+      })
+
       chartData = d3.select('#burden svg').datum(datum)
       chartData.transition().duration(500).call(chart);
 
@@ -96,7 +101,6 @@ window.onload = function () {
       raw[i]['values'][kk] = {'y': raw[i]['values'][0]['y']*cf, 'x': cf}
     }
 
-    console.log(raw)
     // Update the SVG with the new data and call chart
     chartData.datum(raw).transition().duration(5).call(chart);
     nv.utils.windowResize(chart.update);

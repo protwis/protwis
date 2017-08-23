@@ -1,0 +1,116 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<style>
+    text {
+        font: 12px sans-serif;
+    }
+    svg {
+        display: block;
+    }
+    html, body, #test1, svg {
+        margin: 0px;
+        padding: 0px;
+        height: 100%;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+{% block content %}
+
+<h2>Total spending of the NHS for: {{drug}}</h2><br>
+<h4>Used for (BNF section):</h4>
+{% for s in section %}
+<a href='/drugs/nhs/section/{{ s }} '>{{ s }}</a>,
+{% endfor %}
+<br>
+
+<div id="burden" class="chart_container" style="display: none;">
+       <div id="burden"><svg id="burden" style="width:1050;height:500px;"></svg></div>
+
+<!-- <div class="row">
+<div class="col-sm-3"></div>
+  <div class="col-md-6">
+     <button id="update">add scaling / correction factor</button>
+     <input id="updater" type="text" maxlength="5" size="6" value="1.0" name="cutoff"
+  </div>
+  <div class="col-sm-3"></div>
+</div> -->
+<!-- <br><br> -->
+<!-- <h4>Data</h4> -->
+<p><b>Prescribing data</b> is from the monthly files published by the National Heath Service Digital, used under the terms of the Open Government Licence</p>
+<p>The British National Formulary (BNF) is a UK pharmaceutical reference book that contains a wide spectrum of information and advice on prescribing available on the UK National Health Service (NHS)</p>
+<p><i>OpenPrescribing.net, EBM DataLab, University of Oxford, 2017</i></p>
+
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script>
+// https://github.com/novus/nvd3/tree/master/examples
+var chart ;
+var chartData;
+
+window.onload = function () {
+
+  nv.addGraph(function() {
+      var datum = {{data|safe}}
+
+      chart = nv.models.multiBarChart()
+        // .reduceXTicks(false)   //If 'false', every single x-axis tick label will be rendered.
+        // .rotateLabels(0)      //Angle to rotate x-axis labels.
+        .showControls(true)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
+        // .groupSpacing(0.1)    //Distance between each group of bars.
+        .stacked(true)
+        .margin({"left": 120, "right": 50, "top": 100, "bottom": 70,})
+        // .xScale(d3.time.scale()); // use a time scale instead of plain numbers in order to get nice round default values in the axis
+
+      chart.xAxis
+          .axisLabel("Month")
+          .showMaxMin(true)
+          .rotateLabels(-45)
+          // .tickPadding(6)
+          .tickFormat(function(d) {
+              return d3.time.format('%m-%Y')(new Date(d))
+          });
+      chart.yAxis
+          .axisLabel("Spending in GBP")
+          .showMaxMin(false)
+          .axisLabelDistance(20)
+          .tickFormat(d3.format(','));
+
+      chartData = d3.select('#burden svg').datum(datum)
+
+      chartData.transition().duration(100).call(chart);
+      // nv.utils.windowResize(chart.update);
+
+      return chart;
+  });
+
+  // var raw = {{data|safe}};
+  // function update(cf) {
+  //   var cf = document.getElementById('updater').value
+  //   var rawLength = raw.length;
+    // for (var i = 0; i < rawLength; i++) {
+    //   var kk = raw[i]['values'].length;
+    //   raw[i]['values'][kk] = {'y': raw[i]['values'][0]['y']*cf, 'x': cf}
+    // }
+
+    // Update the SVG with the new data and call chart
+//     chartData.datum(raw).transition(0).duration(10).call(chart);
+//     nv.utils.windowResize(chart.update);
+// };
+
+// d3.select("#update").on("click", update);
+
+  $(document).ready(function () {
+      $('#burden').css("fill", '#000000');
+      $('#burden').css("display", '');
+
+  });
+};
+</script>
+
+{% endblock %}

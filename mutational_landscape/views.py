@@ -456,18 +456,18 @@ def statistics(request):
 
     return render(request, 'variation_statistics2.html', context)
 
-@cache_page(60*60*24*7) #  2 days
+# @cache_page(60*60*24*7) #  2 days
 def economicburden(request):
-    data = [{'values': [{'y': 0.886, 'x': 1}], 'key': 'analgesics', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.118, 'x': 1}], 'key': 'antidepressant drugs', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.203, 'x': 1}], 'key': 'beta-adrenoceptor blocking drugs', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.524, 'x': 1}], 'key': 'bronchodilators', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.312, 'x': 1}], 'key': 'drugs used in diabetes', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.080, 'x': 1}], 'key': 'drugs used in parkinson/related disorders', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.205, 'x': 1}], 'key': 'drugs used in psychoses & relelated disorders', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.102, 'x': 1}], 'key': 'drugs used in substance dependence', 'yAxis': 'Scaling factor 1'},
+    data = [{'values': [{'y': 0.886, 'x': 1}], 'key': 'Analgesics', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.118, 'x': 1}], 'key': 'Antidepressant Drugs', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.203, 'x': 1}], 'key': 'Beta-Adrenoceptor Blocking Drugs', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.524, 'x': 1}], 'key': 'Bronchodilators', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.312, 'x': 1}], 'key': 'Drugs Used In Diabetes', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.080, 'x': 1}], 'key': "Drugs Used In Park'ism/Related Disorders", 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.205, 'x': 1}], 'key': 'Drugs Used In Psychoses & Rel.Disorders', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.102, 'x': 1}], 'key': 'Drugs Used In Substance Dependence', 'yAxis': 'Scaling factor 1'},
     {'values': [{'y': 0.080, 'x': 1}], 'key': 'hormones & antagonists in malignant disease', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.072, 'x': 1}], 'key': 'hypothalamic & pituitary hormones', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.257, 'x': 1}], 'key': 'other', 'yAxis': 'Scaling factor 1'}]
+    {'values': [{'y': 0.072, 'x': 1}], 'key': 'Hypothalamic&Pituitary Hormones&Antioest', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.257, 'x': 1}], 'key': 'Other', 'yAxis': 'Scaling factor 1'}]
 
     return render(request, 'economicburden.html', {'data':data})
