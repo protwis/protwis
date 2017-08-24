@@ -7,25 +7,8 @@
 <link href="{% static 'home/css/residue_table.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/alignment.css' %}" rel="stylesheet">
 <style>
-.smiles-tooltip + .tooltip > .tooltip-inner {
-    max-width: 350px;
-    /* If max-width does not work, try using width instead */
-    width: 350px;
-    height: 350px;
-    background-color: #F5F5F5;
-    color: #202020;
-}
-
-.citation-tooltip + .tooltip > .tooltip-inner {
-
-    background-color: #F5F5F5;
-    color: #202020;
-}
-
-input.form-control {
-    width: 50px;
-    font-size: 14px;
-    display: inline;
+.tooltip-inner {
+    white-space: pre-wrap;
 }
 </style>
 
@@ -38,7 +21,6 @@ input.form-control {
     <script src="{% static 'home/js/selection.js' %}"> </script>
     <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
     <script src="{% static 'home/js/alignment.js' %}"></script>
-
 
     {% if HelixBox %}
     <script src="{% static 'home/js/diagrams.js' %}"></script>
