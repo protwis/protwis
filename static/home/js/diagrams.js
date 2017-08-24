@@ -637,8 +637,8 @@ function ajaxNaturalMutation(plotid, protein) {
          "\nAllele Count: " + String(val[2]) +
          "\nAllele Number: " + String(val[3]) +
         "\nNumber of Homozygotes: " + String(val[4]) +
+        "\nFunctional Annotation: " + String(val[8]) +
         "\nPredicted effect (SIFT/PolyPhen): <span style='color:"+String(val[7])+"'> "+ String(val[6]);
-        // "\nFunctional Annotations:"+String(val[8]);
 
         //  color = "#c40100";
          $('#'+plotid).find("#"+key).next().css("fill", "#fefdfd");
