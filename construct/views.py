@@ -1041,6 +1041,7 @@ def stabilisation_browser(request):
         p_class = prot.family.parent.parent.parent.name
         p_ligand = prot.family.parent.parent.name
         p_receptor = prot.family.parent.name
+        real_receptor = prot.entry_name
         pdb = mutant.construct.crystal.pdb_code
 
         # Get the generic number and segment, if known.
@@ -1060,6 +1061,7 @@ def stabilisation_browser(request):
         mutant_info = {'pdb':pdb,
                        'ligand': p_ligand,
                        'receptor': p_receptor,
+                       'real_receptor': real_receptor,
                        'wild_type':mutant_id["wild_type"],
                        'mutant':mutant_id['mutant'],
                        'state':state,
@@ -1123,7 +1125,6 @@ def stabilisation_browser(request):
 
             # Count the number of construct mutations recorded in the row.
             group[0]['GPCR_count'] += 1
-
             # Remove unnecessary items from the mutant info
             info = {key:set((item,)) for key, item in mutant_info.items() if key not in attr['include_in_id']}
 

@@ -98,18 +98,36 @@ $(document).ready(function() {
         paging: false
     });
 
-    /* Custom filtering function to  filter data */
+    // /* Custom filtering function to  filter data */
+    // $.fn.dataTableExt.afnFiltering.push(function (oSettings, aData, iDataIndex) {
+    //     var myRowClasses = oSettings.aoData[iDataIndex].nTr.className.split(" ");
+    //     var sub = $('.subset-check:checked').data('sub');
+    //     if (sub == undefined) {result = true;}
+    //     else { result = myRowClasses.indexOf(sub) == -1; }
+    //     return result;
+    // });
+
+        /* Custom filtering function to  filter data */
     $.fn.dataTableExt.afnFiltering.push(function (oSettings, aData, iDataIndex) {
         var myRowClasses = oSettings.aoData[iDataIndex].nTr.className.split(" ");
-        var sub = $('.subset-check:checked').data('sub');
-        if (sub == undefined) {result = true;}
-        else { result = myRowClasses.indexOf(sub) == -1; }
+        result = true;
+        $('.subset-check:checked').each(function(i, obj) {
+            sub = $(obj).data('sub');
+            if ( myRowClasses.indexOf(sub) !== -1 ){
+                // Flag as false ( do not show ) if row has a class that is filtered out
+                result = false;
+            }
+        });
         return result;
     });
 
      /* Add an event listener to the mutation subset input */
-    $('#ala-checkbox').change(function () {
-        all_table.draw();
+    $('.subset-check').change(function () {
+        current_table = $("#group_select").val();
+        if (current_table=='position_only') position_table.columns.adjust().draw();
+        if (current_table=='all') all_table.columns.adjust().draw();
+        if (current_table=='pos_and_mut') mut_table.columns.adjust().draw();
+        if (current_table=='pos_and_wt') wt_table.columns.adjust().draw();
     });
 
 
@@ -124,10 +142,16 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
                 if (d == selection) {
                     d3.selectAll('#' + d + '_vis')
                         .style('display', 'block');
-                        position_table.columns.adjust().draw();
-                        all_table.columns.adjust().draw();
-                        mut_table.columns.adjust().draw();
-                        wt_table.columns.adjust().draw();
+
+                        if (selection=='position_only') position_table.columns.adjust().draw();
+                        if (selection=='all') all_table.columns.adjust().draw();
+                        if (selection=='pos_and_mut') mut_table.columns.adjust().draw();
+                        if (selection=='pos_and_wt') wt_table.columns.adjust().draw();
+        
+                        // position_table.columns.adjust().draw();
+                        // all_table.columns.adjust().draw();
+                        // mut_table.columns.adjust().draw();
+                        // wt_table.columns.adjust().draw();
                 } else {
                     d3.selectAll('#' + d + '_vis')
                         .style('display', 'none');
@@ -193,8 +217,14 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
         <option value="all">Class, Position, Wild Type AA, and Mutant AA</option>
     </select>
 
+
+    <span id='minimum_2_gpcrs'>
+        <span style="font-weight:bold">Mutant Subsets:</span> Only show mutations present in minimum 2 GPCRs
+        <input style="margin-right: 20px" id='min-2-gpcr-checkbox' class="subset-check" data-sub="min2_subset" type="checkbox" />
+    </span>
+
     <span id='ala_subset_choice' style='display:none;'>
-        <span style="font-weight:bold">Mutant Subsets:</span> Hide Xaa to Ala and Ala to Leu Mutations
+        Hide Xaa to Ala and Ala to Leu Mutations
         <input style="margin-right: 20px"  checked="checked" id='ala-checkbox' class="subset-check" data-sub="ala_subset" type="checkbox" />
     </span>
 
@@ -229,7 +259,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
     </thead>
     <tbody>
         {% for key, group in position_only.items %}
-        <tr>
+        <tr class='{% if group.1.real_receptor|length < 2 %} min2_subset{% endif %}'>
             <td>
                 <table>
                     {% for mutant in group.1.state %}
@@ -280,7 +310,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
                     {% endfor %}
                 </table>
             </td>
-            <td> {{group.0.GPCR_count}} </td>
+            <td> {{group.1.real_receptor | length}} </td>
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
             <td>
@@ -336,7 +366,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
     </thead>
 
         {% for key, group in pos_and_mut.items %}
-        <tr >
+        <tr class='{% if group.1.real_receptor|length < 2 %} min2_subset{% endif %}'>
             <td>
                 <table>
                     {% for mutant in group.1.state %}
@@ -379,7 +409,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
                 </table>
             </td>
             <td>{{group.0.mutant}}</td>
-            <td> {{group.0.GPCR_count}} </td>
+            <td> {{group.1.real_receptor | length}} </td>
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
 
@@ -440,7 +470,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
         </tr>
     </thead>
         {% for key, group in pos_and_wt.items %}
-        <tr >
+        <tr class='{% if group.1.real_receptor|length < 2 %} min2_subset{% endif %}'>
             <td>
                 <table>
                     {% for mutant in group.1.state %}
@@ -484,7 +514,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
                 </table>
             </td>
 
-            <td> {{group.0.GPCR_count}} </td>
+            <td> {{group.1.real_receptor | length}} </td>
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
             <td>
@@ -545,7 +575,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
     </thead>
 
         {% for key, group in all.items %}
-        <tr class='{{group.0.ala_subset}}'>
+        <tr class='{{group.0.ala_subset}}{% if group.1.real_receptor|length < 2 %} min2_subset{% endif %}'>
             <td>
                 <table>
                     {% for mutant in group.1.state %}
@@ -573,7 +603,7 @@ groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
             <td>{{group.0.wild_type}}</td>
             <td>{{group.0.mutant}}</td>
 
-            <td> {{group.0.GPCR_count}} </td>
+            <td> {{group.1.real_receptor | length}} </td>
             <td>{{group.1.receptor | length}}</td>
             <td>{{group.1.struct_id | length}}</td>
             <td>
