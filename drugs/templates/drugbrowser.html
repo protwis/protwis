@@ -7,7 +7,7 @@
 <h2>Drug Browser</h2>
 <div class="row">
     <div class="col-md-12 text-center">
-        {% if drugdata %}              
+        {% if drugdata %}
         <div style="padding-top: 10px; font-size: 11px; white-space: nowrap;">
             <table width="100%" class="display table" id="drugdata">
 
@@ -16,14 +16,24 @@
                         <th style="background-color:#98df8a;text-align:center">Drug Name</th>
                         <th style="background-color:#98df8a;text-align:center">Indication</th>
                         <th style="background-color:#aec7e8;text-align:center">Target</th>
+                        <th style="background-color:#aec7e8;text-align:center">Target Level</th>
                         <th style="background-color:#aec7e8;text-align:center">Class</th>
                         <th style="background-color:#aec7e8;text-align:center">Family</th>
                         <th style="background-color:#ffbb78;text-align:center">Status</th>
+                        <th style="background-color:#ffbb78;text-align:center">Phase</th>
+                        <th style="background-color:#ffbb78;text-align:center">Clinical Status</th>
                         <th style="background-color:#ffbb78;text-align:center">Year of Approval</th>
                         <th style="background-color:#ffbb78;text-align:center">Drug Type</th>
+                        <th style="background-color:#ffbb78;text-align:center">Mechanism of Action</th>
                         <th style="background-color:#ffbb78;text-align:center">Novelty</th>
+                        <th style="background-color:#ffbb78;text-align:center">NHS</th>
                     </tr>
                     <tr>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
+                        <th style="text-align:center"> </th>
                         <th style="text-align:center"> </th>
                         <th style="text-align:center"> </th>
                         <th style="text-align:center"> </th>
@@ -38,15 +48,28 @@
                 <tbody>
                 {% for row in drugdata %}
                 <tr>
-                <td style="text-align:center">{{row.name|safe}}</td>
+                {% if row.NHS == 'yes' %}
+                  <td style="text-align:center"><a href='/drugs/nhs/{{row.name|safe}} '> {{row.name|safe}}</a></td>
+                {% else %}
+                  <td style="text-align:center">{{row.name|safe}}</a></td>
+                {% endif %}
                 <td style="text-align:center">{{row.indication|safe}}</td>
-                <td style="text-align:center"> <a href='/protein/{{row.target|safe}} '> {{row.target|safe}} </a </td>
+                <td style="text-align:center"> <a href='/protein/{{row.target|safe}} '> {{row.target|safe}} </a> </td>
+                <td style="text-align:center">{{row.targetlevel|safe}}</td>
                 <td style="text-align:center">{{row.class|safe}}</td>
                 <td style="text-align:center">{{row.family|safe}}</td>
                 <td style="text-align:center">{{row.status|safe}}</td>
+                <td style="text-align:center">{{row.phase|safe}}</td>
+                <td style="text-align:center">{{row.clinicalstatus|safe}}</td>
                 <td style="text-align:center">{{row.approval|safe}}</td>
                 <td style="text-align:center">{{row.drugtype|safe}}</td>
+                <td style="text-align:center">{{row.moa|safe}}</td>
                 <td style="text-align:center">{{row.novelty|safe}}</td>
+                {% if row.NHS == 'yes' %}
+                  <td style="text-align:center"><a href='/drugs/nhs/{{row.name|safe}} '> {{row.NHS|safe}}</a></td>
+                {% else %}
+                  <td style="text-align:center">{{row.NHS|safe}}</a></td>
+                {% endif %}
                 {% endfor %}
                 </tbody>
             </table>
@@ -63,7 +86,7 @@
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
 <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
 <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
-   
+
 <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             var table = $('#drugdata').DataTable({
@@ -76,7 +99,12 @@
                 'autoWidth': true,
                 'dom': 'T<"clear">lfrtip',
                 'order': [[6, "desc"]], // order by date
-                "aoColumns": [ 
+                "aoColumns": [
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
                         {"sClass": "center"},
                         {"sClass": "center"},
                         {"sClass": "center"},
@@ -103,11 +131,16 @@
                             { type: "select" },
                             { type: "select" },
                             { type: "select" },
+                            { type: "select" },
+                            { type: "select" },
+                            { type: "select" },
+                            { type: "select" },
+                            { type: "select" },
                         ]
                     });
                 }
 
             });
         });
-    </script> 
+    </script>
 {% endblock %}

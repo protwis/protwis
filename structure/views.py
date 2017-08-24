@@ -140,8 +140,8 @@ class StructureStatistics(TemplateView):
             cname = lookup[fid[0]]
             if fname not in families:
                 families.append(fname)
-            if cname not in classes:
-                classes.append(cname)
+            # if cname not in classes:
+            classes.append(cname)
 
         # classes = [x.protein_conformation.protein.get_protein_class() for x in unique_structs]
 
@@ -267,7 +267,13 @@ class StructureStatistics(TemplateView):
         for f in families:
             lookup[f.slug] = f.name.replace("receptors","")
 
-        class_proteins = Protein.objects.filter(family__slug__startswith="00", source__name='SWISSPROT').prefetch_related('family').order_by('family__slug')
+        ### only crystallised
+        crystallised_proteins = Structure.objects.all().prefetch_related('protein_conformation__protein')
+        cs = []
+        for i in crystallised_proteins:
+            cs.append(i.protein_conformation.protein.parent.entry_name)
+
+        class_proteins = Protein.objects.filter(family__slug__startswith="00", source__name='SWISSPROT').prefetch_related('family').order_by('family__slug').filter(entry_name__in=cs)
 
         coverage = OrderedDict()
 
@@ -316,35 +322,44 @@ class StructureStatistics(TemplateView):
 
         score_copy = {'score': {'a':0,'i':0,'i_weight':0,'m':0,'m_weight':0,'s':0,'s_weight':0} , 'interaction' : {},'mutation': {}}
 
-        for i in class_interactions:
-            fid = i.structure_ligand_pair.structure.protein_conformation.protein.parent.family.slug.split("_")
-            interaction_type = i.interaction_type.slug
-            interaction_type_class = i.interaction_type.type
-            if i.rotamer.residue.display_generic_number:
-                dgn = i.rotamer.residue.display_generic_number.label
-            else:
-                dgn = 'N/A'
-            if interaction_type=='polar_backbone':
-                continue
-            if interaction_type=='acc':
-                continue
-            coverage[fid[0]]['interactions'] += 1
-            coverage[fid[0]]['children'][fid[1]]['interactions'] += 1
-            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['interactions'] += 1
+        # for i in class_interactions:
+        #     fid = i.structure_ligand_pair.structure.protein_conformation.protein.parent.family.slug.split("_")
+        #     interaction_type = i.interaction_type.slug
+        #     interaction_type_class = i.interaction_type.type
+        #     if i.rotamer.residue.display_generic_number:
+        #         dgn = i.rotamer.residue.display_generic_number.label
+        #     else:
+        #         dgn = 'N/A'
+        #     if interaction_type=='polar_backbone':
+        #         continue
+        #     if interaction_type=='acc':
+        #         continue
+        #     coverage[fid[0]]['interactions'] += 1
+        #     coverage[fid[0]]['children'][fid[1]]['interactions'] += 1
+        #     coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['interactions'] += 1
+        #     coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['interactions'] += 1
+
+        #     if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['interactions']==1: #if first time receptor gets a point
+        #         coverage[fid[0]]['receptor_i'] += 1
+        #         coverage[fid[0]]['children'][fid[1]]['receptor_i'] += 1
+        #         coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_i'] += 1
+        #         coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_i'] = 1
+
+        #         coverage[fid[0]]['fraction_i'] = coverage[fid[0]]['receptor_i']/coverage[fid[0]]['receptor_t']
+        #         coverage[fid[0]]['children'][fid[1]]['fraction_i'] = coverage[fid[0]]['children'][fid[1]]['receptor_i']/coverage[fid[0]]['children'][fid[1]]['receptor_t']
+        #         coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['fraction_i'] = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_i']/coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t']
+
+        # Replace above as fractions etc is not required and it was missing xtals that didnt have interactions.
+        unique_structs = list(Structure.objects.order_by('protein_conformation__protein__parent', 'state',
+            'publication_date', 'resolution').distinct('protein_conformation__protein__parent').prefetch_related('protein_conformation__protein__family'))
+
+        for s in unique_structs:
+            fid = s.protein_conformation.protein.family.slug.split("_")
+            coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_i'] = 1
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['interactions'] += 1
 
-            if coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['interactions']==1: #if first time receptor gets a point
-                coverage[fid[0]]['receptor_i'] += 1
-                coverage[fid[0]]['children'][fid[1]]['receptor_i'] += 1
-                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_i'] += 1
-                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_i'] = 1
-
-                coverage[fid[0]]['fraction_i'] = coverage[fid[0]]['receptor_i']/coverage[fid[0]]['receptor_t']
-                coverage[fid[0]]['children'][fid[1]]['fraction_i'] = coverage[fid[0]]['children'][fid[1]]['receptor_i']/coverage[fid[0]]['children'][fid[1]]['receptor_t']
-                coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['fraction_i'] = coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_i']/coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['receptor_t']
-
-
-        CSS_COLOR_NAMES = ["SteelBlue","SlateBlue","LightCoral","Orange","LightGreen","LightGray","PeachPuff","PaleGoldenRod"]
+        CSS_COLOR_NAMES = ["SteelBlue","SlateBlue","LightCoral","Orange","LightGreen","LightGray","LightGray","PaleGoldenRod"]
+        # PeachPuff
 
         tree = OrderedDict({'name':'GPCRs','children':[]})
         i = 0
@@ -1527,7 +1542,7 @@ def webformdata(request) :
                 if 'chemical_components' not in crystallization:
                     crystallization['chemical_components'] = []
 
-                # print(key)    
+                # print(key)
                 if key!='chemical_comp': #not first
                     comp_id = key.replace('chemical_comp','')
                 else:

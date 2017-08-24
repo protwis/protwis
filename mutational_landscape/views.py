@@ -6,13 +6,16 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinGProtein, ProteinGProteinPair
-from residue.models import Residue, ResiduePositionSet
-from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations
+from residue.models import Residue, ResiduePositionSet, ResidueSet
+from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations, PTMs
 
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 
 from mutation.functions import *
 from mutation.models import *
+
+from interaction.models import *
+from interaction.views import ajax #import x-tal interactions
 
 from common import definitions
 from collections import OrderedDict
@@ -54,6 +57,7 @@ class TargetSelection(AbsTargetSelection):
     default_species = False
 
 def render_variants(request, protein = None, family = None, download = None, receptor_class = None, gn = None, aa = None, **response_kwargs):
+
     simple_selection = request.session.get('selection', False)
     proteins = []
 
@@ -89,16 +93,91 @@ def render_variants(request, protein = None, family = None, download = None, rec
                     proteins.append(fp)
 
     NMs = NaturalMutations.objects.filter(Q(protein__in=proteins)).prefetch_related('residue')
+    ptms = PTMs.objects.filter(Q(protein__in=proteins)).prefetch_related('residue')
+    ptms_dict = {}
+
+    ## MICROSWITCHES
+    micro_switches_rset = ResiduePositionSet.objects.get(name="Microswitches")
+    ms_label = []
+    for residue in micro_switches_rset.residue_position.all():
+        ms_label.append(residue.label)
+
+    ms_object = Residue.objects.filter(protein_conformation__protein__entry_name=proteins[0], generic_number__label__in=ms_label)
+    ms_sequence_numbers = []
+    for ms in ms_object:
+        ms_sequence_numbers.append(ms.sequence_number)
+
+    ## SODIUM POCKET
+    sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium pocket")
+    sp_label = []
+    for residue in sodium_pocket_rset.residue_position.all():
+        sp_label.append(residue.label)
+
+    sp_object = Residue.objects.filter(protein_conformation__protein__entry_name=proteins[0], generic_number__label__in=ms_label)
+    sp_sequence_numbers = []
+    for sp in sp_object:
+        sp_sequence_numbers.append(sp.sequence_number)
+
+    for ptm in ptms:
+        ptms_dict[ptm.residue.sequence_number] = ptm.modification
+
+    ## G PROTEIN INTERACTION POSITIONS
+    # THIS SHOULD BE CLASS SPECIFIC (different set)
+    rset = ResiduePositionSet.objects.get(name='Signalling protein pocket')
+    gprotein_generic_set = []
+    for residue in rset.residue_position.all():
+        gprotein_generic_set.append(residue.label)
+
+    ### GET LB INTERACTION DATA
+    # get also ortholog proteins, which might have been crystallised to extract
+    # interaction data also from those
+    orthologs = Protein.objects.filter(family__slug__startswith=proteins[0].family.slug, sequence_type__slug='wt')
+
+    interactions = ResidueFragmentInteraction.objects.filter(
+        structure_ligand_pair__structure__protein_conformation__protein__parent__in=orthologs, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').order_by('rotamer__residue__sequence_number')
+    interaction_data = {}
+    for interaction in interactions:
+        if interaction.rotamer.residue.generic_number:
+            sequence_number = interaction.rotamer.residue.sequence_number
+            # sequence_number = lookup[interaction.rotamer.residue.generic_number.label]
+            label = interaction.rotamer.residue.generic_number.label
+            aa = interaction.rotamer.residue.amino_acid
+            interactiontype = interaction.interaction_type.name
+            if sequence_number not in interaction_data:
+                interaction_data[sequence_number] = []
+            if interactiontype not in interaction_data[sequence_number]:
+                interaction_data[sequence_number].append(interactiontype)
 
     jsondata = {}
-
     for NM in NMs:
-
+        functional_annotation = ''
         SN = NM.residue.sequence_number
+        if NM.residue.generic_number:
+            GN = NM.residue.generic_number.label
+        else:
+            GN = ''
+        if SN in sp_sequence_numbers:
+            functional_annotation +=  'SodiumPocket '
+        if SN in ms_sequence_numbers:
+            functional_annotation +=  'MicroSwitch '
+        if SN in ptms_dict:
+            functional_annotation +=  'PTM (' + ptms_dict[SN] + ') '
+        if SN in interaction_data:
+            functional_annotation +=  'LB (' + ', '.join(interaction_data[SN]) + ') '
+        if GN in gprotein_generic_set:
+            functional_annotation +=  'GP (contact) '
+
+        type = NM.type
+        if type == 'missense':
+            effect = 'deleterious' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else 'tolerated'
+            color = '#e30e0e' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else '#70c070'
+        else:
+            effect = 'deleterious'
+            color = '#575c9d'
         # account for multiple mutations at this position!
-        effect = 'deleterious' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else 'tolerated'
-        color = '#e30e0e' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else '#70c070'
-        jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes, effect, color]
+        NM.functional_annotation = functional_annotation
+        # print(NM.functional_annotation)
+        jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes, NM.type, effect, color, functional_annotation]
 
     residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=proteins[0].entry_name).prefetch_related('protein_segment','display_generic_number','generic_number')
     SnakePlot = DrawSnakePlot(
@@ -110,9 +189,8 @@ def render_variants(request, protein = None, family = None, download = None, rec
         data = []
         for r in NMs:
             values = r.__dict__
-            print(values)
             data.append(values)
-        headers = ['amino_acid', 'allele_count','allele_number', 'allele_frequency', 'polyphen_score', 'sift_score', 'number_homozygotes']
+        headers = ['type','amino_acid', 'allele_count','allele_number', 'allele_frequency', 'polyphen_score', 'sift_score', 'number_homozygotes']
 
         #EXCEL SOLUTION
         output = BytesIO()
@@ -137,7 +215,6 @@ def render_variants(request, protein = None, family = None, download = None, rec
         response = HttpResponse(xlsx_data,content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response['Content-Disposition'] = 'attachment; filename=GPCRdb_'+proteins[0].entry_name+'_variant_data.xlsx' #% 'mutations'
         return response
-
     return render(request, 'browser.html', {'mutations': NMs, 'HelixBox':HelixBox, 'SnakePlot':SnakePlot, 'receptor': str(proteins[0].entry_name),'mutations_pos_list' : json.dumps(jsondata)})
 
 def ajaxNaturalMutation(request, slug, **response_kwargs):
@@ -154,10 +231,16 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
         for NM in NMs:
 
             SN = NM.residue.sequence_number
+            type = NM.type
+
+            if type == 'missense':
+                effect = 'deleterious' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else 'tolerated'
+                color = '#e30e0e' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else '#70c070'
+            else:
+                effect = 'deleterious'
+                color = '#575c9d'
             # account for multiple mutations at this position!
-            effect = 'deleterious' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else 'tolerated'
-            color = '#e30e0e' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else '#70c070'
-            jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes, effect, color]
+            jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes, NM.type, effect, color]
 
         jsondata = json.dumps(jsondata)
         response_kwargs['content_type'] = 'application/json'
@@ -166,49 +249,74 @@ def ajaxNaturalMutation(request, slug, **response_kwargs):
 
     return HttpResponse(jsondata, **response_kwargs)
 
-def ajaxCancerMutation(request, slug, **response_kwargs):
+def ajaxPTMs(request, slug, **response_kwargs):
 
-    name_of_cache = 'ajaxCancerMutation_'+slug
-
-    jsondata = cache.get(name_of_cache)
-
-    if jsondata == None:
-        jsondata = {}
-
-        CMs = CancerMutations.objects.filter(protein__entry_name=slug).prefetch_related('residue')
-
-        for CM in CMs:
-            SN = CM.residue.sequence_number
-            jsondata[SN] = [CM.amino_acid]
-
-        jsondata = json.dumps(jsondata)
-        response_kwargs['content_type'] = 'application/json'
-
-        cache.set(name_of_cache, jsondata, 20) #two days timeout on cache
-
-    return HttpResponse(jsondata, **response_kwargs)
-
-def ajaxDiseaseMutation(request, slug, **response_kwargs):
-
-    name_of_cache = 'ajaxDiseaseMutation_'+slug
+    name_of_cache = 'ajaxPTMs_'+slug
 
     jsondata = cache.get(name_of_cache)
 
     if jsondata == None:
         jsondata = {}
 
-        DMs = DiseaseMutations.objects.filter(protein__entry_name=slug).prefetch_related('residue')
+        NMs = PTMs.objects.filter(protein__entry_name=slug).prefetch_related('residue')
 
-        for DM in DMs:
-            SN = DM.residue.sequence_number
-            jsondata[SN] = [DM.amino_acid]
+        for NM in NMs:
+
+            SN = NM.residue.sequence_number
+            mod = NM.modification
+
+            jsondata[SN] = [mod]
 
         jsondata = json.dumps(jsondata)
         response_kwargs['content_type'] = 'application/json'
 
-        cache.set(name_of_cache, jsondata, 20) #two days timeout on cache
+        cache.set(name_of_cache, jsondata, 20) # 60*60*24*2 two days timeout on cache
 
     return HttpResponse(jsondata, **response_kwargs)
+
+# def ajaxCancerMutation(request, slug, **response_kwargs):
+#
+#     name_of_cache = 'ajaxCancerMutation_'+slug
+#
+#     jsondata = cache.get(name_of_cache)
+#
+#     if jsondata == None:
+#         jsondata = {}
+#
+#         CMs = CancerMutations.objects.filter(protein__entry_name=slug).prefetch_related('residue')
+#
+#         for CM in CMs:
+#             SN = CM.residue.sequence_number
+#             jsondata[SN] = [CM.amino_acid]
+#
+#         jsondata = json.dumps(jsondata)
+#         response_kwargs['content_type'] = 'application/json'
+#
+#         cache.set(name_of_cache, jsondata, 20) #two days timeout on cache
+#
+#     return HttpResponse(jsondata, **response_kwargs)
+#
+# def ajaxDiseaseMutation(request, slug, **response_kwargs):
+#
+#     name_of_cache = 'ajaxDiseaseMutation_'+slug
+#
+#     jsondata = cache.get(name_of_cache)
+#
+#     if jsondata == None:
+#         jsondata = {}
+#
+#         DMs = DiseaseMutations.objects.filter(protein__entry_name=slug).prefetch_related('residue')
+#
+#         for DM in DMs:
+#             SN = DM.residue.sequence_number
+#             jsondata[SN] = [DM.amino_acid]
+#
+#         jsondata = json.dumps(jsondata)
+#         response_kwargs['content_type'] = 'application/json'
+#
+#         cache.set(name_of_cache, jsondata, 20) #two days timeout on cache
+#
+#     return HttpResponse(jsondata, **response_kwargs)
 
 def mutant_extract(request):
     import pandas as pd
@@ -259,7 +367,7 @@ def mutant_extract(request):
         # jsondata[mutation.residue.sequence_number].append([mutation.foldchange,ligand,qual])
     # print(jsondata)
 
-# @cache_page(60*60*24*2) #  2 days
+@cache_page(60*60*24*7) #  2 days
 def statistics(request):
 
     context = dict()
@@ -364,25 +472,27 @@ def statistics(request):
     context['tree'] = json.dumps(tree)
 
     ## Overview statistics
-    total_receptors = NaturalMutations.objects.all().values('protein_id').distinct().count()
-    total_mv = len(NaturalMutations.objects.all())
-    total_av_rv = round(len(NaturalMutations.objects.filter(allele_frequency__lt=0.001))/ total_receptors,1)
-    total_av_cv = round(len(NaturalMutations.objects.filter(allele_frequency__gte=0.001))/ total_receptors,1)
-    context['stats'] = {'total_mv':total_mv,'total_av_rv':total_av_rv, 'total_av_cv':total_av_cv}
+    total_receptors = NaturalMutations.objects.filter(type='missense').values('protein_id').distinct().count()
+    total_mv = len(NaturalMutations.objects.filter(type='missense'))
+    total_lof = len(NaturalMutations.objects.exclude(type='missense'))
+    total_av_rv = round(len(NaturalMutations.objects.filter(type='missense', allele_frequency__lt=0.001))/ total_receptors,1)
+    total_av_cv = round(len(NaturalMutations.objects.filter(type='missense', allele_frequency__gte=0.001))/ total_receptors,1)
+    context['stats'] = {'total_mv':total_mv,'total_lof':total_lof,'total_av_rv':total_av_rv, 'total_av_cv':total_av_cv}
 
     return render(request, 'variation_statistics2.html', context)
 
+# @cache_page(60*60*24*7) #  2 days
 def economicburden(request):
-    data = [{'values': [{'y': 0.886, 'x': 1}], 'key': 'analgesics', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.118, 'x': 1}], 'key': 'antidepressant drugs', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.203, 'x': 1}], 'key': 'beta-adrenoceptor blocking drugs', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.524, 'x': 1}], 'key': 'bronchodilators', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.312, 'x': 1}], 'key': 'drugs used in diabetes', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.080, 'x': 1}], 'key': 'drugs used in parkinson/related disorders', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.205, 'x': 1}], 'key': 'drugs used in psychoses & relelated disorders', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.102, 'x': 1}], 'key': 'drugs used in substance dependence', 'yAxis': 'Scaling factor 1'},
+    data = [{'values': [{'y': 0.886, 'x': 1}], 'key': 'Analgesics', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.118, 'x': 1}], 'key': 'Antidepressant Drugs', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.203, 'x': 1}], 'key': 'Beta-Adrenoceptor Blocking Drugs', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.524, 'x': 1}], 'key': 'Bronchodilators', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.312, 'x': 1}], 'key': 'Drugs Used In Diabetes', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.080, 'x': 1}], 'key': "Drugs Used In Park'ism/Related Disorders", 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.205, 'x': 1}], 'key': 'Drugs Used In Psychoses & Rel.Disorders', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.102, 'x': 1}], 'key': 'Drugs Used In Substance Dependence', 'yAxis': 'Scaling factor 1'},
     {'values': [{'y': 0.080, 'x': 1}], 'key': 'hormones & antagonists in malignant disease', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.072, 'x': 1}], 'key': 'hypothalamic & pituitary hormones', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.257, 'x': 1}], 'key': 'other', 'yAxis': 'Scaling factor 1'}]
+    {'values': [{'y': 0.072, 'x': 1}], 'key': 'Hypothalamic&Pituitary Hormones&Antioest', 'yAxis': 'Scaling factor 1'},
+    {'values': [{'y': 0.257, 'x': 1}], 'key': 'Other', 'yAxis': 'Scaling factor 1'}]
 
     return render(request, 'economicburden.html', {'data':data})
