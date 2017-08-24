@@ -1375,7 +1375,7 @@ def get_data_all_grouping(rules, mutant, wild_type, class_cons, fam_cons):
 
 
 
-def parse_rule_definition(rule_def):
+def parse_rule_definition(rule_def,rule_result):
     '''
         Take in a rule definition from the structural rules, and parse so that's it's suitable both for display and
         use in the rule dictionaries.
@@ -1389,9 +1389,9 @@ def parse_rule_definition(rule_def):
           definiton - the action at the site.  to be 'Removed', 'Contracted', or 'Added'
     '''
     # Get the type of action in the definition
-    if rule_def[-7:] == 'removal':
+    if rule_result[-7:] == 'Removal':
         result = 'Removed'
-    elif rule_def[-11:] == 'contraction':
+    elif rule_result[-11:] == 'Contraction':
         result = 'Contracted'
     else:
         result = 'Added'
@@ -1401,7 +1401,7 @@ def parse_rule_definition(rule_def):
         site = 'ionic_lock'
     elif rule_def[:6] == 'Sodium':
         site = 'sodium_ion'
-    elif rule_def[:7] == 'Residue':
+    elif rule_def[:5] == 'State':
         site = 'residue_switch'
     else: # Then there is no sensible way to understand this rule.
         site = 'other'
@@ -1435,7 +1435,7 @@ def create_structural_rule_trees(rule_dictionary):
     for item in {'A', 'B', 'C', 'All'}:
         for rule in rule_dictionary[item]:
             # Get the dictionary to which the rule pertains
-            site, definition = parse_rule_definition(rule['Definition'])
+            site, definition = parse_rule_definition(rule['Design Principle'], rule["Addition / Removal"])
             tree = structural_rule_trees[site+"_tree"]
 
             # Get a set of the classes and wild type aas that the rule affects
