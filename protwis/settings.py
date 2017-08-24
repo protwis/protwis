@@ -131,7 +131,7 @@ if DEBUG:
 # Debug toolbar
 if DEBUG:
     DEBUG_TOOLBAR_PATCH_SETTINGS = False
-    INTERNAL_IPS = ('10.0.2.2')
+    INTERNAL_IPS = ('188.176.9.25')
 
 
 # Logging
@@ -186,14 +186,14 @@ if DEBUG:
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/tmp/django_cache',
+        'LOCATION': '/protwis/cache/protwis/django_cache',
         'OPTIONS': {
             'MAX_ENTRIES': 100000
         }
     },
     'alignments': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/tmp/django_cache_alignments',
+        'LOCATION': '/protwis/cache/protwis/django_cache_alignments',
         'OPTIONS': {
             'MAX_ENTRIES': 1000
         }
