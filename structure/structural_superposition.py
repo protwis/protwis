@@ -188,7 +188,8 @@ class RotamerSuperpose(object):
             self.backbone_rmsd = np.sqrt(sum(sum(diff**2))/array1[1:].shape[0])
             return self.template_atoms
         except Exception as msg:
-            print("Failed superimposition:\n{}".format(msg))
+            if self.reference_atoms!='x':
+                print("Failed rotamer superimposition:\n{}".format(msg))
 
 #==============================================================================  
 class BulgeConstrictionSuperpose(object):

@@ -73,7 +73,7 @@ class DrawSnakePlot(Diagram):
                             number = str(int(rs[i+1][2].split('x')[1])-1)
                             rs[i][2] = str(helix_num) + "x" + number
 
-        self.helixWidth = 85           # Width of helix
+        self.helixWidth = 70          # Width of helix
         self.resNumPerRow = 4          # Residue number per row in helix
         self.angleDeg = 22.0           # Angle size of each helix turn
         self.residue_radius = 12     # Radius of the residue circle
@@ -191,7 +191,7 @@ class DrawSnakePlot(Diagram):
 
             # Move down with right amount
             y = round(startY+row*self.residue_radius*2.4+row_pos*self.residue_radius*0.5+indentY+bulgeY)
-            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], rs[i][3], self.residue_radius)
+            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], rs[i][3], self.residue_radius,'TM'+str(helix_num))
 
 
             if x<self.maxX['left']: self.maxX['left'] = x
@@ -220,9 +220,11 @@ class DrawSnakePlot(Diagram):
 
 
             if (row_pos==1 and row!=0) or (skip==1 and row_pos==2): # if need for trace
+                id_for_path = str(rs[i-1][0])
+                if helix_num%2==0: id_for_path = str(rs[i][0])
                 if row_length==3: points = "M "+str(prevX)+" "+str(prevY)+" Q"+str(prevX-40)+" "+str(prevY+30)+", "+str(x-21)+" "+str(y-8)+" T"+str(x)+" "+str(y)
                 if row_length>=4: points = "M "+str(prevX)+" "+str(prevY)+" Q"+str(prevX-40)+" "+str(prevY+30)+", "+str(x-24)+" "+str(y-7)+" T"+str(x)+" "+str(y)
-                output_trace += "<path d='" + points + "' stroke='grey' fill='none' stroke-width='2'  />"
+                output_trace += "<path id='path_"+id_for_path+"' d='" + points + "' stroke='grey' fill='none' stroke-width='2'  />"
 
             # alternate between 4 and 3 res per row
             if row_length>3 and row_pos>=row_length:
@@ -308,7 +310,7 @@ class DrawSnakePlot(Diagram):
             y = round(startY+row*self.residue_radius*2.4+row_pos*self.residue_radius*0.5+indentY+bulgeY) #Move down with right amount
             x = round(startX+row*self.residue_radius*2.4-row_pos*self.residue_radius*0.5+indentY+bulgeY) #move left as you go down a row
             y = round(startY+row_pos*self.residue_radius*1.6+indentX+bulgeX) # Move down with right amount
-            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], rs[i][3], self.residue_radius)
+            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], rs[i][3], self.residue_radius,"H8")
 
 
             if x<self.maxX['left']: self.maxX['left'] = x
@@ -374,15 +376,17 @@ class DrawSnakePlot(Diagram):
 
         y_offset = 50
         font_size = 12
-        font_family = 'courier'
+        font_family = 'helvetica'
         bezier_pull = 80
 
         between_residues = 18
 
+
         for i in ['N','C']:
+            drawn_residues = []
 
             name = i+"-term"
-            if name not in self.segments: break # break if no terminus
+            if name not in self.segments: continue # continue if no terminus
 
             rs = self.segments[name] # get residues
 
@@ -413,8 +417,8 @@ class DrawSnakePlot(Diagram):
             # Make line and box for short version
             points = "M "+str(x1)+" "+str(y1)+" Q"+str(x1+30)+" "+str(y2)+" "+str(x2)+" "+str(y2)
             self.output += "<path class='"+name+" short' d='" + points + "' stroke='black' fill='none' stroke-width='2' />"
-            self.output += "<rect class='"+name+" short' onclick='toggleLoop(\"."+name+"\",\"short\");' x="+str(x2-25)+" y="+str(y2-13)+" rx=5 ry=5 width='50' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
-            self.output += str("<text class='"+name+" short' onclick='toggleLoop(\"."+name+"\",\"short\");' x="+str(x2)+" y="+str(y2)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
+            self.output += "<rect class='"+name+" short segment' onclick='toggleLoop(\"."+name+"\",\"short\");' x="+str(x2-25)+" y="+str(y2-13)+" rx=5 ry=5 width='50' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+            self.output += str("<text class='"+name+" short segment' onclick='toggleLoop(\"."+name+"\",\"short\");' x="+str(x2)+" y="+str(y2)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
             x2 = x1-90*orientation
             y2 = y_max
@@ -465,20 +469,22 @@ class DrawSnakePlot(Diagram):
 
                 if bend==0: labely = where[1][1]
 
-                self.output += self.DrawResidue(where[1][0],where[1][1],r[1], r[0], rs[i][3], self.residue_radius-1,name+" long")
+                drawn_residues.append(self.DrawResidue(where[1][0],where[1][1],r[1], r[0], rs[i][3], self.residue_radius-1,name+" long"))
                 pos += between_residues
 
                 if where[1][1]<self.low: self.low = where[1][1]
                 if where[1][1]>self.high: self.high = where[1][1]
 
-            self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str(self.TBCoords[linked_helix][position][0]-40*orientation-25)+" y="+str((labely+self.TBCoords[linked_helix][position][1])/2-13)+" rx=5 ry=5 width='50' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
-            self.output += str("<text onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str(self.TBCoords[linked_helix][position][0]-40*orientation)+" y="+str((labely+self.TBCoords[linked_helix][position][1])/2)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
+            if name=='N-term': drawn_residues = drawn_residues[::-1]
+            self.output += ''.join(drawn_residues)
+            self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str(self.TBCoords[linked_helix][position][0]-40*orientation-25)+" y="+str((labely+self.TBCoords[linked_helix][position][1])/2-13)+" rx=5 ry=5 width='50' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+            self.output += str("<text onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str(self.TBCoords[linked_helix][position][0]-40*orientation)+" y="+str((labely+self.TBCoords[linked_helix][position][1])/2)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
     def drawSnakePlotLoops(self):
 
         y_offset = 50
         font_size = 12
-        font_family = 'courier'
+        font_family = 'helvetica'
         bezier_pull = 80
         orientation = 1
         for i in range(1,7):
@@ -544,8 +550,8 @@ class DrawSnakePlot(Diagram):
 
             #JUST SIMPLE
             self.output += "<path class='"+name+" short' d='" + points2 + "' stroke='black' fill='none' stroke-width='2' />"
-            self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"short\");' class='"+name+" short' x="+str(Fx-18)+" y="+str(Fy-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
-            self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"short\");' class='"+name+" short' x="+str(Fx)+" y="+str(Fy)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
+            self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"short\");' class='"+name+" short segment' x="+str(Fx-18)+" y="+str(Fy-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+            self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"short\");' class='"+name+" short segment' x="+str(Fx)+" y="+str(Fy)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
 
             y_indent = y_indent*len(rs)/5 # get an approx need for y_indent for size of loop
@@ -611,14 +617,14 @@ class DrawSnakePlot(Diagram):
 
                 while abs(length-length_of_residues_in_loop)>6: # determine length of bends etc depending on amount of loops
                     tries +=1
-                    length_first = self.lengthbezier([x1,y1],[x1+60,temp_max_y+80*orientation],[x_left,temp_max_y+80*orientation],0.001)-60
+                    length_first = self.lengthbezier([x1,y1],[x1+60,temp_max_y+100*orientation],[x_left,temp_max_y+100*orientation],0.001)-60
 
                     length_bend = (bends*2+1)*between_residues*2
 
                     length_middel = (x2-x_left-80)*(bends*2+1)
                     length_middel = floor(length_middel / between_residues)*between_residues
 
-                    length_second = self.lengthbezier([x2-between_residues-30,temp_max_y+80*orientation+(bends*2+1)*distance_between_rows*orientation],[x2+50,temp_max_y+80*orientation+(bends*2+1)*distance_between_rows*orientation],[x2,y2],0.001)-40
+                    length_second = self.lengthbezier([x2-between_residues-30,temp_max_y+100*orientation+(bends*2+1)*distance_between_rows*orientation],[x2+50,temp_max_y+100*orientation+(bends*2+1)*distance_between_rows*orientation],[x2,y2],0.001)-40
 
 
                     length = length_first+length_second+length_bend+length_middel
@@ -635,8 +641,8 @@ class DrawSnakePlot(Diagram):
 
                 pos = 60
 
-                points2 = "M "+str(x1)+" "+str(y1)+" Q"+str(x1+60)+" "+str(temp_max_y+80*orientation)+" "+str(x_left)+" "+str(temp_max_y+80*orientation )
-                self.output += "<path class='"+name+" long' d='" + points2 + "' stroke='black' fill='none' stroke-width='2' />"
+                points2 = "M "+str(x1)+" "+str(y1)+" Q"+str(x1+60)+" "+str(temp_max_y+100*orientation)+" "+str(x_left)+" "+str(temp_max_y+100*orientation )
+                self.output += "<path id='path_"+name+"_first' class='"+name+" long' d='" + points2 + "' stroke='black' fill='none' stroke-width='2' />"
 
                 pos_bend = 0
                 bend = 1
@@ -645,14 +651,14 @@ class DrawSnakePlot(Diagram):
                 for i in range(0,len(rs)):
                     r = rs[i]
                     if pos<=length_first+61: # first branch
-                        where = self.wherebezier([x1,y1],[x1+60,temp_max_y+80*orientation],[x_left,temp_max_y+80*orientation],0.001,pos)
+                        where = self.wherebezier([x1,y1],[x1+60,temp_max_y+100*orientation],[x_left,temp_max_y+100*orientation],0.001,pos)
                         pos += ((length_first)/floor((length_first)/between_residues))
                     elif (bend/2)==(bends+1): #lastpart
                         if pos_last==0:
-                            length_second = self.lengthbezier([last_bend_x+between_residues,last_bend_y],[x2+100,temp_max_y+80],[x2,y2],0.001)
+                            length_second = self.lengthbezier([last_bend_x+between_residues,last_bend_y],[x2+100,temp_max_y+100],[x2,y2],0.001)
                             res_left = len(rs)-i
                             points2 = "M "+str(last_bend_x+between_residues)+" "+str(last_bend_y)+" Q"+str(x2+50)+" "+str(last_bend_y)+" "+str(x2)+" "+str(y2)
-                            self.output += "<path class='"+name+" long' d='" + points2 + "' stroke='black' fill='none' stroke-width='2' />"
+                            self.output += "<path id='path_"+name+"_end' class='"+name+" long' d='" + points2 + "' stroke='black' fill='none' stroke-width='2' />"
 
                         where = self.wherebezier([last_bend_x+between_residues,last_bend_y],[x2+50,last_bend_y],[x2,y2],0.001,pos_last)
 
@@ -663,7 +669,7 @@ class DrawSnakePlot(Diagram):
                             where[1][1] = where[1][1]+orientation*distance_between_rows/2
                         else:
                             where[1][0] = where[1][0]+between_residues*bend_direction
-                            where[1][1] = temp_max_y+80*orientation+bend*distance_between_rows*orientation
+                            where[1][1] = temp_max_y+100*orientation+bend*distance_between_rows*orientation
                         last_bend_x = where[1][0]
                         last_bend_y = where[1][1]
 
@@ -686,10 +692,10 @@ class DrawSnakePlot(Diagram):
                     if where[1][1]>self.high: self.high = where[1][1]
                     if where[1][1]<self.low: self.low = where[1][1]
 
-                box_y = temp_max_y+80*orientation+bend*distance_between_rows*orientation+5*orientation
+                box_y = temp_max_y+100*orientation+bend*distance_between_rows*orientation+5*orientation
 
-                self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str((x2+x1)/2-18)+" y="+str(box_y-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
-                self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str((x2+x1)/2)+" y="+str(box_y)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
+                self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str((x2+x1)/2-18)+" y="+str(box_y-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+                self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str((x2+x1)/2)+" y="+str(box_y)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
 
                 if box_y>self.high: self.high = box_y
@@ -705,7 +711,7 @@ class DrawSnakePlot(Diagram):
 
                 labelbox[1][1] += orientation*40
 
-                self.output += "<path class='"+name+" long' d='" + points2 + "' stroke='black' fill='none' stroke-width='2' />"
+                self.output += "<path id='path_"+name+"' class='"+name+" long' d='" + points2 + "' stroke='black' fill='none' stroke-width='2' />"
 
                 max_y = y1
                 for i in range(0,len(rs)):
@@ -740,15 +746,15 @@ class DrawSnakePlot(Diagram):
                     max_y = max_y+25
                 else:
                     max_y = max_y-20
-                self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str(x_at_max_y-18)+" y="+str(max_y-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
-                self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long' x="+str(x_at_max_y)+" y="+str(max_y)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
+                self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str(x_at_max_y-18)+" y="+str(max_y-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+                self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+" long segment' x="+str(x_at_max_y)+" y="+str(max_y)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
     def drawSnakePlotLoop(self,number):
         name = "ICL"+str(number)
         rs = self.segments[name]
         #self.TBCoords[helix_num] = {}
         font_size = 12
-        font_family = 'courier'
+        font_family = 'helvetica'
         # name = 'ICL1'
 
         between_residues = 18
@@ -806,7 +812,7 @@ class DrawSnakePlot(Diagram):
 
             x = round(startX+row*self.residue_radius*2.4-row_pos*self.residue_radius*0.5+indentY) #move left as you go down a row
             y = round(startY+row_pos*self.residue_radius*1.6+indentX) # Move down with right amount
-            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], rs[i][3], self.residue_radius)
+            output_residue = self.DrawResidue(x,y,rs[i][1], rs[i][0], rs[i][3], self.residue_radius,name)
 
             if y>self.maxY['intra']: self.maxY['intra'] = y-20
             row_pos += 1
@@ -867,8 +873,8 @@ class DrawSnakePlot(Diagram):
 
         self.output += output_trace+output_residue_in+output_residue_out
 
-        self.output += "<rect class='"+name+" long' x="+str(((self.TBCoords[prevhelix]['intra'][0]+self.TBCoords[nexthelix]['intra'][0])/2)-18)+" y="+str(max_y-13+30)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
-        self.output += str("<text  class='"+name+" long' x="+str((self.TBCoords[prevhelix]['intra'][0]+self.TBCoords[nexthelix]['intra'][0])/2)+" y="+str(max_y+30)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
+        self.output += "<rect class='"+name+" long segment' x="+str(((self.TBCoords[prevhelix]['intra'][0]+self.TBCoords[nexthelix]['intra'][0])/2)-18)+" y="+str(max_y-13+30)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+        self.output += str("<text  class='"+name+" long segment' x="+str((self.TBCoords[prevhelix]['intra'][0]+self.TBCoords[nexthelix]['intra'][0])/2)+" y="+str(max_y+30)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")
 
 
 class DrawHelixBox(Diagram):

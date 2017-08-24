@@ -84,6 +84,10 @@ class Command(BaseBuild):
     with open(xtal_seg_end_file, 'r') as f:
         xtal_seg_ends = yaml.load(f)
 
+    xtal_anomalies_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'annotation', 'all_anomalities.yaml'])
+    with open(xtal_anomalies_file, 'r') as f2:
+        xtal_anomalies = yaml.load(f2)
+
     s = ProteinSegment.objects.all()
     segments = {}
     for segment in s:
@@ -180,7 +184,7 @@ class Command(BaseBuild):
                             # print(seg)
                             for i in seg[6]:
                                 removed.append(i)
-
+        
         if len(deletions)>len(d['wt_seq'])*0.9:
             #if too many deltions
             removed = []
@@ -269,7 +273,7 @@ class Command(BaseBuild):
         gaps = 0
         unmapped_ref = {}
         for i, r in enumerate(pw2[0][0], 1): #loop over alignment to create lookups (track pos)
-            # print(i,r,pw2[0][1][i-1]) #print alignment for sanity check
+#            print(i,r,pw2[0][1][i-1]) #print alignment for sanity check
             if r == "-":
                 gaps += 1
             if r != "-":
@@ -313,6 +317,9 @@ class Command(BaseBuild):
         rotamer_bulk = []
         rotamer_data_bulk = []
         residues_bulk = []
+        if structure.pdb_code.index=='5LWE':
+            seg_ends['5b'] = 209
+            seg_ends['5e'] = 244
         for i,line in enumerate(pdblines):
             # print(line)
             if line.startswith('ATOM'):
@@ -397,9 +404,10 @@ class Command(BaseBuild):
                                         residue.display_generic_number = None
                                         residue.generic_number = None
                                         #print('no GN')
+
                                     residue.protein_segment = wt_r.protein_segment
                                     residue.missing_gn = False
-                                    # print(residue,residue.protein_segment.slug)
+                                    
                                     if len(seg_ends):
                                         if residue.protein_segment.slug=='TM1':
                                             if seg_ends['1b']!='-' and seg_ends['1e']!='-':
@@ -593,7 +601,10 @@ class Command(BaseBuild):
                                                 # FIX ME
                                                 # self.logger.info('No SEG ENDS info for {}'.format(structure.protein_conformation.protein.entry_name,residue.amino_acid,residue.sequence_number, wt_r.sequence_number,residue.protein_segment,wt_r.protein_segment))
                                                 pass
-
+                                    if structure.pdb_code.index=='5LWE' and 209<=residue.sequence_number<=244:
+                                        residue.display_generic_number = None
+                                        residue.generic_number = None
+                                        residue.protein_segment = None
                                     # print(residue.sequence_number, "(",int(check.strip()),")",residue.amino_acid,residue.protein_segment,wt_r.amino_acid,wt_r.sequence_number) #sanity check
 
                             else:
@@ -747,14 +758,17 @@ class Command(BaseBuild):
         if debug: print("===============**================")
         return None
 
-    def main_func(self, positions, iteration):
+    def main_func(self, positions, iteration,count,lock):
         # filenames
-        if not positions[1]:
-            filenames = self.filenames[positions[0]:]
-        else:
-            filenames = self.filenames[positions[0]:positions[1]]
-
-        for source_file in filenames:
+        # if not positions[1]:
+        #     filenames = self.filenames[positions[0]:]
+        # else:
+        #     filenames = self.filenames[positions[0]:positions[1]]
+        filenames = self.filenames
+        while count.value<len(filenames):
+            with lock:
+                source_file = filenames[count.value]
+                count.value +=1 
             source_file_path = os.sep.join([self.structure_data_dir, source_file])
             # if source_file != "2RH1.yaml":
             #     continue
@@ -793,10 +807,13 @@ class Command(BaseBuild):
 
                     # create a structure record
                     try:
-                        s = Structure.objects.get(protein_conformation__protein=con)
+                        #s = Structure.objects.get(protein_conformation__protein=con)
+                        s = Structure.objects.get(protein_conformation__protein=con).delete()
+                        s = Structure()
                     except Structure.DoesNotExist:
                         s = Structure()
-                        s.representative = representative
+                    
+                    s.representative = representative
 
                     # protein state
                     if 'state' not in sd:
@@ -970,6 +987,11 @@ class Command(BaseBuild):
                     except:
                         self.logger.error('Error saving publication'.format(ps.name))
 
+                    if source_file.split('.')[0] in self.xtal_seg_ends:
+                        s.annotated = True
+                    else:
+                        s.annotated = False
+
                     # save structure before adding M2M relations
                     s.save()
                     # StructureLigandInteraction.objects.filter(structure=s).delete()
@@ -1013,9 +1035,9 @@ class Command(BaseBuild):
                             peptide_chain = ""
                             if 'chain' in ligand:
                                 peptide_chain = ligand['chain']
-                                ligand['name'] = 'pep'
+                                # ligand['name'] = 'pep'
                             if ligand['name'] and ligand['name'] != 'None': # some inserted as none.
-
+                                ligand['type'] = ligand['type'].lower()
                                 # use annoted ligand type or default type
                                 if ligand['type']:
                                     lt, created = LigandType.objects.get_or_create(slug=slugify(ligand['type']),
@@ -1025,7 +1047,10 @@ class Command(BaseBuild):
                                         slug=slugify(default_ligand_type), defaults={'name': default_ligand_type})
 
                                 # set pdb reference for structure-ligand interaction
-                                pdb_reference = ligand['name']
+                                if len(ligand['name'])>3 and ligand['type']=='peptide':
+                                    pdb_reference = 'pep'
+                                else:
+                                    pdb_reference = ligand['name']
 
                                 # use pubchem_id
                                 if 'pubchemId' in ligand and ligand['pubchemId'] and ligand['pubchemId'] != 'None':
@@ -1082,7 +1107,6 @@ class Command(BaseBuild):
                                 if i.pdb_reference != pdb_reference:
                                     i.pdb_reference = pdb_reference
                                     i.save()
-
 
 
                     # structure segments
@@ -1165,8 +1189,28 @@ class Command(BaseBuild):
                             se.save()
 
                     # protein anomalies
+                    anomaly_entry = self.xtal_anomalies[s.protein_conformation.protein.parent.entry_name]
+                    segment_codes = {'1':'TM1','12':'ICL1','2':'TM2','23':'ECL1','3':'TM3','34':'ICL2','4':'TM4','5':'TM5','6':'TM6','7':'TM7'}
+                    all_bulges, all_constrictions = OrderedDict(), OrderedDict()
+                    for key, val in anomaly_entry.items():
+                        if 'x' not in val:
+                            continue
+                        if key[0] not in segment_codes:
+                            continue
+                        segment = segment_codes[key.split('x')[0]]
+                        if len(key.split('x')[1])==3:
+                            try:
+                                all_bulges[segment] = all_bulges[segment]+[val]
+                            except:
+                                all_bulges[segment] = [val]
+                        else:
+                            try:
+                                all_constrictions[segment] = all_constrictions[segment]+[val]
+                            except:
+                                all_constrictions[segment] = [val]
+
                     scheme = s.protein_conformation.protein.residue_numbering_scheme
-                    if 'bulges' in sd and sd['bulges']:
+                    if len(all_bulges)>0:
                         pa_slug = 'bulge'
                         try:
                             pab, created = ProteinAnomalyType.objects.get_or_create(slug=pa_slug, defaults={
@@ -1176,7 +1220,7 @@ class Command(BaseBuild):
                         except IntegrityError:
                             pab = ProteinAnomalyType.objects.get(slug=pa_slug)
 
-                        for segment, bulges in sd['bulges'].items():
+                        for segment, bulges in all_bulges.items():
                             for bulge in bulges:
                                 try:
                                     gn, created = ResidueGenericNumber.objects.get_or_create(label=bulge,
@@ -1196,7 +1240,7 @@ class Command(BaseBuild):
                                     pa, created = ProteinAnomaly.objects.get(anomaly_type=pab, generic_number=gn)
 
                                 s.protein_anomalies.add(pa)
-                    if 'constrictions' in sd and sd['constrictions']:
+                    if len(all_constrictions)>0:
                         pa_slug = 'constriction'
                         try:
                             pac, created = ProteinAnomalyType.objects.get_or_create(slug=pa_slug, defaults={
@@ -1206,7 +1250,7 @@ class Command(BaseBuild):
                         except IntegrityError:
                             pac = ProteinAnomalyType.objects.get(slug=pa_slug)
 
-                        for segment, constrictions in sd['constrictions'].items():
+                        for segment, constrictions in all_constrictions.items():
                             for constriction in constrictions:
                                 try:
                                     gn, created = ResidueGenericNumber.objects.get_or_create(label=constriction,
@@ -1259,6 +1303,7 @@ class Command(BaseBuild):
                     Residue.objects.filter(protein_conformation=s.protein_conformation).delete()
 
                     d = {}
+
                     try:
                         current = time.time()
                         #protein = Protein.objects.filter(entry_name=s.protein_conformation).get()
@@ -1274,7 +1319,6 @@ class Command(BaseBuild):
                         print(msg)
                         print('ERROR WITH CONSTRUCT FETCH {}'.format(sd['pdb']))
                         self.logger.error('ERROR WITH CONSTRUCT FETCH for {}'.format(sd['pdb']))
-
 
                     try:
                         current = time.time()
@@ -1301,9 +1345,23 @@ class Command(BaseBuild):
                         self.logger.info('Interaction calculations done for {}. {} seconds.'.format(
                                     s.protein_conformation.protein.entry_name, diff))
                     except Exception as msg:
-                        print(msg)
-                        print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
-                        self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
+                        try:
+                            current = time.time()
+                            mypath = '/tmp/interactions/results/' + sd['pdb'] + '/output'
+                            # if not os.path.isdir(mypath):
+                            #     #Only run calcs, if not already in temp
+                            runcalculation(sd['pdb'],peptide_chain)
+
+                            parsecalculation(sd['pdb'],False)
+                            end = time.time()
+                            diff = round(end - current,1)
+                            self.logger.info('Interaction calculations done (again) for {}. {} seconds.'.format(
+                                        s.protein_conformation.protein.entry_name, diff))
+                        except Exception as msg:
+
+                            print(msg)
+                            print('ERROR WITH INTERACTIONS {}'.format(sd['pdb']))
+                            self.logger.error('Error parsing interactions output for {}'.format(sd['pdb']))
 
 
 
