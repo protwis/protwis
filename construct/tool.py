@@ -897,7 +897,7 @@ def structure_rules(request, slug, **response_kwargs):
     return HttpResponse(jsondata, **response_kwargs)
 
 
-@cache_page(60 * 60 * 24)
+# @cache_page(60 * 60 * 24)
 def mutations(request, slug, **response_kwargs):
     start_time = time.time()
 
@@ -908,20 +908,48 @@ def mutations(request, slug, **response_kwargs):
     # for pc in pconfs:
     #     cterm_start[pc.protein.entry_name] = pc.start
 
+    protein_class_slug = Protein.objects.get(entry_name=slug).family.parent.parent.parent.slug
+    protein_rf_name = Protein.objects.get(entry_name=slug).family.parent.name
+
     cons = Construct.objects.all().prefetch_related('crystal', 'protein','mutations')
     mutations = []
     positions = []
     proteins = []
-    for c in cons:
-        p = c.protein
-        entry_name = p.entry_name
-        pdb = c.crystal.pdb_code
-        for mutation in c.mutations.all():
-            if p.entry_name not in proteins:
-                proteins.append(entry_name)
-            mutations.append((mutation,entry_name,pdb))
-            if mutation.sequence_number not in positions:
-                positions.append(mutation.sequence_number)
+    # for c in cons:
+    #     p = c.protein
+    #     entry_name = p.entry_name
+    #     pdb = c.crystal.pdb_code
+    #     for mutation in c.mutations.all():
+    #         if p.entry_name not in proteins:
+    #             proteins.append(entry_name)
+    #         mutations.append((mutation,entry_name,pdb))
+    #         if mutation.sequence_number not in positions:
+    #             positions.append(mutation.sequence_number)
+
+    # Grab thermostabilising mutations
+    mutations_thermo = ConstructMutation.objects.filter(effects__slug='thermostabilising', construct__protein__family__parent__parent__parent__slug=protein_class_slug).all()\
+                .prefetch_related(
+                    "construct__structure__state",
+                    "residue__generic_number",
+                    "residue__protein_segment",
+                    "construct__protein__family__parent__parent__parent",
+                    "construct__crystal")
+
+    for mutant in mutations_thermo:
+        # Get info for the construct
+        struct_id = mutant.construct.structure_id
+        state = mutant.construct.structure.state.name
+        prot = mutant.construct.protein
+        p_class = prot.family.parent.parent.parent.name
+        p_ligand = prot.family.parent.parent.name
+        p_receptor = prot.family.parent.name
+        real_receptor = prot.entry_name
+        pdb = mutant.construct.crystal.pdb_code
+        if real_receptor not in proteins:
+            proteins.append(real_receptor)
+        mutations.append((mutant,real_receptor,pdb, p_receptor))
+        if mutant.sequence_number not in positions:
+            positions.append(mutant.sequence_number)
 
     #print(positions)
     #print(proteins)
@@ -955,34 +983,160 @@ def mutations(request, slug, **response_kwargs):
     for mutation in mutations:
         pos = mutation[0].sequence_number
         entry_name = mutation[1]
+        pdb = mutation[2]
+        family = mutation[3]
         if entry_name not in rs_lookup:
             continue
         if pos not in rs_lookup[entry_name]:
             continue
         gn = rs_lookup[entry_name][pos]
 
-        if gn not in mutation_list:
-            mutation_list[gn] = {'proteins':[], 'hits':0, 'mutation':[], 'wt':''}
+        # First do the ones with same WT
+        full_mutation = "%s_%s_%s" % (gn,mutation[0].wild_type_amino_acid,"X")
+        if gn in wt_lookup and wt_lookup[gn][0]==mutation[0].wild_type_amino_acid:
+            # Only use those that have the same WT residue at GN
+            if full_mutation not in mutation_list:
+                mutation_list[full_mutation] = {'proteins':[], 'hits':0, 'mutation':[[],[]], 'wt':'', 'pdbs':[], 'protein_families': []}
 
-        if entry_name not in mutation_list[gn]['proteins']:
-            mutation_list[gn]['proteins'].append(entry_name)
-            mutation_list[gn]['hits'] += 1  
-            mutation_list[gn]['mutation'].append((mutation[0].wild_type_amino_acid,mutation[0].mutated_amino_acid))
-            if gn in wt_lookup:
-                mutation_list[gn]['wt'] = wt_lookup[gn]
+            entry_name = mutation[1].split("_")[0]
 
+            if entry_name not in mutation_list[full_mutation]['proteins']:
+                mutation_list[full_mutation]['proteins'].append(entry_name)
+                mutation_list[full_mutation]['hits'] += 1  
+                mutation_list[full_mutation]['mutation'][0].append(mutation[0].wild_type_amino_acid)
+                mutation_list[full_mutation]['mutation'][1].append(mutation[0].mutated_amino_acid)
+                if gn in wt_lookup:
+                    mutation_list[full_mutation]['wt'] = wt_lookup[gn]
+                if family not in mutation_list[full_mutation]['protein_families']:
+                    mutation_list[full_mutation]['protein_families'].append(family)
 
-    for gn, vals in mutation_list.items():
-        if vals['hits']<2:
-            mutation_list.pop(gn, None)
+            if pdb not in mutation_list[full_mutation]['pdbs']:
+                mutation_list[full_mutation]['pdbs'].append(pdb)
 
+        # Second, check those with same mutated AA
+        full_mutation = "%s_%s_%s" % (gn,"X",mutation[0].mutated_amino_acid)
+        if gn in wt_lookup and wt_lookup[gn][0]!=mutation[0].mutated_amino_acid:
+            if full_mutation not in mutation_list:
+                mutation_list[full_mutation] = {'proteins':[], 'hits':0, 'mutation':[[],[]], 'wt':'', 'pdbs':[], 'protein_families': []}
+
+            entry_name = mutation[1].split("_")[0]
+
+            if entry_name not in mutation_list[full_mutation]['proteins']:
+                mutation_list[full_mutation]['proteins'].append(entry_name)
+                mutation_list[full_mutation]['hits'] += 1  
+                mutation_list[full_mutation]['mutation'][0].append(mutation[0].wild_type_amino_acid)
+                mutation_list[full_mutation]['mutation'][1].append(mutation[0].mutated_amino_acid)
+                if gn in wt_lookup:
+                    mutation_list[full_mutation]['wt'] = wt_lookup[gn]
+                if family not in mutation_list[full_mutation]['protein_families']:
+                    mutation_list[full_mutation]['protein_families'].append(family)
+
+            if pdb not in mutation_list[full_mutation]['pdbs']:
+                mutation_list[full_mutation]['pdbs'].append(pdb)
+
+    simple_list = OrderedDict()
     mutation_list = OrderedDict(sorted(mutation_list.items(), key=lambda x: x[1]['hits'],reverse=True))
+    for gn, vals in mutation_list.items():
+        definition_matches = []
+        if gn.split("_")[1] == "X":
+            # Below rules only apply the mutations that share the same mutation AA
+            if slug.split("_")[0] in vals['proteins']:
+                # Check if same receptor
+                definition_matches.append([1,'same_receptor'])
+            elif protein_rf_name in vals['protein_families']:
+                # Check if same receptor receptor family
+                definition_matches.append([2,'same_receptor_family'])
+            elif len(vals['protein_families'])<2:
+                # If not same receptor or receptor family and not in two receptor families,
+                # it is just a single match on position used in B-F class
+                if protein_class_slug!='001':
+                    # If class A require two distinct receptor families
+                    definition_matches.append([4,'same_pos'])
+
+            if len(vals['protein_families'])>=2:
+                # If mutation is seen in >=2 receptor families
+                # Put this one outside the above logic, to allow multi definitions
+                definition_matches.append([2,'common_mutation'])
+
+            # Check for membrane binding
+            if 'K' in vals['mutation'][1] or 'R' in vals['mutation'][1]:
+                if vals['wt'][0] not in ['R','K']:
+                    # Only if not R,K already
+                    definition_matches.append([2,'membrane_binding'])
+                elif vals['wt'][0] in ['K'] and 'R' in vals['mutation'][1]:
+                    # If K
+                    definition_matches.append([3,'membrane_binding_weak'])
+
+        else:
+            # Below rules is for the common WT (But different mut AA)
+
+            if len(vals['protein_families'])>=2:
+                definition_matches.append([2,'common_wt'])
+            elif protein_rf_name not in vals['protein_families']:
+                # if receptor family not the one, then check if it's a same wt match for B-F
+                if protein_class_slug!='001':
+                    # If class A require two distinct receptor families
+                    definition_matches.append([3,'same_wt'])
+        if definition_matches:
+            # print(gn,vals)
+            #print(definition_matches)
+            min_priority = min(x[0] for x in definition_matches)
+            pos = vals['wt'][1]
+            wt_aa = vals['wt'][0]
+            origin = {'pdbs': vals['pdbs'], 'protein_families': vals['protein_families'], 'proteins': vals['proteins'], 'hits':vals['hits']} 
+            gpcrdb = gn.split("_")[0]
+            for mut_aa in set(vals['mutation'][1]):
+                if mut_aa!=wt_aa:
+                    mut = {'wt_aa': wt_aa, 'pos': pos, 'gpcrdb':gpcrdb, 'mut_aa':mut_aa, 'definitions' : definition_matches, 'priority': min_priority, 'origin': [origin]}
+                    key = '%s%s%s' % (wt_aa,pos,mut_aa)
+                    # print(key,mut)
+                    if key not in simple_list:
+                        simple_list[key] = mut
+                    else:
+                        simple_list[key]['definitions'] += definition_matches
+                        min_priority = min(x[0] for x in simple_list[key]['definitions'])
+                        simple_list[key]['priority'] = min_priority
+                        simple_list[key]['origin'].append(origin)
+
+    simple_list = OrderedDict(sorted(simple_list.items(), key=lambda x: x[1]['priority']))
+    for key, val in simple_list.items():
+        print(key,val)
+
+
+    # # If class do more strict filtering
+    # if protein_class_slug=='001':
+    #     for gn, vals in mutation_list.items():
+    #         if len(vals['protein_families'])<2:
+    #             # if not from 2 seperate families
+    #             if not protein_rf_name in vals['protein_families'] or vals['hits'] < 2: 
+    #                 # if not from same receptor family, or there was only one hit
+
+    #                 # if it's not from same receptor
+    #                 if slug.split("_")[0] not in vals['proteins']:
+    #                     mutation_list.pop(gn, None)
+    # else:
+    #     # For other classes be more 'lax
+    #     for gn, vals in mutation_list.items():
+    #         if vals['hits'] < 1: 
+    #             # if not from same receptor family, or there was only one hit
+    #             # if it's not from same receptor
+    #             if slug.split("_")[0] not in vals['proteins']:
+    #                 mutation_list.pop(gn, None)
+
+
+    # # Make a prettier / easier dump for tool
+    # simple_list = []
+    # for gn, vals in mutation_list.items():
+    #     print(gn,vals)
+
+    # TODO : overlay with other types of mutations, e.g. surfacing expressing 
+
     #print(mutation_list)
 
 
     #print(json.dumps(mutation_list, indent=4))
 
-    jsondata = mutation_list
+    jsondata = simple_list
     jsondata = json.dumps(jsondata)
     response_kwargs['content_type'] = 'application/json'
     end_time = time.time()
