@@ -36,6 +36,8 @@ class Drugs(models.Model):
 
     novelty = models.CharField(max_length=15) #Boolean
 
+    references = models.CharField(max_length=150) #Boolean
+
     def __str__(self):
         return self.name
 
