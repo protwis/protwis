@@ -2,6 +2,7 @@
 {% load staticfiles %}
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 <style>
     text {
         font: 12px sans-serif;
@@ -44,12 +45,114 @@
 <li>the correction or scaling factor combines the contributing effects including other targets, metabolism ADR, dose/efficacy effects, buffering mutations, depletion of susceptible effects (decreased risk of adverse events over time, associated care costs such as for mental health illness) <em>etc</em>.</li>
 </ul>
 <p>For these estimates, we assume that for the NHS data each prescription is a unique individual.</p>
+<br><br>
+<h3>Sales and variation information per drug</h3><br>
+    <!-- Download button -->
+    <a class="btn btn-sm btn-primary" href="download" role="button">
+    <span class="glyphicon glyphicon-download"></span> Download</a>
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+            <table width="100%" class="display" id="drugdata">
+                <thead>
+                    <tr>
+                        <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="amino acid substitution, wildtype to mutant" data-placement="top">Drug Name</th>
+                        <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="Category of mutation" data-placement="top">GPCR Drug Targets</th>
+                        <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="ExAC allele frequencies, as calculated as allele count/allele number" data-placement="top">Sales Average</th>
+                        <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="number of alleles with this variant" data-placement="top">Prescription Average</th>
+                        <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="total number of alleles that were able to be called" data-placement="top">Item Cost</th>
+                        <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="number of individuals, where both alleles are the same" data-placement="top">Known Functional Variation</th>
+                        <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="deleterious: <= 0.05<br>tolerated: > 0.05" data-placement="top">Putative Functional Variantion</th>
+                    </tr>
+                    <tr>
+                        <th style="text-align:center"></th>
+                        <th style="text-align:center"></th>
+                        <th style="text-align:center"></th>
+                        <th style="text-align:center"></th>
+                        <th style="text-align:center"></th>
+                        <th style="text-align:center"></th>
+                        <th style="text-align:center"></th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
 
+                      <th style="text-align:center">Drug Name</th>
+                      <th style="text-align:center">GPCR Drug Targets</th>
+                      <th style="text-align:center">Sales Average</th>
+                      <th style="text-align:center">Prescription Average</th>
+                      <th style="text-align:center">Item Cost</th>
+                      <th style="text-align:center">Known Functional Variation</th>
+                      <th style="text-align:center">Putative Functional Variantion</th>
+                    </tr>
+                </tfoot>
+                {% for drug in drug_data %}
+                <!-- add: .select_related.all -->
+                <tr>
+                  <td><a
+                  <td style="text-align:center"><a href='/drugs/nhs/{{drug.drugname|safe}} '> {{drug.drugname|safe}}</a></td>
+                  <td>{% for target in drug.targets %}
+                  <a href='/mutational_landscape/protein/{{ target|add:"_human" }} '>{{ target }}</a>
+                  {% endfor %}</td>
+                  <td>{{drug.average_cost}}</td>
+                  <td>{{drug.average_items}}</td>
+                  <td>{{drug.item_cost}}</td>
+                  <td>{{drug.known_functional}}</td>
+                  <td>{{drug.putative_func}}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        <br><br>
 {% endblock %}
 {% block addon_js %}
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/d3.min.js' %}"></script>
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+
+<script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            var table = $('#drugdata').DataTable({
+                "scrollX": true,
+                // 'scrollY': $(window).height()-300,
+                'bScrollCollapse': true,
+                'paging': true,
+                "lengthMenu": [[25, 50, 100, -1], [25, 50, 100, "All"]],
+                'orderCellsTop': true,
+                'autoWidth': true,
+                'dom': 'T<"clear">lfrtip',
+                'order': [[1, "desc"]], // order by date
+                "aoColumns": [
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"},
+                        {"sClass": "center"}],
+                'tableTools': {
+                    "sRowSelect": "multi",
+                    "aButtons": []
+                },
+                initComplete: function () {
+                    $('#drugdata').dataTable().columnFilter({
+                        'sPlaceHolder': "head:after",
+                        'aoColumns': [
+                            { type: "text" },
+                            { type: "text" },
+                            { type: "text" },
+                            { type: "text" },
+                            { type: "text" },
+                            { type: "text" },
+                            { type: "text" },
+                        ]
+                    });
+                }
+
+            });
+        });
+    </script>
 <script>
 // https://github.com/novus/nvd3/tree/master/examples
 var chart ;
