@@ -242,7 +242,7 @@ def drugbrowser(request):
         context = list()
 
         drugs = Drugs.objects.all().prefetch_related('target__family__parent__parent__parent')
-        # NHS data
+        ## NHS data
         NHS_names = NHSPrescribings.objects.all().values_list('drugname__name', flat=True).distinct()
 
         for drug in drugs:
@@ -271,13 +271,9 @@ def drugbrowser(request):
                 family = str(protein.family.parent.name)
 
                 jsondata = {'name':drugname, 'target': str(protein), 'phase': phase, 'approval': approval, 'class':clas, 'family':family, 'indication': indication, 'status':status, 'drugtype':drugtype, 'moa':moa,'novelty': novelty, 'targetlevel': targetlevel, 'clinicalstatus': clinicalstatus, 'NHS': NHS}
-                context.append(jsondata)
+                drugdata.append(jsondata)
 
-            # jsondata = {'name':drugname, 'target': ', '.join(set(targets)), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
-            # context.append(jsondata)
-        # cache.set(name_of_cache, context, 60*60*24*1) # two days timeout on cache
-
-    return render(request, 'drugbrowser.html', {'drugdata':context})
+    return render(request, 'drugbrowser.html', {'drugdata':drugdata})
 
 @cache_page(60*60*24*7)
 def drugmapping(request):

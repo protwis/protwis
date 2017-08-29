@@ -7,9 +7,11 @@ from django.views.decorators.cache import cache_page
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene, ProteinGProtein, ProteinGProteinPair
 from residue.models import Residue, ResiduePositionSet, ResidueSet
-from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations, PTMs
+from mutational_landscape.models import NaturalMutations, CancerMutations, DiseaseMutations, PTMs, NHSPrescribings
 
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
+
+from drugs.models import Drugs
 
 from mutation.functions import *
 from mutation.models import *
@@ -62,7 +64,7 @@ def render_variants(request, protein = None, family = None, download = None, rec
     proteins = []
 
     if protein: # if protein static page
-        proteins.append(Protein.objects.get(entry_name = protein))
+        proteins.append(Protein.objects.get(entry_name = protein.lower()))
 
     # flatten the selection into individual proteins
 
@@ -190,7 +192,7 @@ def render_variants(request, protein = None, family = None, download = None, rec
         for r in NMs:
             values = r.__dict__
             data.append(values)
-        headers = ['type','amino_acid', 'allele_count','allele_number', 'allele_frequency', 'polyphen_score', 'sift_score', 'number_homozygotes']
+        headers = ['type','amino_acid', 'allele_count','allele_number', 'allele_frequency', 'polyphen_score', 'sift_score', 'number_homozygotes', 'functional_annotation']
 
         #EXCEL SOLUTION
         output = BytesIO()
@@ -559,7 +561,7 @@ def statistics(request):
 
 # @cache_page(60*60*24*7) #  2 days
 def economicburden(request):
-    data = [{'values': [{'y': 0.886, 'x': 1}], 'key': 'Analgesics', 'yAxis': 'Scaling factor 1'},
+    economic_data = [{'values': [{'y': 0.886, 'x': 1}], 'key': 'Analgesics', 'yAxis': 'Scaling factor 1'},
     {'values': [{'y': 0.118, 'x': 1}], 'key': 'Antidepressant Drugs', 'yAxis': 'Scaling factor 1'},
     {'values': [{'y': 0.203, 'x': 1}], 'key': 'Beta-Adrenoceptor Blocking Drugs', 'yAxis': 'Scaling factor 1'},
     {'values': [{'y': 0.524, 'x': 1}], 'key': 'Bronchodilators', 'yAxis': 'Scaling factor 1'},
@@ -571,4 +573,32 @@ def economicburden(request):
     {'values': [{'y': 0.072, 'x': 1}], 'key': 'Hypothalamic&Pituitary Hormones&Antioest', 'yAxis': 'Scaling factor 1'},
     {'values': [{'y': 0.257, 'x': 1}], 'key': 'Other', 'yAxis': 'Scaling factor 1'}]
 
-    return render(request, 'economicburden.html', {'data':data})
+    ### PER DRUG TABLE
+    nhs_data = NHSPrescribings.objects.all().values('drugname__name').annotate(Avg('actual_cost'), Avg('items'), Avg('quantity'))
+
+    drug_data = []
+    for i in nhs_data:
+
+        ## druginformation
+        drugname = i['drugname__name']
+        average_cost = round(i['actual_cost__avg'],0)
+        average_quantity = round(i['quantity__avg'],0)
+        average_items = round(i['items__avg'],1)
+
+        if average_items > 0:
+            item_cost= round(float(average_cost)/average_items,1)
+        else:
+            item_cost = 0
+
+        ## get target information
+        protein_targets = Protein.objects.filter(drugs__name=drugname).distinct()
+        targets = [p.entry_name.split('_human')[0].upper() for p in list(protein_targets)]
+        known_functional = 0
+        putative_func = 0
+
+
+        jsondata = {'drugname':drugname, 'targets': targets, 'average_cost': average_cost, 'average_quantity': average_quantity, 'average_items':average_items, 'item_cost':item_cost, 'known_functional': known_functional, 'putative_func':putative_func}
+        drug_data.append(jsondata)
+
+
+    return render(request, 'economicburden.html', {'data':economic_data, 'drug_data':drug_data})
