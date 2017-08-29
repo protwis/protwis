@@ -228,7 +228,7 @@ def drugstatistics(request):
 
     return render(request, 'drugstatistics.html', {'drugtypes_approved':drugtypes_approved, 'drugtypes_trials':drugtypes_trials,  'drugtypes_estab':drugtypes_estab,  'drugtypes_not_estab':drugtypes_not_estab, 'drugindications_approved':drugindications_approved, 'drugindications_trials':drugindications_trials, 'drugtargets_approved':drugtargets_approved, 'drugtargets_trials':drugtargets_trials, 'phase_trials':phase_trials, 'phase_trials_inactive': phase_trials_inactive, 'moas_trials':moas_trials, 'moas_approved':moas_approved, 'drugfamilies_approved':drugfamilies_approved, 'drugfamilies_trials':drugfamilies_trials, 'drugClasses_approved':drugClasses_approved, 'drugClasses_trials':drugClasses_trials, 'drugs_over_time':drugs_over_time, 'in_trial':len(in_trial), 'not_targeted':not_targeted})
 
-@cache_page(60*60*24*17)
+# @cache_page(60*60*24*17)
 def drugbrowser(request):
     # Get drugdata from here somehow
 
@@ -252,6 +252,7 @@ def drugbrowser(request):
             indication = drug.indication
             novelty = drug.novelty
             clinicalstatus = drug.clinicalstatus
+            references = [i for i in drug.references.split('|')]
 
             target_list = drug.target.all()
             targets = []
@@ -262,7 +263,7 @@ def drugbrowser(request):
                 clas = str(protein.family.parent.parent.parent.name)
                 family = str(protein.family.parent.name)
 
-                jsondata = {'name':drugname, 'target': str(protein), 'phase': phase, 'approval': approval, 'class':clas, 'family':family, 'indication': indication, 'status':status, 'drugtype':drugtype, 'moa':moa,'novelty': novelty, 'targetlevel': targetlevel, 'clinicalstatus': clinicalstatus}
+                jsondata = {'name':drugname, 'target': str(protein), 'phase': phase, 'approval': approval, 'class':clas, 'family':family, 'indication': indication, 'status':status, 'drugtype':drugtype, 'moa':moa,'novelty': novelty, 'targetlevel': targetlevel, 'clinicalstatus': clinicalstatus, 'references':references}
                 context.append(jsondata)
 
             # jsondata = {'name':drugname, 'target': ', '.join(set(targets)), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}

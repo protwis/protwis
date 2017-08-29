@@ -26,8 +26,10 @@
                         <th style="background-color:#ffbb78;text-align:center">Drug Type</th>
                         <th style="background-color:#ffbb78;text-align:center">Mechanism of Action</th>
                         <th style="background-color:#ffbb78;text-align:center">Novelty</th>
+                        <th style="background-color:#ffbb78;text-align:center">References</th>
                     </tr>
                     <tr>
+                        <th style="text-align:center"> </th>
                         <th style="text-align:center"> </th>
                         <th style="text-align:center"> </th>
                         <th style="text-align:center"> </th>
@@ -48,7 +50,7 @@
                 <tr>
                 <td style="text-align:center">{{row.name|safe}}</td>
                 <td style="text-align:center">{{row.indication|safe}}</td>
-                <td style="text-align:center"> <a href='/protein/{{row.target|safe}} '> {{row.target|safe}} </a </td>
+                <td style="text-align:center"> <a href='/protein/{{row.target|safe}} '> {{row.target|safe}} </a></td>
                 <td style="text-align:center">{{row.targetlevel|safe}}</td>
                 <td style="text-align:center">{{row.class|safe}}</td>
                 <td style="text-align:center">{{row.family|safe}}</td>
@@ -59,6 +61,10 @@
                 <td style="text-align:center">{{row.drugtype|safe}}</td>
                 <td style="text-align:center">{{row.moa|safe}}</td>
                 <td style="text-align:center">{{row.novelty|safe}}</td>
+
+                {% for pmid in row.references %}
+                <td style="text-align:center"> <a href='https://www.ncbi.nlm.nih.gov/pubmed/{{pmid}}' target="_blank">{{pmid}}{% if not forloop.last %}{% ifequal forloop.revcounter 2 %} | {% else %} | {% endifequal %}{% else %}{% endif %}</a{% endfor %}</td>
+
                 {% endfor %}
                 </tbody>
             </table>
@@ -101,6 +107,7 @@
                         {"sClass": "center"},
                         {"sClass": "center"},
                         {"sClass": "center"},
+                        {"sClass": "center"},
                         {"sClass": "center"}],
                 'tableTools': {
                     "sRowSelect": "multi",
@@ -123,6 +130,7 @@
                             { type: "select" },
                             { type: "select" },
                             { type: "select" },
+                            { type: "text" },
                         ]
                     });
                 }
