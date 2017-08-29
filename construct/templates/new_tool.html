@@ -306,6 +306,25 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 </tbody>
 </table>
 
+<table width=100%  id='mutation_scan' class='table table-bordered table-condensed'>
+<thead>
+<tr>
+  <th> Prio </th>
+  <th> Segment </th>
+  <th> GPCRdb </th>
+  <th> BW </th>
+  <th> Pos </th>
+  <th> Wt AA </th>
+  <th> Mut AA </th>
+  <th> Method </th>
+  <th> Selected </th>
+  <th> Fixed </th>
+</tr> 
+</thead>
+<tbody>
+</tbody>
+</table>
+
 <div class="row">
 </div>
 
@@ -429,6 +448,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     var modifications = new Array;
     var tables = new Array;
     var mutations_browser = new Array;
+    var mutations_mode_suggestions = new Array;
     var removals_list = new Array;
     var export_list = {};
     var load_status = 0;
@@ -1352,53 +1372,56 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       var state = $('input:radio[name=state]:checked').val();
       var keys = Object.keys(mutations_browser);
       export_list['thermo'] = [];
+      mutations_mode_suggestions = [];
       muts = {}
       $.each(keys, function( i,type ) {
         if (type.substring(0, 11) == "struc_rules" && type.substring(12)!=state) {
           return true; //loop away from these
         }
         $.each(mutations_browser[type], function(gn, values){
-          if(!muts[gn]) { muts[gn] = {'priority': 99, 'gn': gn, 'types': [], 'pretty_types': [], 'hits':0, 'details':[]}; }
+          console.log(type,values);
+          full_mutation = gn + values[0] + values[2];
+          if(!muts[full_mutation]) { muts[full_mutation] = {'priority': 99, 'gn': gn, 'types': [], 'pretty_types': [], 'hits':0, 'details':[]}; }
 
-          muts[gn]['hits'] += 1;
+          muts[full_mutation]['hits'] += 1;
 
-          muts[gn]['details'].push(values);
+          muts[full_mutation]['details'].push(values);
           if (type.substring(0, 11) == "struc_rules") {
-            if (muts[gn]['priority']>5) muts[gn]['priority'] = 5;
+            if (muts[full_mutation]['priority']>5) muts[full_mutation]['priority'] = 5;
             pretty_type = 'State-stabilising'
           } else if (type == "termo_From target recepter") {
-            if (muts[gn]['priority']>1) muts[gn]['priority'] = 1;
+            if (muts[full_mutation]['priority']>1) muts[full_mutation]['priority'] = 1;
             pretty_type = 'From Receptor'
           } else if (type == "termo_Common mutation (Wt)") {
-            if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
+            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
             pretty_type = 'Observed (multiple)'
           } else if (type == "termo_Common mutation (Mut)") {
-            if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
+            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
             pretty_type = 'Observed (multiple)'
           } else if (type == "termo_Single common mutation (Wt)") {
-            if (muts[gn]['priority']>2) muts[gn]['priority'] = 3;
+            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 3;
             pretty_type = 'Observed (single)'
           } else if (type == "cons_rm_conserved_G") {
-            if (muts[gn]['priority']>4) muts[gn]['priority'] = 4;
+            if (muts[full_mutation]['priority']>4) muts[full_mutation]['priority'] = 4;
             pretty_type = 'Conservation (remove Gly)'
           } else if (type == "cons_rm_nonconserved_GP") {
-            if (muts[gn]['priority']>4) muts[gn]['priority'] = 2;
+            if (muts[full_mutation]['priority']>4) muts[full_mutation]['priority'] = 2;
             pretty_type = 'Conservation (remove Gly/Pro)'
           } else if (type == "cons_rf_and_class") {
-            if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
+            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
             pretty_type = 'Conservation'
           } else if (type == "cons_rf") {
-            if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
+            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
             pretty_type = 'Conservation'
           } else if (type == "cons_strucs") {
-            if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
+            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
             pretty_type = 'Conservation'
           } else {
             console.log(type);
           }
 
-          muts[gn]['types'].push(type);
-          muts[gn]['pretty_types'].push(pretty_type);
+          muts[full_mutation]['types'].push(type);
+          muts[full_mutation]['pretty_types'].push(pretty_type);
         });
       });
       // console.log(muts);
@@ -1470,6 +1493,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         temp = "<tr><td align=center>"+vals['priority']+"</td><td>"+gn+"</td><td origin='"+vals['types']+"'>"+mut_suggestions.join(", ")+"</td><td>"+vals['pretty_types']+" <a class='methods_info' data-toggle='tooltip' data-html='true' data-placement='bottom' title='"+vals['types'].join("<br>")+"'><i class='glyphicon glyphicon-info-sign'></i></a></td></tr>";
         items_table.push( temp );
         export_list['thermo'].push([gn,label.join(", "),vals['hits'],vals['types']]);
+        mutations_mode_suggestions.push([gn,label,vals['types'],vals['priority']])
       });
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
@@ -1605,6 +1629,27 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       // finall overview
       modifications_overview();
+    }
+
+    function mutation_mode() {
+      console.log('mutation_mode');
+      if ($('.snakechoice:checked').length) 
+        {
+          selected_construct = $('.snakechoice:checked').val();
+          $("#possibilities > tbody > tr").not( "#row_"+selected_construct).fadeOut("slow");
+          build_mutation_mode_table();
+        } else {
+          console.log('No parent construct to do mutation on');
+        }
+
+    }
+
+    function build_mutation_mode_table() {
+
+      $.each(export_list['thermo'], function(i, val) {
+        console.log(val);
+      });
+
     }
 
     function reset_fixed(modi_type) {
@@ -2646,7 +2691,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           icl_total_cols = icl_start_cols + icl_start_linker + icl_mod + icl_end_linker + icl_end_cols;
 
 
-          row_html = "<tr class='"+tr_class+"'><td>" + (key+1) + "</td><td style='cursor: pointer;' onclick='selectTD(this);'><input type='radio' onclick='changesnakeplot(this)' class='snakechoice' value='"+key+"' "+checked+"></td><td><input type='checkbox' onclick='toogle_keep(this)' value='"+key+"' checked><td>"+inserts['nterm'].length+"</td></td>"+nfusion_cols+nterm_cols+icl_total_cols+cterm_cols+"<td>"+inserts['cterm'].length+"</td></tr>";
+          row_html = "<tr class='"+tr_class+"' id='row_"+key+"'><td>" + (key+1) + "</td><td style='cursor: pointer;' onclick='selectTD(this);'><input type='radio' onclick='changesnakeplot(this)' class='snakechoice' value='"+key+"' "+checked+"></td><td><input type='checkbox' onclick='toogle_keep(this)' value='"+key+"' checked><td>"+inserts['nterm'].length+"</td></td>"+nfusion_cols+nterm_cols+icl_total_cols+cterm_cols+"<td>"+inserts['cterm'].length+"</td></tr>";
           $('#possibilities tbody').append(row_html);
        });
         change_fusionpos();
