@@ -312,7 +312,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
   <th> Prio </th>
   <th> Segment </th>
   <th> GPCRdb </th>
-  <th> BW </th>
   <th> Pos </th>
   <th> Wt AA </th>
   <th> Mut AA </th>
@@ -448,7 +447,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     var modifications = new Array;
     var tables = new Array;
     var mutations_browser = new Array;
-    var mutations_mode_suggestions = new Array;
+    var mutations_mode_suggestions = [];
     var removals_list = new Array;
     var export_list = {};
     var load_status = 0;
@@ -631,8 +630,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     function updateLoadStatus() {
 
-      $('#loadstatus').html("Please wait while data is loaded. "+Math.round(load_status*100/11)+"% done");
-      if (load_status != 11) {
+      $('#loadstatus').html("Please wait while data is loaded. "+Math.round(load_status*100/7)+"% done");
+      if (load_status != 7) {
         $('#method_options').hide();
       } else {
         $('#method_options').show();
@@ -1637,6 +1636,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         {
           selected_construct = $('.snakechoice:checked').val();
           $("#possibilities > tbody > tr").not( "#row_"+selected_construct).fadeOut("slow");
+          $("#mutation_scan > tbody").html("");
           build_mutation_mode_table();
         } else {
           console.log('No parent construct to do mutation on');
@@ -1646,8 +1646,18 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     function build_mutation_mode_table() {
 
-      $.each(export_list['thermo'], function(i, val) {
-        console.log(val);
+      $.each(mutations_mode_suggestions, function(i, val) {
+        console.log(i,val);
+        row = `<tr>
+                <td>`+val['priority']+`</td>
+                <td>`+val['segment']+`</td>
+                <td>`+val['gpcrdb']+`</td>
+                <td>`+val['pos']+`</td>
+                <td>`+val['wt_aa']+`</td>
+                <td>`+val['mut_aa']+`</td>
+                <td>`+val['definitions']+`</td>
+                </tr>`;
+        $('#mutation_scan tbody').append(row);
       });
 
     }
@@ -3745,135 +3755,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           updateLoadStatus();
         });
 
-        $.getJSON( "/construct/tool/json/cons_strucs/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( gn, val ) {
-            temp = "<li id='"+gn+"' class=\"dropdown-submenu\"><a class='origin'>"+gn+" ("+val[0]+val[1]+val[2]+") ("+val[3]+"0% cons)</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' > Mutate "+val[0]+val[1]+val[2]+"</a></li></ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $("#cons_strucs").html(result);
-          mutations_browser['cons_strucs'] = data;
-          build_mutations();
+       $.getJSON( "/construct/tool/json/mutations/{{target.entry_name}}/", function( data ) {
+          mutations_mode_suggestions = data;
           load_status += 1;
           updateLoadStatus();
-        });
-
-        $.getJSON( "/construct/tool/json/cons_rf/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( gn, val ) {
-            temp = "<li id='"+gn+"' class=\"dropdown-submenu\"><a class='origin'>"+gn+" ("+val[0]+val[1]+val[2]+") ("+val[3]+"0% cons)</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' > Mutate "+val[0]+val[1]+val[2]+"</a></li></ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $("#cons_rf").html(result);
-          mutations_browser['cons_rf'] = data;
-          build_mutations();
-          load_status += 1;
-          updateLoadStatus();
-        });
-
-        $.getJSON( "/construct/tool/json/cons_rf_and_class/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( gn, val ) {
-            temp = "<li id='"+gn+"' class=\"dropdown-submenu\"><a class='origin'>"+gn+" ("+val[0]+val[1]+val[2]+") ("+val[3]+"0% cons)</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' > Mutate "+val[0]+val[1]+val[2]+"</a></li></ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $("#cons_rf_and_class").html(result);
-          mutations_browser['cons_rf_and_class'] = data;
-          build_mutations();
-          load_status += 1;
-          updateLoadStatus();
-        });
-
-
-        
-
-        $.getJSON( "/construct/tool/json/cons_rm_GP/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( gn, val ) {
-            temp = "<li id='"+gn+"' class=\"dropdown-submenu\"><a class='origin'>"+gn+" ("+val[0]+val[1]+val[2]+") ("+val[3]+"0% cons)</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' > Mutate "+val[0]+val[1]+val[2]+"</a></li></ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $("#cons_rm_GP").html(result);
-          mutations_browser['cons_rm_nonconserved_GP'] = data['non-conserved'];
-          mutations_browser['cons_rm_conserved_G'] = data['conserved'];
-          build_mutations();
-          load_status += 1;
-          updateLoadStatus();
-        });
-
-      $.getJSON( "/construct/tool/json/termo/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( level, gns ) {
-            if (level == 1) {
-              level_text = "From target recepter"
-            } else if (level == 2) {
-              level_text = "Common mutation (Mut)"
-            } else if (level == 3) {
-              level_text = "Common mutation (Wt)"
-            } else if (level == 4) {
-              level_text = "Single common mutation (Wt)"
-            }
-            mutations_browser['termo_'+level_text] = gns;
-            temp = "<li id='" + level + "' class=\"dropdown-submenu\"><a>" + level_text + "</a><ul class=\"dropdown-menu\">";
-            $.each( gns, function( gn, aa ) {
-                $.each( aa, function( key, value ) {
-
-                extra = " to ";
-                to = key ; 
-                number = value['pdbs'].length;
-                if (level == 2) {
-                  extra = " to ";
-                  from = value['wt'][0];
-                  to = key;
-                  number = value['proteins'].length;
-                } else if (level ==3 ){
-                  extra = " to " + value['muts'] + " from ";
-                  to = value['muts'];
-                  number = value['proteins'].length;
-                }
-
-                temp += "<li id='" + level + "' class=\"dropdown-submenu\"><a>" + gn + extra + " ("+number+" hits)</a><ul class=\"dropdown-menu\">";
-                temp += "<li><a>"+gn+" in {{target.entry_name}} is "+value['wt'][0]+"</a></li>";
-                temp += "<li class=\"divider\"></li>";
-
-                // pos = to.split(",");
-                if (level == 3) {
-                  $.each(to, function(key,pos){
-                    temp += "<li><a onclick='mut(this)' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+pos+"'><strong>Mutate "+value['wt'][0]+value['wt'][1]+pos+"</strong></a></li>";
-                  })
-                } else {
-                  temp += "<li><a onclick='mut(this)' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+to+"'><strong>Mutate "+value['wt'][0]+value['wt'][1]+to+"</strong></a></li>";
-                }
-                temp += "<li class=\"divider\"></li>";
-                if (level == 1 ) {
-                  $.each(value['pdbs'], function(i, pdb) {
-                      temp += "<li id='" + level + "'><a>" + pdb+"</a>";
-                  })
-                } else if (level == 2 || level == 3 ) {
-                  $.each(value['proteins'], function(i, pdb) {
-                      temp += "<li id='" + level + "'><a>" + pdb+"</a>";
-                  })
-                }
-                // temp += "<li id='" + level + "' class=\"dropdown-submenu\"><a>" + key + " ("+value['hits']+" hits)</a>";
-                // temp += "<ul class=\"dropdown-menu\"><li></li></ul>";
-
-                temp += "</li>";
-                temp += "</ul></li>";
-                });
-             });
-            temp += "</ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $("#thermo").html(result);
-          build_mutations();
-          load_status += 1;
-          updateLoadStatus();
-        });
+      });
 
       $.getJSON( "/construct/tool/json/struc_rules/{{target.entry_name}}/", function( data ) {
           var items = [];
