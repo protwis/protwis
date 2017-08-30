@@ -1,21 +1,18 @@
 {% extends "home/base.html" %}
 {% load staticfiles %}
 {% block addon_css %}
-<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<!-- <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" /> -->
+<!-- <link href="{% static 'home/css/residue_table.css' %}" rel="stylesheet"> -->
+<!-- <link href="{% static 'home/css/alignment.css' %}" rel="stylesheet"> -->
 <style>
-    text {
-        font: 12px sans-serif;
-    }
-    svg {
-        display: block;
-    }
-    html, body, #test1, svg {
-        margin: 0px;
-        padding: 0px;
-        height: 100%;
-        width: 100%;
-    }
+/*table.dataTable tbody td {
+  white-space: nowrap;
+}*/
+overflow:auto;
+ height: 400px;
+ position:relative;
 </style>
 {% endblock %}
 {% block content %}
@@ -50,7 +47,7 @@
     <!-- Download button -->
     <a class="btn btn-sm btn-primary" href="download" role="button">
     <span class="glyphicon glyphicon-download"></span> Download</a>
-        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+        <div style="padding-top: 10px; font-size: 11px;">
             <table width="100%" class="display" id="drugdata">
                 <thead>
                     <tr>
@@ -59,10 +56,19 @@
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="ExAC allele frequencies, as calculated as allele count/allele number" data-placement="top">Sales Average</th>
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="number of alleles with this variant" data-placement="top">Prescription Average</th>
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="total number of alleles that were able to be called" data-placement="top">Item Cost</th>
-                        <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="number of individuals, where both alleles are the same" data-placement="top">Known Functional Variation</th>
-                        <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="deleterious: <= 0.05<br>tolerated: > 0.05" data-placement="top">Putative Functional Variantion</th>
-                    </tr>
-                    <tr>
+                        <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="deleterious: <= 0.05<br>tolerated: > 0.05" data-placement="top">Putative Functional Site Variants</th>
+                        <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="deleterious: <= 0.05<br>tolerated: > 0.05" data-placement="top">BNF section</th>
+                      </tr>
+                      <tr>
+                          <th style="text-align:center"></th>
+                          <th style="text-align:center"></th>
+                          <th style="text-align:center"></th>
+                          <th style="text-align:center"></th>
+                          <th style="text-align:center"></th>
+                          <th style="text-align:center"></th>
+                          <th style="text-align:center"></th>
+                      </tr>
+                      <tr>
                         <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
@@ -70,24 +76,22 @@
                         <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
-                    </tr>
+                      </tr>
                 </thead>
                 <tfoot>
                     <tr>
-
                       <th style="text-align:center">Drug Name</th>
                       <th style="text-align:center">GPCR Drug Targets</th>
                       <th style="text-align:center">Sales Average</th>
                       <th style="text-align:center">Prescription Average</th>
                       <th style="text-align:center">Item Cost</th>
-                      <th style="text-align:center">Known Functional Variation</th>
-                      <th style="text-align:center">Putative Functional Variantion</th>
+                      <th style="text-align:center">Putative Functional Site Variants</th>
+                      <th style="text-align:center">BNF section</th>
                     </tr>
                 </tfoot>
                 {% for drug in drug_data %}
                 <!-- add: .select_related.all -->
                 <tr>
-                  <td><a
                   <td style="text-align:center"><a href='/drugs/nhs/{{drug.drugname|safe}} '> {{drug.drugname|safe}}</a></td>
                   <td>{% for target in drug.targets %}
                   <a href='/mutational_landscape/protein/{{ target|add:"_human" }} '>{{ target }}</a>
@@ -95,8 +99,8 @@
                   <td>{{drug.average_cost}}</td>
                   <td>{{drug.average_items}}</td>
                   <td>{{drug.item_cost}}</td>
-                  <td>{{drug.known_functional}}</td>
                   <td>{{drug.putative_func}}</td>
+                  <td><a href='/drugs/nhs/section/{{ drug.section }} '>{{ drug.section }}</a></td>
                 </tr>
                 {% endfor %}
             </table>
@@ -114,15 +118,17 @@
 <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             var table = $('#drugdata').DataTable({
-                "scrollX": true,
-                // 'scrollY': $(window).height()-300,
+                /*"scrollX": true,*/
+                /*// 'scrollY': $(window).height()-300,*/
                 'bScrollCollapse': true,
                 'paging': true,
-                "lengthMenu": [[25, 50, 100, -1], [25, 50, 100, "All"]],
+                "lengthMenu": [[20, 50, 100, -1], [20, 50, 100, "All"]],
                 'orderCellsTop': true,
                 'autoWidth': true,
+                "sScrollX": "100%",
+                "sScrollXInner": "100%",
+                'order': [[4, "asc"]],
                 'dom': 'T<"clear">lfrtip',
-                'order': [[1, "desc"]], // order by date
                 "aoColumns": [
                         {"sClass": "center"},
                         {"sClass": "center"},
