@@ -2,6 +2,8 @@
 {% load staticfiles %}
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<style media="screen">
+</style>
 {% endblock %}
 {% block content %}
 <h2>Drug Browser</h2>
@@ -25,8 +27,7 @@
                         <th style="background-color:#ffbb78;text-align:center">Year of Approval</th>
                         <th style="background-color:#ffbb78;text-align:center">Drug Type</th>
                         <th style="background-color:#ffbb78;text-align:center">Mechanism of Action</th>
-                        <th style="background-color:#ffbb78;text-align:center">Novelty</th>
-                        <th style="background-color:#ffbb78;text-align:center">References</th>
+                        <th style="background-color:#ffbb78;text-align:;word-wrap: break-word">References</th>
                         <th style="background-color:#ffbb78;text-align:center">NHS</th>
                     </tr>
                     <tr>
@@ -65,16 +66,14 @@
                 <td style="text-align:center">{{row.approval|safe}}</td>
                 <td style="text-align:center">{{row.drugtype|safe}}</td>
                 <td style="text-align:center">{{row.moa|safe}}</td>
-                <td style="text-align:center">{{row.novelty|safe}}</td>
+                {% for pmid in row.references %}
+                <td style="text-align:center"> <a
+                 href='https://www.ncbi.nlm.nih.gov/pubmed/{{pmid}}' target="_blank">{{pmid}}{% if not forloop.last %}{% ifequal forloop.revcounter 2 %} | {% else %} | {% endifequal %}{% else %}{% endif %}</a{% endfor %}</td>
                 {% if row.NHS == 'yes' %}
                   <td style="text-align:center"><a href='/drugs/nhs/{{row.name|safe}} '> {{row.NHS|safe}}</a></td>
                 {% else %}
                   <td style="text-align:center">{{row.NHS|safe}}</a></td>
                 {% endif %}
-
-                {% for pmid in row.references %}
-                <td style="text-align:center"> <a href='https://www.ncbi.nlm.nih.gov/pubmed/{{pmid}}' target="_blank">{{pmid}}{% if not forloop.last %}{% ifequal forloop.revcounter 2 %} | {% else %} | {% endifequal %}{% else %}{% endif %}</a{% endfor %}</td>
-
                 {% endfor %}
                 </tbody>
             </table>
@@ -85,7 +84,10 @@
     </div>
 </div>
 <br>
-
+<br>
+<p>Hauser, A. S., Misty, A., Mathias, R.-A., Schiöth, H. B. & Gloriam, D. E. Trends in GPCR drug discovery: new agents, targets and indications.<i> Nat Rev Drug Discov</i>, (2017).</p>
+<br>
+<br>
 {% endblock %}
 {% block addon_js %}
 <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
@@ -140,6 +142,7 @@
                             { type: "select" },
                             { type: "select" },
                             { type: "select" },
+                            { type: "text" },
                             { type: "text" },
                         ]
                     });
