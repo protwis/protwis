@@ -7,7 +7,7 @@ from django import forms
 
 from construct.models import *
 from structure.models import Structure
-from protein.models import ProteinConformation, Protein, ProteinSegment
+from protein.models import ProteinConformation, Protein, ProteinSegment, ProteinFamily
 from alignment.models import AlignmentConsensus
 from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, STRUCTURAL_RULES
 
@@ -899,101 +899,76 @@ def structure_rules(request, slug, **response_kwargs):
 
 # @cache_page(60 * 60 * 24)
 def mutations(request, slug, **response_kwargs):
+    from django.db import connection
     start_time = time.time()
 
-    ##PREPARE TM1 LOOKUP DATA
-    # proteins = Construct.objects.all().values_list('protein', flat = True)
-    # pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__protein_segment__slug='C-term').annotate(start=Min('residue__sequence_number'))
-    # cterm_start = {}
-    # for pc in pconfs:
-    #     cterm_start[pc.protein.entry_name] = pc.start
-
-    protein_class_slug = Protein.objects.get(entry_name=slug).family.parent.parent.parent.slug
-    protein_rf_name = Protein.objects.get(entry_name=slug).family.parent.name
-
-    cons = Construct.objects.all().prefetch_related('crystal', 'protein','mutations')
-    mutations = []
-    positions = []
-    proteins = []
-    # for c in cons:
-    #     p = c.protein
-    #     entry_name = p.entry_name
-    #     pdb = c.crystal.pdb_code
-    #     for mutation in c.mutations.all():
-    #         if p.entry_name not in proteins:
-    #             proteins.append(entry_name)
-    #         mutations.append((mutation,entry_name,pdb))
-    #         if mutation.sequence_number not in positions:
-    #             positions.append(mutation.sequence_number)
+    protein = Protein.objects.get(entry_name=slug)
+    protein_class_slug = protein.family.slug.split("_")[0]
+    protein_rf_name = protein.family.parent.name
+    protein_rf_slug = protein.family.parent.slug
+    protein_rf_count = ProteinFamily.objects.filter(parent__slug=protein_rf_slug).count()
 
     # Grab thermostabilising mutations
-    mutations_thermo = ConstructMutation.objects.filter(effects__slug='thermostabilising', construct__protein__family__parent__parent__parent__slug=protein_class_slug).all()\
-                .prefetch_related(
-                    "construct__structure__state",
-                    "residue__generic_number",
-                    "residue__protein_segment",
-                    "construct__protein__family__parent__parent__parent",
-                    "construct__crystal")
+    key = "CD_all_thermo_mutations_class_%s" % protein_class_slug
+    mutations = cache.get(key)
+    if not mutations:
+        mutations = []
+        mutations_thermo = ConstructMutation.objects.filter(effects__slug='thermostabilising', construct__protein__family__parent__parent__parent__slug=protein_class_slug).all()\
+                    .prefetch_related(
+                        # "construct__structure__state",
+                        "residue__generic_number",
+                        # "residue__protein_segment",
+                        "construct__protein__family__parent__parent__parent",
+                        "construct__crystal"
+                        )
+        for mutant in mutations_thermo:
+            if not mutant.residue.generic_number:
+                continue
+            prot = mutant.construct.protein
+            p_receptor = prot.family.parent.name
+            real_receptor = prot.entry_name
+            pdb = mutant.construct.crystal.pdb_code
+            gn = mutant.residue.generic_number.label
+            mutations.append(([mutant.sequence_number,mutant.wild_type_amino_acid,mutant.mutated_amino_acid],real_receptor,pdb, p_receptor,gn))
 
-    for mutant in mutations_thermo:
-        # Get info for the construct
-        struct_id = mutant.construct.structure_id
-        state = mutant.construct.structure.state.name
-        prot = mutant.construct.protein
-        p_class = prot.family.parent.parent.parent.name
-        p_ligand = prot.family.parent.parent.name
-        p_receptor = prot.family.parent.name
-        real_receptor = prot.entry_name
-        pdb = mutant.construct.crystal.pdb_code
-        if real_receptor not in proteins:
-            proteins.append(real_receptor)
-        mutations.append((mutant,real_receptor,pdb, p_receptor))
-        if mutant.sequence_number not in positions:
-            positions.append(mutant.sequence_number)
+        cache.set(key,mutations,60*60*24)
 
-    #print(positions)
-    #print(proteins)
-
-    rs = Residue.objects.filter(protein_conformation__protein__entry_name__in=proteins, sequence_number__in=positions).prefetch_related('generic_number','protein_conformation__protein')
-
-    rs_lookup = {}
-    gns = []
+    # Build current target residue GN mapping
+    rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug, generic_number__isnull=False).prefetch_related('generic_number', 'protein_segment')
+    
+    # Build a dictionary to know how far a residue is from segment end/start
+    # Used for propensity removals
+    start_end_segments = {}
     for r in rs:
-        if not r.generic_number:
-            continue #skip non GN
-        entry_name = r.protein_conformation.protein.entry_name
-        gn = r.generic_number.label
-        pos = r.sequence_number
-        if entry_name not in rs_lookup:
-            rs_lookup[entry_name] = {}
-        if pos not in rs_lookup[entry_name]:
-            rs_lookup[entry_name][pos] = gn
-        if gn not in gns:
-            gns.append(gn)
-    #print(rs_lookup)
-
-    rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug, generic_number__label__in=gns).prefetch_related('protein_segment','display_generic_number','generic_number')
+        if r.protein_segment.slug not in start_end_segments:
+            start_end_segments[r.protein_segment.slug] = {'start':r.sequence_number}
+        start_end_segments[r.protein_segment.slug]['end'] = r.sequence_number
 
     wt_lookup = {}
+    GP_residues_in_target = []
     for r in rs:
         gn = r.generic_number.label
-        wt_lookup[gn] = [r.amino_acid, r.sequence_number]
-  
+        from_start = r.sequence_number-start_end_segments[r.protein_segment.slug]['start']
+        from_end = start_end_segments[r.protein_segment.slug]['end'] - r.sequence_number
+        wt_lookup[gn] = [r.amino_acid, r.sequence_number,r.protein_segment.slug]
+        if r.amino_acid in ["G","P"] and from_start>=4 and from_end>=4:
+            # build a list of potential GP removals (ignore those close to helix borders)
+            GP_residues_in_target.append(gn)
+
+    # Go through all mutations and find groupings (common)
     mutation_list = OrderedDict()
     for mutation in mutations:
-        pos = mutation[0].sequence_number
+        pos = mutation[0][0]
+        mut_wt = mutation[0][1]
+        mut_mut = mutation[0][2]
         entry_name = mutation[1]
         pdb = mutation[2]
         family = mutation[3]
-        if entry_name not in rs_lookup:
-            continue
-        if pos not in rs_lookup[entry_name]:
-            continue
-        gn = rs_lookup[entry_name][pos]
+        gn = mutation[4]
 
         # First do the ones with same WT
-        full_mutation = "%s_%s_%s" % (gn,mutation[0].wild_type_amino_acid,"X")
-        if gn in wt_lookup and wt_lookup[gn][0]==mutation[0].wild_type_amino_acid:
+        full_mutation = "%s_%s_%s" % (gn,mut_wt,"X")
+        if gn in wt_lookup and wt_lookup[gn][0]==mut_wt:
             # Only use those that have the same WT residue at GN
             if full_mutation not in mutation_list:
                 mutation_list[full_mutation] = {'proteins':[], 'hits':0, 'mutation':[[],[]], 'wt':'', 'pdbs':[], 'protein_families': []}
@@ -1003,8 +978,8 @@ def mutations(request, slug, **response_kwargs):
             if entry_name not in mutation_list[full_mutation]['proteins']:
                 mutation_list[full_mutation]['proteins'].append(entry_name)
                 mutation_list[full_mutation]['hits'] += 1  
-                mutation_list[full_mutation]['mutation'][0].append(mutation[0].wild_type_amino_acid)
-                mutation_list[full_mutation]['mutation'][1].append(mutation[0].mutated_amino_acid)
+                mutation_list[full_mutation]['mutation'][0].append(mut_wt)
+                mutation_list[full_mutation]['mutation'][1].append(mut_mut)
                 if gn in wt_lookup:
                     mutation_list[full_mutation]['wt'] = wt_lookup[gn]
                 if family not in mutation_list[full_mutation]['protein_families']:
@@ -1014,8 +989,8 @@ def mutations(request, slug, **response_kwargs):
                 mutation_list[full_mutation]['pdbs'].append(pdb)
 
         # Second, check those with same mutated AA
-        full_mutation = "%s_%s_%s" % (gn,"X",mutation[0].mutated_amino_acid)
-        if gn in wt_lookup and wt_lookup[gn][0]!=mutation[0].mutated_amino_acid:
+        full_mutation = "%s_%s_%s" % (gn,"X",mut_mut)
+        if gn in wt_lookup and wt_lookup[gn][0]!=mut_mut:
             if full_mutation not in mutation_list:
                 mutation_list[full_mutation] = {'proteins':[], 'hits':0, 'mutation':[[],[]], 'wt':'', 'pdbs':[], 'protein_families': []}
 
@@ -1024,8 +999,8 @@ def mutations(request, slug, **response_kwargs):
             if entry_name not in mutation_list[full_mutation]['proteins']:
                 mutation_list[full_mutation]['proteins'].append(entry_name)
                 mutation_list[full_mutation]['hits'] += 1  
-                mutation_list[full_mutation]['mutation'][0].append(mutation[0].wild_type_amino_acid)
-                mutation_list[full_mutation]['mutation'][1].append(mutation[0].mutated_amino_acid)
+                mutation_list[full_mutation]['mutation'][0].append(mut_wt)
+                mutation_list[full_mutation]['mutation'][1].append(mut_mut)
                 if gn in wt_lookup:
                     mutation_list[full_mutation]['wt'] = wt_lookup[gn]
                 if family not in mutation_list[full_mutation]['protein_families']:
@@ -1034,6 +1009,7 @@ def mutations(request, slug, **response_kwargs):
             if pdb not in mutation_list[full_mutation]['pdbs']:
                 mutation_list[full_mutation]['pdbs'].append(pdb)
 
+    # Go through the previous list and filter with rules and add rule matches
     simple_list = OrderedDict()
     mutation_list = OrderedDict(sorted(mutation_list.items(), key=lambda x: x[1]['hits'],reverse=True))
     for gn, vals in mutation_list.items():
@@ -1069,7 +1045,6 @@ def mutations(request, slug, **response_kwargs):
 
         else:
             # Below rules is for the common WT (But different mut AA)
-
             if len(vals['protein_families'])>=2:
                 definition_matches.append([2,'common_wt'])
             elif protein_rf_name not in vals['protein_families']:
@@ -1078,16 +1053,15 @@ def mutations(request, slug, **response_kwargs):
                     # If class A require two distinct receptor families
                     definition_matches.append([3,'same_wt'])
         if definition_matches:
-            # print(gn,vals)
-            #print(definition_matches)
             min_priority = min(x[0] for x in definition_matches)
             pos = vals['wt'][1]
             wt_aa = vals['wt'][0]
+            segment = vals['wt'][2]
             origin = {'pdbs': vals['pdbs'], 'protein_families': vals['protein_families'], 'proteins': vals['proteins'], 'hits':vals['hits']} 
             gpcrdb = gn.split("_")[0]
             for mut_aa in set(vals['mutation'][1]):
                 if mut_aa!=wt_aa:
-                    mut = {'wt_aa': wt_aa, 'pos': pos, 'gpcrdb':gpcrdb, 'mut_aa':mut_aa, 'definitions' : definition_matches, 'priority': min_priority, 'origin': [origin]}
+                    mut = {'wt_aa': wt_aa, 'segment': segment, 'pos': pos, 'gpcrdb':gpcrdb, 'mut_aa':mut_aa, 'definitions' : definition_matches, 'priority': min_priority, 'origin': [origin]}
                     key = '%s%s%s' % (wt_aa,pos,mut_aa)
                     # print(key,mut)
                     if key not in simple_list:
@@ -1098,49 +1072,104 @@ def mutations(request, slug, **response_kwargs):
                         simple_list[key]['priority'] = min_priority
                         simple_list[key]['origin'].append(origin)
 
-    simple_list = OrderedDict(sorted(simple_list.items(), key=lambda x: x[1]['priority']))
-    for key, val in simple_list.items():
-        print(key,val)
-
-
-    # # If class do more strict filtering
-    # if protein_class_slug=='001':
-    #     for gn, vals in mutation_list.items():
-    #         if len(vals['protein_families'])<2:
-    #             # if not from 2 seperate families
-    #             if not protein_rf_name in vals['protein_families'] or vals['hits'] < 2: 
-    #                 # if not from same receptor family, or there was only one hit
-
-    #                 # if it's not from same receptor
-    #                 if slug.split("_")[0] not in vals['proteins']:
-    #                     mutation_list.pop(gn, None)
-    # else:
-    #     # For other classes be more 'lax
-    #     for gn, vals in mutation_list.items():
-    #         if vals['hits'] < 1: 
-    #             # if not from same receptor family, or there was only one hit
-    #             # if it's not from same receptor
-    #             if slug.split("_")[0] not in vals['proteins']:
-    #                 mutation_list.pop(gn, None)
-
-
-    # # Make a prettier / easier dump for tool
-    # simple_list = []
-    # for gn, vals in mutation_list.items():
-    #     print(gn,vals)
 
     # TODO : overlay with other types of mutations, e.g. surfacing expressing 
 
-    #print(mutation_list)
+    # Conservation rules and Helix propensity rules
+
+    rf_conservation = calculate_conservation(slug=protein_rf_slug)
+    rf_cutoff = 5
+    rf_conservation_priority = 3
+    definition_matches = [rf_conservation_priority,'conservation_rf']
+    for cons_gn, aa in rf_conservation.items():
+        if int(aa[1])>=rf_cutoff and cons_gn in wt_lookup and wt_lookup[cons_gn][0]!=aa[0] and aa[0]!="+":
+            # If cons_gn exist in target but AA is not the same
+            mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':aa[0], 'definitions' : [definition_matches], 'priority': rf_conservation_priority}
+            key = '%s%s%s' % (wt_lookup[cons_gn][0],wt_lookup[cons_gn][1],aa[0])
+            if key not in simple_list:
+                simple_list[key] = mut
+            else:
+                simple_list[key]['definitions'] += [definition_matches]
+                min_priority = min(x[0] for x in simple_list[key]['definitions'])
+                simple_list[key]['priority'] = min_priority
+
+        # Apply helix propensity rules
+        if cons_gn in GP_residues_in_target:
+            if not (wt_lookup[cons_gn][0]==aa[0] and int(aa[1])>5):
+                rule = [2,"remove_unconserved_%s" % wt_lookup[cons_gn][0]]
+                mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':'A', 'definitions' : [rule], 'priority': 2}
+                key = '%s%s%s' % (wt_lookup[cons_gn][0],wt_lookup[cons_gn][1],'A')
+                if key not in simple_list:
+                    simple_list[key] = mut
+                else:
+                    simple_list[key]['definitions'] += [rule]
+                    min_priority = min(x[0] for x in simple_list[key]['definitions'])
+                    simple_list[key]['priority'] = min_priority
 
 
-    #print(json.dumps(mutation_list, indent=4))
+    class_conservation = calculate_conservation(slug=protein_class_slug)
+    class_cutoff = 7
+    class_conservation_priority = 4
+    definition_matches = [class_conservation_priority,'conservation_class']
+    for cons_gn, aa in class_conservation.items():
+        if int(aa[1])>=class_cutoff and cons_gn in wt_lookup and wt_lookup[cons_gn][0]!=aa[0] and aa[0]!="+":
+            # If cons_gn exist in target but AA is not the same
+            mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':aa[0], 'definitions' : [definition_matches], 'priority': class_conservation_priority}
+            key = '%s%s%s' % (wt_lookup[cons_gn][0],wt_lookup[cons_gn][1],aa[0])
+            if key not in simple_list:
+                simple_list[key] = mut
+            else:
+                simple_list[key]['definitions'] += [definition_matches]
+                min_priority = min(x[0] for x in simple_list[key]['definitions'])
+                simple_list[key]['priority'] = min_priority
+
+        # Apply helix propensity rules from class when receptor family only has one member or non-classA
+        if (protein_rf_count==1 or protein_class_slug!='001') and cons_gn in GP_residues_in_target:
+            if not (wt_lookup[cons_gn][0]==aa[0] and int(aa[1])>5):
+                rule = [2,"remove_unconserved_%s" % wt_lookup[cons_gn][0]]
+                mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':'A', 'definitions' : [rule], 'priority': 2}
+                key = '%s%s%s' % (wt_lookup[cons_gn][0],wt_lookup[cons_gn][1],'A')
+                if key not in simple_list:
+                    simple_list[key] = mut
+                else:
+                    if rule not in simple_list[key]['definitions']:
+                        # Do not add this rule if it is already there (From RF check)
+                        simple_list[key]['definitions'] += [rule]
+                        min_priority = min(x[0] for x in simple_list[key]['definitions'])
+                        simple_list[key]['priority'] = min_priority
+
+
+    xtals_conservation = cache.get("CD_xtal_cons_"+protein_class_slug)
+    if not xtals_conservation:
+        c_proteins = Construct.objects.filter(protein__family__slug__startswith = protein_class_slug).all().values_list('protein__pk', flat = True).distinct()
+        xtal_proteins = Protein.objects.filter(pk__in=c_proteins)
+        print(xtal_proteins)
+        xtals_conservation = calculate_conservation(proteins=xtal_proteins)
+        cache.set("CD_xtal_cons_"+protein_class_slug,xtals_conservation,60*60*24)
+
+    xtals_cutoff = 5
+    xtals_conservation_priority = 4
+    definition_matches = [xtals_conservation_priority,'conservation_xtals']
+    for cons_gn, aa in class_conservation.items():
+        if int(aa[1])>=xtals_cutoff and cons_gn in wt_lookup and wt_lookup[cons_gn][0]!=aa[0] and aa[0]!="+":
+            # If cons_gn exist in target but AA is not the same
+            mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':aa[0], 'definitions' : [definition_matches], 'priority': xtals_conservation_priority}
+            key = '%s%s%s' % (wt_lookup[cons_gn][0],wt_lookup[cons_gn][1],aa[0])
+            if key not in simple_list:
+                simple_list[key] = mut
+            else:
+                simple_list[key]['definitions'] += [definition_matches]
+                min_priority = min(x[0] for x in simple_list[key]['definitions'])
+                simple_list[key]['priority'] = min_priority
+
+    simple_list = OrderedDict(sorted(simple_list.items(), key=lambda x: (x[1]['priority'],x[1]['pos']) ))
+    for key, val in simple_list.items():
+        val['definitions'] = [x[1] for x in val['definitions']]
 
     jsondata = simple_list
     jsondata = json.dumps(jsondata)
     response_kwargs['content_type'] = 'application/json'
-    end_time = time.time()
-    diff = round(end_time - start_time,1)
+    diff = round(time.time() - start_time,1)
     print("muts",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
@@ -1465,3 +1494,47 @@ def cons_rm_GP(request, slug, **response_kwargs):
     diff = round(end_time - start_time,1)
     print("cons_rm_GP",diff)
     return HttpResponse(jsondata, **response_kwargs)
+
+def calculate_conservation(proteins = None, slug = None):
+    # Return a a dictionary of each generic number and the conserved residue and its frequency
+    # Can either be used on a list of proteins or on a slug. If slug then use the cached alignment object.
+
+    amino_acids_stats = {}
+    amino_acids_groups_stats = {}
+
+    if slug:
+        try: 
+            # Load alignment 
+            alignment_consensus = AlignmentConsensus.objects.get(slug=slug)
+            if alignment_consensus.gn_consensus:
+                return pickle.loads(alignment_consensus.gn_consensus)
+            a = pickle.loads(alignment_consensus.alignment)
+        except: 
+            proteins = Protein.objects.filter(family__slug__startswith=slug, source__name='SWISSPROT',species__common_name='Human')
+            align_segments = ProteinSegment.objects.all().filter(slug__in = list(settings.REFERENCE_POSITIONS.keys())).prefetch_related()
+            a = Alignment()
+            a.load_proteins(proteins)
+            a.load_segments(align_segments) 
+            a.build_alignment()
+            # calculate consensus sequence + amino acid and feature frequency
+            a.calculate_statistics()
+    elif proteins:
+        align_segments = ProteinSegment.objects.all().filter(slug__in = list(settings.REFERENCE_POSITIONS.keys())).prefetch_related()
+        a = Alignment()
+        a.load_proteins(proteins)
+        a.load_segments(align_segments) 
+        a.build_alignment()
+        # calculate consensus sequence + amino acid and feature frequency
+        a.calculate_statistics()
+
+
+    consensus = {}
+    for seg, aa_list in a.consensus.items():
+        for gn, aa in aa_list.items():
+            if 'x' in gn: # only takes those GN positions that are actual 1x50 etc
+                consensus[gn] = [aa[0],aa[1]]
+    if slug and alignment_consensus:
+        alignment_consensus.gn_consensus = pickle.dumps(consensus)
+        alignment_consensus.save()
+
+    return consensus
