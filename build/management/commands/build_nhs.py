@@ -55,8 +55,7 @@ class Command(BaseCommand):
 
         for filename in filenames:
             filepath = os.sep.join([self.drug_data_path, filename])
-            nhs_data =  pd.read_csv(filepath, low_memory=False)
-            nhs_data = nhs_data
+            nhs_data = pd.read_csv(filepath, low_memory=False)
 
             for index, entry in enumerate(nhs_data.iterrows()):
 
@@ -69,17 +68,15 @@ class Command(BaseCommand):
                 bnf_section_raw = nhs_data[index:index+1]['section'].values[0]
                 bnf_section_name = bnf_section_raw.split(': ')[1]
                 bnf_section_id = bnf_section_raw.split(': ')[0]
-
                 drugNameQuery = nhs_data[index:index+1]['drugNameQuery'].values[0]
 
                 try:
                     drugname = Drugs.objects.filter(name=drugNameQuery)[0]
-                except Drugs.DoesNotExist:
-                    self.logger.warning('Drug not found for cehmical {}'.format(drugNameQuery))
+
+                except:
+                    self.logger.warning('Drug not found for chemical {}'.format(drugNameQuery))
                     continue
 
-
-
-                nhs, created = NHSPrescribings.objects.get_or_create(date=date, quantity=quantity, items=items, actual_cost=actual_cost, drugCode=drugCode, op_name=op_name, bnf_section=bnf_section_name, drugname =drugname)
+                nhs, created = NHSPrescribings.objects.get_or_create(date=date, quantity=quantity, items=items, actual_cost=actual_cost, drugCode=drugCode, op_name=op_name, bnf_section=bnf_section_name, drugname=drugname)
 
         self.logger.info('COMPLETED CREATING NHS PRESCRIBINGS')
