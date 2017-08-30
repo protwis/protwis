@@ -47,15 +47,16 @@ class Command(BaseCommand):
 
         # read source files
         if not filenames:
-            filenames = os.listdir(self.drugdata_data_dir)
+            filenames = [fn for fn in os.listdir(self.drugdata_data_dir) if fn.endswith('drug_data.csv')]
 
         for filename in filenames:
 
             filepath = os.sep.join([self.drugdata_data_dir, filename])
 
-            data = pd.read_csv(filepath, header=0, encoding = "ISO-8859-1")
+            data = pd.read_csv(filepath, low_memory=False, encoding = "ISO-8859-1")
 
             for index, row in enumerate(data.iterrows()):
+
                 drugname = data[index:index+1]['Drug Name'].values[0]
                 trialname = data[index:index+1]['Trial name'].values[0]
                 drugalias_raw = data[index:index+1]['DrugAliases'].values[0]
@@ -77,15 +78,17 @@ class Command(BaseCommand):
                 approval = data[index:index+1]['Approval'].values[0]
                 status = data[index:index+1]['Status'].values[0]
 
+                references = data[index:index+1]['PMID'].values[0]
+
                 # fetch protein
                 try:
                     p = Protein.objects.get(entry_name=entry_name)
                 except Protein.DoesNotExist:
                     self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
-                    print('error', entry_name)
+                    print('error', drugname, entry_name)
                     continue
 
-                drug, created = Drugs.objects.get_or_create(name=drugname, drugtype=drugtype, indication=indication, novelty=novelty, approval=approval, phase=phase, phasedate=PhaseDate, clinicalstatus=ClinicalStatus, moa=moa, status=status, targetlevel=targetlevel)
+                drug, created = Drugs.objects.get_or_create(name=drugname, synonym=', '.join(drugalias), drugtype=drugtype, indication=indication, novelty=novelty, approval=approval, phase=phase, phasedate=PhaseDate, clinicalstatus=ClinicalStatus, moa=moa, status=status, targetlevel=targetlevel,references=references)
                 drug.target.add(p)
                 drug.save()
 

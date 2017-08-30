@@ -265,8 +265,6 @@ def drugbrowser(request):
             target_list = drug.target.all()
             targets = []
             for protein in target_list:
-                # targets.append(str(protein))
-                # jsondata = {'name':drugname, 'target': str(protein), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
 
                 clas = str(protein.family.parent.parent.parent.name)
                 family = str(protein.family.parent.name)
@@ -276,9 +274,9 @@ def drugbrowser(request):
 
             # jsondata = {'name':drugname, 'target': ', '.join(set(targets)), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
             # context.append(jsondata)
-        # cache.set(name_of_cache, context, 60*60*24*1) # two days timeout on cache
+        cache.set(name_of_cache, context, 60*60*24*7) # two days timeout on cache
 
-    return render(request, 'drugbrowser.html', {'drugdata':drugdata})
+    return render(request, 'drugbrowser.html', {'drugdata':context})
 
 @cache_page(60*60*24*7)
 def drugmapping(request):
@@ -472,4 +470,5 @@ def nhs_section(request, slug):
     for nhs_name in data_dic.keys():
         # print (len(data_dic[nhs_name]), nhs_name)
         data.append({'values': data_dic[nhs_name], 'key':nhs_name})
+
     return render(request, 'nhs.html', {'data':data, 'drug':slug, 'section':list(set(sections))})

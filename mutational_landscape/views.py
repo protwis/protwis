@@ -559,7 +559,7 @@ def statistics(request):
 
     return render(request, 'variation_statistics2.html', context)
 
-# @cache_page(60*60*24*7) #  2 days
+# @cache_page(60*60*24*7)
 def economicburden(request):
     economic_data = [{'values': [{'y': 0.886, 'x': 1}], 'key': 'Analgesics', 'yAxis': 'Scaling factor 1'},
     {'values': [{'y': 0.118, 'x': 1}], 'key': 'Antidepressant Drugs', 'yAxis': 'Scaling factor 1'},
@@ -574,6 +574,101 @@ def economicburden(request):
     {'values': [{'y': 0.257, 'x': 1}], 'key': 'Other', 'yAxis': 'Scaling factor 1'}]
 
     ### PER DRUG TABLE
+
+    ## functional sites
+
+    # ptms = PTMs.objects.all().prefetch_related('residue')
+    # ptms_dict = {}
+    #
+    # ## MICROSWITCHES
+    # micro_switches_rset = ResiduePositionSet.objects.get(name="Microswitches")
+    # ms_label = []
+    # for residue in micro_switches_rset.residue_position.all():
+    #     ms_label.append(residue.label)
+    #
+    # ms_object = Residue.objects.filter(protein_conformation__protein__entry_name=proteins[0], generic_number__label__in=ms_label)
+    # ms_sequence_numbers = []
+    # for ms in ms_object:
+    #     ms_sequence_numbers.append(ms.sequence_number)
+    #
+    # ## SODIUM POCKET
+    # sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium pocket")
+    # sp_label = []
+    # for residue in sodium_pocket_rset.residue_position.all():
+    #     sp_label.append(residue.label)
+    #
+    # sp_object = Residue.objects.filter(protein_conformation__protein__entry_name=proteins[0], generic_number__label__in=ms_label)
+    # sp_sequence_numbers = []
+    # for sp in sp_object:
+    #     sp_sequence_numbers.append(sp.sequence_number)
+    #
+    # for ptm in ptms:
+    #     ptms_dict[ptm.residue.sequence_number] = ptm.modification
+    #
+    # ## G PROTEIN INTERACTION POSITIONS
+    # # THIS SHOULD BE CLASS SPECIFIC (different set)
+    # rset = ResiduePositionSet.objects.get(name='Signalling protein pocket')
+    # gprotein_generic_set = []
+    # for residue in rset.residue_position.all():
+    #     gprotein_generic_set.append(residue.label)
+    #
+    # ### GET LB INTERACTION DATA
+    # # get also ortholog proteins, which might have been crystallised to extract
+    # # interaction data also from those
+    # orthologs = Protein.objects.filter(family__slug__startswith=proteins[0].family.slug, sequence_type__slug='wt')
+    #
+    # interactions = ResidueFragmentInteraction.objects.filter(
+    #     structure_ligand_pair__structure__protein_conformation__protein__parent__in=orthologs, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').order_by('rotamer__residue__sequence_number')
+    # interaction_data = {}
+    # for interaction in interactions:
+    #     if interaction.rotamer.residue.generic_number:
+    #         sequence_number = interaction.rotamer.residue.sequence_number
+    #         # sequence_number = lookup[interaction.rotamer.residue.generic_number.label]
+    #         label = interaction.rotamer.residue.generic_number.label
+    #         aa = interaction.rotamer.residue.amino_acid
+    #         interactiontype = interaction.interaction_type.name
+    #         if sequence_number not in interaction_data:
+    #             interaction_data[sequence_number] = []
+    #         if interactiontype not in interaction_data[sequence_number]:
+    #             interaction_data[sequence_number].append(interactiontype)
+    #
+    # jsondata = {}
+    # for NM in NMs:
+    #     functional_annotation = ''
+    #     SN = NM.residue.sequence_number
+    #     if NM.residue.generic_number:
+    #         GN = NM.residue.generic_number.label
+    #     else:
+    #         GN = ''
+    #     if SN in sp_sequence_numbers:
+    #         functional_annotation +=  'SodiumPocket '
+    #     if SN in ms_sequence_numbers:
+    #         functional_annotation +=  'MicroSwitch '
+    #     if SN in ptms_dict:
+    #         functional_annotation +=  'PTM (' + ptms_dict[SN] + ') '
+    #     if SN in interaction_data:
+    #         functional_annotation +=  'LB (' + ', '.join(interaction_data[SN]) + ') '
+    #     if GN in gprotein_generic_set:
+    #         functional_annotation +=  'GP (contact) '
+    #
+    #     type = NM.type
+    #     if type == 'missense':
+    #         effect = 'deleterious' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else 'tolerated'
+    #         color = '#e30e0e' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else '#70c070'
+    #     else:
+    #         effect = 'deleterious'
+    #         color = '#575c9d'
+    #     # account for multiple mutations at this position!
+    #     NM.functional_annotation = functional_annotation
+    #     # print(NM.functional_annotation)
+    #     jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes, NM.type, effect, color, functional_annotation]
+
+    ## drug data
+    nhs_sections = NHSPrescribings.objects.all().values("drugname__name", "bnf_section").distinct()
+    section_dict = {}
+    for drug in nhs_sections:
+        section_dict[drug['drugname__name']] = drug['bnf_section']
+
     nhs_data = NHSPrescribings.objects.all().values('drugname__name').annotate(Avg('actual_cost'), Avg('items'), Avg('quantity'))
 
     drug_data = []
@@ -584,6 +679,7 @@ def economicburden(request):
         average_cost = round(i['actual_cost__avg'],0)
         average_quantity = round(i['quantity__avg'],0)
         average_items = round(i['items__avg'],1)
+        section = section_dict[drugname]
 
         if average_items > 0:
             item_cost= round(float(average_cost)/average_items,1)
@@ -593,11 +689,12 @@ def economicburden(request):
         ## get target information
         protein_targets = Protein.objects.filter(drugs__name=drugname).distinct()
         targets = [p.entry_name.split('_human')[0].upper() for p in list(protein_targets)]
-        known_functional = 0
-        putative_func = 0
 
+        known_functional = 'NaN'
 
-        jsondata = {'drugname':drugname, 'targets': targets, 'average_cost': average_cost, 'average_quantity': average_quantity, 'average_items':average_items, 'item_cost':item_cost, 'known_functional': known_functional, 'putative_func':putative_func}
+        putative_func = len(NaturalMutations.objects.filter(Q(protein__in=protein_targets), Q(sift_score__lte=0.05) | Q(polyphen_score__gte=0.1)).annotate(count_putative_func=Count('id')))
+
+        jsondata = {'drugname':drugname, 'targets': targets, 'average_cost': average_cost, 'average_quantity': average_quantity, 'average_items':average_items, 'item_cost':item_cost, 'known_functional': known_functional, 'putative_func':putative_func, 'section':section}
         drug_data.append(jsondata)
 
 

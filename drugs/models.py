@@ -15,7 +15,7 @@ from django.db import models
 
 class Drugs(models.Model):
     target = models.ManyToManyField('protein.Protein')
-    name = models.CharField(max_length=75)
+    name = models.CharField(max_length=100)
 
     synonym = models.CharField(max_length=300, null=True) # addName as list, make as ManyField
 
@@ -36,7 +36,7 @@ class Drugs(models.Model):
 
     novelty = models.CharField(max_length=15) #Boolean
 
-    references = models.CharField(max_length=150) #Boolean
+    references = models.CharField(max_length=180) #Boolean
 
     def __str__(self):
         return self.name
