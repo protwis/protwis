@@ -561,17 +561,76 @@ def statistics(request):
 
 # @cache_page(60*60*24*7)
 def economicburden(request):
-    economic_data = [{'values': [{'y': 0.886, 'x': 1}], 'key': 'Analgesics', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.118, 'x': 1}], 'key': 'Antidepressant Drugs', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.203, 'x': 1}], 'key': 'Beta-Adrenoceptor Blocking Drugs', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.524, 'x': 1}], 'key': 'Bronchodilators', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.312, 'x': 1}], 'key': 'Drugs Used In Diabetes', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.080, 'x': 1}], 'key': "Drugs Used In Park'ism/Related Disorders", 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.205, 'x': 1}], 'key': 'Drugs Used In Psychoses & Rel.Disorders', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.102, 'x': 1}], 'key': 'Drugs Used In Substance Dependence', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.080, 'x': 1}], 'key': 'hormones & antagonists in malignant disease', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.072, 'x': 1}], 'key': 'Hypothalamic&Pituitary Hormones&Antioest', 'yAxis': 'Scaling factor 1'},
-    {'values': [{'y': 0.257, 'x': 1}], 'key': 'Other', 'yAxis': 'Scaling factor 1'}]
+    economic_data = [{'key': 'Analgesics',
+  'values': [{'x': 'known-homo', 'y': 0},
+   {'x': 'known-hetero', 'y': 0},
+   {'x': 'putative-homo', 'y': 138729775},
+   {'x': 'putative-hetero', 'y': 852076775}]},
+ {'key': 'Antidepressant Drugs',
+  'values': [{'x': 'known-homo', 'y': 0},
+   {'x': 'known-hetero', 'y': 0},
+   {'x': 'putative-homo', 'y': 0},
+   {'x': 'putative-hetero', 'y': 117515697}]},
+ {'key': 'Antihist, Hyposensit & Allergic Emergen',
+  'values': [{'x': 'known-homo', 'y': 0},
+   {'x': 'known-hetero', 'y': 0},
+   {'x': 'putative-homo', 'y': 0},
+   {'x': 'putative-hetero', 'y': 87803411}]},
+ {'key': 'Antispasmod.&Other Drgs Alt.Gut Motility',
+  'values': [{'x': 'known-homo', 'y': 0},
+   {'x': 'known-hetero', 'y': 0},
+   {'x': 'putative-homo', 'y': 0},
+   {'x': 'putative-hetero', 'y': 54611327}]},
+ {'key': 'Beta-Adrenoceptor Blocking Drugs',
+  'values': [{'x': 'known-homo', 'y': 0},
+   {'x': 'known-hetero', 'y': 0},
+   {'x': 'putative-homo', 'y': 47857516},
+   {'x': 'putative-hetero', 'y': 150812524}]},
+ {'key': 'Bronchodilators',
+  'values': [{'x': 'known-homo', 'y': 0},
+   {'x': 'known-hetero', 'y': 41074219},
+   {'x': 'putative-homo', 'y': 137046938},
+   {'x': 'putative-hetero', 'y': 470255724}]},
+ {'key': 'Drugs For Genito-Urinary Disorders',
+  'values': [{'x': 'known-homo', 'y': 0},
+   {'x': 'known-hetero', 'y': 0},
+   {'x': 'putative-homo', 'y': 0},
+   {'x': 'putative-hetero', 'y': 41526465}]},
+ {'key': 'Drugs Used In Diabetes',
+  'values': [{'x': 'known-homo', 'y': 73753896},
+   {'x': 'known-hetero', 'y': 251228756},
+   {'x': 'putative-homo', 'y': 73753896},
+   {'x': 'putative-hetero', 'y': 255738363}]},
+ {'key': "Drugs Used In Park'ism/Related Disorders",
+  'values': [{'x': 'known-homo', 'y': 0},
+   {'x': 'known-hetero', 'y': 0},
+   {'x': 'putative-homo', 'y': 0},
+   {'x': 'putative-hetero', 'y': 79762195}]},
+ {'key': 'Drugs Used In Psychoses & Rel.Disorders',
+  'values': [{'x': 'known-homo', 'y': 0},
+   {'x': 'known-hetero', 'y': 0},
+   {'x': 'putative-homo', 'y': 0},
+   {'x': 'putative-hetero', 'y': 152517877}]},
+ {'key': 'Drugs Used In Substance Dependence',
+  'values': [{'x': 'known-homo', 'y': 0},
+   {'x': 'known-hetero', 'y': 0},
+   {'x': 'putative-homo', 'y': 0},
+   {'x': 'putative-hetero', 'y': 88442258}]},
+ {'key': 'Hypothalamic&Pituitary Hormones&Antioest',
+  'values': [{'x': 'known-homo', 'y': 0},
+   {'x': 'known-hetero', 'y': 0},
+   {'x': 'putative-homo', 'y': 0},
+   {'x': 'putative-hetero', 'y': 72449192}]},
+ {'key': 'Sex Hormones & Antag In Malig Disease',
+  'values': [{'x': 'known-homo', 'y': 0},
+   {'x': 'known-hetero', 'y': 0},
+   {'x': 'putative-homo', 'y': 0},
+   {'x': 'putative-hetero', 'y': 81779136}]},
+ {'key': 'other',
+  'values': [{'x': 'known-homo', 'y': 5075664},
+   {'x': 'known-hetero', 'y': 63027544},
+   {'x': 'putative-homo', 'y': 161011110},
+   {'x': 'putative-hetero', 'y': 147981073}]}]
 
     ### PER DRUG TABLE
 
@@ -667,7 +726,10 @@ def economicburden(request):
     nhs_sections = NHSPrescribings.objects.all().values("drugname__name", "bnf_section").distinct()
     section_dict = {}
     for drug in nhs_sections:
-        section_dict[drug['drugname__name']] = drug['bnf_section']
+        if drug['drugname__name'] in section_dict:
+            section_dict[drug['drugname__name']].append(drug['bnf_section'])
+        else:
+            section_dict[drug['drugname__name']] = [drug['bnf_section']]
 
     nhs_data = NHSPrescribings.objects.all().values('drugname__name').annotate(Avg('actual_cost'), Avg('items'), Avg('quantity'))
 

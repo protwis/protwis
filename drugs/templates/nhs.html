@@ -64,7 +64,7 @@ window.onload = function () {
         .showControls(true)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
         // .groupSpacing(0.1)    //Distance between each group of bars.
         .stacked(true)
-        .margin({"left": 120, "right": 50, "top": 100, "bottom": 70,})
+        .margin({"left": 120, "right": 20, "top": 100, "bottom": 70,})
         // .xScale(d3.time.scale()); // use a time scale instead of plain numbers in order to get nice round default values in the axis
 
       chart.xAxis
@@ -76,7 +76,7 @@ window.onload = function () {
               return d3.time.format('%m-%Y')(new Date(d))
           });
       chart.yAxis
-          .axisLabel("Spending in GBP")
+          .axisLabel("Spending in GBP (£)")
           .showMaxMin(false)
           .axisLabelDistance(20)
           .tickFormat(d3.format(','));
@@ -86,7 +86,7 @@ window.onload = function () {
 
           d.series.forEach(function(elem){
             html += "<h4 style='color:"+elem.color+"'>"
-                    +elem.key+"</h4> NHS spending this month: <b>"+elem.value.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,')+" &pound"+"</b>";
+                    +elem.key+"</h4> NHS spending this month: <b>"+elem.value.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,')+" &pound  "+"</b>";
           })
           html += "</ul>"
           return html;

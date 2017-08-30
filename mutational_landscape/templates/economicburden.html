@@ -7,12 +7,14 @@
 <!-- <link href="{% static 'home/css/residue_table.css' %}" rel="stylesheet"> -->
 <!-- <link href="{% static 'home/css/alignment.css' %}" rel="stylesheet"> -->
 <style>
-/*table.dataTable tbody td {
-  white-space: nowrap;
-}*/
-overflow:auto;
- height: 400px;
- position:relative;
+table.dataTable thead tr th {
+    word-wrap: break-word;
+    word-break: break-all;
+}
+table.dataTable tbody tr td {
+    word-wrap: break-word;
+    word-break: break-all;
+}
 </style>
 {% endblock %}
 {% block content %}
@@ -24,12 +26,12 @@ overflow:auto;
 <div class="row">
 <div class="col-sm-3"></div>
   <div class="col-md-6">
-     <button id="update">add scaling / correction factor</button>
+     <button id="update">add scaling factor for drugs targeting polymorphic putative functional sites</button>
      <input id="updater" type="text" maxlength="5" size="6" value="1.0" name="cutoff"
   </div>
   <div class="col-sm-3"></div>
 </div>
-<br><br><br><br><br>
+<br><br><br>
 <h4>Calculations</h4>
 <p>The economic burden was estimated by:</p>
 <p style="text-align: center;"><em>estimated economic burden per drug (&pound;) <strong>=</strong> NHS cost per drug per year (&pound;) <strong>x</strong></em></p>
@@ -47,8 +49,10 @@ overflow:auto;
     <!-- Download button -->
     <a class="btn btn-sm btn-primary" href="download" role="button">
     <span class="glyphicon glyphicon-download"></span> Download</a>
-        <div style="padding-top: 10px; font-size: 11px;">
-            <table width="100%" class="display" id="drugdata">
+<div class="row">
+    <div class="col-md-11 text-center">
+        <div style="padding-top: 10px; font-size: 11px;white-space: nowrap;">
+            <table width="100%" id="drugdata">
                 <thead>
                     <tr>
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="amino acid substitution, wildtype to mutant" data-placement="top">Drug Name</th>
@@ -100,12 +104,16 @@ overflow:auto;
                   <td>{{drug.average_items}}</td>
                   <td>{{drug.item_cost}}</td>
                   <td>{{drug.putative_func}}</td>
-                  <td><a href='/drugs/nhs/section/{{ drug.section }} '>{{ drug.section }}</a></td>
+                  <td>{% for section in drug.section %}
+                  <a href='/drugs/nhs/section/{{ section }} '>{{ section }}</a>
+                  {% endfor %}</td>
                 </tr>
                 {% endfor %}
             </table>
         </div>
-        <br><br>
+      </div>
+    </div>
+<br><br>
 {% endblock %}
 {% block addon_js %}
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
@@ -118,25 +126,25 @@ overflow:auto;
 <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
             var table = $('#drugdata').DataTable({
-                /*"scrollX": true,*/
+                // 'scrollX': true,
                 /*// 'scrollY': $(window).height()-300,*/
-                'bScrollCollapse': true,
+                // 'scrollCollapse': true,
                 'paging': true,
-                "lengthMenu": [[20, 50, 100, -1], [20, 50, 100, "All"]],
+                'lengthMenu': [[20, 50, 100, -1], [20, 50, 100, "All"]],
                 'orderCellsTop': true,
-                'autoWidth': true,
-                "sScrollX": "100%",
-                "sScrollXInner": "100%",
-                'order': [[4, "asc"]],
+                'autoWidth': false,
+                // 'sScrollX': "100%",
+                // 'sScrollXInner': "100%",
+                'order': [[3, "asc"]],
                 'dom': 'T<"clear">lfrtip',
-                "aoColumns": [
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"},
-                        {"sClass": "center"}],
+                'columnDefs': [
+                  {"width": "10%", targets: 0},
+                  {"width": "20%", targets: 1},
+                  {"width": "10%", targets: 2},
+                  {"width": "10%", targets: 3},
+                  {"width": "30%", targets: 4},
+                  {"width": "10%", targets: 5},
+                  {"width": "5%", targets: 6}],
                 'tableTools': {
                     "sRowSelect": "multi",
                     "aButtons": []
@@ -171,20 +179,22 @@ window.onload = function () {
 
       chart = nv.models.multiBarChart()
         .reduceXTicks(false)   //If 'false', every single x-axis tick label will be rendered.
-        .rotateLabels(0)      //Angle to rotate x-axis labels.
+        // .rotateLabels(0)      //Angle to rotate x-axis labels.
         .showControls(true)   //Allow user to switch between 'Grouped' and 'Stacked' mode.
-        .groupSpacing(0.1)    //Distance between each group of bars.
+        // .groupSpacing(0.1)    //Distance between each group of bars.
         .stacked(true)
+        .margin({"left": 120, "right": 50, "top": 100, "bottom": 70,})
       ;
 
       chart.xAxis
-          .axisLabel("correction or scaling factor")
-          .showMaxMin(true)
-          .tickFormat(d3.format(',.1f'))
+          // .axisLabel("correction or scaling factor")
+          // .showMaxMin(true)
+          // .tickFormat(d3.format(',.1f'))
 
       chart.yAxis
-          .axisLabel("estimated economic burden per year (GBP in billion)")
-          .tickFormat(d3.format(',.2f'));
+          .axisLabel("estimated economic burden per year (GBP, £)")
+          .axisLabelDistance(35)
+          .tickFormat(d3.format(','));
 
       chart.multibar.dispatch.on("elementClick", function(e) {
         link = e['data']['key']
@@ -207,7 +217,7 @@ window.onload = function () {
     for (var i = 0; i < rawLength; i++) {
 
       var kk = raw[i]['values'].length;
-      raw[i]['values'][kk] = {'y': raw[i]['values'][0]['y']*cf, 'x': cf}
+      raw[i]['values'][kk] = {'y': raw[i]['values'][3]['y']*cf, 'x': cf}
     }
 
     // Update the SVG with the new data and call chart
