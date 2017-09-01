@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
+from build.management.commands.base_build import Command as BaseBuild
 from django.utils.text import slugify
 from django.conf import settings
 from ligand.functions import get_or_make_ligand
@@ -15,62 +16,60 @@ import logging
 import shlex
 import csv
 import os
+from collections import OrderedDict
 
-class Command(BaseCommand):
+class Command(BaseBuild):
     help = 'Reads source data and creates links to other databases'
 
     def add_arguments(self, parser):
+        parser.add_argument('-p', '--proc',
+            type=int,
+            action='store',
+            dest='proc',
+            default=1,
+            help='Number of processes to run')
         parser.add_argument('--filename', action='append', dest='filename',
             help='Filename to import. Can be used multiple times')
 
     logger = logging.getLogger(__name__)
 
     # source file directory
-    links_data_dir = os.sep.join([settings.DATA_DIR, 'ligand', 'assay'])
-    dictionary_file = os.sep.join([settings.DATA_DIR, 'ligand', 'assay', 'dictionary.txt'])
+    links_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'assay_data'])
+    dictionary_file = os.sep.join([settings.DATA_DIR, 'ligand_data', 'assay_data', 'dictionary.txt'])
     
-    
-    
-    ##chembl_to_cid = load file
     
     def handle(self, *args, **options):
         if options['filename']:
             filenames = options['filename']
         else:
-            filenames = False
-        
-        # try:
-        # def purge_drugs(self):
-        #try:
-        #    Drugs.objects.all().delete()
-        #except Drugs.DoesNotExist:
-        #    self.logger.warning('Drugs mod not found: nothing to delete.')
-        self.control(filenames)
-        #self.create_assays(filenames)
-   
-    def control (self, filenames):
+            filenames = os.listdir(self.links_data_dir)
 
         #chembl_mol_ids,assay_ids = self.extract_chembl_mol_ids(filenames)
         data,header_dict = self.extract_chembl_mol_ids(filenames) #reading the entry file from the data filder.
-        chembl_cid_dict = self.read_dict_file(self.dictionary_file)
+        self.chembl_cid_dict = self.read_dict_file(self.dictionary_file)
+        self.chembl_cid_dict = OrderedDict(self.chembl_cid_dict)
         #found_ids_dict = chembl_cid_dict #testing time. else commented.
 
-##### find the chembl_molecular_ids ############
-        chembl_mol_ids = set()
-        for i in data:
-            chembl_mol_ids.add(i[header_dict['molecule_chembl_id']])
-            #print (i[header_dict['pchembl_value']])
-######## end ##############
-            
+        print("size of current dict",len(self.chembl_cid_dict))
 
+        ##### find the chembl_molecular_ids ############
+        self.chembl_mol_ids = set()
+        for i in data:
+            self.chembl_mol_ids.add(i[header_dict['molecule_chembl_id']])
+            #print (i[header_dict['pchembl_value']])
+        ######## end ##############
+        print("amount of ids in dataset",len(self.chembl_mol_ids))
+            
         ##notfound_ids_set = self.read_notfound(filenames) # testing
-        chembl_cid_dict, notfound_ids_set = self.find_cid(chembl_mol_ids, chembl_cid_dict)
-        chembl_cid_dict, notfound_ids_set = self.call_pubchem_service(chembl_cid_dict, notfound_ids_set)
-        self.write_dictionary_file(chembl_cid_dict)
+        # chembl_cid_dict, notfound_ids_set = self.find_cid(chembl_mol_ids, chembl_cid_dict)
+        # chembl_cid_dict, notfound_ids_set = self.call_pubchem_service(chembl_cid_dict, notfound_ids_set)
+        # self.write_dictionary_file(chembl_cid_dict)
         ###print (len(chembl_mol_ids))
-        self.create_ligand(chembl_cid_dict)
-        self.create_assays(data,header_dict)
-        self.create_assaysExperiment(data,header_dict)
+
+        self.prepare_input(options['proc'], self.chembl_mol_ids)
+
+        # self.create_assays(data,header_dict)
+        # self.create_assaysExperiment(data,header_dict)
         
         
 
@@ -138,7 +137,7 @@ class Command(BaseCommand):
         return assay_ids
 
 
-    def create_ligand(self, found_ids_dict):
+    def main_func(self, positions, iteration,count,lock):
         #####Create chembl compound link and connect it to the corresponding ligand/cid#####
         defaults = {
         'name': 'ChEMBL_compound_ids',
@@ -147,14 +146,29 @@ class Command(BaseCommand):
         wr, created = WebResource.objects.get_or_create(slug='chembl_ligand', defaults = defaults)
         wr_pubchem = WebResource.objects.get(slug='pubchem')
         
-        
-        for chembl_ligand  in found_ids_dict:
-            
-            cids = str(found_ids_dict[chembl_ligand])
-            temp = cids.split(';') #perhaps we should load all of the CIDs
+        print(positions,iteration,count,lock)
+        chembl_ids = self.chembl_mol_ids
+        list_of_chembl_ids = list(chembl_ids)
+        while count.value<len(chembl_ids):
+            with lock:
+                chembl_ligand = list_of_chembl_ids[count.value]
+                count.value +=1 
+
+            if chembl_ligand not in self.chembl_cid_dict.keys():
+                cids, not_found = self.find_cid_for_chembl(chembl_ligand)
+                if not_found:
+                    print('NOT FOUND',chembl_ligand,cids)
+                    continue
+            else:
+                cids = self.chembl_cid_dict[chembl_ligand]
+           # cid = self.chembl_cid_dict[chembl_ligand]
+
+            # cids = str(chembl_ligand[1])
+            temp = str(cids).split(';') #perhaps we should load all of the CIDs
             #print (temp)
             
             cid = str(temp[0])
+            print(count.value)
             #if cid!='3559':
             #    continue
             l = get_or_make_ligand(cid,'PubChem CID') #call the first cid if there are more than one
@@ -216,17 +230,58 @@ class Command(BaseCommand):
             for k in chembl_cid_dict.keys():
                 foo.write('{}\t{}\n'.format(k, chembl_cid_dict[k]))
 
+    def find_cid_for_chembl(self, chembl_mol_id):
+        cache_dir = ['ebi', 'chembl', 'src_compound_id_all']
+        url = 'https://www.ebi.ac.uk/unichem/rest/src_compound_id_all/$index/1/22'
+        lig_data = fetch_from_web_api(url, chembl_mol_id, cache_dir)
+        # print("Searching for ",chembl_mol_id)
+        not_found = False
+        cid = False
+        temp = []
+        if not lig_data:
+            #if not successful
+            not_found = True
+        else:
+            try:
+                for i, x  in enumerate(lig_data):
+                    temp.append(lig_data[i]['src_compound_id'])
+                if len(temp) > 1:
+                    cid = ';'.join(temp)
+                    self.add_cid_to_dict(chembl_mol_id,cid)
+                elif len(temp) == 1 and temp[0] != '\n':
+                    cid = temp[0] #lig_data[0]['src_compound_id'] 
+                    self.add_cid_to_dict(chembl_mol_id,cid)
+                else:
+                    not_found = True
+                    #print (chembl_mol_id)
+            except KeyError:
+                not_found = True
+        if not cid:
+            # not found
+            cache_dir = ['pubchem', 'chembl', 'compound_name']
+            url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/$index/json'
+            lig_data = fetch_from_web_api(url, chembl_mol_id, cache_dir)
+            if lig_data:
+                try:
+                    cid = lig_data['PC_Compounds'][0]['id']['id']['cid']
+                    self.add_cid_to_dict(chembl_mol_id,cid)
+                    not_found = False
+                except KeyError:
+                    not_found = True
+
+        return cid,not_found
 
     def call_pubchem_service(self, chembl_cid_dict, notfound_ids_set):
         notfound = set()
         for chembl_id in notfound_ids_set:
-            url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/'+chembl_id+'/json'
-            response = requests.get(url)
-            lig_data = response.json()
+            cache_dir = ['pubchem', 'chembl', 'compound_name']
+            url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/$index/json'
+            lig_data = fetch_from_web_api(url, chembl_id, cache_dir)
             try:
                 cid = lig_data['PC_Compounds'][0]['id']['id']['cid']
                 #updating the existing dictionary
                 chembl_cid_dict[chembl_id] = cid
+                self.add_cid_to_dict(chembl_mol_id,cid)
                 #.discard(x)
             except KeyError:
                 #print (chembl_id)
@@ -235,6 +290,9 @@ class Command(BaseCommand):
 
         return chembl_cid_dict, notfound 
 
+    def add_cid_to_dict(self,chembl_id, cid):
+        with open(self.dictionary_file, 'a') as myfile:
+            myfile.write('{}\t{}\n'.format(chembl_id, cid))
     
     ##call pubchem service to find cids for chembl
     def find_cid(self, chembl_mol_ids, chembl_cid_dict):
@@ -244,20 +302,29 @@ class Command(BaseCommand):
             if chembl_mol_id not in chembl_cid_dict.keys():
                 temp = []
                 
-                url = 'https://www.ebi.ac.uk/unichem/rest/src_compound_id_all/'+chembl_mol_id+'/1/22'
-                response = requests.get(url)
-                lig_data = response.json()
-                #print (lig_data)
+                # url = 'https://www.ebi.ac.uk/unichem/rest/src_compound_id_all/'+chembl_mol_id+'/1/22'
+                # response = requests.get(url)
+                # lig_data = response.json()
+                cache_dir = ['ebi', 'chembl', 'src_compound_id_all']
+                url = 'https://www.ebi.ac.uk/unichem/rest/src_compound_id_all/$index/1/22'
+                lig_data = fetch_from_web_api(url, chembl_mol_id, cache_dir)
+                print("Searching for ",chembl_mol_id,len(chembl_mol_ids))
+                if not lig_data:
+                    #if not successful
+                    notfound.add(chembl_mol_id)
+                    continue
                 try:
                     for i, x  in enumerate(lig_data):
                         temp.append(lig_data[i]['src_compound_id'])
                     if len(temp) > 1:
                         cid = ';'.join(temp)
                         chembl_cid_dict[chembl_mol_id] = cid
+                        self.add_cid_to_dict(chembl_mol_id,cid)
                     elif len(temp) == 1 and temp[0] != '\n':
                         cid = temp[0] #lig_data[0]['src_compound_id'] 
                         #updating the existing dictionary
                         chembl_cid_dict[chembl_mol_id] = cid
+                        self.add_cid_to_dict(chembl_mol_id,cid)
                     else:
                         notfound.add(chembl_mol_id)
                         #print (chembl_mol_id)
@@ -297,58 +364,32 @@ class Command(BaseCommand):
 #        if not filenames:
 #            filenames = os.listdir(self.links_data_dir)
         for filename in filenames:
-            #print (filename)
+            if filename=='dictionary.txt':
+                continue
+            full_file = os.sep.join([self.links_data_dir,filename])
+            print (filename,full_file)
             header_dict = {}
             data = []
             chembl_assay_ids = set ()
             chembl_mol_ids = set()
-            with open (filename, 'r') as fii:
-                
-                linereader = csv.reader(fii)
-                #ensure that i got the correct columns - the ones with the correct headers
-                for x,row in enumerate(linereader):
-                    if x == 0:
-                        for y,column in enumerate(row):
-                            header_dict[column] = y
-                        #print (header_dict)
-                    
-                    elif row[0] != '\n':
-                        data.append(row)
-                        #chembl_mol_ids.add(row[header_dict['molecule_chembl_id']])
-                        #chembl_target_ids.add(row[header_dict['target_chembl_id']])
-                        #chembl_assay_ids.add(row[header_dict['assay_chembl_id']])
-            #print (len(chembl_assay_ids))
+
+            if filename[-2:]=='gz':
+                import gzip, io
+                with gzip.open(full_file, "r") as fii:
+                    linereader = csv.reader(io.TextIOWrapper(fii, newline=""))
+                    #ensure that i got the correct columns - the ones with the correct headers
+                    for x,row in enumerate(linereader):
+                        if x == 0:
+                            for y,column in enumerate(row):
+                                header_dict[column] = y
+                            #print (header_dict)
+                        
+                        elif row[0] != '\n':
+                            data.append(row)
+                            #chembl_mol_ids.add(row[header_dict['molecule_chembl_id']])
+                            #chembl_target_ids.add(row[header_dict['target_chembl_id']])
+                            #chembl_assay_ids.add(row[header_dict['assay_chembl_id']])
+                #print (len(chembl_assay_ids))
             
         #return chembl_mol_ids, chembl_assay_ids
         return data, header_dict
-
-
-
-     ##for i in notfound_ids_set:
-        #    #inchi_key = self.find_inchi_key_from_chembl_id(i)
-        #    
-        ##
-        #
-        #
-    #def read_notfound(self,filenames):
-    #    for filename in filenames:
-    #    
-    #        ids = set()
-    #        with open(filename, 'r') as fii:
-    #            for line in fii:
-    #                line = line.rstrip()
-    #                ids.add(line)
-    #                
-    #        return ids
-
-#not in use
-    #def find_inchi_key_from_chembl_id(self, chembl_mol_id):
-    #    url = 'https://www.ebi.ac.uk/chembl/api/data/molecule/'+chembl_mol_id+'.json'
-    #    response = requests.get(url)
-    #    mol_data = response.json()
-    #    try:
-    #        inchy_key = (mol_data['molecule_structures']['standard_inchi_key'])
-    #    except TypeError:
-    #        print (chembl_mol_id)
-
-        #return inchi_key
