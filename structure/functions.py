@@ -9,9 +9,10 @@ from Bio.PDB.Vector import rotaxis
 from django.conf import settings
 from common.selection import SimpleSelection
 from common.alignment import Alignment
-from protein.models import Protein, ProteinSegment
+from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinState
+from residue.functions import dgn
 from residue.models import Residue
-from structure.models import Structure
+from structure.models import Structure, Rotamer
 
 from subprocess import Popen, PIPE
 from io import StringIO
@@ -25,6 +26,7 @@ from collections import OrderedDict
 import Bio.PDB as PDB
 import csv
 from openpyxl import Workbook
+import numpy
 
 
 logger = logging.getLogger("protwis")
@@ -808,3 +810,112 @@ class PdbChainSelector():
                     max_res = num_helix_res[i]
                     max_i = i
         return self.chains[max_i]
+
+
+class PdbStateIdentifier():
+    def __init__(self, structure):
+        self.structure = structure
+        self.state = None
+        self.activation_value = None
+        self.line = False
+
+    def run(self):
+        self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein.parent)
+        # class A
+        if self.parent_prot_conf.protein.family.slug.startswith('001'):
+            tm6 = self.get_residue_distance('2x39', '6x35')
+            tm7 = self.get_residue_distance('3x47', '7x53')
+            if tm6!=False and tm7!=False:
+                self.activation_value = tm6-tm7
+                if self.activation_value<0:
+                    self.state = ProteinState.objects.get(slug='inactive')
+                elif 0<=self.activation_value<=8:
+                    self.state = ProteinState.objects.get(slug='intermediate')
+                elif self.activation_value>8:
+                    self.state = ProteinState.objects.get(slug='active')
+        # class B
+        elif self.parent_prot_conf.protein.family.slug.startswith('002') or self.parent_prot_conf.protein.family.slug.startswith('003'):
+            tm6 = self.get_residue_distance('2x44', '6x35')
+            if tm6!=False:
+                self.activation_value = tm6
+                if self.activation_value<18:
+                    self.state = ProteinState.objects.get(slug='inactive')
+                elif 18<=self.activation_value<=25:
+                    self.state = ProteinState.objects.get(slug='intermediate')
+                elif self.activation_value>25:
+                    self.state = ProteinState.objects.get(slug='active')
+        # class C
+        elif self.parent_prot_conf.protein.family.slug.startswith('004'):
+            tm6 = self.get_residue_distance('2x39', '6x35')
+            if tm6!=False:
+                self.activation_value = tm6
+                if self.activation_value<18:
+                    self.state = ProteinState.objects.get(slug='inactive')
+                elif 18<=self.activation_value<=25:
+                    self.state = ProteinState.objects.get(slug='intermediate')
+                elif self.activation_value>25:
+                    self.state = ProteinState.objects.get(slug='active')
+        elif self.parent_prot_conf.protein.family.slug.startswith('005'):
+            tm6 = self.get_residue_distance('2x39', '6x35')
+            if tm6!=False:
+                self.activation_value = tm6
+                if self.activation_value<20:
+                    self.state = ProteinState.objects.get(slug='inactive')
+                elif 20<=self.activation_value<=25:
+                    self.state = ProteinState.objects.get(slug='intermediate')
+                elif self.activation_value>25:
+                    self.state = ProteinState.objects.get(slug='active')
+        else:
+            print('{} is not class A,B,C,F'.format(self.structure))
+            
+    def get_residue_distance(self, residue1, residue2):
+        try:
+            res1 = Residue.objects.get(protein_conformation__protein=self.structure.protein_conformation.protein.parent, display_generic_number__label=dgn(residue1, self.parent_prot_conf))
+            res2 = Residue.objects.get(protein_conformation__protein=self.structure.protein_conformation.protein.parent, display_generic_number__label=dgn(residue2, self.parent_prot_conf))
+            try:
+                rota1 = Rotamer.objects.filter(structure=self.structure, residue__sequence_number=res1.sequence_number)
+                if len(rota1)==0:
+                    raise Exception
+            except:
+                rota1 = Rotamer.objects.filter(structure=self.structure, residue__display_generic_number__label=dgn(residue1, self.structure.protein_conformation))
+            rota1 = right_rotamer_select(rota1, self.structure.preferred_chain[0])
+            try:
+                rota2 = Rotamer.objects.filter(structure=self.structure, residue__sequence_number=res2.sequence_number)
+                if len(rota2)==0:
+                    raise Exception
+            except:
+                rota2 = Rotamer.objects.filter(structure=self.structure, residue__display_generic_number__label=dgn(residue2, self.structure.protein_conformation))
+            rota2 = right_rotamer_select(rota2, self.structure.preferred_chain[0])
+            rotas = [rota1, rota2]
+            io1 = StringIO(rotas[0].pdbdata.pdb)
+            rota_struct1 = PDB.PDBParser(QUIET=True).get_structure('structure', io1)[0]
+            io2 = StringIO(rotas[1].pdbdata.pdb)
+            rota_struct2 = PDB.PDBParser(QUIET=True).get_structure('structure', io2)[0]
+            
+            for chain1, chain2 in zip(rota_struct1, rota_struct2):
+                for r1, r2 in zip(chain1, chain2):
+                    print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
+                    line = '{},{},{},{},{}\n'.format(self.structure, self.structure.state.name, round(self.calculate_CA_distance(r1, r2), 2), r1.get_id()[1], r2.get_id()[1])
+                    self.line = line
+                    return self.calculate_CA_distance(r1, r2)
+        except:
+            print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
+            return False
+
+    def calculate_CA_distance(self, residue1, residue2):
+        diff_vector = residue1['CA'].get_coord()-residue2['CA'].get_coord()
+        return numpy.sqrt(numpy.sum(diff_vector * diff_vector))
+
+
+def right_rotamer_select(rotamer, chain=None):
+    ''' Filter out compound rotamers.
+    '''
+    if len(rotamer)>1:
+        for i in rotamer:
+            if i.pdbdata.pdb.startswith('COMPND')==False:
+                if chain!=None and chain==i.pdbdata.pdb[21]:
+                    rotamer = i
+                    break
+    else:
+        rotamer=rotamer[0]
+    return rotamer

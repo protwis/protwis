@@ -10,7 +10,7 @@ from protein.models import Protein, ProteinConformation, ProteinSequenceType, Pr
 from residue.models import Residue
 from structure.models import Structure, PdbData, StructureType
 from structure.sequence_parser import SequenceParser
-from structure.functions import PdbChainSelector
+from structure.functions import PdbChainSelector, PdbStateIdentifier
 from construct.functions import *
 from common.models import WebResource, WebLink, Publication
 
@@ -20,6 +20,9 @@ import urllib
 import re
 import os
 import xmltodict
+import yaml
+import shlex
+import subprocess
 
 
 class Command(BaseBuild):
@@ -39,6 +42,7 @@ class Command(BaseBuild):
             q.new_xtals(self.verbose)
         else:
             self.uniprots = self.get_all_GPCR_uniprots()
+            # self.uniprots = ['P24530']
             self.yamls = self.get_all_yamls()
             self.prepare_input(options['proc'], self.uniprots)
 
@@ -92,7 +96,7 @@ class QueryPDB():
             x50s = None
         if structs!=['null']:
             for s in structs:
-                missing_from_db = False
+                missing_from_db, missing_yaml = False, False
                 try:
                     st_obj = Structure.objects.get(pdb_code__index=s)
                 except:
@@ -108,6 +112,7 @@ class QueryPDB():
                         check = 1
                     if check==1:
                         self.yaml_list.append(s)
+                        missing_yaml = True
                 if not missing_from_db:
                     continue
                 try:
@@ -193,12 +198,52 @@ class QueryPDB():
                         pcs = PdbChainSelector(s, protein)
                         pcs.run_dssp()
                         preferred_chain = pcs.select_chain()
-                        os.remove('./pdb{}.ent'.format(s).lower())
 
-                        # Create new structure object
-                        Structure.objects.get_or_create(preferred_chain=preferred_chain, resolution=resolution, publication_date=publication_date, representative='f', pdb_code=pdb_code,
-                                                        pdb_data=pdb_data, protein_conformation=new_prot_conf, publication=publication, state=state, 
-                                                        structure_type=st_type, annotated=False)
+                        # Run state identification
+
+                        # Create yaml files
+                        with open('../../data/protwis/gpcr/structure_data/constructs/{}.yaml'.format(pdb_code.index), 'w') as construct_file:
+                            yaml.dump({'name': pdb_code.index.lower(), 'protein': protein.entry_name}, construct_file, indent=4)
+                        with open('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index), 'w') as structure_file:
+                            struct_yaml_dict = {'construct': pdb_code.index.lower(), 'pdb': pdb_code.index, 'preferred_chain': preferred_chain, 'auxiliary_protein': '', 
+                                                'ligand': {'name': 'None', 'pubchemId': 'None', 'title': 'None', 'role': '.nan', 'type': 'None'}, 'signaling_protein': 'None', 'state': 'Inactive'}
+                            auxiliary_proteins, ligands = [], []
+                            for key, values in pdb_data_dict['ligands'].items():
+                                if key in ['SO4','NA','CLR','OLA','OLC','TAR','NAG']:
+                                    continue
+                                else:
+                                    ligands.append({'name': key, 'pubchemId': 'None', 'title': pdb_data_dict['ligands'][key]['comp_name'], 'role': '.nan', 'type': 'None'})
+                            for key, values in pdb_data_dict['auxiliary'].items():
+                                if pdb_data_dict['auxiliary'][key]['subtype'] in ['Expression tag', 'Linker']:
+                                    continue
+                                else:
+                                    auxiliary_proteins.append(pdb_data_dict['auxiliary'][key]['subtype'])
+                            for key, values in pdb_data_dict['construct_sequences'].items():
+                                if key!=protein.entry_name and key not in struct_yaml_dict['auxiliary_protein']:
+                                    if 'arrestin' in key:
+                                        struct_yaml_dict['signaling_protein'] = key
+                            if len(auxiliary_proteins)>1:
+                                struct_yaml_dict['auxiliary_protein'] = ', '.join(auxiliary_proteins)
+                            if len(ligands)>1:
+                                struct_yaml_dict['ligand'] = ligands
+                            yaml.dump(struct_yaml_dict, structure_file, indent=4, default_flow_style=False)
+
+                        # Build residue table for structure
+                        build_structure_command = shlex.split('/env/bin/python3 manage.py build_structures -f {}.yaml'.format(pdb_code.index))
+                        subprocess.call(build_structure_command)
+
+                        # Check state
+                        struct = Structure.objects.get(pdb_code__index=pdb_code.index)
+                        pi = PdbStateIdentifier(struct)
+                        pi.run()
+                        if pi.state!=None:
+                            Structure.objects.filter(pdb_code__index=pdb_code.index).update(state=pi.state)
+                            print(pi.state, pi.activation_value)
+                            struct_yaml = yaml.load('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index))
+                            struct_yaml['state'] = pi.state
+                            with open('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index), 'w') as struct_yaml_file:
+                                yaml.dump(struct_yaml, struct_yaml_file, indent=4)
+                
                         print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
                 except Exception as msg:
                     print(msg)
