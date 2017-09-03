@@ -1,23 +1,33 @@
 from interaction import *
 import numpy
 
+# Amino acid names.
 AA = {'ALA', 'ARG', 'ASN', 'ASP',
       'CYS', 'GLN', 'GLU', 'GLY',
       'HIS', 'ILE', 'LEU', 'LYS',
       'MET', 'PHE', 'PRO', 'SER',
       'THR', 'TRP', 'TYR', 'VAL'}
 
+# Aromatic amino acid names.
 AROMATIC_AA = {'TYR', 'TRP', 'PHE', 'HIS'}
 
+# Positively charged amino acid names.
 POS_CHARGED_AA = {'ARG', 'LYS'}  # skip ,'HIS'
+
+# Negatively charged amino acid names.
 NEG_CHARGED_AA = {'ASP', 'GLU'}
 
+# Hydrophobic amino acid shortnames.
 HYDROPHOBIC_AA = {'ALA', 'CYS', 'PHE',
                   'ILE', 'LEU', 'MET',
                   'PRO', 'VAL', 'TRP',
                   'TYR'}
 
+# Van-der-Waals radii of the elements.
 VDW_RADII = {'H': 1.2, 'C': 1.7, 'N': 1.55, 'O': 1.52, 'S': 1.80}
+
+# Factor multiplied with VDW radii when determining distance between elements.
+VDW_TRESHOLD_FACTOR = 1.1
 
 
 def is_aromatic_aa(res):

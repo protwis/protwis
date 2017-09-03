@@ -141,29 +141,23 @@ def has_face_to_face_interaction(res1, res2):
 
     # Make sure that the acute angle between the planes are less than 20
     # degrees and that the distance between centers is less than 5 Angstrom.
-    return any([angle_between_plane_normals(r1[1], r2[1]) < 0.34906585
-                and numpy.linalg.norm(numpy.subtract(r1[0], r1[0])) < 5
+    return any([(angle_between_plane_normals(r1[1], r2[1]) < 0.34906585)
+                and (numpy.linalg.norm(numpy.subtract(r1[0], r2[0])) < 5.0)
                 for r1 in rings_res1 for r2 in rings_res2])
 
 
 # Checks if two residues have an edge to face interaction
 def has_edge_to_face_interaction(res1, res2):
-    res1_atoms = get_ring_atom_name_lists(res1)
     res1_desc = get_ring_descriptors(res1)
     res2_desc = get_ring_descriptors(res2)
 
-    # Make sure the edge atom closest to the center is closer than 4.5 angstroms.
-    close_enough = any([any([distance_between(a.coord, desc[0]) < 4.5 for a in atoms]) for desc in res2_desc for atoms in res1_atoms])
-
-    # And that the perpendicular angles is with +/- 30 degrees, i.e. the acute angle is greater than 60 degrees = 1.04719755 radians.
-    angle_ok = any([angle_between_plane_normals(desc1[1], desc2[1]) > 1.04719755 for desc1 in res1_desc for desc2 in res2_desc])
-
-    '''
-    if close_enough and angle_ok:
-        print "Distance and angle is fine!"
-    '''
-
-    return close_enough and angle_ok
+    # Make sure the edge atom closest to the center is closer than
+    # 4.5 angstroms and that the perpendicular angles is with
+    # +/- 30 degrees, i.e. the acute angle is greater than 60
+    # degrees = 1.04719755 radians.
+    return any([(abs(angle_between_plane_normals(r1[1], r2[1]) - 1.5707963267) < 0.523598776)
+                and (numpy.linalg.norm(numpy.subtract(r1[0], r2[0])) < 5.2)
+                for r1 in res1_desc for r2 in res2_desc])
 
 
 def has_pi_cation_interaction(res1, res2):
@@ -313,7 +307,7 @@ def get_van_der_waals_interactions(res1, res2):
     res1_atoms = res1.child_list
     res2_atoms = res2.child_list
     # Consider just labeling all unlabeled interacting pairs as VDW
-    if any([distance_between(a1.coord, a2.coord) < (VDW_RADII[a1.element] + VDW_RADII[a2.element]) for a1 in res1_atoms for a2 in res2_atoms]):
+    if any([distance_between(a1.coord, a2.coord) < ((VDW_RADII[a1.element] + VDW_RADII[a2.element]) * VDW_TRESHOLD_FACTOR) for a1 in res1_atoms for a2 in res2_atoms]):
         return [VanDerWaalsInteraction()]
     else:
         return []
