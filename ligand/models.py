@@ -81,8 +81,11 @@ class Ligand(models.Model):
         url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/{}/$index/property/CanonicalSMILES,InChIKey,MolecularWeight,HBondDonorCount,HBondAcceptorCount,XLogP,RotatableBondCount/json'.format(lookup_type)
         pubchem = fetch_from_web_api(url, pubchem_id, cache_dir)
         # get properties from response
-        if pubchem['PropertyTable']['Properties'][0]:
-            
+        if pubchem==False:
+            logger.warning('Ligand {} not found in PubChem'.format(pubchem_id))
+            return None
+
+        if pubchem['PropertyTable']['Properties'][0]:   
             if 'HBondAcceptorCount' in pubchem['PropertyTable']['Properties'][0] :
                 properties['hacc'] =  pubchem['PropertyTable']['Properties'][0]['HBondAcceptorCount']
             if 'HBondDonorCount' in pubchem['PropertyTable']['Properties'][0] :
