@@ -184,7 +184,8 @@ class Command(BaseBuild):
                             # print(seg)
                             for i in seg[6]:
                                 removed.append(i)
-        
+        # Reset removed, since it causes more problems than not
+        removed = []
         if len(deletions)>len(d['wt_seq'])*0.9:
             #if too many deltions
             removed = []
