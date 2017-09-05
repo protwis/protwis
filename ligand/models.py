@@ -49,7 +49,7 @@ class Ligand(models.Model):
             
             return self.update_ligand(ligand_name, {}, ligand_type, web_resource, gtop_id)
 
-    def load_from_pubchem(self, lookup_type, pubchem_id, ligand_type, chembl_lig_id=False, ligand_title=False):
+    def load_from_pubchem(self, lookup_type, pubchem_id, ligand_type, ligand_title=False):
         logger = logging.getLogger('build')
 
         # if ligand title is specified, use that as the name
