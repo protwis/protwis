@@ -36,6 +36,13 @@ class Command(BaseBuild):
     # source file directory
     links_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'assay_data'])
     dictionary_file = os.sep.join([settings.DATA_DIR, 'ligand_data', 'assay_data', 'dictionary.txt'])
+    defaults = {
+        'name': 'ChEMBL_compound_ids',
+        'url': 'https://www.ebi.ac.uk/chembl/compound/inspect/$index'
+        }
+    wr, created = WebResource.objects.get_or_create(slug='chembl_ligand', defaults = defaults)
+    wr_pubchem = WebResource.objects.get(slug='pubchem')
+        
     
     
     def handle(self, *args, **options):
@@ -139,13 +146,7 @@ class Command(BaseBuild):
 
     def main_func(self, positions, iteration,count,lock):
         #####Create chembl compound link and connect it to the corresponding ligand/cid#####
-        defaults = {
-        'name': 'ChEMBL_compound_ids',
-        'url': 'https://www.ebi.ac.uk/chembl/compound/inspect/$index'
-        }
-        wr, created = WebResource.objects.get_or_create(slug='chembl_ligand', defaults = defaults)
-        wr_pubchem = WebResource.objects.get(slug='pubchem')
-        
+
         print(positions,iteration,count,lock)
         chembl_ids = self.chembl_mol_ids
         list_of_chembl_ids = list(chembl_ids)
@@ -173,7 +174,7 @@ class Command(BaseBuild):
             #    continue
             l = get_or_make_ligand(cid,'PubChem CID') #call the first cid if there are more than one
             #print (cid)
-            wl, created = WebLink.objects.get_or_create(index=chembl_ligand, web_resource=wr)
+            wl, created = WebLink.objects.get_or_create(index=chembl_ligand, web_resource=self.wr)
             try:
                 l.properities.web_links.add(wl)
                 
@@ -189,7 +190,7 @@ class Command(BaseBuild):
                 lp = LigandProperities.objects.get(web_links__index = cid, web_links__web_resource__slug = 'pubchem')
             except:
                 # NO CID FOR LIGAND! Rare cases where SMILES was used for initial look up
-                wl, created = WebLink.objects.get_or_create(index=cid, web_resource=wr_pubchem)
+                wl, created = WebLink.objects.get_or_create(index=cid, web_resource=self.wr_pubchem)
                 l.properities.web_links.add(wl)
                 lp = l.properities
             #print (lp)
