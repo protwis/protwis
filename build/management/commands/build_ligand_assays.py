@@ -177,6 +177,9 @@ class Command(BaseBuild):
             #    continue
             l = get_or_make_ligand(cid,'PubChem CID') #call the first cid if there are more than one
             #print (cid)
+            if not l:
+                print('Ligand not found in PubChem', cid)
+                continue
             wl, created = WebLink.objects.get_or_create(index=chembl_ligand, web_resource=self.wr)
             try:
                 l.properities.web_links.add(wl)
