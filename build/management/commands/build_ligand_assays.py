@@ -65,6 +65,7 @@ class Command(BaseBuild):
         for i in data:
             self.chembl_mol_ids.add(i[header_dict['molecule_chembl_id']])
             #print (i[header_dict['pchembl_value']])
+        self.chembl_mol_ids = sorted(list(self.chembl_mol_ids))
         ######## end ##############
         print("amount of ids in dataset",len(self.chembl_mol_ids))
             
@@ -149,15 +150,14 @@ class Command(BaseBuild):
         #####Create chembl compound link and connect it to the corresponding ligand/cid#####
 
         print(positions,iteration,count,lock)
-        chembl_ids = self.chembl_mol_ids
-        list_of_chembl_ids = list(chembl_ids)
-        while count.value<len(chembl_ids):
+        list_of_chembl_ids = self.chembl_mol_ids
+        while count.value<len(list_of_chembl_ids):
             with lock:
                 chembl_ligand = list_of_chembl_ids[count.value]
                 count.value +=1 
                 if count.value % 1000 == 0:
                     print('{} Status {} out of {}'.format(
-                    datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), count.value, len(chembl_ids)))
+                    datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), count.value, len(list_of_chembl_ids)))
 
             if chembl_ligand not in self.chembl_cid_dict.keys():
                 cids, not_found = self.find_cid_for_chembl(chembl_ligand)
@@ -176,32 +176,20 @@ class Command(BaseBuild):
             #if cid!='3559':
             #    continue
             l = get_or_make_ligand(cid,'PubChem CID') #call the first cid if there are more than one
-            #print (cid)
             if not l:
                 print('Ligand not found in PubChem', cid)
                 continue
-            wl, created = WebLink.objects.get_or_create(index=chembl_ligand, web_resource=self.wr)
-            try:
-                l.properities.web_links.add(wl)
-                
-            except AttributeError:
-                print (cid) # to do get to the logger 
-                continue
-            
-            ## Check if properities has web resource with pubchem and this cid // otherwise insert
-                
-            l.properities.save()
-            # print(cid)#148842 10775772 54477
-            try:
-                lp = LigandProperities.objects.get(web_links__index = cid, web_links__web_resource__slug = 'pubchem')
-            except:
+
+            if not l.properities.web_links.filter(web_resource__slug = 'pubchem',index = cid).exists():
                 # NO CID FOR LIGAND! Rare cases where SMILES was used for initial look up
                 wl, created = WebLink.objects.get_or_create(index=cid, web_resource=self.wr_pubchem)
                 l.properities.web_links.add(wl)
-                lp = l.properities
-            #print (lp)
+
+            if not l.properities.web_links.filter(web_resource__slug = 'chembl_ligand',index = chembl_ligand).exists():
+                wl, created = WebLink.objects.get_or_create(index=chembl_ligand, web_resource=self.wr)
+                l.properities.web_links.add(wl)
             
-        ###### Vendor stuff  ######
+            ###### Vendor stuff  ######
             cache_dir = ['pubchem', 'cid', 'vendors']
             url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/categories/compound/$index/JSON/'
             vendors = fetch_from_web_api(url, cid, cache_dir)
@@ -375,7 +363,7 @@ class Command(BaseBuild):
                 continue
             full_file = os.sep.join([self.links_data_dir,filename])
             print (filename,full_file)
-            header_dict = {}
+            header_dict = OrderedDict()
             data = []
             chembl_assay_ids = set ()
             chembl_mol_ids = set()
