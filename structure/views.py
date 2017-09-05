@@ -12,6 +12,7 @@ from structure.models import Structure
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
+from structure.phylogenetic_tree import PhylogeneticTreeGenerator
 from structure.forms import *
 from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
 from protein.models import Protein, ProteinFamily
@@ -169,8 +170,15 @@ class StructureStatistics(TemplateView):
         context['chartdata_all'] = self.get_per_family_cumulative_data_series(years, all_structs, lookup)
         context['chartdata_reso'] = self.get_resolution_coverage_data_series(all_structs)
         context['coverage'] = self.get_diagram_coverage()
-        context['crystals'] = self.get_diagram_crystals()
-
+        #{
+        #    'depth': 3,
+        #    'anchor': '#crystals'}
+        tree = PhylogeneticTreeGenerator()
+        qq = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class A (Rhodopsin)'))
+        context['crystals_options'] = tree.d3_options
+        context['crystals_options']['anchor'] = 'crystals'
+        context['crystals'] = json.dumps(qq.get_nodes_dict('crystalized'))
+        json.dump(qq.get_nodes_dict('crystalized'), open('tree_test.json', 'w'), indent=4)
         return context
 
     def get_families_dict(self, queryset, lookup):
@@ -401,6 +409,7 @@ class StructureStatistics(TemplateView):
             tree['children'].append(c_v)
             i += 1
 
+        json.dump(tree, open('old_tree.json', 'w'), indent=4)
         return json.dumps(tree)
 
 
