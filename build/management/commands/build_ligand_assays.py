@@ -17,6 +17,7 @@ import shlex
 import csv
 import os
 from collections import OrderedDict
+import datetime
 
 class Command(BaseBuild):
     help = 'Reads source data and creates links to other databases'
@@ -154,6 +155,9 @@ class Command(BaseBuild):
             with lock:
                 chembl_ligand = list_of_chembl_ids[count.value]
                 count.value +=1 
+                if count.value % 1000 == 0:
+                    print('{} Status {} out of {}'.format(
+                    datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), count.value, len(chembl_ids)))
 
             if chembl_ligand not in self.chembl_cid_dict.keys():
                 cids, not_found = self.find_cid_for_chembl(chembl_ligand)
@@ -169,7 +173,6 @@ class Command(BaseBuild):
             #print (temp)
             
             cid = str(temp[0])
-            print(count.value)
             #if cid!='3559':
             #    continue
             l = get_or_make_ligand(cid,'PubChem CID') #call the first cid if there are more than one
@@ -185,7 +188,7 @@ class Command(BaseBuild):
             ## Check if properities has web resource with pubchem and this cid // otherwise insert
                 
             l.properities.save()
-            print(cid)#148842 10775772 54477
+            # print(cid)#148842 10775772 54477
             try:
                 lp = LigandProperities.objects.get(web_links__index = cid, web_links__web_resource__slug = 'pubchem')
             except:
