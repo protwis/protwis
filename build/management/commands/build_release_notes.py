@@ -29,6 +29,8 @@ class Command(BaseCommand):
 
     def create_release_notes(self):
         self.logger.info('CREATING RELEASE NOTES')
+
+        ReleaseNotes.objects.all().delete()
         
         # what files should be parsed?
         filenames = os.listdir(self.release_notes_data_dir)

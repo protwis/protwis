@@ -1,4 +1,5 @@
 from django.utils.text import slugify
+from django.db import IntegrityError
 
 from common.models import WebResource
 from common.models import WebLink
@@ -31,8 +32,12 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
                 # if exists under different name
                 l_canonical = Ligand.objects.get(properities__web_links__web_resource=web_resource,
                     properities__web_links__index=ligand_id, canonical=True)
-                l, created = Ligand.objects.get_or_create(properities = l_canonical.properities,
-                    name = ligand_name, canonical = False)
+                try:
+                    l, created = Ligand.objects.get_or_create(properities = l_canonical.properities,
+                        name = ligand_name, canonical = False)
+                except IntegrityError:
+                    l = Ligand.objects.get(properities = l_canonical.properities,
+                        name = ligand_name, canonical = False)
             except Ligand.DoesNotExist:
                 # fetch ligand from pubchem
                 default_ligand_type = 'Small molecule'
@@ -72,7 +77,10 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
                                 l.properities = lp
                                 l.canonical = True #maybe false, but that would break stuff.
                                 l.ambigious_alias = False
-                                l.save()
+                                try:
+                                    l.save()
+                                except IntegrityError:
+                                    l = Ligand.objects.get(name=ligand_name, canonical=True)
             
     elif name:
         
@@ -109,8 +117,11 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
             l.name = str(name)
             l.canonical = True
             l.ambigious_alias = False
-            l.save()
-            l.load_by_name(str(name))
+            try:
+                l.save()
+                l.load_by_name(str(name))
+            except IntegrityError:
+                l = Ligand.objects.get(name=str(name), canonical=True)
     else:
         l = None
 

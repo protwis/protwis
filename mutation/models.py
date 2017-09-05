@@ -24,8 +24,14 @@ class MutationType(models.Model):
 
 class MutationExperiment(models.Model):
 
+    #Data-submitting group
+    submitting_group = models.CharField(max_length=200, null=True)
+
     #links
     refs = models.ForeignKey('common.Publication', null=True) #Change to a common model?
+    data_container = models.CharField(max_length=200, null=True) # is the data from a table, figure, Supl. info or inside the text in reference
+    data_container_number = models.CharField(max_length=20, null=True) # if the data above is from a table/figure, what is the number
+
     review = models.ForeignKey('common.Publication', null=True, related_name='review') #Change to a common model?
     protein = models.ForeignKey('protein.Protein')
     residue = models.ForeignKey('residue.Residue')
@@ -46,6 +52,13 @@ class MutationExperiment(models.Model):
     mu_value = models.FloatField()
     mu_sign = models.CharField(max_length=2)
     foldchange = models.FloatField()
+
+    #Opt
+    opt_receptor_expression = models.FloatField(null=True)
+    opt_basal_activity = models.FloatField(null=True)
+    opt_gain_of_activity = models.CharField(max_length=100, null=True)
+    opt_ligand_emax = models.FloatField(null=True)
+    opt_agonist = models.CharField(max_length=100, null=True)
 
     def citation(self):
 
@@ -80,8 +93,10 @@ class MutationExperiment(models.Model):
 
     def getCalculation(self):
 
-        if self.exp_measure and self.exp_qual:
-            temp = ("Type: "+ self.exp_measure.measure + " <br> Measure: "+self.exp_type.type+" <br> Unit: " + str(self.wt_unit) +  " <br> WT: " + str(self.wt_value) + " <br> Mu: "+ str(self.mu_value) +" <br> Foldchange: "+str(self.foldchange))
+        if self.foldchange and self.exp_type:
+            
+            #"Type: "+ self.exp_measure.measure + " <br>
+            temp = (" Measure: "+self.exp_type.type+" <br> Unit: " + str(self.wt_unit) +  " <br> WT: " + str(self.wt_value) + " <br> Mu: "+ str(self.mu_value) +" <br> Foldchange: "+str(self.foldchange))
         else:
             temp = "No information"
         # if ($this->mut_effect_qual_id!=0) {
@@ -133,8 +148,11 @@ class MutationOptional(models.Model):
 class MutationRaw(models.Model):
 
 
+    submitting_group = models.CharField(max_length=200, null=True)
     reference = models.CharField(max_length=100)
     review = models.CharField(max_length=100, null=True)
+    data_container = models.CharField(max_length=200, null=True) # is the data from a table, figure, Supl. info or inside the text in reference
+    data_container_number = models.CharField(max_length=20, null=True) # if the data above is from a table/figure, what is the number
     protein = models.CharField(max_length=100)
     mutation_pos = models.SmallIntegerField()
     mutation_from = models.CharField(max_length=1)
@@ -142,7 +160,7 @@ class MutationRaw(models.Model):
 
     ligand_name = models.CharField(max_length=100)
     ligand_idtype = models.CharField(max_length=100)
-    ligand_id = models.CharField(max_length=100)
+    ligand_id = models.CharField(max_length=300)
     ligand_class = models.CharField(max_length=100)
 
     exp_type = models.CharField(max_length=100)
@@ -159,13 +177,19 @@ class MutationRaw(models.Model):
     exp_mu_effect_ligand_prop = models.CharField(max_length=100)
     exp_mu_ligand_ref = models.CharField(max_length=100)
 
-    opt_type = models.CharField(max_length=100)
-    opt_wt = models.FloatField()
-    opt_mu = models.FloatField()
-    opt_sign = models.CharField(max_length=5)
-    opt_percentage  = models.FloatField()
-    opt_qual = models.CharField(max_length=100)
+    opt_receptor_expression = models.CharField(max_length=100)
+    opt_basal_activity = models.CharField(max_length=100)
+    opt_gain_of_activity = models.CharField(max_length=100)
+    opt_ligand_emax = models.CharField(max_length=100)
     opt_agonist = models.CharField(max_length=100)
+
+    # opt_type = models.CharField(max_length=100)
+    # opt_wt = models.FloatField()
+    # opt_mu = models.FloatField()
+    # opt_sign = models.CharField(max_length=5)
+    # opt_percentage  = models.FloatField()
+    # opt_qual = models.CharField(max_length=100)
+    # opt_agonist = models.CharField(max_length=100)
 
     added_by = models.CharField(max_length=100)
     added_date = models.DateField()
@@ -199,11 +223,13 @@ class MutationQual(models.Model):
 
     class Meta():
         db_table = 'mutation_qual'
+        unique_together = ('qual','prop')
+
 
 
 class MutationFunc(models.Model):
 
-    func = models.CharField(max_length=100)
+    func = models.CharField(max_length=100, unique=True)
 
     class Meta():
         db_table = 'mutation_func'
@@ -211,7 +237,7 @@ class MutationFunc(models.Model):
 
 class MutationExperimentalType(models.Model):
 
-    type = models.CharField(max_length=100)
+    type = models.CharField(max_length=100, unique=True)
 
     class Meta():
         db_table = 'mutation_experimental_type'
@@ -219,7 +245,7 @@ class MutationExperimentalType(models.Model):
 
 class MutationLigandClass(models.Model):
 
-    classname = models.CharField(max_length=100)
+    classname = models.CharField(max_length=100, unique=True)
 
     class Meta():
         db_table = 'mutation_ligand_class'
@@ -227,7 +253,7 @@ class MutationLigandClass(models.Model):
 
 class MutationLigandRef(models.Model):
 
-    reference = models.CharField(max_length=100)
+    reference = models.CharField(max_length=100, unique=True)
 
     class Meta():
         db_table = 'mutation_ligand_reference'

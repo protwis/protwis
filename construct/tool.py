@@ -3,10 +3,12 @@ from django.http import HttpResponse
 from django.db.models import Min, Count, Max
 from django.conf import settings
 from django.views.decorators.cache import cache_page
+from django import forms
 
 from construct.models import *
+from structure.models import Structure
 from protein.models import ProteinConformation, Protein, ProteinSegment
-from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS
+from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, STRUCTURAL_RULES
 
 import json
 from collections import OrderedDict
@@ -14,8 +16,12 @@ import re
 import xlrd
 import yaml
 import os
+import time
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
+
+class FileUploadForm(forms.Form):
+    file_source = forms.FileField()
 
 def parse_excel(path):
     workbook = xlrd.open_workbook(path)
@@ -84,22 +90,76 @@ def tool(request):
 
     context['target'] = proteins[0]
 
+    level = proteins[0].family.slug
+    if level.split("_")[0]=='001':
+        c_level = 'A'
+    elif level.split("_")[0]=='002':
+        c_level = 'B'
+    elif level.split("_")[0]=='003':
+        c_level = 'B'
+    elif level.split("_")[0]=='004':
+        c_level = 'C'
+    elif level.split("_")[0]=='005':
+        c_level = 'F'
+    else:
+        c_level = ''
+
+    states = list(Structure.objects.filter(protein_conformation__protein__family__slug__startswith=level.split("_")[0]).all().values_list('state__slug', flat = True).distinct())
+    if 'active' in states:
+        active_xtals = True
+    else:
+        active_xtals = False
+
 
     rs = Residue.objects.filter(protein_conformation__protein=proteins[0]).prefetch_related('protein_segment','display_generic_number','generic_number')
 
     residues = {}
     residues_gn = {}
+    residues_pos = {}
     for r in rs:
         segment = r.protein_segment.slug
         segment = segment.replace("-","")
         if segment not in residues:
             residues[segment] = []
         residues[segment].append(r)
+        label = ''
         if r.generic_number:
             residues_gn[r.generic_number.label] = r
+            label = r.display_generic_number.label
 
+        residues_pos[r.sequence_number] = [r.amino_acid,r.protein_segment.slug,label]
+
+
+    cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
+    
+    inserts = {}
+    inserts['fusions'] = []
+    inserts['other'] = {}
+    for ins in ConstructInsertionType.objects.all().order_by('name','subtype'):
+       # print(ins.name,ins.subtype,ins.sequence)
+        if ins.name == 'fusion':
+            inserts['fusions'].append(ins.subtype)
+        else:
+            if ins.name not in inserts['other']:
+                inserts['other'][ins.name] = []
+            if ins.subtype not in inserts['other'][ins.name]:
+                inserts['other'][ins.name].append(ins.subtype)
+        # fusion, f_results = c.fusion()
+        # if fusion:
+        #     f_protein = f_results[0][2]
+        #     if f_protein not in inserts['fusions']:
+        #         inserts['fusions'].append(f_protein)
+        # else:
+        #     for ins in c.insertions.all():
+        #         print(ins)
+    print(inserts)
     context['residues'] = residues
     context['residues_gn'] = residues_gn
+    context['residues_pos'] = residues_pos
+    context['class'] = c_level
+    context['active_xtals'] = active_xtals
+    context['inserts'] = inserts
+    context['form'] = FileUploadForm
     #print(residues)
 
     return render(request,'tool.html',context)
@@ -119,7 +179,7 @@ def json_fusion(request, slug, **response_kwargs):
 @cache_page(60 * 60 * 24)
 def json_palmi(request, slug, **response_kwargs):
 
-
+    start_time = time.time()
     seq = Protein.objects.filter(entry_name=slug).values_list('sequence', flat = True).get()
     rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug,protein_segment__slug__in=['H8','C-term']).order_by('sequence_number').prefetch_related('protein_segment')
     residues = {}
@@ -150,12 +210,15 @@ def json_palmi(request, slug, **response_kwargs):
     jsondata = palmi
     jsondata = json.dumps(jsondata)
     response_kwargs['content_type'] = 'application/json'
+    end_time = time.time()
+    diff = round(end_time - start_time,1)
+    print("palmi",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
 
-#@cache_page(60 * 60 * 24)
+@cache_page(60 * 60 * 24)
 def json_glyco(request, slug, **response_kwargs):
-
+    start_time = time.time()
 
     seq = Protein.objects.filter(entry_name=slug).values_list('sequence', flat = True).get()
     rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug).prefetch_related('protein_segment')
@@ -199,16 +262,20 @@ def json_glyco(request, slug, **response_kwargs):
             mutations_mammalian.append([m.start()+1,pos0,m.start()+2,pos1,matches_seq[i],residues[m.start()+1]])
 
     glyco = OrderedDict()
-    glyco['o-linked']= mutations_all
-    glyco['n-linked'] = mutations_mammalian
+    glyco['n-linked']= mutations_all
+    glyco['o-linked'] = mutations_mammalian
 
     jsondata = glyco
     jsondata = json.dumps(jsondata)
     response_kwargs['content_type'] = 'application/json'
+    end_time = time.time()
+    diff = round(end_time - start_time,1)
+    print("glyco",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
 @cache_page(60 * 60 * 24)
 def json_icl3(request, slug, **response_kwargs):
+    start_time = time.time()
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
 
     ##PREPARE TM1 LOOKUP DATA
@@ -219,17 +286,17 @@ def json_icl3(request, slug, **response_kwargs):
     tm6_end = {}
     tm5_50 = {}
     tm6_50 = {}
-    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__protein_segment__slug='TM5').annotate(start=Min('residue__sequence_number'), end=Max('residue__sequence_number'))
+    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).prefetch_related('protein').filter(residue__protein_segment__slug='TM5').annotate(start=Min('residue__sequence_number'), end=Max('residue__sequence_number'))
     for pc in pconfs:
         tm5_start[pc.protein.entry_name] = pc.start
         tm5_end[pc.protein.entry_name] = pc.end
-    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__protein_segment__slug='TM6').annotate(start=Min('residue__sequence_number'), end=Max('residue__sequence_number'))
+    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).prefetch_related('protein').filter(residue__protein_segment__slug='TM6').annotate(start=Min('residue__sequence_number'), end=Max('residue__sequence_number'))
     for pc in pconfs:
         tm6_start[pc.protein.entry_name] = pc.start
         tm6_end[pc.protein.entry_name] = pc.end
 
 
-    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__generic_number__label__in=['5x50','6x50']).annotate(start=Min('residue__sequence_number'), end=Max('residue__sequence_number'))
+    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).prefetch_related('protein').filter(residue__generic_number__label__in=['5x50','6x50']).annotate(start=Min('residue__sequence_number'), end=Max('residue__sequence_number'))
     for pc in pconfs:
         tm5_50[pc.protein.entry_name] = pc.start
         tm6_50[pc.protein.entry_name] = pc.end
@@ -254,13 +321,19 @@ def json_icl3(request, slug, **response_kwargs):
         if pdb not in states:
             states[pdb] = state
         fusion, f_results = c.fusion()
+        if fusion:
+            f_protein = f_results[0][2]
+        else:
+            f_protein = ""
         for deletion in c.deletions.all():
             #print(pdb,deletion.start,deletion.end)
             if deletion.start > tm5_start[entry_name] and deletion.start < tm6_end[entry_name]:
                 if p.entry_name not in deletions[d_level_name]:
                     deletions[d_level_name][entry_name] = {}
                 #deletions[entry_name][pdb] = [tm5_end[entry_name],tm6_start[entry_name],deletion.start,deletion.end,deletion.start-tm5_end[entry_name],tm6_start[entry_name]-deletion.end]
-                deletions[d_level_name][entry_name][pdb] = [deletion.start-tm5_50[entry_name],tm6_50[entry_name]-deletion.end-1,state,str(fusion)]
+                deletions[d_level_name][entry_name][pdb] = [deletion.start-tm5_50[entry_name],tm6_50[entry_name]-deletion.end-1,state,str(fusion),f_protein]
+                # if (str(fusion)=='icl3'):
+                #     print(entry_name,pdb,50+deletion.start-tm5_50[entry_name],50-(tm6_50[entry_name]-deletion.end-1),str(fusion),f_protein)
 
     # for pdb,state in sorted(states.items()):
     #     print(pdb,"\t",state)
@@ -268,21 +341,95 @@ def json_icl3(request, slug, **response_kwargs):
     jsondata = deletions
     jsondata = json.dumps(jsondata)
     response_kwargs['content_type'] = 'application/json'
+    end_time = time.time()
+    diff = round(end_time - start_time,1)
+    print("icl3",diff)
+    return HttpResponse(jsondata, **response_kwargs)
+
+@cache_page(60 * 60 * 24)
+def json_icl2(request, slug, **response_kwargs):
+    start_time = time.time()
+    level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
+
+    ##PREPARE TM1 LOOKUP DATA
+    proteins = Construct.objects.all().values_list('protein', flat = True)
+    tm3_start = {}
+    tm3_end = {}
+    tm4_start = {}
+    tm4_end = {}
+    tm3_50 = {}
+    tm4_50 = {}
+    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).prefetch_related('protein').filter(residue__protein_segment__slug='TM3').annotate(start=Min('residue__sequence_number'), end=Max('residue__sequence_number'))
+    for pc in pconfs:
+        tm3_start[pc.protein.entry_name] = pc.start
+        tm3_end[pc.protein.entry_name] = pc.end
+    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).prefetch_related('protein').filter(residue__protein_segment__slug='TM4').annotate(start=Min('residue__sequence_number'), end=Max('residue__sequence_number'))
+    for pc in pconfs:
+        tm4_start[pc.protein.entry_name] = pc.start
+        tm4_end[pc.protein.entry_name] = pc.end
+
+
+    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).prefetch_related('protein').filter(residue__generic_number__label__in=['3x50','4x50']).annotate(start=Min('residue__sequence_number'), end=Max('residue__sequence_number'))
+    for pc in pconfs:
+        tm3_50[pc.protein.entry_name] = pc.start
+        tm4_50[pc.protein.entry_name] = pc.end
+
+
+    cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
+    
+    deletions = OrderedDict()
+    deletions['Receptor'] = {}
+    deletions['Receptor Family'] = {}
+    deletions['Ligand Type'] = {}
+    deletions['Class'] = {}
+    deletions['Different Class'] = {}
+    states = {}
+    for c in cons:
+        p = c.protein
+        entry_name = p.entry_name
+        p_level = p.family.slug
+        d_level, d_level_name = compare_family_slug(level,p_level)
+        pdb = c.crystal.pdb_code
+        state = c.structure.state.slug
+        if pdb not in states:
+            states[pdb] = state
+        fusion, f_results = c.fusion()
+        if fusion:
+            f_protein = f_results[0][2]
+        else:
+            f_protein = ""
+        for deletion in c.deletions.all():
+            #print(pdb,deletion.start,deletion.end)
+            if deletion.start > tm3_start[entry_name] and deletion.start < tm4_end[entry_name]:
+                if p.entry_name not in deletions[d_level_name]:
+                    deletions[d_level_name][entry_name] = {}
+                #deletions[entry_name][pdb] = [tm5_end[entry_name],tm6_start[entry_name],deletion.start,deletion.end,deletion.start-tm5_end[entry_name],tm6_start[entry_name]-deletion.end]
+                deletions[d_level_name][entry_name][pdb] = [deletion.start-tm3_50[entry_name],tm4_50[entry_name]-deletion.end-1,state,str(fusion),f_protein]
+
+    # for pdb,state in sorted(states.items()):
+    #     print(pdb,"\t",state)
+
+    jsondata = deletions
+    jsondata = json.dumps(jsondata)
+    response_kwargs['content_type'] = 'application/json'
+    end_time = time.time()
+    diff = round(end_time - start_time,1)
+    print("icl2",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
 @cache_page(60 * 60 * 24)
 def json_nterm(request, slug, **response_kwargs):
+    start_time = time.time()
 
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
 
     ##PREPARE TM1 LOOKUP DATA
     proteins = Construct.objects.all().values_list('protein', flat = True)
-    #pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__protein_segment__slug='TM1').annotate(start=Min('residue__sequence_number'))
-    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__generic_number__label__in=['1x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
+    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).prefetch_related('protein').filter(residue__protein_segment__slug='TM1').annotate(start=Min('residue__sequence_number'))
+    #pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__generic_number__label__in=['1x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
     tm1_start = {}
     for pc in pconfs:
-        tm1_start[pc[0]] = pc[1]
-
+        tm1_start[pc.protein.entry_name] = pc.start
 
     cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
     deletions = OrderedDict()
@@ -299,19 +446,28 @@ def json_nterm(request, slug, **response_kwargs):
         pdb = c.crystal.pdb_code
         state = c.structure.state.slug
         fusion, f_results = c.fusion()
+        if fusion:
+            f_protein = f_results[0][2]
+        else:
+            f_protein = ""
         for deletion in c.deletions.all():
             if deletion.start < tm1_start[entry_name]:
                 if p.entry_name not in deletions[d_level_name]:
                     deletions[d_level_name][entry_name] = {}
-                deletions[d_level_name][entry_name][pdb] = [deletion.start,deletion.end, tm1_start[entry_name]-deletion.end-1,state,str(fusion)]
+                deletions[d_level_name][entry_name][pdb] = [deletion.start,deletion.end, tm1_start[entry_name]-deletion.end,state,str(fusion),f_protein]
 
     jsondata = deletions
     jsondata = json.dumps(jsondata)
     response_kwargs['content_type'] = 'application/json'
+    end_time = time.time()
+    diff = round(end_time - start_time,1)
+    print("nterm",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
 @cache_page(60 * 60 * 24)
 def json_cterm(request, slug, **response_kwargs):
+
+    start_time = time.time()
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
 
     ##PREPARE TM1 LOOKUP DATA
@@ -320,10 +476,12 @@ def json_cterm(request, slug, **response_kwargs):
     # cterm_start = {}
     # for pc in pconfs:
     #     cterm_start[pc.protein.entry_name] = pc.start
-    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__generic_number__label__in=['8x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
+    # pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__protein_segment__slug='C-term').annotate(start=Min('residue__sequence_number')).values_list('protein__entry_name','start','residue__generic_number__label')
+    #pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).filter(residue__generic_number__label__in=['8x50']).values_list('protein__entry_name','residue__sequence_number','residue__generic_number__label')
+    pconfs = ProteinConformation.objects.filter(protein_id__in=proteins).prefetch_related('protein').filter(residue__protein_segment__slug='C-term').annotate(start=Min('residue__sequence_number'))
     cterm_start = {}
     for pc in pconfs:
-        cterm_start[pc[0]] = pc[1]
+        cterm_start[pc.protein.entry_name] = pc.start
 
 
     cons = Construct.objects.all().prefetch_related('crystal', 'protein__family','deletions','structure__state','insertions__insert_type')
@@ -342,20 +500,28 @@ def json_cterm(request, slug, **response_kwargs):
         pdb = c.crystal.pdb_code
         state = c.structure.state.slug
         fusion, f_results = c.fusion()
+        if fusion:
+            f_protein = f_results[0][2]
+        else:
+            f_protein = ""
         for deletion in c.deletions.all():
             if deletion.start >= cterm_start[entry_name]:
                 if p.entry_name not in deletions[d_level_name]:
                     deletions[d_level_name][entry_name] = {}
-                deletions[d_level_name][entry_name][pdb] = [deletion.start,deletion.end, cterm_start[entry_name]-deletion.start,state,str(fusion)]
+                deletions[d_level_name][entry_name][pdb] = [deletion.start,deletion.end, deletion.start-cterm_start[entry_name],state,str(fusion),f_protein]
 
     jsondata = deletions
     jsondata = json.dumps(jsondata)
     response_kwargs['content_type'] = 'application/json'
+    end_time = time.time()
+    diff = round(end_time - start_time,1)
+    print("cterm",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
 @cache_page(60 * 60 * 24)
 def thermostabilising(request, slug, **response_kwargs):
 
+    start_time = time.time()
 
     rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug).prefetch_related('protein_segment','display_generic_number','generic_number')
 
@@ -375,6 +541,10 @@ def thermostabilising(request, slug, **response_kwargs):
         c_level = 'B'
     elif level.split("_")[0]=='003':
         c_level = 'B'
+    elif level.split("_")[0]=='004':
+        c_level = 'C'
+    elif level.split("_")[0]=='005':
+        c_level = 'F'
     else:
         c_level = ''
 
@@ -399,7 +569,9 @@ def thermostabilising(request, slug, **response_kwargs):
         pdb = mut['PDB']
         if mut['Effect'] != 'Thermostabilising':
             continue #only thermo!
-        if entry_name == slug:
+        if gn is "":
+            continue
+        if (entry_name == slug) or (entry_name.split('_')[0] == slug.split('_')[0] and wt_aa == wt_lookup[gn][0]):
             if gn not in results['1']:
                 results['1'][gn] = {}
             if mut_aa not in results['1'][gn]:
@@ -427,7 +599,7 @@ def thermostabilising(request, slug, **response_kwargs):
                         results['3'][gn][wt_aa]['hits'] += 1
                         if mut_aa not in results['3'][gn][wt_aa]['muts']:
                             results['3'][gn][wt_aa]['muts'].append(mut_aa)
-
+      
     temp = {}
     for gn, vals1 in results['2'].items():
         for mut_aa, vals2 in vals1.items():
@@ -439,6 +611,7 @@ def thermostabilising(request, slug, **response_kwargs):
                 #results['2'][gn].pop(mut_aa, None)
     results['2'] = temp
 
+    temp_single = {}                  
     temp = {}
     for gn, vals1 in results['3'].items():
         for mut_aa, vals2 in vals1.items():
@@ -448,17 +621,162 @@ def thermostabilising(request, slug, **response_kwargs):
                 if mut_aa not in temp[gn]:
                     temp[gn][mut_aa] = vals2
                 #results['2'][gn].pop(mut_aa, None)
+            elif vals2['hits']==1:
+                if gn not in temp_single:
+                    temp_single[gn] = {}
+                if mut_aa not in temp_single[gn]:
+                    temp_single[gn][mut_aa] = vals2
     results['3'] = temp
+    results['4'] = temp_single
 
 
     jsondata = results
     jsondata = json.dumps(jsondata)
     response_kwargs['content_type'] = 'application/json'
+    end_time = time.time()
+    diff = round(end_time - start_time,1)
+    print("termo",diff)
+    return HttpResponse(jsondata, **response_kwargs)
+
+
+@cache_page(60 * 60 * 24)
+def structure_rules(request, slug, **response_kwargs):
+    start_time = time.time()
+
+    rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug).prefetch_related('protein_segment','display_generic_number','generic_number')
+
+    wt_lookup = {}
+    wt_lookup_pos = {}
+    for r in rs:
+        if r.generic_number:
+            gn = r.generic_number.label
+            wt_lookup[gn] = [r.amino_acid, r.sequence_number]
+        pos = r.sequence_number
+        wt_lookup_pos[pos] = [r.amino_acid]
+
+    level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
+    if level.split("_")[0]=='001':
+        c_level = 'A'
+    elif level.split("_")[0]=='002':
+        c_level = 'B'
+    elif level.split("_")[0]=='003':
+        c_level = 'B'
+    elif level.split("_")[0]=='004':
+        c_level = 'C'
+    elif level.split("_")[0]=='005':
+        c_level = 'F'
+    else:
+        c_level = ''
+
+    # path = os.sep.join([settings.DATA_DIR, 'structure_data', 'construct_data', 'structure_rules.xlsx'])
+    # d = parse_excel(path)
+    d = STRUCTURAL_RULES
+    if c_level in d:
+        rules = d[c_level]
+    else:
+        rules = []
+
+    results = OrderedDict()
+    results['active'] = {}
+    results['inactive'] = {} #fixed mut
+
+    for rule in rules:
+        gn = rule['Generic Position']
+        mut_aa = rule['Mut AA']
+        wt_aas = rule['Wt AA'].split("/")
+        definition = rule['Design Principle']+" "+rule['Addition / Removal']
+        state = rule['State'].lower()
+        valid = False
+        if gn in wt_lookup:
+            for wt_aa in wt_aas:
+                if wt_aa=='X' and wt_lookup[gn][0]!=mut_aa: #if universal but not mut aa
+                    valid = True
+                elif wt_lookup[gn][0]==wt_aa:
+                    valid = True
+            if valid:
+                mut = {'wt':wt_lookup[gn][0], 'gn': gn, 'pos':wt_lookup[gn][1], 'mut':mut_aa, 'definition':definition}
+                if state=='all':
+                    if gn not in results['active']: 
+                        results['active'][gn] = []
+                    if gn not in results['inactive']: 
+                        results['inactive'][gn] = []
+                    results['active'][gn].append(mut)
+                    results['inactive'][gn].append(mut)
+                else:
+                    if gn not in results[state]: 
+                        results[state][gn] = []
+                    results[state][gn].append(mut)
+
+
+    #     entry_name = mut['UniProt']
+    #     pos = int(mut['POS'])
+    #     pdb = mut['PDB']
+    #     if mut['Effect'] != 'Thermostabilising':
+    #         continue #only thermo!
+    #     if entry_name == slug:
+    #         if gn not in results['1']:
+    #             results['1'][gn] = {}
+    #         if mut_aa not in results['1'][gn]:
+    #             results['1'][gn][mut_aa] = {'pdbs':[], 'hits':0, 'wt':wt_lookup[gn]}
+    #         if mut['PDB'] not in results['1'][gn][mut_aa]['pdbs']:
+    #             results['1'][gn][mut_aa]['pdbs'].append(pdb)
+    #         results['1'][gn][mut_aa]['hits'] += 1
+
+    #     if gn:
+    #         if gn in wt_lookup:
+    #             if gn not in results['2']:
+    #                 results['2'][gn] = {}
+    #             if mut_aa not in results['2'][gn]:
+    #                 results['2'][gn][mut_aa] = {'pdbs':[], 'proteins':[], 'hits':0, 'wt':wt_lookup[gn]}
+    #             if entry_name not in results['2'][gn][mut_aa]['proteins']:
+    #                 results['2'][gn][mut_aa]['proteins'].append(entry_name)
+    #                 results['2'][gn][mut_aa]['hits'] += 1
+    #             if wt_lookup[gn][0] == wt_aa:
+    #                 if gn not in results['3']:
+    #                     results['3'][gn] = {}
+    #                 if wt_aa not in results['3'][gn]:
+    #                     results['3'][gn][wt_aa] = {'pdbs':[], 'proteins':[], 'hits':0, 'wt':wt_lookup[gn], 'muts':[]}
+    #                 if entry_name not in results['3'][gn][wt_aa]['proteins']:
+    #                     results['3'][gn][wt_aa]['proteins'].append(entry_name)
+    #                     results['3'][gn][wt_aa]['hits'] += 1
+    #                     if mut_aa not in results['3'][gn][wt_aa]['muts']:
+    #                         results['3'][gn][wt_aa]['muts'].append(mut_aa)
+
+    # temp = {}
+    # for gn, vals1 in results['2'].items():
+    #     for mut_aa, vals2 in vals1.items():
+    #         if vals2['hits']>1:
+    #             if gn not in temp:
+    #                 temp[gn] = {}
+    #             if mut_aa not in temp[gn]:
+    #                 temp[gn][mut_aa] = vals2
+    #             #results['2'][gn].pop(mut_aa, None)
+    # results['2'] = temp
+
+    # temp = {}
+    # for gn, vals1 in results['3'].items():
+    #     for mut_aa, vals2 in vals1.items():
+    #         if vals2['hits']>1:
+    #             if gn not in temp:
+    #                 temp[gn] = {}
+    #             if mut_aa not in temp[gn]:
+    #                 temp[gn][mut_aa] = vals2
+    #             #results['2'][gn].pop(mut_aa, None)
+    # results['3'] = temp
+
+
+    jsondata = results
+    jsondata = json.dumps(jsondata)
+    response_kwargs['content_type'] = 'application/json'
+    end_time = time.time()
+    diff = round(end_time - start_time,1)
+    print("rules",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
 
 @cache_page(60 * 60 * 24)
 def mutations(request, slug, **response_kwargs):
+    start_time = time.time()
 
     ##PREPARE TM1 LOOKUP DATA
     # proteins = Construct.objects.all().values_list('protein', flat = True)
@@ -544,13 +862,16 @@ def mutations(request, slug, **response_kwargs):
     jsondata = mutation_list
     jsondata = json.dumps(jsondata)
     response_kwargs['content_type'] = 'application/json'
+    end_time = time.time()
+    diff = round(end_time - start_time,1)
+    print("muts",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
 @cache_page(60 * 60 * 24)
 def cons_strucs(request, slug, **response_kwargs):
+    start_time = time.time()
 
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
-    print(level)
     ##PREPARE TM1 LOOKUP DATA
     c_proteins = Construct.objects.filter(protein__family__slug__startswith = level.split("_")[0]).all().values_list('protein__pk', flat = True).distinct()
     xtal_proteins = Protein.objects.filter(pk__in=c_proteins)
@@ -562,7 +883,6 @@ def cons_strucs(request, slug, **response_kwargs):
     potentials = cache.get("CD_xtal_"+level.split("_")[0])
 
     if potentials==None:
-        print(len(xtal_proteins))
 
         a = Alignment()
 
@@ -610,14 +930,16 @@ def cons_strucs(request, slug, **response_kwargs):
             results[gn] = [r.amino_acid, r.sequence_number,potentials[gn][0],potentials[gn][1]]
     jsondata = json.dumps(results)
     response_kwargs['content_type'] = 'application/json'
+    end_time = time.time()
+    diff = round(end_time - start_time,1)
+    print("cons_strucs",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
 @cache_page(60 * 60 * 24)
 def cons_rf(request, slug, **response_kwargs):
+    start_time = time.time()
 
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
-    print(level)
-    print("_".join(level.split("_")[0:3]))
     ##PREPARE TM1 LOOKUP DATA
     #c_proteins = Construct.objects.filter(protein__family__slug__startswith = level.split("_")[0]).all().values_list('protein__pk', flat = True).distinct()
     rf_proteins = Protein.objects.filter(family__slug__startswith="_".join(level.split("_")[0:3]), source__name='SWISSPROT',species__common_name='Human')
@@ -674,14 +996,16 @@ def cons_rf(request, slug, **response_kwargs):
             results[gn] = [r.amino_acid, r.sequence_number,potentials[gn][0],potentials[gn][1]]
     jsondata = json.dumps(results)
     response_kwargs['content_type'] = 'application/json'
+    end_time = time.time()
+    diff = round(end_time - start_time,1)
+    print("cons_rf",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
 @cache_page(60 * 60 * 24)
 def cons_rf_and_class(request, slug, **response_kwargs):
+    start_time = time.time()
 
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
-    print(level)
-    print("_".join(level.split("_")[0:3]))
     ##PREPARE TM1 LOOKUP DATA
     #c_proteins = Construct.objects.filter(protein__family__slug__startswith = level.split("_")[0]).all().values_list('protein__pk', flat = True).distinct()
     rf_proteins = Protein.objects.filter(family__slug__startswith="_".join(level.split("_")[0:3]), source__name='SWISSPROT',species__common_name='Human')
@@ -690,8 +1014,6 @@ def cons_rf_and_class(request, slug, **response_kwargs):
     amino_acids_stats = {}
     amino_acids_groups_stats = {}
         
-    print(len(rf_proteins))
-
     a = Alignment()
 
     a.load_proteins(rf_proteins)
@@ -736,7 +1058,6 @@ def cons_rf_and_class(request, slug, **response_kwargs):
         amino_acids_stats = {}
         amino_acids_groups_stats = {}
             
-        print(len(class_proteins))
 
         a = Alignment()
 
@@ -782,18 +1103,18 @@ def cons_rf_and_class(request, slug, **response_kwargs):
         gn = r.generic_number.label
         if r.amino_acid!=potentials[gn][0]:
             if gn in potentials2:
-                print(gn,r.amino_acid,potentials[gn],potentials2[gn])
                 results[gn] = [r.amino_acid, r.sequence_number,potentials[gn][0],potentials[gn][1]]
     jsondata = json.dumps(results)
     response_kwargs['content_type'] = 'application/json'
+    end_time = time.time()
+    diff = round(end_time - start_time,1)
+    print("cons_rf_and_class",diff)
     return HttpResponse(jsondata, **response_kwargs)
 
 @cache_page(60 * 60 * 24)
 def cons_rm_GP(request, slug, **response_kwargs):
-
+    start_time = time.time()
     level = Protein.objects.filter(entry_name=slug).values_list('family__slug', flat = True).get()
-    print(level)
-    print("_".join(level.split("_")[0:3]))
     ##PREPARE TM1 LOOKUP DATA
     #c_proteins = Construct.objects.filter(protein__family__slug__startswith = level.split("_")[0]).all().values_list('protein__pk', flat = True).distinct()
     rf_proteins = Protein.objects.filter(family__slug__startswith="_".join(level.split("_")[0:3]), source__name='SWISSPROT',species__common_name='Human')
@@ -802,18 +1123,11 @@ def cons_rm_GP(request, slug, **response_kwargs):
     amino_acids_stats = {}
     amino_acids_groups_stats = {}
         
-
-    print(len(rf_proteins))
-
     a = Alignment()
-
     a.load_proteins(rf_proteins)
-
     a.load_segments(align_segments) #get all segments to make correct diagrams
-
     # build the alignment data matrix
     a.build_alignment()
-
     # calculate consensus sequence + amino acid and feature frequency
     a.calculate_statistics()
 
@@ -844,12 +1158,17 @@ def cons_rm_GP(request, slug, **response_kwargs):
     rs = Residue.objects.filter(protein_conformation__protein__entry_name=slug, generic_number__label__in=list(potentials.keys())).prefetch_related('protein_segment','display_generic_number','generic_number')
 
     results = {}
+    results2 = {}
     for r in rs:
         gn = r.generic_number.label
         if r.amino_acid in ['G','P']:
-            print(gn,potentials[gn][1],potentials[gn][0])
             if r.amino_acid!=potentials[gn][0]:
                 results[gn] = [r.amino_acid, r.sequence_number,potentials[gn][0],potentials[gn][1]]
-    jsondata = json.dumps(results)
+            if r.amino_acid=='G' and potentials[gn][0]=='G':
+                results2[gn] = [r.amino_acid, r.sequence_number,'A',potentials[gn][1]]
+    jsondata = json.dumps({'non-conserved':results, 'conserved':results2})
     response_kwargs['content_type'] = 'application/json'
+    end_time = time.time()
+    diff = round(end_time - start_time,1)
+    print("cons_rm_GP",diff)
     return HttpResponse(jsondata, **response_kwargs)
