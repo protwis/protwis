@@ -56,6 +56,7 @@ class Command(BaseCommand):
                 res1 = Residue.objects.get(sequence_number=res1_seq_num, protein_conformation=conformation)
                 res2 = Residue.objects.get(sequence_number=res2_seq_num, protein_conformation=conformation)
             except Residue.DoesNotExist:
+                self.logger.info('Error with pair between {} and {} ({})' % (res1_seq_num,res2_seq_num,conformation))
                 continue
 
             # Save the pair
