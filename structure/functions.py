@@ -21,6 +21,9 @@ import tempfile
 import logging
 import math
 import urllib
+from collections import OrderedDict
+import Bio.PDB as PDB
+
 
 logger = logging.getLogger("protwis")
 
@@ -351,9 +354,14 @@ class BackboneSelector():
         "target_residue" : 2
         }
 
-    similarity_rules = [[['H', 'F', 'Y', 'W'], ['AEF', 'AFF'], ['H', 'F', 'Y', 'W']],
-        [['Y'], ['AFE'], ['F']],
-        [['S', 'T'], ['HBA', 'HBD'], ['S', 'T']],]
+    #similarity_rules = [[['H', 'F', 'Y', 'W'], ['AEF', 'AFF'], ['H', 'F', 'Y', 'W']],
+    #    [['Y'], ['AFE'], ['F']],
+    #    [['S', 'T'], ['HBA', 'HBD'], ['S', 'T']],]
+    
+    #interaction_type slugs changed along the way
+    similarity_rules = [[['H', 'F', 'Y', 'W'], ['aro_ef_protein', 'aro_ff'], ['H', 'F', 'Y', 'W']],
+        [['Y'], ['aro_fe_protein'], ['F']],
+        [['S', 'T'], ['polar_acceptor_protein', 'polar_donor_protein'], ['S', 'T']],]
 
     def __init__ (self, ref_pdbio_struct, fragment, use_similar=False):
 
@@ -377,7 +385,8 @@ class BackboneSelector():
                                 if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and fragment.rotamer.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
                                     return [res['CA'], res['N'], res['O']] 
                         else:
-                            return [res['CA'], res['N'], res['O']] 
+                            if fragment.interaction_type.slug not in ['acc', 'hyd']:
+                                return [res['CA'], res['N'], res['O']] 
                 except Exception as msg:
                     continue
         return []                  
@@ -513,7 +522,7 @@ class HSExposureCB(AbstractPropertyMap):
     vector based on three consecutive CA atoms. This is done by two separate
     subclasses.
     """
-    def __init__(self, model, radius, offset=0, hse_up_key='HSE_U', hse_down_key='HSE_D', angle_key=None):
+    def __init__(self, model, radius, offset=0, hse_up_key='HSE_U', hse_down_key='HSE_D', angle_key=None, check_chain_breaks=False):
         """
         @param model: model
         @type model: L{Model}
@@ -544,9 +553,18 @@ class HSExposureCB(AbstractPropertyMap):
         hse_list=[]
         hse_keys=[]
         ### GP
+        residues_in_pdb,residues_with_proper_CA=[],[]
+        if check_chain_breaks==True:
+            for m in model:
+                for chain in m:
+                    for res in chain:
+                        if is_aa(res):
+                            residues_in_pdb.append(res.get_id()[1])
         self.clash_pairs = []
+        self.chain_breaks = []
         for pp1 in ppl:
             for i in range(0, len(pp1)):
+                residues_with_proper_CA.append(pp1[i].get_id()[1])
                 if i==0:
                     r1=None
                 else:
@@ -569,9 +587,15 @@ class HSExposureCB(AbstractPropertyMap):
                 residue_down=[] ### GP
                 for pp2 in ppl:
                     for j in range(0, len(pp2)):
-                        if pp1 is pp2 and abs(i-j)<=offset:
+                        try:
+                            if r2.get_id()[1]-1!=r1.get_id()[1] or r2.get_id()[1]+1!=r3.get_id()[1]:
+                                pass
+                            else:
+                                raise Exception
+                        except:
+                            if pp1 is pp2 and abs(i-j)<=offset:
                             # neighboring residues in the chain are ignored
-                            continue
+                                continue
                         ro=pp2[j]
                         if not is_aa(ro) or not ro.has_id('CA'):
                             continue
@@ -583,6 +607,7 @@ class HSExposureCB(AbstractPropertyMap):
                                 ### GP
                                 # Puts residues' names in a list that were found in the upper half sphere
                                 residue_up.append(ro)
+                                
                                 ### end of GP code
                             else:
                                 hse_d+=1
@@ -604,20 +629,47 @@ class HSExposureCB(AbstractPropertyMap):
                     r2.xtra[angle_key]=angle
                 
                 ### GP checking for atom clashes
+                include_prev, include_next = False, False
+                try:
+                    if pp1[i].get_id()[1]-1!=pp1[i-1].get_id()[1]:
+                        include_prev = True
+                except:
+                    include_prev = False
+                try:                                
+                    if pp1[i].get_id()[1]+1!=pp1[i+1].get_id()[1]:
+                        include_next = True
+                except:
+                    include_next = False
                 for atom in pp1[i]:
                     ref_vector = atom.get_vector()
                     for other_res in residue_up:
                         try:
-                            if other_res!=pp1[i-1] and other_res!=pp1[i+1]:
-                                for other_atom in other_res:
-                                    other_vector = other_atom.get_vector()
-                                    d = other_vector-ref_vector
-                                    if d.norm()<2:
-                                        self.clash_pairs.append([(pp1[i]['CA'].get_bfactor(),pp1[i].get_id()[1]),
-                                                                 (other_res['CA'].get_bfactor(),other_res.get_id()[1])])
+                            if other_res==pp1[i-1] and include_prev==False:
+                                continue
+                            elif len(pp1)>=i+1 and other_res==pp1[i+1] and include_next==False:
+                                continue
+                            else:
+                                raise Exception
                         except:
-                            pass
-
+                            for other_atom in other_res:
+                                other_vector = other_atom.get_vector()
+                                d = other_vector-ref_vector
+                                if d.norm()<2:
+                                    if len(str(pp1[i]['CA'].get_bfactor()).split('.')[1])==1:
+                                        clash_res1 = float(str(pp1[i]['CA'].get_bfactor())+'0')
+                                    else:
+                                        clash_res1 = pp1[i]['CA'].get_bfactor()
+                                    if len(str(other_res['CA'].get_bfactor()).split('.')[1])==1:
+                                        clash_res2 = float(str(other_res['CA'].get_bfactor())+'0')
+                                    else:
+                                        clash_res2 = other_res['CA'].get_bfactor()
+                                    self.clash_pairs.append([(clash_res1, pp1[i].get_id()[1]), (clash_res2, other_res.get_id()[1])])
+        if check_chain_breaks==True:
+            for r in residues_in_pdb:
+                if r not in residues_with_proper_CA:
+                    self.chain_breaks.append(r)
+                    
+                    
     def _get_cb(self, r1, r2, r3):
         """
         Method to calculate CB-CA vector.
@@ -659,3 +711,67 @@ class HSExposureCB(AbstractPropertyMap):
         # This is for PyMol visualization
         self.ca_cb_list.append((ca_v, cb_v))
         return cb_at_origin_v
+
+
+class PdbChainSelector():
+    def __init__(self, pdb_code, protein):
+        self.pdb_code = pdb_code
+        self.protein = protein
+        self.chains = []
+        self.dssp_dict = OrderedDict()
+        self.dssp_info = OrderedDict()
+        self.aux_residues = []
+
+    def run_dssp(self):
+        pdb = PDB.PDBList()
+        pdb.retrieve_pdb_file(self.pdb_code, pdir='./', file_format="pdb")
+        p = PDB.PDBParser()
+        f = 'pdb{}.ent'.format(self.pdb_code.lower())
+        wt_residues = [i.sequence_number for i in Residue.objects.filter(protein_conformation__protein=self.protein).exclude(protein_segment__slug__in=['N-term','C-term'])]
+        structure = p.get_structure(self.pdb_code, f)
+        for chain in structure[0]:
+            ch = chain.get_id()
+            self.chains.append(ch)
+            self.dssp_dict[ch] = OrderedDict()
+            self.dssp_info[ch] = OrderedDict([('H',0),('B',0),('E',0),('G',0),('I',0),('T',0),('S',0),('-',0)])
+        if len(self.dssp_dict)>1:
+            dssp = PDB.DSSP(structure[0], f, dssp='/env/bin/dssp')
+            for key in dssp.keys():
+                if int(key[1][1]) in wt_residues:
+                    self.dssp_dict[key[0]][key[1][1]] = dssp[key]
+                    self.dssp_info[key[0]][dssp[key][2]] = self.dssp_info[key[0]][dssp[key][2]]+1
+
+    def get_seqnums_by_secondary_structure(self, chain, secondary_structure):
+        ''' Returns list of sequence numbers that match the secondary structural property. \n
+            H: alpha helix, B: isolated beta-bridge, E: strand, G: 3-10 helix, I: pi-helix, T: turn, S: bend, -: Other
+        '''
+        if secondary_structure not in ['H','B','E','G','I','T','S','-']:
+            raise ValueError('Incorrect secondary_structure input. Input can be H, B, E, G, I, T, S, -')
+        output = []
+        for seqnum, val in self.dssp_dict[chain].items():
+            if val[2]==secondary_structure:
+                output.append(seqnum)
+        return output
+
+    def select_chain(self):
+        num_helix_res = []
+        seq_lengths = []
+        for c, val in self.dssp_info.items():
+            seq_length = 0
+            num_helix_res.append(val['H']+val['G']+val['I'])
+            for s, num in val.items():
+                seq_length+=num
+            seq_lengths.append(seq_length)
+
+        max_res = num_helix_res[0]
+        max_i = 0
+        for i in range(1,len(num_helix_res)):
+            if num_helix_res[i]>max_res:
+                if num_helix_res[i]-max_res>seq_lengths[max_i]-seq_lengths[i]:
+                    max_res = num_helix_res[i]
+                    max_i = i
+            elif num_helix_res[i]==max_res:
+                if seq_lengths[max_i]<seq_lengths[i]:
+                    max_res = num_helix_res[i]
+                    max_i = i
+        return self.chains[max_i]

@@ -14,6 +14,31 @@
             font-size: 10px;
         }
 
+        td { 
+             white-space: nowrap;
+         }
+
+        thead .cus_sorting {
+            background-image: url(/static/home/images/sort_both.png);
+            background-repeat: no-repeat;
+            background-position: center right;
+            cursor: pointer;
+        }
+
+        thead .cus_sorting_asc {
+            background-image: url(/static/home/images/sort_asc.png);
+            background-repeat: no-repeat;
+            background-position: center right;
+            cursor: pointer;
+        }
+
+        thead .cus_sorting_desc {
+            background-image: url(/static/home/images/sort_desc.png);
+            background-repeat: no-repeat;
+            background-position: center right;
+            cursor: pointer;
+        }
+
         #filters{
 /*            float:left;
           display:none;
@@ -39,14 +64,22 @@
         width: 100% !Important;
         }
 
+        .ali-scroll-div, .ali-main-div
+        {
+            width: 890px;
+        }
         @media (min-width: 1600px){
             #content {
-                width: 1570px;
+                width: 1200px;
             }
         }
         @media (min-width: 1800px){
             #content {
                 width: 1770px;
+            }
+            .ali-scroll-div, .ali-main-div
+            {
+                width: 1400px;
             }
         }
     </style>
@@ -90,7 +123,7 @@
 
             console.log(oTable);
             $("#constructs_div").show();
-            assign_to_row();
+            // assign_to_row();
 
 
             yadcf.init(oTable,
@@ -137,8 +170,9 @@
 
             $("#constructs_div").hide();
             $("#loading_div").hide();
-            update_tables('wt');
-            $("#wt_schematics_div").show();
+            update_tables('c');
+            $("#constructs_schematics_div").show();
+            set_scroll_divs("#constructs_schematics_div");
 
             // $.datepicker.regional[""].dateFormat = "yy-mm-dd";
             // $.datepicker.setDefaults($.datepicker.regional['']);
@@ -165,6 +199,7 @@
                 });
                oTable.fnDraw();
                update_tables('both');
+               update_tables('both');
             });
 
             $("#remove_non_sel").click(function () { 
@@ -178,12 +213,14 @@
                    }
                 });
                 oTable.fnDraw();
+                update_tables('both');
                update_tables('both');
+
             });
 
             function update_tables(tables) {
-                if (typeof(tables)==='undefined') a = "both";
-                console.log('update_tables');
+                if (typeof(tables)==='undefined') tables = "both";
+                // console.log('update_tables '+tables);
                 // $('#wt_schematics > tbody  > tr').each(function() {
                 //     $(this).hide();
                 // });
@@ -191,19 +228,26 @@
                 //     $(this).hide();
                 // });
                 if (tables=="both" || tables=="wt") {$('#wt_schematics > tbody  > tr').hide();}
+                if (tables=="both" || tables=="wt") {$('#wt_schematics_main > tbody  > tr').hide();}
                 if (tables=="both" || tables=="c") {$('#constructs_schematics > tbody  > tr').hide();}
+                if (tables=="both" || tables=="c") {$('#constructs_schematics_main > tbody  > tr').hide();}
                 i = 0;
                 ids = Array();
                 $('#constructs > tbody  > tr').each(function() {
                     id = $(this).attr('id');
+                    // console.log(id);
                     ids.push(id);
                     if (tables=="both" || tables=="c") {
                         $("#con_sche_"+id).show();
                         $("#con_sche_"+id).find('td:eq(1)').attr('data-text',i);
+                        $("#con_sche2_"+id).show();
+                        $("#con_sche2_"+id).find('td:eq(0)').attr('data-text',i);
                     }
                     if (tables=="both" || tables=="wt") {
                         $("#wt_sche_"+id).show();
                         $("#wt_sche_"+id).find('td:eq(1)').attr('data-text',i);
+                        $("#wt_sche2_"+id).show();
+                        $("#wt_sche2_"+id).find('td:eq(0)').attr('data-text',i);
                     }
                     i++;
                 });
@@ -224,18 +268,31 @@
                 // }
                 if (tables=="both" || tables=="wt") {
                     if (JSON.stringify(ids)!=JSON.stringify(prev_ids['wt'])) {
-                        console.log("new wt list"); 
                         $("#wt_schematics").trigger("destroy"); 
                         $('#wt_schematics thead th').addClass('sorter-false'); 
-                        $("#wt_schematics").tablesorter( {sortList: [[1,0]],textExtraction: 'basic'} ); }
-                    prev_ids['wt'] = ids;
+                        $("#wt_schematics").tablesorter( {sortList: [[1,0]],textExtraction: 'basic'} );
+                        $("#wt_schematics_main").trigger("destroy"); 
+                        $('#wt_schematics_main thead th').addClass('sorter-false'); 
+                        $("#wt_schematics_main").tablesorter( {sortList: [[0,0]],textExtraction: 'basic'} ); }
+                        prev_ids['wt'] = ids;
                 }
                 if (tables=="both" || tables=="c") {
                     if (JSON.stringify(ids)!=JSON.stringify(prev_ids['c'])) {
-                        console.log("new c list"); 
                         $("#constructs_schematics").trigger("destroy"); 
                         $('#constructs_schematics thead th').addClass('sorter-false'); 
-                        $("#constructs_schematics").tablesorter( {sortList: [[1,0]],textExtraction: 'basic'} ); }
+                        $("#constructs_schematics").tablesorter( {
+                            sortList: [[1,0]],
+                            textExtraction: 'basic', 
+                        }
+                        ); 
+                        $("#constructs_schematics_main").trigger("destroy"); 
+                        $('#constructs_schematics_main thead th').addClass('sorter-false'); 
+                        $("#constructs_schematics_main").tablesorter( {
+                            sortList: [[0,0]],
+                            textExtraction: 'basic', 
+                        }
+                        );
+                        }
                     prev_ids['c'] = ids;
                 }
             };
@@ -250,6 +307,7 @@
                     // var oTable = $('#constructs').dataTable();
                     // oTable.fnDraw();
                     $("#loading_div").hide();
+                    oTable.columns.adjust().draw();
                 }
             });
 
@@ -259,7 +317,9 @@
                     $("#constructs_schematics_div").hide();
                     $("#constructs_div").hide();
                     update_tables('wt');
+                    update_tables('wt');
                     $("#wt_schematics_div").show();
+                    set_scroll_divs("#wt_schematics_div");
                 }
             });
 
@@ -269,9 +329,36 @@
                     $("#align_div").hide();
                     $("#constructs_div").hide();   
                     update_tables('c');
+                    update_tables('c');
                     $("#constructs_schematics_div").show();
+                    set_scroll_divs("#constructs_schematics_div"); 
                 }
             });
+
+            var cus_sort = "asc";
+            $('.receptor_sorting').click(function() {
+                var oTable = $('#constructs').DataTable();
+                
+                if (cus_sort == "asc") {
+                    cus_sort = "desc";
+                    $('.receptor_sorting').removeClass("cus_sorting");
+                    $('.receptor_sorting').removeClass("cus_sorting_asc");
+                    $('.receptor_sorting').addClass("cus_sorting_desc");
+                } else {
+                    cus_sort = "asc";
+                    $('.receptor_sorting').removeClass("cus_sorting");
+                    $('.receptor_sorting').removeClass("cus_sorting_desc");
+                    $('.receptor_sorting').addClass("cus_sorting_asc");
+                }
+                // Sort by column 1 and then re-draw
+                oTable
+                    .order( [ 2, cus_sort ] )
+                    .draw();
+
+               // oTable.fnDraw();
+               update_tables('both');
+               update_tables('both');
+            })
 
             $('#apply_filter').click(function() {
                 update_tables("both");
@@ -348,6 +435,7 @@
             $('.table_tooltip').tooltip({ container: 'body', html: true, placement: "top"})
 
             $('input:checkbox').change(function() {
+                console.log('checkbox checked!');
                 id = $(this).attr('id');
                 if($(this).is(":checked")) {
                    $("#constructs #"+id).prop('checked', true);
@@ -358,6 +446,7 @@
                    $("#wt_schematics #"+id).prop('checked', false);
                    $("#constructs_schematics_div #"+id).prop('checked', false);
                 }    
+                console.log('checkbox checked done!');
             });
 
         });
@@ -401,46 +490,40 @@
             var posting = $.post( url, { ids: JSON.stringify(current_align_ids)  } );
               posting.done(function( data ) {
                 $("#align_div").html('').append(data)
+                set_scroll_divs("#align_div");
+              });
+        };
 
+        function set_scroll_divs(div_name) {
                 $(function () {$('[data-toggle="tooltip"]').tooltip()})
 
                 $(function(){
                     $('.ali-scroll-div').scroll(function(){
-                        $('.ali-main-div')
-                            .scrollLeft($('.ali-scroll-div').scrollLeft());
+                        $( div_name ).find(".ali-main-div")
+                            .scrollLeft($( div_name ).find( ".ali-scroll-div" ).scrollLeft());
                     });
-                    $('.ali-main-div').scroll(function(){
-                        $('.ali-scroll-div')
-                            .scrollLeft($('.ali-main-div').scrollLeft());
+                    $( div_name ).find( ".ali-main-div" ).scroll(function(){
+                        $( div_name ).find(".ali-scroll-div")
+                            .scrollLeft( $( div_name ).find( ".ali-main-div" ).scrollLeft());
+                        $( div_name ).find(".ali-first-col-div")
+                            .scrollTop( $( div_name ).find( ".ali-main-div" ).scrollTop());
                     });
                 });
 
-                $(function () {$('.internal-scroll-div').css('width', $('.dynamic-div').outerWidth() );});
-              });
-        };
+                $(function () {$( div_name ).find(".internal-scroll-div").css('width', $( div_name ).find(".dynamic-div").outerWidth() );});
+        }
     </script> 
 {% endblock %}
 
 {% block content %}
 
     <br />
-        <!-- <button class="btn btn-primary btn-group" id='OpenFilters'>Filters</button> -->
 
         <div class="btn-group">
         <button class="btn btn-primary btn-group" id='show_browser'>Browser</button>
         <button class="btn btn-primary btn-group" id='show_wt'>WT schematic</button>
         <button class="btn btn-primary btn-group" id='show_construct'>Construct schematic</button>
         </div>
-
-<!--         <div class="dropdown btn-group">
-              <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Views
-              <span class="caret"></span></button>
-              <ul class="dropdown-menu">
-                <li><a href="#" id="show_browser">Browser</a></li>
-                <li><a href="#" id="show_wt">WT schematic</a></li>
-                <li><a href="#" id="show_construct">Construct schematic</a></li>
-              </ul>
-        </div> -->
 
         <div class="dropdown btn-group">
               <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Sequence
@@ -450,11 +533,12 @@
               </ul>
         </div>
     <div id='filters'>
+    Filter by either Class, Receptor Family or Receptor:
     <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container3"></span></div>
     <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container2"></span></div>
-    <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container1"></span></div>
+    <div style='width: 105px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container1"></span></div> and by
 <!--     <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container0"></span></div> -->
-    <div style='width: 100px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container4"></span></div>
+    <div style='width: 105px;display: inline-block;'><span  style='width: 80px;display: inline-block;' id="external_filter_container4"></span></div>
 <!--     <div style='width: 140px;display: inline-block;'><span id="external_filter_container5"></span></div> -->
     <button id='apply_filter' class="btn btn-default btn-xs">Apply Filter</button>
             <div class="dropdown btn-group">
@@ -529,91 +613,174 @@
             </tbody>
         </table>
     </div>
-<div style='height:80vh;overflow-y: scroll;overflow-x: scroll;font-size: 10px;border-bottom: 1px solid #111;' id="wt_schematics_div">
-        <div class='spacer'>
-            <!-- <br>Size: <div class="slider" style='width:100px'></div> -->
-            </div>
+<!-- <div style='height:80vh;overflow-y: scroll;overflow-x: scroll;font-size: 10px;border-bottom: 1px solid #111;' id="wt_schematics_div"> -->
+<div style='font-size: 10px;' id="wt_schematics_div">
 
-        <table width=100% class="display" id="wt_schematics">
+        <table>
+            <tr>
+                <!-- static column -->
+                <td valign="top">
+                    <div class="ali-first-scroll-div"></div>
+                    <div class="ali-first-col-div" style="height:80vh;overflow-y: hidden;">
+                        <table id="wt_schematics">
+                            <!-- segment line -->
+                            
+                            <!-- numbering scheme lines -->
                             <thead>
-                <tr class='hidden2'>
-                    <th class="protein-th"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
-                    <th class="protein-th">Construct name</th>
-                    <th class="protein-th">Receptor</th>
-                    <th class="protein-th">N-term<br><input class="alt_seg" type="checkbox" id="align_N-term"></th>
-                    <th class="protein-th">TM1<br><input class="alt_seg" type="checkbox" id="align_TM1"></th>
-                    <th class="pdb-th">ICL1<br><input class="alt_seg" type="checkbox" id="align_ICL1"></th>
-                    <th class="pdb-th">TM2<br><input class="alt_seg" type="checkbox" id="align_TM2"></th>
-                    <th class="pdb-th">ECL1<br><input class="alt_seg" type="checkbox" id="align_ECL1"></th>
-                    <th class='pdb-th'>TM3<br><input class="alt_seg" type="checkbox" id="align_TM3"></th>
-                    <th class="pdb-th">ICL2<br><input class="alt_seg" type="checkbox" id="align_ICL2"></th>
-                    <th class='pdb-th'>TM4<br><input class="alt_seg" type="checkbox" id="align_TM4"></th>
-                    <th class="parts-th">ECL2<br><input class="alt_seg" type="checkbox" id="align_ECL2"></th>
-                    <th class="parts-th">TM5<br><input class="alt_seg" type="checkbox" id="align_TM5"></th>
-                    <th class="parts-th">ICL3<br><input class="alt_seg" type="checkbox" id="align_ICL3"></th>
-                    <th class="parts-th">TM6<br><input class="alt_seg" type="checkbox" id="align_TM6"></th>
-                    <th class="pub-th">ECL3<br><input class="alt_seg" type="checkbox" id="align_ECL3"></th>
-                    <th class="pub-th">TM7<br><input class="alt_seg" type="checkbox" id="align_TM7"></th>
-                    <!-- <th class="pub-th">ICL4<br><input class="alt_seg" type="checkbox" id="align_ICL4"></th> -->
-                    <th class="pub-th">H8<br><input class="alt_seg" type="checkbox" id="align_H8"></th>
-                    <th class="pub-th">C-term<br><input class="alt_seg" type="checkbox" id="align_C-term"></th>
-                </tr>
-            </thead>
-                    <tbody style='border-top: 1px solid #111;'>
-                    {% for construct in constructs %}
+                            <tr height='49px'>
+                                <th class="ali-td ali-td-first-col protein-th"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                                <th class="ali-td ali-td-first-col protein-th">Construct name</th>
+                                <th class="ali-td ali-td-first-col protein-th receptor_sorting cus_sorting">Receptor</th>
+                            </tr>
+                            </thead>
+
+                            <!-- protein names -->
+                            <tbody style='border-top: 1px solid #111;'>
+                            {% for construct in constructs %}
                             <tr style='height: 32px' id="wt_sche_{{ construct.pk }}">
-                            <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
-                            <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
-                            <td style='padding: 8px 10px;'>{{ construct.protein.name|safe }}</td>
-                            {{construct.schematics.schematic_2_wt|safe}}
-                        </tr>
-                    {% endfor %}
-                    </tbody>
+                                    <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
+                                    <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
+                                    <td style='padding: 8px 10px;'>{{ construct.protein.name|safe }}</td>
+                            </tr>       
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+                <!-- scrollable column -->
+                <td>
+                    <div class="ali-scroll-div">
+                        <div class="internal-scroll-div">
+                            &nbsp;
+                        </div>
+                    </div>
+                    <div class="ali-main-div" style="height:80vh;overflow-y: scroll;">
+                        <div class="dynamic-div">
+                            <table id="wt_schematics_main">
+                                <thead>
+                                <tr>
+                                    
+                                <th class="protein-th">N-term<br><input class="alt_seg" type="checkbox" id="align_N-term"></th>
+                                <th class="protein-th">TM1<br><input class="alt_seg" type="checkbox" id="align_TM1"></th>
+                                <th class="pdb-th">ICL1<br><input class="alt_seg" type="checkbox" id="align_ICL1"></th>
+                                <th class="pdb-th">TM2<br><input class="alt_seg" type="checkbox" id="align_TM2"></th>
+                                <th class="pdb-th">ECL1<br><input class="alt_seg" type="checkbox" id="align_ECL1"></th>
+                                <th class='pdb-th'>TM3<br><input class="alt_seg" type="checkbox" id="align_TM3"></th>
+                                <th class="pdb-th">ICL2<br><input class="alt_seg" type="checkbox" id="align_ICL2"></th>
+                                <th class='pdb-th'>TM4<br><input class="alt_seg" type="checkbox" id="align_TM4"></th>
+                                <th class="parts-th">ECL2<br><input class="alt_seg" type="checkbox" id="align_ECL2"></th>
+                                <th class="parts-th">TM5<br><input class="alt_seg" type="checkbox" id="align_TM5"></th>
+                                <th class="parts-th">ICL3<br><input class="alt_seg" type="checkbox" id="align_ICL3"></th>
+                                <th class="parts-th">TM6<br><input class="alt_seg" type="checkbox" id="align_TM6"></th>
+                                <th class="pub-th">ECL3<br><input class="alt_seg" type="checkbox" id="align_ECL3"></th>
+                                <th class="pub-th">TM7<br><input class="alt_seg" type="checkbox" id="align_TM7"></th>
+                                <th class="pub-th">H8<br><input class="alt_seg" type="checkbox" id="align_H8"></th>
+                                <th class="pub-th">C-term<br><input class="alt_seg" type="checkbox" id="align_C-term"></th>
+
+                                </tr>
+                                </thead>
+                                
+                                <tbody style='border-top: 1px solid #111;'>
+                                {% for construct in constructs %}
+                                <tr style='height: 32px' id="wt_sche2_{{ construct.pk }}">
+                                    {{construct.wt_schematic|safe}}
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                                
+                            </table>
+                        </div>
+                    </div>
+
+                </td>
+            </tr>
         </table>
 </div>
-        <div style='height:80vh;overflow-y: scroll;overflow-x: scroll;font-size: 10px;border-bottom: 1px solid #111;' id="constructs_schematics_div">
-        <div class='spacer'><br>
-            <!-- Size: <div class="slider" style='width:100px'></div> -->
-        </div>
-        <table width=100% class="display" id="constructs_schematics">
-                    <thead>
-                <tr class='hidden2'>
-                    <th class="protein-th"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
-                    <th class="protein-th">Construct name</th>
-                    <th class="protein-th">Receptor</th>
-                    <th class="protein-th">N-inserts<br><input class="alt_seg" type="checkbox" id="align_xx"></th>
-                    <th class="protein-th">N-term<br><input class="alt_seg" type="checkbox" id="align_xx"></th>
-                    <th class="protein-th">TM1<br><input class="alt_seg" type="checkbox" id="align_TM1"></th>
-                    <th class="pdb-th">ICL1<br><input class="alt_seg" type="checkbox" id="align_ICL1"></th>
-                    <th class="pdb-th">TM2<br><input class="alt_seg" type="checkbox" id="align_TM2"></th>
-                    <th class="pdb-th">ECL1<br><input class="alt_seg" type="checkbox" id="align_ECL1"></th>
-                    <th class='pdb-th'>TM3<br><input class="alt_seg" type="checkbox" id="align_TM3"></th>
-                    <th class="pdb-th" colspan=3>ICL2<br><input class="alt_seg" type="checkbox" id="align_ICL2"></th>
-                    <th class='pdb-th'>TM4<br><input class="alt_seg" type="checkbox" id="align_TM4"></th>
-                    <th class="parts-th">ECL2<br><input class="alt_seg" type="checkbox" id="align_ECL2"></th>
-                    <th class="parts-th">TM5<br><input class="alt_seg" type="checkbox" id="align_TM5"></th>
-                    <th class="parts-th" colspan=3>ICL3<br><input class="alt_seg" type="checkbox" id="align_ICL3"></th>
-                    <th class="parts-th">TM6<br><input class="alt_seg" type="checkbox" id="align_TM6"></th>
-                    <th class="pub-th">ECL3<br><input class="alt_seg" type="checkbox" id="align_ECL3"></th>
-                    <th class="pub-th">TM7<br><input class="alt_seg" type="checkbox" id="align_TM7"></th>
-                    <th class="pub-th">ICL4<br><input class="alt_seg" type="checkbox" id="align_ICL4"></th>
-                  <!--   <th class="pub-th">H8<br><input class="alt_seg" type="checkbox" id="align_H8"></th> -->
-                    <th class="pub-th">C-term<br><input class="alt_seg" type="checkbox" id="align_C-term"></th>
-                    <th class="pub-th">C-inserts<br><input class="alt_seg" type="checkbox" id="align_C-term"></th>
-                </tr>
-            </thead>
-                    <tbody style='border-top: 1px solid #111;'>
-                    {% for construct in constructs %}
+        <!-- <div style='height:80vh;overflow-y: scroll;overflow-x: scroll;font-size: 10px;border-bottom: 1px solid #111;' id="constructs_schematics_div"> -->
+        <div style='font-size: 10px;' id="constructs_schematics_div">
+
+        <table>
+            <tr>
+                <!-- static column -->
+                <td valign="top">
+                    <div class="ali-first-scroll-div"></div>
+                    <div class="ali-first-col-div" style="height:80vh;overflow-y: hidden;">
+                        <table id="constructs_schematics">
+                            <!-- segment line -->
+                            
+                            <!-- numbering scheme lines -->
+                            <thead>
+                            <tr height='49px'>
+                                <th class="ali-td ali-td-first-col protein-th"><input class="select-all" type="checkbox" onclick="select_all(this)"></th>
+                                <th class="ali-td ali-td-first-col protein-th">Construct name</th>
+                                <th class="ali-td ali-td-first-col protein-th receptor_sorting cus_sorting">Receptor</th>
+                            </tr>
+                            </thead>
+
+                            <!-- protein names -->
+                            <tbody style='border-top: 1px solid #111;'>
+                            {% for construct in constructs %}
                             <tr style='height: 32px' id="con_sche_{{ construct.pk }}">
-                            <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
-                            <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
-                            <td style='padding: 8px 10px;'>{{ construct.protein.name|safe }}</td>
-                            {{construct.schematics.schematic_2_c|safe}}
-                        </tr>
-                    {% endfor %}
-                    </tbody>
+                                    <td style='padding: 8px 10px;min-width: 35px;text-align: center' ><input class="alt" type="checkbox" id="{{ construct.pk }}"></td>
+                                    <td style='padding: 8px 10px;'><a href="{{ construct.name|safe}}">{{ construct.name|safe }}</a></td>
+                                    <td style='padding: 8px 10px;'>{{ construct.protein.name|safe }}</td>
+                            </tr>       
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+                <!-- scrollable column -->
+                <td>
+                    <div class="ali-scroll-div">
+                        <div class="internal-scroll-div">
+                            &nbsp;
+                        </div>
+                    </div>
+                    <div class="ali-main-div" style="height:80vh;overflow-y: scroll;">
+                        <div class="dynamic-div">
+                            <table id="constructs_schematics_main">
+                                <thead>
+                                <tr>
+                                    <th class="protein-th">N-inserts<br><input class="alt_seg" type="checkbox" id="align_xx"></th>
+                                    <th class="protein-th">N-term<br><input class="alt_seg" type="checkbox" id="align_xx"></th>
+                                    <th class="protein-th">TM1<br><input class="alt_seg" type="checkbox" id="align_TM1"></th>
+                                    <th class="pdb-th">ICL1<br><input class="alt_seg" type="checkbox" id="align_ICL1"></th>
+                                    <th class="pdb-th">TM2<br><input class="alt_seg" type="checkbox" id="align_TM2"></th>
+                                    <th class="pdb-th">ECL1<br><input class="alt_seg" type="checkbox" id="align_ECL1"></th>
+                                    <th class='pdb-th'>TM3<br><input class="alt_seg" type="checkbox" id="align_TM3"></th>
+                                    <th class="pdb-th" colspan=3>ICL2<br><input class="alt_seg" type="checkbox" id="align_ICL2"></th>
+                                    <th class='pdb-th'>TM4<br><input class="alt_seg" type="checkbox" id="align_TM4"></th>
+                                    <th class="parts-th">ECL2<br><input class="alt_seg" type="checkbox" id="align_ECL2"></th>
+                                    <th class="parts-th">TM5<br><input class="alt_seg" type="checkbox" id="align_TM5"></th>
+                                    <th class="parts-th" colspan=3>ICL3<br><input class="alt_seg" type="checkbox" id="align_ICL3"></th>
+                                    <th class="parts-th">TM6<br><input class="alt_seg" type="checkbox" id="align_TM6"></th>
+                                    <th class="pub-th">ECL3<br><input class="alt_seg" type="checkbox" id="align_ECL3"></th>
+                                    <th class="pub-th">TM7<br><input class="alt_seg" type="checkbox" id="align_TM7"></th>
+                                    <th class="pub-th">ICL4<br><input class="alt_seg" type="checkbox" id="align_ICL4"></th>
+                                    <th class="pub-th">C-term<br><input class="alt_seg" type="checkbox" id="align_C-term"></th>
+                                    <th class="pub-th" style="white-space: nowrap;">C-inserts<br><input class="alt_seg" type="checkbox" id="align_C-term"></th>
+                                </tr>
+                                </thead>
+                                
+                                <tbody style='border-top: 1px solid #111;'>
+                                {% for construct in constructs %}
+                                <tr style='height: 32px' id="con_sche2_{{ construct.pk }}">
+                                    {{construct.cons_schematic|safe}}
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                                
+                            </table>
+                        </div>
+                    </div>
+
+                </td>
+            </tr>
         </table>
+
 </div>
+
 
 <div style="padding-top: 0px; white-space: nowrap;" id="align_div">
 </div>

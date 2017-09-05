@@ -5,6 +5,7 @@ from django.db import IntegrityError
 
 
 from common.models import WebResource, WebLink
+from common.definitions import G_PROTEIN_SEGMENTS
 
 from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
@@ -49,23 +50,21 @@ class Command(BaseCommand):
         else:
             filenames = False
         
-        try:
-            self.create_g_proteins(filenames)
-        except Exception as msg:
-            self.logger.error(msg)
-
         #add gproteins from cgn db
         try:
-            # self.purge_cgn_residues()
-            # self.purge_cgn_protein_segments()
+            self.purge_coupling_data()
+            self.purge_cgn_residues()
+            self.purge_cgn_proteins()
+            self.create_g_protein_segments()
+
+            self.create_g_proteins(filenames)
             self.cgn_create_proteins_and_families()
-            # self.purge_cgn_proteins()
-            #delete added g-proteins
 
         except Exception as msg:
+            print(msg)
             self.logger.error(msg)
 
-        #add residues from cgn db
+        # add residues from cgn db
         try:
             human_and_orths = self.cgn_add_proteins()
 
@@ -73,12 +72,13 @@ class Command(BaseCommand):
         except Exception as msg:
             self.logger.error(msg)
 
+        # add barcode data
         try:
             self.create_barcode()
         except Exception as msg:
             self.logger.error(msg)
 
-    def purge_data(self):
+    def purge_coupling_data(self):
         try:
             ProteinGProteinPair.objects.filter().delete()
             ProteinGProtein.all().delete()
@@ -124,18 +124,40 @@ class Command(BaseCommand):
                 except IntegrityError:
                     self.logger.error('Failed creating barcode for ' + CGN + ' for protein ' + p.name)
 
+    def create_g_protein_segments(self):
+        self.logger.info('CREATING G-PROTEIN SEGMENTS')
+
+        for s in G_PROTEIN_SEGMENTS['Full']:
+
+            if s.startswith('S') and len(s) == 2:
+                category = 'sheet'
+            elif s.startswith('H') and len(s) == 2:
+                category = 'helix'
+            else:
+                category = 'loop'
+
+            try:
+                ProteinSegment.objects.get_or_create(slug=s, name=s, category=category, fully_aligned=True)
+                self.logger.info('Created protein segment')
+
+            except:
+                self.logger.error('Failed to create protein segment')
+
+        self.logger.info('COMPLETED CREATING G-PROTEIN SEGMENTS')
+
     def create_g_proteins(self, filenames=False):
         self.logger.info('CREATING GPROTEINS')
-        self.purge_data()
 
         translation = {'Gs family':'100_000_001', 'Gi/Go family':'100_000_002', 'Gq/G11 family':'100_000_003','G12/G13 family':'100_000_004',}
 
         # read source files
         if not filenames:
-            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('.csv')]
+            filenames = [fn for fn in os.listdir(self.gprotein_data_path) if fn.endswith('Gprotein_crossclass.csv')]
 
         for filename in filenames:
             filepath = os.sep.join([self.gprotein_data_path, filename])
+
+            self.logger.info('Reading filename' + filename)
 
             with open(filepath, 'r') as f:
                 reader = csv.reader(f)
@@ -183,7 +205,8 @@ class Command(BaseCommand):
 
     def purge_cgn_proteins(self):
         try:
-            Protein.objects.filter(residue_numbering_scheme_id=12).delete()
+            Protein.objects.filter(residue_numbering_scheme__slug='cgn').delete()
+            ProteinSegment.objects.filter(slug__in=list(G_PROTEIN_SEGMENTS['Full'])).delete()
         except:
             self.logger.info('Protein to delete not found')
 
@@ -218,7 +241,7 @@ class Command(BaseCommand):
 
             try:
                 Residue.objects.get_or_create(sequence_number=row['Position'], protein_conformation=pc, amino_acid=row['Residue'], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
-                self.logger.info("Residues added to db")
+                # self.logger.info("Residues added to db")
 
             except:
                 self.logger.error("Failed to add residues")
@@ -227,7 +250,7 @@ class Command(BaseCommand):
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
                 ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme_id=12)
-                self.logger.info("Residues added to ResidueGenericNumberEquivalent")
+                # self.logger.info("Residues added to ResidueGenericNumberEquivalent")
 
             except:
                 self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
@@ -278,21 +301,21 @@ class Command(BaseCommand):
         #purge line
         #ProteinSegment.objects.filter(slug__in=np.unique(segments)).delete()
 
-        for s in np.unique(segments):
+        # for s in np.unique(segments):
 
-            if s.startswith('S') and len(s) == 2:
-                category = 'sheet'
-            elif s.startswith('H') and len(s) == 2:
-                category = 'helix'
-            else:
-                category = 'loop'
+        #     if s.startswith('S') and len(s) == 2:
+        #         category = 'sheet'
+        #     elif s.startswith('H') and len(s) == 2:
+        #         category = 'helix'
+        #     else:
+        #         category = 'loop'
 
-            try:
-                ProteinSegment.objects.get_or_create(slug=s, name=s, category=category, fully_aligned=True)
-                self.logger.info('Created protein segment')
+        #     try:
+        #         ProteinSegment.objects.get_or_create(slug=s, name=s, category=category, fully_aligned=True)
+        #         self.logger.info('Created protein segment')
 
-            except:
-                self.logger.error('Failed to create protein segment')
+        #     except:
+        #         self.logger.error('Failed to create protein segment')
 
         #Residue numbering scheme is the same for all added residue generic numbers (CGN)
 

@@ -1,0 +1,637 @@
+{% extends "home/base.html" %} {% load staticfiles %} {% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.yadcf.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<style type="text/css">
+.select2-result-label {
+    font-size: x-small;
+    font-size: 10px;
+}
+
+#filters {
+    float: left;
+    display: none;
+    position: absolute;
+    background: white;
+    border: 1px solid #D1C9C2;
+    border-top: 1;
+    width: 400px;
+    margin: 0 auto;
+    padding: 7px 15px;
+    text-align: left;
+    -webkit-border-bottom-right-radius: 6px;
+    -webkit-border-bottom-left-radius: 6px;
+    -moz-border-radius-bottomright: 6px;
+    -moz-border-radius-bottomleft: 6px;
+    border-bottom-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    z-index: 1;
+    font-size: 10px;
+}
+
+@media (min-width: 1600px) {
+    #content {
+        width: 1570px;
+    }
+}
+
+@media (min-width: 1800px) {
+    #content {
+        width: 1770px;
+    }
+}
+</style>
+{% endblock %}
+{% block addon_js %}
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'home/js/selection.js' %}">
+</script>
+<!-- <script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> -->
+</script>
+<script src="{% static 'home/js/select2.js' %}">
+</script>
+<script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
+<script type="text/javascript" charset="utf-8">
+$(document).ready(function() {
+    // 'use strict';
+
+    $('#position_only').wrap('<div id="position_only_vis" style="display:block"/>');
+    var position_table = $('#position_only').DataTable({
+        'scrollX': true,
+        "bScrollCollapse": true,
+        // 'paging': true,
+        // 'autoWidth': true,
+
+        // "columnDefs": [
+        //     { className: "", "targets": [12,13,14,15] }
+        //   ],
+        scrollY: '60vh',
+        scrollCollapse: true,
+        paging: false
+    });
+
+    $('#pos_and_mut').wrap('<div id="pos_and_mut_vis" style="display:none"/>');
+    var mut_table = $('#pos_and_mut').DataTable({
+        'scrollX': true,
+        "bScrollCollapse": true,
+        scrollY: '60vh',
+        scrollCollapse: true,
+        paging: false
+    });
+
+    $('#pos_and_wt').wrap('<div id="pos_and_wt_vis" style="display:none"/>');
+    var wt_table = $('#pos_and_wt').DataTable({
+        'scrollX': true,
+        "bScrollCollapse": true,
+        scrollY: '60vh',
+        scrollCollapse: true,
+        paging: false
+    });
+
+    $('#all').wrap('<div id="all_vis" style="display:none"/>');
+    var all_table = $('#all').DataTable({
+        'scrollX': true,
+        "bScrollCollapse": true,
+        scrollY: '60vh',
+        scrollCollapse: true,
+        paging: false
+    });
+
+    // /* Custom filtering function to  filter data */
+    // $.fn.dataTableExt.afnFiltering.push(function (oSettings, aData, iDataIndex) {
+    //     var myRowClasses = oSettings.aoData[iDataIndex].nTr.className.split(" ");
+    //     var sub = $('.subset-check:checked').data('sub');
+    //     if (sub == undefined) {result = true;}
+    //     else { result = myRowClasses.indexOf(sub) == -1; }
+    //     return result;
+    // });
+
+        /* Custom filtering function to  filter data */
+    $.fn.dataTableExt.afnFiltering.push(function (oSettings, aData, iDataIndex) {
+        var myRowClasses = oSettings.aoData[iDataIndex].nTr.className.split(" ");
+        result = true;
+        $('.subset-check:checked').each(function(i, obj) {
+            sub = $(obj).data('sub');
+            if ( myRowClasses.indexOf(sub) !== -1 ){
+                // Flag as false ( do not show ) if row has a class that is filtered out
+                result = false;
+            }
+        });
+        return result;
+    });
+
+     /* Add an event listener to the mutation subset input */
+    $('.subset-check').change(function () {
+        current_table = $("#group_select").val();
+        if (current_table=='position_only') position_table.columns.adjust().draw();
+        if (current_table=='all') all_table.columns.adjust().draw();
+        if (current_table=='pos_and_mut') mut_table.columns.adjust().draw();
+        if (current_table=='pos_and_wt') wt_table.columns.adjust().draw();
+    });
+
+
+
+groups = ["pos_and_wt", "pos_and_mut", "position_only", "all"]
+    $("#group_select")
+        .on('change', function() {
+            var selection = d3.select(this).property('value');
+
+            // Show and hide the tables for each analysis mode
+            groups.forEach(function(d) {
+                if (d == selection) {
+                    d3.selectAll('#' + d + '_vis')
+                        .style('display', 'block');
+
+                        if (selection=='position_only') position_table.columns.adjust().draw();
+                        if (selection=='all') all_table.columns.adjust().draw();
+                        if (selection=='pos_and_mut') mut_table.columns.adjust().draw();
+                        if (selection=='pos_and_wt') wt_table.columns.adjust().draw();
+        
+                        // position_table.columns.adjust().draw();
+                        // all_table.columns.adjust().draw();
+                        // mut_table.columns.adjust().draw();
+                        // wt_table.columns.adjust().draw();
+                } else {
+                    d3.selectAll('#' + d + '_vis')
+                        .style('display', 'none');
+                }
+
+                // Show and hide the mutation subset checkbox
+                if (selection == 'all'){
+                    d3.select('#ala_subset_choice').style('display', 'inline');
+                }
+                else {
+                    d3.select('#ala_subset_choice').style('display', 'none');
+                }
+            });
+        });
+
+})
+
+</script>
+<script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+
+<style type="text/css">
+    table.dataTable thead th{
+    padding: 5px 5px;
+    padding-right: 15px;
+    border-bottom: 1px solid #111;
+    }
+    .internal-table {
+        width:100%;
+    }
+    table.dataTable {
+        font-size: 12px;
+        text-align: center;
+    }
+    .inner{
+        background-color: transparent;
+    padding: 0 !important;
+    }
+
+</style>
+
+{% endblock %}
+
+{% block content %}
+<h2> Mutations</h2>
+<!-- <button class="btn btn-primary btn-group" id='OpenFilters'>Filters</button> -->
+<!-- <div id='filters'>
+    <div><span style='width: 160px;display: inline-block;'>Class:</span><span style='width: 160px;display: inline-block;' id="external_filter_container3"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Family:</span><span style='width: 160px;display: inline-block;' id="external_filter_container2"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Receptor(s):</span><span style='width: 160px;display: inline-block;' id="external_filter_container1"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Generic Number:</span><span style='width: 160px;display: inline-block;' id="external_filter_container2"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Segment(s):</span><span style='width: 160px;display: inline-block;' id="external_filter_container3"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>WT:</span><span style='width: 160px;display: inline-block;' id="external_filter_container4"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>MUT:</span><span style='width: 160px;display: inline-block;' id="external_filter_container5"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>Construct:</span><span style='width: 160px;display: inline-block;' id="external_filter_container7"></span></div>
+    <div><span style='width: 160px;display: inline-block;'>PDB:</span><span style='width: 160px;display: inline-block;' id="external_filter_container6"></span></div>
+    <button id='apply_filter'>Apply Filter</button>
+</div> -->
+<div>Group By:
+    <select style="margin-right: 20px" id="group_select">
+        <option value="position_only">Class and Position</option>
+        <option value="pos_and_wt">Class, Position, and Wild Type AA</option>
+        <option value="pos_and_mut">Class, Position, and Mutant AA</option>
+        <option value="all">Class, Position, Wild Type AA, and Mutant AA</option>
+    </select>
+
+
+    <span id='minimum_2_gpcrs'>
+        <span style="font-weight:bold">Mutant Subsets:</span> Only show mutations present in minimum 2 GPCRs
+        <input style="margin-right: 20px" id='min-2-gpcr-checkbox' class="subset-check" data-sub="min2_subset" type="checkbox" />
+    </span>
+
+    <span id='ala_subset_choice' style='display:none;'>
+        Hide Xaa to Ala and Ala to Leu Mutations
+        <input style="margin-right: 20px"  checked="checked" id='ala-checkbox' class="subset-check" data-sub="ala_subset" type="checkbox" />
+    </span>
+
+</div>
+
+<table width="100%" class="display" id="position_only">
+    <thead>
+        <tr>
+            <th class="seq-th" colspan="1">State</th>
+            <th class="protein-th" colspan="3">Targets</th>
+            <th class="seq-th" colspan="4">Mutations</th>
+            <th class="protein-th" colspan="4">Frequency</th>
+            <th class="seq-th" colspan="3">Sites</th>
+        </tr>
+        <tr>
+            <th class="seq-th">State</th>
+            <th class="protein-th">Class</th>
+            <th class="protein-th">Ligand Type</th>
+            <th class="protein-th">Receptor Family</th>
+            <th class="seq-th">Segment</th>
+            <th class="seq-th">Position (GN)</th>
+            <th class="seq-th">WT</th>
+            <th class="seq-th">Mut</th>
+            <th class="protein-th">No. GPCRS</th>
+            <th class="protein-th"><div style="max-width: 78px">No. Receptor Families</div></th>
+            <th class="protein-th"><div style="max-width: 70px">No. Structures</div></th>
+            <th class="protein-th">GPCRs (PDB IDs)</th>
+            <th class='seq-th'>Ionic Lock</th>
+            <th class='seq-th'>Sodium Ion Binding Site</th>
+            <th class='seq-th'>Residue Switch</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for key, group in position_only.items %}
+        <tr class='{% if group.1.real_receptor|length < 2 %} min2_subset{% endif %}'>
+            <td>
+                <table>
+                    {% for mutant in group.1.state %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                {{group.0.class}}
+            </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.ligand %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.receptor %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>{{group.0.segment}}</td>
+            <td> {{group.0.gen_num}} </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.wild_type %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.mutant %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td> {{group.1.real_receptor | length}} </td>
+            <td>{{group.1.receptor | length}}</td>
+            <td>{{group.1.struct_id | length}}</td>
+            <td>
+                <div style="width:130px">
+                    {% for mutant in group.1.pdb %}
+                        {% if forloop.last %}
+                            {{mutant}}
+                        {% else %}
+                            {{mutant}},
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </td>
+            <td>{{group.0.ionic_lock}}</td>
+            <td>{{group.0.sodium_ion}}</td>
+            <td>{{group.0.res_switch}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<table width="100%" class="display" id="pos_and_mut">
+    <thead>
+        <tr>
+            <th class="seq-th" colspan="1">State</th>
+            <th class="protein-th" colspan="3">Targets</th>
+            <th class="seq-th" colspan="4">Mutations</th>
+            <th class="protein-th" colspan="4">Frequency</th>
+            <th class="seq-th " colspan="4">Data (Mutant)</th>
+            <th class="protein-th" colspan="3">Sites</th>
+        </tr>
+        <tr>
+            <th class="seq-th">State</th>
+            <th class="protein-th">Class</th>
+            <th class="protein-th">Ligand Type</th>
+            <th class="protein-th">Receptor Family</th>
+            <th class="seq-th">Segment</th>
+            <th class="seq-th">Position (GN)</th>
+            <th class="seq-th">WT</th>
+            <th class="seq-th">Mut</th>
+            <th class="protein-th">No. GPCRS</th>
+            <th class="protein-th">No. Receptor Families</th>
+            <th class="protein-th">No. Structures</th>
+            <th class="protein-th">GPCRs (PDB IDs)</th>
+            <th class="seq-th" >Class Sequence Conservation</th>
+            <th class="seq-th" >Receptor Family Sequence Conservation</th>
+            <th class="seq-th" >Helix Propen- sity</th>
+            <th class="seq-th" >Hydroph- obicity</th>
+            <th class='protein-th'>Ionic Lock</th>
+            <th class='protein-th'>Sodium Ion Binding Site</th>
+            <th class='protein-th'>Residue Switch</th>
+        </tr>
+    </thead>
+
+        {% for key, group in pos_and_mut.items %}
+        <tr class='{% if group.1.real_receptor|length < 2 %} min2_subset{% endif %}'>
+            <td>
+                <table>
+                    {% for mutant in group.1.state %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                {{group.0.class}}
+            </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.ligand %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.receptor %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>{{group.0.segment}}</td>
+            <td> {{group.0.gen_num}} </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.wild_type %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>{{group.0.mutant}}</td>
+            <td> {{group.1.real_receptor | length}} </td>
+            <td>{{group.1.receptor | length}}</td>
+            <td>{{group.1.struct_id | length}}</td>
+
+            <td>
+                <div style="width:90px">
+                    {% for mutant in group.1.pdb %}
+                        {% if forloop.last %}
+                            {{mutant}}
+                        {% else %}
+                            {{mutant}},
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </td>
+            <td>{{group.0.class_cons}}</td>
+            <td>{{group.0.receptor_fam_cons}}</td>
+            <td>{{group.0.propensity}}</td>
+            <td>{{group.0.hydro}}</td>
+            <td>{{group.0.ionic_lock}}</td>
+            <td>{{group.0.sodium_ion}}</td>
+            <td>{{group.0.res_switch}}</td>
+        </tr>
+        {% endfor %}
+
+    </tbody>
+</table>
+
+<table width="100%" class="display" id="pos_and_wt">
+    <thead>
+        <tr >
+            <th class="seq-th" colspan="1">State</th>
+            <th class="protein-th" colspan="3">Targets</th>
+            <th class="seq-th" colspan="4">Mutations</th>
+            <th class="protein-th" colspan="4">Frequency</th>
+            <th class="seq-th" colspan="4">Data (Wild Type)</th>
+            <th class="protein-th" colspan="3">Sites</th>
+        </tr>
+        <tr>
+            <th class="seq-th">State</th>
+            <th class="protein-th">Class</th>
+            <th class="protein-th">Ligand Type</th>
+            <th class="protein-th">Receptor Family</th>
+            <th class="seq-th">Segment</th>
+            <th class="seq-th">Position (GN)</th>
+            <th class="seq-th">WT</th>
+            <th class="seq-th">Mut</th>
+            <th class="protein-th">No. GPCRS</th>
+            <th class="protein-th">No. Receptor Families</th>
+            <th class="protein-th">No. Structures</th>
+            <th class="protein-th">GPCRs (PDB IDs)</th>
+            <th class="seq-th" >Class Sequence Conservation</th>
+            <th class="seq-th" >Receptor Family Sequence Conservation</th>
+            <th class="seq-th" >Helix Propen- sity</th>
+            <th class="seq-th" >Hydroph- obicity</th>
+            <th class='protein-th'>Ionic Lock</th>
+            <th class='protein-th'>Sodium Ion Binding Site</th>
+            <th class='protein-th'>Residue Switch</th>
+        </tr>
+    </thead>
+        {% for key, group in pos_and_wt.items %}
+        <tr class='{% if group.1.real_receptor|length < 2 %} min2_subset{% endif %}'>
+            <td>
+                <table>
+                    {% for mutant in group.1.state %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                {{group.0.class}}
+            </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.ligand %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.receptor %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>{{group.0.segment}}</td>
+            <td> {{group.0.gen_num}} </td>
+            <td>{{group.0.wild_type}}</td>
+            <td>
+                <table class="internal-table">
+                    {% for mutant in group.1.mutant %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+
+            <td> {{group.1.real_receptor | length}} </td>
+            <td>{{group.1.receptor | length}}</td>
+            <td>{{group.1.struct_id | length}}</td>
+            <td>
+                <div style="width:90px">
+                    {% for mutant in group.1.pdb %}
+                        {% if forloop.last %}
+                            {{mutant}}
+                        {% else %}
+                            {{mutant}},
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </td>
+            <td>{{group.0.class_cons}}</td>
+            <td>{{group.0.receptor_fam_cons}}</td>
+            <td>{{group.0.propensity}}</td>
+            <td>{{group.0.hydro}}</td>
+            <td>{{group.0.ionic_lock}}</td>
+            <td>{{group.0.sodium_ion}}</td>
+            <td>{{group.0.res_switch}}</td>
+        </tr>
+        {% endfor %}
+
+    </tbody>
+</table>
+
+<table width="100%" class="display" id="all">
+    <thead>
+        <tr>
+            <th class="seq-th" colspan="1">State</th>
+            <th class="protein-th" colspan="3">Targets</th>
+            <th class="seq-th" colspan="4">Mutations</th>
+            <th class="protein-th" colspan="4">Frequency</th>
+            <th class="seq-th " colspan="4">Data (Fold Change (Mutant/Wild Type))</th>
+            <th class="protein-th" colspan="3">Sites</th>
+        </tr>
+        <tr>
+            <th class="seq-th">State</th>
+            <th class="protein-th">Class</th>
+            <th class="protein-th">Ligand Type</th>
+            <th class="protein-th">Receptor Family</th>
+            <th class="seq-th">Segment</th>
+            <th class="seq-th">Position (GN)</th>
+            <th class="seq-th">WT</th>
+            <th class="seq-th">Mut</th>
+            <th class="protein-th">No. GPCRS</th>
+            <th class="protein-th">No. Receptor Families</th>
+            <th class="protein-th">No. Structures</th>
+            <th class="protein-th">GPCRs (PDB IDs)</th>
+            <th class="seq-th" >Class Sequence Conservation</th>
+            <th class="seq-th" >Receptor Family Sequence Conservation</th>
+            <th class="seq-th" >Helix Propen- sity</th>
+            <th class="seq-th" >Hydroph- obicity</th>
+            <th class='protein-th'>Ionic Lock</th>
+            <th class='protein-th'>Sodium Ion Binding Site</th>
+            <th class='protein-th'>Residue Switch</th>
+        </tr>
+    </thead>
+
+        {% for key, group in all.items %}
+        <tr class='{{group.0.ala_subset}}{% if group.1.real_receptor|length < 2 %} min2_subset{% endif %}'>
+            <td>
+                <table>
+                    {% for mutant in group.1.state %}
+                    <tr style='background-color: transparent;'>
+                        <td class='inner'> {{ mutant }} </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>
+                {{group.0.class}}
+            </td>
+            <td>
+                {% for mutant in group.1.ligand %}
+                    {{ mutant }}
+                {% endfor %}
+            </td>
+            <td>
+                {% for mutant in group.1.receptor %}
+                    {{ mutant }}
+                {% endfor %}
+            </td>
+            <td>{{group.0.segment}}</td>
+            <td> {{group.0.gen_num}} </td>
+            <td>{{group.0.wild_type}}</td>
+            <td>{{group.0.mutant}}</td>
+
+            <td> {{group.1.real_receptor | length}} </td>
+            <td>{{group.1.receptor | length}}</td>
+            <td>{{group.1.struct_id | length}}</td>
+            <td>
+                <div style="width:90px">
+                    {% for mutant in group.1.pdb %}
+                        {% if forloop.last %}
+                            {{mutant}}
+                        {% else %}
+                            {{mutant}},
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </td>
+            <td>{{group.0.class_cons}}</td>
+            <td>{{group.0.receptor_fam_cons}}</td>
+            <td>{{group.0.propensity}}</td>
+            <td>{{group.0.hydro}}</td>
+            <td>{{group.0.ionic_lock}}</td>
+            <td>{{group.0.sodium_ion}}</td>
+            <td>{{group.0.res_switch}}</td>
+        </tr>
+        {% endfor %}
+
+
+    </tbody>
+</table>
+
+<footer style="font-size: .75em">Note: All data in the frequency, data and site sections is calculated or matched with respect only to those columns selected for grouping.  All other columns are provided for information only. </footer>
+
+
+{% endblock %}

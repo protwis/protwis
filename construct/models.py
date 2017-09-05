@@ -10,16 +10,17 @@ from common.diagrams_gpcr import DrawSnakePlot
 
 import pickle
 
-class Construct(models.Model): 
-    #overall class 
+class Construct(models.Model):
+    #overall class
     name = models.TextField(max_length=100, unique=True)
+    # linked onto the WT protein
     protein = models.ForeignKey('protein.Protein')
     contributor = models.ForeignKey('ContributorInfo')
     #Modifications
-    mutations = models.ManyToManyField('ConstructMutation')
-    deletions = models.ManyToManyField('ConstructDeletion')
-    modifications = models.ManyToManyField('ConstructModification')
-    insertions = models.ManyToManyField('ConstructInsertion')
+    # mutations = models.ManyToManyField('ConstructMutation') ## MOVE TO ONETOMANY FIELDS in children
+    # deletions = models.ManyToManyField('ConstructDeletion')
+    # modifications = models.ManyToManyField('ConstructModification')
+    # insertions = models.ManyToManyField('ConstructInsertion')
 
     expression = models.ForeignKey('ExpressionSystem', null=True)  #method description if present
     solubilization = models.ForeignKey('Solubilization', null=True)  #method description if present
@@ -35,7 +36,7 @@ class Construct(models.Model):
 
     def fusion(self):
         list_of_none_fusion = ['Expression tag','Linker','Not_Observed','Engineered mutation','','Conflict','Insertion','S-arrestin']
-        list_of_comfirmed_fusion = ['C8TP59','Q0SXH8','Q9V2J8','Soluble cytochrome b562','Endolysin','Rubredoxin','Lysozyme']
+        list_of_comfirmed_fusion = ['C8TP59','Q0SXH8','Q9V2J8','Soluble cytochrome b562','Endolysin','Rubredoxin','Lysozyme','Flavodoxin']
         #ODD Rubredoxin
         #Q9V2J8 GlgA glycogen synthase  auto_4ZJ8
         #C8TP59  Cytochrome b562
@@ -52,12 +53,48 @@ class Construct(models.Model):
             confirmed = False
             if insert.insert_type.name=='fusion' or insert.insert_type.subtype in list_of_comfirmed_fusion:
                 confirmed = True
+                if position != None:
+                    print("new fusion??",position,insert.position,self.name)
                 if insert.position.startswith('N-term'):
                     position = 'nterm'
                 else:
                     position = 'icl3'
             result.append([confirmed,insert.insert_type.name, insert.insert_type.subtype,insert.position])
         return position,result
+
+    def cons_schematic(self):
+        cache_key = self.name + "_cons_schematic"
+        schematic = cache.get(cache_key)
+        if schematic==None:
+            temp = self.schematic()
+            schematic = temp['schematic_2_c']
+            cache.set(cache_key,schematic,60*60*24*7)
+
+        return schematic
+
+    def wt_schematic(self):
+        cache_key = self.name + "_wt_schematic"
+        schematic = cache.get(cache_key)
+        if schematic==None:
+            temp = self.schematic()
+            schematic = temp['schematic_2_wt']
+            cache.set(cache_key,schematic,60*60*24*7)
+
+        return schematic
+
+    def chem_summary(self):
+        cache_key = self.name + "_chem_summary"
+        summary = cache.get(cache_key)
+        if summary==None:
+            temp = self.schematic()
+            summary = temp['summary']
+            cache.set(cache_key,summary,60*60*24*7)
+
+        return summary
+
+    def invalidate_schematics(self):
+        cache.delete_many([self.name + "_cons_schematic",self.name + "_wt_schematic",self.name + "_chem_summary"])
+
 
     def schematic(self):
         ## Use cache if possible
@@ -94,7 +131,7 @@ class CrystalInfo(models.Model):
     resolution = models.DecimalField(max_digits=5, decimal_places=3) #probably want more values
     pdb_data = models.ForeignKey('structure.PdbData', null=True) #if exists
     pdb_code = models.TextField(max_length=10, null=True) #if exists
-    #No not include ligands here, as they should be part of crystalization 
+    #No not include ligands here, as they should be part of crystalization
 
 
 class ContributorInfo(models.Model):
@@ -102,26 +139,70 @@ class ContributorInfo(models.Model):
     pi_email = models.TextField(max_length=50)
     pi_name = models.TextField(max_length=50)
     urls = models.TextField() #can be comma seperated if many
-    date = models.DateField() 
+    date = models.DateField()
     address = models.TextField()
 
 
 class ConstructMutation(models.Model):
+    # construct = models.ManyToManyField('ConstructMutation')
+    construct = models.ForeignKey('Construct', related_name = 'mutations')
     sequence_number = models.SmallIntegerField()
     wild_type_amino_acid = models.CharField(max_length=1)
     mutated_amino_acid = models.CharField(max_length=1)
-    mutation_type = models.CharField(max_length=30, null=True)
+    # mutation_type = models.CharField(max_length=30, null=True)
     remark = models.TextField(null=True)
+    residue = models.ForeignKey('residue.Residue', null=True)
+    effects = models.ManyToManyField('ConstructMutationType', related_name="bar")
+
+    def get_res(self):
+        '''Retrieve the residue connected to this mutation, and save it as a FK field.'''
+        # try:
+        #     construct = self.construct_set.get().structure.protein_conformation.protein
+        # except Construct.DoesNotExist:
+        #     print('no construct for this mutation')
+        #     return None
+        seq_no = self.sequence_number
+        try:
+            # res_cons = Residue.objects.get(protein_conformation__protein=construct, sequence_number=seq_no)
+            res_wt = Residue.objects.get(protein_conformation__protein=self.construct.structure.protein_conformation.protein.parent, sequence_number=seq_no)
+            if res_wt.amino_acid != self.wild_type_amino_acid:
+                print('aa dont match',construct,seq_no,"annotated wt:", self.wild_type_amino_acid, "DB wt:",res_wt.amino_acid, "Annotated Mut",self.mutated_amino_acid)
+            #     print('records wt',res_wt.amino_acid,'construct res',res_cons.amino_acid)
+            return res_wt
+        except Residue.DoesNotExist:
+            print('no residue for',construct,seq_no)
+            return None
+
+
+
+    # def save(self, *args, **kwargs):
+    #     '''Modify save function to automatically get the associated residue, should it exist'''
+    #     self.residue_id = self.get_res()
+    #     super(ConstructMutation, self).save(*args, **kwargs)
+
 
     def __str__(self):
         return '{}{}{}'.format(self.wild_type_amino_acid, self.sequence_number,
-            self.mutated_amino_acid)
+                               self.mutated_amino_acid)
 
     class Meta():
         db_table = 'construct_mutation'
 
+class ConstructMutationType(models.Model):
+    slug = models.SlugField(max_length=100)
+    name = models.CharField(max_length=100)
+    effect = models.CharField(max_length=100, null=True)
+
+    def __str__(self):
+        return self.slug
+
+    class Meta():
+        db_table = 'construct_mutation_type'
+        unique_together = ('slug', 'name','effect')
+
 
 class ConstructDeletion(models.Model):
+    construct = models.ForeignKey('Construct', related_name = 'deletions')
     start = models.SmallIntegerField()
     end = models.SmallIntegerField()
 
@@ -133,6 +214,7 @@ class ConstructDeletion(models.Model):
 
 
 class ConstructModification(models.Model):
+    construct = models.ForeignKey('Construct', related_name = 'modifications')
     modification = models.TextField(max_length=50)
     position_type = models.TextField(max_length=20)
     pos_start = models.SmallIntegerField()
@@ -147,6 +229,7 @@ class ConstructModification(models.Model):
 
 
 class ConstructInsertion(models.Model):
+    construct = models.ForeignKey('Construct', related_name = 'insertions')
     insert_type = models.ForeignKey('ConstructInsertionType')
     position = models.TextField(max_length=20, null=True) #N-term1, N-term2 etc -- to track order
     presence = models.TextField(max_length=20, null=True) #YES or NO (presence in crystal)
@@ -216,7 +299,7 @@ class ChemicalConc(models.Model):
         return self.chemical.name
 
     class Meta():
-        db_table = 'construct_chemical_conc'    
+        db_table = 'construct_chemical_conc'
 
 
 # includes all chemicals, type & concentration. Chemicals can be from LCPlipid, detergent, etc.
