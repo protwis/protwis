@@ -6,6 +6,7 @@ import os
 import yaml
 import time
 import logging
+import urllib
 from urllib.parse import quote
 from urllib.request import urlopen
 from urllib.error import HTTPError
