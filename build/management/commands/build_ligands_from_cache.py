@@ -80,17 +80,19 @@ class Command(BaseBuild):
                     print('{} Status {} out of {}'.format(
                     datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), count.value, len(ligands)))
 
-            # Check if inchikey is there
-            ligand = Ligand.objects.filter(name=l['name'], properities__inchikey=l['inchikey']).first()
-
             if 'logp' not in l:
                 # temp skip to only use "full" annotated ligands
                 continue
 
+            lp = LigandProperities.objects.filter(inchikey=l['inchikey']).first()
+            ligand = None
+            if lp:
+                # Check if inchikey is there
+                ligand = Ligand.objects.filter(name=l['name'], properities=lp).prefetch_related('properities__ligand_type','properities__web_links','properities__vendors').first()
+
             # The name with corresponding inchikey is there, assume all is good and skip.
             # Will add links to make sure they're there.
             if not ligand:
-                lp = LigandProperities.objects.filter(inchikey=l['inchikey']).first()
                 if lp:
                     print(l['name'],'is there! (but not by name, only inchi')
                     ligand = Ligand()
@@ -124,20 +126,22 @@ class Command(BaseBuild):
 
 
             # create links - impossible to make duplicates so no need to check if there already
-            for link in l['web_links']:
-                wr = WebResource.objects.get(slug=link['web_resource'])
-                wl, created = WebLink.objects.get_or_create(index=link['index'], web_resource=wr)
-                ligand.properities.web_links.add(wl)
+            if ligand.properities.web_links.count()<len(l['web_links']):
+                for link in l['web_links']:
+                    wr = WebResource.objects.get(slug=link['web_resource'])
+                    wl, created = WebLink.objects.get_or_create(index=link['index'], web_resource=wr)
+                    ligand.properities.web_links.add(wl)
 
             # create vendors - impossible to make duplicates so no need to check if there already
-            for link in l['vendors']:
-                lv = LigandVendors.objects.get(slug = link['vendor_slug'])
-                check = LigandVendorLink.objects.filter(sid=link['sid']).exists()
-                if not check:
-                    lvl = LigandVendorLink()
-                    lvl.sid = link['sid']
-                    lvl.vendor = lv
-                    lvl.lp = ligand.properities
-                    lvl.vendor_external_id = link['vendor_external_id']
-                    lvl.url = link['url']
-                    lvl.save()
+            if ligand.properities.vendors.count()<len(l['vendors']):
+                for link in l['vendors']:
+                    lv = LigandVendors.objects.get(slug = link['vendor_slug'])
+                    check = LigandVendorLink.objects.filter(sid=link['sid']).exists()
+                    if not check:
+                        lvl = LigandVendorLink()
+                        lvl.sid = link['sid']
+                        lvl.vendor = lv
+                        lvl.lp = ligand.properities
+                        lvl.vendor_external_id = link['vendor_external_id']
+                        lvl.url = link['url']
+                        lvl.save()
