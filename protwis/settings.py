@@ -29,6 +29,7 @@ INSTALLED_APPS = (
     'debug_toolbar',
     'rest_framework',
     'rest_framework_swagger',
+    'polymorphic',
     'common',
     'api',
     'news',
@@ -51,6 +52,7 @@ INSTALLED_APPS = (
     'tools',
     'drugs',
     'signprot',
+    'contactnetwork',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -106,6 +108,7 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             # insert your TEMPLATE_DIRS here
+
         ],
         'APP_DIRS': True,
         'OPTIONS': {

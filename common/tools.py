@@ -6,6 +6,7 @@ import os
 import yaml
 import time
 import logging
+import urllib
 from urllib.parse import quote
 from urllib.request import urlopen
 from urllib.error import HTTPError
@@ -95,6 +96,10 @@ def fetch_from_web_api(url, index, cache_dir=False, xml=False):
                 return False
             else:
                 time.sleep(2)
+        except urllib.error.URLError as e:
+            # Catches 101 network is unreachable -- I think it's auto limiting feature
+            tries +=1 
+            time.sleep(2)
         else:
             # save to cache
             if cache_dir:

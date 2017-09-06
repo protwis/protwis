@@ -62,6 +62,7 @@ class Ligand(models.Model):
             cache_dir = ['pubchem', 'cid', 'synonyms']
             url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/{}/$index/synonyms/json'.format(lookup_type)
             pubchem = fetch_from_web_api(url, pubchem_id, cache_dir)
+            ##print (pubchem)
             
             # get name from response
             try:
@@ -77,20 +78,37 @@ class Ligand(models.Model):
         
         # check cache
         cache_dir = ['pubchem', 'cid', 'property']
-        url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/{}/$index/property/CanonicalSMILES,InChIKey/json'.format(lookup_type)
+        url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/{}/$index/property/CanonicalSMILES,InChIKey,MolecularWeight,HBondDonorCount,HBondAcceptorCount,XLogP,RotatableBondCount/json'.format(lookup_type)
         pubchem = fetch_from_web_api(url, pubchem_id, cache_dir)
-        
-        # get properties from reponse
+        # get properties from response
+        if pubchem==False:
+            logger.warning('Ligand {} not found in PubChem'.format(pubchem_id))
+            return None
+
+        if pubchem['PropertyTable']['Properties'][0]:   
+            if 'HBondAcceptorCount' in pubchem['PropertyTable']['Properties'][0] :
+                properties['hacc'] =  pubchem['PropertyTable']['Properties'][0]['HBondAcceptorCount']
+            if 'HBondDonorCount' in pubchem['PropertyTable']['Properties'][0] :
+                properties['hdon'] =  pubchem['PropertyTable']['Properties'][0]['HBondDonorCount']
+            if 'XLogP' in pubchem['PropertyTable']['Properties'][0] :
+                properties['logp'] =  pubchem['PropertyTable']['Properties'][0]['XLogP']
+            if 'RotatableBondCount' in pubchem['PropertyTable']['Properties'][0] :
+                properties['rotatable_bonds'] =  pubchem['PropertyTable']['Properties'][0]['RotatableBondCount']
+            if 'MolecularWeight' in pubchem['PropertyTable']['Properties'][0] :
+                properties['mw'] = pubchem['PropertyTable']['Properties'][0]['MolecularWeight']
         try:
+            
             properties['smiles'] =  pubchem['PropertyTable']['Properties'][0]['CanonicalSMILES']
             properties['inchikey'] =  pubchem['PropertyTable']['Properties'][0]['InChIKey']
+
         except:
             logger.warning('Ligand {} not found in PubChem'.format(pubchem_id))
             return None
 
         # pubchem webresource
         web_resource = WebResource.objects.get(slug='pubchem')
-
+        #print (web_resource)
+        
         # does a ligand with this canonical name already exist
         try:
             return Ligand.objects.get(name=ligand_name, canonical=True)
@@ -235,8 +253,17 @@ class Ligand(models.Model):
 class LigandProperities(models.Model):
     ligand_type = models.ForeignKey('LigandType', null=True)
     web_links = models.ManyToManyField('common.WebLink')
+    #vendor_links = models.ManyToManyField('common.WebLink', related_name='vendors')
     smiles = models.TextField(null=True)
     inchikey = models.CharField(max_length=50, null=True, unique=True)
+    #vendors = models.ManyToManyField('LigandVenderLink')
+
+    mw = models.DecimalField(max_digits=15, decimal_places=3, null=True)
+    rotatable_bonds =  models.SmallIntegerField(null=True)
+    hacc =  models.SmallIntegerField( null=True)
+    hdon =  models.SmallIntegerField( null=True)
+    logp = models.DecimalField(max_digits=10, decimal_places=3, null=True)
+    
 
     def __str__(self):
         return self.inchikey
@@ -245,6 +272,7 @@ class LigandProperities(models.Model):
         db_table = 'ligand_properities'
 
 
+    
 class LigandType(models.Model):
     slug = models.SlugField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
@@ -265,3 +293,57 @@ class LigandRole(models.Model):
     
     class Meta():
         db_table = 'ligand_role'
+        
+        
+class ChemblAssay(models.Model):
+     #slug = models.SlugField(max_length=50, unique=True)
+    web_links = models.ManyToManyField('common.WebLink')
+    assay_id = models.CharField(max_length=50, unique = True)
+    
+    
+        
+    def __str__(self):
+        return self.assay_id
+    
+    class Meta():
+        db_table = 'chembl_assays'
+        
+        
+class AssayExperiment(models.Model):
+    
+    ligand = models.ForeignKey('Ligand')
+    protein = models.ForeignKey('protein.Protein')
+    assay = models.ForeignKey('ChemblAssay')
+    assay_type = models.CharField(max_length=10)
+    assay_description = models.TextField(max_length=1000)
+    pchembl_value = models.DecimalField(max_digits=9, decimal_places=3)
+
+    published_value = models.DecimalField(max_digits=9, decimal_places=3)
+    published_relation = models.CharField(max_length=10)
+    published_type = models.CharField(max_length=20)
+    published_units = models.CharField(max_length=20)
+
+    standard_value = models.DecimalField(max_digits=9, decimal_places=3)
+    standard_relation = models.CharField(max_length=10)
+    standard_type = models.CharField(max_length=20)
+    standard_units = models.CharField(max_length=20)
+    
+
+    
+    class Meta():
+        unique_together = ('ligand', 'protein', 'assay')
+    
+    
+
+class LigandVendors(models.Model):
+    slug = models.SlugField(max_length=100, unique=True)
+    name = models.CharField(max_length=200, default='')
+    url = models.TextField(null=True)
+
+class LigandVendorLink(models.Model):
+    vendor = models.ForeignKey('LigandVendors')
+    lp = models.ForeignKey('LigandProperities', related_name='vendors')
+    url = models.CharField(max_length=300)  #SourceRecordURL
+    vendor_external_id = models.CharField(max_length=300) #RegistryID
+    sid = models.CharField(max_length=200, unique=True) #SID
+    

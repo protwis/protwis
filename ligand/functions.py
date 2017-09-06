@@ -24,14 +24,37 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
 
         try:
             # if this name is canonical and it has a ligand record already
-            l = Ligand.objects.get(name=ligand_name, canonical=True,
-                properities__web_links__web_resource=web_resource,
-                properities__web_links__index=ligand_id)
+            if (ligand_name==False):
+            
+                l = None
+                ls = Ligand.objects.filter(canonical=True,
+                   properities__web_links__web_resource=web_resource,
+                   properities__web_links__index=ligand_id)
+               
+                for ligand in ls:
+                    l = ligand
+                    #print (l)
+                    break
+                if l == None:
+                    l = Ligand.objects.get(canonical=True,
+                    properities__web_links__web_resource=web_resource,
+                    properities__web_links__index=ligand_id)
+                    
+            else:
+               l = Ligand.objects.get(name=ligand_name, canonical=True,
+                   properities__web_links__web_resource=web_resource,
+                   properities__web_links__index=ligand_id)
+            
+            #l = Ligand.objects.get(name=ligand_name, canonical=True,
+            #    properities__web_links__web_resource=web_resource,
+            #    properities__web_links__index=ligand_id)
+            #
         except Ligand.DoesNotExist:
             try:
                 # if exists under different name
                 l_canonical = Ligand.objects.get(properities__web_links__web_resource=web_resource,
                     properities__web_links__index=ligand_id, canonical=True)
+                #print (created)
                 try:
                     l, created = Ligand.objects.get_or_create(properities = l_canonical.properities,
                         name = ligand_name, canonical = False)
@@ -44,7 +67,9 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
                 lt, created = LigandType.objects.get_or_create(slug=slugify(default_ligand_type),
                     defaults={'name': default_ligand_type})
                 l = Ligand()
+                #print (ligand_name)
                 l = l.load_from_pubchem(pubchem_lookup_value, ligand_id, lt, ligand_name)
+                #print (l)
                 if l == None and type_id=='SMILES': #insert manually if smiles and unfound in pubchem
                     try:
                         l = Ligand.objects.get(name=ligand_name, canonical=True,
@@ -124,5 +149,6 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
                 l = Ligand.objects.get(name=str(name), canonical=True)
     else:
         l = None
-
+    
     return l
+
