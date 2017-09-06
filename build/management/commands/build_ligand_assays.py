@@ -37,11 +37,8 @@ class Command(BaseBuild):
     # source file directory
     links_data_dir = os.sep.join([settings.DATA_DIR, 'ligand_data', 'assay_data'])
     dictionary_file = os.sep.join([settings.DATA_DIR, 'ligand_data', 'assay_data', 'dictionary.txt'])
-    defaults = {
-        'name': 'ChEMBL_compound_ids',
-        'url': 'https://www.ebi.ac.uk/chembl/compound/inspect/$index'
-        }
-    wr, created = WebResource.objects.get_or_create(slug='chembl_ligand', defaults = defaults)
+
+    wr = WebResource.objects.get(slug='chembl_ligand')
     wr_pubchem = WebResource.objects.get(slug='pubchem')
         
     
@@ -130,11 +127,7 @@ class Command(BaseBuild):
             assay_ids.add(row[header_dict['assay_chembl_id']])
             
         ####create webResource for chembl assays
-        defaults = {
-        'name': 'ChEMBL Assays ids',
-        'url': 'https://www.ebi.ac.uk/chembl/assay/inspect/$index'
-        }
-        wr, created = WebResource.objects.get_or_create(slug='chembl_assays', defaults = defaults)
+        wr = WebResource.objects.get(slug='chembl_assays')
 
         ####Create an ChemblAssay object (ca) with wiblink
         for chembl_assay_id in assay_ids:

@@ -342,7 +342,7 @@ class LigandVendors(models.Model):
 
 class LigandVendorLink(models.Model):
     vendor = models.ForeignKey('LigandVendors')
-    lp = models.ForeignKey('LigandProperities')
+    lp = models.ForeignKey('LigandProperities', related_name='vendors')
     url = models.CharField(max_length=300)  #SourceRecordURL
     vendor_external_id = models.CharField(max_length=300) #RegistryID
     sid = models.CharField(max_length=200, unique=True) #SID
