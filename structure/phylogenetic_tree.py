@@ -17,18 +17,11 @@ class PhylogeneticTreeNode(object):
         self.name = name
         self.color = color
         self.children = OrderedDict()
-        self.crystalized = 0
-        self.receptor_i = 0
-        self.mutations = 0
-        self.receptor_m = 0
-        self.receptor_m_am = 0
-        self.receptor_t = 0
-        self.fraction_i = 0
-        self.fraction_m = 0
-        self.fraction_m_an = 0
-
-    def add_child(self):
-        pass
+        self.exp_data = {
+            'crystals': 0,
+            'mutations': 0,
+            'ligands': 0,
+            }
 
     def get_value(self, param):
         """
@@ -37,16 +30,26 @@ class PhylogeneticTreeNode(object):
 
         TODO: Implement a scheme for mutations.
         """
-        return self.__getattribute__(param)
+        try:
+            return self.exp_data[param]
+        except KeyError:
+            return 0
 
-    def increment_value(self, param):
+    def increment_value(self, param, value=1):
         """
         Function returning a parameter for coloring tree leaves.
         @param: a parameter based on which a color value will be set.
 
         TODO: Implement a scheme for mutations.
         """
-        self.__setattr__(param, self.__getattribute__(param)+1)
+        self.exp_data[param] += value
+
+    def update_exp_data(self, data):
+
+        for key, value in data.items():
+            if self.exp_data[key] > value: continue
+            self.exp_data[key] = value
+            
 
     def get_nodes_dict(self, param):
         return OrderedDict([
@@ -57,8 +60,6 @@ class PhylogeneticTreeNode(object):
                 y.get_nodes_dict(param) for x,y in self.children.items() if self.children != OrderedDict()
                 ]),
             ])
-    #def __repr__(self):
-    #    return "'name': {}\n'children': {}".format(self.name,self.children)
 
 
 class PhylogeneticTree(object):
@@ -79,8 +80,29 @@ class PhylogeneticTree(object):
                 tmp = tmp['_'.join(tmp_path)].children
             except KeyError:
                 tmp['_'.join(tmp_path)] = data
+        try:
+            tmp[path].update_exp_data(data.exp_data)
+        except KeyError:
+            tmp[path] = data
 
-        tmp[path] = data
+
+    def get_data(self, path):
+        
+        parent_path = path.split('_')[1:-1]
+        tmp = self.tree.children
+        tmp_path = [path.split('_')[0]]
+        while parent_path != []:
+            tmp_path.append(parent_path.pop(0))
+            try:
+                tmp = tmp['_'.join(tmp_path)].children
+            except KeyError:
+                print("You're screwed")
+        try:
+            print(path)
+            print(tmp[path].name)
+            print(tmp[path].exp_data)
+        except:
+            pass
 
 
     def get_nodes(self, level):
@@ -106,16 +128,15 @@ class PhylogeneticTreeGenerator(object):
     #TODO: This should go to settings as it is GPCR-specific.
     #Dict keys are the Class - Protein family pairs. '' means 'any'.
     CSS_COLORS = {
-       ("Class F (Frizzled)", '') : 'RoyalBlue',
-       ('Class A (Rhodopsin)', 'Protein') : 'RoyalBlue',
-       ('Class B2 (Adhesion)', '') : 'RoyalBlue',
+       ("Class F (Frizzled)", '') : 'SteelBlue',
+       ('Class A (Rhodopsin)', 'Protein') : 'SteelBlue',
+       ('Class B2 (Adhesion)', '') : 'SteelBlue',
        ('Class A (Rhodopsin)', 'Peptide') : 'SkyBlue',
        ('Class B1 (Secretin)', '') : 'SkyBlue',
        ('Class A (Rhodopsin)', 'Lipid') : 'LightGreen',
        ('', 'Orphan') : 'Orange',
        ('Class A (Rhodopsin)', 'Sensory') : 'DarkGray',
        ('Class C (Glutamate)', 'Sensory') : 'DarkGray',
-       ('Taste 1', '') : 'DarkGray',
        ('Taste 2', '') : 'DarkGray',
        ('Class A (Rhodopsin)', 'Nucleotide') : 'Purple',
        }
@@ -159,60 +180,41 @@ class PhylogeneticTreeGenerator(object):
             tree_lvl = len(family.slug.split('_'))
             if tree_lvl > self.tree_depth:
                 continue
+            if family.slug == '005_001_002':
+                continue
             self.lookup[tree_lvl][family.slug] = family
 
         self.color_mapping = {}
         self.map_family_colors()
 
-        self.proteins = Protein.objects.filter(family__slug__startswith="00", source__name='SWISSPROT', species__common_name='Human').prefetch_related('family').order_by('family__slug')
+        self.proteins = Protein.objects.filter(
+            family__slug__startswith="00",
+            source__name='SWISSPROT'
+            ).prefetch_related('family', 'family__parent'
+                               ).order_by('family__slug')
 
 
     def get_aux_data(self):
 
-        self.aux_data['crystals'] = [x.id 
-                                     for x in 
-                                     Protein.objects.filter(
-                                         id__in=[x.protein_conformation.protein.parent.id for x in
-                                                 Structure.objects.distinct
+        self.aux_data['crystals'] = [x.protein_conformation.protein.parent.id for x in
+                                                 Structure.objects.all()
+                                                 .distinct
                                                  ('protein_conformation__protein__parent')
                                                  ]
-                                         )
-                                     ]
 
 
     def map_family_colors(self):
 
         for x,y in self.CSS_COLORS.items():
-            lvl1_slug = ''
-            for slug, fam in self.lookup[1].items():
-                if x[0] == fam.name and x[0] != '':
-                    lvl1_slug = slug
-                    break
-            lvl2_slug = ''
+            lvl1_slug = [slug for slug, fam in self.lookup[1].items() if (x[0] == fam.name or x[0] == '')]
+            lvl2_slug = []
             for slug, fam in self.lookup[2].items():
-                if fam.name.startswith(x[1]) and x[1] != '':
-                    lvl2_slug = slug
-                    break
-            self.color_mapping[(lvl1_slug == '' and lvl2_slug != '' and 'xxx' + lvl2_slug[3:]) or
-                               (lvl1_slug != '' and lvl2_slug == '' and lvl1_slug) or
-                               (lvl1_slug != '' and lvl2_slug != '' and lvl2_slug)
-                               ] = y
-
+                if fam.name.startswith(x[1]) and slug[:3] in lvl1_slug:
+                    self.color_mapping[slug] = y
 
     def get_color(self, slug):
-
-        path = slug.split('_')
-
         try:
-            return self.color_mapping[path[0]]
-        except KeyError:
-            pass
-        try:
-            return self.color_mapping['{}_{}'.format(path[0], path[1])]
-        except KeyError:
-            pass
-        try:
-            return self.color_mapping['xxx_{}'.format(path[1])]
+            return self.color_mapping[slug[:7]]
         except KeyError:
             return 'Black'
 
@@ -221,7 +223,7 @@ class PhylogeneticTreeGenerator(object):
         """
         Prepare data for coverage diagram. Iterative aproach.
         """
-
+        self.d3_options['branch_length'] = {}
         coverage = PhylogeneticTree(self.root_lvl, self.tree_depth, family)
 
         for lvl in range(self.root_lvl, self.tree_depth+1):
@@ -232,42 +234,31 @@ class PhylogeneticTreeGenerator(object):
                 for path, branch in coverage.get_nodes(lvl-2).items():
                     tmp_prots = self.proteins.filter(family__parent__slug=path)
                     for protein in tmp_prots:
-                        tmp_node = PhylogeneticTreeNode(protein.entry_name.split("_")[0], self.get_color(protein.family.slug))
+                        tmp_node = PhylogeneticTreeNode(
+                            protein.entry_name.split("_")[0], 
+                            self.get_color(protein.family.slug)
+                            )
                         if protein.id in self.aux_data['crystals']:
-                            tmp_node.increment_value("crystalized")
+                            tmp_node.increment_value('crystals')
                         coverage.add_data(protein.family.slug, tmp_node)
                 return coverage
             children = OrderedDict()
             if lvl+1 in self.SORTED_BRANCHES:
                 for slug, node in sorted(self.lookup[lvl+1].items(), key=lambda y: y[1].name.lower()):
                     if node.parent.slug.startswith(family.slug):
-                        name = node.name.replace('receptors','').strip()
+                        name = node.name.replace('receptors','').replace('<sub>',' ').replace('</sub>','').strip()
                         children[slug] = PhylogeneticTreeNode(name, self.get_color(node.slug))
                         
                         if len(name) > len(self.d3_options['branch_length'][lvl]):
                             self.d3_options['branch_length'][lvl] = name
-
-                #children = OrderedDict((x[0], PhylogeneticTreeNode(x[1].name.replace('receptors','').strip(), self.get_color(x[1].slug)))
-                #                    for x in sorted(
-                #                        self.lookup[lvl+1].items(),
-                #                        key=lambda y: y[1].name.lower()) 
-                #                    if x[1].parent.slug.startswith(family.slug)
-                #                    )
             else:
                 for slug, node in self.lookup[lvl+1].items():
                     if node.parent.slug.startswith(family.slug):
-                        name = node.name.replace('receptors','').strip()
+                        name = node.name.replace('receptors','').replace('<sub>',' ').replace('</sub>','').strip()
                         children[slug] = PhylogeneticTreeNode(name, self.get_color(node.slug))
 
                         if len(name) > len(self.d3_options['branch_length'][lvl]):
                             self.d3_options['branch_length'][lvl] = name
-                        
-                #children = OrderedDict({x: PhylogeneticTreeNode(
-                #    self.lookup[lvl+1][x].name.replace('receptors','').strip(), 
-                #    self.get_color(self.lookup[lvl+1][x].slug))
-                #                    for x in self.lookup[lvl+1]
-                #                    if self.lookup[lvl+1][x].parent.slug.startswith(family.slug)
-                #                    })
             for path, data in children.items():
                 coverage.add_data(path, data)
         return coverage

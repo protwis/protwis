@@ -31,7 +31,6 @@ function draw_tree(data, options) {
         branches[key] = branch_offset;
     }
     branches[options.depth] = branch_offset + 10;
-    //console.info(branches);
 
     var color = d3.scale.category20();
 
@@ -39,13 +38,12 @@ function draw_tree(data, options) {
 
     var tree = d3.layout.tree()
         .size([360, diameter / 2])
-        //.sort(function (a, b) { return b.sort - a.sort; })
         .separation(function (a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
 
     var diagonal = d3.svg.diagonal.radial()
         .projection(function (d) { return [d.y, d.x / 180 * Math.PI]; });
 
-    var svg = d3.select('#'+options.anchor).append("svg") // bylo "#coverage"
+    var svg = d3.select('#'+options.anchor).append("svg")
         .attr("width", diameter)
         .attr("height", diameter)
         .attr("id", options.anchor+"_svg")
@@ -68,18 +66,6 @@ function draw_tree(data, options) {
         } else {
             d.y = branches[d.depth]
         }
-        //console.info(d.y);
-        //} else if (d.depth == 1) {
-        //    d.y = 100
-        //} else if (d.depth == 2) {
-        //    d.y = 260
-        //} else if (d.depth == 3) {
-        //    d.y = 300
-        //} else if (d.depth == 4  ) {
-        //    d.y =  430
-        //} else {
-        //    d.y = d.depth * 150
-        //}
     });
 
     var links = tree.links(nodes);
@@ -93,12 +79,12 @@ function draw_tree(data, options) {
         .attr("d", function (d) { return step(d.source.x, d.source.y, d.target.x, d.target.y) })
         .style("stroke", function (d) { return d.target.color; })
         .style("stroke-width", function (d) { if (d.target.depth > 0) { return 4 - d.target.depth; } else { return 0; } })
-        //.style("opacity", function (d) {
-        //    if ((d.target.interactions > 0 && d.target.mutations_an > 0) || 1 == 1) { return 0.8 } //|| 1==1
-        //    else if (d.target.interactions > 0) { return 0.5 }
-        //    else if (d.target.mutations_an > 0) { return 0.5 }
-        //    else { return 0.1 };
-        //});
+        .style("opacity", function (d) {
+            if ((d.target.interactions > 0 && d.target.mutations_an > 0) || 1 == 1) { return 0.8 } //|| 1==1
+            else if (d.target.interactions > 0) { return 0.5 }
+            else if (d.target.mutations_an > 0) { return 0.5 }
+            else { return 0.1 };
+        });
 
     var node = svg_g.selectAll(".node")
         .data(nodes)
@@ -110,7 +96,9 @@ function draw_tree(data, options) {
         .attr("r", function (d) { if (d.name == '') { return "0" } else { return "4.0" } })
         .style("fill", function (d) {
             if (d.color && d.depth < options.depth) { return d.color }
-            else if (d.value > 0) { return "FireBrick" }
+            else if (d.value > 0) {
+                return "FireBrick";
+            }
             //Here should go code for ligands and mutations
             else { return "#eee" };
         })
@@ -126,15 +114,25 @@ function draw_tree(data, options) {
                 return d.x < 180 ? "translate(-12)" : "rotate(180)translate(12)";
             }
         })
-        .text(function (d) { if (d.depth == options.depth) { return d.name.toUpperCase(); } else if (d.depth > 0) { return d.name; } else { return ""; } })
+        .text(function (d) {
+            if (d.depth == options.depth) {
+                return d.name.toUpperCase();
+            } else if (options.label_free.includes(d.depth)) {
+                return "";
+            } else if (d.depth > 0) {
+                return d.name;
+            } else {
+                return "";
+            }
+        })
 
         .style("font-size", function (d) { if (d.depth < 2) { return "14px" } else if (d.depth == 2) { return "12px" } else { return "10px" } })
         .style("font-family", "Palatino")
         .style("fill", function (d) {
             if (d.color) { return "#111" }
-            else if (d.interactions > 0 && d.mutations_an > 0 && 1 == 2) { return "green" }
-            else if (d.interactions > 0 && 1 == 2) { return "Olive" }
-            else if (d.mutations_an > 0 && 1 == 2) { return "palegreen" }
+            //else if (d.interactions > 0 && d.mutations_an > 0 && 1 == 2) { return "green" }
+            //else if (d.interactions > 0 && 1 == 2) { return "Olive" }
+            //else if (d.mutations_an > 0 && 1 == 2) { return "palegreen" }
             else { return "#222" };
         }).call(getBB);
     node.filter(function (d) { return (d.depth != options.depth) }).insert("rect", "text")
