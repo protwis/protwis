@@ -436,7 +436,6 @@ class StructureStatistics(TemplateView):
             tree['children'].append(c_v)
             i += 1
 
-        json.dump(tree, open('old_tree.json', 'w'), indent=4)
         return json.dumps(tree)
 
 

@@ -130,6 +130,7 @@ class PhylogeneticTreeGenerator(object):
     CSS_COLORS = {
        ("Class F (Frizzled)", '') : 'SteelBlue',
        ('Class A (Rhodopsin)', 'Protein') : 'SteelBlue',
+       ('Class A (Rhodopsin)', 'Alicarboxylic acid') : 'Red',
        ('Class B2 (Adhesion)', '') : 'SteelBlue',
        ('Class A (Rhodopsin)', 'Peptide') : 'SkyBlue',
        ('Class B1 (Secretin)', '') : 'SkyBlue',
@@ -141,7 +142,7 @@ class PhylogeneticTreeGenerator(object):
        ('Class A (Rhodopsin)', 'Nucleotide') : 'Purple',
        }
     #List of tree levels that should be sorted alphabetically
-    SORTED_BRANCHES = [2,]
+    SORTED_BRANCHES = [2,3]
 
 #   o	Dark blue: class A Protein ligand type and whole of classes Adhesion and class F (they also have this ligand type)
 #   o	Light blue: Peptide and whole of class B1 (it also has this ligand type)

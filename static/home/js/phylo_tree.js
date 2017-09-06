@@ -32,7 +32,7 @@ function draw_tree(data, options) {
     }
     branches[options.depth] = branch_offset + 10;
 
-    var color = d3.scale.category20();
+    //var color = d3.scale.category20();
 
     var diameter = 2 * branches[options.depth] + 150;
 
@@ -57,8 +57,7 @@ function draw_tree(data, options) {
     var svg_g = svg.append("g")
         .attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
 
-
-    var nodes = tree.nodes(data)
+    var nodes = tree.nodes(data);
 
     nodes.forEach(function (d) {
         if (d.depth == 0) {
@@ -76,7 +75,7 @@ function draw_tree(data, options) {
         .data(links)
         .enter().append("path")
         .each(function (d) { d.target.linkNode = this; })
-        .attr("d", function (d) { return step(d.source.x, d.source.y, d.target.x, d.target.y) })
+        .attr("d", diagonal) //function (d) { return step(d.source.x, d.source.y, d.target.x, d.target.y) })
         .style("stroke", function (d) { return d.target.color; })
         .style("stroke-width", function (d) { if (d.target.depth > 0) { return 4 - d.target.depth; } else { return 0; } })
         .style("opacity", function (d) {
