@@ -3,3 +3,6 @@
 protwis/settings_local.py
 env
 /data
+
+.DS_Store
+.idea/
