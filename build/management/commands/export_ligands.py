@@ -67,6 +67,9 @@ class Command(BaseCommand):
                 continue
             if l.properities.logp:
                 export['logp'] = str(Decimal(l.properities.logp))
+            else:
+                # If no mw, do not dump, as it needs to be created and attempted to find it
+                continue
             export['rotatable_bonds'] = l.properities.rotatable_bonds
             export['hacc'] = l.properities.hacc
             export['hdon'] = l.properities.hdon

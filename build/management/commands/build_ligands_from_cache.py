@@ -47,9 +47,9 @@ class Command(BaseBuild):
 
 
         with gzip.open(os.sep.join([settings.DATA_DIR, 'ligand_data','raw_ligands','ligands.json.gz']), "rb") as f:
-            ligand_dump = json.loads(f.read().decode("ascii"))
-        print(len(ligand_dump),"ligands to load")
-        # self.prepare_input(options['proc'], self.chembl_mol_ids)
+            self.ligand_dump = json.loads(f.read().decode("ascii"))
+        print(len(self.ligand_dump),"ligands to load")
+        self.prepare_input(options['proc'], self.ligand_dump)
 
 
     def create_vendors(self,filenames):
@@ -69,74 +69,75 @@ class Command(BaseBuild):
                 print(len(d),"vendors",create_count,"vendors created")  
 
     def main_func(self, positions, iteration,count,lock):
-        #####Create chembl compound link and connect it to the corresponding ligand/cid#####
 
         print(positions,iteration,count,lock)
-        list_of_chembl_ids = self.chembl_mol_ids
-        while count.value<len(list_of_chembl_ids):
+        ligands = self.ligand_dump
+        while count.value<len(ligands):
             with lock:
-                chembl_ligand = list_of_chembl_ids[count.value]
+                l = ligands[count.value]
                 count.value +=1 
                 if count.value % 1000 == 0:
                     print('{} Status {} out of {}'.format(
-                    datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), count.value, len(list_of_chembl_ids)))
+                    datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), count.value, len(ligands)))
 
-            if chembl_ligand not in self.chembl_cid_dict.keys():
-                cids, not_found = self.find_cid_for_chembl(chembl_ligand)
-                if not_found:
-                    print('NOT FOUND',chembl_ligand,cids)
-                    continue
-            else:
-                cids = self.chembl_cid_dict[chembl_ligand]
-           # cid = self.chembl_cid_dict[chembl_ligand]
+            # Check if inchikey is there
+            ligand = Ligand.objects.filter(name=l['name'], properities__inchikey=l['inchikey']).first()
 
-            # cids = str(chembl_ligand[1])
-            temp = str(cids).split(';') #perhaps we should load all of the CIDs
-            #print (temp)
-            
-            cid = str(temp[0])
-            #if cid!='3559':
-            #    continue
-            l = get_or_make_ligand(cid,'PubChem CID') #call the first cid if there are more than one
-            if not l:
-                print('Ligand not found in PubChem', cid)
+            if 'logp' not in l:
+                # temp skip to only use "full" annotated ligands
                 continue
 
-            if not l.properities.web_links.filter(web_resource__slug = 'pubchem',index = cid).exists():
-                # NO CID FOR LIGAND! Rare cases where SMILES was used for initial look up
-                wl, created = WebLink.objects.get_or_create(index=cid, web_resource=self.wr_pubchem)
-                l.properities.web_links.add(wl)
+            # The name with corresponding inchikey is there, assume all is good and skip.
+            # Will add links to make sure they're there.
+            if not ligand:
+                lp = LigandProperities.objects.filter(inchikey=l['inchikey']).first()
+                if lp:
+                    print(l['name'],'is there! (but not by name, only inchi')
+                    ligand = Ligand()
+                    ligand.properities = lp
+                    ligand.name = l['name']
+                    ligand.canonical = l['canonical']
+                    ligand.ambigious_alias = l['ambigious_alias']
+                    ligand.save()
+                else:
+                    # No ligand seems to match by inchikey -- start creating it.
+                    # Make LigandProperities first
+                    lt, created = LigandType.objects.get_or_create(slug=l['ligand_type__slug'],name=l['ligand_type__name'])
+                    lp = LigandProperities()
+                    lp.inchikey = l['inchikey']
+                    lp.smiles = l['smiles']
+                    lp.mw = l['mw']
+                    lp.logp = l['logp']
+                    lp.rotatable_bonds = l['rotatable_bonds']
+                    lp.hacc = l['hacc']
+                    lp.hdon = l['hdon']
+                    lp.ligand_type = lt
 
-            if not l.properities.web_links.filter(web_resource__slug = 'chembl_ligand',index = chembl_ligand).exists():
-                wl, created = WebLink.objects.get_or_create(index=chembl_ligand, web_resource=self.wr)
-                l.properities.web_links.add(wl)
-            
-            ###### Vendor stuff  ######
-            cache_dir = ['pubchem', 'cid', 'vendors']
-            url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/categories/compound/$index/JSON/'
-            vendors = fetch_from_web_api(url, cid, cache_dir)
-            
-            if vendors:
-                for vendor_data in vendors['SourceCategories']['Categories'][0]['Sources'] :
-                    lv, created = LigandVendors.objects.get_or_create(slug = slugify(vendor_data['SourceName']))
-                    lv.name = vendor_data['SourceName']
-                    if 'SourceURL' in vendor_data:
-                        lv.url = vendor_data['SourceURL']
-                    lv.save()
+                    lp.save()
 
-                    if 'SID' in vendor_data:
-                        #print (vendor_data['SID'])
-                        lvls = LigandVendorLink.objects.filter(sid = vendor_data['SID'] )
-                        if not lvls.exists():
-                            lvl = LigandVendorLink()
-                            lvl.vendor = lv
-                            lvl.lp = l.properities
-                            lvl.sid =  vendor_data['SID'] 
-                            if 'RegistryID' in vendor_data:
-                                lvl.vendor_external_id = vendor_data['RegistryID']
-                            if 'SourceRecordURL' in vendor_data:
-                                lvl.url = vendor_data['SourceRecordURL']
-                            else:
-                                continue
-                            lvl.save()
- 
+                    ligand = Ligand()
+                    ligand.properities = lp
+                    ligand.name = l['name']
+                    ligand.canonical = l['canonical']
+                    ligand.ambigious_alias = l['ambigious_alias']
+                    ligand.save()
+
+
+            # create links - impossible to make duplicates so no need to check if there already
+            for link in l['web_links']:
+                wr = WebResource.objects.get(slug=link['web_resource'])
+                wl, created = WebLink.objects.get_or_create(index=link['index'], web_resource=wr)
+                ligand.properities.web_links.add(wl)
+
+            # create vendors - impossible to make duplicates so no need to check if there already
+            for link in l['vendors']:
+                lv = LigandVendors.objects.get(slug = link['vendor_slug'])
+                check = LigandVendorLink.objects.filter(sid=link['sid']).exists()
+                if not check:
+                    lvl = LigandVendorLink()
+                    lvl.sid = link['sid']
+                    lvl.vendor = lv
+                    lvl.lp = ligand.properities
+                    lvl.vendor_external_id = link['vendor_external_id']
+                    lvl.url = link['url']
+                    lvl.save()
