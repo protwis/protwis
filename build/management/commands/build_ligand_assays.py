@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from build.management.commands.base_build import Command as BaseBuild
 from django.utils.text import slugify
 from django.conf import settings
+from django.db import IntegrityError
 from ligand.functions import get_or_make_ligand
 from common.models import WebResource, WebLink
 from protein.models import Protein
@@ -49,176 +50,199 @@ class Command(BaseBuild):
         else:
             filenames = os.listdir(self.links_data_dir)
 
-        #chembl_mol_ids,assay_ids = self.extract_chembl_mol_ids(filenames)
-        data,header_dict = self.extract_chembl_mol_ids(filenames) #reading the entry file from the data filder.
         self.chembl_cid_dict = self.read_dict_file(self.dictionary_file)
         self.chembl_cid_dict = OrderedDict(self.chembl_cid_dict)
-        #found_ids_dict = chembl_cid_dict #testing time. else commented.
 
         print("size of current dict",len(self.chembl_cid_dict))
+        self.data,self.header_dict = self.load_data(filenames) #reading the entry file from the data filder.
 
         ##### find the chembl_molecular_ids ############
         self.chembl_mol_ids = set()
-        for i in data:
-            self.chembl_mol_ids.add(i[header_dict['molecule_chembl_id']])
-            #print (i[header_dict['pchembl_value']])
+        for i in self.data:
+            self.chembl_mol_ids.add(i[self.header_dict['molecule_chembl_id']])
         self.chembl_mol_ids = sorted(list(self.chembl_mol_ids))
         ######## end ##############
-        print("amount of ids in dataset",len(self.chembl_mol_ids))
-            
-        ##notfound_ids_set = self.read_notfound(filenames) # testing
-        # chembl_cid_dict, notfound_ids_set = self.find_cid(chembl_mol_ids, chembl_cid_dict)
-        # chembl_cid_dict, notfound_ids_set = self.call_pubchem_service(chembl_cid_dict, notfound_ids_set)
-        # self.write_dictionary_file(chembl_cid_dict)
-        ###print (len(chembl_mol_ids))
+        print("Distinct ligands in Dataset",len(self.chembl_mol_ids))
+        print("Total rows in dataset",len(self.data))
 
-        self.prepare_input(options['proc'], self.chembl_mol_ids)
-
-        # self.create_assays(data,header_dict)
-        # self.create_assaysExperiment(data,header_dict)
+        # Code that counts duplicates
+        check = []
+        lists = {}
+        for i,record in enumerate(self.data):
+            target = record[self.header_dict['target_chembl_id']]
+            assay = record[self.header_dict['assay_chembl_id']]
+            ligand =record[self.header_dict['molecule_chembl_id']]
+            common = '%s_%s_%s' % (target,assay,ligand)
+            check.append(common)
+            if not common in lists:
+                lists[common] = []
+            lists[common].append(record)
         
+        from collections import Counter
+        a = dict(Counter(check))
+        count = 0
+        for k,v in a.items():
+            if v>1:
+                count += 1
+                # print(k)
+                # for l in lists[k]:
+                #     print(l)
+        print('Data rows that seem duplicated',count)
+            
+        # Load all ligands ( possible to skip if believed to be included or already imported )
+        #self.prepare_input(options['proc'], self.chembl_mol_ids, 0)
+        # Insert the actual data points
+        self.prepare_input(options['proc'], self.data ,1)
+
         
-
-    
-    def create_assaysExperiment(self, data, header):
-        for record in data:
-
-            target = record[header['target_chembl_id']]
-            assay = record[header['assay_chembl_id']]
-            ligand =record[header['molecule_chembl_id']]
-            p = Protein.objects.get(web_links__index = target, web_links__web_resource__slug = 'chembl')
-            ls = Ligand.objects.filter(properities__web_links__index=ligand, properities__web_links__web_resource__slug = 'chembl_ligand', canonical=True)
-            for l in ls:
-                if len(ls)>1:
-                    print('issue with canonical! give to munk',l,l.pk,ligand)
-                    break
-            assay_experiments = AssayExperiment.objects.filter( protein=p, ligand=l, assay__assay_id=assay)
-            
-            if assay_experiments.exists():
-                assay_experiment = assay_experiments.get()
-            else:
-                assay_experiment = AssayExperiment()
-                assay_experiment.assay = ChemblAssay.objects.get(web_links__index = assay, web_links__web_resource__slug = 'chembl_assays' )
-                assay_experiment.ligand = l
-                assay_experiment.protein = p
-            
-            
-            assay_experiment.assay_type = record[header['assay_type']]
-            assay_experiment.pchembl_value = record[header['pchembl_value']]
-            assay_experiment.assay_description = record[header['assay_description']]
-            assay_experiment.published_value = record[header['published_value']]
-            assay_experiment.published_relation = record[header['published_relation']]
-            assay_experiment.published_type = record[header['published_type']]
-            assay_experiment.published_units = record[header['published_units']]
-            
-            assay_experiment.standard_value = record[header['standard_value']]
-            assay_experiment.standard_relation = record[header['standard_relation']]
-            assay_experiment.standard_type = record[header['standard_type']]
-            assay_experiment.standard_units = record[header['standard_units']]
-            
-            assay_experiment.save()
-  
-    
-    def create_assays(self, data, header_dict):
-        
-        ####find the Chembl_assay_ids in a set - nonredundant lis
-        assay_ids = set()
-        for row in data:
-            assay_ids.add(row[header_dict['assay_chembl_id']])
-            
-        ####create webResource for chembl assays
-        wr = WebResource.objects.get(slug='chembl_assays')
-
-        ####Create an ChemblAssay object (ca) with wiblink
-        for chembl_assay_id in assay_ids:
-            #print (chembl_assay_id)
-            ca, created = ChemblAssay.objects.get_or_create(assay_id=chembl_assay_id)
-            wl, created = WebLink.objects.get_or_create(index=chembl_assay_id, web_resource=wr)
-            ca.web_links.add(wl)
-            ca.save()
-        return assay_ids
-
-
     def main_func(self, positions, iteration,count,lock):
         #####Create chembl compound link and connect it to the corresponding ligand/cid#####
 
-        print(positions,iteration,count,lock)
-        list_of_chembl_ids = self.chembl_mol_ids
-        while count.value<len(list_of_chembl_ids):
-            with lock:
-                chembl_ligand = list_of_chembl_ids[count.value]
-                count.value +=1 
-                if count.value % 1000 == 0:
-                    print('{} Status {} out of {}'.format(
-                    datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), count.value, len(list_of_chembl_ids)))
+        if iteration==0:
+            # First load makes sure ligands are there
+            list_of_chembl_ids = self.chembl_mol_ids
+            while count.value<len(list_of_chembl_ids):
+                with lock:
+                    chembl_ligand = list_of_chembl_ids[count.value]
+                    count.value +=1 
+                    if count.value % 1000 == 0:
+                        print('{} Status {} out of {}'.format(
+                        datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), count.value, len(list_of_chembl_ids)))
 
-            if chembl_ligand not in self.chembl_cid_dict.keys():
-                cids, not_found = self.find_cid_for_chembl(chembl_ligand)
-                if not_found:
-                    print('NOT FOUND',chembl_ligand,cids)
+                l = Ligand.objects.filter(properities__web_links__web_resource__slug = 'chembl_ligand', properities__web_links__index=chembl_ligand).first()
+                if l:
+                    cid = l.properities.web_links.filter(web_resource__slug = 'pubchem').first()
+                    if cid:
+                        cid = cid.index
+                    else:
+                        l = None
+                        # make sure code blow is run
+
+                if not l:
+                    # if l already has chembl link, assume all is good.
+                    if chembl_ligand not in self.chembl_cid_dict.keys():
+                        cids, not_found = self.find_cid_for_chembl(chembl_ligand)
+                        if not_found:
+                            print('SKIPPED: Could not determine CID',chembl_ligand,cids)
+                            continue
+                    else:
+                        cids = self.chembl_cid_dict[chembl_ligand]
+
+                    temp = str(cids).split(';') #perhaps we should load all of the CIDs
+                    cid = str(temp[0])
+
+                    l = get_or_make_ligand(cid,'PubChem CID') #call the first cid if there are more than one
+                    if not l:
+                        print('SKIPPED: Ligand not found in PubChem', cid)
+                        continue
+
+                    if not l.properities.web_links.filter(web_resource__slug = 'pubchem',index = cid).exists():
+                        # NO CID FOR LIGAND! Rare cases where SMILES was used for initial look up
+                        wl, created = WebLink.objects.get_or_create(index=cid, web_resource=self.wr_pubchem)
+                        l.properities.web_links.add(wl)
+
+                    if not l.properities.web_links.filter(web_resource__slug = 'chembl_ligand',index = chembl_ligand).exists():
+                        wl, created = WebLink.objects.get_or_create(index=chembl_ligand, web_resource=self.wr)
+                        l.properities.web_links.add(wl)
+                
+                ###### Vendor stuff  ######
+                if not len(l.properities.vendors.all()):
+                    # If it has some, assume they are all loaded
+                    cache_dir = ['pubchem', 'cid', 'vendors']
+                    url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/categories/compound/$index/JSON/'
+                    vendors = fetch_from_web_api(url, cid, cache_dir)
+                    
+                    if vendors:
+                        for vendor_data in vendors['SourceCategories']['Categories'][0]['Sources'] :
+                            lv, created = LigandVendors.objects.get_or_create(slug = slugify(vendor_data['SourceName']))
+                            lv.name = vendor_data['SourceName']
+                            if 'SourceURL' in vendor_data:
+                                lv.url = vendor_data['SourceURL']
+                            lv.save()
+
+                            if 'SID' in vendor_data:
+                                #print (vendor_data['SID'])
+                                lvls = LigandVendorLink.objects.filter(sid = vendor_data['SID'] )
+                                if not lvls.exists():
+                                    lvl = LigandVendorLink()
+                                    lvl.vendor = lv
+                                    lvl.lp = l.properities
+                                    lvl.sid =  vendor_data['SID'] 
+                                    if 'RegistryID' in vendor_data:
+                                        lvl.vendor_external_id = vendor_data['RegistryID']
+                                    if 'SourceRecordURL' in vendor_data:
+                                        lvl.url = vendor_data['SourceRecordURL']
+                                    else:
+                                        continue
+                                    lvl.save()
+
+        elif iteration==1:
+            # Third load loads the exp (based on ligand/assay)
+            header = self.header_dict
+            skipped = 0
+            while count.value<len(self.data):
+                with lock:
+                    record = self.data[count.value]
+                    count.value +=1 
+                    if count.value % 1000 == 0:
+                        print('{} Status {} out of {}'.format(
+                        datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), count.value, len(self.data)))
+
+
+                target = record[header['target_chembl_id']]
+                assay_id = record[header['assay_chembl_id']]
+
+                assay, created = ChemblAssay.objects.get_or_create(assay_id=assay_id)
+                if created:
+                    wl, created = WebLink.objects.get_or_create(index=assay_id, web_resource__slug='chembl_assays')
+                    ca.web_links.add(wl)
+
+
+                ligand =record[header['molecule_chembl_id']]
+                p = Protein.objects.get(web_links__index = target, web_links__web_resource__slug = 'chembl')
+                ls = Ligand.objects.filter(properities__web_links__index=ligand, properities__web_links__web_resource__slug = 'chembl_ligand', canonical=True)
+                if not ls.exists():
+                    # if no ligand matches this, then ignore -- be sure this works later.
+                    skipped += 1
                     continue
-            else:
-                cids = self.chembl_cid_dict[chembl_ligand]
-           # cid = self.chembl_cid_dict[chembl_ligand]
+                for l in ls:
+                    if len(ls)>1:
+                        print('issue with canonical! give to munk',l,l.pk,ligand)
+                        break
+                assay_experiments = AssayExperiment.objects.filter( protein=p, ligand=l, assay=assay)
+                
+                if assay_experiments.exists():
+                    assay_experiment = assay_experiments.get()
+                else:
+                    assay_experiment = AssayExperiment()
+                    assay_experiment.assay = assay
+                    assay_experiment.ligand = l
+                    assay_experiment.protein = p
 
-            # cids = str(chembl_ligand[1])
-            temp = str(cids).split(';') #perhaps we should load all of the CIDs
-            #print (temp)
-            
-            cid = str(temp[0])
-            #if cid!='3559':
-            #    continue
-            l = get_or_make_ligand(cid,'PubChem CID') #call the first cid if there are more than one
-            if not l:
-                print('Ligand not found in PubChem', cid)
-                continue
+                
+                
+                assay_experiment.assay_type = record[header['assay_type']]
+                assay_experiment.pchembl_value = record[header['pchembl_value']]
+                assay_experiment.assay_description = record[header['assay_description']]
+                assay_experiment.published_value = record[header['published_value']]
+                assay_experiment.published_relation = record[header['published_relation']]
+                assay_experiment.published_type = record[header['published_type']]
+                assay_experiment.published_units = record[header['published_units']]
+                
+                assay_experiment.standard_value = record[header['standard_value']]
+                assay_experiment.standard_relation = record[header['standard_relation']]
+                assay_experiment.standard_type = record[header['standard_type']]
+                assay_experiment.standard_units = record[header['standard_units']]
+                
+                try:
+                    assay_experiment.save()
+                except IntegrityError:
+                    assay_experiment = AssayExperiment.objects.get( protein=p, ligand=l, assay=assay)
 
-            if not l.properities.web_links.filter(web_resource__slug = 'pubchem',index = cid).exists():
-                # NO CID FOR LIGAND! Rare cases where SMILES was used for initial look up
-                wl, created = WebLink.objects.get_or_create(index=cid, web_resource=self.wr_pubchem)
-                l.properities.web_links.add(wl)
-
-            if not l.properities.web_links.filter(web_resource__slug = 'chembl_ligand',index = chembl_ligand).exists():
-                wl, created = WebLink.objects.get_or_create(index=chembl_ligand, web_resource=self.wr)
-                l.properities.web_links.add(wl)
-            
-            ###### Vendor stuff  ######
-            cache_dir = ['pubchem', 'cid', 'vendors']
-            url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/categories/compound/$index/JSON/'
-            vendors = fetch_from_web_api(url, cid, cache_dir)
-            
-            if vendors:
-                for vendor_data in vendors['SourceCategories']['Categories'][0]['Sources'] :
-                    lv, created = LigandVendors.objects.get_or_create(slug = slugify(vendor_data['SourceName']))
-                    lv.name = vendor_data['SourceName']
-                    if 'SourceURL' in vendor_data:
-                        lv.url = vendor_data['SourceURL']
-                    lv.save()
-
-                    if 'SID' in vendor_data:
-                        #print (vendor_data['SID'])
-                        lvls = LigandVendorLink.objects.filter(sid = vendor_data['SID'] )
-                        if not lvls.exists():
-                            lvl = LigandVendorLink()
-                            lvl.vendor = lv
-                            lvl.lp = l.properities
-                            lvl.sid =  vendor_data['SID'] 
-                            if 'RegistryID' in vendor_data:
-                                lvl.vendor_external_id = vendor_data['RegistryID']
-                            if 'SourceRecordURL' in vendor_data:
-                                lvl.url = vendor_data['SourceRecordURL']
-                            else:
-                                continue
-                            lvl.save()
- 
-
-    def write_dictionary_file(self, chembl_cid_dict):
-        with open(self.dictionary_file, 'w') as foo:
-#        with open('dict2', 'w') as foo:
-            for k in chembl_cid_dict.keys():
-                foo.write('{}\t{}\n'.format(k, chembl_cid_dict[k]))
+            print('done, skipped:',skipped)
 
     def find_cid_for_chembl(self, chembl_mol_id):
+        # function to find cid based on chembl
         cache_dir = ['ebi', 'chembl', 'src_compound_id_all']
         url = 'https://www.ebi.ac.uk/unichem/rest/src_compound_id_all/$index/1/22'
         lig_data = fetch_from_web_api(url, chembl_mol_id, cache_dir)
@@ -259,24 +283,6 @@ class Command(BaseBuild):
 
         return cid,not_found
 
-    def call_pubchem_service(self, chembl_cid_dict, notfound_ids_set):
-        notfound = set()
-        for chembl_id in notfound_ids_set:
-            cache_dir = ['pubchem', 'chembl', 'compound_name']
-            url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/$index/json'
-            lig_data = fetch_from_web_api(url, chembl_id, cache_dir)
-            try:
-                cid = lig_data['PC_Compounds'][0]['id']['id']['cid']
-                #updating the existing dictionary
-                chembl_cid_dict[chembl_id] = cid
-                self.add_cid_to_dict(chembl_mol_id,cid)
-                #.discard(x)
-            except KeyError:
-                #print (chembl_id)
-                notfound.add(chembl_id)
-
-
-        return chembl_cid_dict, notfound 
 
     def add_cid_to_dict(self,chembl_id, cid):
         with open(self.dictionary_file, 'a') as myfile:
@@ -296,7 +302,7 @@ class Command(BaseBuild):
                 cache_dir = ['ebi', 'chembl', 'src_compound_id_all']
                 url = 'https://www.ebi.ac.uk/unichem/rest/src_compound_id_all/$index/1/22'
                 lig_data = fetch_from_web_api(url, chembl_mol_id, cache_dir)
-                print("Searching for ",chembl_mol_id,len(chembl_mol_ids))
+                # print("Searching for ",chembl_mol_id,len(chembl_mol_ids))
                 if not lig_data:
                     #if not successful
                     notfound.add(chembl_mol_id)
@@ -341,16 +347,9 @@ class Command(BaseBuild):
                     except IndexError:
                         print(line) #to do record to the log if tehre is some errors
         return chembl_cid_dict
-#        return chembl_cid_dict
-
 
     ##read pre-generated file and extract the chembl_ids
-    def extract_chembl_mol_ids(self, filenames=False):
-        #self.logger.info('CREATING ASSAYS IMPORT LIGANDS START')
-#        
-#        # read source files
-#        if not filenames:
-#            filenames = os.listdir(self.links_data_dir)
+    def load_data(self, filenames=False):
         for filename in filenames:
             if filename=='dictionary.txt':
                 continue
@@ -374,10 +373,5 @@ class Command(BaseBuild):
                         
                         elif row[0] != '\n':
                             data.append(row)
-                            #chembl_mol_ids.add(row[header_dict['molecule_chembl_id']])
-                            #chembl_target_ids.add(row[header_dict['target_chembl_id']])
-                            #chembl_assay_ids.add(row[header_dict['assay_chembl_id']])
-                #print (len(chembl_assay_ids))
-            
-        #return chembl_mol_ids, chembl_assay_ids
+
         return data, header_dict
