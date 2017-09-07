@@ -15,7 +15,7 @@ Supplementary Table TruncationSites N-term
 <table width="1800" border=1>
 <tr><th colspan=3>Classification</th><th>GPCR</th><th colspan={{truncations_new_possibilties.nterm|length}}>N-term</th>
 </tr>
-<tr><th>Class</th><th>Lig</th><th>Rec</th><th>Entry name</th>
+<tr><th width=110>Class</th><th>Lig</th><th>Rec</th><th>Entry name</th>
 {% for pos in truncations_new_possibilties.nterm %}
 <th width=25 style="text-align: center;">{{pos}}</th>
 {% endfor %}
@@ -25,11 +25,11 @@ Supplementary Table TruncationSites N-term
     <tr><td>{{class}}</td><td></td><td></td><td>{{recp}}</td>
     {% for pos in truncations_new_possibilties.nterm %}
         {% if pos in t_pos.0 %}
-                <td bgcolor='green' align='center'> </td>
+                <td bgcolor='green' align='center'>C</td>
         {% elif pos in t_pos.1 %}
-                <td bgcolor='red' align='center'> </td>
+                <td bgcolor='red' align='center'>E</td>
         {% elif pos in t_pos.2 %}
-                <td bgcolor='blue' align='center'> </td>
+                <td bgcolor='blue' align='center'>T</td>
         {% else %}
             <td></td>
         {% endif %}
@@ -66,11 +66,11 @@ Supplementary Table TruncationSites C-term
     <tr><td>{{class}}</td><td></td><td></td><td>{{recp}}</td>
     {% for pos in truncations_new_possibilties.cterm %}
         {% if pos in t_pos.0 %}
-                <td bgcolor='green' align='center'> </td>
+                <td bgcolor='green' align='center'>C</td>
         {% elif pos in t_pos.1 %}
-                <td bgcolor='red' align='center'> </td>
+                <td bgcolor='red' align='center'>E</td>
         {% elif pos in t_pos.2 %}
-                <td bgcolor='blue' align='center'> </td>
+                <td bgcolor='blue' align='center'>T</td>
         {% else %}
             <td></td>
         {% endif %}
@@ -100,7 +100,7 @@ Supplementary Table FusionSites (and loop deletion sites, typically active state
 <th colspan={{truncations_new_possibilties.icl2_fusion_end|length}}>ICL2 End</th>
 <th colspan={{truncations_new_possibilties.icl3_fusion_end|length}}>ICL3 End</th>
 </tr>
-<tr><th>Class</th><th>Lig</th><th>Rec</th><th>Entry name</th>
+<tr><th width=120>Class</th><th>Lig</th><th>Rec</th><th>Entry name</th>
 {% for pos in truncations_new_possibilties.nterm_fusion reversed %}
 <th width=25 style="text-align: center;">{{pos}}</th>
 {% endfor %}
@@ -122,7 +122,7 @@ Supplementary Table FusionSites (and loop deletion sites, typically active state
         <tr><td>{{class}}</td><td></td><td></td><td>{{recp}}</td>
         {% for pos in vals.for_print %}
             {% if pos == 1 %}
-                <td bgcolor='green' align='center'> </td>
+                <td bgcolor='green' align='center'>C</td>
             {% else %}
                 <td></td>
             {% endif %}
@@ -130,16 +130,53 @@ Supplementary Table FusionSites (and loop deletion sites, typically active state
         </tr>
     {% endfor %}
 {% endfor %}
+{% for class, values in track_fusion_sums.items %}
+    <tr><td>{{class}}</td><td></td><td></td><td>Sum</td>
+    {% for pos, vals in values.items %}
+            <td>{{vals}}</td>
+    {% endfor %}
+    </tr>
+{% endfor %}
 {% for fus, vals in test2.items %}
     <tr><td> - </td><td></td><td></td><td>{{fus}}</td>
     {% for pos in vals.for_print %}
         {% if pos == 1 %}
-            <td bgcolor='green' align='center'> </td>
+            <td bgcolor='green' align='center'>C</td>
         {% else %}
             <td></td>
         {% endif %}
     {% endfor %}
     </tr>
+{% endfor %}
+</table>
+
+<br>
+ICL3 NON FUSION PROTEINS CUTS
+<table width="1800" border=1>
+<tr><th colspan=3>Classification</th><th>GPCR</th>
+<th colspan={{truncations_new_possibilties.icl3_start|length}}>ICL3 Start</th>
+<th colspan={{truncations_new_possibilties.icl3_end|length}}>ICL3 End</th>
+</tr>
+<tr><th width=120>Class</th><th>Lig</th><th>Rec</th><th>Entry name</th>
+{% for pos in truncations_new_possibilties.icl3_start %}
+<th width=25 style="text-align: center;">{{pos}}</th>
+{% endfor %}
+{% for pos in truncations_new_possibilties.icl3_end %}
+<th width=25 style="text-align: center;">{{pos}}</th>
+{% endfor %}
+</tr>
+{% for class, values in track_without_fusions.items %}
+    {% for recp, vals in values.items %}
+        <tr><td>{{class}}</td><td></td><td></td><td>{{recp}}</td>
+        {% for pos in vals.for_print %}
+            {% if pos == 1 %}
+                <td bgcolor='green' align='center'>C</td>
+            {% else %}
+                <td></td>
+            {% endif %}
+        {% endfor %}
+        </tr>
+    {% endfor %}
 {% endfor %}
 </table>
 
@@ -218,6 +255,17 @@ ICL3 (non fused)
 ICL3 (fused)
 <table width="100%">
 {% for class, values in truncations.icl3_fusion.items %}
+<tr><td colspan="2">{{class}}</td></tr>
+{% for position, proteins in values.items %}
+<tr><td>{{position}}</td><td>{{proteins|length}}</td><td>{{proteins|join:", "}}</td></tr>
+{% endfor %}
+{% endfor %}
+</table>
+
+<br>
+ICL2 (fused)
+<table width="100%">
+{% for class, values in truncations.icl2_fusion.items %}
 <tr><td colspan="2">{{class}}</td></tr>
 {% for position, proteins in values.items %}
 <tr><td>{{position}}</td><td>{{proteins|length}}</td><td>{{proteins|join:", "}}</td></tr>
