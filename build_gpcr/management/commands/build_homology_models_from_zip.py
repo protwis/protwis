@@ -23,6 +23,8 @@ class Command(BaseBuild):
 		zip_ref.close()
 		all_files = os.listdir(path_to_files+'/homology_models')
 		for f in all_files:
+			if 'post'  in f:
+				continue
 			if f.endswith('.pdb'):
 				p = UploadHomologyModelsToDB(path_to_files+'/homology_models/'+f)
 				p.parse_model()

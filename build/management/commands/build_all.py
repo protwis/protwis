@@ -19,6 +19,11 @@ class Command(BaseCommand):
                             dest='test',
                             default=False,
                             help='Include only a subset of data for testing')
+        parser.add_argument('--hommod',
+                            action='store_true',
+                            dest='hommod',
+                            default=False,
+                            help='Include build of homology models')
 
     def handle(self, *args, **options):
         if options['test']:
@@ -49,11 +54,16 @@ class Command(BaseCommand):
             ['build_release_notes'],
         ]
 
+        if options['hommod']:
+            commands = commands+[['build_homology_models', ['--update', '-z'], {'proc': options['proc'], 'test_run': options['test']}]]
+
         for c in commands:
             print('{} Running {}'.format(
                 datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), c[0]))
-            if len(c) > 1:
+            if len(c) == 2:
                 call_command(c[0], **c[1])
+            elif len(c) == 3:
+                call_command(c[0], *c[1], **c[2])
             else:
                 call_command(c[0])
 

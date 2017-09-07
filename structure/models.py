@@ -19,6 +19,7 @@ class Structure(models.Model):
     pdb_data = models.ForeignKey('PdbData', null=True) #allow null for now, since dump file does not contain.
     representative = models.BooleanField(default=False)
     annotated = models.BooleanField(default=True)
+    distance = models.DecimalField(max_digits=5, decimal_places=2, null=True)
 
 
     def __str__(self):
