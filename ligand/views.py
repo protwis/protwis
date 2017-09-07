@@ -12,7 +12,6 @@ def LigandBrowser(request):
     
     ligands = AssayExperiment.objects.values('protein__entry_name', 'protein__family__name', 'protein__family__parent__name', 'protein__family__parent__parent__name', 'protein__family__parent__parent__parent__name', 'protein__family__slug', 'protein__family__parent__slug', 'protein__family__parent__parent__slug', 'protein__family__parent__parent__parent__slug', 'protein__species__common_name').annotate(num_ligands=Count('ligand', distinct=True))
     
-    print(ligands)
     
     #od = collections.OrderedDict(sorted(ligands.items()))
     #
@@ -58,8 +57,6 @@ def l_detail(request, ligand__id):
                 min_val = min(p_dict[i][l][d]) #maximum value
                 p_dict[i][l][d]=[min_val,av]
             
-    for i in p_dict:
-        print(i, p_dict[i])
     #
     av_list = []
     for p in ligands:
@@ -103,7 +100,7 @@ def p_detail(request, slug):
                    'ligand__id', 'ligand__properities_id', 'ligand__properities__web_links__index',
                    'protein__species__common_name', 'protein__entry_name', 'ligand__properities__mw',
                    'ligand__properities__logp', 'ligand__properities__rotatable_bonds', 'ligand__properities__smiles',
-                   'ligand__properities__hdon', 'ligand__properities__hacc','protein', 'ligand__properities__ligandvendorlink__vendor__name'
+                   'ligand__properities__hdon', 'ligand__properities__hacc','protein', 'ligand__properities__vendors__vendor__name'
                    ).annotate(num_targets = Count('protein__id', distinct=True))
 
     if slug.count('_') == 1 and len(slug) == 7:
@@ -112,14 +109,10 @@ def p_detail(request, slug):
         f = slug
     
     
-    for p in ps:
-        #print (p.standard_value)
-        print (p['protein__entry_name'])
+
     #print(context)
-    print ('hi')
     #f = Protein.objects.get(family__slug='slug')http://localhost:8000/ligand/
     #print(f)
-    print (len(ps))
     #context = {'proteins': ps, 's':slug}
     context = {'proteins': ps, 's':f}
 
