@@ -77,15 +77,17 @@ class Command(BaseCommand):
                 approval = data[index:index+1]['Approval'].values[0]
                 status = data[index:index+1]['Status'].values[0]
 
+                references = data[index:index+1]['PMID'].values[0]
+
                 # fetch protein
                 try:
                     p = Protein.objects.get(entry_name=entry_name)
                 except Protein.DoesNotExist:
                     self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
-                    print('error', entry_name)
+                    print('error', drugname, entry_name)
                     continue
 
-                drug, created = Drugs.objects.get_or_create(name=drugname, drugtype=drugtype, indication=indication, novelty=novelty, approval=approval, phase=phase, phasedate=PhaseDate, clinicalstatus=ClinicalStatus, moa=moa, status=status, targetlevel=targetlevel)
+                drug, created = Drugs.objects.get_or_create(name=drugname, synonym=', '.join(drugalias), drugtype=drugtype, indication=indication, novelty=novelty, approval=approval, phase=phase, phasedate=PhaseDate, clinicalstatus=ClinicalStatus, moa=moa, status=status, targetlevel=targetlevel,references=references)
                 drug.target.add(p)
                 drug.save()
 
