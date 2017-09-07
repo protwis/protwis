@@ -559,118 +559,38 @@ def statistics(request):
 
     return render(request, 'variation_statistics2.html', context)
 
-# @cache_page(60*60*24*7)
-def economicburden(request):
-    economic_data = [{'key': 'Analgesics',
-  'values': [{'x': 'known-homo', 'y': 0},
-   {'x': 'known-hetero', 'y': 0},
-   {'x': 'putative-homo', 'y': 138729775},
-   {'x': 'putative-hetero', 'y': 852076775}]},
- {'key': 'Antidepressant Drugs',
-  'values': [{'x': 'known-homo', 'y': 0},
-   {'x': 'known-hetero', 'y': 0},
-   {'x': 'putative-homo', 'y': 0},
-   {'x': 'putative-hetero', 'y': 117515697}]},
- {'key': 'Antihist, Hyposensit & Allergic Emergen',
-  'values': [{'x': 'known-homo', 'y': 0},
-   {'x': 'known-hetero', 'y': 0},
-   {'x': 'putative-homo', 'y': 0},
-   {'x': 'putative-hetero', 'y': 87803411}]},
- {'key': 'Antispasmod.&Other Drgs Alt.Gut Motility',
-  'values': [{'x': 'known-homo', 'y': 0},
-   {'x': 'known-hetero', 'y': 0},
-   {'x': 'putative-homo', 'y': 0},
-   {'x': 'putative-hetero', 'y': 54611327}]},
- {'key': 'Beta-Adrenoceptor Blocking Drugs',
-  'values': [{'x': 'known-homo', 'y': 0},
-   {'x': 'known-hetero', 'y': 0},
-   {'x': 'putative-homo', 'y': 47857516},
-   {'x': 'putative-hetero', 'y': 150812524}]},
- {'key': 'Bronchodilators',
-  'values': [{'x': 'known-homo', 'y': 0},
-   {'x': 'known-hetero', 'y': 41074219},
-   {'x': 'putative-homo', 'y': 137046938},
-   {'x': 'putative-hetero', 'y': 470255724}]},
- {'key': 'Drugs For Genito-Urinary Disorders',
-  'values': [{'x': 'known-homo', 'y': 0},
-   {'x': 'known-hetero', 'y': 0},
-   {'x': 'putative-homo', 'y': 0},
-   {'x': 'putative-hetero', 'y': 41526465}]},
- {'key': 'Drugs Used In Diabetes',
-  'values': [{'x': 'known-homo', 'y': 73753896},
-   {'x': 'known-hetero', 'y': 251228756},
-   {'x': 'putative-homo', 'y': 73753896},
-   {'x': 'putative-hetero', 'y': 255738363}]},
- {'key': "Drugs Used In Park'ism/Related Disorders",
-  'values': [{'x': 'known-homo', 'y': 0},
-   {'x': 'known-hetero', 'y': 0},
-   {'x': 'putative-homo', 'y': 0},
-   {'x': 'putative-hetero', 'y': 79762195}]},
- {'key': 'Drugs Used In Psychoses & Rel.Disorders',
-  'values': [{'x': 'known-homo', 'y': 0},
-   {'x': 'known-hetero', 'y': 0},
-   {'x': 'putative-homo', 'y': 0},
-   {'x': 'putative-hetero', 'y': 152517877}]},
- {'key': 'Drugs Used In Substance Dependence',
-  'values': [{'x': 'known-homo', 'y': 0},
-   {'x': 'known-hetero', 'y': 0},
-   {'x': 'putative-homo', 'y': 0},
-   {'x': 'putative-hetero', 'y': 88442258}]},
- {'key': 'Hypothalamic&Pituitary Hormones&Antioest',
-  'values': [{'x': 'known-homo', 'y': 0},
-   {'x': 'known-hetero', 'y': 0},
-   {'x': 'putative-homo', 'y': 0},
-   {'x': 'putative-hetero', 'y': 72449192}]},
- {'key': 'Sex Hormones & Antag In Malig Disease',
-  'values': [{'x': 'known-homo', 'y': 0},
-   {'x': 'known-hetero', 'y': 0},
-   {'x': 'putative-homo', 'y': 0},
-   {'x': 'putative-hetero', 'y': 81779136}]},
- {'key': 'other',
-  'values': [{'x': 'known-homo', 'y': 5075664},
-   {'x': 'known-hetero', 'y': 63027544},
-   {'x': 'putative-homo', 'y': 161011110},
-   {'x': 'putative-hetero', 'y': 147981073}]}]
+def get_functional_sites(protein):
 
-    ### PER DRUG TABLE
+    known_function_sites = []
 
-    ## functional sites
+    ## PTMs
+    ptms = PTMs.objects.filter(protein=protein).values('residue').distinct()
 
-    # ptms = PTMs.objects.all().prefetch_related('residue')
-    # ptms_dict = {}
-    #
-    # ## MICROSWITCHES
-    # micro_switches_rset = ResiduePositionSet.objects.get(name="Microswitches")
-    # ms_label = []
-    # for residue in micro_switches_rset.residue_position.all():
-    #     ms_label.append(residue.label)
-    #
-    # ms_object = Residue.objects.filter(protein_conformation__protein__entry_name=proteins[0], generic_number__label__in=ms_label)
-    # ms_sequence_numbers = []
-    # for ms in ms_object:
-    #     ms_sequence_numbers.append(ms.sequence_number)
-    #
-    # ## SODIUM POCKET
-    # sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium pocket")
-    # sp_label = []
-    # for residue in sodium_pocket_rset.residue_position.all():
-    #     sp_label.append(residue.label)
-    #
-    # sp_object = Residue.objects.filter(protein_conformation__protein__entry_name=proteins[0], generic_number__label__in=ms_label)
-    # sp_sequence_numbers = []
-    # for sp in sp_object:
-    #     sp_sequence_numbers.append(sp.sequence_number)
-    #
-    # for ptm in ptms:
-    #     ptms_dict[ptm.residue.sequence_number] = ptm.modification
-    #
-    # ## G PROTEIN INTERACTION POSITIONS
-    # # THIS SHOULD BE CLASS SPECIFIC (different set)
-    # rset = ResiduePositionSet.objects.get(name='Signalling protein pocket')
-    # gprotein_generic_set = []
-    # for residue in rset.residue_position.all():
-    #     gprotein_generic_set.append(residue.label)
-    #
+    ## MICROSWITCHES
+    micro_switches_rset = ResiduePositionSet.objects.get(name="Microswitches")
+    ms_label = []
+    for residue in micro_switches_rset.residue_position.all():
+        ms_label.append(residue.label)
+
+    ms_object = Residue.objects.filter(protein_conformation__protein=protein, generic_number__label__in=ms_label).values('id').distinct()
+
+    ## SODIUM POCKET
+    sodium_pocket_rset = ResiduePositionSet.objects.get(name="Sodium pocket")
+    sp_label = []
+    for residue in sodium_pocket_rset.residue_position.all():
+        sp_label.append(residue.label)
+    sp_object = Residue.objects.filter(protein_conformation__protein=protein, generic_number__label__in=ms_label).values('id').distinct()
+
+
+    ## G PROTEIN INTERACTION POSITIONS
+    # THIS SHOULD BE CLASS SPECIFIC (different set)
+    rset = ResiduePositionSet.objects.get(name='Signalling protein pocket')
+    gprotein_generic_set = []
+    for residue in rset.residue_position.all():
+        gprotein_generic_set.append(residue.label)
+    GP_object = Residue.objects.filter(protein_conformation__protein=protein, generic_number__label__in=gprotein_generic_set).values('id').distinct()
+
+    print(protein,len(ptms),len(ms_object),len(sp_object),len(GP_object))
     # ### GET LB INTERACTION DATA
     # # get also ortholog proteins, which might have been crystallised to extract
     # # interaction data also from those
@@ -691,36 +611,13 @@ def economicburden(request):
     #         if interactiontype not in interaction_data[sequence_number]:
     #             interaction_data[sequence_number].append(interactiontype)
     #
-    # jsondata = {}
-    # for NM in NMs:
-    #     functional_annotation = ''
-    #     SN = NM.residue.sequence_number
-    #     if NM.residue.generic_number:
-    #         GN = NM.residue.generic_number.label
-    #     else:
-    #         GN = ''
-    #     if SN in sp_sequence_numbers:
-    #         functional_annotation +=  'SodiumPocket '
-    #     if SN in ms_sequence_numbers:
-    #         functional_annotation +=  'MicroSwitch '
-    #     if SN in ptms_dict:
-    #         functional_annotation +=  'PTM (' + ptms_dict[SN] + ') '
-    #     if SN in interaction_data:
-    #         functional_annotation +=  'LB (' + ', '.join(interaction_data[SN]) + ') '
-    #     if GN in gprotein_generic_set:
-    #         functional_annotation +=  'GP (contact) '
-    #
-    #     type = NM.type
-    #     if type == 'missense':
-    #         effect = 'deleterious' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else 'tolerated'
-    #         color = '#e30e0e' if NM.sift_score <= 0.05 or NM.polyphen_score >= 0.1 else '#70c070'
-    #     else:
-    #         effect = 'deleterious'
-    #         color = '#575c9d'
-    #     # account for multiple mutations at this position!
-    #     NM.functional_annotation = functional_annotation
-    #     # print(NM.functional_annotation)
-    #     jsondata[SN] = [NM.amino_acid, NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes, NM.type, effect, color, functional_annotation]
+    return 10
+
+# @cache_page(60*60*24*7)
+def economicburden(request):
+    economic_data = [{'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 81381936, 'x': 'putative-homozygous'}, {'y': 517386100, 'x': 'putative-all variants'}], 'key': 'Analgesics'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 55107240, 'x': 'putative-all variants'}], 'key': 'Antidepressant Drugs'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 22012303, 'x': 'putative-homozygous'}, {'y': 71668528, 'x': 'putative-all variants'}], 'key': 'Antihist, Hyposensit & Allergic Emergen'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 20728310, 'x': 'putative-homozygous'}, {'y': 65483498, 'x': 'putative-all variants'}], 'key': 'Beta-Adrenoceptor Blocking Drugs'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 29712774, 'x': 'known-all variants'}, {'y': 27940976, 'x': 'putative-homozygous'}, {'y': 118345875, 'x': 'putative-all variants'}], 'key': 'Bronchodilators'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 24837363, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 43685113, 'x': 'putative-all variants'}], 'key': 'Drugs For Genito-Urinary Disorders'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 44334808, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 45130626, 'x': 'putative-all variants'}], 'key': 'Drugs Used In Diabetes'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 43075291, 'x': 'putative-all variants'}], 'key': "Drugs Used In Park'ism/Related Disorders"}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 179794741, 'x': 'putative-all variants'}], 'key': 'Drugs Used In Psychoses & Rel.Disorders'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 22362048, 'x': 'putative-all variants'}], 'key': 'Drugs Used In Substance Dependence'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 26049537, 'x': 'putative-all variants'}], 'key': 'Hypothalamic&Pituitary Hormones&Antioest'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 41195403, 'x': 'putative-all variants'}], 'key': 'Sex Hormones & Antag In Malig Disease'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 15815063, 'x': 'putative-homozygous'}, {'y': 51579016, 'x': 'putative-all variants'}], 'key': 'Treatment Of Glaucoma'}, {'values': [{'y': 16000539, 'x': 'known-homozygous'}, {'y': 30150424, 'x': 'known-all variants'}, {'y': 62762245, 'x': 'putative-homozygous'}, {'y': 37702980, 'x': 'putative-all variants'}], 'key': 'other'}]
+
+    ### PER DRUG TABLE
 
     ## drug data
     nhs_sections = NHSPrescribings.objects.all().values("drugname__name", "bnf_section").distinct()
@@ -752,7 +649,10 @@ def economicburden(request):
         protein_targets = Protein.objects.filter(drugs__name=drugname).distinct()
         targets = [p.entry_name.split('_human')[0].upper() for p in list(protein_targets)]
 
-        known_functional = 'NaN'
+        known_functional = 0
+        for target in protein_targets:
+            function_sites = get_functional_sites(target)
+
 
         putative_func = len(NaturalMutations.objects.filter(Q(protein__in=protein_targets), Q(sift_score__lte=0.05) | Q(polyphen_score__gte=0.1)).annotate(count_putative_func=Count('id')))
 
