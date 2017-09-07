@@ -46,8 +46,11 @@ class Command(BaseCommand):
         # fetch all ligands
         ls = Ligand.objects.all().prefetch_related('properities__ligand_type','properities__web_links','properities__vendors')
         export_data = []
-
-        for l in ls:
+        number_of_ligands = len(ls)
+        for i, l in enumerate(ls):
+            if i % 1000 == 0:
+                print('{} Status {} out of {}'.format(
+                datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), i, number_of_ligands))
             export = {}
             # Main ligand fields
             export['name'] = l.name
