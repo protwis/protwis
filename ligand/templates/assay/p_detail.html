@@ -148,12 +148,12 @@
 		    {% endif %}
                     <td><input class="alt" type="checkbox"></td>
 		    <td>{{p.protein__entry_name}}</td>
-                    {% if p.ligand__properities__ligandvendorlink__vendor__name%}
+                    {% if p.ligand__properities__vendors__vendor__name%}
                     <td> Yes</td>
                     {%else%}
                     <td>No</td>
                     {%endif%}
-                    <td>{{p.ligand__properities__ligandvendorlink__vendor__name}}</td>
+                    <td>{{p.ligand__properities__vendors__vendor__name}}</td>
 		    <td><a href = "/ligand/l/{{p.ligand__properities__web_links__index}}">{{p.ligand__properities__web_links__index}}</a></td>
 		    <td align="right">{{p.pchembl_value}}</td>
 		    <td align="center">{{p.standard_type}}</td>
