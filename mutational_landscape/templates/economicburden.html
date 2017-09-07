@@ -39,7 +39,7 @@ table.dataTable tbody tr td {
 <!-- <p style="text-align: center;"><em>correction or scaling factor&nbsp;</em></p> -->
 <p>where:</p>
 <ul style="list-style-type: circle;">
-<li>The average NHS cost is the average yearly cost over a 6-year period (2011-2017) per GPCR drug that is listed (n=279)
+<li>The average NHS cost is the average yearly cost over a 4-year period (2013-2016) per GPCR drug that is listed (n=279)
 </li>
 <li>% Individuals is the percentage of affected individuals with a missense variant in a functional site of the respective drug target(s) (2,504 individuals from 1,000 Genomes Project phase 3 genotype data)</li>
 <li>The fraction of affected individuals was calculated by considering (a) individuals who have a variation in a functional site in both alleles (homozygous) and (b) individuals if they have a variation in a functional site in at least one allele (i.e. homozygous and heterozygous).
@@ -65,6 +65,7 @@ table.dataTable tbody tr td {
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="number of alleles with this variant" data-placement="top">Prescription Average</th>
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="total number of alleles that were able to be called" data-placement="top">Item Cost</th>
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="deleterious: <= 0.05<br>tolerated: > 0.05" data-placement="top">Putative Functional Site Variants</th>
+                        <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="deleterious: <= 0.05<br>tolerated: > 0.05" data-placement="top">Known Functional Site Variants</th>
                         <th style="text-align:center" class="citation-tooltip" target="_blank" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="deleterious: <= 0.05<br>tolerated: > 0.05" data-placement="top">BNF section</th>
                       </tr>
                       <tr>
@@ -75,8 +76,10 @@ table.dataTable tbody tr td {
                           <th style="text-align:center"></th>
                           <th style="text-align:center"></th>
                           <th style="text-align:center"></th>
+                          <th style="text-align:center"></th>
                       </tr>
                       <tr>
+                        <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
                         <th style="text-align:center"></th>
@@ -93,6 +96,7 @@ table.dataTable tbody tr td {
                       <th style="text-align:center">Sales Average</th>
                       <th style="text-align:center">Prescription Average</th>
                       <th style="text-align:center">Item Cost</th>
+                      <th style="text-align:center">Known Functional Site Variants</th>
                       <th style="text-align:center">Putative Functional Site Variants</th>
                       <th style="text-align:center">BNF section</th>
                     </tr>
@@ -108,6 +112,7 @@ table.dataTable tbody tr td {
                   <td>{{drug.average_items}}</td>
                   <td>{{drug.item_cost}}</td>
                   <td>{{drug.putative_func}}</td>
+                  <td>{{drug.known_func}}</td>
                   <td>{% for section in drug.section %}
                   <a href='/drugs/nhs/section/{{ section }} '>{{ section }}</a>
                   {% endfor %}</td>
@@ -149,7 +154,8 @@ table.dataTable tbody tr td {
                   {"width": "10%", targets: 3},
                   {"width": "30%", targets: 4},
                   {"width": "10%", targets: 5},
-                  {"width": "5%", targets: 6}],
+                  {"width": "10%", targets: 6},
+                  {"width": "5%", targets: 7}],
                 'tableTools': {
                     "sRowSelect": "multi",
                     "aButtons": []
@@ -158,6 +164,7 @@ table.dataTable tbody tr td {
                     $('#drugdata').dataTable().columnFilter({
                         'sPlaceHolder': "head:after",
                         'aoColumns': [
+                            { type: "text" },
                             { type: "text" },
                             { type: "text" },
                             { type: "text" },
