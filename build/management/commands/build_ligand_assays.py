@@ -180,11 +180,13 @@ class Command(BaseBuild):
             # Third load loads the exp (based on ligand/assay)
             header = self.header_dict
             skipped = 0
+            non_p = []
+            wr_chembl_assays = WebResource.objects.get(slug='chembl_assays')
             while count.value<len(self.data):
                 with lock:
                     record = self.data[count.value]
                     count.value +=1 
-                    if count.value % 1000 == 0:
+                    if count.value % 10000 == 0:
                         print('{} Status {} out of {}'.format(
                         datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), count.value, len(self.data)))
 
@@ -194,12 +196,18 @@ class Command(BaseBuild):
 
                 assay, created = ChemblAssay.objects.get_or_create(assay_id=assay_id)
                 if created:
-                    wl, created = WebLink.objects.get_or_create(index=assay_id, web_resource__slug='chembl_assays')
-                    ca.web_links.add(wl)
+                    wl, created = WebLink.objects.get_or_create(index=assay_id, web_resource=wr_chembl_assays)
+                    assay.web_links.add(wl)
 
 
                 ligand =record[header['molecule_chembl_id']]
-                p = Protein.objects.get(web_links__index = target, web_links__web_resource__slug = 'chembl')
+                p = Protein.objects.filter(web_links__index = target, web_links__web_resource__slug = 'chembl').first()
+                if not p:
+                    if not target in non_p:
+                        non_p.append(target)
+                        print('Not found protein!',target)
+                    continue
+
                 ls = Ligand.objects.filter(properities__web_links__index=ligand, properities__web_links__web_resource__slug = 'chembl_ligand', canonical=True)
                 if not ls.exists():
                     # if no ligand matches this, then ignore -- be sure this works later.
