@@ -28,11 +28,11 @@
                 'orderCellsTop': true,
                 'autoWidth': true,
                 'dom': 'iTlfrt',
-                'order': [[14, "asc"]], // order by date
+                'order': [[17, "desc"]], // order by date
                 'aoColumnDefs': [
                     { 'bSortable' : false, 'aTargets': [0] },
                     { 'sType': 'string', 'aTargets': [1] },
-                    { 'sType': 'string', 'aTargets': [10] },
+                    { 'sType': 'string', 'aTargets': [12] },
                 ],
                 'tableTools': {
                     "sRowSelect": "single",
@@ -51,6 +51,8 @@
                             { type: "text" }, // pdb code
                             { type: "number-range" }, // resolution
                             { type: "text" }, // preferred chain
+                            { type: "text" }, // state
+                            { type: "number-range" }, // delta distance
                             { type: "text" }, // stabilizing agent - left as type-in for now
                             { type: "text" }, // endogenous ligand name
                             { type: "text" }, // endogenous ligand type
@@ -183,6 +185,8 @@
                     <th class="pdb-th">PDB code</th>
                     <th class="pdb-th">Resolution</th>
                     <th class="pdb-th">Pre. chain</th>
+                    <th class="pdb-th">State</th>
+                    <th class="pdb-th">&#916; distance (&#8491;)</th>
                     <th class='pdb-th'>Aux. proteins</th>
                     <th class="ligand-th">Endo. ligand</th>
                     <th class="ligand-th">Ligand type</th>
@@ -194,6 +198,8 @@
                     <th class="pub-th">Annotated</th>
                 </tr>
                 <tr>
+                    <th></th>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -229,6 +235,8 @@
                     </a></td>
                     <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
                     <td class="text-center">{{ structure.preferred_chain }}</td>
+                    <td class="text-center">{{ structure.state.name }}</td>
+                    <td class="text-center">{{ structure.distance|floatformat:"2" }}</td>
                     <td>
                         {% for sa in structure.stabilizing_agents.all %}
                             {{ sa.name }}<br />

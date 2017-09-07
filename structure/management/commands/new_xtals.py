@@ -116,6 +116,7 @@ class QueryPDB():
                 if not missing_from_db:
                     continue
                 try:
+                    print(s)
                     pdb_data_dict = fetch_pdb_info(s, protein)
                     exp_method = pdb_data_dict['experimental_method']
                     if exp_method=='Electron Microscopy':
@@ -209,7 +210,7 @@ class QueryPDB():
                                                 'ligand': {'name': 'None', 'pubchemId': 'None', 'title': 'None', 'role': '.nan', 'type': 'None'}, 'signaling_protein': 'None', 'state': 'Inactive'}
                             auxiliary_proteins, ligands = [], []
                             for key, values in pdb_data_dict['ligands'].items():
-                                if key in ['SO4','NA','CLR','OLA','OLC','TAR','NAG']:
+                                if key in ['SO4','NA','CLR','OLA','OLC','TAR','NAG','EPE','BU1','ACM']:
                                     continue
                                 else:
                                     ligands.append({'name': key, 'pubchemId': 'None', 'title': pdb_data_dict['ligands'][key]['comp_name'], 'role': '.nan', 'type': 'None'})
@@ -239,14 +240,19 @@ class QueryPDB():
                         if pi.state!=None:
                             Structure.objects.filter(pdb_code__index=pdb_code.index).update(state=pi.state)
                             print(pi.state, pi.activation_value)
-                            struct_yaml = yaml.load('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index))
+                            with open('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index), 'r') as yf:
+                                struct_yaml = yaml.load(yf)
                             struct_yaml['state'] = pi.state
+                            try:
+                                struct_yaml['distance'] = round(float(pi.activation_value), 2)
+                            except:
+                                struct_yaml['distance'] = None
                             with open('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index), 'w') as struct_yaml_file:
-                                yaml.dump(struct_yaml, struct_yaml_file, indent=4)
+                                yaml.dump(struct_yaml, struct_yaml_file, indent=4, default_flow_style=False)
                 
                         print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
                 except Exception as msg:
-                    print(msg)
+                    print(s, msg)
 
 
     def pdb_request_by_uniprot(self, uniprot_id):
@@ -274,6 +280,8 @@ class QueryPDB():
         if 'NMR' in str_des or 'extracellular' in str_des:
             return 0
         if pdb_code=='AAAA':
+            return 0
+        if pdb_code in ['4QXE','1XWD','4QXF','4MQW']:
             return 0
         polymer = dic['molDescription']['structureId']['polymer']
         description = ''

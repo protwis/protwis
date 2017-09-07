@@ -821,8 +821,8 @@ class PdbStateIdentifier():
 
     def run(self):
         self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein.parent)
-        # class A
-        if self.parent_prot_conf.protein.family.slug.startswith('001'):
+        # class A and T
+        if self.parent_prot_conf.protein.family.slug.startswith('001') or self.parent_prot_conf.protein.family.slug.startswith('006'):
             tm6 = self.get_residue_distance('2x39', '6x35')
             tm7 = self.get_residue_distance('3x47', '7x53')
             if tm6!=False and tm7!=False:
@@ -836,34 +836,38 @@ class PdbStateIdentifier():
         # class B
         elif self.parent_prot_conf.protein.family.slug.startswith('002') or self.parent_prot_conf.protein.family.slug.startswith('003'):
             tm6 = self.get_residue_distance('2x44', '6x35')
-            if tm6!=False:
-                self.activation_value = tm6
-                if self.activation_value<18:
+            tm7 = self.get_residue_distance('3x47', '7x53')
+            if tm6!=False and tm7!=False:
+                self.activation_value = tm6-tm7
+                if self.activation_value<10:
                     self.state = ProteinState.objects.get(slug='inactive')
-                elif 18<=self.activation_value<=25:
+                elif 10<=self.activation_value<=15:
                     self.state = ProteinState.objects.get(slug='intermediate')
-                elif self.activation_value>25:
+                elif self.activation_value>15:
                     self.state = ProteinState.objects.get(slug='active')
         # class C
         elif self.parent_prot_conf.protein.family.slug.startswith('004'):
             tm6 = self.get_residue_distance('2x39', '6x35')
-            if tm6!=False:
-                self.activation_value = tm6
-                if self.activation_value<18:
+            tm7 = self.get_residue_distance('3x47', '7x53')
+            if tm6!=False and tm7!=False:
+                self.activation_value = tm6-tm7
+                if self.activation_value<0:
                     self.state = ProteinState.objects.get(slug='inactive')
-                elif 18<=self.activation_value<=25:
+                elif 0<=self.activation_value<=8:
                     self.state = ProteinState.objects.get(slug='intermediate')
-                elif self.activation_value>25:
+                elif self.activation_value>8:
                     self.state = ProteinState.objects.get(slug='active')
+        # class F
         elif self.parent_prot_conf.protein.family.slug.startswith('005'):
             tm6 = self.get_residue_distance('2x39', '6x35')
-            if tm6!=False:
-                self.activation_value = tm6
-                if self.activation_value<20:
+            tm7 = self.get_residue_distance('3x47', '7x53')
+            if tm6!=False and tm7!=False:
+                self.activation_value = tm6-tm7
+                if self.activation_value<5:
                     self.state = ProteinState.objects.get(slug='inactive')
-                elif 20<=self.activation_value<=25:
+                elif 5<=self.activation_value<=15:
                     self.state = ProteinState.objects.get(slug='intermediate')
-                elif self.activation_value>25:
+                elif self.activation_value>15:
                     self.state = ProteinState.objects.get(slug='active')
         else:
             print('{} is not class A,B,C,F'.format(self.structure))

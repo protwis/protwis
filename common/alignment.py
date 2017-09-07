@@ -981,7 +981,7 @@ class AlignedReferenceTemplate(Alignment):
         self.changes_on_db = []
         self.loop_partial_except_list = {'ICL1':[],'ECL1':[],'ICL2':[],'ECL2':[],'ECL2_1':['3UZA','3UZC','3RFM'],
                                          'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':[],'ICL4':[]}
-        self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000}
+        self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000}
         
     def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
                              provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None):
@@ -1256,6 +1256,7 @@ class AlignedReferenceTemplate(Alignment):
                 except:
                     temp_length, temp_length1, temp_length2 = -1,-1,-1
                 temp_list.append((struct, temp_length, similarity, float(struct.resolution), protein, struct.representative))
+
                 if self.segment_labels[0]=='ECL2' and ref_ECL2!=None:
                     temp_list1.append((struct, temp_length1, similarity, float(struct.resolution), protein, struct.representative))
                     temp_list2.append((struct, temp_length2, similarity, float(struct.resolution), protein, struct.representative))
@@ -1286,6 +1287,9 @@ class AlignedReferenceTemplate(Alignment):
         sorted_list_gn = sorted(alt_temps_gn, key=lambda x: (-x[2],-x[5],x[3]))
         sorted_list = sorted(alt_temps, key=lambda x: (-x[2],-x[5],x[3]))
         combined = sorted_list_gn+sorted_list
+        main_in = [x for x in combined if x[0]==self.main_template_structure]
+        if len(combined)>0 and combined[0][0]!=self.main_template_structure and len(main_in)>0:
+            combined = main_in+combined
         if self.revise_xtal!=None:
             temp_list = []
             for i in combined:
