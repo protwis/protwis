@@ -1,0 +1,124 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+
+{% block addon_css %}
+    <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+{% endblock %}
+
+{% block addon_js %}
+    <script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+    <script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+    <script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+    <script src="{% static 'home/js/selection.js' %}"> </script>
+
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function () {
+            ClearSelection('targets');
+            var table = $('#ligands').DataTable({
+                'scrollX': true,
+                'scrollY': $(window).height()-300,
+                'bScrollCollapse': true,
+                'paging': false,
+                'orderCellsTop': true,
+                'autoWidth': true,
+                'dom': 'iTlfrt',
+                'aoColumnDefs': [
+                    { 'bSortable' : false, 'aTargets': [0] },
+                    { 'sType': 'string', 'aTargets': [1] },
+                ],
+                'tableTools': {
+                    "sRowSelect": "double",
+                    "aButtons": []
+                },
+                initComplete: function () {
+                    $('#ligands').dataTable().columnFilter({
+                        sPlaceHolder: "head:after",
+                        sRangeFormat: "{from}:{to}",
+                        aoColumns: [
+                            null,
+                            { type: "select" }, // receptor
+                            { type: "select" }, //protein family
+                            { type: "select" }, // ligand type
+                            { type: "select" }, // class
+                            { type: "number-range" }, // resolution
+                        ]
+                    });
+                }
+            });
+            $.fn.dataTable.ext.search.push(
+                function (settings, data, dataIndex) {
+                    if ($('#representative_btn').hasClass('toggled')) {
+                        if ($(table.row(dataIndex).node()).hasClass("repr-st")) {
+                            return true;
+                        }
+                        return false;
+                    }
+                    else {
+                        return true;
+                    }
+            });
+            //$('#download_btn').click(function () {
+            //    ClearSelection('targets');
+            //    var checked_data = table.rows('.alt_selected').data();
+            //    for (i = 0; i < checked_data.length; i++) {
+            //        var div = document.createElement("div");
+            //        div.innerHTML = checked_data[i][5];
+            //        if (typeof div.innerText !== "undefined") {
+            //            AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '') );
+            //        } else {
+            //            AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+            //        }
+            //    }
+            //    window.location.href = '/structure/pdb_download_index';
+            //});
+            $('.select-all').change(function () {
+                $('.alt').prop('checked', $(this).prop("checked"));
+                $('.alt').parent().parent().toggleClass('alt_selected');
+            });
+
+        });
+    </script> 
+{% endblock %}
+
+{% block content %}
+    <div class="btn-group">
+        <a id="download_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Download</a>
+    </div>
+
+    <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+	<table width="100%" class="display" id="ligands">
+        <thead>
+            <tr>
+		        <th><input class="select-all" type="checkbox"> Select all</th>
+		        <th class="protein-th">Receptor</th>
+                <th class="protein-th">Receptor family</th>
+                <th class="protein-th">Ligand type</th>
+                <th class="protein-th">Class</th>
+                <th class="ligand-th">Ligand count</th>
+		    </tr>
+		    <tr>
+		        <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+    		</tr>
+	    </thead>
+        <tbody>
+		{% for ligand in ligands %}
+            <tr>
+                <td><input class="alt" type="checkbox"></td>
+		        <td>{{ligand.protein__family__name|safe}}</td>
+		        <td>{{ligand.protein__family__parent__name}}</td>
+		        <td>{{ligand.protein__family__parent__parent__name}}</td>
+		        <td>{{ligand.protein__family__parent__parent__parent__name}}</td>
+   		        <td><a href="/ligand/target/{{ligand.protein__entry_name}}">{{ligand.num_ligands}}</a></td>
+		
+		    </tr>		    
+		{% endfor %}
+	    </tbody>
+	</table>
+    </div>
+{% endblock %}

@@ -4,7 +4,7 @@ from django.views.generic import TemplateView
 from ligand.views import *
 
 urlpatterns = [
-    url(r'^$', LigandBrowser, name='ligand_browser'),
-    url(r'^p/(?P<slug>[-\w]+)/$',p_detail, name='p_detail'),
-    url(r'^l/(?P<ligand__id>[-\w]+)/$',l_detail, name='l_detail'),
+    url(r'^$', LigandBrowser.as_view(), name='ligand_browser'),
+    url(r'^target/(?P<slug>[-\w]+)/$',TargetDetails, name='ligand_target_detail'),
+    url(r'^(?P<ligand__id>[-\w]+)/$',LigandDetails, name='ligand_detail'),
 ]
