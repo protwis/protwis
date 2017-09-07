@@ -6,6 +6,7 @@ import logging
 import os
 from decimal import Decimal
 import gzip, json
+import datetime
 
 class Command(BaseCommand):
     help = 'Exports ligands, to lessen load on pubchem when loading'
