@@ -9,7 +9,7 @@ from django.views.decorators.cache import cache_page
 
 from protein.models import Gene, ProteinSegment
 from structure.models import Structure, StructureModel, StructureModelStatsRotamer, StructureModelSeqSim
-from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn, convert_csv_to_xlsx
+from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
 from structure.forms import *
