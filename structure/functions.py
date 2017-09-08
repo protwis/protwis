@@ -25,7 +25,7 @@ import urllib
 from collections import OrderedDict
 import Bio.PDB as PDB
 import csv
-from openpyxl import Workbook
+# from openpyxl import Workbook
 import numpy
 
 
@@ -487,21 +487,21 @@ def extract_pdb_data(residue):
 
 
 #==============================================================================
-def convert_csv_to_xlsx(self, csv, separator):
-    wb = Workbook()
-    sheet = wb.active
+# def convert_csv_to_xlsx(self, csv, separator):
+#     wb = Workbook()
+#     sheet = wb.active
 
-    CSV_SEPARATOR = separator
+#     CSV_SEPARATOR = separator
 
-    with open(csv) as f:
-        reader = csv.reader(f)
-        for r, row in enumerate(reader):
-            for c, col in enumerate(row):
-                for idx, val in enumerate(col.split(CSV_SEPARATOR)):
-                    cell = sheet.cell(row=r+1, column=idx+1)
-                    cell.value = val
+#     with open(csv) as f:
+#         reader = csv.reader(f)
+#         for r, row in enumerate(reader):
+#             for c, col in enumerate(row):
+#                 for idx, val in enumerate(col.split(CSV_SEPARATOR)):
+#                     cell = sheet.cell(row=r+1, column=idx+1)
+#                     cell.value = val
 
-    wb.save("my_file.xlsx")
+#     wb.save("my_file.xlsx")
 
 
 
