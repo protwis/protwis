@@ -40,8 +40,8 @@ class Command(BaseCommand):
             ['build_construct_proteins'],
             ['build_structures', {'proc': options['proc']}],
             ['build_construct_data'],
-            ['build_ligands_from_cache', {'proc': options['proc']}]
-            ['build_ligand_assays', {'proc': options['proc']}]
+            ['build_ligands_from_cache', {'proc': options['proc']}],
+            ['build_ligand_assays', {'proc': options['proc']}],
             ['build_mutant_data', {'proc': options['proc']}],
             ['build_crystal_interactions', {'proc': options['proc']}],
             ['build_protein_sets'],

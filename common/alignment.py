@@ -1399,6 +1399,9 @@ class AlignedReferenceTemplate(Alignment):
                 self.alignment_dict[ref_seglab] = align_segment_dict
 
         if keep_all==False:
+            delete_r = ()
+            delete_t = ()
+            delete_a = ()
             for r_seglab, t_seglab, a_seglab in zip(self.reference_dict,self.template_dict,self.alignment_dict):
                 if r_seglab in ['ICL1','ECL1','ICL2']:
                     if len(list(self.reference_dict[r_seglab].keys()))==0:
@@ -1416,13 +1419,21 @@ class AlignedReferenceTemplate(Alignment):
                         if x50_present==False:
                             well_aligned = False
                         if well_aligned==False:
-                            del self.reference_dict[r_seglab]
-                            del self.template_dict[t_seglab]
-                            del self.alignment_dict[a_seglab]
+                            delete_r.add(r_seglab)
+                            delete_t.add(t_seglab)
+                            delete_a.add(a_seglab)
                 elif r_seglab=='ECL2':
-                    del self.reference_dict[r_seglab]
-                    del self.template_dict[t_seglab]
-                    del self.alignment_dict[a_seglab]
+                    delete_r.add(r_seglab)
+                    delete_t.add(t_seglab)
+                    delete_a.add(a_seglab)
+
+            for i in delete_r:
+                del self.reference_dict[i]
+            for i in delete_t:
+                del self.template_dict[i]
+            for i in delete_a:
+                del self.alignment_dict[i]
+
 
         return self
 

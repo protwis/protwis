@@ -53,8 +53,11 @@ class Command(BaseBuild):
                 count.value +=1 
                 self.logger.info('Generating crystal interactions data for PDB \'{}\'... ({} out of {})'.format(pdb_code, count.value, len(self.structures)))
 
-
-            interacting_pairs = compute_interactions(pdb_code)
+            try:
+                interacting_pairs = compute_interactions(pdb_code)
+            except:
+                self.logger.error('Error with computing interactions (%s)' % (pdb_code))
+                continue
 
             for p in interacting_pairs:
                 # Create the pair

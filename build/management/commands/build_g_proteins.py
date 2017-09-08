@@ -494,8 +494,8 @@ class Command(BaseCommand):
         try:
             p.save()
             self.logger.info('Created protein {}'.format(p.entry_name))
-        except:
-            self.logger.error('Failed creating protein {}'.format(p.entry_name))
+        except Exception as msg:
+            self.logger.error('Failed creating protein {} ({})'.format(p.entry_name,msg))
 
         # protein aliases
         for i, alias in enumerate(uniprot['names']):
