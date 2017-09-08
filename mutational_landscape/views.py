@@ -592,14 +592,13 @@ def get_functional_sites(protein):
     ## get also ortholog proteins, which might have been crystallised to extract
     ## interaction data also from those
     orthologs = Protein.objects.filter(family__slug__startswith=protein.family.slug, sequence_type__slug='wt')
-
-    interactions = ResidueFragmentInteraction.objects.filter(
+    interaction_residues = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__protein_conformation__protein__parent__in=orthologs, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').values_list('rotamer__residue_id', flat=True).distinct()
 
-    print(protein.entry_name,interactions)
+    print(protein.entry_name,interaction_residues)
 
     ## Get variants of these known residues:
-    known_function_sites = set(x for l in [GP_object,sp_object,ms_object,ptms,interactions] for x in l)
+    known_function_sites = set(x for l in [GP_object,sp_object,ms_object,ptms,interaction_residues] for x in l)
     NMs = NaturalMutations.objects.filter(residue_id__in=known_function_sites)
     return len(NMs)
 

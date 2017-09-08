@@ -446,7 +446,6 @@ def nhs_drug(request, slug):
 def nhs_section(request, slug):
 
     nhs_data = NHSPrescribings.objects.filter(bnf_section=slug).order_by('date')
-    print(nhs_data)
     data_dic = {}
 
     sections = []
@@ -470,5 +469,4 @@ def nhs_section(request, slug):
     for nhs_name in data_dic.keys():
         # print (len(data_dic[nhs_name]), nhs_name)
         data.append({'values': data_dic[nhs_name], 'key':nhs_name})
-
     return render(request, 'nhs.html', {'data':data, 'drug':slug, 'section':list(set(sections))})
