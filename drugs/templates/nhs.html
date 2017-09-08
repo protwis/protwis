@@ -15,6 +15,7 @@
         height: 100%;
         width: 100%;
     }
+
 </style>
 {% endblock %}
 {% block content %}
@@ -92,29 +93,18 @@ window.onload = function () {
           return html;
         })
 
+        chart.multibar.dispatch.on("elementClick", function(elem) {
+          link = elem['series']['query_key']
+          window.open ('/drugs/nhs/'+link,'_self',false)
+        })
+
       chartData = d3.select('#burden svg').datum(datum)
 
-      chartData.transition().duration(100).call(chart);
+      chartData.transition().duration(400).call(chart);
       // nv.utils.windowResize(chart.update);
 
       return chart;
   });
-
-  // var raw = {{data|safe}};
-  // function update(cf) {
-  //   var cf = document.getElementById('updater').value
-  //   var rawLength = raw.length;
-    // for (var i = 0; i < rawLength; i++) {
-    //   var kk = raw[i]['values'].length;
-    //   raw[i]['values'][kk] = {'y': raw[i]['values'][0]['y']*cf, 'x': cf}
-    // }
-
-    // Update the SVG with the new data and call chart
-//     chartData.datum(raw).transition(0).duration(10).call(chart);
-//     nv.utils.windowResize(chart.update);
-// };
-
-// d3.select("#update").on("click", update);
 
   $(document).ready(function () {
       $('#burden').css("fill", '#000000');
