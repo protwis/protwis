@@ -101,12 +101,14 @@ class Command(BaseBuild):
                 structs = Structure.objects.filter(protein_conformation__protein__parent=r)
                 if r.family.slug.startswith('001') or r.family.slug.startswith('002') or r.family.slug.startswith('003') or r.family.slug.startswith('006'):
                     states_dic = {'Inactive':0, 'Intermediate':0, 'Active':0}
+                    if len(structs)==0:
+                        self.receptor_list.append([r, 'Inactive'])
+                        self.receptor_list.append([r, 'Intermediate'])
+                        self.receptor_list.append([r, 'Active'])
                 elif r.family.slug.startswith('004') or r.family.slug.startswith('005'):
                     states_dic = {'Inactive':0}
-                if len(structs)==0:
-                    self.receptor_list.append([r, 'Inactive'])
-                    self.receptor_list.append([r, 'Intermediate'])
-                    self.receptor_list.append([r, 'Active'])
+                    if len(structs)==0:
+                        self.receptor_list.append([r, 'Inactive'])
                 else:
                     for s in structs:
                         try:
@@ -169,6 +171,7 @@ class Command(BaseBuild):
             receptor_list = self.receptor_list[positions[0]:positions[1]]
         
         for receptor in receptor_list:
+            print('running ',receptor)
             self.run_HomologyModeling(receptor[0].entry_name, receptor[1])
     
     def run_HomologyModeling(self, receptor, state):
@@ -207,22 +210,22 @@ class Command(BaseBuild):
                 except:
                     pass
             if residue_shift==True:
-                print('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
+                #TODO PUT IN LOGGER print('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
                 logger.info('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
                 raise ValueError('Error: Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res)) 
             # Check for clashes in model
             if len(hse.clash_pairs)>0:
-                print('Remaining clashes in {}:'.format(Homology_model.reference_entry_name))
+                #TODO PUT IN LOGGER print('Remaining clashes in {}:'.format(Homology_model.reference_entry_name))
                 for i in hse.clash_pairs:
-                    print(i)
+                    #TODO PUT IN LOGGER print(i)
                     if i[0][1]==i[1][1]-1 or i[0][1]==i[1][1]:
                         hse.clash_pairs.remove(i)
                 logger.info('Remaining clashes in {}\n{}'.format(Homology_model.reference_entry_name,hse.clash_pairs))
             # Check for chain breaks in model
             if len(hse.chain_breaks)>0:
-                print('Chain breaks in {}:'.format(Homology_model.reference_entry_name))
-                for j in hse.chain_breaks:
-                    print(j)
+                #TODO PUT IN LOGGER print('Chain breaks in {}:'.format(Homology_model.reference_entry_name))
+                # for j in hse.chain_breaks:
+                    #TODO PUT IN LOGGER print(j)
                 logger.info('Chain breaks in {}\n{}'.format(Homology_model.reference_entry_name,hse.chain_breaks))
             logger.info('Model built for {} {}'.format(receptor, state))
             
@@ -230,7 +233,7 @@ class Command(BaseBuild):
             if self.update and not residue_shift:
                 Homology_model.upload_to_db(formatted_model)
                 logger.info('{} homology model uploaded to db'.format(Homology_model.reference_entry_name))
-                print('{} homology model uploaded to db'.format(Homology_model.reference_entry_name))
+                #TODO PUT IN LOGGER print('{} homology model uploaded to db'.format(Homology_model.reference_entry_name))
 
             with open('./structure/homology_models/done_models.txt','a') as f:
                     f.write(receptor+'\n')
@@ -529,9 +532,9 @@ class HomologyModeling(object):
         self.changes_on_db = alignment.changes_on_db
         main_pdb_array = OrderedDict()
         if core_alignment==True:
-            print('Alignment: ',datetime.now() - startTime)
+            #TODO PUT IN LOGGER print('Alignment: ',datetime.now() - startTime)
             alignment.enhance_alignment(alignment.reference_protein, alignment.main_template_protein)
-            print('Enhanced alignment: ',datetime.now() - startTime)
+            #TODO PUT IN LOGGER print('Enhanced alignment: ',datetime.now() - startTime)
             self.segments = segments
             self.main_structure = alignment.main_template_structure           
             self.similarity_table = alignment.similarity_table
@@ -662,7 +665,7 @@ class HomologyModeling(object):
 
             self.statistics.add_info('helix_end_mods',self.helix_end_mods)
             
-            print('Corrected helix ends: ',datetime.now() - startTime)
+            #TODO PUT IN LOGGER print('Corrected helix ends: ',datetime.now() - startTime)
             
             main_pdb_array = helixends.main_pdb_array
             alignment = helixends.alignment
@@ -689,7 +692,7 @@ class HomologyModeling(object):
                     pass
             self.statistics.add_info('similarity_table', self.similarity_table)
             self.statistics.add_info('loops',self.loop_template_table)
-            print('Loop alignment: ',datetime.now() - startTime)
+            #TODO PUT IN LOGGER print('Loop alignment: ',datetime.now() - startTime)
 
         return alignment, main_pdb_array
         
@@ -829,7 +832,7 @@ class HomologyModeling(object):
             self.statistics.add_info('loops', loop_stat)
             self.loops = loop_stat
 
-        print('Integrate loops: ',datetime.now() - startTime)
+        #TODO PUT IN LOGGER print('Integrate loops: ',datetime.now() - startTime)
 
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
@@ -1057,7 +1060,7 @@ class HomologyModeling(object):
                                 a.template_dict[seg_id] = OrderedDict([(g.replace('x','?'), v) if g==gn.replace('.','x') else (g, v) for g, v in a.template_dict[seg_id].items()])
                     out_pdb_array[seg_id] = seg
                 main_pdb_array = out_pdb_array
-        print('Integrate bulges/constrictions: ',datetime.now() - startTime)
+        #TODO PUT IN LOGGER print('Integrate bulges/constrictions: ',datetime.now() - startTime)
 
         # check for inconsitencies with db
         pdb_db_inconsistencies = []
@@ -1123,7 +1126,7 @@ class HomologyModeling(object):
         if not os.path.exists(path):
             os.mkdir(path)
   
-        print('Check inconsistencies: ',datetime.now() - startTime)
+        #TODO PUT IN LOGGER print('Check inconsistencies: ',datetime.now() - startTime)
 
         # inserting loops for free modeling
         for label, template in loop_stat.items():
@@ -1136,7 +1139,7 @@ class HomologyModeling(object):
                 a.reference_dict = modeling_loops.reference_dict
                 a.template_dict = modeling_loops.template_dict
                 a.alignment_dict = modeling_loops.alignment_dict
-        print('Free loops: ',datetime.now() - startTime)
+        #TODO PUT IN LOGGER print('Free loops: ',datetime.now() - startTime)
 
         # Adjust H8 if needed
         if 'H8' in main_pdb_array and 'ICL4' not in main_pdb_array and len(self.helix_end_mods['removed']['TM7'][1])>0:
@@ -1417,7 +1420,7 @@ class HomologyModeling(object):
         if self.reference_entry_name.startswith('taar') and str(self.main_structure)=='4IAR':
             trimmed_residues.append('5.36')
         
-        print('Rotamer switching: ',datetime.now() - startTime)
+        #TODO PUT IN LOGGER print('Rotamer switching: ',datetime.now() - startTime)
         
         for i in model_loops:
             for j in a.reference_dict[i]:
@@ -1687,7 +1690,7 @@ class HomologyModeling(object):
                 s_file.write('{},{},{},{},{}\n'.format(t.pdb_code.index, s, t.resolution, t.representative, t.state.slug))
 
 
-        print('MODELLER build: ',datetime.now() - startTime)
+        #TODO PUT IN LOGGER print('MODELLER build: ',datetime.now() - startTime)
         # pprint.pprint(self.statistics)
         print('################################')
         return self
