@@ -445,7 +445,7 @@ def mutant_extract(request):
         # jsondata[mutation.residue.sequence_number].append([mutation.foldchange,ligand,qual])
     # print(jsondata)
 
-@cache_page(60*60*24*7) #  2 days
+@cache_page(60*60*24*21) #  2 days
 def statistics(request):
 
     context = dict()
@@ -595,14 +595,12 @@ def get_functional_sites(protein):
     interaction_residues = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__protein_conformation__protein__parent__in=orthologs, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').values_list('rotamer__residue_id', flat=True).distinct()
 
-    print(protein.entry_name,interaction_residues)
-
     ## Get variants of these known residues:
     known_function_sites = set(x for l in [GP_object,sp_object,ms_object,ptms,interaction_residues] for x in l)
     NMs = NaturalMutations.objects.filter(residue_id__in=known_function_sites)
     return len(NMs)
 
-@cache_page(60*60*24*7)
+@cache_page(60*60*24*21)
 def economicburden(request):
     economic_data = [{'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 29574708, 'x': 'putative-homozygous'}, {'y': 186577951, 'x': 'putative-all variants'}], 'key': 'Analgesics'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 14101883, 'x': 'putative-all variants'}], 'key': 'Antidepressant Drugs'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 10637449, 'x': 'putative-all variants'}], 'key': 'Antihist, Hyposensit & Allergic Emergen'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 6633692, 'x': 'putative-all variants'}], 'key': 'Antispasmod.&Other Drgs Alt.Gut Motility'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 8575714, 'x': 'putative-homozygous'}, {'y': 27008513, 'x': 'putative-all variants'}], 'key': 'Beta-Adrenoceptor Blocking Drugs'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 10108322, 'x': 'known-all variants'}, {'y': 25187489, 'x': 'putative-homozygous'}, {'y': 89224667, 'x': 'putative-all variants'}], 'key': 'Bronchodilators'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 5466184, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 10313279, 'x': 'putative-all variants'}], 'key': 'Drugs For Genito-Urinary Disorders'}, {'values': [{'y': 13015487, 'x': 'known-homozygous'}, {'y': 44334808, 'x': 'known-all variants'}, {'y': 13015487, 'x': 'putative-homozygous'}, {'y': 45130626, 'x': 'putative-all variants'}], 'key': 'Drugs Used In Diabetes'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 12168533, 'x': 'putative-all variants'}], 'key': "Drugs Used In Park'ism/Related Disorders"}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 28670250, 'x': 'putative-all variants'}], 'key': 'Drugs Used In Psychoses & Rel.Disorders'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 11069531, 'x': 'putative-all variants'}], 'key': 'Drugs Used In Substance Dependence'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 8694786, 'x': 'putative-all variants'}], 'key': 'Hypothalamic&Pituitary Hormones&Antioest'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 0, 'x': 'putative-homozygous'}, {'y': 9855456, 'x': 'putative-all variants'}], 'key': 'Sex Hormones & Antag In Malig Disease'}, {'values': [{'y': 0, 'x': 'known-homozygous'}, {'y': 0, 'x': 'known-all variants'}, {'y': 7848808, 'x': 'putative-homozygous'}, {'y': 25446045, 'x': 'putative-all variants'}], 'key': 'Treatment Of Glaucoma'}, {'values': [{'y': 864112, 'x': 'known-homozygous'}, {'y': 6107013, 'x': 'known-all variants'}, {'y': 19047162, 'x': 'putative-homozygous'}, {'y': 15754588, 'x': 'putative-all variants'}], 'key': 'other'}]
 
