@@ -83,8 +83,7 @@ class Command(BaseCommand):
                 try:
                     p = Protein.objects.get(entry_name=entry_name)
                 except Protein.DoesNotExist:
-                    self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
-                    print('error', drugname, entry_name)
+                    self.logger.error('Protein not found for entry_name {}'.format(entry_name))
                     continue
 
                 drug, created = Drugs.objects.get_or_create(name=drugname, synonym=', '.join(drugalias), drugtype=drugtype, indication=indication, novelty=novelty, approval=approval, phase=phase, phasedate=PhaseDate, clinicalstatus=ClinicalStatus, moa=moa, status=status, targetlevel=targetlevel,references=references)
