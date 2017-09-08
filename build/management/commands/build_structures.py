@@ -994,7 +994,7 @@ class Command(BaseBuild):
                                 p.save()
                                 s.publication = p
                     except:
-                        self.logger.error('Error saving publication'.format(ps.name))
+                        self.logger.error('Error saving publication'.format(sd['pdb']))
 
                     if source_file.split('.')[0] in self.xtal_seg_ends:
                         s.annotated = True
