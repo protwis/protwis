@@ -122,7 +122,7 @@ class Command(BaseBuild):
             if options['test_run']:
                 self.receptor_list = self.receptor_list[:5]
                 self.receptor_list_entry_names = self.receptor_list_entry_names[:5]
-            print(self.receptor_list)
+            print("receptors to do",len(self.receptor_list))
             
             try:
                 self.prepare_input(options['proc'], self.receptor_list)
@@ -833,6 +833,10 @@ class HomologyModeling(object):
 
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
+            delete_r = set()
+            delete_t = set()
+            delete_a = set()
+
             for ref_seg, temp_seg, aligned_seg in zip(a.reference_dict, a.template_dict, a.alignment_dict):
                 if ref_seg[0]=='T':
                     for ref_res, temp_res, aligned_res in zip(a.reference_dict[ref_seg], a.template_dict[temp_seg], 
@@ -875,9 +879,10 @@ class HomologyModeling(object):
                                                         a.alignment_dict[aligned_seg][gn__]='.'
                                                 switch_res+=1
                                             del main_pdb_array[ref_seg][gn.replace('x','.')]
-                                            del a.reference_dict[ref_seg][gn]
-                                            del a.template_dict[temp_seg][gn]
-                                            del a.alignment_dict[aligned_seg][gn]
+                                            delete_r.add((ref_seg,gn))
+                                            delete_t.add((temp_seg,gn))
+                                            delete_a.add((aligned_seg,gn))
+
                                             temp_bulge_list.append({gn:Bulge.template})
                                         except:
                                             temp_bulge_list.append({gn:None})
@@ -917,9 +922,9 @@ class HomologyModeling(object):
                                                 switch_res+=1
                                             ref_const_list.append({gn:Const.template})
                                             del main_pdb_array[ref_seg][gn.replace('x','.')]
-                                            del a.reference_dict[ref_seg][gn]
-                                            del a.template_dict[temp_seg][gn]
-                                            del a.alignment_dict[aligned_seg][gn]
+                                            delete_r.add((ref_seg,gn))
+                                            delete_t.add((temp_seg,gn))
+                                            delete_a.add((aligned_seg,gn))
                                         except:
                                             ref_const_list.append({gn:None})
                             elif (a.template_dict[ref_seg][temp_res]=='-' and 
@@ -1001,6 +1006,14 @@ class HomologyModeling(object):
                                                 a.alignment_dict[ref_seg][gn] = '.'
                                         except:
                                             temp_const_list.append({gn:None})
+
+            for i,ii in delete_r:
+                del a.reference_dict[i][ii]
+            for i,ii in delete_t:
+                del a.template_dict[i][ii]
+            for i,ii in delete_a:
+                del a.alignment_dict[i][ii]
+
                                         
             self.statistics.add_info('reference_bulges', ref_bulge_list)
             self.statistics.add_info('template_bulges', temp_bulge_list)
@@ -2517,6 +2530,10 @@ class HelixEndsModeling(HomologyModeling):
             offset = 0
             increase_offset = True
             full_template_dict_seg = deepcopy(a.template_dict[temp_seg])
+
+            delete_r = set()
+            delete_t = set()
+            delete_a = set()
             for ref_res, temp_res, align_res in zip(a.reference_dict[ref_seg],a.template_dict[temp_seg],
                                                     a.alignment_dict[align_seg]):
                 if a.template_dict[temp_seg][temp_res]=='x' and increase_offset==True:
@@ -2530,9 +2547,9 @@ class HelixEndsModeling(HomologyModeling):
                         modifications['removed'][ref_seg][0].append(ref_res)
                     else:
                         modifications['removed'][ref_seg][1].append(ref_res)
-                    del a.reference_dict[ref_seg][ref_res]
-                    del a.template_dict[temp_seg][temp_res]
-                    del a.alignment_dict[align_seg][align_res]
+                    delete_r.add((ref_seg,ref_res))
+                    delete_t.add((temp_seg,temp_res))
+                    delete_a.add((align_seg,align_res))
                     try:
                         del main_pdb_array[ref_seg][ref_res.replace('x','.')]
                     except:
@@ -2544,6 +2561,14 @@ class HelixEndsModeling(HomologyModeling):
                     else:
                         modifications['added'][temp_seg][1].append(temp_res)
             
+
+            for i,ii in delete_r:
+                del a.reference_dict[i][ii]
+            for i,ii in delete_t:
+                del a.template_dict[i][ii]
+            for i,ii in delete_a:
+                del a.alignment_dict[i][ii]
+
             if ref_seg[0]=='T' or ref_seg=='H8':
                 if len(modifications['added'][ref_seg][0])>0:
                     self.helix_ends[ref_seg][0] = modifications['added'][ref_seg][0][0]
