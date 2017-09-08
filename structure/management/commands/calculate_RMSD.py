@@ -19,13 +19,20 @@ class Command(BaseCommand):
         parser.add_argument('files', help='Add any number of files as arguments. First one has to be the reference file.',
                             type=str, nargs='+')
         parser.add_argument('-r', help='Specify residue sequence numbers to compare.', type=str, default=False, nargs='+')
+        parser.add_argument('-c', help='Specify chain ID. If not specified, the program will try to find one that matches.', type=str, default=False)
         
     def handle(self, *args, **options):
         v = Validation()
         if options['r']==False:
-            v.run_RMSD_list(options['files'])
+            if options['c']==False:
+                v.run_RMSD_list(options['files'])
+            else:
+                v.run_RMSD_list(options['files'], force_chain=options['c'])
         else:
-            v.run_RMSD_list(options['files'], seq_nums=options['r'])
+            if options['c']==False:
+                v.run_RMSD_list(options['files'], seq_nums=options['r'])
+            else:
+                v.run_RMSD_list(options['files'], seq_nums=options['r'], force_chain=options['c'])
         self.stdout.write('\nNumber of superposed residues:\n')
         for i,j in v.number_of_residues_superposed.items():
             self.stdout.write('{}: {}'.format(i,j))
@@ -45,7 +52,7 @@ class Validation():
         self.rmsds = OrderedDict()
         self.four_scores = ['overall_all','overall_backbone','TM_all','TM_backbone']
     
-    def run_RMSD_list(self, files, seq_nums=None):
+    def run_RMSD_list(self, files, seq_nums=None, force_chain=None):
         ''' Calculates 4 RMSD values between a list of GPCR pdb files. It compares the files using sequence and generic
         numbers. First file in the list has to be the reference file.
             1. overall all atoms RMSD
@@ -84,7 +91,11 @@ class Validation():
             for c in m:
                 if c in chains[0]:
                     usable_chains.append(c)
+        if force_chain:
+            chains[0] = [force_chain]
+        
         arrays = []
+        model_counter = 0
         for p in pdbs:
             try:
                 if pdbs.index(p)==0 and len(usable_chains)==0:
@@ -96,6 +107,8 @@ class Validation():
                     chain = p[' '].get_id()
                 except:
                     chain = p['A'].get_id()
+            if force_chain and model_counter==0:
+                chain = force_chain
             pdb_array1, pdb_array2 = OrderedDict(), OrderedDict()
             for residue in p[chain]:
                 if residue.get_full_id()[3][0]!=' ':
@@ -109,8 +122,9 @@ class Validation():
                         pdb_array2[int(residue.get_id()[1])] = residue
                 except:
                     pass
-            arrays.append([pdb_array1,pdb_array2])   
-        
+            arrays.append([pdb_array1,pdb_array2])
+            model_counter+=1
+
         all_deletes, TM_deletes = [], []
         all_keep, TM_keep = [], []
         for i in range(0,2):
@@ -128,6 +142,7 @@ class Validation():
                             TM_keep.append(res)
         deletes = [all_deletes, TM_deletes]
         keeps = [all_keep, TM_keep]
+
         num_atoms1, num_atoms2 = OrderedDict(), OrderedDict()
         num_atoms = [num_atoms1, num_atoms2]
         mismatches = []
@@ -264,7 +279,7 @@ class Validation():
                                 overall_all1.append(atom1)
                                 overall_all2.append(atom2)
                                 keys1.append((num1,atom1.get_id()))
-                                if atom1.get_id() in ['N','CA','C','O']:
+                                if atom1.get_id() in ['N','CA','C']:
                                     keys2.append((num1,atom1.get_id()))
                                     overall_backbone1.append(atom1)
                                     overall_backbone2.append(atom2)
