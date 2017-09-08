@@ -19,6 +19,7 @@ class Structure(models.Model):
     pdb_data = models.ForeignKey('PdbData', null=True) #allow null for now, since dump file does not contain.
     representative = models.BooleanField(default=False)
     annotated = models.BooleanField(default=True)
+    distance = models.DecimalField(max_digits=5, decimal_places=2, null=True)
 
 
     def __str__(self):
@@ -65,13 +66,16 @@ class StructureModel(models.Model):
     state = models.ForeignKey('protein.ProteinState')
     main_template = models.ForeignKey('structure.Structure')
     pdb = models.TextField()
-    version = models.DecimalField(max_digits=2, decimal_places=1)
+    version = models.DateField()
     
     def __repr__(self):
         return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
 
     class Meta():
-        db_table = 'structure_model'      
+        db_table = 'structure_model'
+
+    def get_cleaned_pdb(self):
+        return self.pdb 
 
 
 class StructureModelStatsRotamer(models.Model):
@@ -81,10 +85,22 @@ class StructureModelStatsRotamer(models.Model):
     backbone_template = models.ForeignKey('structure.Structure', related_name='+', null=True)
 
     def __repr__(self):
-        return '<StructureModelStatsRotamer: seqnum '+str(self.sequence_number)+' hommod '+str(self.homology_model.protein)+'>'
+        return '<StructureModelStatsRotamer: seqnum '+str(self.residue.sequence_number)+' hommod '+str(self.homology_model.protein)+'>'
 
     class Meta():
         db_table = 'structure_model_stats_rotamer'
+
+
+class StructureModelSeqSim(models.Model):
+    homology_model = models.ForeignKey('structure.StructureModel')
+    template = models.ForeignKey('structure.Structure')
+    similarity = models.IntegerField()
+
+    def __repr__(self):
+        return '<StructureModelSeqSim: {}>'.format(self.homology_model.protein.entry_name)
+
+    class Meta():
+        db_table = 'structure_model_seqsim'
 
 
 class StructureModelRMSD(models.Model):
