@@ -557,7 +557,7 @@ def statistics(request):
     total_av_cv = round(len(NaturalMutations.objects.filter(type='missense', allele_frequency__gte=0.001))/ total_receptors,1)
     context['stats'] = {'total_mv':total_mv,'total_lof':total_lof,'total_av_rv':total_av_rv, 'total_av_cv':total_av_cv}
 
-    return render(request, 'variation_statistics2.html', context)
+    return render(request, 'variation_statistics.html', context)
 
 def get_functional_sites(protein):
 
@@ -622,9 +622,9 @@ def economicburden(request):
 
         ## druginformation
         drugname = i['drugname__name']
-        average_cost = round(i['actual_cost__avg'],0)
-        average_quantity = round(i['quantity__avg'],0)
-        average_items = round(i['items__avg'],1)
+        average_cost = int(i['actual_cost__avg'])
+        average_quantity = int(i['quantity__avg'])
+        average_items = int(i['items__avg'])
         section = section_dict[drugname]
 
         if average_items > 0:
