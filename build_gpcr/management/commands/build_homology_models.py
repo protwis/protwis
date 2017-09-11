@@ -68,7 +68,7 @@ class Command(BaseBuild):
             os.mkdir('./structure/PIR')
         if not os.path.exists('./static/homology_models'):
             os.mkdir('./static/homology_models')
-        open('./structure/homology_models/done_models.txt','w')
+        open('./structure/homology_models/done_models.txt','w').close()
         if options['update']==True:
             self.update = True
         else:
@@ -181,11 +181,14 @@ class Command(BaseBuild):
             with lock:
                 receptor = self.receptor_list[count.value]
                 print('Generating model for  \'{}\' ({})... ({} out of {})'.format(receptor[0].entry_name, receptor[1],count.value, len(self.receptor_list)))
+
                 count.value +=1 
             self.run_HomologyModeling(receptor[0].entry_name, receptor[1])
     
     def run_HomologyModeling(self, receptor, state):
         # try:
+
+            logger.info('Model started for {} {}'.format(receptor, state))
             seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX']
 
             ##### Ignore output from that can come from BioPDB! #####
@@ -196,6 +199,7 @@ class Command(BaseBuild):
             alignment = Homology_model.run_alignment([state])
             Homology_model.build_homology_model(alignment)
             print('Done building model for {} ({})'.format(receptor,state))
+            logger.info('Main model done for {} {}'.format(receptor, state))
             formatted_model = Homology_model.format_final_model()
             if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
                 args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
@@ -261,7 +265,7 @@ class Command(BaseBuild):
                 #TODO PUT IN LOGGER print('{} homology model uploaded to db'.format(Homology_model.reference_entry_name))
 
             with open('./structure/homology_models/done_models.txt','a') as f:
-                    f.write(receptor+'\n')
+                f.write(receptor+'\n')
 
             print('Done post-handling of model for {} ({})'.format(receptor,state))
         # except Exception as msg:
