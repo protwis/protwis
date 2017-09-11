@@ -357,10 +357,10 @@ class HomologyModeling(object):
             hommod.version = self.version
             hommod.save()
         except:
-            hommod, created = StructureModel.objects.update_or_create(protein=self.reference_protein, state=s_state, 
-                                                                      main_template=self.main_structure, 
-                                                                      pdb=formatted_model, 
-                                                                      version=self.version)
+            hommod, created = StructureModel.objects.create(protein=self.reference_protein, state=s_state, 
+                                                            main_template=self.main_structure, 
+                                                            pdb=formatted_model, 
+                                                            version=self.version)
             new_entry = True
         if not new_entry:
             StructureModelStatsRotamer.objects.filter(homology_model=hommod).delete()
