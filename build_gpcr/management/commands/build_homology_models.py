@@ -41,6 +41,8 @@ logger.setLevel(logging.INFO)
 
 build_date = date.today()
 
+import warnings
+warnings.filterwarnings("ignore")
 
 class Command(BaseBuild):  
     help = 'Build automated chimeric GPCR homology models'
@@ -64,6 +66,8 @@ class Command(BaseBuild):
             os.mkdir('./structure/homology_models')
         if not os.path.exists('./structure/PIR/'):
             os.mkdir('./structure/PIR')
+        if not os.path.exists('./static/homology_models'):
+            os.mkdir('./static/homology_models')
         open('./structure/homology_models/done_models.txt','w')
         if options['update']==True:
             self.update = True
@@ -97,7 +101,7 @@ class Command(BaseBuild):
             self.receptor_list = []
 
             # Find proteins and states for which there is no xtal yet
-            for r in all_receptors:
+            for r in all_receptors.order_by('entry_name'):
                 structs = Structure.objects.filter(protein_conformation__protein__parent=r)
                 if r.family.slug.startswith('001') or r.family.slug.startswith('002') or r.family.slug.startswith('003') or r.family.slug.startswith('006'):
                     states_dic = {'Inactive':0, 'Intermediate':0, 'Active':0}
@@ -165,21 +169,25 @@ class Command(BaseBuild):
         shutil.rmtree('PIR')
 
     def main_func(self, positions, iteration, count, lock):
-        if not positions[1]:
-            receptor_list = self.receptor_list[positions[0]:]
-        else:
-            receptor_list = self.receptor_list[positions[0]:positions[1]]
-        
-        for receptor in receptor_list:
-            print('running ',receptor)
+        while count.value<len(self.receptor_list):
+            with lock:
+                receptor = self.receptor_list[count.value]
+                print('Generating model for  \'{}\' ({})... ({} out of {})'.format(receptor[0].entry_name, receptor[1],count.value, len(self.receptor_list)))
+                count.value +=1 
             self.run_HomologyModeling(receptor[0].entry_name, receptor[1])
     
     def run_HomologyModeling(self, receptor, state):
-        try:
+        # try:
             seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX']
+
+            ##### Ignore output from that can come from BioPDB! #####
+            _stdout = sys.stdout
+            sys.stdout = open(os.devnull, 'w')
+
             Homology_model = HomologyModeling(receptor, state, [state], iterations=self.modeller_iterations)
             alignment = Homology_model.run_alignment([state])
             Homology_model.build_homology_model(alignment)
+            print('Done building model for {} ({})'.format(receptor,state))
             formatted_model = Homology_model.format_final_model()
             if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
                 args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
@@ -195,6 +203,7 @@ class Command(BaseBuild):
                                 Homology_model.class_name,Homology_model.uniprot_id,Homology_model.main_structure))
             hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True)
 
+
             # Check for residue shifts in model
             residue_shift = False
             db_res = ''
@@ -209,6 +218,8 @@ class Command(BaseBuild):
                         break
                 except:
                     pass
+
+
             if residue_shift==True:
                 #TODO PUT IN LOGGER print('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
                 logger.info('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
@@ -227,6 +238,12 @@ class Command(BaseBuild):
                 # for j in hse.chain_breaks:
                     #TODO PUT IN LOGGER print(j)
                 logger.info('Chain breaks in {}\n{}'.format(Homology_model.reference_entry_name,hse.chain_breaks))
+
+
+            ##### Resume output #####
+            sys.stdout = _stdout
+            sys.stdout.close()
+
             logger.info('Model built for {} {}'.format(receptor, state))
             
             # Upload to db
@@ -237,24 +254,26 @@ class Command(BaseBuild):
 
             with open('./structure/homology_models/done_models.txt','a') as f:
                     f.write(receptor+'\n')
-        except Exception as msg:
-            try:
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
-                                                                                        Homology_model.main_structure,msg))
-                logger.error('Failed to build model {} {}\n    {}'.format(receptor, state, msg))
-                t = tests.HomologyModelsTests()
-                if 'Number of residues in the alignment and  pdb files are different' in str(msg):
-                    t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
-                                             Homology_model.main_structure)
-                with open('./structure/homology_models/done_models.txt','a') as f:
-                    f.write(receptor+'\n')
-            except:
-                try:
-                    Protein.objects.get(entry_name=receptor)
-                except:
-                    logger.error('Invalid receptor name: {}'.format(receptor))
-                    print('Invalid receptor name: {}'.format(receptor))
+
+            print('Done post-handling of model for {} ({})'.format(receptor,state))
+        # except Exception as msg:
+        #     try:
+        #         exc_type, exc_obj, exc_tb = sys.exc_info()
+        #         print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
+        #                                                                                 Homology_model.main_structure,msg))
+        #         logger.error('Failed to build model {} {}\n    {}'.format(receptor, state, msg))
+        #         t = tests.HomologyModelsTests()
+        #         if 'Number of residues in the alignment and  pdb files are different' in str(msg):
+        #             t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
+        #                                      Homology_model.main_structure)
+        #         with open('./structure/homology_models/done_models.txt','a') as f:
+        #             f.write(receptor+'\n')
+        #     except:
+        #         try:
+        #             Protein.objects.get(entry_name=receptor)
+        #         except:
+        #             logger.error('Invalid receptor name: {}'.format(receptor))
+        #             print('Invalid receptor name: {}'.format(receptor))
 
         
 class HomologyModeling(object):
@@ -840,10 +859,17 @@ class HomologyModeling(object):
             delete_t = set()
             delete_a = set()
 
-            for ref_seg, temp_seg, aligned_seg in zip(a.reference_dict, a.template_dict, a.alignment_dict):
+            ref_seg_keys = list(a.reference_dict.keys())
+            temp_seg_keys = list(a.template_dict.keys())
+            aligned_seg_keys = list(a.alignment_dict.keys())
+
+            for ref_seg, temp_seg, aligned_seg in zip(ref_seg_keys, temp_seg_keys, aligned_seg_keys):
                 if ref_seg[0]=='T':
-                    for ref_res, temp_res, aligned_res in zip(a.reference_dict[ref_seg], a.template_dict[temp_seg], 
-                                                              a.alignment_dict[aligned_seg]):
+                    ref_res_keys = list(a.reference_dict[ref_seg].keys())
+                    temp_res_keys = list(a.template_dict[temp_seg].keys())
+                    aligned_res_keys = list(a.alignment_dict[aligned_seg].keys())
+                    for ref_res, temp_res, aligned_res in zip(ref_res_keys, temp_res_keys, 
+                                                              aligned_res_keys):
                         gn = ref_res
                         gn_num = parse.gn_num_extract(gn, 'x')[1]
                         
@@ -1580,9 +1606,16 @@ class HomologyModeling(object):
             modelname = "{}_{}_{}_{}_GPCRdb".format(self.class_name, self.reference_entry_name,self.state,self.main_structure)
         else:
             modelname = "{}_{}_{}_GPCRdb".format(self.class_name, self.uniprot_id, self.main_structure)
+
+        # Ignore output from modeller!
+        _stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.reference_entry_name+'_'+self.state+"_post.pdb", 
                           self.uniprot_id, self.modeller_iterations, path+modelname+'.pdb', 
                           atom_dict=trimmed_res_nums, helix_restraints=helix_restraints, icl3_mid=icl3_mid, disulfide_nums=disulfide_nums)
+        # Resume output
+        sys.stdout.close()
+        sys.stdout = _stdout
 
         os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
 
