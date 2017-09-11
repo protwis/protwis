@@ -109,18 +109,26 @@ class Command(BaseBuild):
                         self.receptor_list.append([r, 'Inactive'])
                         self.receptor_list.append([r, 'Intermediate'])
                         self.receptor_list.append([r, 'Active'])
+                    else:
+                        for s in structs:
+                            try:
+                                del states_dic[s.state.name]
+                            except:
+                                pass
+                        for st in states_dic:
+                            self.receptor_list.append([r, st])
                 elif r.family.slug.startswith('004') or r.family.slug.startswith('005'):
                     states_dic = {'Inactive':0}
                     if len(structs)==0:
                         self.receptor_list.append([r, 'Inactive'])
-                else:
-                    for s in structs:
-                        try:
-                            del states_dic[s.state.name]
-                        except:
-                            pass
-                    for st in states_dic:
-                        self.receptor_list.append([r, st])
+                    else:
+                        for s in structs:
+                            try:
+                                del states_dic[s.state.name]
+                            except:
+                                pass
+                        for st in states_dic:
+                            self.receptor_list.append([r, st])
 
             self.receptor_list_entry_names = [i[0].entry_name for i in self.receptor_list]
 
@@ -345,10 +353,10 @@ class HomologyModeling(object):
             hommod.version = self.version
             hommod.save()
         except:
-            hommod, created = StructureModel.objects.update_or_create(protein=self.reference_protein, state=s_state, 
-                                                                      main_template=self.main_structure, 
-                                                                      pdb=formatted_model, 
-                                                                      version=self.version)
+            hommod, created = StructureModel.objects.create(protein=self.reference_protein, state=s_state, 
+                                                            main_template=self.main_structure, 
+                                                            pdb=formatted_model, 
+                                                            version=self.version)
             new_entry = True
         if not new_entry:
             StructureModelStatsRotamer.objects.filter(homology_model=hommod).delete()
