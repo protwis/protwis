@@ -58,6 +58,7 @@ class Command(BaseBuild):
                             action='store_true')
         parser.add_argument('-s', help='Set activation state for model, default is inactive', default='inactive')
         parser.add_argument('-c', help='Select GPCR class (A, B1, B2, C, F)', default=False)
+        parser.add_argument('--purge', help='Purge all existing records', default=False, action='store_true')
         parser.add_argument('-i', help='Number of MODELLER iterations for model building', default=1, type=int)
         parser.add_argument('--test_run', action='store_true', help='Build only a test set of homology models ', default=False)
         
@@ -82,76 +83,73 @@ class Command(BaseBuild):
         GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'F':'005', 'T':'006'}
         self.modeller_iterations = options['i']
         self.build_all = False
-        if options['r']==False:
-            # Build all
-            if options['c']==False:
-                self.build_all = True
-                all_receptors = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human').filter(Q(family__slug__istartswith='001') |
-                                                                                                                                          Q(family__slug__istartswith='002') |
-                                                                                                                                          Q(family__slug__istartswith='003') |
-                                                                                                                                          Q(family__slug__istartswith='004') |
-                                                                                                                                          Q(family__slug__istartswith='005') |
-                                                                                                                                          Q(family__slug__istartswith='006'))
-            elif options['c'].upper() not in GPCR_class_codes:
-                raise AssertionError('Error: Incorrect class name given. Use argument -c with class name A, B1, B2, C, F or T')
-            # Build one class
-            else:
-                all_receptors = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
-                                                       family__slug__istartswith=GPCR_class_codes[options['c'].upper()])
-            self.receptor_list = []
 
-            # Find proteins and states for which there is no xtal yet
-            for r in all_receptors.order_by('entry_name'):
-                structs = Structure.objects.filter(protein_conformation__protein__parent=r)
-                if r.family.slug.startswith('001') or r.family.slug.startswith('002') or r.family.slug.startswith('003') or r.family.slug.startswith('006'):
-                    states_dic = {'Inactive':0, 'Intermediate':0, 'Active':0}
-                    if len(structs)==0:
-                        self.receptor_list.append([r, 'Inactive'])
-                        self.receptor_list.append([r, 'Intermediate'])
-                        self.receptor_list.append([r, 'Active'])
-                    else:
-                        for s in structs:
-                            try:
-                                del states_dic[s.state.name]
-                            except:
-                                pass
-                        for st in states_dic:
-                            self.receptor_list.append([r, st])
-                elif r.family.slug.startswith('004') or r.family.slug.startswith('005'):
-                    states_dic = {'Inactive':0}
-                    if len(structs)==0:
-                        self.receptor_list.append([r, 'Inactive'])
-                    else:
-                        for s in structs:
-                            try:
-                                del states_dic[s.state.name]
-                            except:
-                                pass
-                        for st in states_dic:
-                            self.receptor_list.append([r, st])
+        # Build all
+        if options['purge']:
+            # if updating all, then delete existing
+            print("Delete existing")                                      
+            StructureModel.objects.all().delete()
+            StructureModelSeqSim.objects.all().delete()
+            StructureModelStatsRotamer.objects.all().delete()
 
-            self.receptor_list_entry_names = [i[0].entry_name for i in self.receptor_list]
-
-            # Test run, only 5 models
-            if options['test_run']:
-                self.receptor_list = self.receptor_list[:5]
-                self.receptor_list_entry_names = self.receptor_list_entry_names[:5]
-            print("receptors to do",len(self.receptor_list))
-            
-            try:
-                self.prepare_input(options['proc'], self.receptor_list)
-            except Exception as msg:
-                print(msg)
-        elif len(options['r'])>1:
-            self.receptor_list = options['r']
-            try:
-                self.prepare_input(options['proc'], self.receptor_list)
-            except Exception as msg:
-                print(msg)
+        if options['r']:
+            all_receptors = Protein.objects.filter(entry_name__in=options['r'])
+        elif options['c']==False:
+            self.build_all = True
+            all_receptors = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human').filter(Q(family__slug__istartswith='001') |
+                                                                                                                                      Q(family__slug__istartswith='002') |
+                                                                                                                                      Q(family__slug__istartswith='003') |
+                                                                                                                                      Q(family__slug__istartswith='004') |
+                                                                                                                                      Q(family__slug__istartswith='005') |
+                                                                                                                                      Q(family__slug__istartswith='006'))
+        elif options['c'].upper() not in GPCR_class_codes:
+            raise AssertionError('Error: Incorrect class name given. Use argument -c with class name A, B1, B2, C, F or T')
+        # Build one class
         else:
-            self.run_HomologyModeling(options['r'][0], self.state)
-            self.receptor_list = [options['r'][0]]
-            self.receptor_list_entry_names = [options['r'][0]]
+            all_receptors = Protein.objects.filter(parent__isnull=True, accession__isnull=False, species__common_name='Human', 
+                                                   family__slug__istartswith=GPCR_class_codes[options['c'].upper()])
+        self.receptor_list = []
+
+        # Find proteins and states for which there is no xtal yet
+        for r in all_receptors.order_by('entry_name'):
+            structs = Structure.objects.filter(protein_conformation__protein__parent=r)
+            if r.family.slug.startswith('001') or r.family.slug.startswith('002') or r.family.slug.startswith('003') or r.family.slug.startswith('006'):
+                states_dic = {'Inactive':0, 'Intermediate':0, 'Active':0}
+                if len(structs)==0:
+                    self.receptor_list.append([r, 'Inactive'])
+                    self.receptor_list.append([r, 'Intermediate'])
+                    self.receptor_list.append([r, 'Active'])
+                else:
+                    for s in structs:
+                        try:
+                            del states_dic[s.state.name]
+                        except:
+                            pass
+                    for st in states_dic:
+                        self.receptor_list.append([r, st])
+            elif r.family.slug.startswith('004') or r.family.slug.startswith('005'):
+                states_dic = {'Inactive':0}
+                if len(structs)==0:
+                    self.receptor_list.append([r, 'Inactive'])
+                else:
+                    for s in structs:
+                        try:
+                            del states_dic[s.state.name]
+                        except:
+                            pass
+                    for st in states_dic:
+                        self.receptor_list.append([r, st])
+
+        self.receptor_list_entry_names = [i[0].entry_name for i in self.receptor_list]
+
+        # Test run, only 5 models
+        if options['test_run']:
+            self.receptor_list = self.receptor_list[:5]
+            self.receptor_list_entry_names = self.receptor_list_entry_names[:5]
+        print("receptors to do",len(self.receptor_list))
+        self.processors = options['proc']
+        self.prepare_input(options['proc'], self.receptor_list)
+
         missing_models = []
         with open('./structure/homology_models/done_models.txt') as f:
             for i in f.readlines():
@@ -177,22 +175,39 @@ class Command(BaseBuild):
         shutil.rmtree('PIR')
 
     def main_func(self, positions, iteration, count, lock):
+        processor_id = round(self.processors*positions[0]/len(self.receptor_list))+1
+        i = 0
         while count.value<len(self.receptor_list):
+            i += 1
             with lock:
                 receptor = self.receptor_list[count.value]
-                logger.info('Generating model for  \'{}\' ({})... ({} out of {})'.format(receptor[0].entry_name, receptor[1],count.value, len(self.receptor_list)))
+                logger.info('Generating model for  \'{}\' ({})... ({} out of {}) (processor:{} count:{})'.format(receptor[0].entry_name, receptor[1],count.value, len(self.receptor_list),processor_id,i))
                 count.value +=1 
+
+            # TODO maybe make check make sense -- since homology_models are deleted, then it doesnt make sense now
+            # check
+            # sm = StructureModel.objects.filter(protein__entry_name=receptor[0].entry_name, state__name=receptor[1]).first()
+            # if sm:
+            #     print('receptor',receptor,'already done',sm)
+            #     main_structure = sm.main_structure.pdb_code.index
+            #     # class_name = 'Class'+class_tree[Protein.objects.get(entry_name=self.reference_entry_name).family.parent.slug[:3]]
+            #     # modelname = '{}_{}_{}_{}_GPCRdb'.format(self.class_name, self.reference_entry_name, self.state, 
+            #     #                          self.main_structure)
+            #     continue
+
+            # then check db
+
+            mod_startTime = datetime.now()
             self.run_HomologyModeling(receptor[0].entry_name, receptor[1])
-    
+            logger.info('Model finished for  \'{}\' ({})... (processor:{} count:{}) (Time: {})'.format(receptor[0].entry_name, receptor[1],processor_id,i,datetime.now() - mod_startTime))
+        
     def run_HomologyModeling(self, receptor, state):
         try:
-            mod_startTime = datetime.now()
             seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX']
 
             ##### Ignore output from that can come from BioPDB! #####
             _stdout = sys.stdout
             sys.stdout = open(os.devnull, 'w')
-
             Homology_model = HomologyModeling(receptor, state, [state], iterations=self.modeller_iterations)
             alignment = Homology_model.run_alignment([state])
             Homology_model.build_homology_model(alignment)
@@ -256,13 +271,12 @@ class Command(BaseBuild):
             # Upload to db
             if self.update and not residue_shift:
                 Homology_model.upload_to_db(formatted_model)
-                logger.info('{} ({}) homology model uploaded to db'.format(Homology_model.reference_entry_name,state))
+                # logger.info('{} ({}) homology model uploaded to db'.format(Homology_model.reference_entry_name,state))
                 #TODO PUT IN LOGGER print('{} homology model uploaded to db'.format(Homology_model.reference_entry_name))
 
             with open('./structure/homology_models/done_models.txt','a') as f:
                 f.write(receptor+'\n')
 
-            logger.info('Model built for {} ({}) (Time: {})'.format(receptor, state,datetime.now() - mod_startTime))
 
         except Exception as msg:
             try:
@@ -352,29 +366,26 @@ class HomologyModeling(object):
             hommod.pdb = formatted_model
             hommod.version = self.version
             hommod.save()
-        except:
-            hommod, created = StructureModel.objects.create(protein=self.reference_protein, state=s_state, 
+
+            # Delete previous data
+            StructureModelStatsRotamer.objects.filter(homology_model=hommod).delete()
+            StructureModelSeqSim.objects.filter(homology_model=hommod).delete()
+        except Exception as msg:
+            hommod = StructureModel.objects.create(protein=self.reference_protein, state=s_state, 
                                                             main_template=self.main_structure, 
                                                             pdb=formatted_model, 
                                                             version=self.version)
-            new_entry = True
-        if not new_entry:
-            StructureModelStatsRotamer.objects.filter(homology_model=hommod).delete()
-        
+       
         for r in self.template_stats:
             if r[0] in ['N-term', 'C-term']:
                 continue
             res = Residue.objects.get(protein_conformation__protein=self.reference_protein, sequence_number=r[1])
-            rots, created = StructureModelStatsRotamer.objects.update_or_create(homology_model=hommod, residue=res,
+            rots = StructureModelStatsRotamer.objects.create(homology_model=hommod, residue=res,
                                                                                 backbone_template=r[4],rotamer_template=r[5])
-
-        # Upload sequence similarity of templates that were used
-        if not new_entry:
-            db_seqsim = StructureModelSeqSim.objects.filter(homology_model=hommod).delete()
 
         for struct, sim in self.similarity_table_all.items():
             if struct in self.template_list:
-                db_seqsim, created = StructureModelSeqSim.objects.get_or_create(homology_model=hommod, template=struct, similarity=sim)
+                db_seqsim = StructureModelSeqSim.objects.create(homology_model=hommod, template=struct, similarity=sim)
                                    
     def right_rotamer_select(self, rotamer):
         ''' Filter out compound rotamers.
@@ -511,9 +522,9 @@ class HomologyModeling(object):
                         except:
                             out_list.append(line)
         
-        with open (path+modelname+'.pdb', 'w') as f:
-            
+        with open (path+modelname+'.pdb', 'w') as f:   
             f.write(''.join(out_list))
+
         pdb_struct = PDB.PDBParser(QUIET=True).get_structure('model', path+modelname+'.pdb')[0]
         assign_gn = as_gn.GenericNumbering(structure=pdb_struct)
         pdb_struct = assign_gn.assign_generic_numbers()
@@ -1733,7 +1744,7 @@ class HomologyModeling(object):
 
         #TODO PUT IN LOGGER print('MODELLER build: ',datetime.now() - startTime)
         # pprint.pprint(self.statistics)
-        print('################################')
+        # print('################################')
         return self
     
     def run_non_conserved_switcher(self, main_pdb_array, reference_dict, template_dict, alignment_dict):
@@ -2841,7 +2852,7 @@ class Loops(object):
                                     self.aligned = False
                                     continue
                             else:
-                                print('Warning: need to superpose aligned {}'.format(self.loop_label))
+                                # print('Warning: need to superpose aligned {}'.format(self.loop_label))
                                 return self.fetch_loop_residues(main_pdb_array,superpose_modded_loop=True)
                         else:
                             if template.pdb_code.index in self.excluded_loops[self.loop_label]:
