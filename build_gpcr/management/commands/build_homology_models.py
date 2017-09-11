@@ -172,15 +172,13 @@ class Command(BaseBuild):
         while count.value<len(self.receptor_list):
             with lock:
                 receptor = self.receptor_list[count.value]
-                print('Generating model for  \'{}\' ({})... ({} out of {})'.format(receptor[0].entry_name, receptor[1],count.value, len(self.receptor_list)))
-
+                logger.info('Generating model for  \'{}\' ({})... ({} out of {})'.format(receptor[0].entry_name, receptor[1],count.value, len(self.receptor_list)))
                 count.value +=1 
             self.run_HomologyModeling(receptor[0].entry_name, receptor[1])
     
     def run_HomologyModeling(self, receptor, state):
-        # try:
-
-            logger.info('Model started for {} {}'.format(receptor, state))
+        try:
+            mod_startTime = datetime.now()
             seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX']
 
             ##### Ignore output from that can come from BioPDB! #####
@@ -190,8 +188,6 @@ class Command(BaseBuild):
             Homology_model = HomologyModeling(receptor, state, [state], iterations=self.modeller_iterations)
             alignment = Homology_model.run_alignment([state])
             Homology_model.build_homology_model(alignment)
-            print('Done building model for {} ({})'.format(receptor,state))
-            logger.info('Main model done for {} {}'.format(receptor, state))
             formatted_model = Homology_model.format_final_model()
             if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
                 args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
@@ -226,7 +222,7 @@ class Command(BaseBuild):
 
             if residue_shift==True:
                 #TODO PUT IN LOGGER print('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
-                logger.info('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
+                logger.warning('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
                 raise ValueError('Error: Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res)) 
             # Check for clashes in model
             if len(hse.clash_pairs)>0:
@@ -235,49 +231,49 @@ class Command(BaseBuild):
                     #TODO PUT IN LOGGER print(i)
                     if i[0][1]==i[1][1]-1 or i[0][1]==i[1][1]:
                         hse.clash_pairs.remove(i)
-                logger.info('Remaining clashes in {}\n{}'.format(Homology_model.reference_entry_name,hse.clash_pairs))
+                logger.warning('Remaining clashes in {}\n{}'.format(Homology_model.reference_entry_name,hse.clash_pairs))
             # Check for chain breaks in model
             if len(hse.chain_breaks)>0:
                 #TODO PUT IN LOGGER print('Chain breaks in {}:'.format(Homology_model.reference_entry_name))
                 # for j in hse.chain_breaks:
                     #TODO PUT IN LOGGER print(j)
-                logger.info('Chain breaks in {}\n{}'.format(Homology_model.reference_entry_name,hse.chain_breaks))
+                logger.warning('Chain breaks in {}\n{}'.format(Homology_model.reference_entry_name,hse.chain_breaks))
 
 
             ##### Resume output #####
             sys.stdout = _stdout
             sys.stdout.close()
 
-            logger.info('Model built for {} {}'.format(receptor, state))
             
             # Upload to db
             if self.update and not residue_shift:
                 Homology_model.upload_to_db(formatted_model)
-                logger.info('{} homology model uploaded to db'.format(Homology_model.reference_entry_name))
+                logger.info('{} ({}) homology model uploaded to db'.format(Homology_model.reference_entry_name,state))
                 #TODO PUT IN LOGGER print('{} homology model uploaded to db'.format(Homology_model.reference_entry_name))
 
             with open('./structure/homology_models/done_models.txt','a') as f:
                 f.write(receptor+'\n')
 
-            print('Done post-handling of model for {} ({})'.format(receptor,state))
-        # except Exception as msg:
-        #     try:
-        #         exc_type, exc_obj, exc_tb = sys.exc_info()
-        #         print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
-        #                                                                                 Homology_model.main_structure,msg))
-        #         logger.error('Failed to build model {} {}\n    {}'.format(receptor, state, msg))
-        #         t = tests.HomologyModelsTests()
-        #         if 'Number of residues in the alignment and  pdb files are different' in str(msg):
-        #             t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
-        #                                      Homology_model.main_structure)
-        #         with open('./structure/homology_models/done_models.txt','a') as f:
-        #             f.write(receptor+'\n')
-        #     except:
-        #         try:
-        #             Protein.objects.get(entry_name=receptor)
-        #         except:
-        #             logger.error('Invalid receptor name: {}'.format(receptor))
-        #             print('Invalid receptor name: {}'.format(receptor))
+            logger.info('Model built for {} ({}) (Time: {})'.format(receptor, state,datetime.now() - mod_startTime))
+
+        except Exception as msg:
+            try:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
+                                                                                        Homology_model.main_structure,msg))
+                logger.error('Failed to build model {} {}\n    {}'.format(receptor, state, msg))
+                t = tests.HomologyModelsTests()
+                if 'Number of residues in the alignment and  pdb files are different' in str(msg):
+                    t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
+                                             Homology_model.main_structure)
+                with open('./structure/homology_models/done_models.txt','a') as f:
+                    f.write(receptor+'\n')
+            except:
+                try:
+                    Protein.objects.get(entry_name=receptor)
+                except:
+                    logger.error('Invalid receptor name: {}'.format(receptor))
+                    print('Invalid receptor name: {}'.format(receptor))
 
         
 class HomologyModeling(object):
