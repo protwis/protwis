@@ -105,18 +105,26 @@ class Command(BaseBuild):
                         self.receptor_list.append([r, 'Inactive'])
                         self.receptor_list.append([r, 'Intermediate'])
                         self.receptor_list.append([r, 'Active'])
+                    else:
+                        for s in structs:
+                            try:
+                                del states_dic[s.state.name]
+                            except:
+                                pass
+                        for st in states_dic:
+                            self.receptor_list.append([r, st])
                 elif r.family.slug.startswith('004') or r.family.slug.startswith('005'):
                     states_dic = {'Inactive':0}
                     if len(structs)==0:
                         self.receptor_list.append([r, 'Inactive'])
-                else:
-                    for s in structs:
-                        try:
-                            del states_dic[s.state.name]
-                        except:
-                            pass
-                    for st in states_dic:
-                        self.receptor_list.append([r, st])
+                    else:
+                        for s in structs:
+                            try:
+                                del states_dic[s.state.name]
+                            except:
+                                pass
+                        for st in states_dic:
+                            self.receptor_list.append([r, st])
 
             self.receptor_list_entry_names = [i[0].entry_name for i in self.receptor_list]
 
