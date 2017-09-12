@@ -308,7 +308,7 @@ def AddToSelection(request):
             o.append(Structure.objects.get(pdb_code__index=selection_id.upper()))
 
         elif selection_subtype == 'structure_model':
-            o.append(StructureModel.objects.get(protein__entry_name=selection_id))
+            o.append(StructureModel.objects.filter(protein__entry_name=selection_id)[0])
     
     elif selection_type == 'segments':
         if selection_subtype == 'residue':
