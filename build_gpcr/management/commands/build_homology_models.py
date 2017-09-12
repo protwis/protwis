@@ -202,7 +202,7 @@ class Command(BaseBuild):
             logger.info('Model finished for  \'{}\' ({})... (processor:{} count:{}) (Time: {})'.format(receptor[0].entry_name, receptor[1],processor_id,i,datetime.now() - mod_startTime))
         
     def run_HomologyModeling(self, receptor, state):
-        try:
+        # try:
             seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX']
 
             ##### Ignore output from that can come from BioPDB! #####
@@ -278,24 +278,24 @@ class Command(BaseBuild):
                 f.write(receptor+'\n')
 
 
-        except Exception as msg:
-            try:
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
-                                                                                        Homology_model.main_structure,msg))
-                logger.error('Failed to build model {} {}\n    {}'.format(receptor, state, msg))
-                t = tests.HomologyModelsTests()
-                if 'Number of residues in the alignment and  pdb files are different' in str(msg):
-                    t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
-                                             Homology_model.main_structure)
-                with open('./structure/homology_models/done_models.txt','a') as f:
-                    f.write(receptor+'\n')
-            except:
-                try:
-                    Protein.objects.get(entry_name=receptor)
-                except:
-                    logger.error('Invalid receptor name: {}'.format(receptor))
-                    print('Invalid receptor name: {}'.format(receptor))
+        # except Exception as msg:
+        #     try:
+        #         exc_type, exc_obj, exc_tb = sys.exc_info()
+        #         print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
+        #                                                                                 Homology_model.main_structure,msg))
+        #         logger.error('Failed to build model {} {}\n    {}'.format(receptor, state, msg))
+        #         t = tests.HomologyModelsTests()
+        #         if 'Number of residues in the alignment and  pdb files are different' in str(msg):
+        #             t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
+        #                                      Homology_model.main_structure)
+        #         with open('./structure/homology_models/done_models.txt','a') as f:
+        #             f.write(receptor+'\n')
+        #     except:
+        #         try:
+        #             Protein.objects.get(entry_name=receptor)
+        #         except:
+        #             logger.error('Invalid receptor name: {}'.format(receptor))
+        #             print('Invalid receptor name: {}'.format(receptor))
 
         
 class HomologyModeling(object):
@@ -1350,6 +1350,7 @@ class HomologyModeling(object):
 
         try:
             if len(a.reference_dict[label])>10:
+                delete_ts, delete_r, delete_t, delete_a, delete_m = set(),set(),set(),set(),set()
                 chain_break = False
                 icl3_c = 0
                 keys = list(self.template_source['ICL3'].keys())
@@ -1367,14 +1368,24 @@ class HomologyModeling(object):
                             a.template_dict[label][t_s] = '/'
                             a.alignment_dict[label][a_s] = '/'
                             main_pdb_array[label][ar_s] = '/'
-                            del self.template_source['ICL3'][keys[icl3_c-1]]
+                            delete_ts.add(('ICL3',keys[icl3_c-1]))
                             chain_break = True
                         else:
-                            del a.reference_dict[label][r_s]
-                            del a.template_dict[label][t_s]
-                            del a.alignment_dict[label][a_s]
-                            del main_pdb_array[label][ar_s]
-                            del self.template_source['ICL3'][keys[icl3_c-1]]
+                            delete_r.add((label,r_s))
+                            delete_t.add((label,t_s))
+                            delete_a.add((label,a_s))
+                            delete_m.add((label,ar_s))
+                            delete_ts.add(('ICL3',keys[icl3_c-1]))
+                for i,ii in delete_ts:
+                    del self.template_source[i][ii]
+                for i,ii in delete_r:
+                    del a.reference_dict[i][ii]
+                for i,ii in delete_t:
+                    del a.template_dict[i][ii]
+                for i,ii in delete_a:
+                    del a.alignment_dict[i][ii]
+                for i,ii in delete_m:
+                    del main_pdb_array[i][ii]
         except:
             pass
 
@@ -1743,7 +1754,7 @@ class HomologyModeling(object):
 
 
         #TODO PUT IN LOGGER print('MODELLER build: ',datetime.now() - startTime)
-        # pprint.pprint(self.statistics)
+        pprint.pprint(self.statistics)
         # print('################################')
         return self
     
