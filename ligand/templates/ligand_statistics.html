@@ -105,7 +105,7 @@
             {% endfor %}
         </tr>
         <tr>
-            <td><tAverage # of ligands per receptor</td>
+            <td>Average # of ligands per receptor</td>
             {% for data in ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.avg_num_ligands|floatformat:0|intcomma }}</td>
             {% endfor %}
