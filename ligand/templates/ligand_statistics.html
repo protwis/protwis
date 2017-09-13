@@ -5,81 +5,79 @@
 <link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
 <style>
-.node circle {
-  /*fill: #fff;*/
-  /*stroke: DarkGreen;*/
-  /*fill: DarkGreen;*/
-  stroke: #000000 ;
-  stroke-width: .3px;
-}
+        .node circle {
+            /*fill: #fff;*/
+            /*stroke: DarkGreen;*/
+            /*fill: DarkGreen;*/
+            stroke: #000000;
+            stroke-width: .3px;
+        }
 
-.node {
-  font: 8px sans-serif;
-}
+        .node {
+            font: 8px sans-serif;
+        }
 
-.link {
-  fill: none;
-  stroke: #eee;
-  stroke-width: 1px;
-}
+        .link {
+            fill: none;
+            stroke: #eee;
+            stroke-width: 1px;
+        }
 
-.node text {
-  font: 8px sans-serif;
-}
+        .node text {
+            font: 8px sans-serif;
+        }
 
-.links {
-  fill: none;
-  stroke: #000;
-}
+        .links {
+            fill: none;
+            stroke: #000;
+        }
 
-.link-extensions {
-  fill: none;
-  stroke: #000;
-  stroke-opacity: .25;
-}
-
-
-body {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  margin: 0;
-}
-
-/*#show-length {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-}*/
-
-.links {
-  fill: none;
-  stroke: #000;
-}
-
-.link-extensions {
-  fill: none;
-  stroke: #000;
-  stroke-opacity: .25;
-}
-
-.labels {
-  font: 14px Palatino;
-  font-weight: bold;
-}
-
-.link--active {
-  stroke: #000 !important;
-  stroke-width: 3.5px;
-}
-
-.link-extension--active {
-  stroke-opacity: .6;
-}
-
-.label--active {
-  font-weight: bold;
-}
+        .link-extensions {
+            fill: none;
+            stroke: #000;
+            stroke-opacity: .25;
+        }
 
 
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            margin: 0;
+        }
+
+        /*#show-length {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+    }*/
+
+        .links {
+            fill: none;
+            stroke: #000;
+        }
+
+        .link-extensions {
+            fill: none;
+            stroke: #000;
+            stroke-opacity: .25;
+        }
+
+        .labels {
+            font: 14px Palatino;
+            font-weight: bold;
+        }
+
+        .link--active {
+            stroke: #000 !important;
+            stroke-width: 3.5px;
+        }
+
+        .link-extension--active {
+            stroke-opacity: .6;
+        }
+
+        .label--active {
+            font-weight: bold;
+        }
 </style>
 {% endblock %}
 
@@ -91,7 +89,7 @@ body {
 <table style="width:75% !important" class="table table-stripped">
     <thead>
         <tr>
-            <td><b>Class<br/>(Family)</b></td>
+            <td><b>Class<br />(Family)</b></td>
             <!--<td align="center"><b>Total</b></td>-->
             {% for data in ligands_by_class %}
             <td align="center"><b>{% if data.name == "Taste 2" %}Taste&nbsp;2{% else %}{{ data.name }}{% endif %}</b></td>
@@ -101,15 +99,15 @@ body {
     <tbody>
         <tr>
             <td>Number of ligands</td>
-<!--            <td align="center" style="vertical-align:middle !important">{{ data.num_ligands }}</td>-->
+            <!--            <td align="center" style="vertical-align:middle !important">{{ data.num_ligands }}</td>-->
             {% for data in ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.num_ligands|floatformat:0|intcomma }}</td>
             {% endfor %}
         </tr>
         <tr>
-            <td>Average # of ligands per receptor</td>
+            <td><tAverage # of ligands per receptor</td>
             {% for data in ligands_by_class %}
-            <td align="center"  style="vertical-align:middle !important">{{ data.avg_num_ligands|floatformat:0|intcomma }}</td>
+            <td align="center" style="vertical-align:middle !important">{{ data.avg_num_ligands|floatformat:0|intcomma }}</td>
             {% endfor %}
         </tr>
         <tr>
@@ -129,40 +127,43 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
 <br />
 <h4>Ligand coverage of GPCR Classes</h4><br />
 <script type="text/javascript" charset="utf-8">
-    class_a = {{ class_a|safe }};
-    class_a_options = {{ class_a_options|safe }};
-    class_b1 = {{ class_b1|safe }};
-    class_b1_options = {{ class_b1_options|safe }};
-    class_b2 = {{ class_b2|safe }};
-    class_b2_options = {{ class_b2_options|safe }};
-    class_c = {{ class_c|safe }};
-    class_c_options = {{ class_c_options|safe }};
-    class_f = {{ class_f|safe }};
-    class_f_options = {{ class_f_options|safe }};
-    class_t2 = {{ class_t2|safe }};
-    class_t2_options = {{ class_t2_options|safe }};
+    class_a = {{ class_a | safe }};
+    class_a_options = {{ class_a_options | safe }};
+    class_b1 = {{ class_b1 | safe }};
+    class_b1_options = {{ class_b1_options | safe }};
+    class_b2 = {{ class_b2 | safe }};
+    class_b2_options = {{ class_b2_options | safe }};
+    class_c = {{ class_c | safe }};
+    class_c_options = {{ class_c_options | safe }};
+    class_f = {{ class_f | safe }};
+    class_f_options = {{ class_f_options | safe }};
+    class_t2 = {{ class_t2 | safe }};
+    class_t2_options = {{ class_t2_options | safe }};
 </script>
 <h4>Class A</h4>
 <div id="class_a">
 </div>
-    <div class="btn-group">
-        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                aria-haspopup="true" aria-expanded="false">
-            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu">
-            <li>
-                <a href="javascript:saveSvgAsPng(document.getElementById('class_a_svg'), 'ligand_coverage_tree_class_a.png');">PNG</a>
-            </li>
-            <li>
-                <a href="javascript:saveSvgAsJpg(document.getElementById('class_a_svg'), 'ligand_coverage_tree_class_a.jpg');">JPG</a>
-            </li>
-            <li>
-                <a href="javascript:saveSvgAsTiff(document.getElementById('class_a_svg'), 'ligand_coverage_tree_class_a.tiff');">TIFF</a>
-                </a>
-            </li>
-        </ul>
-    </div>
+<div class="btn-group">
+    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+            aria-haspopup="true" aria-expanded="false">
+        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu">
+        <li>
+            <a href="javascript:saveSvgAsPng(document.getElementById('class_a_svg'), 'ligand_coverage_tree_class_a.png');">PNG</a>
+        </li>
+        <li>
+            <a href="javascript:saveSvgAsJpg(document.getElementById('class_a_svg'), 'ligand_coverage_tree_class_a.jpg');">JPG</a>
+        </li>
+        <li>
+            <a href="javascript:saveSvgAsTiff(document.getElementById('class_a_svg'), 'ligand_coverage_tree_class_a.tiff');">TIFF</a>
+            </a>
+        </li>
+    </ul>
+</div>
+<br />
+<br />
+<br />
 <table>
     <tr>
         <td align="center">
@@ -176,126 +177,140 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
         </td>
     </tr>
     <tr>
-        <td width="33%">
-            <div id="class_b1">
-            </div>
-            <p>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a href="javascript:saveSvgAsPng(document.getElementById('class_b1_svg'), 'ligand_coverage_tree_class_b1.png');">PNG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsJpg(document.getElementById('class_b1_svg'), 'ligand_coverage_tree_class_b1.jpg');">JPG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsTiff(document.getElementById('class_b1_svg'), 'ligand_coverage_tree_class_b1.tiff');">TIFF</a>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </p>
+        <td width="33%" style="padding: 20px">
+            <div id="class_b1"></div>
         </td>
-        <td width="33%">
-            <div id="class_b2">
-            </div>
-            <p>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a href="javascript:saveSvgAsPng(document.getElementById('class_b2_svg'), 'ligand_coverage_tree_class_b2.png');">PNG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsJpg(document.getElementById('class_b2_svg'), 'ligand_coverage_tree_class_b2.jpg');">JPG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsTiff(document.getElementById('class_b2_svg'), 'ligand_coverage_tree_class_b2.tiff');">TIFF</a>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </p>
+        <td width="33%" style="padding: 20px">
+            <div id="class_b2"></div>
         </td>
-        <td width="33%">
-            <div id="class_c">
+        <td width="33%" style="padding: 20px">
+            <div id="class_c"></div>
+
+        </td>
+    </tr>
+    <tr>
+        <td width="33%" style="padding: 20px">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('class_b1_svg'), 'ligand_coverage_tree_class_b1.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_b1_svg'), 'ligand_coverage_tree_class_b1.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_b1_svg'), 'ligand_coverage_tree_class_b1.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                </ul>
             </div>
-            <p>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                            aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a href="javascript:saveSvgAsPng(document.getElementById('class_c_svg'), 'ligand_coverage_tree_class_c.png');">PNG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsJpg(document.getElementById('class_c_svg'), 'ligand_coverage_tree_class_c.jpg');">JPG</a>
-                        </li>
-                        <li>
-                            <a href="javascript:saveSvgAsTiff(document.getElementById('class_c_svg'), 'ligand_coverage_tree_class_c.tiff');">TIFF</a>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </p>
+        </td>
+        <td width="33%" style="padding: 20px">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('class_b2_svg'), 'ligand_coverage_tree_class_b2.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_b2_svg'), 'ligand_coverage_tree_class_b2.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_b2_svg'), 'ligand_coverage_tree_class_b2.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </td>
+        <td width="33%" style="padding: 20px">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('class_c_svg'), 'ligand_coverage_tree_class_c.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_c_svg'), 'ligand_coverage_tree_class_c.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_c_svg'), 'ligand_coverage_tree_class_c.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </td>
     </tr>
 </table>
-<div id="class_f">
-</div>
-<h4>Class F</h4>
-<p>
-    <div class="btn-group">
-        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                aria-haspopup="true" aria-expanded="false">
-            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu">
-            <li>
-                <a href="javascript:saveSvgAsPng(document.getElementById('class_f_svg'), 'ligand_coverage_tree_class_f.png');">PNG</a>
-            </li>
-            <li>
-                <a href="javascript:saveSvgAsJpg(document.getElementById('class_f_svg'), 'ligand_coverage_tree_class_f.jpg');">JPG</a>
-            </li>
-            <li>
-                <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'ligand_coverage_tree_class_f.tiff');">TIFF</a>
-                </a>
-            </li>
-        </ul>
-    </div>
-</p>
-<div id="class_t2">
-</div>
-<h4>Taste 2</h4>
-<p>
-    <div class="btn-group">
-        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-                aria-haspopup="true" aria-expanded="false">
-            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu">
-            <li>
-                <a href="javascript:saveSvgAsPng(document.getElementById('class_t2_svg'), 'ligand_coverage_tree_t2.png');">PNG</a>
-            </li>
-            <li>
-                <a href="javascript:saveSvgAsJpg(document.getElementById('class_t2_svg'), 'ligand_coverage_tree_t2.jpg');">JPG</a>
-            </li>
-            <li>
-                <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'ligand_coverage_tree_t2.tiff');">TIFF</a>
-                </a>
-            </li>
-        </ul>
-    </div>
-</p>
+<table width="100%">
+    <tr>
+        <td width="50%" align="center">
+            <h4>Class F</h4>
+        </td>
+        <td width="50%" align="center">
+            <h4>Taste 2</h4>
+        </td>
+    </tr>
+    <tr>
+        <td width="50%" align="center" style="padding: 20px">
+            <div id="class_f"></div>
+        </td>
+        <td width="50%" align="center" style="padding: 20px">
+            <div id="class_t2"></div>
+        </td>
+    </tr>
+    <tr>
+        <td width="50%" style="padding: 20px">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('class_f_svg'), 'ligand_coverage_tree_class_f.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_f_svg'), 'ligand_coverage_tree_class_f.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'ligand_coverage_tree_class_f.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </td>
+        <td width="50%" style="padding: 20px">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('class_t2_svg'), 'ligand_coverage_tree_t2.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_t2_svg'), 'ligand_coverage_tree_t2.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'ligand_coverage_tree_t2.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </td>
+    </tr>
+</table>
 {% endblock %}
 
 {% block addon_js %}
@@ -305,7 +320,7 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
 <script src="{% static 'home/js/phylo_tree.js' %}"></script>
 <script type="text/javascript" charset="utf-8">
-    $(window).load(function() {
+    $(window).load(function () {
         draw_tree(class_a, class_a_options);
         draw_tree(class_b1, class_b1_options);
         draw_tree(class_b2, class_b2_options);
