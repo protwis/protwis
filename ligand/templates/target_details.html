@@ -1,0 +1,184 @@
+{% extends "home/base.html" %}
+{% load staticfiles %}
+{% load structure_extras %}
+
+
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/jquery.dataTables.min.js' %}"> </script>
+<script src="{% static 'home/js/dataTables.tableTools.min.js' %}"> </script>
+<script src="{% static 'home/js/jquery.dataTables.columnFilter.js' %}"> </script>
+<script src="{% static 'home/js/selection.js' %}"> </script>
+
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function () {
+        ClearSelection('targets');
+        //ClearSelection('reference');
+        var table = $('#proteins').DataTable({
+            'scrollX': true,
+            'scrollY': $(window).height() - 300,
+            'bScrollCollapse': true,
+            'paging': true,
+            'paging_type': 'full_numbers',
+            'orderCellsTop': true,
+            'autoWidth': true,
+            'dom': 'iTlfrtp',
+            'aoColumnDefs': [
+                { 'bSortable': false, 'aTargets': [0] },
+                { 'sType': 'string', 'aTargets': [1] },
+            ],
+            'tableTools': {
+                "sRowSelect": "double",
+                "aButtons": []
+            },
+            "language": {
+                "lengthMenu": 'Display <select>' +
+                    '<option value="50">50</option>' +
+                    '<option value="100">100</option>' +
+                    '<option value="200">200</option>' +
+                    '<option value="-1">All</option>' +
+                    '</select> records'
+            },
+            initComplete: function () {
+                $('#proteins').dataTable().columnFilter({
+                    sPlaceHolder: "head:after",
+                    sRangeFormat: "{from}:{to}",
+                    aoColumns: [
+                        null,
+                        { type: "select" },//Protein Entry Name
+                        { type: "select" },// purchasable
+                        { type: "select" },// vendor
+                        { type: "select" },//Ligand Name
+                        { type: "number-range" },//PChEMBL Value
+                        { type: "select" },//Standard Type
+                        null,//Standard Relation
+                        { type: "number-range" },//Standard Value
+                        { type: "select" },//Standard Units
+                        { type: "select" },//Assay Type
+                        { type: "select" },//Assay Description
+                        { type: "select" },//Species
+                        { type: "text" },//Smiles
+                        { type: "number-range" },//Rotatable Bonds
+                        { type: "number-range" },//Hydrogen Bond Donors
+                        { type: "number-range" },//Hydrogen Bond Acceptors
+                        { type: "number-range" },//LogP
+
+                    ]
+                });
+            }
+        });
+        $('.select-all').change(function () {
+            $('.alt').prop('checked', $(this).prop("checked"));
+            $('.alt').parent().parent().toggleClass('alt_selected');
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="btn-group">
+    <a id="download_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Download</a>
+</div>
+<!--<div class="btn-group">-->
+<!--    <a id="concise_binding_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show Concise Binding Assay Information</a>-->
+<!--</div>-->
+<!--<div class="btn-group">-->
+<!--    <a id="concise_funtional_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show Concise Functional Assay Information</a>-->
+<!--</div>-->
+<!--<div class="btn-group">-->
+<!--    <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>-->
+<!--</div>-->
+<!--<div style="font-size: 10px;">For superimposition: Select (tick box) ligands, and Highlight the reference template</div>-->
+<br />
+<br />
+<h3>Ligand information for {{target}}:</h3>
+
+<div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+    <table width="100%" class="display" id="proteins">
+        <thead>
+            <tr>
+                <th><input class="select-all" type="checkbox"> Select all</th>
+                <th class="protein-th">Receptor</th>
+                <th class="protein-th">Purchasable Yes/No</th>
+                <th class="protein-th">Vendor</th>
+                <th class="protein-th">Ligand Name</th>
+                <th class="protein-th">PChEMBL Value</th>
+                <th class="protein-th">Standard Type</th>
+                <th class="protein-th">Standard Relation</th>
+                <th class="protein-th">Standard Value</th>
+                <th class="protein-th">Standard Units</th>
+                <th class="protein-th">Assay Type</th>
+                <th class="protein-th">Assay Description</th>
+                <th class="protein-th">Species</th>
+                <th class="ligand-th">Smiles</th>
+                <th class="ligand-th">Rotatable Bonds</th>
+                <th class="ligand-th">Hydrogen Bond Donors</th>
+                <th class="ligand-th">Hydrogen Bond Acceptors</th>
+                <th class="ligand-th">LogP</th>
+            </tr>
+            <tr>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in proteins %}
+            {% if p.representative %}
+            <tr class="repr-st">
+            {% else %}
+            <tr>
+            {% endif %}
+                <td><input class="alt" type="checkbox"></td>
+                <td>{{p.protein__entry_name}}</td>
+                {% if p.ligand__properities__vendors__vendor__name%}
+                    <td> Yes</td>
+                {%else%}
+                    <td>No</td>
+                {%endif%}
+                <td>{{p.ligand__properities__vendors__vendor__name}}</td>
+                <td><a href="/ligand/{{p.ligand__properities__web_links__index}}">{{p.ligand__properities__web_links__index}}</a></td>
+                <td align="right">{{p.pchembl_value}}</td>
+                <td align="center">{{p.standard_type}}</td>
+                <td>{{p.standard_relation}}</td>
+                <td>{{p.standard_value}}</td>
+                <td>{{p.standard_units}}</td>
+                <td>{{p.assay_type}}</td>
+                <td <div style = "overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;">{{p.assay_description}} </div></td>
+                <td>{{p.protein__species__common_name}}</td>
+                <td>{{p.ligand__properities__smiles}}</td>
+                <td>{{p.ligand__properities__rotatable_bonds}}</td>
+                <td>{{p.ligand__properities__hdon}}</td>
+                <td>{{p.ligand__properities__hacc}}</td>
+                <td>{{p.ligand__properities__logp}}</td>
+                <!--<td><a href="/ligand/{{p.protein__entry_name}}">{{ligand.num_ligands}}</a></td>-->
+            </tr>
+
+        {% endfor %}
+        </tbody>
+
+
+
+
+    </table>
+</div>
+{% endblock %}
