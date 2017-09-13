@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('interaction', '0002_auto_20170908_0758'),
+        #('interaction', '0002_auto_20170908_0758'),
         ('protein', '0001_initial'),
         ('ligand', '0001_initial'),
         ('residue', '0001_initial'),
