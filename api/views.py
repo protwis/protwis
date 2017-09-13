@@ -102,7 +102,7 @@ class ProteinFamilyChildrenList(generics.ListAPIView):
     """
 
     serializer_class = ProteinFamilySerializer
-    
+
     def get_queryset(self):
         family = self.kwargs.get('slug')
         queryset = ProteinFamily.objects.all()
@@ -117,7 +117,7 @@ class ProteinFamilyDescendantList(generics.ListAPIView):
     """
 
     serializer_class = ProteinFamilySerializer
-    
+
     def get_queryset(self):
         family = self.kwargs.get('slug')
         queryset = ProteinFamily.objects.all()
@@ -132,7 +132,7 @@ class ProteinsInFamilyList(generics.ListAPIView):
     """
 
     serializer_class = ProteinSerializer
-    
+
     def get_queryset(self):
         queryset = Protein.objects.all()
         family = self.kwargs.get('slug')
@@ -165,7 +165,7 @@ class ResiduesList(generics.ListAPIView):
     """
 
     serializer_class = ResidueSerializer
-    
+
     def get_queryset(self):
         queryset = Residue.objects.all()
         #protein_conformation__protein__sequence_type__slug='wt',
@@ -331,11 +331,11 @@ class FamilyAlignment(views.APIView):
         if slug is not None:
             # Check for specific species
             if latin_name is not None:
-                ps = Protein.objects.filter(sequence_type__slug='wt', source__id=1, family__slug__startswith=slug, 
+                ps = Protein.objects.filter(sequence_type__slug='wt', source__id=1, family__slug__startswith=slug,
                     species__latin_name=latin_name)
             else:
                 ps = Protein.objects.filter(sequence_type__slug='wt', source__id=1, family__slug__startswith=slug)
-            
+
             # take the numbering scheme from the first protein
             s_slug = Protein.objects.get(entry_name=ps[0]).residue_numbering_scheme_id
 
@@ -344,7 +344,7 @@ class FamilyAlignment(views.APIView):
             if segments is not None:
                 input_list = segments.split(",")
                 # fetch a list of all segments
-                protein_segments = ProteinSegment.objects.filter(partial=False).values_list('slug', flat=True) 
+                protein_segments = ProteinSegment.objects.filter(partial=False).values_list('slug', flat=True)
                 for s in input_list:
                     # add to segment list
                     if s in protein_segments:
@@ -354,8 +354,8 @@ class FamilyAlignment(views.APIView):
                         # make sure the query works for all positions
                         gen_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__id=s_slug)
                         gen_object.properties = {}
-                        gen_list.append(gen_object)                        
-                
+                        gen_list.append(gen_object)
+
                 # fetch all complete protein_segments
                 ss = ProteinSegment.objects.filter(slug__in=segment_list, partial=False)
             else:
@@ -374,7 +374,7 @@ class FamilyAlignment(views.APIView):
 
             # build the alignment data matrix
             a.build_alignment()
-            
+
             a.calculate_statistics()
 
             residue_list = []
@@ -424,7 +424,7 @@ class FamilyAlignmentPartial(FamilyAlignment):
     Get a partial sequence alignment of a protein family
     \n/alignment/family/{slug}/{segments}/
     \n{slug} is a protein family identifier, e.g. 001_001_001
-    \n{segments} is a comma separated list of protein segment identifiers and/ or 
+    \n{segments} is a comma separated list of protein segment identifiers and/ or
     generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     """
 
@@ -433,7 +433,7 @@ class FamilyAlignmentPartialSpecies(FamilyAlignment):
     Get a partial sequence alignment of a protein family
     \n/alignment/family/{slug}/{segments}/{species}
     \n{slug} is a protein family identifier, e.g. 001_001_001
-    \n{segments} is a comma separated list of protein segment identifiers and/ or 
+    \n{segments} is a comma separated list of protein segment identifiers and/ or
     generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     \n{species} is a species identifier from Uniprot, e.g. Homo sapiens
     """
@@ -445,7 +445,7 @@ class ProteinSimilaritySearchAlignment(views.APIView):
     \n/alignment/similarity/{proteins}/
     \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human,cxcr4_human,
     where the first protein is the query protein and the following the proteins to compare it to
-    \n{segments} is a comma separated list of protein segment identifiers and/ or 
+    \n{segments} is a comma separated list of protein segment identifiers and/ or
     generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     """
 
@@ -462,7 +462,7 @@ class ProteinSimilaritySearchAlignment(views.APIView):
             if segments is not None:
                 input_list = segments.split(",")
                 # fetch a list of all segments
-                protein_segments = ProteinSegment.objects.filter(partial=False).values_list('slug', flat=True) 
+                protein_segments = ProteinSegment.objects.filter(partial=False).values_list('slug', flat=True)
                 gen_list = []
                 segment_list = []
                 for s in input_list:
@@ -474,8 +474,8 @@ class ProteinSimilaritySearchAlignment(views.APIView):
                         # make sure the query works for all positions
                         gen_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__id=s_slug)
                         gen_object.properties = {}
-                        gen_list.append(gen_object)                        
-                
+                        gen_list.append(gen_object)
+
                 # fetch all complete protein_segments
                 ss = ProteinSegment.objects.filter(slug__in=segment_list, partial=False)
 
@@ -493,7 +493,7 @@ class ProteinSimilaritySearchAlignment(views.APIView):
 
             # build the alignment data matrix
             a.build_alignment()
-            
+
             # calculate identity and similarity of each row compared to the reference
             a.calculate_similarity()
 
@@ -514,7 +514,7 @@ class ProteinSimilaritySearchAlignment(views.APIView):
                         a.proteins[num].similarity = 100
                     # order dict after custom list
                     keyorder = ["similarity","identity","AA"]
-                    ali_dict[k] = {"AA": row, "identity": int(str(a.proteins[num].identity).replace(" ","")), 
+                    ali_dict[k] = {"AA": row, "identity": int(str(a.proteins[num].identity).replace(" ","")),
                     "similarity": int(str(a.proteins[num].similarity).replace(" ",""))}
                     ali_dict[k] = OrderedDict(sorted(ali_dict[k].items(), key=lambda t: keyorder.index(t[0])))
                     num+=1
@@ -542,7 +542,7 @@ class ProteinAlignment(views.APIView):
             if segments is not None:
                 input_list = segments.split(",")
                 # fetch a list of all segments
-                protein_segments = ProteinSegment.objects.filter(partial=False).values_list('slug', flat=True) 
+                protein_segments = ProteinSegment.objects.filter(partial=False).values_list('slug', flat=True)
                 for s in input_list:
                     # add to segment list
                     if s in protein_segments:
@@ -551,8 +551,8 @@ class ProteinAlignment(views.APIView):
                     else:
                         gen_object = ResidueGenericNumberEquivalent.objects.get(label=s, scheme__id=s_slug)
                         gen_object.properties = {}
-                        gen_list.append(gen_object)                        
-                
+                        gen_list.append(gen_object)
+
                 # fetch all complete protein_segments
                 ss = ProteinSegment.objects.filter(slug__in=segment_list, partial=False)
 
@@ -577,7 +577,7 @@ class ProteinAlignment(views.APIView):
             # calculate statistics
             if statistics == True:
                 a.calculate_statistics()
-            
+
             # render the fasta template as string
             response = render_to_string('alignment/alignment_fasta.html', {'a': a}).split("\n")
 
@@ -590,7 +590,7 @@ class ProteinAlignment(views.APIView):
                 elif k:
                     ali_dict[k] = row
                     k = False
-            
+
             # render statistics for output
             if statistics == True:
                 feat = {}
@@ -618,11 +618,11 @@ class ProteinAlignment(views.APIView):
 
 class ProteinAlignmentStatistics(ProteinAlignment):
     """
-    Add a /statics at the end of an alignment in order to 
+    Add a /statics at the end of an alignment in order to
     receive an additional residue property statistics output e.g.:
     \n/alignment/protein/{proteins}/{segments}/statistics
     \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human
-    \n{segments} is a comma separated list of protein segment identifiers and/ or 
+    \n{segments} is a comma separated list of protein segment identifiers and/ or
     generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     """
 
@@ -631,7 +631,7 @@ class ProteinAlignmentPartial(ProteinAlignment):
     Get a partial sequence alignment of two or more proteins
     \n/alignment/protein/{proteins}/{segments}/
     \n{proteins} is a comma separated list of protein identifiers, e.g. adrb2_human,5ht2a_human
-    \n{segments} is a comma separated list of protein segment identifiers and/ or 
+    \n{segments} is a comma separated list of protein segment identifiers and/ or
     generic GPCRdb numbers, e.g. TM2,TM3,ECL2,4x50
     """
 
@@ -653,7 +653,7 @@ class StructureTemplate(views.APIView):
             ps = []
             for structure in structures:
                 ps.append(structure.protein_conformation.protein.parent)
-            
+
             if segments is not None:
                 input_list = segments.split(",")
                 ss = ProteinSegment.objects.filter(slug__in=input_list, partial=False)
@@ -674,7 +674,7 @@ class StructureTemplate(views.APIView):
 
             # calculate identity and similarity of each row compared to the reference
             a.calculate_similarity()
-            
+
             # return the entry_name of the closest template
             return Response(a.proteins[1].protein.entry_name)
 
@@ -692,7 +692,7 @@ class StructureAssignGenericNumbers(views.APIView):
     """
     Assign generic residue numbers (Ballesteros-Weinstein and GPCRdb schemes) to an uploaded pdb file.
     \n/structure/assign_generic_numbers\n
-    e.g. 
+    e.g.
     curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/services/structure/assign_generic_numbers
     """
     parser_classes = (FileUploadParser,)
@@ -714,9 +714,9 @@ class StructureAssignGenericNumbers(views.APIView):
 
 class StructureSequenceParser(views.APIView):
     """
-    Analyze the uploaded pdb structure listing auxiliary proteins, mutations, deletions and insertions. 
+    Analyze the uploaded pdb structure listing auxiliary proteins, mutations, deletions and insertions.
     \n/structure/structure/parse_pdb\n
-    e.g. 
+    e.g.
     curl -X POST -F "pdb_file=@myfile.pdb" http://gpcrdb.org/services/structure/parse_pdb
     """
     parser_classes = (FileUploadParser,)
@@ -784,13 +784,16 @@ class DrugList(views.APIView):
         for drug in drugs:
             drugname = drug.name
             drugtype = drug.drugtype
-            status = drug.status
+            clinical = drug.clinicalstatus
+            phasedate = drug.phasedate
+            if clinical != '-':
+                status = drug.status + ' (' + drug.clinicalstatus + ', ' + phasedate + ')'
+            else:
+                status = drug.status
             approval = drug.approval
             indication = drug.indication
+            moa = drug.moa
             novelty = drug.novelty
-            druglist.append({'name':drugname, 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty})
+            druglist.append({'name':drugname, 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'moa':moa, 'novelty': novelty})
 
         return Response(druglist)
-
-
-

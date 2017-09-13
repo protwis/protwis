@@ -28,7 +28,7 @@ class Command(BaseCommand):
             filenames = options['filename']
         else:
             filenames = False
-        
+
         try:
             self.purge_drugs()
             self.create_drug_data(filenames)
@@ -57,7 +57,19 @@ class Command(BaseCommand):
 
             for index, row in enumerate(data.iterrows()):
                 drugname = data[index:index+1]['Drug Name'].values[0]
+                trialname = data[index:index+1]['Trial name'].values[0]
+                drugalias_raw = data[index:index+1]['DrugAliases'].values[0]
+                drugalias = ['' if str(drugalias_raw) == 'nan' else ', '+str(drugalias_raw)]
+                # trialadd = ['' if str(trialname) == drugname else ' ('+str(trialname)+')']
+                drugname = drugname + drugalias[0]
+
                 entry_name = data[index:index+1]['EntryName'].values[0]
+
+                phase = data[index:index+1]['Phase'].values[0]
+                PhaseDate = data[index:index+1]['PhaseDate'].values[0]
+                ClinicalStatus = data[index:index+1]['ClinicalStatus'].values[0]
+                moa = data[index:index+1]['ModeOfAction'].values[0]
+                targetlevel = data[index:index+1]['TargetCategory'].values[0]
 
                 drugtype = data[index:index+1]['Drug Class'].values[0]
                 indication = data[index:index+1]['Indication(s)'].values[0]
@@ -65,21 +77,19 @@ class Command(BaseCommand):
                 approval = data[index:index+1]['Approval'].values[0]
                 status = data[index:index+1]['Status'].values[0]
 
+                references = data[index:index+1]['PMID'].values[0]
+
                 # fetch protein
                 try:
                     p = Protein.objects.get(entry_name=entry_name)
                 except Protein.DoesNotExist:
-                    self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
-                    print('error', entry_name)
+                    self.logger.error('Protein not found for entry_name {}'.format(entry_name))
                     continue
 
-                drug, created = Drugs.objects.get_or_create(name=drugname, drugtype=drugtype, indication=indication, novelty=novelty, approval=approval, status=status)
+                drug, created = Drugs.objects.get_or_create(name=drugname, synonym=', '.join(drugalias), drugtype=drugtype, indication=indication, novelty=novelty, approval=approval, phase=phase, phasedate=PhaseDate, clinicalstatus=ClinicalStatus, moa=moa, status=status, targetlevel=targetlevel,references=references)
                 drug.target.add(p)
                 drug.save()
 
                 # target_list = drug.target.all()
-                # print('drug',target_list)
-                # drug_list = p.drugs_set.all()
-                # print('drug_list',drug_list)
 
         self.logger.info('COMPLETED CREATING DRUGDATA')

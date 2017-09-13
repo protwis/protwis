@@ -173,8 +173,8 @@ class RotamerSuperpose(object):
         super_imposer = Superimposer()
         try:
             if self.TM_keys==None:
-                ref_backbone_atoms = [atom for atom in self.reference_atoms if atom.get_name() in ['N','CA','C','N']]
-                temp_backbone_atoms = [atom for atom in self.template_atoms if atom.get_name() in ['N','CA','C','N']]
+                ref_backbone_atoms = [atom for atom in self.reference_atoms if atom.get_name() in ['N','CA','C']]
+                temp_backbone_atoms = [atom for atom in self.template_atoms if atom.get_name() in ['N','CA','C']]
             else:
                 ref_backbone_atoms = [atom for atom in self.reference_atoms if atom.get_name() in ['N','CA','C'] and atom.get_parent().get_full_id()[-1][1] in self.TM_keys]
                 temp_backbone_atoms = [atom for atom in self.template_atoms if atom.get_name() in ['N','CA','C'] and atom.get_parent().get_full_id()[-1][1] in self.TM_keys]
@@ -212,11 +212,11 @@ class BulgeConstrictionSuperpose(object):
         '''
         super_imposer = Superimposer()
         ref_backbone_atoms = [atom for atom in self.reference_dict[self.reference_gns[0]] if atom.get_name() in 
-                                ['N','CA','C','O']] + [atom for atom in self.reference_dict[self.reference_gns[-1]] if 
-                                atom.get_name() in ['N','CA','C','O']]
+                                ['N','CA','C']] + [atom for atom in self.reference_dict[self.reference_gns[-1]] if 
+                                atom.get_name() in ['N','CA','C']]
         temp_backbone_atoms= [atom for atom in self.template_dict[self.template_gns[0]] if atom.get_name() in 
-                                ['N','CA','C','O']] + [atom for atom in self.template_dict[self.template_gns[-1]] if 
-                                atom.get_name() in ['N','CA','C','O']]
+                                ['N','CA','C']] + [atom for atom in self.template_dict[self.template_gns[-1]] if 
+                                atom.get_name() in ['N','CA','C']]
         all_template_atoms = []
         for gn, atoms in self.template_dict.items():
             all_template_atoms+=atoms
@@ -269,7 +269,7 @@ class LoopSuperpose(BulgeConstrictionSuperpose):
         ref_backbone_atoms, temp_backbone_atoms, all_template_atoms = [], [], []
         for gn, atoms in self.reference_dict.items():
             for atom in atoms:
-                if atom.get_name() in ['N','CA','C','O']:
+                if atom.get_name() in ['N','CA','C']:
                     ref_backbone_atoms.append(atom)
         res_count=0
         array_length = len(self.template_dict.keys())
@@ -283,7 +283,7 @@ class LoopSuperpose(BulgeConstrictionSuperpose):
         for gn, atoms in self.template_dict.items():
             res_count+=1
             for atom in atoms:
-                if (res_count<=edge1 or array_length-edge2<res_count) and atom.get_name() in ['N','CA','C','O']:
+                if (res_count<=edge1 or array_length-edge2<res_count) and atom.get_name() in ['N','CA','C']:
                     temp_backbone_atoms.append(atom)
                 all_template_atoms.append(atom)
         self.backbone_rmsd = self.calc_backbone_RMSD(ref_backbone_atoms, temp_backbone_atoms)
@@ -307,7 +307,7 @@ class OneSidedSuperpose(BulgeConstrictionSuperpose):
         ref_backbone_atoms, temp_backbone_atoms, all_template_atoms = [], [], []
         for gn, atoms in self.reference_dict.items():
             for atom in atoms:
-                if atom.get_name() in ['N','CA','C','O']:
+                if atom.get_name() in ['N','CA','C']:
                     ref_backbone_atoms.append(atom)
         res_count = 0
         if self.which_end==0:
@@ -318,7 +318,7 @@ class OneSidedSuperpose(BulgeConstrictionSuperpose):
             end = self.num_frame-1        
         for gn, atoms in self.template_dict.items():
             for atom in atoms:
-                if start<=res_count<=end and atom.get_name() in ['N','CA','C','O']:
+                if start<=res_count<=end and atom.get_name() in ['N','CA','C']:
                     temp_backbone_atoms.append(atom)
                 all_template_atoms.append(atom)
             res_count+=1
@@ -339,13 +339,13 @@ class ECL2MidSuperpose(BulgeConstrictionSuperpose):
         ref_backbone_atoms, temp_backbone_atoms, all_template_atoms = [], [], []
         for gn, atoms in self.reference_dict.items():
             for atom in atoms:
-                if atom.get_name() in ['N','CA','C','O']:
+                if atom.get_name() in ['N','CA','C']:
                     ref_backbone_atoms.append(atom)
         res_count=0
         for gn, atoms in self.template_dict.items():
             res_count+=1
             for atom in atoms:
-                if res_count<4 and atom.get_name() in ['N','CA','C','O']:
+                if res_count<4 and atom.get_name() in ['N','CA','C']:
                     temp_backbone_atoms.append(atom)
                 all_template_atoms.append(atom)
         self.backbone_rmsd = self.calc_backbone_RMSD(ref_backbone_atoms, temp_backbone_atoms)

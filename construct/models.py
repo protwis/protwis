@@ -166,7 +166,7 @@ class ConstructMutation(models.Model):
             # res_cons = Residue.objects.get(protein_conformation__protein=construct, sequence_number=seq_no)
             res_wt = Residue.objects.get(protein_conformation__protein=self.construct.structure.protein_conformation.protein.parent, sequence_number=seq_no)
             if res_wt.amino_acid != self.wild_type_amino_acid:
-                print('aa dont match',construct,seq_no,"annotated wt:", self.wild_type_amino_acid, "DB wt:",res_wt.amino_acid, "Annotated Mut",self.mutated_amino_acid)
+                print('aa dont match',construct.name,seq_no,"annotated wt:", self.wild_type_amino_acid, "DB wt:",res_wt.amino_acid, "Annotated Mut",self.mutated_amino_acid)
             #     print('records wt',res_wt.amino_acid,'construct res',res_cons.amino_acid)
             return res_wt
         except Residue.DoesNotExist:

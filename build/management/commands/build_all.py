@@ -19,6 +19,11 @@ class Command(BaseCommand):
                             dest='test',
                             default=False,
                             help='Include only a subset of data for testing')
+        parser.add_argument('--hommod',
+                            action='store_true',
+                            dest='hommod',
+                            default=False,
+                            help='Include build of homology models')
 
     def handle(self, *args, **options):
         if options['test']:
@@ -30,16 +35,15 @@ class Command(BaseCommand):
             ['build_blast_database'],
             ['build_other_proteins', {'constructs_only': options['test'] ,'proc': options['proc']}], # build only constructs in test mode
             ['build_annotation', {'proc': options['proc']}],
-            # OLD['build_human_residues', {'proc': options['proc']}],
-            # OLD['build_other_residues', {'proc': options['proc']}],
             ['build_blast_database'],
             ['build_links'],
-            ['build_construct_proteins'], #, {'proc': options['proc']}
+            ['build_construct_proteins'],
             ['build_structures', {'proc': options['proc']}],
-            ['build_construct_data'], #, {'proc': options['proc']}
+            ['build_construct_data'],
+            ['build_ligands_from_cache', {'proc': options['proc']}],
+            ['build_ligand_assays', {'proc': options['proc']}],
             ['build_mutant_data', {'proc': options['proc']}],
-            # OLD ['find_protein_templates', {'proc': options['proc']}],
-            # OLD['update_alignments', {'proc': options['proc']}],
+            ['build_crystal_interactions', {'proc': options['proc']}],
             ['build_protein_sets'],
             ['build_consensus_sequences', {'proc': options['proc']}],
             ['build_g_proteins'],
@@ -49,11 +53,16 @@ class Command(BaseCommand):
             ['build_release_notes'],
         ]
 
+        if options['hommod']:
+            commands = commands+[['build_homology_models', ['--update', '-z'], {'proc': options['proc'], 'test_run': options['test']}]]
+
         for c in commands:
             print('{} Running {}'.format(
                 datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), c[0]))
-            if len(c) > 1:
+            if len(c) == 2:
                 call_command(c[0], **c[1])
+            elif len(c) == 3:
+                call_command(c[0], *c[1], **c[2])
             else:
                 call_command(c[0])
 

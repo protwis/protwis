@@ -7,7 +7,7 @@ from django.views.decorators.cache import cache_page
 
 from protein.models import Protein, ProteinConformation, ProteinAlias, ProteinFamily, Gene,ProteinGProteinPair
 from residue.models import Residue
-from structure.models import Structure
+from structure.models import Structure, StructureModel
 from mutation.models import MutationExperiment
 from common.selection import Selection
 from common.views import AbsBrowseSelection
@@ -97,8 +97,10 @@ def detail(request, slug):
     if r_buffer:
         r_chunks.append(r_buffer)
 
+    homology_models = StructureModel.objects.filter(protein=p)
+
     context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
-        'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations, 'protein_links': protein_links}
+        'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations, 'protein_links': protein_links,'homology_models': homology_models}
 
     return render(request, 'protein/protein_detail.html', context)
 
