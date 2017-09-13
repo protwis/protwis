@@ -7,11 +7,11 @@
 font-size: 10px;
 }
 body {
-  background-color:#ffffff; 
+  background-color:#ffffff;
 }
 #targetdistribution text {
   fill: #000;
-  font: 14px open sans;
+  font: 14px Arial;
 }
 #targetdistribution {
   background-color: #fff;
@@ -21,12 +21,12 @@ body {
 {% endblock %}
 {% block content %}
 
-<h1 style="font-family: open sans">GPCRs as drug targets:</h1>
+<h1 style="font-family: Arial">GPCRs as drug targets:</h1>
 <div>
   <svg id="targetdistribution"></svg>
 </div>
 <br>
-<h2 align="center" style="font-family: open sans;position: relative; bottom:-50px;">Disease associations of GPCRs</h2>
+<!-- <h2 align="center" style="font-family: Arial;position: relative; bottom:-50px;">Disease associations of GPCRs</h2>
 <div class="row" style="position: relative; left: 65%; bottom:-50px;">
   <div class="col-xs-12">
 <select onchange="updateBubbles(this.value)" multiple class="form-control input-lg" size="3">
@@ -36,7 +36,7 @@ body {
 </select>
   </div>
 </div>
-<div id="bubbles"></div>
+<div id="bubbles"></div> -->
 
 <div class="row" style="position: relative; left: 75%; bottom:-100px;">
   <div class="col-xs-12">
@@ -47,6 +47,7 @@ body {
   </div>
 </div>
 <div id="pie_classes" onload="updatetypes('approved')"></div>
+
 
 <div class="row" style="position: relative; left: 75%; bottom:-100px;">
   <div class="col-xs-12">
@@ -82,6 +83,16 @@ body {
 
 <div class="row" style="position: relative; left: 75%; bottom:-100px;">
   <div class="col-xs-12">
+<select onchange="updateMOA(this.value)" multiple class="form-control input-lg" size="2">
+  <option value="trials">In clinical trials</option>
+  <option selected="selected" value="approved">Approved</option>
+</select>
+  </div>
+</div>
+<div id="pie_moas"></div>
+
+<div class="row" style="position: relative; left: 75%; bottom:-100px;">
+  <div class="col-xs-12">
 <select onchange="updatediseases(this.value)" multiple class="form-control input-lg" size="2">
   <option value="trials">In clinical trials</option>
   <option selected="selected" value="approved">Approved</option>
@@ -90,10 +101,21 @@ body {
 </div>
 <div id="pie_disease"></div>
 
+<div class="row" style="position: relative; left: 75%; bottom:-100px;">
+  <div class="col-xs-12">
+<select onchange="updatePhases(this.value)" multiple class="form-control input-lg" size="2">
+  <option selected="selected" value="active">Active</option>
+  <option value="inactive">Inactive</option>
+</select>
+  </div>
+</div>
+<div id="pie_phases"></div>
+
 <br>
 <br>
  <div id="unique" class="chart_container" style="display: none;">
         <div id="unique_year"><svg id="unique_cryst" style="width:1050;height:500px;"></svg></div>
+<center>Data only shown for drugs with an annotated approval year</center>
 <br>
 <br>
 <br>
@@ -109,8 +131,8 @@ body {
 <script>
 console.log({{in_trial}})
 var dataset =  [{text:"Established", value: {{drugtargets_approved|length}}},
-                {text:"In trials", value: {{in_trial}}},
-                {text:"Not targeted", value: {{not_targeted}}}];
+                {text:"Reached clinical trials", value: {{in_trial}}},
+                {text:"Non-targeted", value: {{not_targeted}}}];
 // data.sort(function(a, b){return a-b});
 //data.sort(d3.descending());
 var width = "90%",
@@ -128,7 +150,7 @@ var chart_width = parseInt(d3.select("#targetdistribution").style("width"));
 
 var color = d3.scale.ordinal()
   .domain(["New York", "San Francisco", "Austin"])
-  .range(["#de5d5e", "#83be86" , "#c4c4c4"]);
+  .range(["#d62728", "#43A047" , "#c4c4c4"]);
 
 var bar = chart.selectAll("g")
   .data(dataset)
@@ -172,20 +194,19 @@ bar.append("text")
     var prev_perc = perc_so_far;
     var this_perc = 100*(d.value/total_time);
     perc_so_far = perc_so_far + this_perc;
-    return prev_perc + this_perc/4 + "%";
+    return prev_perc + this_perc/8 + "%";
   })
   .attr("y", 11)
   .attr("dy", "1.35em")
   // .attr("text-anchor", "end")
   .data(dataset)
   .text(function(d) { return d.text; });
-    
+
 d3.select(window).on('resize', resize);
 
 function resize () {
   var width = parseInt(d3.select("#targetdistribution").style("width"));
 }
-
 </script>
 
 <script>
@@ -194,9 +215,9 @@ function drawBubbleChart(root){
     var diameter = 960,
         format = d3.format(",d");
 
-    var color = d3.scale.category20();
-    
-    // Create a bubble layout based on the tree of objects. 
+    var color = d3.scale.category10();
+
+    // Create a bubble layout based on the tree of objects.
     // This adds properties x,y,r to each of our leaf objects
     // indicating where to draw them (x,y), and how big to draw them (r).
     var bubble = d3.layout.pack().sort(null).size([960,960]).padding(1.5);
@@ -207,7 +228,7 @@ function drawBubbleChart(root){
                 .attr("height", 960)
                 .attr("align","center")
                 .attr("class","bubble");
-    
+
     var tooltip = d3.select("#bubbles")
       .append("div")
       .style("position", "absolute")
@@ -239,7 +260,7 @@ function drawBubbleChart(root){
           return tooltip.style("top", (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");
       })
        .on("mouseout", function(){return tooltip.style("visibility", "hidden");});;
-  
+
   function wrap(text, width) {
         text.each(function () {
             var text = d3.select(this),
@@ -266,13 +287,14 @@ function drawBubbleChart(root){
 
    node.append("text")
        .attr("dy", ".35em")
-       .attr("y", -15)  
+       .attr("y", -15)
        .style("text-anchor", "middle")
-       .style({
-        "fill":"black", 
-        "font-family":"Helvetica Neue, Helvetica, Arial, san-serif",
-        "font-size": "13px"
-        })
+       .style("font-family", "Palatino")
+       .style("font", function(d) {
+          if (d.value <= 1.5) {return "13px sans-serif"}
+          else if (d.value <= 3) {return "15px sans-serif"}
+          else {return "17px sans-serif"}
+          })
        .text(function(d) {
               return d.name;
         }).call(wrap,0);
@@ -285,7 +307,7 @@ updateBubbles('not_targeted')
 function updateBubbles(request) {
 
   if (request == 'not_targeted') {
-    dataframe = [['autoimmune disease', 4.9, 0], ['relapsing-remitting multiple sclerosis', 4.0, 3], ['multiple sclerosis', 4.0, 4], ['inflammatory bowel disease', 3.72, 6], ['chronic progressive multiple sclerosis', 3.58, 7], ['Retinal dystrophy', 3.0, 8], ['chronic inflammatory demyelinating polyradiculoneuropathy', 2.8, 9], ['Normosmic congenital hypogonadotropic hypogonadism', 2.0, 12], ['Blue cone monochromatism', 2.0, 16], ['red-green color blindness', 2.0, 15], ['Progressive cone dystrophy', 2.0, 13], ['Congenital stationary night blindness', 2.0, 14], ['Kallmann syndrome', 2.0, 18], ['heart failure', 1.87, 19], ['arthritis', 1.63, 20], ['rheumatoid arthritis', 1.63, 21], ['ulcerative colitis', 1.2, 22], ['Li-Fraumeni syndrome', 1.11, 23], ['Usher syndrome', 1.0, 31], ['asthma', 1.0, 26], ['Lethal congenital contracture syndrome', 1.0, 24], ['age-related macular degeneration', 1.0, 30], ['red color blindness', 1.0, 32], ['Bilateral polymicrogyria', 1.0, 29], ['exudative vitreoretinopathy', 1.0, 34], ['Cone rod dystrophy', 1.0, 33], ['Retinitis pigmentosa', 1.0, 27], ['ciliopathy', 1.0, 28]];
+    dataframe = [['relapsing-remitting multiple sclerosis', 4.0, 0], ['inflammatory bowel disease', 3.72, 1], ['chronic progressive multiple sclerosis', 3.58, 0], ['Retinal dystrophy', 3.0, 2], ['chronic inflammatory demyelinating polyradiculoneuropathy', 2.8, 3], ['Normosmic congenital hypogonadotropic hypogonadism', 2.0, 4], ['Progressive cone dystrophy', 2.0, 2], ['Congenital stationary night blindness', 2.0, 2], ['red-green color blindness', 2.0, 2], ['Blue cone monochromatism', 2.0, 2], ['Kallmann syndrome', 2.0, 5], ['heart failure', 1.87, 6], ['arthritis', 1.63, 7], ['rheumatoid arthritis', 1.63, 7], ['ulcerative colitis', 1.2, 1], ['Li-Fraumeni syndrome', 1.11, 5], ['Lethal congenital contracture syndrome', 1.0, 5], ['asthma', 1.0, 8], ['Retinitis pigmentosa', 1.0, 2], ['ciliopathy', 1.0, 5], ['Bilateral polymicrogyria', 1.0, 5], ['age-related macular degeneration', 1.0, 2], ['Usher syndrome', 1.0, 3], ['red color blindness', 1.0, 2], ['Cone rod dystrophy', 1.0, 2], ['Familial exudative vitreoretinopathy', 1.0, 11]];
   }
   else if (request == 'not_established') {
     dataframe = [['asthma', 1.96, 10], ['Familial melanoma', 1.0, 30], ['Genetic obesity', 1.0, 23], ['body mass index', 1.55, 15], ['autoimmune disease', 2.42, 4], ['Congenital hypogonadotropic hypogonadism', 1.0, 34], ['obesity', 2.79, 13], ['Congenital stationary night blindness', 1.0, 26], ['schizophrenia', 1.94, 12], ['Autosomal recessive cerebellar ataxia', 1.0, 24], ['Normosmic congenital hypogonadotropic hypogonadism', 1.0, 21], ['Autosomal recessive congenital cerebellar ataxia',  1.0,  20], ['breast carcinoma', 1.29, 18], ['typeI diabetes mellitus', 1.52, 17], ['Woolly hair', 1.0, 28], ['diabetes mellitus', 1.52, 16], ['inflammatory bowel disease', 1.99, 8], ['mental or behavioural disorder', 1.95, 11], ['Growth hormone excess', 1.0, 19], ['Retinal dystrophy', 1.0, 29], ["Crohn's disease", 1.0, 33], ['body height', 1.98, 9], ['liver disease', 1.0, 32], ['sexual dysfunction', 2.7, 3]];
@@ -304,7 +326,7 @@ function updaterbubbles(dataframe) {
 
   $("#bubbles").html("");
 
-  // Build a "tree" from each of the data rows 
+  // Build a "tree" from each of the data rows
   // Each leaf in the tree has a name, value and group
   var root =  {};
     root.name = "Interactions";
@@ -315,7 +337,7 @@ function updaterbubbles(dataframe) {
       item.value = Number(dataframe[i][1]);
       item.group = dataframe[i][2];
       root.children.push(item);
-    }    
+    }
     drawBubbleChart(root);
 }
 
@@ -379,8 +401,8 @@ function updaterbubbles(dataframe) {
     //         $(this).css("fill", '');
     //         $('#'+$(this).attr('id')+".container").css("display", 'none');
     //     });
-    // };   
- 
+    // };
+
     $(document).ready(function () {
         $('#unique.chart_type').css("fill", '#000000');
         $('#unique.chart_container').css("display", '');
@@ -397,7 +419,7 @@ function updateTypes(request) {
 
   var series = {{drugtypes_approved|safe}}
   text = "Approved and distinct drugs"
-  
+
   if (request == 'trials') {
     text = "Clinical trials agents"
     series = {{drugtypes_trials|safe}}
@@ -410,10 +432,10 @@ function updateTypes(request) {
     text = "Agents targeting not established targets"
     series = {{drugtypes_not_estab|safe}}
   }
-  updatertypes(series,text)
+  updatermoas(series,text)
 }
 
-function updatertypes(series,text) {
+function updatermoas(series,text) {
 
   $("#pie_types").html("");
 
@@ -422,13 +444,13 @@ function updatertypes(series,text) {
       "title": {
         "text": "Drugtypes",
         "fontSize": 32,
-        "font": "open sans"
+        "font": "Arial"
       },
       "subtitle": {
         "text": " ",
         "color": "#999999",
-        "fontSize": 12,
-        "font": "open sans"
+        "fontSize": 18,
+        "font": "Arial"
       },
       "titleSubtitlePadding": 25
     },
@@ -436,7 +458,7 @@ function updatertypes(series,text) {
       "text": text,
       "color": "#999999",
       "fontSize": 10,
-      "font": "open sans",
+      "font": "Arial",
       "location": "center"
     },
     "size": {
@@ -452,7 +474,7 @@ function updatertypes(series,text) {
         "value": 0.2
       },
       "content": series
-      // {{drugtypes|safe}} 
+      // {{drugtypes|safe}}
     },
     "labels": {
       "outer": {
@@ -462,15 +484,15 @@ function updatertypes(series,text) {
         "hideWhenLessThanPercentage": 3
       },
       "mainLabel": {
-        "fontSize": 12
+        "fontSize": 17
       },
       "percentage": {
         "color": "#ffffff",
-        "fontSize": 12
+        "fontSize": 18
       },
       "value": {
         "color": "#adadad",
-        "fontSize": 12
+        "fontSize": 18
       },
       "lines": {
         "enabled": true,
@@ -488,7 +510,7 @@ function updatertypes(series,text) {
         "fadeInSpeed": 0,
         "backgroundOpacity": 0.71,
         "borderRadius": 10,
-        "fontSize": 15
+        "fontSize": 18
       }
     },
     "effects": {
@@ -508,38 +530,37 @@ function updatertypes(series,text) {
       }
     }
   });
-} 
-
-updateClasses('approved')
-function updateClasses(request) {
-  var series = {{drugClasses_approved|safe}}
-  text = "Approved and distinct drugs"
-  
-  if (request == 'trials') {
-    text = "Clinical trials agents"
-    series = {{drugClasses_trials|safe}}
-    updaterclasses(series,text)
-  }
-  updaterclasses(series,text)
-
 }
 
-function updaterclasses(series,text) {
+updateMOA('approved')
+function updateMOA(request) {
 
-  $("#pie_classes").html(""); 
+  var series = {{moas_approved|safe}}
+  text = "Approved and distinct drugs"
 
-  var pie = new d3pie("pie_classes", {
+  if (request == 'trials') {
+    text = "Clinical trials agents"
+    series = {{moas_trials|safe}}
+  }
+  updatertypes(series,text)
+}
+
+function updatertypes(series,text) {
+
+  $("#pie_moas").html("");
+
+  var pie = new d3pie("pie_moas", {
     "header": {
       "title": {
-        "text": "Class targets",
+        "text": "Mode of Action",
         "fontSize": 32,
-        "font": "open sans"
+        "font": "Arial"
       },
       "subtitle": {
         "text": " ",
         "color": "#999999",
-        "fontSize": 12,
-        "font": "open sans"
+        "fontSize": 18,
+        "font": "Arial"
       },
       "titleSubtitlePadding": 25
     },
@@ -547,7 +568,116 @@ function updaterclasses(series,text) {
       "text": text,
       "color": "#999999",
       "fontSize": 10,
-      "font": "open sans",
+      "font": "Arial",
+      "location": "center"
+    },
+    "size": {
+      "canvasHeight": 600,
+      "canvasWidth": 1100,
+      "pieInnerRadius": "50%",
+      "pieOuterRadius": "100%"
+    },
+    "data": {
+      "sortOrder": "value-asc",
+      "smallSegmentGrouping": {
+        "enabled": true,
+        "value": 0.2
+      },
+      "content": series
+      // {{drugtypes|safe}}
+    },
+    "labels": {
+      "outer": {
+        "pieDistance": 21
+      },
+      "inner": {
+        "hideWhenLessThanPercentage": 3
+      },
+      "mainLabel": {
+        "fontSize": 17
+      },
+      "percentage": {
+        "color": "#ffffff",
+        "fontSize": 18
+      },
+      "value": {
+        "color": "#adadad",
+        "fontSize": 18
+      },
+      "lines": {
+        "enabled": true,
+        "style": "straight"
+      },
+      "truncation": {
+        "enabled": true
+      }
+    },
+    "tooltips": {
+      "enabled": true,
+      "type": "placeholder",
+      "string": "{label}: {value}, {percentage}%",
+      "styles": {
+        "fadeInSpeed": 0,
+        "backgroundOpacity": 0.71,
+        "borderRadius": 10,
+        "fontSize": 18
+      }
+    },
+    "effects": {
+      "load": {
+        "speed": 800
+      },
+      "pullOutSegmentOnClick": {
+        "effect": "linear",
+        "speed": 400,
+        "size": 14
+      }
+    },
+    "misc": {
+      "gradient": {
+        "enabled": true,
+        "percentage": 65
+      }
+    }
+  });
+}
+
+updatePhases('active')
+function updatePhases(request) {
+  var series = {{phase_trials|safe}}
+  text = "Active agents (ongoing, recruiting, planned or completed trials)"
+
+  if (request == 'inactive') {
+    text = "Inactive agents (terminated, discontinued, or withdrawn trials)"
+    series = {{phase_trials_inactive|safe}}
+    updaterphases(series,text)
+  }
+  updaterphases(series,text)
+}
+
+function updaterphases(series,text) {
+
+  $("#pie_phases").html("");
+  var pie = new d3pie("pie_phases", {
+    "header": {
+      "title": {
+        "text": "Phase distribution of clinical agents",
+        "fontSize": 32,
+        "font": "Arial"
+      },
+      "subtitle": {
+        "text": " ",
+        "color": "#999999",
+        "fontSize": 18,
+        "font": "Arial"
+      },
+      "titleSubtitlePadding": 25
+    },
+    "footer": {
+      "text": text,
+      "color": "#999999",
+      "fontSize": 10,
+      "font": "Arial",
       "location": "center"
     },
     "size": {
@@ -572,15 +702,15 @@ function updaterclasses(series,text) {
         "hideWhenLessThanPercentage": 3
       },
       "mainLabel": {
-        "fontSize": 12
+        "fontSize": 17
       },
       "percentage": {
         "color": "#ffffff",
-        "fontSize": 12
+        "fontSize": 18
       },
       "value": {
         "color": "#adadad",
-        "fontSize": 12
+        "fontSize": 18
       },
       "lines": {
         "enabled": true,
@@ -598,7 +728,116 @@ function updaterclasses(series,text) {
         "fadeInSpeed": 0,
         "backgroundOpacity": 0.71,
         "borderRadius": 10,
-        "fontSize": 15
+        "fontSize": 18
+      }
+    },
+    "effects": {
+      "load": {
+        "speed": 800
+      },
+      "pullOutSegmentOnClick": {
+        "effect": "linear",
+        "speed": 400,
+        "size": 14
+      }
+    },
+    "misc": {
+      "gradient": {
+        "enabled": true,
+        "percentage": 65
+      }
+    }
+  });
+}
+
+updateClasses('approved')
+function updateClasses(request) {
+  var series = {{drugClasses_approved|safe}}
+  text = "Approved and distinct drugs"
+
+  if (request == 'trials') {
+    text = "Clinical trials agents"
+    series = {{drugClasses_trials|safe}}
+    updaterclasses(series,text)
+  }
+  updaterclasses(series,text)
+}
+
+function updaterclasses(series,text) {
+
+  $("#pie_classes").html("");
+
+  var pie = new d3pie("pie_classes", {
+    "header": {
+      "title": {
+        "text": "Class targets",
+        "fontSize": 32,
+        "font": "Arial"
+      },
+      "subtitle": {
+        "text": " ",
+        "color": "#999999",
+        "fontSize": 18,
+        "font": "Arial"
+      },
+      "titleSubtitlePadding": 25
+    },
+    "footer": {
+      "text": text,
+      "color": "#999999",
+      "fontSize": 10,
+      "font": "Arial",
+      "location": "center"
+    },
+    "size": {
+      "canvasHeight": 600,
+      "canvasWidth": 1100,
+      "pieInnerRadius": "50%",
+      "pieOuterRadius": "100%"
+    },
+    "data": {
+      "sortOrder": "value-desc",
+      "smallSegmentGrouping": {
+        "enabled": false,
+        "value": 1
+      },
+      "content": series
+    },
+    "labels": {
+      "outer": {
+        "pieDistance": 21
+      },
+      "inner": {
+        "hideWhenLessThanPercentage": 3
+      },
+      "mainLabel": {
+        "fontSize": 17
+      },
+      "percentage": {
+        "color": "#ffffff",
+        "fontSize": 18
+      },
+      "value": {
+        "color": "#adadad",
+        "fontSize": 18
+      },
+      "lines": {
+        "enabled": true,
+        "style": "straight"
+      },
+      "truncation": {
+        "enabled": true
+      }
+    },
+    "tooltips": {
+      "enabled": true,
+      "type": "placeholder",
+      "string": "{label}: {value}, {percentage}%",
+      "styles": {
+        "fadeInSpeed": 0,
+        "backgroundOpacity": 0.71,
+        "borderRadius": 10,
+        "fontSize": 18
       }
     },
     "effects": {
@@ -625,7 +864,7 @@ function updatefamilies(request) {
 
   var series = {{drugfamilies_approved|safe}}
   text = "Approved and distinct drugs"
-  
+
   if (request == 'trials') {
     text = "Clinical trials agents"
     series = {{drugfamilies_trials|safe}}
@@ -637,20 +876,20 @@ function updatefamilies(request) {
 
 function updaterfamilies(series,text) {
 
-  $("#pie_families").html(""); 
+  $("#pie_families").html("");
 
   var pie = new d3pie("pie_families", {
     "header": {
       "title": {
         "text": "Receptor family targets",
         "fontSize": 32,
-        "font": "open sans"
+        "font": "Arial"
       },
       "subtitle": {
         "text": " ",
         "color": "#999999",
-        "fontSize": 12,
-        "font": "open sans"
+        "fontSize": 18,
+        "font": "Arial"
       },
       "titleSubtitlePadding": 25
     },
@@ -658,7 +897,7 @@ function updaterfamilies(series,text) {
       "text": text,
       "color": "#999999",
       "fontSize": 10,
-      "font": "open sans",
+      "font": "Arial",
       "location": "center"
     },
     "size": {
@@ -683,15 +922,15 @@ function updaterfamilies(series,text) {
         "hideWhenLessThanPercentage": 3
       },
       "mainLabel": {
-        "fontSize": 12
+        "fontSize": 17
       },
       "percentage": {
         "color": "#ffffff",
-        "fontSize": 12
+        "fontSize": 18
       },
       "value": {
         "color": "#ffffff",
-        "fontSize": 12
+        "fontSize": 18
       },
       "lines": {
         "enabled": true,
@@ -709,7 +948,7 @@ function updaterfamilies(series,text) {
         "fadeInSpeed": 0,
         "backgroundOpacity": 0.71,
         "borderRadius": 10,
-        "fontSize": 15
+        "fontSize": 18
       }
     },
     "effects": {
@@ -736,7 +975,7 @@ function updatediseases(request) {
 
   var series = {{drugindications_approved|safe}}
   text = "Approved and distinct drugs"
-  
+
   if (request == 'trials') {
     var text = "Clinical trials agents"
     var series = {{drugindications_trials|safe}}
@@ -754,13 +993,13 @@ var pie = new d3pie("pie_disease", {
     "title": {
       "text": "Disease indications",
       "fontSize": 32,
-      "font": "open sans"
+      "font": "Arial"
     },
     "subtitle": {
       "text": " ",
       "color": "#999999",
-      "fontSize": 12,
-      "font": "open sans"
+      "fontSize": 18,
+      "font": "Arial"
     },
     "titleSubtitlePadding": 25
   },
@@ -768,7 +1007,7 @@ var pie = new d3pie("pie_disease", {
     "text": text,
     "color": "#999999",
     "fontSize": 10,
-    "font": "open sans",
+    "font": "Arial",
     "location": "center"
   },
   "size": {
@@ -793,15 +1032,15 @@ var pie = new d3pie("pie_disease", {
       "hideWhenLessThanPercentage": 3
     },
     "mainLabel": {
-      "fontSize": 12
+      "fontSize": 17
     },
     "percentage": {
       "color": "#ffffff",
-      "fontSize": 12
+      "fontSize": 18
     },
     "value": {
       "color": "#adadad",
-      "fontSize": 12
+      "fontSize": 18
     },
     "lines": {
       "enabled": true,
@@ -819,7 +1058,7 @@ var pie = new d3pie("pie_disease", {
       "fadeInSpeed": 0,
       "backgroundOpacity": 0.71,
       "borderRadius": 10,
-      "fontSize": 15
+      "fontSize": 18
     }
   },
   "effects": {
@@ -846,7 +1085,7 @@ function updatetargets(request) {
 
   var series = {{drugtargets_approved|safe}}
   text = "Approved and distinct drugs"
-  
+
   if (request == 'trials') {
     var text = "Clinical trials agents"
     var series = {{drugtargets_trials|safe}}
@@ -864,13 +1103,13 @@ var pie = new d3pie("pie_targets", {
     "title": {
       "text": "Receptor targets",
       "fontSize": 32,
-      "font": "open sans"
+      "font": "Arial"
     },
     "subtitle": {
       "text": " ",
       "color": "#999999",
-      "fontSize": 12,
-      "font": "open sans"
+      "fontSize": 18,
+      "font": "Arial"
     },
     "titleSubtitlePadding": 25
   },
@@ -878,7 +1117,7 @@ var pie = new d3pie("pie_targets", {
     "text": text,
     "color": "#999999",
     "fontSize": 10,
-    "font": "open sans",
+    "font": "Arial",
     "location": "center"
   },
   "size": {
@@ -903,15 +1142,15 @@ var pie = new d3pie("pie_targets", {
       "hideWhenLessThanPercentage": 3
     },
     "mainLabel": {
-      "fontSize": 12
+      "fontSize": 17
     },
     "percentage": {
       "color": "#ffffff",
-      "fontSize": 12
+      "fontSize": 18
     },
     "value": {
       "color": "#adadad",
-      "fontSize": 12
+      "fontSize": 18
     },
     "lines": {
       "enabled": true,
@@ -929,7 +1168,7 @@ var pie = new d3pie("pie_targets", {
       "fadeInSpeed": 0,
       "backgroundOpacity": 0.71,
       "borderRadius": 10,
-      "fontSize": 15
+      "fontSize": 18
     }
   },
   "effects": {

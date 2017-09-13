@@ -90,13 +90,16 @@ def fetch_pdb_info(pdbname,protein):
     for line in pdb_file.split('\n'):
         if line.startswith('DBREF'):
             line = line.split()
-            uniprot = line[7]
-            if uniprot == d['construct_crystal']['uniprot'].upper():
-                uniprot_code = line[6]
+            if len(line)>7:
+                uniprot = line[7]
+                if uniprot == d['construct_crystal']['uniprot'].upper():
+                    uniprot_code = line[6]
 
     for line in pdb_file.split('\n'):
         if line.startswith('DBREF'):
             line = line.split()
+            if len(line)<8:
+                continue
             uniprot = line[7]
             start = line[8]
             end = line[9]

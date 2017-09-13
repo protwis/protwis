@@ -9,7 +9,7 @@ from django.views.decorators.cache import cache_page
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment
-from structure.models import Structure
+from structure.models import Structure, StructureModel, StructureModelStatsRotamer, StructureModelSeqSim
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
@@ -46,6 +46,8 @@ from smtplib import SMTP
 import smtplib
 import sys
 
+class_tree = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T'}
+
 class StructureBrowser(TemplateView):
     """
     Fetching Structure data for browser
@@ -72,8 +74,132 @@ class StructureBrowser(TemplateView):
 
         return context
 
-def ServeHomologyModels(request):
-    return render(request,"homology_models.html")
+# def ServeHomologyModels(request):
+#     return render(request,"homology_models.html")
+
+class ServeHomologyModels(TemplateView):
+
+    template_name = "homology_models.html"
+    def get_context_data(self, **kwargs):
+        context = super(ServeHomologyModels, self).get_context_data(**kwargs)
+        try:
+            context['structure_model'] = StructureModel.objects.all().select_related(
+                "protein__family",
+                "state",
+                "protein__family__parent__parent__parent",
+                "protein__species",
+                "main_template__protein_conformation__protein__parent__family",
+                "main_template__pdb_code")
+        except StructureModel.DoesNotExist as e:
+            pass
+
+        return context
+
+
+def HomologyModelDetails(request, modelname, state):
+    """
+    Show homology models details
+    """
+    modelname = modelname
+    color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","maroon",]
+
+    model = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
+    rotamers = StructureModelStatsRotamer.objects.filter(homology_model=model).prefetch_related("homology_model", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
+    backbone_templates, rotamer_templates = [],[]
+    segments, segments_formatted, segments_out = {},{},{}
+    bb_temps, r_temps = OrderedDict(), OrderedDict()
+    bb_main, bb_alt, bb_none = 0,0,0
+    sc_main, sc_alt, sc_none = 0,0,0
+
+    for r in rotamers:
+        if r.backbone_template not in backbone_templates and r.backbone_template!=None:
+            backbone_templates.append(r.backbone_template)
+            if r.backbone_template.protein_conformation.protein.parent not in bb_temps:
+                bb_temps[r.backbone_template.protein_conformation.protein.parent] = [r.backbone_template]
+            else:
+                bb_temps[r.backbone_template.protein_conformation.protein.parent].append(r.backbone_template)
+        if r.rotamer_template not in rotamer_templates and r.rotamer_template!=None:
+            rotamer_templates.append(r.rotamer_template)
+            if r.rotamer_template.protein_conformation.protein.parent not in r_temps:
+                r_temps[r.rotamer_template.protein_conformation.protein.parent] = [r.rotamer_template]
+            else:
+                r_temps[r.rotamer_template.protein_conformation.protein.parent].append(r.rotamer_template)
+        if r.backbone_template not in segments:
+            segments[r.backbone_template] = [r.residue.sequence_number]
+        else:
+            segments[r.backbone_template].append(r.residue.sequence_number)
+        if r.backbone_template==model.main_template:
+            bb_main+=1
+        elif r.backbone_template!=None:
+            bb_alt+=1
+        elif r.backbone_template==None:
+            bb_none+=1
+        if r.rotamer_template==model.main_template:
+            sc_main+=1
+        elif r.rotamer_template!=None:
+            sc_alt+=1
+        elif r.rotamer_template==None:
+            sc_none+=1
+    for s, nums in segments.items():
+        for i, num in enumerate(nums):
+            if i==0:
+                segments_formatted[s] = [[num]]
+            elif nums[i-1]!=num-1:
+                if segments_formatted[s][-1][0]==nums[i-1]:
+                    segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], nums[i-1])
+                else:
+                    segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], nums[i-1])
+                segments_formatted[s].append([num])
+                if i+1==len(segments[s]):
+                    segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], segments_formatted[s][-1][0])
+            elif i+1==len(segments[s]):
+                segments_formatted[s][-1] = '{}-{}'.format(segments_formatted[s][-1][0], nums[i-1]+1)
+        if len(nums)==1:
+            segments_formatted[s] = ['{}-{}'.format(segments_formatted[s][0][0], segments_formatted[s][0][0])]
+
+    colors = OrderedDict([(model.main_template,"darkorchid"), (None,"white")])
+    i = 0
+    for s, nums in segments_formatted.items():
+        if len(nums)>1:
+            text = ''
+            for n in nums:
+                text+='{} or '.format(n)
+            segments_formatted[s] = text[:-4]
+        else:
+            segments_formatted[s] = segments_formatted[s][0]
+        if s==model.main_template:
+            pass
+        elif s==None:
+            segments_out["white"] = segments_formatted[s]
+        else:
+            segments_out[color_palette[i]] = segments_formatted[s]
+            colors[s] = color_palette[i]
+        i+=1
+    template_list = []
+    for b, temps in bb_temps.items():
+        for i, t in enumerate(temps):
+            t.color = colors[t]
+            bb_temps[b][i] = t
+            template_list.append(t.pdb_code.index)
+    main_template_seqsim = StructureModelSeqSim.objects.get(homology_model=model, template=model.main_template).similarity
+
+    return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
+                                                          'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(rotamers)*100, 1),
+                                                          'bb_alt': round(bb_alt/len(rotamers)*100, 1), 'bb_none': round(bb_none/len(rotamers)*100, 1), 'sc_main': round(sc_main/len(rotamers)*100, 1), 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
+                                                          'sc_none': round(sc_none/len(rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 'template_list': template_list})
+
+def ServeHomModDiagram(request, modelname, state):
+    model=StructureModel.objects.filter(protein__entry_name=modelname, state__slug=state)
+    if model.exists():
+        model=model.get()
+    else:
+         quit() #quit!
+
+    if model.pdb is None:
+        quit()
+
+    response = HttpResponse(model.pdb, content_type='text/plain')
+    return response
 
 def StructureDetails(request, pdbname):
     """
@@ -341,7 +467,13 @@ class StructureStatistics(TemplateView):
         for f in families:
             lookup[f.slug] = f.name.replace("receptors","")
 
-        class_proteins = Protein.objects.filter(family__slug__startswith="00", source__name='SWISSPROT').prefetch_related('family').order_by('family__slug')
+        ### only crystallised
+        crystallised_proteins = Structure.objects.all().prefetch_related('protein_conformation__protein')
+        cs = []
+        for i in crystallised_proteins:
+            cs.append(i.protein_conformation.protein.parent.entry_name)
+
+        class_proteins = Protein.objects.filter(family__slug__startswith="00", source__name='SWISSPROT').prefetch_related('family').order_by('family__slug').filter(entry_name__in=cs)
 
         coverage = OrderedDict()
 
@@ -398,7 +530,8 @@ class StructureStatistics(TemplateView):
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['receptor_i'] = 1
             coverage[fid[0]]['children'][fid[1]]['children'][fid[2]]['children'][fid[3]]['interactions'] += 1
 
-        CSS_COLOR_NAMES = ["SteelBlue","SlateBlue","LightCoral","Orange","LightGreen","LightGray","PeachPuff","PaleGoldenRod"]
+        CSS_COLOR_NAMES = ["SteelBlue","SlateBlue","LightCoral","Orange","LightGreen","LightGray","LightGray","PaleGoldenRod"]
+        # PeachPuff
 
         tree = OrderedDict({'name':'GPCRs','children':[]})
         i = 0
@@ -785,12 +918,12 @@ class SuperpositionWorkflowIndex(TemplateView):
         # get selection from session and add to context
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)
-
+        # print(simple_selection)
         # create full selection and import simple selection (if it exists)
         selection = Selection()
         if simple_selection:
             selection.importer(simple_selection)
-
+        print(self.kwargs.keys())
         #Clearing selections for fresh run
         if 'clear' in self.kwargs.keys():
             selection.clear('reference')
@@ -935,13 +1068,18 @@ class SuperpositionWorkflowResults(TemplateView):
         if 'alt_files' in self.request.session.keys():
             alt_files = [StringIO(alt_file.file.read().decode('UTF-8')) for alt_file in self.request.session['alt_files']]
         elif selection.targets != []:
-            alt_files = [StringIO(x.item.get_cleaned_pdb()) for x in selection.targets if x.type == 'structure']
+            alt_files = [StringIO(x.item.get_cleaned_pdb()) for x in selection.targets if x.type in ['structure', 'structure_model']]
         superposition = ProteinSuperpose(deepcopy(ref_file),alt_files, selection)
         out_structs = superposition.run()
         if 'alt_files' in self.request.session.keys():
             alt_file_names = [x.name for x in self.request.session['alt_files']]
         else:
-            alt_file_names = ['{}_{}.pdb'.format(x.item.protein_conformation.protein.parent.entry_name, x.item.pdb_code.index) for x in selection.targets if x.type == 'structure']
+            alt_file_names = []
+            for x in selection.targets:
+                if x.type=='structure':
+                    alt_file_names.append('{}_{}.pdb'.format(x.item.protein_conformation.protein.parent.entry_name, x.item.pdb_code.index))
+                elif x.type=='structure_model':
+                    alt_file_names.append('Class{}_{}_{}_{}_GPCRdb.pdb'.format(class_tree[x.item.protein.family.slug[:3]], x.item.protein.entry_name, x.item.state.name, x.item.main_template.pdb_code.index))
         if len(out_structs) == 0:
             self.success = False
         elif len(out_structs) >= 1:
@@ -993,7 +1131,11 @@ class SuperpositionWorkflowDownload(View):
             gn_assigner = GenericNumbering(structure=ref_struct)
             gn_assigner.assign_generic_numbers()
             self.ref_substructure_mapping = gn_assigner.get_substructure_mapping_dict()
-            ref_name = '{}_{}_ref.pdb'.format(selection.reference[0].item.protein_conformation.protein.parent.entry_name, selection.reference[0].item.pdb_code.index)
+            if selection.reference[0].type=='structure':
+                ref_name = '{}_{}_ref.pdb'.format(selection.reference[0].item.protein_conformation.protein.parent.entry_name, selection.reference[0].item.pdb_code.index)
+            elif selection.reference[0].type=='structure_model':
+                ref_name = 'Class{}_{}_{}_{}_GPCRdb_ref.pdb'.format(class_tree[selection.reference[0].item.protein.family.slug[:3]], selection.reference[0].item.protein.entry_name, 
+                                                                    selection.reference[0].item.state.name, selection.reference[0].item.main_template.pdb_code.index)
 
         alt_structs = {}
         for alt_id, st in self.request.session['alt_structs'].items():
@@ -1034,6 +1176,7 @@ class SuperpositionWorkflowDownload(View):
             io.set_structure(ref_struct)
             tmp = StringIO()
             io.save(tmp, SubstructureSelector(self.ref_substructure_mapping, parsed_selection=SelectionParser(selection)))
+            print('ref')
             zipf.writestr(ref_name, tmp.getvalue())
             for alt_name in self.request.session['alt_structs']:
                 tmp = StringIO()
@@ -1320,8 +1463,9 @@ class PDBClean(TemplateView):
     template_name = "pdb_download.html"
 
     def post(self, request, *args, **kwargs):
-
         context = super(PDBClean, self).get_context_data(**kwargs)
+
+        class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
 
         self.posted = True
         pref = True
@@ -1344,21 +1488,52 @@ class PDBClean(TemplateView):
         io = PDBIO()
         zipf = zipfile.ZipFile(out_stream, 'w', zipfile.ZIP_DEFLATED)
         if selection.targets != []:
-            for selected_struct in [x for x in selection.targets if x.type == 'structure']:
-                struct_name = '{}_{}.pdb'.format(selected_struct.item.protein_conformation.protein.parent.entry_name, selected_struct.item.pdb_code.index)
-                if hets:
-                    lig_names = [x.pdb_reference for x in StructureLigandInteraction.objects.filter(structure=selected_struct.item, annotated=True)]
-                else:
-                    lig_names = None
-                gn_assigner = GenericNumbering(structure=PDBParser(QUIET=True).get_structure(struct_name, StringIO(selected_struct.item.get_cleaned_pdb(pref, water, lig_names)))[0])
-                tmp = StringIO()
-                io.set_structure(gn_assigner.assign_generic_numbers())
-                request.session['substructure_mapping'] = gn_assigner.get_substructure_mapping_dict()
-                io.save(tmp)
-                zipf.writestr(struct_name, tmp.getvalue())
-                del gn_assigner, tmp
-            for struct in selection.targets:
-                selection.remove('targets', 'structure', struct.item.id)
+            if selection.targets != [] and selection.targets[0].type == 'structure':
+                for selected_struct in [x for x in selection.targets if x.type == 'structure']:
+                    struct_name = '{}_{}.pdb'.format(selected_struct.item.protein_conformation.protein.parent.entry_name, selected_struct.item.pdb_code.index)
+                    if hets:
+                        lig_names = [x.pdb_reference for x in StructureLigandInteraction.objects.filter(structure=selected_struct.item, annotated=True)]
+                    else:
+                        lig_names = None
+                    gn_assigner = GenericNumbering(structure=PDBParser(QUIET=True).get_structure(struct_name, StringIO(selected_struct.item.get_cleaned_pdb(pref, water, lig_names)))[0])
+                    tmp = StringIO()
+                    io.set_structure(gn_assigner.assign_generic_numbers())
+                    request.session['substructure_mapping'] = gn_assigner.get_substructure_mapping_dict()
+                    io.save(tmp)
+                    zipf.writestr(struct_name, tmp.getvalue())
+                    del gn_assigner, tmp
+                for struct in selection.targets:
+                    selection.remove('targets', 'structure', struct.item.id)
+            elif selection.targets != [] and selection.targets[0].type == 'structure_model':
+                for hommod in [x for x in selection.targets if x.type == 'structure_model']:
+                    mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.item.protein.family.slug[:3]], hommod.item.protein.entry_name, 
+                                                                                  hommod.item.state.name, hommod.item.main_template.pdb_code.index, hommod.item.version)
+                    tmp = StringIO(hommod.item.pdb)
+                    request.session['substructure_mapping'] = 'full'
+                    zipf.writestr(mod_name, tmp.getvalue())
+                    del tmp
+                    rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod.item).prefetch_related('residue','backbone_template','rotamer_template').order_by('residue__sequence_number')
+                    stats_data = 'Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n'
+                    for r in rotamers:
+                        try:
+                            gn = r.residue.generic_number.label
+                        except:
+                            gn = '-'
+                        if r.backbone_template:
+                            bt = r.backbone_template.pdb_code.index
+                        else:
+                            bt = '-'
+                        if r.rotamer_template:
+                            rt = r.rotamer_template.pdb_code.index
+                        else:
+                            rt = '-'
+                        stats_data+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
+                    stats_name = mod_name[:-3]+'templates.csv'
+                    zipf.writestr(stats_name, stats_data)
+                    del stats_data
+                for mod in selection.targets:
+                    selection.remove('targets', 'structure_model', mod.item.id)
+
             # export simple selection that can be serialized
             simple_selection = selection.exporter()
 
@@ -1369,7 +1544,11 @@ class PDBClean(TemplateView):
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
-        return render(request, self.template_name, context)
+
+        if selection.targets != [] and selection.targets[0].type == 'structure_model':
+            return zipf
+        else:
+            return render(request, self.template_name, context)
 
 
     def get_context_data (self, **kwargs):
@@ -1447,8 +1626,7 @@ class PDBDownload(View):
     Serve the PDB (sub)structures depending on user's choice.
     """
 
-    def get(self, request, *args, **kwargs):
-
+    def get(self, request, hommods=False, *args, **kwargs):
         if self.kwargs['substructure'] == 'select':
             return HttpResponseRedirect('/structure/pdb_segment_selection')
 
@@ -1475,7 +1653,10 @@ class PDBDownload(View):
             del request.session['substructure_mapping']
         if len(out_stream.getvalue()) > 0:
             response = HttpResponse(content_type="application/zip")
-            response['Content-Disposition'] = 'attachment; filename="pdb_structures.zip"'
+            if hommods == False:
+                response['Content-Disposition'] = 'attachment; filename="pdb_structures.zip"'
+            else:
+                response['Content-Disposition'] = 'attachment; filename="GPCRDB_homology_models.zip"'
             response.write(out_stream.getvalue())
 
         return response
@@ -1503,6 +1684,76 @@ def ConvertStructuresToProteins(request):
 
     return HttpResponseRedirect('/alignment/segmentselection')
 
+
+def ConvertStructureModelsToProteins(request):
+    "For alignment from homology model browser"
+    simple_selection = request.session.get('selection', False)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+    if selection.targets != []:
+        for struct_mod in selection.targets:
+            try:
+                prot = struct_mod.item.protein
+                selection.remove('targets', 'structure_model', struct_mod.item.id)
+                selection.add('targets', 'protein', SelectionItem('protein', prot))
+            except:
+                prot = struct_mod.item.protein_conformation.protein.parent
+                selection.remove('targets', 'structure', struct_mod.item.id)
+                selection.add('targets', 'protein', SelectionItem('protein', prot))
+        if selection.reference != []:
+            selection.add('targets', 'protein', selection.reference[0])
+    # export simple selection that can be serialized
+    simple_selection = selection.exporter()
+
+    # add simple selection to session
+    request.session['selection'] = simple_selection
+
+    return HttpResponseRedirect('/alignment/segmentselection')
+
+
+def HommodDownload(request):
+    "Download selected homology models in zip file"
+    p = PDBClean()
+    p.post(request)
+    p1 = PDBDownload()
+    p1.kwargs = {}
+    p1.kwargs['substructure'] = 'full'
+    p2 = p1.get(request, hommods=True)
+    return p2
+
+def SingleModelDownload(request, modelname, state, csv=False):
+    "Download single homology model"
+    class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
+    hommod = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
+    if csv:
+        rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod).prefetch_related("homology_model", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
+        text_out = "Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n"
+        for r in rotamers:
+            if r.backbone_template:
+                bt = r.backbone_template.pdb_code.index
+            else:
+                bt = '-'
+            if r.rotamer_template:
+                rt = r.rotamer_template.pdb_code.index
+            else:
+                rt = '-'
+            if r.residue.generic_number:
+                gn = r.residue.generic_number.label
+            else:
+                gn = '-'
+            text_out+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
+        print(text_out)
+        response = HttpResponse(text_out, content_type="homology_models/csv")
+        file_name = 'Class{}_{}_{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+                                                                                 hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+    else:
+        response = HttpResponse(hommod.pdb, content_type="homology_models/model")
+        file_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+                                                                       hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+    response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
+
+    return response
 
 def ServePdbOutfile (request, outfile, replacement_tag):
 
@@ -1686,7 +1937,7 @@ def webformdata(request) :
                 if 'chemical_components' not in crystallization:
                     crystallization['chemical_components'] = []
 
-                # print(key)    
+                # print(key)
                 if key!='chemical_comp': #not first
                     comp_id = key.replace('chemical_comp','')
                 else:

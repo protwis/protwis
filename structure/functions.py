@@ -9,9 +9,10 @@ from Bio.PDB.Vector import rotaxis
 from django.conf import settings
 from common.selection import SimpleSelection
 from common.alignment import Alignment
-from protein.models import ProteinSegment
+from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinState
+from residue.functions import dgn
 from residue.models import Residue
-from structure.models import Structure
+from structure.models import Structure, Rotamer
 
 from subprocess import Popen, PIPE
 from io import StringIO
@@ -23,6 +24,9 @@ import math
 import urllib
 from collections import OrderedDict
 import Bio.PDB as PDB
+import csv
+# from openpyxl import Workbook
+import numpy
 
 
 logger = logging.getLogger("protwis")
@@ -483,6 +487,25 @@ def extract_pdb_data(residue):
 
 
 #==============================================================================
+# def convert_csv_to_xlsx(self, csv, separator):
+#     wb = Workbook()
+#     sheet = wb.active
+
+#     CSV_SEPARATOR = separator
+
+#     with open(csv) as f:
+#         reader = csv.reader(f)
+#         for r, row in enumerate(reader):
+#             for c, col in enumerate(row):
+#                 for idx, val in enumerate(col.split(CSV_SEPARATOR)):
+#                     cell = sheet.cell(row=r+1, column=idx+1)
+#                     cell.value = val
+
+#     wb.save("my_file.xlsx")
+
+
+
+#==============================================================================
 def get_atom_line(atom, hetfield, segid, atom_number, resname, resseq, icode, chain_id, charge="  "): 
     """Returns an ATOM PDB string.""" 
     if hetfield!=" ": 
@@ -716,6 +739,10 @@ class HSExposureCB(AbstractPropertyMap):
 class PdbChainSelector():
     def __init__(self, pdb_code, protein):
         self.pdb_code = pdb_code
+        try:
+            protein.entry_name
+        except:
+            protein = Protein.objects.get(entry_name=protein)
         self.protein = protein
         self.chains = []
         self.dssp_dict = OrderedDict()
@@ -727,7 +754,8 @@ class PdbChainSelector():
         pdb.retrieve_pdb_file(self.pdb_code, pdir='./', file_format="pdb")
         p = PDB.PDBParser()
         f = 'pdb{}.ent'.format(self.pdb_code.lower())
-        wt_residues = [i.sequence_number for i in Residue.objects.filter(protein_conformation__protein=self.protein).exclude(protein_segment__slug__in=['N-term','C-term'])]
+        wt_residues = [i for i in Residue.objects.filter(protein_conformation__protein=self.protein).exclude(protein_segment__slug__in=['N-term','C-term'])]
+        gn_residues = [i.sequence_number for i in wt_residues if i.generic_number and i.protein_segment.slug not in ['ECL1','ECL2','ICL3','ECL3']]
         structure = p.get_structure(self.pdb_code, f)
         for chain in structure[0]:
             ch = chain.get_id()
@@ -737,9 +765,10 @@ class PdbChainSelector():
         if len(self.dssp_dict)>1:
             dssp = PDB.DSSP(structure[0], f, dssp='/env/bin/dssp')
             for key in dssp.keys():
-                if int(key[1][1]) in wt_residues:
+                if int(key[1][1]) in gn_residues:
                     self.dssp_dict[key[0]][key[1][1]] = dssp[key]
                     self.dssp_info[key[0]][dssp[key][2]] = self.dssp_info[key[0]][dssp[key][2]]+1
+        os.remove(f)
 
     def get_seqnums_by_secondary_structure(self, chain, secondary_structure):
         ''' Returns list of sequence numbers that match the secondary structural property. \n
@@ -765,9 +794,15 @@ class PdbChainSelector():
 
         max_res = num_helix_res[0]
         max_i = 0
+        print(self.chains[0], num_helix_res[0], seq_lengths[0])
         for i in range(1,len(num_helix_res)):
+            print(self.chains[i], num_helix_res[i], seq_lengths[i])
             if num_helix_res[i]>max_res:
-                if num_helix_res[i]-max_res>seq_lengths[max_i]-seq_lengths[i]:
+                if num_helix_res[i]-max_res>=seq_lengths[max_i]-seq_lengths[i]:
+                    max_res = num_helix_res[i]
+                    max_i = i
+            elif num_helix_res[i]<max_res:
+                if max_res-num_helix_res[i]<seq_lengths[i]-seq_lengths[max_i]:
                     max_res = num_helix_res[i]
                     max_i = i
             elif num_helix_res[i]==max_res:
@@ -775,3 +810,116 @@ class PdbChainSelector():
                     max_res = num_helix_res[i]
                     max_i = i
         return self.chains[max_i]
+
+
+class PdbStateIdentifier():
+    def __init__(self, structure):
+        self.structure = structure
+        self.state = None
+        self.activation_value = None
+        self.line = False
+
+    def run(self):
+        self.parent_prot_conf = ProteinConformation.objects.get(protein=self.structure.protein_conformation.protein.parent)
+        # class A and T
+        if self.parent_prot_conf.protein.family.slug.startswith('001') or self.parent_prot_conf.protein.family.slug.startswith('006'):
+            tm6 = self.get_residue_distance('2x39', '6x35')
+            tm7 = self.get_residue_distance('3x47', '7x53')
+            if tm6!=False and tm7!=False:
+                self.activation_value = tm6-tm7
+                if self.activation_value<0:
+                    self.state = ProteinState.objects.get(slug='inactive')
+                elif 0<=self.activation_value<=8:
+                    self.state = ProteinState.objects.get(slug='intermediate')
+                elif self.activation_value>8:
+                    self.state = ProteinState.objects.get(slug='active')
+        # class B
+        elif self.parent_prot_conf.protein.family.slug.startswith('002') or self.parent_prot_conf.protein.family.slug.startswith('003'):
+            tm6 = self.get_residue_distance('2x44', '6x35')
+            tm7 = self.get_residue_distance('3x47', '7x53')
+            if tm6!=False and tm7!=False:
+                self.activation_value = tm6-tm7
+                if self.activation_value<10:
+                    self.state = ProteinState.objects.get(slug='inactive')
+                elif 10<=self.activation_value<=15:
+                    self.state = ProteinState.objects.get(slug='intermediate')
+                elif self.activation_value>15:
+                    self.state = ProteinState.objects.get(slug='active')
+        # class C
+        elif self.parent_prot_conf.protein.family.slug.startswith('004'):
+            tm6 = self.get_residue_distance('2x39', '6x35')
+            tm7 = self.get_residue_distance('3x47', '7x53')
+            if tm6!=False and tm7!=False:
+                self.activation_value = tm6-tm7
+                if self.activation_value<0:
+                    self.state = ProteinState.objects.get(slug='inactive')
+                elif 0<=self.activation_value<=8:
+                    self.state = ProteinState.objects.get(slug='intermediate')
+                elif self.activation_value>8:
+                    self.state = ProteinState.objects.get(slug='active')
+        # class F
+        elif self.parent_prot_conf.protein.family.slug.startswith('005'):
+            tm6 = self.get_residue_distance('2x39', '6x35')
+            tm7 = self.get_residue_distance('3x47', '7x53')
+            if tm6!=False and tm7!=False:
+                self.activation_value = tm6-tm7
+                if self.activation_value<5:
+                    self.state = ProteinState.objects.get(slug='inactive')
+                elif 5<=self.activation_value<=15:
+                    self.state = ProteinState.objects.get(slug='intermediate')
+                elif self.activation_value>15:
+                    self.state = ProteinState.objects.get(slug='active')
+        else:
+            print('{} is not class A,B,C,F'.format(self.structure))
+            
+    def get_residue_distance(self, residue1, residue2):
+        try:
+            res1 = Residue.objects.get(protein_conformation__protein=self.structure.protein_conformation.protein.parent, display_generic_number__label=dgn(residue1, self.parent_prot_conf))
+            res2 = Residue.objects.get(protein_conformation__protein=self.structure.protein_conformation.protein.parent, display_generic_number__label=dgn(residue2, self.parent_prot_conf))
+            try:
+                rota1 = Rotamer.objects.filter(structure=self.structure, residue__sequence_number=res1.sequence_number)
+                if len(rota1)==0:
+                    raise Exception
+            except:
+                rota1 = Rotamer.objects.filter(structure=self.structure, residue__display_generic_number__label=dgn(residue1, self.structure.protein_conformation))
+            rota1 = right_rotamer_select(rota1, self.structure.preferred_chain[0])
+            try:
+                rota2 = Rotamer.objects.filter(structure=self.structure, residue__sequence_number=res2.sequence_number)
+                if len(rota2)==0:
+                    raise Exception
+            except:
+                rota2 = Rotamer.objects.filter(structure=self.structure, residue__display_generic_number__label=dgn(residue2, self.structure.protein_conformation))
+            rota2 = right_rotamer_select(rota2, self.structure.preferred_chain[0])
+            rotas = [rota1, rota2]
+            io1 = StringIO(rotas[0].pdbdata.pdb)
+            rota_struct1 = PDB.PDBParser(QUIET=True).get_structure('structure', io1)[0]
+            io2 = StringIO(rotas[1].pdbdata.pdb)
+            rota_struct2 = PDB.PDBParser(QUIET=True).get_structure('structure', io2)[0]
+            
+            for chain1, chain2 in zip(rota_struct1, rota_struct2):
+                for r1, r2 in zip(chain1, chain2):
+                    print(self.structure, r1.get_id()[1], r2.get_id()[1], self.calculate_CA_distance(r1, r2), self.structure.state.name)
+                    line = '{},{},{},{},{}\n'.format(self.structure, self.structure.state.name, round(self.calculate_CA_distance(r1, r2), 2), r1.get_id()[1], r2.get_id()[1])
+                    self.line = line
+                    return self.calculate_CA_distance(r1, r2)
+        except:
+            print('Error: {} no matching rotamers ({}, {})'.format(self.structure.pdb_code.index, residue1, residue2))
+            return False
+
+    def calculate_CA_distance(self, residue1, residue2):
+        diff_vector = residue1['CA'].get_coord()-residue2['CA'].get_coord()
+        return numpy.sqrt(numpy.sum(diff_vector * diff_vector))
+
+
+def right_rotamer_select(rotamer, chain=None):
+    ''' Filter out compound rotamers.
+    '''
+    if len(rotamer)>1:
+        for i in rotamer:
+            if i.pdbdata.pdb.startswith('COMPND')==False:
+                if chain!=None and chain==i.pdbdata.pdb[21]:
+                    rotamer = i
+                    break
+    else:
+        rotamer=rotamer[0]
+    return rotamer

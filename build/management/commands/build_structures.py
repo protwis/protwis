@@ -832,6 +832,14 @@ class Command(BaseBuild):
                         ps = ProteinState.objects.get(slug=state_slug)
                     s.state = ps
 
+                    # xtal activation value aka Delta Distance (Å)
+                    if 'distance' not in sd:
+                        self.logger.warning('Delta distance not defined, using default value {}'.format(None))
+                        distance = None
+                    else:
+                        distance = sd['distance']
+                    s.distance = distance
+
                     # protein conformation
                     try:
                         s.protein_conformation = ProteinConformation.objects.get(protein=con)
@@ -986,7 +994,7 @@ class Command(BaseBuild):
                                 p.save()
                                 s.publication = p
                     except:
-                        self.logger.error('Error saving publication'.format(ps.name))
+                        self.logger.error('Error saving publication'.format(sd['pdb']))
 
                     if source_file.split('.')[0] in self.xtal_seg_ends:
                         s.annotated = True
