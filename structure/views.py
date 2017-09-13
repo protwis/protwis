@@ -7,12 +7,12 @@ from django import forms
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
+from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment
 from structure.models import Structure
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
-from structure.phylogenetic_tree import PhylogeneticTreeGenerator
 from structure.forms import *
 from interaction.models import ResidueFragmentInteraction,StructureLigandInteraction
 from protein.models import Protein, ProteinFamily
