@@ -6,6 +6,30 @@
 {% block addon_css %}
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
+<style>
+    .AssayCell {
+        position: relative;
+    }
+
+    .AssayDetail {
+        display: none;
+        position: absolute;
+        z-index: 100;
+        border: 1px;
+        background-color: black;
+        border-style: solid;
+        border-width: 1px;
+        padding: 3px;
+        color: white;
+        top: 20px;
+        left: 20px;
+    }
+
+    .AssayCell:hover span.AssayDetail {
+        display: block;
+    }
+
+</style>
 {% endblock %}
 
 {% block addon_js %}
@@ -163,7 +187,7 @@
                 <td>{{p.standard_value}}</td>
                 <td>{{p.standard_units}}</td>
                 <td>{{p.assay_type}}</td>
-                <td <div style = "overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;">{{p.assay_description}} </div></td>
+                <td class="AssayCell"> <div style = "overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;">{{p.assay_description}}<span class="AssayDetail">{{p.assay_description}}</span> </div></td>
                 <td>{{p.protein__species__common_name}}</td>
                 <td>{{p.ligand__properities__smiles}}</td>
                 <td>{{p.ligand__properities__rotatable_bonds}}</td>
