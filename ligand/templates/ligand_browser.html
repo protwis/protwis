@@ -36,7 +36,7 @@
                     sPlaceHolder: "head:after",
                     sRangeFormat: "{from}:{to}",
                     aoColumns: [
-                        //null,
+                        null,
                         { type: "select" }, // receptor
                         { type: "select" }, //protein family
                         { type: "select" }, // ligand type
@@ -46,36 +46,31 @@
                 });
             }
         });
-        $.fn.dataTable.ext.search.push(
-            function (settings, data, dataIndex) {
-                if ($('#representative_btn').hasClass('toggled')) {
-                    if ($(table.row(dataIndex).node()).hasClass("repr-st")) {
-                        return true;
-                    }
-                    return false;
-                }
-                else {
-                    return true;
-                }
-            });
-        //$('#download_btn').click(function () {
-        //    ClearSelection('targets');
-        //    var checked_data = table.rows('.alt_selected').data();
-        //    for (i = 0; i < checked_data.length; i++) {
-        //        var div = document.createElement("div");
-        //        div.innerHTML = checked_data[i][5];
-        //        if (typeof div.innerText !== "undefined") {
-        //            AddToSelection('targets', 'structure',  div.innerText.replace(/\s+/g, '') );
-        //        } else {
-        //            AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
-        //        }
-        //    }
-        //    window.location.href = '/structure/pdb_download_index';
-        //});
+        $('.alt').change(function () {
+            $(this).parent().parent().toggleClass('alt_selected');
+        });
         $('.select-all').change(function () {
             $('.alt').prop('checked', $(this).prop("checked"));
             $('.alt').parent().parent().toggleClass('alt_selected');
         });
+        $('#show_btn').click(function () {
+            ClearSelection('targets');
+            var checked_data = table.rows('.alt_selected').data();
+            for (i = 0; i < checked_data.length; i++) {
+                var div = document.createElement("div");
+                div.innerHTML = checked_data[i][1];
+                if (typeof div.innerText !== "undefined") {
+                    AddToSelection('targets', 'protein_entry', div.innerText.replace(/\s+/g, ''));
+                    console.info(div.innerText.replace(/\s+/g, ''));
+                } else {
+                    AddToSelection('targets', 'protein_entry', div.textContent.replace(/\s+/g, ''));
+                    console.info(div.textContent.replace(/\s+/g, ''));
+                }
+            }
+            window.location.href = '/ligand/targets';
+        });
+
+
 
     });
 </script>
@@ -83,14 +78,14 @@
 
 {% block content %}
 <div class="btn-group">
-    <a id="download_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Download</a>
+    <a id="show_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show ligands</a>
 </div>
 
 <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
     <table width="100%" class="display" id="ligands">
         <thead>
             <tr>
-                <!--<th><input class="select-all" type="checkbox"> Select all</th>-->
+                <th><input class="select-all" type="checkbox"> Select all</th>
                 <th class="protein-th">Receptor</th>
                 <th class="protein-th">Receptor family</th>
                 <th class="protein-th">Ligand type</th>
@@ -98,7 +93,7 @@
                 <th class="ligand-th">Ligand count</th>
             </tr>
             <tr>
-                <!--<th></th>-->
+                <th></th>
                 <th></th>
                 <th></th>
                 <th></th>
@@ -109,13 +104,13 @@
         <tbody>
             {% for ligand in ligands %}
             <tr>
-                <!--<td><input class="alt" type="checkbox"></td>-->
-                <td>{{ligand.protein__family__name|safe}}</td>
+                <td><input class="alt" type="checkbox"></td>
+                <td>{{ligand.protein__entry_name}}</td>
                 <td>{{ligand.protein__family__parent__name}}</td>
                 <td>{{ligand.protein__family__parent__parent__name}}</td>
                 <td>{{ligand.protein__family__parent__parent__parent__name}}</td>
-                <td><a href="/ligand/target/{{ligand.protein__entry_name}}">{{ligand.num_ligands}}</a></td>
-
+                <!--<td><a href="/ligand/target/{{ligand.protein__entry_name}}">{{ligand.num_ligands}}</a></td>-->
+                <td>{{ligand.num_ligands}}</td>
             </tr>
             {% endfor %}
         </tbody>
