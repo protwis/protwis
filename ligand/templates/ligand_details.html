@@ -28,8 +28,8 @@
             'dom': 'iTlfrt',
             //'order': [[14, "asc"]], // order by date
             'aoColumnDefs': [
-                { 'bSortable': false, 'aTargets': [0] },
-                { 'sType': 'string', 'aTargets': [1] },
+                //{ 'bSortable': false, 'aTargets': [0] },
+                { 'sType': 'string', 'aTargets': [0] },
                 //{ 'sType': 'string', 'aTargets': [10] },
             ],
             'tableTools': {
@@ -41,7 +41,7 @@
                     sPlaceHolder: "head:after",
                     sRangeFormat: "{from}:{to}",
                     aoColumns: [
-                        null,
+                        //null,
                         { type: "select" },		//Protein Entry Name
                         { type: "select" },		//Receptor
                         { type: "select" },		//Rec family
@@ -76,9 +76,9 @@
 <!--<div class="btn-group">-->
 <!--    <a id="align_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Align</a>-->
 <!--</div>-->
-<div class="btn-group">
+<!--<div class="btn-group">
     <a id="download_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Download</a>
-</div>
+</div>-->
 <!--<div class="btn-group">-->
 <!--    <a id="concise_binding_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show Concise Binding Assay Information</a>-->
 <!--</div>-->
@@ -98,7 +98,7 @@
         <thead>
 
             <tr>
-                <th><input class="select-all" type="checkbox"> Select all</th>
+                <!--<th><input class="select-all" type="checkbox"> Select all</th>-->
                 <th class="protein-th">Receptor name</th>
                 <th class="protein-th">Receptor family</th>
                 <th class="protein-th">Ligand type</th>
@@ -112,7 +112,7 @@
 
             </tr>
             <tr>
-                <th></th>
+                <!--<th></th>-->
                 <th></th>
                 <th></th>
                 <th></th>
@@ -130,7 +130,7 @@
             {% for record in ligand_data %}
 
             <tr>
-                <td><input class="alt" type="checkbox"></td>
+                <!--<td><input class="alt" type="checkbox"></td>-->
                 <td onclick="window.location='/ligand/target/{{record.protein_name}}'">{{record.protein_name}}</td>
                 <td>{{record.receptor_family}}</td>
                 <td>{{record.ligand_type}}</td>

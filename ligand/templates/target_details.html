@@ -97,114 +97,186 @@
                 });
             }
         });
+        $('.alt').change(function () {
+            $(this).parent().parent().toggleClass('alt_selected');
+        });
         $('.select-all').change(function () {
             $('.alt').prop('checked', $(this).prop("checked"));
             $('.alt').parent().parent().toggleClass('alt_selected');
         });
-    });
+        $('#csv_btn').click(function () {
+            var checked_data = table.rows('.alt_selected').data();
+            var csv_data = [];
+            for (i = 0; i < checked_data.length; i++) {
+                var csv_row = []
+                for (j = 1; j < checked_data[i].length; j++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][j];
+                    if (typeof div.innerText !== "undefined") {
+                        csv_row.push(div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        csv_row.push(div.textContent.replace(/\s+/g, ''));
+                    }
+                }
+                csv_data.push(csv_row.join(';'));
+            }
+            var csv_string = csv_data.join("\n");
+            if (window.navigator.msSaveOrOpenBlob) {
+                var blob = new Blob([csv_string]);
+                window.navigator.msSaveOrOpenBlob(blob, 'target_ligand_data.csv');
+            } else {
+                var a = document.createElement('a');
+                a.href = 'data:attachment/csv,' + encodeURIComponent(csv_string);
+                a.target = '_blank';
+                a.download = 'target_ligand_data.csv';
+                document.body.appendChild(a);
+                a.click();
+            }
+        });
+        $('#smi_btn').click(function () {
+            var checked_data = table.rows('.alt_selected').data();
+            var smi_data = [];
+            for (i = 0; i < checked_data.length; i++) {
+                var smi_row = []
+                for (j = 1; j < checked_data[i].length; j++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][13];
+                    if (typeof div.innerText !== "undefined") {
+                        smi_row.push(div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        smi_row.push(div.textContent.replace(/\s+/g, ''));
+                    }
+                    div.innerHTML = checked_data[i][4];
+                    if (typeof div.innerText !== "undefined") {
+                        smi_row.push(div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        smi_row.push(div.textContent.replace(/\s+/g, ''));
+                    }
+                }
+                smi_data.push(smi_row.join(' '));
+            }
+            var smi_string = smi_data.join("\n");
+            if (window.navigator.msSaveOrOpenBlob) {
+                var blob = new Blob([smi_string]);
+                window.navigator.msSaveOrOpenBlob(blob, 'target_ligands.smi');
+            } else {
+                var a = document.createElement('a');
+                a.href = 'data:attachment/smi,' + encodeURIComponent(smi_string);
+                a.target = '_blank';
+                a.download = 'target_ligands.smi';
+                document.body.appendChild(a);
+                a.click();
+            }
+        });
+    })
+
 </script>
 {% endblock %}
 
 {% block content %}
 <div class="btn-group">
-    <a id="download_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Download</a>
-</div>
-<!--<div class="btn-group">-->
-<!--    <a id="concise_binding_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show Concise Binding Assay Information</a>-->
-<!--</div>-->
-<!--<div class="btn-group">-->
-<!--    <a id="concise_funtional_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show Concise Functional Assay Information</a>-->
-<!--</div>-->
-<!--<div class="btn-group">-->
-<!--    <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>-->
-<!--</div>-->
-<!--<div style="font-size: 10px;">For superimposition: Select (tick box) ligands, and Highlight the reference template</div>-->
-<br />
-<br />
-<h3>Ligand information for {{target}}:</h3>
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+    <ul class="dropdown-menu">
+        <li>
+            <a id="csv_btn" href="javascript:void(0)">CSV</a>
+        </li>
+        <li>
+            <a id="smi_btn" href="javascript:void(0)">SMILES</a>
+        </li>
+        </ul>
+    </div>
+        <!--<div class="btn-group">-->
+        <!--    <a id="concise_funtional_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show Concise Functional Assay Information</a>-->
+        <!--</div>-->
+        <!--<div class="btn-group">-->
+        <!--    <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>-->
+        <!--</div>-->
+        <!--<div style="font-size: 10px;">For superimposition: Select (tick box) ligands, and Highlight the reference template</div>-->
+        <br />
+        <br />
+        <h3>Ligand information for {{target}}:</h3>
 
-<div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
-    <table width="100%" class="display" id="proteins">
-        <thead>
-            <tr>
-                <th><input class="select-all" type="checkbox"> Select all</th>
-                <th class="protein-th">Receptor</th>
-                <th class="protein-th">Purchasable Yes/No</th>
-                <th class="protein-th">Vendor</th>
-                <th class="protein-th">Ligand Name</th>
-                <th class="protein-th">PChEMBL Value</th>
-                <th class="protein-th">Standard Type</th>
-                <th class="protein-th">Standard Relation</th>
-                <th class="protein-th">Standard Value</th>
-                <th class="protein-th">Standard Units</th>
-                <th class="protein-th">Assay Type</th>
-                <th class="protein-th">Assay Description</th>
-                <th class="protein-th">Species</th>
-                <th class="ligand-th">Smiles</th>
-                <th class="ligand-th">Rotatable Bonds</th>
-                <th class="ligand-th">Hydrogen Bond Donors</th>
-                <th class="ligand-th">Hydrogen Bond Acceptors</th>
-                <th class="ligand-th">LogP</th>
-            </tr>
-            <tr>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for p in proteins %}
-            {% if p.representative %}
-            <tr class="repr-st">
-            {% else %}
-            <tr>
-            {% endif %}
-                <td><input class="alt" type="checkbox"></td>
-                <td>{{p.protein__entry_name}}</td>
-                {% if p.ligand__properities__vendors__vendor__name%}
-                    <td> Yes</td>
-                {%else%}
-                    <td>No</td>
-                {%endif%}
-                <td>{{p.ligand__properities__vendors__vendor__name}}</td>
-                <td><a href="/ligand/{{p.ligand__properities__web_links__index}}">{{p.ligand__properities__web_links__index}}</a></td>
-                <td align="right">{{p.pchembl_value}}</td>
-                <td align="center">{{p.standard_type}}</td>
-                <td>{{p.standard_relation}}</td>
-                <td>{{p.standard_value}}</td>
-                <td>{{p.standard_units}}</td>
-                <td>{{p.assay_type}}</td>
-                <td class="AssayCell"> <div style = "overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;">{{p.assay_description}}<span class="AssayDetail">{{p.assay_description}}</span> </div></td>
-                <td>{{p.protein__species__common_name}}</td>
-                <td>{{p.ligand__properities__smiles}}</td>
-                <td>{{p.ligand__properities__rotatable_bonds}}</td>
-                <td>{{p.ligand__properities__hdon}}</td>
-                <td>{{p.ligand__properities__hacc}}</td>
-                <td>{{p.ligand__properities__logp}}</td>
-                <!--<td><a href="/ligand/{{p.protein__entry_name}}">{{ligand.num_ligands}}</a></td>-->
-            </tr>
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
+            <table width="100%" class="display" id="proteins">
+                <thead>
+                    <tr>
+                        <th><input class="select-all" type="checkbox"> Select all</th>
+                        <th class="protein-th">Receptor</th>
+                        <th class="protein-th">Purchasable Yes/No</th>
+                        <th class="protein-th">Vendor</th>
+                        <th class="protein-th">Ligand Name</th>
+                        <th class="protein-th">PChEMBL Value</th>
+                        <th class="protein-th">Standard Type</th>
+                        <th class="protein-th">Standard Relation</th>
+                        <th class="protein-th">Standard Value</th>
+                        <th class="protein-th">Standard Units</th>
+                        <th class="protein-th">Assay Type</th>
+                        <th class="protein-th">Assay Description</th>
+                        <th class="protein-th">Species</th>
+                        <th class="ligand-th">Smiles</th>
+                        <th class="ligand-th">Rotatable Bonds</th>
+                        <th class="ligand-th">Hydrogen Bond Donors</th>
+                        <th class="ligand-th">Hydrogen Bond Acceptors</th>
+                        <th class="ligand-th">LogP</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in proteins %}
+                    <tr>
+                        <td><input class="alt" type="checkbox"></td>
+                        <td>{{p.protein__entry_name}}</td>
+                        {% if p.ligand__properities__vendors__vendor__name %}
+                        <td> Yes</td>
+                        {%else%}
+                        <td>No</td>
+                        {%endif%}
+                        <td>{{p.ligand__properities__vendors__vendor__name}}</td>
+                        <td><a href="/ligand/{{p.ligand__properities__web_links__index}}">{{p.ligand__properities__web_links__index}}</a></td>
+                        <td align="right">{{p.pchembl_value}}</td>
+                        <td align="center">{{p.standard_type}}</td>
+                        <td>{{p.standard_relation}}</td>
+                        <td>{{p.standard_value}}</td>
+                        <td>{{p.standard_units}}</td>
+                        <td>{{p.assay_type}}</td>
+                        <td class="AssayCell"> <div style="overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;">{{p.assay_description}}<span class="AssayDetail">{{p.assay_description}}</span> </div></td>
+                        <td>{{p.protein__species__common_name}}</td>
+                        <td>{{p.ligand__properities__smiles}}</td>
+                        <td>{{p.ligand__properities__rotatable_bonds}}</td>
+                        <td>{{p.ligand__properities__hdon}}</td>
+                        <td>{{p.ligand__properities__hacc}}</td>
+                        <td>{{p.ligand__properities__logp}}</td>
+                        <!--<td><a href="/ligand/{{p.protein__entry_name}}">{{ligand.num_ligands}}</a></td>-->
+                    </tr>
 
-        {% endfor %}
-        </tbody>
+                    {% endfor %}
+                </tbody>
 
 
 
 
-    </table>
-</div>
-{% endblock %}
+            </table>
+        </div>
+        {% endblock %}

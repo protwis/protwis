@@ -6,6 +6,7 @@ from django.views.generic import TemplateView, View
 
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
+from common.selection import Selection, SelectionItem
 from ligand.models import Ligand, AssayExperiment, LigandProperities 
 from protein.models import Protein, Species, ProteinFamily
 
@@ -91,49 +92,63 @@ def LigandDetails(request, ligand_id):
     return render(request, 'ligand_details.html', context)
 
 
-def TargetDetails(request, slug):
+def TargetDetails(request, **kwargs):
 
-    if slug.count('_') == 0 :
-        ps = AssayExperiment.objects.filter(protein__family__parent__parent__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
-    elif slug.count('_') == 1 and len(slug) == 7:
-        ps = AssayExperiment.objects.filter(protein__family__parent__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
-    elif slug.count('_') == 2:
-        ps = AssayExperiment.objects.filter(protein__family__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
-    #elif slug.count('_') == 3:
-    elif slug.count('_') == 1 and len(slug) != 7:
-        ps = AssayExperiment.objects.filter(protein__entry_name = slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
+    if 'slug' in kwargs:
+        slug = kwargs['slug']
+        if slug.count('_') == 0 :
+            ps = AssayExperiment.objects.filter(protein__family__parent__parent__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
+        elif slug.count('_') == 1 and len(slug) == 7:
+            ps = AssayExperiment.objects.filter(protein__family__parent__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
+        elif slug.count('_') == 2:
+            ps = AssayExperiment.objects.filter(protein__family__parent__slug=slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
+        #elif slug.count('_') == 3:
+        elif slug.count('_') == 1 and len(slug) != 7:
+            ps = AssayExperiment.objects.filter(protein__entry_name = slug, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
     
-    ps = ps.values('standard_type',
-                   'standard_relation',
-                   'standard_value',
-                   'assay_description',
-                   'assay_type',
-                   'standard_units',
-                   'pchembl_value',
-                   'ligand__id',
-                   'ligand__properities_id',
-                   'ligand__properities__web_links__index',
-                   'ligand__properities__vendors__vendor__name',
-                   'protein__species__common_name',
-                   'protein__entry_name',
-                   'ligand__properities__mw',
-                   'ligand__properities__logp',
-                   'ligand__properities__rotatable_bonds',
-                   'ligand__properities__smiles',
-                   'ligand__properities__hdon',
-                   'ligand__properities__hacc','protein'
-                   ).annotate(num_targets = Count('protein__id', distinct=True))
+        if slug.count('_') == 1 and len(slug) == 7:
+            f = ProteinFamily.objects.get(slug=slug)      
+        else:
+            f = slug
 
-    if slug.count('_') == 1 and len(slug) == 7:
-        f = ProteinFamily.objects.get(slug=slug)      
+        context = {
+            'target':f
+            }
     else:
-        f = slug
+        print("Going with selection obj")
+        simple_selection = request.session.get('selection', False)
+        selection = Selection()
+        if simple_selection:
+            selection.importer(simple_selection)
+        if selection.targets != []:
+            print(selection.targets)
+            prot_ids = [x.item.id for x in selection.targets]
+            ps = AssayExperiment.objects.filter(protein__in=prot_ids, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
+            context = {
+                'target': ', '.join([x.item.entry_name for x in selection.targets])
+                }
+    ps = ps.values('standard_type',
+                'standard_relation',
+                'standard_value',
+                'assay_description',
+                'assay_type',
+                'standard_units',
+                'pchembl_value',
+                'ligand__id',
+                'ligand__properities_id',
+                'ligand__properities__web_links__index',
+                'ligand__properities__vendors__vendor__name',
+                'protein__species__common_name',
+                'protein__entry_name',
+                'ligand__properities__mw',
+                'ligand__properities__logp',
+                'ligand__properities__rotatable_bonds',
+                'ligand__properities__smiles',
+                'ligand__properities__hdon',
+                'ligand__properities__hacc','protein'
+                ).annotate(num_targets = Count('protein__id', distinct=True))
+    context['proteins'] = ps
 
-    context = {
-        'proteins': ps,
-        'target':f
-        }
-        
     return render(request, 'target_details.html', context)
 
 
