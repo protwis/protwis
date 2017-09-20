@@ -291,6 +291,9 @@ def AddToSelection(request):
     if selection_type == 'reference' or selection_type == 'targets':
         if selection_subtype == 'protein':
             o.append(Protein.objects.get(pk=selection_id))
+        if selection_subtype == 'protein_entry':
+            o.append(Protein.objects.get(entry_name=selection_id))
+            print("Added {}".format(Protein.objects.get(entry_name=selection_id).name))
         
         elif selection_subtype == 'protein_set':
             selection_subtype = 'protein'

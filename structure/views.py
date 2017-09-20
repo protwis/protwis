@@ -7,6 +7,7 @@ from django import forms
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
+from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment
 from structure.models import Structure, StructureModel, StructureModelStatsRotamer, StructureModelSeqSim
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn
@@ -20,6 +21,8 @@ from construct.functions import convert_ordered_to_disordered_annotation,add_con
 from common.views import AbsSegmentSelection,AbsReferenceSelection
 from common.selection import Selection, SelectionItem
 from common.extensions import MultiFileField
+from common.models import ReleaseNotes
+
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 import inspect
@@ -286,14 +289,48 @@ class StructureStatistics(TemplateView):
         context['unique_gprots_by_class'] = self.count_by_class(unique_gprots, lookup)
         context['unique_active'] = len(unique_active)
         context['unique_active_by_class'] = self.count_by_class(unique_active, lookup)
-        
+        context['release_notes'] = ReleaseNotes.objects.all()[0]
 
         context['chartdata'] = self.get_per_family_cumulative_data_series(years, unique_structs, lookup)
         context['chartdata_y'] = self.get_per_family_data_series(years, unique_structs, lookup)
         context['chartdata_all'] = self.get_per_family_cumulative_data_series(years, all_structs, lookup)
         context['chartdata_reso'] = self.get_resolution_coverage_data_series(all_structs)
-        context['coverage'] = self.get_diagram_coverage()
-        context['crystals'] = self.get_diagram_crystals()
+        #context['coverage'] = self.get_diagram_coverage()
+        #{
+        #    'depth': 3,
+        #    'anchor': '#crystals'}
+        tree = PhylogeneticTreeGenerator()
+        class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
+        context['class_a_options'] = deepcopy(tree.d3_options)
+        context['class_a_options']['anchor'] = 'class_a'
+        context['class_a_options']['label_free'] = []
+        context['class_a'] = json.dumps(class_a_data.get_nodes_dict('crystals'))
+        class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
+        context['class_b1_options'] = deepcopy(tree.d3_options)
+        context['class_b1_options']['anchor'] = 'class_b1'
+        context['class_b1_options']['label_free'] = [1,]
+        context['class_b1'] = json.dumps(class_b1_data.get_nodes_dict('crystals'))
+        class_b2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
+        context['class_b2_options'] = deepcopy(tree.d3_options)
+        context['class_b2_options']['anchor'] = 'class_b2'
+        context['class_b2_options']['label_free'] = [1,]
+        context['class_b2'] = json.dumps(class_b2_data.get_nodes_dict('crystals'))
+        class_c_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
+        context['class_c_options'] = deepcopy(tree.d3_options)
+        context['class_c_options']['anchor'] = 'class_c'
+        context['class_c_options']['label_free'] = [1,]
+        context['class_c'] = json.dumps(class_c_data.get_nodes_dict('crystals'))
+        class_f_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))
+        context['class_f_options'] = deepcopy(tree.d3_options)
+        context['class_f_options']['anchor'] = 'class_f'
+        context['class_f_options']['label_free'] = [1,]
+        #json.dump(class_f_data.get_nodes_dict('crystalized'), open('tree_test.json', 'w'), indent=4)
+        context['class_f'] = json.dumps(class_f_data.get_nodes_dict('crystals'))
+        class_t2_data = tree.get_tree_data(ProteinFamily.objects.get(name='Taste 2'))
+        context['class_t2_options'] = deepcopy(tree.d3_options)
+        context['class_t2_options']['anchor'] = 'class_t2'
+        context['class_t2_options']['label_free'] = [1,]
+        context['class_t2'] = json.dumps(class_t2_data.get_nodes_dict('crystals'))
 
         return context
 

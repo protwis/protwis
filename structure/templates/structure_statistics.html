@@ -90,10 +90,10 @@ body {
 <table style="width:75% !important" class="table table-stripped">
     <thead>
         <tr>
-            <td>Class(Family)</td>
-            <td align="center">Total</td>
+            <td><b>Class (Family)</b></td>
+            <td align="center"><b>Total</b></td>
             {% for class in all_structures_by_class.items %}
-            <td align="center">{% if class.0 == "Taste 2" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</td>
+            <td align="center"><b>{% if class.0 == "Taste 2" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
             {% endfor %}
         </tr>
     </thead>
@@ -120,7 +120,7 @@ body {
             {% endfor %}
         </tr>
         <tr>
-            <td>Active-state receptors</td>
+            <td>Active-state receptors*</td>
             <td align="center" style="vertical-align:middle !important">{{ all_active }}</td>
             {% for class in all_active_by_class.items %}
             <td align="center"  style="vertical-align:middle !important">{{ class.1 }}</td>
@@ -130,16 +130,16 @@ body {
     <tr> </tr>
 
 </table>
-
+<br />
 <br />
 <h4>Number of unique receptor complexes</h4>
 <table style="width:75% !important" class="table table-stripped">
     <thead>
         <tr>
-            <td>Class(Family)</td>
+            <td><b>Class (Family)</b></td>
             <td align="center">Total</td>
             {% for class in unique_structures_by_class.items %}
-            <td align="center">{% if class.0 == "Taste 2" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</td>
+            <td align="center"><b>{% if class.0 == "Taste 2" %}Taste&nbsp;2{% else %}{{ class.0 }}{% endif %}</b></td>
             {% endfor %}
         </tr>
     </thead>
@@ -166,7 +166,7 @@ body {
             {% endfor %}
         </tr>
         <tr>
-            <td>Active-state receptors</td>
+            <td>Active-state receptors*</td>
             <td align="center" style="vertical-align:middle !important">{{ unique_active }}</td>
             {% for class in unique_active_by_class.items %}
             <td align="center" style="vertical-align:middle !important">{{ class.1 }}</td>
@@ -176,8 +176,13 @@ body {
     <tr> </tr>
 
 </table>
+*Active state is defined as agonist-bound and opened intracellular TM bundle.
 <br />
-Specific sets of structures can be downloaded from the <a href="/structure">structure browser</a><br /><br />
+<br />
+Specific sets of structures can be downloaded from the <a href="/structure">structure browser</a><br />
+Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d" }}</strong><br />
+<br />
+<br />
 <br />
 <div id="charts" visibility="hidden">
     <?xml version="1.0" standalone="no" ?>
@@ -300,12 +305,24 @@ Specific sets of structures can be downloaded from the <a href="/structure">stru
     </ul>
 </div></p>
 <br />-->
-<h4>Crystal structures of GPCRs</h4><br />
+<h4>Structural coverage of GPCR Classes</h4><br />
 <script type="text/javascript" charset="utf-8">
-    crystals = {{ crystals|safe }};
+    class_a = {{ class_a|safe }};
+    class_a_options = {{ class_a_options|safe }};
+    class_b1 = {{ class_b1|safe }};
+    class_b1_options = {{ class_b1_options|safe }};
+    class_b2 = {{ class_b2|safe }};
+    class_b2_options = {{ class_b2_options|safe }};
+    class_c = {{ class_c|safe }};
+    class_c_options = {{ class_c_options|safe }};
+    class_f = {{ class_f|safe }};
+    class_f_options = {{ class_f_options|safe }};
+    class_t2 = {{ class_t2|safe }};
+    class_t2_options = {{ class_t2_options|safe }};
 </script>
-<div id="crystals">
+<div id="class_a">
 </div>
+<h4>Class A</h4>
 <p>
     <div class="btn-group">
         <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
@@ -314,51 +331,156 @@ Specific sets of structures can be downloaded from the <a href="/structure">stru
         </button>
         <ul class="dropdown-menu">
             <li>
-                <a href="javascript:saveSvgAsPng(document.getElementById('crystals_svg'), 'xtals_tree.png');">PNG</a>
+                <a href="javascript:saveSvgAsPng(document.getElementById('class_a_svg'), 'xtals_tree_class_a.png');">PNG</a>
             </li>
             <li>
-                <a href="javascript:saveSvgAsJpg(document.getElementById('crystals_svg'), 'xtals_tree.jpg');">JPG</a>
+                <a href="javascript:saveSvgAsJpg(document.getElementById('class_a_svg'), 'xtals_tree_class_a.jpg');">JPG</a>
             </li>
             <li>
-                <a href="javascript:saveSvgAsTiff(document.getElementById('crystals_svg'), 'xtals_tree.tiff');">TIFF</a>
+                <a href="javascript:saveSvgAsTiff(document.getElementById('class_a_svg'), 'xtals_tree_class_a.tiff');">TIFF</a>
                 </a>
             </li>
         </ul>
     </div>
 </p>
-<br />
-<h4>Structural coverage of GPCR Classes</h4><br />
-<script type="text/javascript" charset="utf-8">
-    coverage = {{ coverage|safe }};
-</script>
-<div id="coverage">
+<div id="class_b1">
 </div>
-<p><div class="btn-group">
-    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-            aria-haspopup="true" aria-expanded="false">
-        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-    </button>
-    <ul class="dropdown-menu">
-        <li>
-            <a href="javascript:saveSvgAsPng(document.getElementById('coverage_svg'), 'xtals_coverage.png');">PNG</a>
-        </li>
-        <li>
-            <a href="javascript:saveSvgAsJpg(document.getElementById('coverage_svg'), 'xtals_coverage.jpg');">JPG</a>
-        </li>
-        <li>
-            <a href="javascript:saveSvgAsTiff(document.getElementById('coverage_svg'), 'xtals_coverage.tiff');">TIFF</a>
-            </a>
-        </li>
-    </ul>
-</div></p>
-
+<h4>Class B1</h4>
+<p>
+    <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <a href="javascript:saveSvgAsPng(document.getElementById('class_b1_svg'), 'xtals_tree_class_b1.png');">PNG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsJpg(document.getElementById('class_b1_svg'), 'xtals_tree_class_b1.jpg');">JPG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsTiff(document.getElementById('class_b1_svg'), 'xtals_tree_class_b1.tiff');">TIFF</a>
+                </a>
+            </li>
+        </ul>
+    </div>
+</p>
+<div id="class_b2">
+</div>
+<h4>Class B2</h4>
+<p>
+    <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <a href="javascript:saveSvgAsPng(document.getElementById('class_b2_svg'), 'xtals_tree_class_b2.png');">PNG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsJpg(document.getElementById('class_b2_svg'), 'xtals_tree_class_b2.jpg');">JPG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsTiff(document.getElementById('class_b2_svg'), 'xtals_tree_class_b2.tiff');">TIFF</a>
+                </a>
+            </li>
+        </ul>
+    </div>
+</p>
+<div id="class_c">
+</div>
+<h4>Class C</h4>
+<p>
+    <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <a href="javascript:saveSvgAsPng(document.getElementById('class_c_svg'), 'xtals_tree_class_c.png');">PNG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsJpg(document.getElementById('class_c_svg'), 'xtals_tree_class_c.jpg');">JPG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsTiff(document.getElementById('class_c_svg'), 'xtals_tree_class_c.tiff');">TIFF</a>
+                </a>
+            </li>
+        </ul>
+    </div>
+</p>
+<div id="class_f">
+</div>
+<h4>Class F</h4>
+<p>
+    <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <a href="javascript:saveSvgAsPng(document.getElementById('class_f_svg'), 'xtals_tree_class_f.png');">PNG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsJpg(document.getElementById('class_f_svg'), 'xtals_tree_class_f.jpg');">JPG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'xtals_tree_class_f.tiff');">TIFF</a>
+                </a>
+            </li>
+        </ul>
+    </div>
+</p>
+<div id="class_t2">
+</div>
+<h4>Taste 2</h4>
+<p>
+    <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <a href="javascript:saveSvgAsPng(document.getElementById('class_t2_svg'), 'xtals_tree_class_t2.png');">PNG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsJpg(document.getElementById('class_t2_svg'), 'xtals_tree_class_t2.jpg');">JPG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'xtals_tree_class_t2.tiff');">TIFF</a>
+                </a>
+            </li>
+        </ul>
+    </div>
+</p>
 {% endblock %}
 
 {% block addon_js %}
+<script src="{% static 'home/js/jquery.js' %}"></script>
 <script src="{% static 'home/js/d3.min.js' %}"></script>
-<script src="{% static 'home/js/statistics_diagram.js' %}"></script>
-<script src="{% static 'home/js/statistics_diagram_crystals.js' %}"></script>
+<!--<script src="https://d3js.org/d3.v4.min.js"></script>-->
+
+<!--<script src="{% static 'home/js/statistics_diagram.js' %}"></script>-->
+<!--<script src="{% static 'home/js/statistics_diagram_crystals.js' %}"></script>-->
 <script src="{% static 'home/js/nv.d3.min.js' %}"></script>
 <script src="{% static 'home/js/statistics.js' %}"></script>
 <script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/phylo_tree.js' %}"></script>
+<script type="text/javascript" charset="utf-8">
+    $(window).load(function() {
+        draw_tree(class_a, class_a_options);
+        draw_tree(class_b1, class_b1_options);
+        draw_tree(class_b2, class_b2_options);
+        draw_tree(class_c, class_c_options);
+        draw_tree(class_f, class_f_options);
+        draw_tree(class_t2, class_t2_options);
+
+    });
+
+</script>
 {% endblock %}
