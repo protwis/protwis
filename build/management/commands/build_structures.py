@@ -1001,6 +1001,8 @@ class Command(BaseBuild):
                     else:
                         s.annotated = False
 
+                    s.refined = False
+
                     # save structure before adding M2M relations
                     s.save()
                     # StructureLigandInteraction.objects.filter(structure=s).delete()

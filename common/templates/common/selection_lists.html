@@ -20,6 +20,12 @@
                 {{ selected_item.item.pdb_code.index }}
             {% elif selected_item.type == 'structure_model' %}
                 {{ selected_item.item.protein.name|safe }} {{ selected_item.item.state.slug}}
+            {% elif selected_item.type == 'structure_model_Inactive' %}
+                {{ selected_item.item.protein.name|safe }} {{ selected_item.item.state.slug}}
+            {% elif selected_item.type == 'structure_model_Intermediate' %}
+                {{ selected_item.item.protein.name|safe }} {{ selected_item.item.state.slug}}
+            {% elif selected_item.type == 'structure_model_Active' %}
+                {{ selected_item.item.protein.name|safe }} {{ selected_item.item.state.slug}}
             {% else %}
                 {{ selected_item.item.name|safe }}
                 {% if selected_item.item.species.common_name %}
