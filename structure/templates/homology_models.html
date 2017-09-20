@@ -55,32 +55,7 @@
             $('.alt').change(function () {
                 $(this).parent().parent().toggleClass('alt_selected');
             });
-            $('#superpose_btn').click(function () {
-                ClearSelection('targets');
-                ClearSelection('reference');
-                if (table.rows('.selected').data().length == 1) {
-                    var div = document.createElement("div");
-                    div.innerHTML = table.rows('.selected').data()[0][5];
-                    if (typeof div.innerText !== "undefined") {
-                        AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, ''));
-                    } else {
-                        AddToSelection('reference', 'structure', div.textContent.replace(/\s+/g, ''));
-                    }
 
-                }
-                var checked_data = table.rows('.alt_selected').data();
-                for (i = 0; i < checked_data.length; i++) {
-                    var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][5];
-                    if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
-                    } else {
-                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
-                    }
-
-                }
-                window.location.href = '/structure/superposition_workflow_index';
-            });
             $.fn.dataTable.ext.search.push(
                 function (settings, data, dataIndex) {
                     if ($('#representative_btn').hasClass('toggled')) {
@@ -140,10 +115,12 @@
                 if (table.rows('.selected').data().length == 1) {
                     var div = document.createElement("div");
                     div.innerHTML = table.rows('.selected').data()[0][9];
+                    var state1 = table.rows('.selected').data()[0][3];
+
                     if (typeof div.innerText !== "undefined") {
-                        AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, ''));
+                        AddToSelection('reference', 'structure_model_'.concat(state1), div.innerText.replace(/\s+/g, ''));
                     } else {
-                        AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, ''));
+                        AddToSelection('reference', 'structure_model_'.concat(state1), div.textContent.replace(/\s+/g, ''));
                     }
 
                 }
@@ -151,15 +128,18 @@
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
                     div.innerHTML = checked_data[i][9];
+                    var state2 = checked_data[i][3];
                     if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure_model', div.innerText.replace(/\s+/g, ''));
+                        AddToSelection('targets', 'structure_model_'.concat(state2), div.innerText.replace(/\s+/g, ''));
                     } else {
-                        AddToSelection('targets', 'structure_model', div.textContent.replace(/\s+/g, ''));
+                        AddToSelection('targets', 'structure_model_'.concat(state2), div.textContent.replace(/\s+/g, ''));
                     }
 
                 }
                 window.location.href = '/structure/superposition_workflow_index';
             });
+
+            
 
         });
     </script> 
@@ -189,10 +169,9 @@
                 </li>
             </ul>
     </div>
-    <div>
-        <p style="font-size: 12px; padding: 3px;">PDB files contain GPCRdb generic numbers in the B-factor field of CA atoms</p>
-    </div>
     
+    <div style="font-size: 10px; padding: 3px 0px 0px 0px;">PDB files contain GPCRdb generic numbers in the B-factor field of CA atoms</div>
+    <div style="font-size: 10px;">For superimposition: Select (tick box) structures, and Highlight the reference template</div>
 
     <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 100%;">
         <table class="display" id="structure_model">

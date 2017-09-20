@@ -277,7 +277,7 @@ def AddToSelection(request):
     selection_type = request.GET['selection_type']
     selection_subtype = request.GET['selection_subtype']
     selection_id = request.GET['selection_id']
-    
+    print(selection_subtype)
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
     
@@ -309,6 +309,15 @@ def AddToSelection(request):
 
         elif selection_subtype == 'structure_model':
             o.append(StructureModel.objects.filter(protein__entry_name=selection_id)[0])
+
+        elif selection_subtype == 'structure_model_Inactive':
+            o.append(StructureModel.objects.get(protein__entry_name=selection_id, state__name='Inactive'))
+
+        elif selection_subtype == 'structure_model_Intermediate':
+            o.append(StructureModel.objects.get(protein__entry_name=selection_id, state__name='Intermediate'))
+
+        elif selection_subtype == 'structure_model_Active':
+            o.append(StructureModel.objects.get(protein__entry_name=selection_id, state__name='Active'))
     
     elif selection_type == 'segments':
         if selection_subtype == 'residue':
@@ -349,7 +358,7 @@ def AddToSelection(request):
         template = 'common/selection_lists.html'
     
     # amino acid groups
-
+    print(request, template, context)
     return render(request, template, context)
 
 def RemoveFromSelection(request):
