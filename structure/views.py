@@ -1063,7 +1063,7 @@ class SuperpositionWorkflowResults(TemplateView):
             alt_files = [StringIO(alt_file.file.read().decode('UTF-8')) for alt_file in self.request.session['alt_files']]
         elif selection.targets != []:
             alt_files = [StringIO(x.item.get_cleaned_pdb()) for x in selection.targets if x.type in ['structure', 'structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]
-        print(alt_files)
+        
         superposition = ProteinSuperpose(deepcopy(ref_file),alt_files, selection)
         out_structs = superposition.run()
         if 'alt_files' in self.request.session.keys():
@@ -1170,7 +1170,7 @@ class SuperpositionWorkflowDownload(View):
             io.set_structure(ref_struct)
             tmp = StringIO()
             io.save(tmp, SubstructureSelector(self.ref_substructure_mapping, parsed_selection=SelectionParser(selection)))
-            print('ref')
+            
             zipf.writestr(ref_name, tmp.getvalue())
             for alt_name in self.request.session['alt_structs']:
                 tmp = StringIO()
