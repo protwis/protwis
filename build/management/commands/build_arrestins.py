@@ -57,12 +57,12 @@ class Command(BaseCommand):
             self.logger.error(msg)
 
         ## add residues from can db
-        # try:
-        #     human_and_orths = self.can_add_proteins()
-        #
-        #     self.update_protein_conformation(human_and_orths)
-        # except Exception as msg:
-        #     self.logger.error(msg)
+        try:
+            human_and_orths = self.can_add_proteins()
+
+            self.update_protein_conformation(human_and_orths)
+        except Exception as msg:
+            self.logger.error(msg)
 
     def purge_can_residues(self):
         try:
@@ -85,24 +85,24 @@ class Command(BaseCommand):
         residue_data = residue_data.loc[residue_data['Uniprot_ACC'].isin(arrestin_list)]
 
         for index, row in residue_data.iterrows():
-            #fetch protein for protein conformation
-            pr, c= Protein.objects.get_or_create(accession=row['Uniprot_ACC'])
+            # fetch protein for protein conformation
+            pr, c = Protein.objects.get_or_create(accession=row['Uniprot_ACC'])
 
-            #fetch protein conformation
-            pc, c= ProteinConformation.objects.get_or_create(protein_id=pr)
+            # fetch protein conformation
+            pc, c = ProteinConformation.objects.get_or_create(protein_id=pr)
 
             #fetch residue generic number
             rgnsp=[]
-            if(int(row['CGN'].split('.')[2])<10):
-                rgnsp = row['CGN'].split('.')
+            if(int(row['CAN'].split('.')[2])<10):
+                rgnsp = row['CAN'].split('.')
                 rgn_new = rgnsp[0]+'.'+rgnsp[1]+'.0'+rgnsp[2]
                 rgn, c= ResidueGenericNumber.objects.get_or_create(label=rgn_new)
 
             else:
-                rgn, c= ResidueGenericNumber.objects.get_or_create(label=row['CGN'])
+                rgn, c= ResidueGenericNumber.objects.get_or_create(label=row['CAN'])
 
             #fetch protein segment id
-            ps, c= ProteinSegment.objects.get_or_create(slug=row['CGN'].split(".")[1])
+            ps, c= ProteinSegment.objects.get_or_create(slug=row['CAN'].split(".")[1])
 
             try:
                 Residue.objects.get_or_create(sequence_number=row['Position'], protein_conformation=pc, amino_acid=row['Residue'], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
@@ -114,8 +114,7 @@ class Command(BaseCommand):
 
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
-                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme_id=12)
-                # self.logger.info("Residues added to ResidueGenericNumberEquivalent")
+                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme_id=13) ## Update scheme_id
 
             except:
                 self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
@@ -124,7 +123,7 @@ class Command(BaseCommand):
 
         state = ProteinState.objects.get(slug='active')
 
-        #add new cgn protein conformations
+        # add new can protein conformations
         for p in arrestin_list:
             arrestin = Protein.objects.get(accession=p)
 
@@ -138,32 +137,23 @@ class Command(BaseCommand):
 
     def update_genericresiduenumber_and_proteinsegments(self, arrestin_list):
 
-        #Parsing pdb uniprot file for generic residue numbers
-        self.logger.info('Start parsing PDB_UNIPROT_ENSEMBLE_ALL')
+        # Parsing pdb uniprot file for generic residue numbers
+        self.logger.info('Start parsing ARRESTIN RESIDUE FILE')
         self.logger.info('Parsing file ' + self.arrestin_data_file)
         residue_data =  pd.read_table(self.arrestin_data_file, sep="\t", low_memory=False)
 
-
         residue_data = residue_data[residue_data.Uniprot_ID.notnull()]
-
-        #residue_data = residue_data[residue_data['Uniprot_ID'].str.contains('_HUMAN')]
-
         residue_data = residue_data[residue_data['Uniprot_ACC'].isin(arrestin_list)]
 
-        #filtering for human gproteins using list above
-        residue_generic_numbers= residue_data['CAN']
+        # filtering for human arrestins using list above
+        residue_generic_numbers= residue_data['CAN'].unique()
 
-        #add protein segment entries:
+        # add protein segment entries:
         segments =[]
-        cgns = residue_data['CAN'].unique()
+        cans = residue_data['CAN'].unique()
 
-        for s in cgns:
+        for s in cans:
             segments.append(s.split(".")[1])
-
-        #Commit protein segments in db
-
-        #purge line
-        #ProteinSegment.objects.filter(slug__in=np.unique(segments)).delete()
 
         for s in np.unique(segments):
 
@@ -181,14 +171,9 @@ class Command(BaseCommand):
             except:
                 self.logger.error('Failed to create protein segment')
 
-        #Residue numbering scheme is the same for all added residue generic numbers (CGN)
+        can_scheme = ResidueNumberingScheme.objects.get(slug='can')
 
-        cgn_scheme = ResidueNumberingScheme.objects.get(slug='cgn')
-
-        #purge line
-        #ResidueGenericNumber.objects.filter(scheme_id=12).delete()
-
-        for rgn in residue_generic_numbers.unique():
+        for rgn in residue_generic_numbers:
             ps, c= ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1])
 
             rgnsp=[]
@@ -200,12 +185,11 @@ class Command(BaseCommand):
                 rgn_new = rgn
 
             try:
-                res_gen_num, created= ResidueGenericNumber.objects.get_or_create(label=rgn_new, scheme=cgn_scheme, protein_segment=ps)
+                res_gen_num, created= ResidueGenericNumber.objects.get_or_create(label=rgn_new, scheme=can_scheme, protein_segment=ps)
                 self.logger.info('Created generic residue number')
 
             except:
                 self.logger.error('Failed creating generic residue number')
-
 
         self.add_can_residues(arrestin_list)
 
@@ -263,7 +247,7 @@ class Command(BaseCommand):
                     pfm = ProteinFamily.objects.get(slug=k)
 
             # Create new Protein
-            self.can_creat_arrestins(pfm, rns, accession, up)
+            self.can_create_arrestins(pfm, rns, accession, up)
 
         ################## ORTHOLOGS ##############
         ## Add orthologs of arrestins
@@ -297,7 +281,7 @@ class Command(BaseCommand):
         #             pfm = ProteinFamily.objects.get(slug=k)
         #
         #     # Create new Protein
-        #     self.can_creat_arrestins(pfm, rns, accession, up)
+        #     self.can_create_arrestins(pfm, rns, accession, up)
         #
         # # human arrestins
         # orthologs_lower = [x.lower() for x in orthologs]
@@ -310,7 +294,7 @@ class Command(BaseCommand):
         #
         # return list(accessions_all)
 
-    def can_creat_arrestins(self, family, residue_numbering_scheme, accession, uniprot):
+    def can_create_arrestins(self, family, residue_numbering_scheme, accession, uniprot):
         # get/create protein source
 
         try:

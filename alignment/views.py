@@ -67,7 +67,40 @@ class TargetSelectionGprotein(AbsTargetSelection):
         ppf = ProteinFamily.objects.get(slug="100_000")
         pfs = ProteinFamily.objects.filter(parent=ppf.id)
         ps = Protein.objects.filter(family=ppf)
-        
+
+        tree_indent_level = []
+        action = 'expand'
+        # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+        del ppf
+    except Exception as e:
+        pass
+
+class TargetSelectionArrestin(AbsTargetSelection):
+    step = 1
+    number_of_steps = 2
+    psets = False
+    filters = True
+    filter_gprotein = True
+
+    docs = 'sequences.html#structure-based-alignments'
+
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Continue to next step',
+            'url': '/alignment/segmentselectiongprot',
+            'color': 'success',
+        },
+    }
+    try:
+        ppf = ProteinFamily.objects.get(slug="200_000")
+        pfs = ProteinFamily.objects.filter(parent=ppf.id)
+        ps = Protein.objects.filter(family=ppf)
+
         tree_indent_level = []
         action = 'expand'
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)

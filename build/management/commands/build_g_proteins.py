@@ -194,7 +194,6 @@ class Command(BaseCommand):
         residue_data =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
         residue_data = residue_data.loc[residue_data['Uniprot_ACC'].isin(gprotein_list)]
 
-
         for index, row in residue_data.iterrows():
             #fetch protein for protein conformation
             pr, c= Protein.objects.get_or_create(accession=row['Uniprot_ACC'])
