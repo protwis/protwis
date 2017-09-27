@@ -67,6 +67,7 @@ class TargetSelectionGprotein(AbsTargetSelection):
         ppf = ProteinFamily.objects.get(slug="100_000")
         pfs = ProteinFamily.objects.filter(parent=ppf.id)
         ps = Protein.objects.filter(family=ppf)
+        
         tree_indent_level = []
         action = 'expand'
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
@@ -99,7 +100,7 @@ class SegmentSelectionGprotein(AbsSegmentSelection):
         + ' residues by clicking on the down arrows next to each helix, sheet or loop.\n\n You can select the full sequence or show all structured regions at the same time.\n\nSelected segments will appear in the' \
         + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
         + ' button.'
-    
+
     template_name = 'common/segmentselection.html'
 
     selection_boxes = OrderedDict([
@@ -164,7 +165,7 @@ class BlastSearchResults(TemplateView):
 def render_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create an alignment object
     a = Alignment()
 
@@ -273,7 +274,7 @@ def render_family_alignment(request, slug):
 def render_fasta_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create an alignment object
     a = Alignment()
     a.show_padding = False
@@ -284,7 +285,7 @@ def render_fasta_alignment(request):
 
     # build the alignment data matrix
     a.build_alignment()
-    
+
     response = render(request, 'alignment/alignment_fasta.html', context={'a': a}, content_type='text/fasta')
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.fasta"
     return response
@@ -297,14 +298,14 @@ def render_fasta_family_alignment(request, slug):
     # fetch proteins and segments
     proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt')
     segments = ProteinSegment.objects.filter(partial=False)
-    
+
     # load data into the alignment
     a.load_proteins(proteins)
     a.load_segments(segments)
-    
+
     # build the alignment data matrix
     a.build_alignment()
-    
+
     response = render(request, 'alignment/alignment_fasta.html', context={'a': a}, content_type='text/fasta')
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.fasta"
     return response
@@ -313,7 +314,7 @@ def render_fasta_family_alignment(request, slug):
 def render_csv_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create an alignment object
     a = Alignment()
     a.show_padding = False
@@ -327,7 +328,7 @@ def render_csv_alignment(request):
 
     # calculate consensus sequence + amino acid and feature frequency
     a.calculate_statistics()
-    
+
     response = render(request, 'alignment/alignment_csv.html', context={'a': a}, content_type='text/csv')
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.csv"
     return response

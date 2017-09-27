@@ -41,13 +41,14 @@ class BrowseSelection(AbsTargetSelection):
         ('segments', False),
     ])
     try:
-        ppf = ProteinFamily.objects.get(slug="100_000")
-        pfs = ProteinFamily.objects.filter(parent=ppf.id)
-        ps = Protein.objects.filter(family=ppf)
+        ppf_g = ProteinFamily.objects.get(slug="100_000")
+        ppf_a = ProteinFamily.objects.get(slug="200_000")
+        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id,ppf_a.id])
+        ps = Protein.objects.filter(family__in=[ppf_g,ppf_a])
         tree_indent_level = []
         action = 'expand'
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
-        del ppf
+        # del ppf
     except Exception as e:
         pass
 
@@ -88,9 +89,9 @@ def GProtein(request):
 
         context["selectivitydata"] = selectivitydata
 
-        
 
-    return render(request, 'signprot/gprotein.html', context)        
+
+    return render(request, 'signprot/gprotein.html', context)
 
 @cache_page(60*60*24*2)
 def familyDetail(request, slug):
