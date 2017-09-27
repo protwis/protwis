@@ -48,7 +48,7 @@ class Command(BaseCommand):
             filenames = options['filename']
         else:
             filenames = False
-        
+
         #add gproteins from cgn db
         try:
             self.purge_coupling_data()
@@ -92,7 +92,7 @@ class Command(BaseCommand):
 
     def create_barcode(self):
 
-        barcode_data =  pd.read_csv(self.barcode_data_file)
+        barcode_data =  pd.read_csv(self.barcode_data_file, low_memory=False)
 
         for index, entry in enumerate(barcode_data.iterrows()):
 
@@ -172,7 +172,7 @@ class Command(BaseCommand):
                         if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism', '']: #skip bad ones
                             continue
                         if gp in primary: #sip those that were already primary
-                             continue 
+                             continue
                         g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
                         gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary')
                         gpair.save()
@@ -191,7 +191,7 @@ class Command(BaseCommand):
         #Parsing pdb uniprot file for residues
         self.logger.info('Start parsing PDB_UNIPROT_ENSEMBLE_ALL')
         self.logger.info('Parsing file ' + self.gprotein_data_file)
-        residue_data =  pd.read_table(self.gprotein_data_file, sep="\t")
+        residue_data =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
         residue_data = residue_data.loc[residue_data['Uniprot_ACC'].isin(gprotein_list)]
 
 
@@ -221,7 +221,7 @@ class Command(BaseCommand):
 
             except:
                 self.logger.error("Failed to add residues")
-                
+
 
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
@@ -230,7 +230,7 @@ class Command(BaseCommand):
 
             except:
                 self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
-            
+
     def update_protein_conformation(self, gprotein_list):
         #gprotein_list=['gnaz_human','gnat3_human', 'gnat2_human', 'gnat1_human', 'gnas2_human', 'gnaq_human', 'gnao_human', 'gnal_human', 'gnai3_human', 'gnai2_human','gnai1_human', 'gna15_human', 'gna14_human', 'gna12_human', 'gna11_human', 'gna13_human']
         state = ProteinState.objects.get(slug='active')
@@ -252,7 +252,7 @@ class Command(BaseCommand):
         #Parsing pdb uniprot file for generic residue numbers
         self.logger.info('Start parsing PDB_UNIPROT_ENSEMBLE_ALL')
         self.logger.info('Parsing file ' + self.gprotein_data_file)
-        residue_data =  pd.read_table(self.gprotein_data_file, sep="\t")
+        residue_data =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
 
 
         residue_data = residue_data[residue_data.Uniprot_ID.notnull()]
@@ -327,7 +327,7 @@ class Command(BaseCommand):
         self.logger.info('Parsing file ' + self.gprotein_data_file)
 
         #parsing file for accessions
-        df =  pd.read_table(self.gprotein_data_file, sep="\t")
+        df =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
         prot_type = 'purge'
         pfm = ProteinFamily()
 
@@ -507,7 +507,7 @@ class Command(BaseCommand):
                 res = structure[1]
                 if res == '-':
                     res = 0
-    
+
                 structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res)
                 if created:
                     self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
@@ -550,7 +550,7 @@ class Command(BaseCommand):
 
         cgn_dict['Gprotein']=['000']
         cgn_dict['000']=['Gs', 'Gi/o', 'Gq/11', 'G12/13']
-        
+
         #Protein families to be added
         #Key of dictionary is level in hierarchy
         cgn_dict['1']=['Gprotein']
@@ -587,7 +587,7 @@ class Command(BaseCommand):
         up = {}
         up['genes'] = []
         up['names'] = []
-        up['structures'] = []  
+        up['structures'] = []
 
         read_sequence = False
         remote = False
