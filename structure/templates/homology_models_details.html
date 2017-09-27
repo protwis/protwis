@@ -16,8 +16,12 @@ canvas {
 
 <script src="http://cdn.jsdelivr.net/3dmol.js/latest/3Dmol-min.js"></script> 
 <div class="row text-success">
-<div class="text-center">
+    <div class="text-center">
+        {% if model.refined %}
+        <h2>{{ model.pdb_code.index }}</h2>
+        {% else %}
         <h2>{{ model.protein.family.name|safe }} homology model</h2>
+        {% endif %}
     </div>
 </div>
 
@@ -26,7 +30,11 @@ canvas {
         <h4>PROTEIN CLASS</h4>
     </div>
     <div class="col-md-9">
-    {{ model.protein.get_protein_class }}
+        {% if model.refined %}
+        {{ model.protein_conformation.protein.get_protein_class }}
+        {% else %}
+        {{ model.protein.get_protein_class }}
+        {% endif %}
     </div>
 </div>
 
@@ -35,7 +43,11 @@ canvas {
         <h4>RECEPTOR</h4>
     </div>
     <div class="col-md-9">
-    <a href="/protein/{{ model.protein.entry_name }}">{{ model.protein.name|safe }}</a>
+        {% if model.refined %}
+        <a href="/protein/{{ model.protein_conformation.protein.parent.entry_name }}">{{ model.protein_conformation.protein.parent.name|safe }}</a>
+        {% else %}
+        <a href="/protein/{{ model.protein.entry_name }}">{{ model.protein.name|safe }}</a>
+        {% endif %}
     </div>
 </div>
 
@@ -44,7 +56,11 @@ canvas {
         <h4>SPECIES</h4>
     </div>
     <div class="col-md-9">
-    {{ model.protein.species.latin_name }}
+        {% if model.refined %}
+        {{ model.protein_conformation.protein.parent.species.latin_name }}
+        {% else %}
+        {{ model.protein.species.latin_name }}
+        {% endif %}
     </div>
 </div>
 
@@ -57,25 +73,32 @@ canvas {
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>VERSION</h4>
+{% if model.refined %}
+{% else %}
+    <div class="row">
+        <div class="col-md-3 text-right text-info">
+            <h4>VERSION</h4>
+        </div>
+        <div class="col-md-9">
+        {{ model.version|date:"Y-m-d" }}
+        </div>
     </div>
-    <div class="col-md-9">
-    {{ model.version|date:"Y-m-d" }}
-    </div>
-</div>
+{% endif %}
 
 <div class="row">
     <div class="col-md-3 text-right text-info">
         <h4>MAIN TEMPLATE</h4>
     </div>
     <div class="col-md-9">
-        <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
-        
-        <div class="btn-group", style="padding: 0px 0px 5px 5px;">
-            <a id="align_btn" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
-        </div>
+        {% if model.refined %}
+            <a href="/protein/{{ model_main_template.protein_conformation.protein.parent.entry_name }}">{{ model_main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model_main_template.pdb_code.index }}">{{ model_main_template.pdb_code.index }}</a>
+        {% else %}
+            <a href="/protein/{{ model.main_template.protein_conformation.protein.parent.entry_name }}">{{ model.main_template.protein_conformation.protein.parent.family.name|safe }}</a> (sequence similarity: {{ main_template_seqsim }}%) PDB: <a href="../{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index }}</a>
+            
+            <div class="btn-group", style="padding: 0px 0px 5px 5px;">
+                <a id="align_btn" class="btn btn-primary btn-mini " href="javascript:void(0)" style="padding: 2px 5px;">Align</a>
+            </div>
+        {% endif %}
     </div>
 </div>
 
@@ -160,10 +183,18 @@ canvas {
     
     <div style="padding-top: 0px; float: right; font-size: 10px; white-space: nowrap; width: 50%;">
         <div class="btn-group">
-            <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_pdb">Download .pdb</a>
+            {% if model.refined %}
+                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_pdb">Download .pdb</a>
+            {% else %}
+                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_pdb">Download .pdb</a>
+            {% endif %}
         </div>
         <div class="btn-group">
-            <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_csv">Download .csv</a>
+            {% if model.refined %}
+                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.pdb_code.index}}/download_csv">Download .csv</a>
+            {% else %}
+                <a id="download_btn" class="btn btn-primary btn-mini " href="./{{model.protein.entry_name}}_{{model.state.slug}}/download_csv">Download .csv</a>
+            {% endif %}
         </div>
         <div class="btn-group">
             <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
@@ -260,15 +291,22 @@ canvas {
             // stage.loadFile( "http://localhost:8000/structure/pdb/{{pdbname}}", { ext: "pdb" } );
             // NGL.autoLoad( "http://files.rcsb.org/download/5IOS.cif" );
             //stage.loadFile( "http://files.rcsb.org/download/{{pdbname}}.pdb", { ext: "pdb" } );
+            
 
+            if ("{{state}}"=="refined") {
+                stage.loadFile( "../pdb/{{modelname}}_{{state}}", { ext: "pdb" }  ).then( function( o ){
+                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId } 
+                    o.centerView();
+                } );
+            }
+            else {
+                stage.loadFile( "view/{{modelname}}_{{model.state.slug}}", { ext: "pdb" }  ).then( function( o ){
+                    o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId } 
+                    o.centerView();
+                } );
+            }
 
-
-            stage.loadFile( "view/{{modelname}}_{{model.state.slug}}", { ext: "pdb" }  ).then( function( o ){
-                o.addRepresentation( "cartoon", {color: schemeId} );  // pass schemeId here ,{ color: schemeId } 
-                o.centerView();
-
-
-            } );
+            
             //stage.loadFile( "rcsb://1crn.mmtf", { defaultRepresentation: true } );
         } );
         $( "#fullscreen" ).click(function() {
@@ -339,21 +377,30 @@ canvas {
                 ClearSelection('targets');
                 ClearSelection('reference');
                 var div = document.createElement("div");
-                div.innerHTML = "{{model.protein.entry_name}}";
-                
-                if (typeof div.innerText !== "undefined") {
-                    AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, ''));
-                } else {
-                    AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, ''));
+                if ("{{state}}"=="refined") {
+                    div.innerHTML = "{{model.pdb_code.index}}";
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('reference', 'structure', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));
+                    } else {
+                        AddToSelection('reference', 'structure', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
+                    }
+                }
+                else {
+                    div.innerHTML = "{{model.protein.entry_name}}";
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('reference', 'structure_model', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));
+                    } else {
+                        AddToSelection('reference', 'structure_model', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
+                    }
                 }
                 
                 for (i = 0; i < template_list.length; i++) {
                     var div = document.createElement("div");
                     div.innerHTML = template_list[i];
                     if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, '').replace('[','').replace(']',''));
                     } else {
-                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, '').replace('[','').replace(']',''));
                     }
 
                 }

@@ -9,7 +9,7 @@ from django.views.decorators.cache import cache_page
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from protein.models import Gene, ProteinSegment
-from structure.models import Structure, StructureModel, StructureModelStatsRotamer, StructureModelSeqSim
+from structure.models import Structure, StructureModel, StructureModelStatsRotamer, StructureModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
@@ -102,9 +102,18 @@ def HomologyModelDetails(request, modelname, state):
     """
     modelname = modelname
     color_palette = ["orange","cyan","yellow","lime","fuchsia","green","teal","olive","thistle","grey","chocolate","blue","red","pink","maroon",]
+    
+    if state=='refined':
+        model = Structure.objects.get(pdb_code__index=modelname+'_refined')
+        model_main_template = Structure.objects.get(pdb_code__index=modelname)
+        rotamers = StructureRefinedStatsRotamer.objects.filter(structure=model).prefetch_related("structure", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
+        main_template_seqsim = StructureRefinedSeqSim.objects.get(structure=model, template=model_main_template).similarity
+    else:
+        model = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
+        model_main_template = model.main_template
+        rotamers = StructureModelStatsRotamer.objects.filter(homology_model=model).prefetch_related("homology_model", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
+        main_template_seqsim = StructureModelSeqSim.objects.get(homology_model=model, template=model_main_template).similarity
 
-    model = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
-    rotamers = StructureModelStatsRotamer.objects.filter(homology_model=model).prefetch_related("homology_model", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
     backbone_templates, rotamer_templates = [],[]
     segments, segments_formatted, segments_out = {},{},{}
     bb_temps, r_temps = OrderedDict(), OrderedDict()
@@ -128,13 +137,13 @@ def HomologyModelDetails(request, modelname, state):
             segments[r.backbone_template] = [r.residue.sequence_number]
         else:
             segments[r.backbone_template].append(r.residue.sequence_number)
-        if r.backbone_template==model.main_template:
+        if r.backbone_template==model_main_template:
             bb_main+=1
         elif r.backbone_template!=None:
             bb_alt+=1
         elif r.backbone_template==None:
             bb_none+=1
-        if r.rotamer_template==model.main_template:
+        if r.rotamer_template==model_main_template:
             sc_main+=1
         elif r.rotamer_template!=None:
             sc_alt+=1
@@ -157,7 +166,7 @@ def HomologyModelDetails(request, modelname, state):
         if len(nums)==1:
             segments_formatted[s] = ['{}-{}'.format(segments_formatted[s][0][0], segments_formatted[s][0][0])]
 
-    colors = OrderedDict([(model.main_template,"darkorchid"), (None,"white")])
+    colors = OrderedDict([(model_main_template,"darkorchid"), (None,"white")])
     i = 0
     for s, nums in segments_formatted.items():
         if len(nums)>1:
@@ -167,7 +176,7 @@ def HomologyModelDetails(request, modelname, state):
             segments_formatted[s] = text[:-4]
         else:
             segments_formatted[s] = segments_formatted[s][0]
-        if s==model.main_template:
+        if s==model_main_template:
             pass
         elif s==None:
             segments_out["white"] = segments_formatted[s]
@@ -181,15 +190,19 @@ def HomologyModelDetails(request, modelname, state):
             t.color = colors[t]
             bb_temps[b][i] = t
             template_list.append(t.pdb_code.index)
-    main_template_seqsim = StructureModelSeqSim.objects.get(homology_model=model, template=model.main_template).similarity
 
     return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
                                                           'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(rotamers)*100, 1),
                                                           'bb_alt': round(bb_alt/len(rotamers)*100, 1), 'bb_none': round(bb_none/len(rotamers)*100, 1), 'sc_main': round(sc_main/len(rotamers)*100, 1), 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
-                                                          'sc_none': round(sc_none/len(rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 'template_list': template_list})
+                                                          'sc_none': round(sc_none/len(rotamers)*100, 1), 'main_template_seqsim': main_template_seqsim, 'template_list': template_list, 'model_main_template': model_main_template,
+                                                          'state': state})
 
 def ServeHomModDiagram(request, modelname, state):
-    model=StructureModel.objects.filter(protein__entry_name=modelname, state__slug=state)
+    print(modelname, state)
+    if state=='refined':
+        model=Structure.objects.filter(pdb_code__index=modelname+'_refined')
+    else:
+        model=StructureModel.objects.filter(protein__entry_name=modelname, state__slug=state)
     if model.exists():
         model=model.get()
     else:
@@ -253,7 +266,7 @@ class StructureStatistics(TemplateView):
         for f in families:
             lookup[f.slug] = f.name
 
-        all_structs = Structure.objects.all().prefetch_related('protein_conformation__protein__family')
+        all_structs = Structure.objects.all().prefetch_related('protein_conformation__protein__family').exclude(refined=True)
         all_complexes = all_structs.exclude(ligands=None)
         #FIXME G protein list is hard-coded for now. Table structure needs to be expanded for fully automatic approach.
         all_gprots = all_structs.filter(stabilizing_agents__slug='gs')
@@ -1063,7 +1076,7 @@ class SuperpositionWorkflowResults(TemplateView):
             alt_files = [StringIO(alt_file.file.read().decode('UTF-8')) for alt_file in self.request.session['alt_files']]
         elif selection.targets != []:
             alt_files = [StringIO(x.item.get_cleaned_pdb()) for x in selection.targets if x.type in ['structure', 'structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]
-        
+
         superposition = ProteinSuperpose(deepcopy(ref_file),alt_files, selection)
         out_structs = superposition.run()
         if 'alt_files' in self.request.session.keys():
@@ -1413,7 +1426,7 @@ class TemplateBrowser(TemplateView):
         a.load_reference_protein_from_selection(simple_selection)
 
         # fetch
-        qs = Structure.objects.all().select_related(
+        qs = Structure.objects.filter(refined=False).select_related(
             "pdb_code__web_resource",
             "protein_conformation__protein__species",
             "protein_conformation__protein__source",
@@ -1719,9 +1732,15 @@ def HommodDownload(request):
 def SingleModelDownload(request, modelname, state, csv=False):
     "Download single homology model"
     class_dict = {'001':'A','002':'B1','003':'B2','004':'C','005':'F','006':'T','007':'O'}
-    hommod = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
+    if state=='refined':
+        hommod = Structure.objects.get(pdb_code__index=modelname+'_refined')
+    else:
+        hommod = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
     if csv:
-        rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod).prefetch_related("homology_model", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
+        if state=='refined':
+            rotamers = StructureRefinedStatsRotamer.objects.filter(structure=hommod).prefetch_related("structure", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
+        else:
+            rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod).prefetch_related("homology_model", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
         text_out = "Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n"
         for r in rotamers:
             if r.backbone_template:
@@ -1738,12 +1757,23 @@ def SingleModelDownload(request, modelname, state, csv=False):
                 gn = '-'
             text_out+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
         response = HttpResponse(text_out, content_type="homology_models/csv")
-        file_name = 'Class{}_{}_{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
-                                                                                 hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+        if state=='refined':
+            file_name = 'Class{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein_conformation.protein.parent.family.slug[:3]], hommod.protein_conformation.protein.parent.entry_name,
+                                                                               hommod.pdb_code.index)
+        else:
+            file_name = 'Class{}_{}_{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+                                                                                     hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
     else:
-        response = HttpResponse(hommod.pdb, content_type="homology_models/model")
-        file_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
-                                                                       hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
+        if state=='refined':
+            response = HttpResponse(hommod.pdb_data.pdb, content_type="homology_models/model")
+        else:
+            response = HttpResponse(hommod.pdb, content_type="homology_models/model")
+        if state=='refined':
+            file_name = 'Class{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein_conformation.protein.parent.family.slug[:3]], hommod.protein_conformation.protein.parent.entry_name,
+                                                                     hommod.pdb_code.index)
+        else:
+            file_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
+                                                                           hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
     response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
 
     return response

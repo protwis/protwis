@@ -21,7 +21,6 @@ class ProteinSuperpose(object):
     def __init__ (self, ref_file, alt_files, simple_selection):
     
         self.selection = SelectionParser(simple_selection)
-    
         self.ref_struct = PDBParser(PERMISSIVE=True).get_structure('ref', ref_file)[0]
         assert self.ref_struct, self.logger.error("Can't parse the ref file %s".format(ref_file))
         if self.selection.generic_numbers != [] or self.selection.helices != []:

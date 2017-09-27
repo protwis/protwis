@@ -230,11 +230,22 @@
                     <tr>
                 {% endif %}
                     <td><input class="alt" type="checkbox"></td>
-                    <td>{{ structure.protein_conformation.protein.family.name|safe }}</td>
+                    <td>
+                        {% if structure.refined %}
+                        {{ structure.protein_conformation.protein.family.name|safe }}_refined
+                        {% else %}
+                        {{ structure.protein_conformation.protein.family.name|safe }}
+                        {% endif %}
+                    </td>
                     <td>{{ structure.protein_conformation.protein.family.parent.name|safe }}</td>
                     <td>{{ structure.protein_conformation.protein.family.parent.parent.parent.name }}</td>
                     <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
-                    <td class="text-center"><a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}
+                    <td class="text-center">
+                        {% if structure.refined %}
+                        <a href="homology_models/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a>
+                        {% else %}
+                        <a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}
+                        {% endif %}
                     </a></td>
                     <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
                     <td class="text-center">{{ structure.preferred_chain }}</td>
