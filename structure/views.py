@@ -198,7 +198,6 @@ def HomologyModelDetails(request, modelname, state):
                                                           'state': state})
 
 def ServeHomModDiagram(request, modelname, state):
-    print(modelname, state)
     if state=='refined':
         model=Structure.objects.filter(pdb_code__index=modelname+'_refined')
     else:
