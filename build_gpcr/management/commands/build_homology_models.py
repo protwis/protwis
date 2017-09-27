@@ -175,7 +175,7 @@ class Command(BaseBuild):
                 for f in files:
                     zipf.write(os.path.join(root, f))
             zipf.close()
-        # shutil.rmtree('homology_models')
+        shutil.rmtree('homology_models')
         shutil.rmtree('PIR')
 
     def main_func(self, positions, iteration, count, lock):
@@ -1704,7 +1704,7 @@ class HomologyModeling(object):
         sys.stdout.close()
         sys.stdout = _stdout
 
-        # os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
+        os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
 
         # stat file
         with open(path+modelname+'.templates.csv','w') as s_file:
