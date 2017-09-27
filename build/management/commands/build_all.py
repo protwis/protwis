@@ -49,12 +49,11 @@ class Command(BaseCommand):
             ['build_g_proteins'],
             ['build_drugs'],
             ['build_residue_sets'],
+            ['build_homology_models', ['--update', '-z'], {'proc': options['proc'], 'test_run': options['test']}],
+            ['build_blast_database'],
             ['build_text'],
             ['build_release_notes'],
         ]
-
-        if options['hommod']:
-            commands = commands+[['build_homology_models', ['--update', '-z'], {'proc': options['proc'], 'test_run': options['test']}]]
 
         for c in commands:
             print('{} Running {}'.format(
