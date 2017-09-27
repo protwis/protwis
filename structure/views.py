@@ -1084,7 +1084,7 @@ class SuperpositionWorkflowResults(TemplateView):
             alt_file_names = []
             for x in selection.targets:
                 if x.type=='structure':
-                    alt_file_names.append('{}_{}.pdb'.format(x.item.protein_conformation.protein.parent.entry_name, x.item.pdb_code.index))
+                    alt_file_names.append('{}_{}.pdb'.format(x.item.protein_conformation.protein.entry_name, x.item.pdb_code.index))
                 elif x.type=='structure_model' or x.type=='structure_model_Inactive' or x.type=='structure_model_Intermediate' or x.type=='structure_model_Active':
                     alt_file_names.append('Class{}_{}_{}_{}_GPCRdb.pdb'.format(class_tree[x.item.protein.family.slug[:3]], x.item.protein.entry_name, x.item.state.name, x.item.main_template.pdb_code.index))
         if len(out_structs) == 0:
@@ -1138,7 +1138,7 @@ class SuperpositionWorkflowDownload(View):
             gn_assigner.assign_generic_numbers()
             self.ref_substructure_mapping = gn_assigner.get_substructure_mapping_dict()
             if selection.reference[0].type=='structure':
-                ref_name = '{}_{}_ref.pdb'.format(selection.reference[0].item.protein_conformation.protein.parent.entry_name, selection.reference[0].item.pdb_code.index)
+                ref_name = '{}_{}_ref.pdb'.format(selection.reference[0].item.protein_conformation.protein.entry_name, selection.reference[0].item.pdb_code.index)
             elif selection.reference[0].type=='structure_model' or selection.reference[0].type=='structure_model_Inactive' or selection.reference[0].type=='structure_model_Intermediate' or selection.reference[0].type=='structure_model_Active':
                 ref_name = 'Class{}_{}_{}_{}_GPCRdb_ref.pdb'.format(class_tree[selection.reference[0].item.protein.family.slug[:3]], selection.reference[0].item.protein.entry_name, 
                                                                     selection.reference[0].item.state.name, selection.reference[0].item.main_template.pdb_code.index)
@@ -1677,7 +1677,10 @@ def ConvertStructuresToProteins(request):
         selection.importer(simple_selection)
     if selection.targets != []:
         for struct in selection.targets:
-            prot = struct.item.protein_conformation.protein.parent
+            if 'refined' in struct.item.pdb_code.index:
+                prot = struct.item.protein_conformation.protein
+            else:
+                prot = struct.item.protein_conformation.protein.parent
             selection.remove('targets', 'structure', struct.item.id)
             selection.add('targets', 'protein', SelectionItem('protein', prot))
         if selection.reference != []:
