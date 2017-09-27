@@ -91,7 +91,7 @@ class Command(BaseBuild):
         if options['r']:
             all_receptors = Protein.objects.filter(entry_name__in=options['r'])
         elif options['x']:
-            structs = Structure.objects.filter(refined=False)
+            structs = Structure.objects.filter(refined=False).order_by('pdb_code__index')
             all_receptors = [i.protein_conformation.protein for i in structs]
         elif options['c']==False:
             self.build_all = True
