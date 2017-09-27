@@ -44,7 +44,7 @@ canvas {
     </div>
     <div class="col-md-9">
         {% if model.refined %}
-        <a href="/protein/{{ model.protein_conformation.protein.parent.entry_name }}">{{ model.protein_conformation.protein.parent.name|safe }}</a>
+        <a href="/protein/{{ model.protein_conformation.protein.entry_name }}">{{ model.protein_conformation.protein.name|safe }}</a>
         {% else %}
         <a href="/protein/{{ model.protein.entry_name }}">{{ model.protein.name|safe }}</a>
         {% endif %}
@@ -57,7 +57,7 @@ canvas {
     </div>
     <div class="col-md-9">
         {% if model.refined %}
-        {{ model.protein_conformation.protein.parent.species.latin_name }}
+        {{ model.protein_conformation.protein.species.latin_name }}
         {% else %}
         {{ model.protein.species.latin_name }}
         {% endif %}
