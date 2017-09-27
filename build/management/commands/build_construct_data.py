@@ -111,7 +111,7 @@ class Command(BaseCommand):
                 add_construct(d)
 
         if not filenames:
-            structures = Structure.objects.all()
+            structures = Structure.objects.all().exclude(refined=True)
             for s in structures:
                 pdbname = str(s)
                 try:
@@ -146,7 +146,7 @@ class Command(BaseCommand):
                 add_construct(d)
 
         if do_all:
-            structures = Structure.objects.all()
+            structures = Structure.objects.all().exclude(refined=True)
             for s in structures:
                 pdbname = str(s)
                 try:

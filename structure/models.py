@@ -33,7 +33,7 @@ class Structure(models.Model):
         for line in self.pdb_data.pdb.split('\n'):
             save_line = False
             if pref_chain:
-                if (line.startswith('ATOM') or line.startswith('HET')) and line[21] == self.preferred_chain[0]:
+                if (line.startswith('ATOM') or line.startswith('HET')) and (line[21] == self.preferred_chain[0] or 'refined' in self.pdb_code.index):
                     save_line = True
             else:
                 save_line = True
@@ -93,6 +93,19 @@ class StructureModelStatsRotamer(models.Model):
         db_table = 'structure_model_stats_rotamer'
 
 
+class StructureRefinedStatsRotamer(models.Model):
+    structure = models.ForeignKey('structure.Structure')
+    residue = models.ForeignKey('residue.Residue', null=True)
+    rotamer_template = models.ForeignKey('structure.Structure', related_name='+', null=True)
+    backbone_template = models.ForeignKey('structure.Structure', related_name='+', null=True)
+
+    def __repr__(self):
+        return '<StructureRefinedStatsRotamer: seqnum '+str(self.residue.sequence_number)+' '+str(self.structure.pdb_code.index)+'>'
+
+    class Meta():
+        db_table = 'structure_refined_stats_rotamer'
+
+
 class StructureModelSeqSim(models.Model):
     homology_model = models.ForeignKey('structure.StructureModel')
     template = models.ForeignKey('structure.Structure')
@@ -103,6 +116,18 @@ class StructureModelSeqSim(models.Model):
 
     class Meta():
         db_table = 'structure_model_seqsim'
+
+
+class StructureRefinedSeqSim(models.Model):
+    structure = models.ForeignKey('structure.Structure', related_name='+', null=True)
+    template = models.ForeignKey('structure.Structure', related_name='+', null=True)
+    similarity = models.IntegerField()
+
+    def __repr__(self):
+        return '<StructureRefinedSeqSim: {}>'.format(self.structure.pdb_code.index)
+
+    class Meta():
+        db_table = 'structure_refined_seqsim'
 
 
 class StructureModelRMSD(models.Model):

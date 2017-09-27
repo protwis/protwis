@@ -308,7 +308,11 @@ def AddToSelection(request):
             o.append(ProteinSet.objects.get(pk=selection_id))
         
         elif selection_subtype == 'structure':
-            o.append(Structure.objects.get(pdb_code__index=selection_id.upper()))
+            if 'refined' in selection_id:
+                sel1, sel2 = selection_id.split('_')
+                o.append(Structure.objects.get(pdb_code__index=sel1.upper()+'_refined'))
+            else:
+                o.append(Structure.objects.get(pdb_code__index=selection_id.upper()))
 
         elif selection_subtype == 'structure_model':
             o.append(StructureModel.objects.filter(protein__entry_name=selection_id)[0])
