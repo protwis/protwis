@@ -104,7 +104,7 @@ class Command(BaseBuild):
                 else:
                     # No ligand seems to match by inchikey -- start creating it.
                     # Make LigandProperities first
-                    lt, created = LigandType.objects.get_or_create(slug=l['ligand_type__slug'],name=l['ligand_type__name'])
+                    lt, created = LigandType.objects.get_or_create(slug=l['ligand_type__slug'],defaults = {'name':l['ligand_type__name']})
                     lp = LigandProperities()
                     lp.inchikey = l['inchikey']
                     lp.smiles = l['smiles']
