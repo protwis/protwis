@@ -13,6 +13,11 @@ from structure.models import (Structure, StructureType, StructureSegment, Struct
     Rotamer, StructureSegmentModeling, StructureCoordinates, StructureCoordinatesDescription, StructureEngineering,
     StructureEngineeringDescription, Fragment)
 from construct.functions import *
+
+from contactnetwork.models import *
+import contactnetwork.interaction as ci
+from contactnetwork.cube import compute_interactions
+
 #from structure.functions import BlastSearch
 from Bio.PDB import PDBParser,PPBuilder
 from Bio import pairwise2
@@ -759,6 +764,100 @@ class Command(BaseBuild):
         if debug: print("===============**================")
         return None
 
+    def purge_contact_network(self,s):
+
+        ii = Interaction.objects.filter(
+            interacting_pair__referenced_structure=s
+        ).all()
+
+        for i in ii:
+            i.delete()
+
+
+    def build_contact_network(self,s,pdb_code):
+        try:
+            interacting_pairs = compute_interactions(pdb_code)
+        except:
+            self.logger.error('Error with computing interactions (%s)' % (pdb_code))
+            return
+
+        for p in interacting_pairs:
+            # Create the pair
+            res1_seq_num = p.get_residue_1().id[1]
+            res2_seq_num = p.get_residue_2().id[1]
+            conformation = s.protein_conformation
+
+            # Get the residues
+            try:
+                res1 = Residue.objects.get(sequence_number=res1_seq_num, protein_conformation=conformation)
+                res2 = Residue.objects.get(sequence_number=res2_seq_num, protein_conformation=conformation)
+            except Residue.DoesNotExist:
+                self.logger.warning('Error with pair between %s and %s (%s)' % (res1_seq_num,res2_seq_num,conformation))
+                continue
+
+            # Save the pair
+            pair = InteractingResiduePair()
+            pair.res1 = res1
+            pair.res2 = res2
+            pair.referenced_structure = s
+            pair.save()
+
+            # Add the interactions to the pair
+            for i in p.get_interactions():
+                if type(i) is ci.VanDerWaalsInteraction:
+                    ni = VanDerWaalsInteraction()
+                    ni.interacting_pair = pair
+                    ni.save()
+                elif type(i) is ci.HydrophobicInteraction:
+                    ni = HydrophobicInteraction()
+                    ni.interacting_pair = pair
+                    ni.save()
+                elif type(i) is ci.PolarSidechainSidechainInteraction:
+                    ni = PolarSidechainSidechainInteraction()
+                    ni.interacting_pair = pair
+                    ni.is_charged_res1 = i.is_charged_res1
+                    ni.is_charged_res2 = i.is_charged_res2
+                    ni.save()
+                elif type(i) is ci.PolarBackboneSidechainInteraction:
+                    ni = PolarBackboneSidechainInteraction()
+                    ni.interacting_pair = pair
+                    ni.is_charged_res1 = i.is_charged_res1
+                    ni.is_charged_res2 = i.is_charged_res2
+                    ni.res1_is_sidechain = False
+                    ni.save()
+                elif type(i) is ci.PolarSideChainBackboneInteraction:
+                    ni = PolarBackboneSidechainInteraction()
+                    ni.interacting_pair = pair
+                    ni.is_charged_res1 = i.is_charged_res1
+                    ni.is_charged_res2 = i.is_charged_res2
+                    ni.res1_is_sidechain = True
+                    ni.save()
+                elif type(i) is ci.FaceToFaceInteraction:
+                    ni = FaceToFaceInteraction()
+                    ni.interacting_pair = pair
+                    ni.save()
+                elif type(i) is ci.FaceToEdgeInteraction:
+                    ni = FaceToEdgeInteraction()
+                    ni.interacting_pair = pair
+                    ni.res1_has_face = True
+                    ni.save()
+                elif type(i) is ci.EdgeToFaceInteraction:
+                    ni = FaceToEdgeInteraction()
+                    ni.interacting_pair = pair
+                    ni.res1_has_face = False
+                    ni.save()
+                elif type(i) is ci.PiCationInteraction:
+                    ni = PiCationInteraction()
+                    ni.interacting_pair = pair
+                    ni.res1_has_pi = True
+                    ni.save()
+                elif type(i) is ci.CationPiInteraction:
+                    ni = PiCationInteraction()
+                    ni.interacting_pair = pair
+                    ni.res1_has_pi = False
+                    ni.save()
+
+
     def main_func(self, positions, iteration,count,lock):
         # filenames
         # if not positions[1]:
@@ -808,9 +907,9 @@ class Command(BaseBuild):
 
                     # create a structure record
                     try:
-                        #s = Structure.objects.get(protein_conformation__protein=con)
-                        print(con)
-                        s = Structure.objects.get(protein_conformation__protein=con).delete()
+                        s = Structure.objects.get(protein_conformation__protein=con)
+                        self.purge_contact_network(s)
+                        s = s.delete()
                         s = Structure()
                     except Structure.DoesNotExist:
                         s = Structure()
@@ -1343,6 +1442,19 @@ class Command(BaseBuild):
                         print(msg)
                         print('ERROR WITH ROTAMERS {}'.format(sd['pdb']))
                         self.logger.error('Error with rotamers for {}'.format(sd['pdb']))
+
+
+                    try:
+                        current = time.time()
+                        self.build_contact_network(s,sd['pdb'])
+                        end = time.time()
+                        diff = round(end - current,1)
+                        self.logger.info('Create contactnetwork done for {}. {} seconds.'.format(
+                                    s.protein_conformation.protein.entry_name, diff))
+                    except Exception as msg:
+                        print(msg)
+                        print('ERROR WITH CONTACTNETWORK {}'.format(sd['pdb']))
+                        self.logger.error('Error with contactnetwork for {}'.format(sd['pdb']))
 
                     try:
                         current = time.time()
