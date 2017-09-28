@@ -31,7 +31,7 @@ def PdbTreeData(request):
         'protein_conformation__protein__parent__family__parent__slug',
         'protein_conformation__protein__parent__family__slug',
         'protein_conformation__state__slug'
-        )
+        ).exclude(refined=True)
 
     # TODO: Use ordereddict
     l = lambda:defaultdict(l)
