@@ -145,6 +145,7 @@ class ProteinSegment(models.Model):
     category = models.CharField(max_length=50)
     fully_aligned = models.BooleanField(default=False)
     partial = models.BooleanField(default=False)
+    proteinfamily = models.CharField(max_length=20)
 
     def __str__(self):
         return self.slug

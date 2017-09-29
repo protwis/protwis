@@ -436,7 +436,7 @@ def signprotdetail(request, slug):
             title_cell_skip -= 1
     if r_buffer:
         r_chunks.append(r_buffer)
-
+    print(families)
     context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
         'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations}
 

@@ -81,36 +81,36 @@ class Command(BaseCommand):
         # Parsing pdb uniprot file for residues
         self.logger.info('Start parsing ARRESTIN RESIDUES')
         self.logger.info('Parsing file ' + self.arrestin_data_file)
-        residue_data =  pd.read_table(self.arrestin_data_file, sep="\t", low_memory=False)
-        residue_data = residue_data.loc[residue_data['Uniprot_ACC'].isin(arrestin_list)]
+        residue_data =  pd.read_excel(self.arrestin_data_file, sheetname=1)
+        # residue_data = residue_data.loc[residue_data['Uniprot_ACC'].isin(arrestin_list)]
+
+        ## Example data to populate a table for further infrastructure work
+        residue_data = residue_data[residue_data['pdb_id']=='1ayr']
 
         for index, row in residue_data.iterrows():
             # fetch protein for protein conformation
-            pr, c = Protein.objects.get_or_create(accession=row['Uniprot_ACC'])
+            pr, c = Protein.objects.get_or_create(accession='P10523')
 
             # fetch protein conformation
             pc, c = ProteinConformation.objects.get_or_create(protein_id=pr)
 
-            #fetch residue generic number
-            rgnsp=[]
+            # fetch residue generic number
+            rgnsp = []
             if(int(row['CAN'].split('.')[2])<10):
                 rgnsp = row['CAN'].split('.')
-                rgn_new = rgnsp[0]+'.'+rgnsp[1]+'.0'+rgnsp[2]
-                rgn, c= ResidueGenericNumber.objects.get_or_create(label=rgn_new)
+                rgn_new = rgnsp[0] + '.' + rgnsp[1] + '.0' + rgnsp[2]
+                rgn, c = ResidueGenericNumber.objects.get_or_create(label=rgn_new)
 
             else:
-                rgn, c= ResidueGenericNumber.objects.get_or_create(label=row['CAN'])
+                rgn, c = ResidueGenericNumber.objects.get_or_create(label=row['CAN'])
 
-            #fetch protein segment id
-            ps, c= ProteinSegment.objects.get_or_create(slug=row['CAN'].split(".")[1])
-
+            ps, c = ProteinSegment.objects.get_or_create(slug=row['CAN'].split('.')[1])
             try:
-                Residue.objects.get_or_create(sequence_number=row['Position'], protein_conformation=pc, amino_acid=row['Residue'], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
-                # self.logger.info("Residues added to db")
+                Residue.objects.get_or_create(sequence_number=row['pdbPos'], protein_conformation=pc, amino_acid=row['res_id'][0], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
 
             except:
+                print("didnt work")
                 self.logger.error("Failed to add residues")
-
 
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
@@ -140,26 +140,23 @@ class Command(BaseCommand):
         # Parsing pdb uniprot file for generic residue numbers
         self.logger.info('Start parsing ARRESTIN RESIDUE FILE')
         self.logger.info('Parsing file ' + self.arrestin_data_file)
-        residue_data =  pd.read_table(self.arrestin_data_file, sep="\t", low_memory=False)
+        residue_data =  pd.read_excel(self.arrestin_data_file, sheetname=1)
 
-        residue_data = residue_data[residue_data.Uniprot_ID.notnull()]
-        residue_data = residue_data[residue_data['Uniprot_ACC'].isin(arrestin_list)]
+        # residue_data = residue_data[residue_data.Uniprot_ID.notnull()]
+        # residue_data = residue_data[residue_data['Uniprot_ACC'].isin(arrestin_list)]
 
         # filtering for human arrestins using list above
-        residue_generic_numbers= residue_data['CAN'].unique()
+        residue_generic_numbers = residue_data['CAN'].unique()
 
         # add protein segment entries:
-        segments =[]
+        segments = residue_data['CAN'].str.split('.', expand=True)[1].unique()
         cans = residue_data['CAN'].unique()
 
-        for s in cans:
-            segments.append(s.split(".")[1])
+        for s in segments:
 
-        for s in np.unique(segments):
-
-            if s.startswith('S') and len(s) == 2:
+            if s.startswith('S'):
                 category = 'sheet'
-            elif s.startswith('H') and len(s) == 2:
+            elif s.startswith('H'):
                 category = 'helix'
             else:
                 category = 'loop'
@@ -174,18 +171,18 @@ class Command(BaseCommand):
         can_scheme = ResidueNumberingScheme.objects.get(slug='can')
 
         for rgn in residue_generic_numbers:
-            ps, c= ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1])
+            ps, c = ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1])
 
-            rgnsp=[]
+            rgnsp = []
 
             if(int(rgn.split('.')[2])<10):
                 rgnsp = rgn.split('.')
-                rgn_new = rgnsp[0]+'.'+rgnsp[1]+'.0'+rgnsp[2]
+                rgn_new = rgnsp[0] + '.' + rgnsp[1] + '.0' + rgnsp[2]
             else:
                 rgn_new = rgn
 
             try:
-                res_gen_num, created= ResidueGenericNumber.objects.get_or_create(label=rgn_new, scheme=can_scheme, protein_segment=ps)
+                res_gen_num, created =  ResidueGenericNumber.objects.get_or_create(label=rgn_new, scheme=can_scheme, protein_segment=ps)
                 self.logger.info('Created generic residue number')
 
             except:
@@ -291,8 +288,8 @@ class Command(BaseCommand):
         #
         # # all arrestins
         # accessions_all = list(accessions_orth) + list(accessions)
-        #
-        # return list(accessions_all)
+
+        return list(accessions)
 
     def can_create_arrestins(self, family, residue_numbering_scheme, accession, uniprot):
         # get/create protein source
