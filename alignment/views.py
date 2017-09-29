@@ -59,7 +59,7 @@ class TargetSelectionGprotein(AbsTargetSelection):
     buttons = {
         'continue': {
             'label': 'Continue to next step',
-            'url': '/alignment/segmentselectiongprot',
+            'url': '/alignment/segmentselectionarrestin',
             'color': 'success',
         },
     }
@@ -155,6 +155,36 @@ class SegmentSelectionGprotein(AbsSegmentSelection):
     ss = ProteinSegment.objects.filter(name__regex = r'^[a-zA-Z0-9]{1,5}$', partial=False).prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
+class SegmentSelectionArrestin(AbsSegmentSelection):
+    step = 2
+    number_of_steps = 2
+    docs = 'sequences.html#structure-based-alignments'
+    description = 'Select sequence segments in the middle column for beta and visual arrestins. You can expand every structural element and select individual' \
+        + ' residues by clicking on the down arrows next to each helix, sheet or loop.\n\n You can select the full sequence or show all structured regions at the same time.\n\nSelected segments will appear in the' \
+        + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
+        + ' button.'
+
+    template_name = 'common/segmentselection.html'
+
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', True),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Show alignment',
+            'url': '/alignment/render',
+            'color': 'success',
+        },
+    }
+
+    # position_type = 'gprotein'
+    # rsets = ResiduePositionSet.objects.filter(name__in=['Gprotein Barcode', 'YM binding site']).prefetch_related('residue_position')
+
+    ## ProteinSegment for different proteins
+    ss = ProteinSegment.objects.filter(name__regex = r'^[a-zA-Z0-9]{1,5}$', partial=False).prefetch_related('generic_numbers')
+    ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
 class BlastSearchInput(AbsMiscSelection):
     step = 1
@@ -171,7 +201,6 @@ class BlastSearchInput(AbsMiscSelection):
     }
     selection_boxes = {}
     blast_input = True
-
 
 class BlastSearchResults(TemplateView):
     """
@@ -193,7 +222,6 @@ class BlastSearchResults(TemplateView):
         context["input"] = request.POST['input_seq']
 
         return render(request, self.template_name, context)
-
 
 def render_alignment(request):
     # get the user selection from session
