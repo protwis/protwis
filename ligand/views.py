@@ -7,7 +7,7 @@ from django.views.generic import TemplateView, View
 from common.models import ReleaseNotes
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
 from common.selection import Selection, SelectionItem
-from ligand.models import Ligand, AssayExperiment, LigandProperities 
+from ligand.models import Ligand, AssayExperiment, LigandProperities, LigandVendorLink
 from protein.models import Protein, Species, ProteinFamily
 
 from copy import deepcopy
@@ -166,6 +166,7 @@ def TargetDetailsCompact(request, **kwargs):
                 'high_value': max(values),
                 'standard_units': ', '.join(list(set([x.standard_units for x in per_target_data]))),
                 'smiles': lig.properities.smiles,
+                'mw': lig.properities.mw,
                 'rotatable_bonds': lig.properities.rotatable_bonds,
                 'hdon': lig.properities.hdon,
                 'hacc': lig.properities.hacc,
@@ -231,6 +232,58 @@ def TargetDetails(request, **kwargs):
     context['proteins'] = ps
 
     return render(request, 'target_details.html', context)
+
+
+def TargetPurchasabilityDetails(request, **kwargs):
+
+    simple_selection = request.session.get('selection', False)
+    selection = Selection()
+    if simple_selection:
+        selection.importer(simple_selection)
+    if selection.targets != []:
+        prot_ids = [x.item.id for x in selection.targets]
+        ps = AssayExperiment.objects.filter(protein__in=prot_ids, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')#.exclude(ligand__properities__vendors__vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem'])
+        context = {
+            'target': ', '.join([x.item.entry_name for x in selection.targets])
+            }
+
+    ps = ps.values('standard_type',
+                'standard_relation',
+                'standard_value',
+                'assay_description',
+                'assay_type',
+                'standard_units',
+                'pchembl_value',
+                'ligand__id',
+                'ligand__properities_id',
+                'ligand__properities__web_links__index',
+                'ligand__properities__vendors__vendor__id',
+                'ligand__properities__vendors__vendor__name',
+                'protein__species__common_name',
+                'protein__entry_name',
+                'ligand__properities__mw',
+                'ligand__properities__logp',
+                'ligand__properities__rotatable_bonds',
+                'ligand__properities__smiles',
+                'ligand__properities__hdon',
+                'ligand__properities__hacc','protein'
+                ).annotate(num_targets = Count('protein__id', distinct=True))
+    purchasable = []
+    for record in ps:
+        try:
+            tmp = LigandVendorLink.objects.filter(vendor=record['ligand__properities__vendors__vendor__id'], lp=record['ligand__properities_id'])[0]
+            record['vendor_id'] = tmp.vendor_external_id
+            record['vendor_link'] = tmp.url
+            purchasable.append(record)
+        except:
+            continue
+
+    context['proteins'] = purchasable
+
+
+
+
+    return render(request, 'target_purchasability_details.html', context)
 
 
 class LigandStatistics(TemplateView):

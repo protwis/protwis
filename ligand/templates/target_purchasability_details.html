@@ -74,25 +74,24 @@
                     sRangeFormat: "{from}:{to}",
                     aoColumns: [
                         null,
-                        { type: "select" },//Ligand Name
-                        { type: "select" },//Protein Entry Name
+                        null, //{ type: "select" },//Ligand Name
+                        null, //{ type: "select" },//Protein Entry Name
                         { type: "select" },//Species
-                        { type: "select" },// purchasable
-                        { type: "select" },// vendor
-                        { type: "number-range" },	//Num Records
-                        { type: "select" },//Assay Type
-                        { type: "number-range" },	//Minimal Measured Values
-                        { type: "number-range" },	//Average Values
-                        { type: "number-range" },	//Maximal Measured Values
+                        { type: "select" },// Vendor
+                        null,// Vendor ID
+                        { type: "number-range" },//PChEMBL Value
+                        { type: "select" },//Standard Type
+                        null,//Standard Relation
+                        { type: "number-range" },//Standard Value
                         { type: "select" },//Standard Units
+                        { type: "select" },//Assay Type
                         { type: "select" },//Assay Description
                         { type: "text" },//Smiles
-                        { type: "number-range" },//Mol. weight
+                        { type: "number-range" },//Mol weight
                         { type: "number-range" },//Rotatable Bonds
                         { type: "number-range" },//Hydrogen Bond Donors
                         { type: "number-range" },//Hydrogen Bond Acceptors
                         { type: "number-range" },//LogP
-
                     ]
                 });
             }
@@ -107,7 +106,7 @@
         $('#csv_btn').click(function () {
             var checked_data = table.rows('.alt_selected').data();
             var csv_data = [];
-            csv_data.push('ChEMBL ID;Receptor;Species;Purchasable;No. records;Assay type;Min.;Average;Max.;Unit;Smiles;Mol. weight;Rot. Bonds;H don;H acc;LogP')
+            csv_data.push('ChEMBL ID;Receptor;Species;Vendor;Vendor id;p-value (-log);Activity Type;Activity Relation;Activity Value;Unit;Assay Type;Assay Description;Smiles;Mol. weight;Rot. Bonds;H don;H acc;LogP')
             for (i = 0; i < checked_data.length; i++) {
                 var csv_row = []
                 for (j = 1; j < checked_data[i].length; j++) {
@@ -141,7 +140,7 @@
                 var smi_row = []
                 for (j = 1; j < checked_data[i].length; j++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][12];
+                    div.innerHTML = checked_data[i][13];
                     if (typeof div.innerText !== "undefined") {
                         smi_row.push(div.innerText.replace(/\s+/g, ''));
                     } else {
@@ -169,9 +168,6 @@
                 a.click();
             }
         });
-        $('#purchasability-btn').click(function () {
-            window.location.href = '/ligand/targets_purchasable';
-        });
     })
 
 </script>
@@ -192,9 +188,6 @@
         </li>
         </ul>
     </div>
-<div class="btn-group">
-    <a id="purchasability-btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Purchasability</a>
-</div>
         <!--<div class="btn-group">-->
         <!--    <a id="concise_funtional_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show Concise Functional Assay Information</a>-->
         <!--</div>-->
@@ -214,13 +207,15 @@
                         <th class="general-th">ChEMBL ID</th>
                         <th class="general-th">Receptor</th>
                         <th class="general-th">Species</th>
-                        <th class="general-th">Purchasable</th>
-                        <th class="activity-th">No. records</th>
-                        <th class="activity-th">Assay Type</th>
-                        <th class="activity-th">Min.</th>
-                        <th class="activity-th">Average</th>
-                        <th class="activity-th">Max.</th>
+                        <th class="general-th">Vendor</th>
+                        <th class="general-th">Vendor ID</th>
+                        <th class="activity-th">p-value<br />(-log)</th>
+                        <th class="activity-th">Activity<br />Type</th>
+                        <th class="activity-th">Activity<br />Relation</th>
+                        <th class="activity-th">Activity<br />Value</th>
                         <th class="activity-th">Unit</th>
+                        <th class="activity-th">Assay Type</th>
+                        <th class="activity-th">Assay Description</th>
                         <th class="chemical-th">Smiles</th>
                         <th class="chemical-th">Mol. weight</th>
                         <th class="chemical-th">Rot. Bonds</th>
@@ -246,31 +241,33 @@
                         <th></th>
                         <th></th>
                         <th></th>
+                        <th></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for record in ligand_data %}
+                    {% for p in proteins %}
                     <tr>
                         <td><input class="alt" type="checkbox"></td>
-                        <td><a href="/ligand/{{record.ligand_id}}">{{record.ligand_id}}</a></td>
-                        <td>{{record.protein_name}}</td>
-                        <td>{{record.species}}</td>
-                        <td> Yes</td>
-                        <td>{{record.record_count}}</td>
-                        <td>{{record.assay_type}}</td>
-                        <td>{{record.low_value|floatformat:2}}</td>
-                        <td>{{record.average_value|floatformat:2}}</td>
-                        <td>{{record.high_value|floatformat:2}}</td>
-                        <td>{{record.standard_units}}</td>
-                        <td>{{record.smiles}}</td>
-                        <td>{{record.mw}}</td>
-                        <td>{{record.rotatable_bonds}}</td>
-                        <td>{{record.hdon}}</td>
-                        <td>{{record.hacc}}</td>
-                        <td>{{record.logp}}</td>
-
+                        <td><a href="/ligand/{{p.ligand__properities__web_links__index}}">{{p.ligand__properities__web_links__index}}</a></td>
+                        <td>{{p.protein__entry_name}}</td>
+                        <td>{{p.protein__species__common_name}}</td>
+                        <td>{{p.ligand__properities__vendors__vendor__name}}</td>
+                        <td><a href="{{p.vendor_link}}">{{p.vendor_id}}</a></td>
+                        <td align="right">{{p.pchembl_value}}</td>
+                        <td align="center">{{p.standard_type}}</td>
+                        <td>{{p.standard_relation}}</td>
+                        <td>{{p.standard_value}}</td>
+                        <td>{{p.standard_units}}</td>
+                        <td>{% if p.assay_type == 'b' %} Binding {% else %} Functional {% endif %}</td>
+                        <td class="AssayCell"> <div style="overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;">{{p.assay_description}}<span class="AssayDetail">{{p.assay_description}}</span> </div></td>
+                        <td>{{p.ligand__properities__smiles}}</td>
+                        <td>{{p.ligand__properities__mw}}</td>
+                        <td>{{p.ligand__properities__rotatable_bonds}}</td>
+                        <td>{{p.ligand__properities__hdon}}</td>
+                        <td>{{p.ligand__properities__hacc}}</td>
+                        <td>{{p.ligand__properities__logp}}</td>
                     </tr>
-
                     {% endfor %}
                 </tbody>
 
