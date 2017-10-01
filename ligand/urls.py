@@ -9,6 +9,7 @@ urlpatterns = [
     url(r'^target/compact/(?P<slug>[-\w]+)/$',TargetDetailsCompact, name='ligand_target_detail_compact'),
     url(r'^targets$',TargetDetails, name='ligand_target_detail'),
     url(r'^targets_compact',TargetDetailsCompact, name='ligand_target_detail_compact'),
+    url(r'^targets_purchasable',TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
     url(r'^(?P<ligand_id>[-\w]+)/$',LigandDetails, name='ligand_detail'),
     url(r'^statistics', LigandStatistics.as_view(), name='ligand_statistics')
 ]
