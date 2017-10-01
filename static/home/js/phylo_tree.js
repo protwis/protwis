@@ -14,7 +14,6 @@ function draw_tree(data, options) {
             }
         }
         branches[key] = branch_offset;
-        console.info("Branch: " + key + "\toffset: " + branch_offset);
     }
     branches[options.depth] = branch_offset + options.leaf_offset;
 
@@ -32,11 +31,6 @@ function draw_tree(data, options) {
         .attr("height", diameter)
         .attr("id", options.anchor+"_svg")
         .attr("xmlns", "http://www.w3.org/2000/svg");
-
-    //svg.append("rect")
-    //    .attr("width", "100%")
-    //    .attr("height", "100%")
-    //    .attr("fill", "white");
 
     var svg_g = svg.append("g")
         .attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
@@ -125,9 +119,6 @@ function draw_tree(data, options) {
         .style("font-family", "Palatino")
         .style("fill", function (d) {
             if (d.color) { return "#111" }
-            //else if (d.interactions > 0 && d.mutations_an > 0 && 1 == 2) { return "green" }
-            //else if (d.interactions > 0 && 1 == 2) { return "Olive" }
-            //else if (d.mutations_an > 0 && 1 == 2) { return "palegreen" }
             else { return "#222" };
         }).call(getBB);
     node.filter(function (d) { return (d.depth != options.depth) }).insert("rect", "text")
