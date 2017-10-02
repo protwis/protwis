@@ -1,0 +1,373 @@
+﻿{% extends "home/base.html" %}
+{% load staticfiles %}
+{% load humanize %}
+{% block addon_css %}
+<link rel="stylesheet" href="{% static 'home/css/nv.d3.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'home/css/nvd3-update.css' %}" type="text/css" />
+<style>
+        .node circle {
+            /*fill: #fff;*/
+            /*stroke: DarkGreen;*/
+            /*fill: DarkGreen;*/
+            stroke: #000000;
+            stroke-width: .3px;
+        }
+
+        .node {
+            font: 8px sans-serif;
+        }
+
+        .link {
+            fill: none;
+            stroke: #eee;
+            stroke-width: 1px;
+        }
+
+        .node text {
+            font: 8px sans-serif;
+        }
+
+        .links {
+            fill: none;
+            stroke: #000;
+        }
+
+        .link-extensions {
+            fill: none;
+            stroke: #000;
+            stroke-opacity: .25;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            margin: 0;
+        }
+
+        .links {
+            fill: none;
+            stroke: #000;
+        }
+
+        .link-extensions {
+            fill: none;
+            stroke: #000;
+            stroke-opacity: .25;
+        }
+
+        .labels {
+            font: 14px Palatino;
+            font-weight: bold;
+        }
+
+        .link--active {
+            stroke: #000 !important;
+            stroke-width: 3.5px;
+        }
+
+        .link-extension--active {
+            stroke-opacity: .6;
+        }
+
+        .label--active {
+            font-weight: bold;
+        }
+    #circle_100 {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: LightGray;
+    }
+    #circle_500 {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: DarkGray;
+    }
+    #circle_1k {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: Gray;
+    }
+    #circle_2k {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: Black;
+    }
+</style>
+{% endblock %}
+
+
+
+
+{% block content %}
+<h4>Number of unique ligands per receptor class</h4>
+<table style="width:85% !important" class="table table-stripped">
+    <thead>
+        <tr>
+            <td><b>Class<br />(Family)</b></td>
+            <td align="center"><b>Total</b></td>
+            {% for data in ligands_by_class %}
+            <td align="center"><b>{% if data.name == "Taste 2" %}Taste&nbsp;2{% else %}{{ data.name }}{% endif %}</b></td>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>No. ligands</td>
+            <td align="center" style="vertical-align:middle !important">{{ ligands_total.num_ligands|floatformat:0|intcomma }}</td>
+            {% for data in ligands_by_class %}
+            <td align="center" style="vertical-align:middle !important">{{ data.num_ligands|floatformat:0|intcomma }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td nowrap>Average no. ligands/GPCR</td>
+            <td align="center" style="vertical-align:middle !important">{{ ligands_total.avg_num_ligands|floatformat:0|intcomma }}</td>
+            {% for data in ligands_by_class %}
+            <td align="center" style="vertical-align:middle !important">{{ data.avg_num_ligands|floatformat:0|intcomma }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td nowrap>No. GPCRs with ligand (%)</td>
+            <td align="center" style="vertical-align:middle !important"> {{ ligands_total.target_count|floatformat:0 }} ({{ ligands_total.target_percentage|floatformat:0 }})</td>
+            {% for data in ligands_by_class %}
+            <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }} ({{ data.target_percentage|floatformat:0 }})</td>
+            {% endfor %}
+        </tr>
+    </tbody>
+    <tr> </tr>
+
+</table>
+
+Specific sets of ligands can be downloaded from the <a href="/ligand">ligand browser</a><br />
+Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d" }}</strong><br />
+<br />
+<br />
+<h4>Ligand coverage of GPCR Classes</h4><br />
+
+Circle colors indicate a number of ligands: 
+<table style="width:30%">
+    <tr>
+        <td ><div id="circle_100"></div></td>
+        <td> < 100 </td>
+        <td ><div id="circle_500"></div></td>
+        <td> < 500 </td>
+        <td ><div id="circle_1k"></div></td>
+        <td> < 1000 </td>
+        <td ><div id="circle_2k"></div></td>
+        <td> 1000+</td>
+    </tr>
+</table><br />
+<script type="text/javascript" charset="utf-8">
+    class_a = {{ class_a | safe }};
+    class_a_options = {{ class_a_options | safe }};
+    class_b1 = {{ class_b1 | safe }};
+    class_b1_options = {{ class_b1_options | safe }};
+    class_b2 = {{ class_b2 | safe }};
+    class_b2_options = {{ class_b2_options | safe }};
+    class_c = {{ class_c | safe }};
+    class_c_options = {{ class_c_options | safe }};
+    class_f = {{ class_f | safe }};
+    class_f_options = {{ class_f_options | safe }};
+    class_t2 = {{ class_t2 | safe }};
+    class_t2_options = {{ class_t2_options | safe }};
+</script>
+<h4>  Class A<br />(Rhodopsin)</h4>
+<div id="class_a">
+</div>
+<div class="btn-group">
+    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+            aria-haspopup="true" aria-expanded="false">
+        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu">
+        <li>
+            <a href="javascript:saveSvgAsPng(document.getElementById('class_a_svg'), 'ligand_coverage_tree_class_a.png');">PNG</a>
+        </li>
+        <li>
+            <a href="javascript:saveSvgAsJpg(document.getElementById('class_a_svg'), 'ligand_coverage_tree_class_a.jpg');">JPG</a>
+        </li>
+        <li>
+            <a href="javascript:saveSvgAsTiff(document.getElementById('class_a_svg'), 'ligand_coverage_tree_class_a.tiff');">TIFF</a>
+            </a>
+        </li>
+    </ul>
+</div>
+<br />
+<br />
+<br />
+<table>
+    <tr>
+        <td align="center">
+            <h4>Class B1<br />(Secretin)</h4>
+        </td>
+        <td align="center">
+            <h4>Class B2<br />(Adhesion)</h4>
+        </td>
+        <td align="center">
+            <h4>Class C<br />(Glutamate)</h4>
+        </td>
+    </tr>
+    <tr>
+        <td width="33%" style="padding: 20px">
+            <div id="class_b1"></div>
+        </td>
+        <td width="33%" style="padding: 20px">
+            <div id="class_b2"></div>
+        </td>
+        <td width="33%" style="padding: 20px">
+            <div id="class_c"></div>
+
+        </td>
+    </tr>
+    <tr>
+        <td width="33%" style="padding: 20px">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('class_b1_svg'), 'ligand_coverage_tree_class_b1.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_b1_svg'), 'ligand_coverage_tree_class_b1.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_b1_svg'), 'ligand_coverage_tree_class_b1.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </td>
+        <td width="33%" style="padding: 20px">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('class_b2_svg'), 'ligand_coverage_tree_class_b2.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_b2_svg'), 'ligand_coverage_tree_class_b2.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_b2_svg'), 'ligand_coverage_tree_class_b2.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </td>
+        <td width="33%" style="padding: 20px">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('class_c_svg'), 'ligand_coverage_tree_class_c.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_c_svg'), 'ligand_coverage_tree_class_c.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_c_svg'), 'ligand_coverage_tree_class_c.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </td>
+    </tr>
+</table>
+<table width="100%">
+    <tr>
+        <td width="50%" align="center">
+            <h4>Class F<br />(Frizzled)</h4>
+        </td>
+        <td width="50%" align="center">
+            <h4>Taste 2</h4>
+        </td>
+    </tr>
+    <tr>
+        <td width="50%" align="center" style="padding: 20px">
+            <div id="class_f"></div>
+        </td>
+        <td width="50%" align="center" style="padding: 20px">
+            <div id="class_t2"></div>
+        </td>
+    </tr>
+    <tr>
+        <td width="50%" style="padding: 20px">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('class_f_svg'), 'ligand_coverage_tree_class_f.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_f_svg'), 'ligand_coverage_tree_class_f.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_f_svg'), 'ligand_coverage_tree_class_f.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </td>
+        <td width="50%" style="padding: 20px">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="javascript:saveSvgAsPng(document.getElementById('class_t2_svg'), 'ligand_coverage_tree_t2.png');">PNG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsJpg(document.getElementById('class_t2_svg'), 'ligand_coverage_tree_t2.jpg');">JPG</a>
+                    </li>
+                    <li>
+                        <a href="javascript:saveSvgAsTiff(document.getElementById('class_t2_svg'), 'ligand_coverage_tree_t2.tiff');">TIFF</a>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </td>
+    </tr>
+</table>
+{% endblock %}
+
+{% block addon_js %}
+<script src="{% static 'home/js/jquery.js' %}"></script>
+<script src="{% static 'home/js/d3.min.js' %}"></script>
+<script src="{% static 'home/js/nv.d3.min.js' %}"></script>
+<script src="{% static 'home/js/saveSvgAsPng.js' %}"></script>
+<script src="{% static 'home/js/phylo_tree.js' %}"></script>
+<script type="text/javascript" charset="utf-8">
+    $(window).load(function () {
+        draw_tree(class_a, class_a_options);
+        draw_tree(class_b1, class_b1_options);
+        draw_tree(class_b2, class_b2_options);
+        draw_tree(class_c, class_c_options);
+        draw_tree(class_f, class_f_options);
+        draw_tree(class_t2, class_t2_options);
+    });
+</script>
+{% endblock %}

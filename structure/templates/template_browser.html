@@ -22,11 +22,11 @@
                 'paging': false,
                 'orderCellsTop': true,
                 "autoWidth": true,
-                dom: 'T<"clear">lfrtip',
+                "dom": 'T<"clear">lfrtip',
                 "aoColumnDefs": [
                     { 'bSortable': false, 'aTargets': [0] },
                     { "sType": "string", "aTargets": [2] },
-                    { "sType": "string", "aTargets": [12] },
+                    { "sType": "string", "aTargets": [14] },
                 ],
                 "aaSorting": [[ 0, "desc" ]],
                 'tableTools': {
@@ -36,6 +36,7 @@
                 initComplete: function () {
                     $('#crystal_structures').dataTable().columnFilter({
                         sPlaceHolder: "head:after",
+                        sRangeFormat: "{from}:{to}",
                         aoColumns: [
                             null,
                             { type: "number" }, // sequence similarity
@@ -47,6 +48,8 @@
                             { type: "text" }, // pdb code
                             { type: "number-range" }, // resolution
                             { type: "text" }, // preferred chain
+                            { type: "text" }, // state
+                            { type: "number-range" }, // delta distance
                             { type: "text" }, // stabilizing agent - left as type-in for now
                             { type: "text" }, // endogenous ligand name
                             { type: "text" }, // endogenous ligand type
@@ -156,8 +159,8 @@
     <br />
     <br />
     {% if structures %}              
-        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
-            <table width="100%" class="display" id="crystal_structures">
+        <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;" width="100%">
+            <table class="display" id="crystal_structures">
 
                 <thead>
                     <tr>
@@ -171,6 +174,8 @@
                         <th class="pdb-th">PDB code</th>
                         <th class="pdb-th">Resolution</th>
                         <th class="pdb-th">Pre. chain</th>
+                        <th class="pdb-th">State</th>
+                        <th class="pdb-th">&#916; distance (&#8491;)</th>
                         <th class='pdb-th'>Aux. proteins</th>
                         <th class="ligand-th">Endo. ligand</th>
                         <th class="ligand-th">Endo. lig. type</th>
@@ -181,6 +186,8 @@
                         <th class="pub-th">Date</th>
                     </tr>
                     <tr>
+                        <th></th>
+                        <th></th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -211,7 +218,7 @@
                     <td>{{ structure.0 }}</td>
                     <td>{{ structure.1 }}</td>
                     <td>{{ structure.2.protein_conformation.protein.family.name|safe }}</td>
-                    <td>{{ structure.protein_conformation.protein.family.parent.name|safe }}</td>
+                    <td>{{ structure.2.protein_conformation.protein.family.parent.name|safe }}</td>
                     <td>{{ structure.2.protein_conformation.protein.family.parent.parent.parent.name }}</td>
                     <td>{{ structure.2.protein_conformation.protein.species.common_name }}</td>
                     <td class="text-center">
@@ -221,6 +228,8 @@
                     </td>
                     <td class="text-center">{{ structure.2.resolution|floatformat:"1" }}</td>
                     <td class="text-center">{{ structure.2.preferred_chain }}</td>
+                    <td class="text-center">{{ structure.2.state.name }}</td>
+                    <td class="text-center">{{ structure.2.distance|floatformat:"2" }}</td>
                     <td>
                         {% for sa in structure.2.stabilizing_agents.all %}
                         {{ sa.name }}<br />
