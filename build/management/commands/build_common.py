@@ -28,8 +28,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         functions = [
-            'create_resources',
             'create_protein_segments',
+            'create_resources',
             'create_residue_numbering_schemes',
             'create_anomalies',
         ]
@@ -71,7 +71,7 @@ class Command(BaseCommand):
     def create_protein_segments(self):
         self.logger.info('CREATING PROTEIN SEGMENTS')
         self.logger.info('Parsing file ' + self.segment_source_file)
-        ProteinSegment.objects.all().delete()
+
         with open(self.segment_source_file, "r", encoding='UTF-8') as segment_file:
             for row in segment_file:
                 split_row = shlex.split(row)
@@ -90,9 +90,7 @@ class Command(BaseCommand):
                         'proteinfamily': split_row[4]
                     }
 
-                    s, created = ProteinSegment.objects.get_or_create(slug=split_row[0], defaults=defaults)
-                    s.proteinfamily = split_row[4]
-                    s.save()
+                    s, created = ProteinSegment.objects.get_or_create(slug=split_row[0], proteinfamily=split_row[4], defaults=defaults)
 
                     if created:
                         self.logger.info('Created protein segment ' + s.name)
