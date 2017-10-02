@@ -26,6 +26,7 @@ urlpatterns = [
     url(r'^drugs/',include('drugs.urls')),
     url(r'^signprot/',include('signprot.urls')),
     url(r'^ligand/',include('ligand.urls')),
+    url(r'^mutational_landscape/',include('mutational_landscape.urls')),
     url(r'^contactnetwork/', include('contactnetwork.urls'))
 ]
 

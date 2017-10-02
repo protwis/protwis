@@ -50,7 +50,6 @@ class Command(BaseCommand):
             self.purge_can_proteins()
 
             self.can_create_proteins_and_families()
-            print("protein and families done")
 
         except Exception as msg:
             print(msg)
@@ -104,7 +103,7 @@ class Command(BaseCommand):
             else:
                 rgn, c = ResidueGenericNumber.objects.get_or_create(label=row['CAN'])
 
-            ps, c = ProteinSegment.objects.get_or_create(slug=row['CAN'].split('.')[1])
+            ps, c = ProteinSegment.objects.get_or_create(slug=row['CAN'].split('.')[1], proteinfamily='Arrestin')
             try:
                 Residue.objects.get_or_create(sequence_number=row['pdbPos'], protein_conformation=pc, amino_acid=row['res_id'][0], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
 
@@ -148,30 +147,10 @@ class Command(BaseCommand):
         # filtering for human arrestins using list above
         residue_generic_numbers = residue_data['CAN'].unique()
 
-        # add protein segment entries:
-        segments = residue_data['CAN'].str.split('.', expand=True)[1].unique()
-        cans = residue_data['CAN'].unique()
-
-        for s in segments:
-
-            if s.startswith('S'):
-                category = 'sheet'
-            elif s.startswith('H'):
-                category = 'helix'
-            else:
-                category = 'loop'
-
-            try:
-                ProteinSegment.objects.get_or_create(slug=s, name=s, category=category, fully_aligned=True)
-                self.logger.info('Created protein segment')
-
-            except:
-                self.logger.error('Failed to create protein segment')
-
         can_scheme = ResidueNumberingScheme.objects.get(slug='can')
 
         for rgn in residue_generic_numbers:
-            ps, c = ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1])
+            ps, c = ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1], proteinfamily='Arrestin')
 
             rgnsp = []
 
