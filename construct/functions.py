@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.utils.text import slugify
 from django.db import IntegrityError
 from protein.models import Protein, ProteinConformation
@@ -20,6 +21,7 @@ import datetime
 from collections import OrderedDict
 import pickle
 import logging
+import os
 
 AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
      'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N', 
@@ -49,6 +51,7 @@ def fetch_pdb_info(pdbname,protein):
         d['wt_seq'] = protein.sequence
 
 
+
     d['contact_info'] = {}
     d['contact_info']['name_cont'] = 'gpcrdb'
     d['contact_info']['pi_email'] = 'info@gpcrdb.org'
@@ -63,6 +66,160 @@ def fetch_pdb_info(pdbname,protein):
     d['xml_segments'] = []
 
     pos_in_wt = list(range(1,len(d['wt_seq'])+1))
+
+    # GET PDB FILE TO GET INITIAL VALUES - remove known WT that do not exist
+    structure = Structure.objects.filter(pdb_code__index=d['construct_crystal']['pdb'].upper()).get()
+
+    if 1==1: #update pdbs
+        pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
+        pdb_path = os.sep.join([pdb_data_dir, pdbname + '.pdb'])
+
+        url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
+        pdbdata_raw = urlopen(url).read().decode('utf-8')
+        with open(pdb_path, 'w') as f:
+            f.write(pdbdata_raw)
+
+        structure.pdb_data.pdb = pdbdata_raw
+
+    pdb_file = structure.pdb_data.pdb
+    # print(pdb_file)
+    pdb_range = []
+    uniprot_code = ''
+
+    # do uniprot_code check to see if they only label with PDB code
+    for line in pdb_file.split('\n'):
+        if line.startswith('DBREF'):
+            line = line.split()
+            if len(line)>7:
+                uniprot = line[7]
+                if uniprot == d['construct_crystal']['uniprot'].upper():
+                    uniprot_code = line[6]
+
+    for line in pdb_file.split('\n'):
+        if line.startswith('DBREF'):
+            line = line.split()
+            if len(line)<8:
+                continue
+            uniprot = line[7]
+            start = line[8]
+            end = line[9]
+            # print(line,uniprot,d['construct_crystal']['uniprot'].upper())
+            if uniprot == d['construct_crystal']['uniprot'].upper() or (uniprot==pdbname.upper() and uniprot_code==''):
+                uniprot_code = line[6]
+                # print(line)
+                pdb_range += range(int(start),int(end)+1)
+        elif line.startswith('SEQADV'):
+            line = line.split()
+            # if it is relevant to correct uniprot
+            if line[7]=='DELETION':
+                if line[4]==uniprot_code:
+                        #remove from pdb_range
+                        # print(line)
+                        # pdb_range += [int(line[6])]
+                        if int(line[6]) in pdb_range:
+                            pdb_range.remove(int(line[6]))
+            elif len(line)>10 and line[10]=='MUTATION':
+                # print("mutation",line)
+                pass
+            else:
+                # print('uknonwn',line)
+                pass
+
+    #replace if we could create via pdb_file
+    dbref_found = False
+    # print(pdb_range)
+    # print(list(set(pdb_range)))
+    # print("pos_in_wt",pos_in_wt)
+
+    # 5T1A: The final model included 295 residues (37–225 and 241–319) of the 360 residues of CCR2
+    # The sequence of human CCR2 isoform B (Uniprot ID P41597-2) was engineered for crystallization by truncation of C-terminal residues 329–360
+    # ISOFORM: 314-374: SLFHIALGCR...EASLQDKEGA → RYLSVFFRKH...TGEQEVSAGL
+    # DBREF  5T1A A    2   233  UNP    P41597   CCR2_HUMAN       2    233   
+    # DBREF: DBREF  5T1A A  234   328  UNP    P41597   CCR2_HUMAN     234    328 
+    if pdbname.upper()=='5T1A':
+        pdb_range = list(range(2,226))+list(range(241,329))
+
+    # 4Z9G
+    # GLN   103 EXPRESSION TAG 
+    # DBREF  4Z9G A  103   220  UNP    P34998   CRFR1_HUMAN    103    220
+    # DBREF  4Z9G A  223   372  UNP    P34998   CRFR1_HUMAN    252    401 (223-372 in right isoform)
+    if pdbname.upper()=='4Z9G':
+        pdb_range = list(range(104,221))+list(range(223,402))
+
+    # 5GLI 304 - 310 arent in pdb?
+    # ['DBREF', '5GLI', 'A', '63', '416', 'PDB', '5GLI', '5GLI', '63', '416'] <-- unparsed?
+    #  The C terminus was truncated after Ser407, and three cysteine residues were mutated to alanine (C396A, C400A and C405A) to avoid heterogeneous palmitoylation
+    # T4 lysozyme containing the C54T and C97A mutations52 was introduced into intracellular loop 3, between Lys3035.68 and Leu3116.23 (ETBR-Y5-T4L)
+    # a tobacco etch virus (TEV) protease recognition sequence was introduced between Gly57 and Leu66,
+    # WT starts at 30 till 57, then TEV, then WT-66, since TEV cleaves, from 66 is in XTAL
+    if pdbname.upper()=='5GLI' or pdbname.upper()=='5GLH':
+        pdb_range = list(range(66,304))+list(range(311,408))
+
+    # https://www.nature.com/nature/journal/v546/n7657/fig_tab/nature22378_SF1.html
+    if pdbname.upper()=='5VEW' or pdbname.upper()=='5VEX':
+        pdb_range = list(range(128,205))+list(range(214,258))+list(range(261,432))
+
+    # The refined structure contains receptor residues 19–330 with the segment of residues 230–242 within ICL3 replaced by rubredoxin
+    # ['DBREF', '5VBL', 'B', '7', '229', 'UNP', 'P35414', 'APJ_HUMAN', '7', '229']
+    # ['DBREF', '5VBL', 'B', '243', '330', 'UNP', 'P35414', 'APJ_HUMAN', '243', '330']
+    if pdbname.upper()=='5VBL':
+        pdb_range = list(range(19,230))+list(range(243,331))
+
+    # Fix 327 being labelled as there, since it is part of the expression tag
+    if pdbname.upper()=='4Z36':
+        pdb_range = list(range(2,233))+list(range(249,327))
+
+    # http://www.pnas.org/content/suppl/2014/01/22/1317903111.DCSupplemental/pnas.201317903SI.pdf
+    # Amino acids V280-I295 were deleted in the constructs ΔIC3A (3ZEV + 4BV0) and E273-T290 in ΔIC3B (4BUO).
+    if pdbname.upper()=='3ZEV':
+        pdb_range = list(range(50,280))+list(range(296,391))
+
+    # REMARK 999 THE AUTHORS STATE THAT THE SEQUENCE "NV" IS THE ORIGINAL SEQUENCE    
+    # REMARK 999 FROM ENDOTHELIUM, AS OPPOSED TO KSL WHICH IS THE GENOMIC SEQUENCE.   
+    # REMARK 999 THE UNIPROT RECORD WAS CHANGED TO THE GENOMIC SEQUENCE "KSL" AFTER   
+    # REMARK 999 THE CLONE WAS CREATED AND THE CONSTRUCT WAS NOT CHANGED BECAUSE IT   
+    # REMARK 999 WAS PERFORMING WELL. 
+    # SEQADV 3V2W     A       UNP  P21453    LYS   250 SEE REMARK 999                 
+    # SEQADV 3V2W ASN A  251  UNP  P21453    SER   251 SEE REMARK 999                 
+    # SEQADV 3V2W VAL A  252  UNP  P21453    LEU   252 SEE REMARK 999 
+    if pdbname.upper()=='3V2W' or pdbname.upper()=='3V2Y':
+        pdb_range = list(range(2,232))+list(range(244,250))+list(range(251,327))
+
+    # COMPND   6 OTHER_DETAILS: RESIDUES 3-32 AT THE N-TERMINUS AND RESIDUES 244-271  
+    # COMPND   7  OF THE THIRD INTRACELLULAR LOOP WERE DELETED FROM THE CONSTRUCT.    
+    # COMPND   8  THE CONSTRUCT WAS TRUNCATED AFTER RESIDUE 367 AND A HEXAHIS TAG     
+    # COMPND   9  ADDED.   
+    if pdbname.upper()=='5A8E':
+        pdb_range = list(range(33,244))+list(range(272,367))
+
+    # US28 wastruncated by 10 amino acids (1-10) at the N-terminus and 44 amino acids (311-354) at the C-terminus (US28∆N∆C) (Fig. S5B);
+    # http://science.sciencemag.org/content/sci/suppl/2015/03/04/347.6226.1113.DC1/Burg.SM.pdf
+    if pdbname.upper()=='4XT1' or pdbname.upper()=='4XT3':
+        pdb_range = list(range(11,311))
+
+    if pdb_range:
+        dbref_found = True
+        for pos in list(range(1,len(d['wt_seq'])+1)):
+            # print('check for ',pos)
+            if pos in list(set(pdb_range)):
+                # print(pos,'there')
+                pos_in_wt.remove(int(pos))
+
+        # for pos in list(set(pdb_range)):
+        #     pos_in_wt.remove(int(pos))
+    else:  
+        print('NO DB REF!!')
+        dbref_found = False
+    # print("pos_in_wt",pos_in_wt)
+
+    # To prevent the otherwise overrides from faulty SIFTS
+    chain_over_ride = None
+    if pdbname=='3SN6':
+        chain_over_ride = 'D'
+    elif pdbname=='5UZ7':
+        chain_over_ride = 'E'
+    # elif pdbname=='5VBL': # fixed by pdb_range
+    #     chain_over_ride = 'B'
 
     #http://files.gpcrdb.org/uniprot_mapping.txt
     ## get uniprot to name mapping
@@ -104,8 +261,12 @@ def fetch_pdb_info(pdbname,protein):
                 pass
     for elm in insert_info.findall('.//{http://uniprot.org/uniprot}sequence'):
         uniprot_seq = elm.text
+        if uniprot_seq:
+            import re
+            uniprot_seq = re.sub('[\s+]', '', uniprot_seq)
+            # print(uniprot_seq)
     # print(variants_mapping)
-    # print("gpcrdb seq",len(d['wt_seq']),'uniport len',len(uniprot_seq))
+    if len(uniprot_seq)!=len(d['wt_seq']): print("gpcrdb seq",len(d['wt_seq']),'uniport len',len(uniprot_seq))
     #ftp://ftp.ebi.ac.uk/pub/databases/msd/sifts/xml/1xyz.xml.gz
     # Alternative : url = 'http://www.rcsb.org/pdb/files/$index.sifts.xml'
     url = 'ftp://ftp.ebi.ac.uk/pub/databases/msd/sifts/xml/$index.xml.gz'
@@ -166,15 +327,17 @@ def fetch_pdb_info(pdbname,protein):
             elem_seq = ""
             prev_raw_u_id = ""
             raw_u_id = ""
+            prev_pos = 0
+            prev_receptor = False
 
             if (chain=="A" or chain=="B") and pdbname.lower()=="4k5y":
                 continue
-
             # print(chain,'chain')
             for res in elem[0]: #first element is residuelist
                 u_id = 'N/A'
                 pdb_aa = ''
                 uniprot_pos = None
+                pos = None
                 for node in res:
                     if raw_u_id!=prev_raw_u_id:
                         # print("New u_id",raw_u_id,u_id)
@@ -234,6 +397,11 @@ def fetch_pdb_info(pdbname,protein):
                                 seg_uniprot_ids.append(u_id)
                             uniprot_pos = int(node.attrib['dbResNum'])
                             uniprot_aa = node.attrib['dbResName']
+                            if u_id=='crfr1_human':
+                                # fix for crfr1_human isoform blah
+                                if uniprot_pos>145:
+                                    # print('crfr1_human',uniprot_pos,pos,pdb_aa)
+                                    uniprot_pos = pos
                             if pdbname == '5UZ7':
                                 #Special fix for 5UZ7 due to faulty annotation, there is an offset of 34 at the end of the isoforms
                                 if pos:
@@ -267,6 +435,10 @@ def fetch_pdb_info(pdbname,protein):
                                 pdb_resid_total.append(pos)
                             if pos>max_pos: max_pos = pos
                             if pos<min_pos: min_pos = pos
+                        elif source=='PDB':
+                            #if above fails, it's probably cos its missing residue, still should capture pdb_aa
+                            pdb_aa = AA_three[node.attrib['dbResName'].upper()]
+
                     elif pdb_aa and node.tag == '{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}residueDetail':
                         # print(node.text)
                         if u_id!='N/A' and u_id not in d['construct_sequences']:
@@ -290,16 +462,21 @@ def fetch_pdb_info(pdbname,protein):
                                 d['construct_sequences'][u_id]['mutations'][uniprot_pos] = [uniprot_aa,pdb_aa]
 
                         if node.text=='Not_Observed' and receptor:
-                            # print('not observed!',elem.attrib['segId'],uniprot_pos,pos)
+                            # print('not observed!',elem.attrib['segId'],uniprot_pos,pos,pdb_aa)
                             if uniprot_pos:
                                 if uniprot_pos not in d['xml_not_observed']:
                                     d['xml_not_observed'].append(uniprot_pos)
+                                if not pos:
+                                    #if no pos but uniprot looks like pos_in_wt
+                                    if uniprot_pos in pdb_range:
+                                        pos = uniprot_pos
                             elif pos: #in rare cases a uniprot_pos is not captured, but it is safe to assume that pos then must be correct since we are in receptor
                                 if pos not in d['xml_not_observed']:
                                     d['xml_not_observed'].append(pos)
 
                                     if receptor and pos in pos_in_wt:
                                         #make sure to not get this pos 'deleted'
+                                        uniprot_pos = pos
                                         pos_in_wt.remove(pos)
                                         insert_start =  str(pos+1)
 
@@ -308,61 +485,127 @@ def fetch_pdb_info(pdbname,protein):
                             if u_id not in seg_uniprot_ids:
                                 seg_uniprot_ids.append(u_id)
                         elif receptor and node.attrib['property']=='Annotation' and node.text == 'Engineered mutation': ## only in receptor
-                            if {'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos,'type':''} not in d['mutations']: #prevent duplicates
-                                d['mutations'].append({'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos,'type':''})
-                                mutations_check.append(uniprot_pos)
-                                # print({'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos,'type':''},chain,u_id,max_pos)
-                
+                            if (uniprot_pos not in pos_in_wt and dbref_found) or not dbref_found:
+                                if {'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos,'type':node.text} not in d['mutations']: #prevent duplicates
+                                    d['mutations'].append({'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos,'type':node.text})
+                                    mutations_check.append(uniprot_pos)
+                                    # print({'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos,'type':node.text},chain,u_id,max_pos)
+                        elif receptor and node.attrib['property']=='Annotation' and node.text == 'Conflict': ## only in receptor
+                            # if (uniprot_pos not in pos_in_wt and dbref_found) or not dbref_found:
+                            #     if {'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos,'type':node.text} not in d['mutations']: #prevent duplicates
+                            #         d['mutations'].append({'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos,'type':node.text})
+                            #         mutations_check.append(uniprot_pos)
+                            #         print({'mut':pdb_aa,'wt':uniprot_aa,'pos':uniprot_pos,'type':node.text},chain,u_id,max_pos)
+                            # print('conflict!','mut',pdb_aa,'wt',uniprot_aa,'pos',uniprot_pos)
+                            pass
+
+
+                # print(chain,uniprot_pos,pos,receptor)
+
                 if u_id!='N/A':
                     if pos not in pdb_resid_total_accounted:
                         pdb_resid_total_accounted.append(pos)
 
-                if receptor:
-                        wt_aa = d['wt_seq'][uniprot_pos-1]
-                        # if pos==250 or uniprot_pos==250:
-                        #     print(pos,uniprot_pos,pdb_aa,d['wt_seq'][uniprot_pos-1],d['wt_seq'][pos-1])
-                # if receptor and uniprot_pos==None :
-                #     if pos<len(d['wt_seq']):
-                #         print("receptor but no uniprot pos?",pos,pdb_aa,u_id)
-                #         print("WT AA ",d['wt_seq'][pos-1])
-                #         wt_aa = d['wt_seq'][pos-1]
-                #         if uniprot_pos in pos_in_wt:
-                #             pos_in_wt.remove(pos)
-                #             insert_start =  str(pos+1)
-                #         pos_list.append(pos) 
-                #         if wt_aa!=pdb_aa:
-                #             # mutation!
-                #             if {'mut':pdb_aa,'wt':wt_aa,'pos':pos,'type':'custom_maybe_wrong'} not in d['mutations']: #prevent duplicates
-                #                 d['mutations'].append({'mut':pdb_aa,'wt':wt_aa,'pos':pos,'type':'custom_maybe_wrong'})
+                if not chain_over_ride:
+                    if not receptor and pos:
+                        if pos in pos_in_wt and uniprot_seq[pos-1]==pdb_aa:
+                            # if uniprot receptor aa hasnt been found already and aa matches
+                            if int(pos)<prev_pos:
+                                # print('suddenly lower pos number, maybe receptor again?',pos)
+                                receptor = True
+                                uniprot_pos = pos
+                            elif prev_receptor and int(pos-1)==prev_pos:
+                                # print('last was receptor and this number is only one higher?',pos) 
+                                receptor = True
+                                uniprot_pos = pos
+                        else:
+                            pass
+                            # print(pos,'not receptor!',pdb_aa)
+                    elif not pos:
+                        receptor = False
 
-                if uniprot_pos:
-                    # print('hi')
-                    pos_list.append(uniprot_pos) 
-                    if receptor and uniprot_pos in pos_in_wt:
-                        if uniprot_pos<len(d['wt_seq']):
+                    if pos:
+                        prev_pos = int(pos)
+                    if receptor:
+                            if not uniprot_pos:
+                                uniprot_pos = pos
+                            #print(pos,uniprot_pos)
                             wt_aa = d['wt_seq'][uniprot_pos-1]
-                            if wt_aa!=pdb_aa and pdb_aa:
-                                # mutation!
-                                # print("MUTATION",u_id, uniprot_pos,pos ,uniprot_aa,"|",pdb_aa,"|",wt_aa)
-                                if uniprot_pos not in mutations_check: #prevent duplicates
-                                    mut_type = "non_annotated_mutation"
-                                    if str(uniprot_pos) in variants_mapping:
-                                        mut_type = 'SNP location (Not this AA)'
-                                        if pdb_aa in variants_mapping[str(uniprot_pos)]:
-                                            mut_type = 'SNP location: '+variants_mapping[str(uniprot_pos)][pdb_aa][0][0] + variants_mapping[str(uniprot_pos)][pdb_aa][0][1]
+                            prev_receptor = True
+                            # if pos==250 or uniprot_pos==250:
+                            #     print(pos,uniprot_pos,pdb_aa,d['wt_seq'][uniprot_pos-1],d['wt_seq'][pos-1])
+                    # if receptor and uniprot_pos==None :
+                    #     if pos<len(d['wt_seq']):
+                    #         print("receptor but no uniprot pos?",pos,pdb_aa,u_id)
+                    #         print("WT AA ",d['wt_seq'][pos-1])
+                    #         wt_aa = d['wt_seq'][pos-1]
+                    #         if uniprot_pos in pos_in_wt:
+                    #             pos_in_wt.remove(pos)
+                    #             insert_start =  str(pos+1)
+                    #         pos_list.append(pos) 
+                    #         if wt_aa!=pdb_aa:
+                    #             # mutation!
+                    #             if {'mut':pdb_aa,'wt':wt_aa,'pos':pos,'type':'custom_maybe_wrong'} not in d['mutations']: #prevent duplicates
+                    #                 d['mutations'].append({'mut':pdb_aa,'wt':wt_aa,'pos':pos,'type':'custom_maybe_wrong'})
 
-                                    # if  uniprot_seq[uniprot_pos-1]==pdb_aa:
-                                    #     mut_type = "ISOFOR MISMATCH"
-                                    # print("MUT NOT ANNOTATED WT AA ",wt_aa,pdb_aa,uniprot_pos,pos,mut_type,u_id,'uni',uniprot_seq[uniprot_pos-1])
-                                    d['mutations'].append({'mut':pdb_aa,'wt':wt_aa,'pos':uniprot_pos,'type':mut_type})
-                                    mutations_check.append(uniprot_pos)
-                            elif not pdb_aa:
-                                #no pdb_aa seen to be missing
-                                if uniprot_pos not in d['xml_not_observed']:
-                                    d['xml_not_observed'].append(uniprot_pos)
+                    if not receptor and dbref_found:
+                        # if not receptor and we have dbref_found
+                        if pos in pdb_range:
+                            # if the pdb pos is in the pdb_range then assume its sifts error
+                            receptor = True
+                            uniprot_pos = pos
+                            # print('fixed',pos)
 
-                        pos_in_wt.remove(uniprot_pos)
-                        insert_start =  str(uniprot_pos+1)
+                if uniprot_pos and u_id=='crfr1_human':
+                    # fix for crfr1_human isoform blah
+                    if uniprot_pos>145:
+                        # print('crfr1_human',uniprot_pos,pos,pdb_aa)
+                        uniprot_pos = pos
+
+                # print(chain,uniprot_pos,pos,receptor)
+                # if receptor and uniprot_pos and pos:
+                #     print(receptor, uniprot_pos, pos,uniprot_aa, pdb_aa,d['wt_seq'][uniprot_pos-1],d['wt_seq'][pos-1])
+                if uniprot_pos:
+                    if pos:
+                        pos = int(pos)
+                    uniprot_pos = int(uniprot_pos)
+                    if receptor and uniprot_pos not in pos_in_wt:
+                            # print('hi',pos,uniprot_pos)
+                        # if pos and pos>1000 and uniprot_pos<1000 and uniprot_pos!=pos-1000 and uniprot_pos!=pos-2000:
+                        #     # print('PDB residue number:',pos, 'Receptor Uniprot pos:',uniprot_pos)
+                        #     pass
+                        #     # not wt likely
+                        # else:   
+                            if uniprot_pos<len(d['wt_seq']):
+                                wt_aa = d['wt_seq'][uniprot_pos-1]
+                                # print(pdb_aa,wt_aa)
+                                if wt_aa!=pdb_aa and pdb_aa:
+                                    # mutation!
+                                    # print("MUTATION",u_id, uniprot_pos,pos ,uniprot_aa,"|",pdb_aa,"|",wt_aa)
+                                    if uniprot_pos not in mutations_check: #prevent duplicates
+                                        mut_type = "non_annotated_mutation"
+                                        if str(uniprot_pos) in variants_mapping:
+                                            mut_type = 'SNP location (Not this AA)'
+                                            if pdb_aa in variants_mapping[str(uniprot_pos)]:
+                                                mut_type = 'SNP location: '+variants_mapping[str(uniprot_pos)][pdb_aa][0][0] + variants_mapping[str(uniprot_pos)][pdb_aa][0][1]
+
+                                        # if  uniprot_seq[uniprot_pos-1]==pdb_aa:
+                                        #     mut_type = "ISOFOR MISMATCH"
+                                        if pos and pos>1000 and 1==2:
+                                            ## this is probably not a real mutation but an annotation error, ignore
+                                            pass
+                                        else:
+                                            # print("MUT NOT ANNOTATED WT AA ",wt_aa,pdb_aa,uniprot_pos,pos,mut_type,u_id,'uni',uniprot_seq[uniprot_pos-1])
+                                            d['mutations'].append({'mut':pdb_aa,'wt':wt_aa,'pos':uniprot_pos,'type':mut_type})
+                                            mutations_check.append(uniprot_pos)
+                                elif not pdb_aa:
+                                    #no pdb_aa seen to be missing
+                                    print(uniprot_pos,' not found')
+                                    if uniprot_pos not in d['xml_not_observed']:
+                                        d['xml_not_observed'].append(uniprot_pos)
+                            if uniprot_pos in pdb_range:
+                                pdb_range.remove(uniprot_pos)
+                            insert_start =  str(uniprot_pos+1)
                     elif receptor:
                         # print('wierd error with position already deleted',uniprot_pos)
                         pass
@@ -711,9 +954,16 @@ def add_construct(d):
         if 'remark' not in mutation:
             mutation['remark'] = ''
 
+        res_wt = Residue.objects.get(protein_conformation__protein=protein_conformation.protein.parent, sequence_number=mutation['pos'])
+        if res_wt.amino_acid != mutation['wt']:
+            print('aa dont match',construct,mutation['pos'],"annotated wt:", mutation['wt'], "DB wt:",res_wt.amino_acid, "Annotated Mut",mutation['mut'])
+
+        mutation_type, created = ConstructMutationType.objects.get_or_create(slug=slugify(mutation['type']),name=mutation['type'], effect=None)
+
         #construct=construct, TODO: create a unique one for each mutation per construct to avoid unambiguity 
-        mut = ConstructMutation.objects.create(sequence_number=mutation['pos'],wild_type_amino_acid=mutation['wt'],mutated_amino_acid=mutation['mut'],mutation_type=mutation['type'],remark=mutation['remark'])
-        construct.mutations.add(mut)
+        mut = ConstructMutation.objects.create(construct=construct, sequence_number=mutation['pos'],wild_type_amino_acid=mutation['wt'],mutated_amino_acid=mutation['mut'],remark=mutation['remark'], residue=res_wt)
+        mut.effects.add(mutation_type)
+        #construct.mutations.add(mut)
 
     #print(d['raw_data'])
     #make sure to order auxiliary correct
@@ -741,12 +991,12 @@ def add_construct(d):
         # if a 'deletion' is a single type and of non-user origin, assume its an insert and the pos is not actually deleted (3odu)
         dele = False
         if 'start' in deletion:
-            dele, created = ConstructDeletion.objects.get_or_create(start=deletion['start'],end=deletion['end'])
+            dele, created = ConstructDeletion.objects.get_or_create(construct=construct, start=deletion['start'],end=deletion['end'])
         else:
             if deletion['origin']=='user':
-                dele, created = ConstructDeletion.objects.get_or_create(start=deletion['pos'],end=deletion['pos'])
-        if dele:
-            construct.deletions.add(dele)
+                dele, created = ConstructDeletion.objects.get_or_create(construct=construct, start=deletion['pos'],end=deletion['pos'])
+        # if dele:
+        #     construct.deletions.add(dele)
         if deletion['origin']!='user':
             id = deletion['origin'].split('_')[1]
             if id in ip_lookup:
@@ -759,7 +1009,7 @@ def add_construct(d):
     for name,aux in d['auxiliary'].items():
         id = name.replace('aux','')
         aux_type, created = ConstructInsertionType.objects.get_or_create(name=aux['type'],subtype=aux['subtype'])
-        insert = ConstructInsertion.objects.create(insert_type=aux_type,presence=aux['presence'],position=aux['position']+"_"+id)
+        insert = ConstructInsertion.objects.create(construct=construct, insert_type=aux_type,presence=aux['presence'],position=aux['position']+"_"+id)
 
         if insert.presence == 'YES' and insert.position.startswith('Within Receptor'):
             #need to fetch range
@@ -775,14 +1025,14 @@ def add_construct(d):
                     insert.end = insert_deletions[id]['pos']
             insert.save()
 
-        construct.insertions.add(insert)
+        # construct.insertions.add(insert)
 
     #MODIFICATIONS
     for modification in d['modifications']:
-        mod, created = ConstructModification.objects.get_or_create(modification=modification['type'],position_type=modification['position'][0],
+        mod, created = ConstructModification.objects.get_or_create(construct=construct, modification=modification['type'],position_type=modification['position'][0],
                                                    pos_start=modification['position'][1][0],
                                                    pos_end=modification['position'][1][1],remark=modification['remark'] )
-        construct.modifications.add(mod)
+        # construct.modifications.add(mod)
 
 
     #EXPRESSION

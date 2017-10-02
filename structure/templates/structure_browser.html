@@ -15,8 +15,11 @@
 
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function () {
-            ClearSelection('targets');
-            ClearSelection('reference');
+            if(window.location.hash === "#keepselection") {}
+            else {
+                ClearSelection('targets');
+                ClearSelection('reference');
+            }
             var table = $('#structures').DataTable({
                 'scrollX': true,
                 'scrollY': $(window).height()-300,
@@ -25,11 +28,11 @@
                 'orderCellsTop': true,
                 'autoWidth': true,
                 'dom': 'iTlfrt',
-                'order': [[14, "asc"]], // order by date
+                'order': [[17, "desc"]], // order by date
                 'aoColumnDefs': [
                     { 'bSortable' : false, 'aTargets': [0] },
                     { 'sType': 'string', 'aTargets': [1] },
-                    { 'sType': 'string', 'aTargets': [10] },
+                    { 'sType': 'string', 'aTargets': [12] },
                 ],
                 'tableTools': {
                     "sRowSelect": "single",
@@ -48,6 +51,8 @@
                             { type: "text" }, // pdb code
                             { type: "number-range" }, // resolution
                             { type: "text" }, // preferred chain
+                            { type: "select" }, // state
+                            { type: "number-range" }, // delta distance
                             { type: "text" }, // stabilizing agent - left as type-in for now
                             { type: "text" }, // endogenous ligand name
                             { type: "text" }, // endogenous ligand type
@@ -56,6 +61,8 @@
                             { type: "text" }, // x-ray ligand type
                             { type: "text" }, // reference
                             { type: "date-range" }, // publication date
+                            { type: "select"}, // annotated
+                            { type: "select"} // refined
                         ]
                     });
                 }
@@ -66,8 +73,11 @@
                 $(this).parent().parent().toggleClass('alt_selected');
             });
             $('#superpose_btn').click(function () {
-                ClearSelection('targets');
-                ClearSelection('reference');
+                if(window.location.hash === "#keepselection") {}
+                else {
+                    ClearSelection('targets');
+                    ClearSelection('reference');
+                }
                 if (table.rows('.selected').data().length == 1) {
                     var div = document.createElement("div");
                     div.innerHTML = table.rows('.selected').data()[0][5];
@@ -176,6 +186,8 @@
                     <th class="pdb-th">PDB code</th>
                     <th class="pdb-th">Resolution</th>
                     <th class="pdb-th">Pre. chain</th>
+                    <th class="pdb-th">State</th>
+                    <th class="pdb-th">&#916; distance (&#8491;)</th>
                     <th class='pdb-th'>Aux. proteins</th>
                     <th class="ligand-th">Endo. ligand</th>
                     <th class="ligand-th">Ligand type</th>
@@ -184,8 +196,14 @@
                     <th class="ligand-th">X-ray lig. type</th>
                     <th class="pub-th">Reference</th>
                     <th class="pub-th">Date</th>
+                    <th class="pub-th">Annotated</th>
+                    <th class="pub-th">Refined</th>
                 </tr>
                 <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -212,14 +230,27 @@
                     <tr>
                 {% endif %}
                     <td><input class="alt" type="checkbox"></td>
-                    <td>{{ structure.protein_conformation.protein.family.name|safe }}</td>
+                    <td>
+                        {% if structure.refined %}
+                        {{ structure.protein_conformation.protein.family.name|safe }}_refined
+                        {% else %}
+                        {{ structure.protein_conformation.protein.family.name|safe }}
+                        {% endif %}
+                    </td>
                     <td>{{ structure.protein_conformation.protein.family.parent.name|safe }}</td>
                     <td>{{ structure.protein_conformation.protein.family.parent.parent.parent.name }}</td>
                     <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
-                    <td class="text-center"><a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}
+                    <td class="text-center">
+                        {% if structure.refined %}
+                        <a href="homology_models/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a>
+                        {% else %}
+                        <a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}
+                        {% endif %}
                     </a></td>
                     <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
                     <td class="text-center">{{ structure.preferred_chain }}</td>
+                    <td class="text-center">{{ structure.state.name }}</td>
+                    <td class="text-center">{{ structure.distance|floatformat:"2" }}</td>
                     <td>
                         {% for sa in structure.stabilizing_agents.all %}
                             {{ sa.name }}<br />
@@ -266,8 +297,22 @@
                         </a>
                     </td>
                     <td>{{ structure.publication_date|date:"Y-m-d" }}</td>
+                    <td>
+                        {% if structure.annotated %}
+                        Yes
+                        {% else %}
+                        No
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if structure.refined %}
+                        Yes
+                        {% else %}
+                        No
+                        {% endif %}
+                    </td>
                 </tr>
-                {% endfor %}
+            {% endfor %}
             </tbody>
         </table>
     </div>

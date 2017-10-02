@@ -72,6 +72,7 @@ class Command(BaseCommand):
         self.data = self.parse_excel(self.annotation_source_file)
         self.dump_files()
         # self.analyse_annotation_consistency()
+        self.find_representatives()
         if options['m']:
             self.main_template_search()
 
@@ -348,4 +349,83 @@ class Command(BaseCommand):
             print(changes)
             print('INFO: xtal_templates.csv file updated. Please update Structural_Annotation.xlsx Xtal_Templ sheet with this .csv')
         return changes
+
+    def find_representatives(self):
+        grouped = {}
+        counter = 0
+        xtals, nums, states, resolutions = [], [], [], []
+        out = OrderedDict()
+        exceptions = ['4L6R']
+        with open(os.sep.join([settings.DATA_DIR,'structure_data','annotation','xtal_representatives.yaml']), 'w') as outfile:
+            for key, values in self.data['SegEnds_Xtal_Prot#'].items():
+                if counter==0:
+                    prev_rec = values['UniProt']
+                counter+=1
+                if values['PDB']=='_wt' or 'dist' in key:
+                    continue
+                if values['Repr']!='-':
+                    if values['Repr']=='Repr_Act':
+                        actstat = 'Active'
+                    elif values['Repr']=='Repr_Inter':
+                        actstat = 'Intermediate'
+                    elif values['Repr']=='Repr_Inact':
+                        actstat = 'Inactive'
+                    out[values['PDB']] = actstat
+            yaml.dump(out, outfile, default_flow_style=False)
+                # if prev_rec!=values['UniProt'] or counter==len(self.data['SegEnds_Xtal_Prot#']):
+                #     if counter==len(self.data['SegEnds_Xtal_Prot#']):
+                #         xtals.append(key)
+                #         nums.append(values['#Res'])
+                #         states.append(values['State'])
+                #         resolutions.append(values['Resolution'])
+                #     if len(xtals)>0:
+                #         max_num_ia, max_x_ia, max_num_a, max_x_a, ia_count, a_count = 0, 0, 0, 0, 0, 0
+                #         for x, n, s, r in zip(xtals, nums, states, resolutions):
+                #             if s=='Inact':
+                #                 if ia_count==0:
+                #                     max_res_ia = r
+                #                 if n>max_num_ia and x[-4:] not in exceptions:
+                #                     max_num_ia = n
+                #                     max_x_ia = x
+                #                     max_res_ia = r
+                #                 elif n==max_num_ia and x[-4:] not in exceptions:
+                #                     if r<max_res_ia:
+                #                         max_num_ia = n
+                #                         max_x_ia = x
+                #                         max_res_ia = r
+                #                 ia_count+=1
+                #             elif s=='Act':
+                #                 if a_count==0:
+                #                     max_res_a = r
+                #                 if n>max_num_a and x[-4:] not in exceptions:
+                #                     max_num_a = n
+                #                     max_x_a = x
+                #                 elif n==max_num_a and x[-4:] not in exceptions:
+                #                     if r<max_res_a:
+                #                         max_num_a = n
+                #                         max_x_a = x
+                #                         max_res_a = r
+                #                 a_count+=1
+                #         for x, n in zip(xtals, nums):
+                #             if x==max_x_ia:
+                #                 out[x] = 'Repr_Inact'
+                #             elif x==max_x_a:
+                #                 out[x] = 'Repr_Act'
+                #             else:
+                #                 out[x] = '-'
+                #         yaml.dump(out, outfile, indent=4)
+                #         xtals, nums, states, resolutions = [], [], [], []
+                #         out = OrderedDict()
+                #         xtals.append(key)
+                #         nums.append(values['#Res'])
+                #         states.append(values['State'])
+                #         resolutions.append(values['Resolution'])
+                # else:
+                #     xtals.append(key)
+                #     nums.append(values['#Res'])
+                #     states.append(values['State'])
+                #     resolutions.append(values['Resolution'])
+                # prev_rec = values['UniProt']
+                
+
 

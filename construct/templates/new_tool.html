@@ -167,6 +167,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       Mutations:
       </div>
       <div class="col-sm-8">
+      <button type="button" id="mutations_mode" class="btn btn-primary" onclick='mutation_mode();'> Mutation Mode </button>
         <button type="button" id="mutations_button" class="btn btn-primary" onclick='build_mutations();showModal("Thermostabilisation",tables["mutations"],"#mut_sug");'>
           Thermostabilisation
         </button>
@@ -305,6 +306,24 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 </tbody>
 </table>
 
+<table width=100%  id='mutation_scan' class='table table-bordered table-condensed'>
+<thead>
+<tr>
+  <th> Prio </th>
+  <th> Segment </th>
+  <th> GPCRdb </th>
+  <th> Pos </th>
+  <th> Wt AA </th>
+  <th> Mut AA </th>
+  <th> Method </th>
+  <th> Selected </th>
+  <th> Fixed </th>
+</tr> 
+</thead>
+<tbody>
+</tbody>
+</table>
+
 <div class="row">
 </div>
 
@@ -428,6 +447,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     var modifications = new Array;
     var tables = new Array;
     var mutations_browser = new Array;
+    var mutations_mode_suggestions = [];
     var removals_list = new Array;
     var export_list = {};
     var load_status = 0;
@@ -610,8 +630,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     function updateLoadStatus() {
 
-      $('#loadstatus').html("Please wait while data is loaded. "+Math.round(load_status*100/11)+"% done");
-      if (load_status != 11) {
+      $('#loadstatus').html("Please wait while data is loaded. "+Math.round(load_status*100/7)+"% done");
+      if (load_status != 7) {
         $('#method_options').hide();
       } else {
         $('#method_options').show();
@@ -1351,53 +1371,56 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       var state = $('input:radio[name=state]:checked').val();
       var keys = Object.keys(mutations_browser);
       export_list['thermo'] = [];
+      mutations_mode_suggestions = [];
       muts = {}
       $.each(keys, function( i,type ) {
         if (type.substring(0, 11) == "struc_rules" && type.substring(12)!=state) {
           return true; //loop away from these
         }
         $.each(mutations_browser[type], function(gn, values){
-          if(!muts[gn]) { muts[gn] = {'priority': 99, 'gn': gn, 'types': [], 'pretty_types': [], 'hits':0, 'details':[]}; }
+          console.log(type,values);
+          full_mutation = gn + values[0] + values[2];
+          if(!muts[full_mutation]) { muts[full_mutation] = {'priority': 99, 'gn': gn, 'types': [], 'pretty_types': [], 'hits':0, 'details':[]}; }
 
-          muts[gn]['hits'] += 1;
+          muts[full_mutation]['hits'] += 1;
 
-          muts[gn]['details'].push(values);
+          muts[full_mutation]['details'].push(values);
           if (type.substring(0, 11) == "struc_rules") {
-            if (muts[gn]['priority']>5) muts[gn]['priority'] = 5;
+            if (muts[full_mutation]['priority']>5) muts[full_mutation]['priority'] = 5;
             pretty_type = 'State-stabilising'
           } else if (type == "termo_From target recepter") {
-            if (muts[gn]['priority']>1) muts[gn]['priority'] = 1;
+            if (muts[full_mutation]['priority']>1) muts[full_mutation]['priority'] = 1;
             pretty_type = 'From Receptor'
           } else if (type == "termo_Common mutation (Wt)") {
-            if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
+            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
             pretty_type = 'Observed (multiple)'
           } else if (type == "termo_Common mutation (Mut)") {
-            if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
+            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
             pretty_type = 'Observed (multiple)'
           } else if (type == "termo_Single common mutation (Wt)") {
-            if (muts[gn]['priority']>2) muts[gn]['priority'] = 3;
+            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 3;
             pretty_type = 'Observed (single)'
           } else if (type == "cons_rm_conserved_G") {
-            if (muts[gn]['priority']>4) muts[gn]['priority'] = 4;
+            if (muts[full_mutation]['priority']>4) muts[full_mutation]['priority'] = 4;
             pretty_type = 'Conservation (remove Gly)'
           } else if (type == "cons_rm_nonconserved_GP") {
-            if (muts[gn]['priority']>4) muts[gn]['priority'] = 2;
+            if (muts[full_mutation]['priority']>4) muts[full_mutation]['priority'] = 2;
             pretty_type = 'Conservation (remove Gly/Pro)'
           } else if (type == "cons_rf_and_class") {
-            if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
+            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
             pretty_type = 'Conservation'
           } else if (type == "cons_rf") {
-            if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
+            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
             pretty_type = 'Conservation'
           } else if (type == "cons_strucs") {
-            if (muts[gn]['priority']>2) muts[gn]['priority'] = 2;
+            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
             pretty_type = 'Conservation'
           } else {
             console.log(type);
           }
 
-          muts[gn]['types'].push(type);
-          muts[gn]['pretty_types'].push(pretty_type);
+          muts[full_mutation]['types'].push(type);
+          muts[full_mutation]['pretty_types'].push(pretty_type);
         });
       });
       // console.log(muts);
@@ -1469,6 +1492,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         temp = "<tr><td align=center>"+vals['priority']+"</td><td>"+gn+"</td><td origin='"+vals['types']+"'>"+mut_suggestions.join(", ")+"</td><td>"+vals['pretty_types']+" <a class='methods_info' data-toggle='tooltip' data-html='true' data-placement='bottom' title='"+vals['types'].join("<br>")+"'><i class='glyphicon glyphicon-info-sign'></i></a></td></tr>";
         items_table.push( temp );
         export_list['thermo'].push([gn,label.join(", "),vals['hits'],vals['types']]);
+        mutations_mode_suggestions.push([gn,label,vals['types'],vals['priority']])
       });
       items_table.push( "</tbody></table>" );
       result = items_table.join( "" );
@@ -1604,6 +1628,38 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
       // finall overview
       modifications_overview();
+    }
+
+    function mutation_mode() {
+      console.log('mutation_mode');
+      if ($('.snakechoice:checked').length) 
+        {
+          selected_construct = $('.snakechoice:checked').val();
+          $("#possibilities > tbody > tr").not( "#row_"+selected_construct).fadeOut("slow");
+          $("#mutation_scan > tbody").html("");
+          build_mutation_mode_table();
+        } else {
+          console.log('No parent construct to do mutation on');
+        }
+
+    }
+
+    function build_mutation_mode_table() {
+
+      $.each(mutations_mode_suggestions, function(i, val) {
+        console.log(i,val);
+        row = `<tr>
+                <td>`+val['priority']+`</td>
+                <td>`+val['segment']+`</td>
+                <td>`+val['gpcrdb']+`</td>
+                <td>`+val['pos']+`</td>
+                <td>`+val['wt_aa']+`</td>
+                <td>`+val['mut_aa']+`</td>
+                <td>`+val['definitions']+`</td>
+                </tr>`;
+        $('#mutation_scan tbody').append(row);
+      });
+
     }
 
     function reset_fixed(modi_type) {
@@ -2645,7 +2701,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           icl_total_cols = icl_start_cols + icl_start_linker + icl_mod + icl_end_linker + icl_end_cols;
 
 
-          row_html = "<tr class='"+tr_class+"'><td>" + (key+1) + "</td><td style='cursor: pointer;' onclick='selectTD(this);'><input type='radio' onclick='changesnakeplot(this)' class='snakechoice' value='"+key+"' "+checked+"></td><td><input type='checkbox' onclick='toogle_keep(this)' value='"+key+"' checked><td>"+inserts['nterm'].length+"</td></td>"+nfusion_cols+nterm_cols+icl_total_cols+cterm_cols+"<td>"+inserts['cterm'].length+"</td></tr>";
+          row_html = "<tr class='"+tr_class+"' id='row_"+key+"'><td>" + (key+1) + "</td><td style='cursor: pointer;' onclick='selectTD(this);'><input type='radio' onclick='changesnakeplot(this)' class='snakechoice' value='"+key+"' "+checked+"></td><td><input type='checkbox' onclick='toogle_keep(this)' value='"+key+"' checked><td>"+inserts['nterm'].length+"</td></td>"+nfusion_cols+nterm_cols+icl_total_cols+cterm_cols+"<td>"+inserts['cterm'].length+"</td></tr>";
           $('#possibilities tbody').append(row_html);
        });
         change_fusionpos();
@@ -3699,135 +3755,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           updateLoadStatus();
         });
 
-        $.getJSON( "/construct/tool/json/cons_strucs/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( gn, val ) {
-            temp = "<li id='"+gn+"' class=\"dropdown-submenu\"><a class='origin'>"+gn+" ("+val[0]+val[1]+val[2]+") ("+val[3]+"0% cons)</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' > Mutate "+val[0]+val[1]+val[2]+"</a></li></ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $("#cons_strucs").html(result);
-          mutations_browser['cons_strucs'] = data;
-          build_mutations();
+       $.getJSON( "/construct/tool/json/mutations/{{target.entry_name}}/", function( data ) {
+          mutations_mode_suggestions = data;
           load_status += 1;
           updateLoadStatus();
-        });
-
-        $.getJSON( "/construct/tool/json/cons_rf/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( gn, val ) {
-            temp = "<li id='"+gn+"' class=\"dropdown-submenu\"><a class='origin'>"+gn+" ("+val[0]+val[1]+val[2]+") ("+val[3]+"0% cons)</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' > Mutate "+val[0]+val[1]+val[2]+"</a></li></ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $("#cons_rf").html(result);
-          mutations_browser['cons_rf'] = data;
-          build_mutations();
-          load_status += 1;
-          updateLoadStatus();
-        });
-
-        $.getJSON( "/construct/tool/json/cons_rf_and_class/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( gn, val ) {
-            temp = "<li id='"+gn+"' class=\"dropdown-submenu\"><a class='origin'>"+gn+" ("+val[0]+val[1]+val[2]+") ("+val[3]+"0% cons)</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' > Mutate "+val[0]+val[1]+val[2]+"</a></li></ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $("#cons_rf_and_class").html(result);
-          mutations_browser['cons_rf_and_class'] = data;
-          build_mutations();
-          load_status += 1;
-          updateLoadStatus();
-        });
-
-
-        
-
-        $.getJSON( "/construct/tool/json/cons_rm_GP/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( gn, val ) {
-            temp = "<li id='"+gn+"' class=\"dropdown-submenu\"><a class='origin'>"+gn+" ("+val[0]+val[1]+val[2]+") ("+val[3]+"0% cons)</a><ul class=\"dropdown-menu\"><li><a onclick='mut(this)' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' > Mutate "+val[0]+val[1]+val[2]+"</a></li></ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $("#cons_rm_GP").html(result);
-          mutations_browser['cons_rm_nonconserved_GP'] = data['non-conserved'];
-          mutations_browser['cons_rm_conserved_G'] = data['conserved'];
-          build_mutations();
-          load_status += 1;
-          updateLoadStatus();
-        });
-
-      $.getJSON( "/construct/tool/json/termo/{{target.entry_name}}/", function( data ) {
-          var items = [];
-          $.each( data, function( level, gns ) {
-            if (level == 1) {
-              level_text = "From target recepter"
-            } else if (level == 2) {
-              level_text = "Common mutation (Mut)"
-            } else if (level == 3) {
-              level_text = "Common mutation (Wt)"
-            } else if (level == 4) {
-              level_text = "Single common mutation (Wt)"
-            }
-            mutations_browser['termo_'+level_text] = gns;
-            temp = "<li id='" + level + "' class=\"dropdown-submenu\"><a>" + level_text + "</a><ul class=\"dropdown-menu\">";
-            $.each( gns, function( gn, aa ) {
-                $.each( aa, function( key, value ) {
-
-                extra = " to ";
-                to = key ; 
-                number = value['pdbs'].length;
-                if (level == 2) {
-                  extra = " to ";
-                  from = value['wt'][0];
-                  to = key;
-                  number = value['proteins'].length;
-                } else if (level ==3 ){
-                  extra = " to " + value['muts'] + " from ";
-                  to = value['muts'];
-                  number = value['proteins'].length;
-                }
-
-                temp += "<li id='" + level + "' class=\"dropdown-submenu\"><a>" + gn + extra + " ("+number+" hits)</a><ul class=\"dropdown-menu\">";
-                temp += "<li><a>"+gn+" in {{target.entry_name}} is "+value['wt'][0]+"</a></li>";
-                temp += "<li class=\"divider\"></li>";
-
-                // pos = to.split(",");
-                if (level == 3) {
-                  $.each(to, function(key,pos){
-                    temp += "<li><a onclick='mut(this)' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+pos+"'><strong>Mutate "+value['wt'][0]+value['wt'][1]+pos+"</strong></a></li>";
-                  })
-                } else {
-                  temp += "<li><a onclick='mut(this)' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+to+"'><strong>Mutate "+value['wt'][0]+value['wt'][1]+to+"</strong></a></li>";
-                }
-                temp += "<li class=\"divider\"></li>";
-                if (level == 1 ) {
-                  $.each(value['pdbs'], function(i, pdb) {
-                      temp += "<li id='" + level + "'><a>" + pdb+"</a>";
-                  })
-                } else if (level == 2 || level == 3 ) {
-                  $.each(value['proteins'], function(i, pdb) {
-                      temp += "<li id='" + level + "'><a>" + pdb+"</a>";
-                  })
-                }
-                // temp += "<li id='" + level + "' class=\"dropdown-submenu\"><a>" + key + " ("+value['hits']+" hits)</a>";
-                // temp += "<ul class=\"dropdown-menu\"><li></li></ul>";
-
-                temp += "</li>";
-                temp += "</ul></li>";
-                });
-             });
-            temp += "</ul></li>";
-            items.push( temp );
-          });
-          result = items.join( "" );
-          $("#thermo").html(result);
-          build_mutations();
-          load_status += 1;
-          updateLoadStatus();
-        });
+      });
 
       $.getJSON( "/construct/tool/json/struc_rules/{{target.entry_name}}/", function( data ) {
           var items = [];

@@ -29,6 +29,7 @@ INSTALLED_APPS = (
     'debug_toolbar',
     'rest_framework',
     'rest_framework_swagger',
+    'polymorphic',
     'common',
     'api',
     'news',
@@ -51,7 +52,7 @@ INSTALLED_APPS = (
     'tools',
     'drugs',
     'signprot',
-    'mutational_landscape',
+    'contactnetwork',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -107,6 +108,7 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             # insert your TEMPLATE_DIRS here
+
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -131,7 +133,7 @@ if DEBUG:
 # Debug toolbar
 if DEBUG:
     DEBUG_TOOLBAR_PATCH_SETTINGS = False
-    INTERNAL_IPS = ('188.176.9.25')
+    INTERNAL_IPS = ('10.0.2.2')
 
 
 # Logging
@@ -186,14 +188,14 @@ if DEBUG:
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/protwis/cache/protwis/django_cache',
+        'LOCATION': '/tmp/django_cache',
         'OPTIONS': {
             'MAX_ENTRIES': 100000
         }
     },
     'alignments': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/protwis/cache/protwis/django_cache_alignments',
+        'LOCATION': '/tmp/django_cache_alignments',
         'OPTIONS': {
             'MAX_ENTRIES': 1000
         }

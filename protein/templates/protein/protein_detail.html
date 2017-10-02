@@ -22,7 +22,7 @@
         <h4>LINKS</h4>
     </div>
     <div class="col-md-10">
-        {% for link in p.web_links.all %}
+        {% for link in protein_links %}
         <p><a href="{{ link }}">{{ link.web_resource.name }}</a></p>
         {% empty %}
         No links available
@@ -103,7 +103,7 @@
     </div>
     <div class="col-md-10">
         {% for structure in structures %}
-        <p><a href="/structure/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a></p>
+        <p style="display: inline;"><a href="/structure/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
         {% empty %}
         No structures available
         {% endfor %}
@@ -111,12 +111,18 @@
 </div>
 
 <div class="row">
-    <div class="col-md-2 text-right text-info">
-        <h4>GENETIC VARIATION</h4>
-    </div>
-    <div class="col-md-10">
-    <a href="/mutational_landscape/protein/{{ p }}">{{ missense }} missense variants known.</a>
-    </div>
+    {% if homology_models %}
+        <div class="col-md-2 text-right text-info">
+            <h4>HOMOLOGY MODELS</h4>
+        </div>
+        <div class="col-md-10">
+            {% for hommod in homology_models %}
+                <p style="display: inline;"><a href="/structure/homology_models/{{ hommod.protein.entry_name }}_{{ hommod.state.slug }}">{{ hommod.protein.entry_name }} {{ hommod.state.slug }}</a>{% if forloop.last %} {% else %}, {% endif %}</p>
+            {% empty %}
+            No homology models available
+            {% endfor %}
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
 
