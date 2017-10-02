@@ -33,7 +33,7 @@ def parse_excel(path):
         if worksheet_name in d:
             print('Error, worksheet with this name already loaded')
             continue
-
+        d[worksheet_name] = {}
         #d[worksheet_name] = OrderedDict()
         worksheet = workbook.sheet_by_name(worksheet_name)
 
@@ -55,14 +55,14 @@ def parse_excel(path):
 
             if key=='':
                 continue
-            if key not in d:
-                d[key] = []
+            if key not in d[worksheet_name]:
+                d[worksheet_name][key] = []
             temprow = OrderedDict()
             for curr_cell in range(num_cells):
                 cell_value = worksheet.cell_value(curr_row, curr_cell)
                 if headers[curr_cell] not in temprow:
                     temprow[headers[curr_cell]] = cell_value
-            d[key].append(temprow)
+            d[worksheet_name][key].append(temprow)
     return d
 
 def compare_family_slug(a,b):
@@ -1032,16 +1032,16 @@ def mutations(request, slug, **response_kwargs):
             if len(vals['protein_families'])>=2:
                 # If mutation is seen in >=2 receptor families
                 # Put this one outside the above logic, to allow multi definitions
-                definition_matches.append([2,'common_mutation'])
+                definition_matches.append([4,'common_mutation'])
 
-            # Check for membrane binding
-            if 'K' in vals['mutation'][1] or 'R' in vals['mutation'][1]:
-                if vals['wt'][0] not in ['R','K']:
-                    # Only if not R,K already
-                    definition_matches.append([2,'membrane_binding'])
-                elif vals['wt'][0] in ['K'] and 'R' in vals['mutation'][1]:
-                    # If K
-                    definition_matches.append([3,'membrane_binding_weak'])
+            # # Check for membrane binding
+            # if 'K' in vals['mutation'][1] or 'R' in vals['mutation'][1]:
+            #     if vals['wt'][0] not in ['R','K']:
+            #         # Only if not R,K already
+            #         definition_matches.append([2,'membrane_binding'])
+            #     elif vals['wt'][0] in ['K'] and 'R' in vals['mutation'][1]:
+            #         # If K
+            #         definition_matches.append([3,'membrane_binding_weak'])
 
         else:
             # Below rules is for the common WT (But different mut AA)
@@ -1077,27 +1077,98 @@ def mutations(request, slug, **response_kwargs):
 
     # Conservation rules and Helix propensity rules
 
-    rf_conservation = calculate_conservation(slug=protein_rf_slug)
-    rf_cutoff = 5
-    rf_conservation_priority = 3
-    definition_matches = [rf_conservation_priority,'conservation_rf']
-    for cons_gn, aa in rf_conservation.items():
-        if int(aa[1])>=rf_cutoff and cons_gn in wt_lookup and wt_lookup[cons_gn][0]!=aa[0] and aa[0]!="+":
-            # If cons_gn exist in target but AA is not the same
-            mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':aa[0], 'definitions' : [definition_matches], 'priority': rf_conservation_priority}
-            key = '%s%s%s' % (wt_lookup[cons_gn][0],wt_lookup[cons_gn][1],aa[0])
-            if key not in simple_list:
-                simple_list[key] = mut
-            else:
-                simple_list[key]['definitions'] += [definition_matches]
-                min_priority = min(x[0] for x in simple_list[key]['definitions'])
-                simple_list[key]['priority'] = min_priority
+    CONSERVED_RESIDUES = 'ADEFIJLMNQSTVY'
+    POS_RESIDUES = 'HKR'
 
-        # Apply helix propensity rules
+    if protein_rf_count>1:
+        print('RF')
+        # Only perform on RF families with more than one member
+        rf_conservation = calculate_conservation(slug=protein_rf_slug)
+        rf_cutoff = 7
+        rf_cutoff_pos = 4
+        rf_conservation_priority = 3
+        definition_matches = [rf_conservation_priority,'conservation_rf']
+        for cons_gn, aa in rf_conservation.items():
+            if cons_gn in wt_lookup and wt_lookup[cons_gn][0]!=aa[0] and aa[0]!="+":
+                # If cons_gn exist in target but AA is not the same
+                if (int(aa[1])>=rf_cutoff and aa[0] in CONSERVED_RESIDUES): # or  (int(aa[1])>=rf_cutoff_pos and aa[0] in POS_RESIDUES) # EXCLUDE POSITIVE RULE AT RF LEVEL
+                    # differenciate between the two rules for pos or the other residues as they require different cons levels
+                    mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':aa[0], 'definitions' : [definition_matches], 'priority': rf_conservation_priority}
+                    key = '%s%s%s' % (wt_lookup[cons_gn][0],wt_lookup[cons_gn][1],aa[0])
+                    if key not in simple_list:
+                        simple_list[key] = mut
+                    else:
+                        simple_list[key]['definitions'] += [definition_matches]
+                        min_priority = min(x[0] for x in simple_list[key]['definitions'])
+                        simple_list[key]['priority'] = min_priority
+
+            # Apply helix propensity rule (P)
+            if cons_gn in GP_residues_in_target:
+                remove = False
+                if wt_lookup[cons_gn][0]=='P':
+                    # If it is P then only change if ONLY P
+                    if aa[2]['P'][0] == 1:
+                        # if only one count of P (will be this P)
+                        remove = True
+                # elif wt_lookup[cons_gn][0]=='G':
+                #     print('it is G',aa[2]['G'])
+                #     cut_offs = {'001':0.03, '002': 0.21, '003': 0.19, '004': 0.21 ,'005': 0.21}
+                #     if protein_class_slug in cut_offs:
+                #         cut_off = cut_offs[protein_class_slug]
+                #         print('cutoff',cut_off,cut_off>aa[2]['G'][1])
+                #         if cut_off>aa[2]['G'][1]:
+                #             # if cut_off is larger than conserved fraction of G, then it can be removed
+                #             remove = True
+                if remove:
+                    rule = [3,"remove_unconserved_%s" % wt_lookup[cons_gn][0]]
+                    mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':'A', 'definitions' : [rule], 'priority': 3}
+                    key = '%s%s%s' % (wt_lookup[cons_gn][0],wt_lookup[cons_gn][1],'A')
+                    if key not in simple_list:
+                        simple_list[key] = mut
+                    else:
+                        simple_list[key]['definitions'] += [rule]
+                        min_priority = min(x[0] for x in simple_list[key]['definitions'])
+                        simple_list[key]['priority'] = min_priority
+
+
+    class_conservation = calculate_conservation(slug=protein_class_slug)
+    class_cutoff = 7
+    class_cutoff_pos = 4
+    class_conservation_priority = 3
+    definition_matches = [class_conservation_priority,'conservation_class']
+    print('class')
+    for cons_gn, aa in class_conservation.items():
+        if cons_gn in wt_lookup and wt_lookup[cons_gn][0]!=aa[0] and aa[0]!="+":
+            # If cons_gn exist in target but AA is not the same
+            if (int(aa[1])>=class_cutoff and aa[0] in CONSERVED_RESIDUES) or  (int(aa[1])>=class_cutoff_pos and aa[0] in POS_RESIDUES):
+                # differenciate between the two rules for pos or the other residues as they require different cons levels
+                mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':aa[0], 'definitions' : [definition_matches], 'priority': class_conservation_priority}
+                key = '%s%s%s' % (wt_lookup[cons_gn][0],wt_lookup[cons_gn][1],aa[0])
+                if key not in simple_list:
+                    simple_list[key] = mut
+                else:
+                    simple_list[key]['definitions'] += [definition_matches]
+                    min_priority = min(x[0] for x in simple_list[key]['definitions'])
+                    simple_list[key]['priority'] = min_priority
+
+        # Apply helix propensity rule (P+G)
         if cons_gn in GP_residues_in_target:
-            if not (wt_lookup[cons_gn][0]==aa[0] and int(aa[1])>5):
-                rule = [2,"remove_unconserved_%s" % wt_lookup[cons_gn][0]]
-                mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':'A', 'definitions' : [rule], 'priority': 2}
+            remove = False
+            if wt_lookup[cons_gn][0]=='P':
+                # If it is P then only change if ONLY P
+                if aa[2]['P'][0] == 1:
+                    # if only one count of P (will be this P)
+                    remove = True
+            elif wt_lookup[cons_gn][0]=='G':
+                cut_offs = {'001':0.03, '002': 0.21, '003': 0.19, '004': 0.21 ,'005': 0.21}
+                if protein_class_slug in cut_offs:
+                    cut_off = cut_offs[protein_class_slug]
+                    if cut_off>aa[2]['G'][1]:
+                        # if cut_off is larger than conserved fraction of G, then it can be removed
+                        remove = True
+            if remove:
+                rule = [3,"remove_unconserved_%s" % wt_lookup[cons_gn][0]]
+                mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':'A', 'definitions' : [rule], 'priority': 3}
                 key = '%s%s%s' % (wt_lookup[cons_gn][0],wt_lookup[cons_gn][1],'A')
                 if key not in simple_list:
                     simple_list[key] = mut
@@ -1106,61 +1177,55 @@ def mutations(request, slug, **response_kwargs):
                     min_priority = min(x[0] for x in simple_list[key]['definitions'])
                     simple_list[key]['priority'] = min_priority
 
+        # # Apply helix propensity rules from class when receptor family only has one member or non-classA
+        # if (protein_rf_count==1 or protein_class_slug!='001') and cons_gn in GP_residues_in_target:
+        #     if not (wt_lookup[cons_gn][0]==aa[0] and int(aa[1])>5):
+        #         rule = [2,"remove_unconserved_%s" % wt_lookup[cons_gn][0]]
+        #         mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':'A', 'definitions' : [rule], 'priority': 2}
+        #         key = '%s%s%s' % (wt_lookup[cons_gn][0],wt_lookup[cons_gn][1],'A')
+        #         if key not in simple_list:
+        #             simple_list[key] = mut
+        #         else:
+        #             if rule not in simple_list[key]['definitions']:
+        #                 # Do not add this rule if it is already there (From RF check)
+        #                 simple_list[key]['definitions'] += [rule]
+        #                 min_priority = min(x[0] for x in simple_list[key]['definitions'])
+        #                 simple_list[key]['priority'] = min_priority
 
-    class_conservation = calculate_conservation(slug=protein_class_slug)
-    class_cutoff = 7
-    class_conservation_priority = 4
-    definition_matches = [class_conservation_priority,'conservation_class']
-    for cons_gn, aa in class_conservation.items():
-        if int(aa[1])>=class_cutoff and cons_gn in wt_lookup and wt_lookup[cons_gn][0]!=aa[0] and aa[0]!="+":
-            # If cons_gn exist in target but AA is not the same
-            mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':aa[0], 'definitions' : [definition_matches], 'priority': class_conservation_priority}
-            key = '%s%s%s' % (wt_lookup[cons_gn][0],wt_lookup[cons_gn][1],aa[0])
-            if key not in simple_list:
-                simple_list[key] = mut
-            else:
-                simple_list[key]['definitions'] += [definition_matches]
-                min_priority = min(x[0] for x in simple_list[key]['definitions'])
-                simple_list[key]['priority'] = min_priority
 
-        # Apply helix propensity rules from class when receptor family only has one member or non-classA
-        if (protein_rf_count==1 or protein_class_slug!='001') and cons_gn in GP_residues_in_target:
-            if not (wt_lookup[cons_gn][0]==aa[0] and int(aa[1])>5):
-                rule = [2,"remove_unconserved_%s" % wt_lookup[cons_gn][0]]
-                mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':'A', 'definitions' : [rule], 'priority': 2}
-                key = '%s%s%s' % (wt_lookup[cons_gn][0],wt_lookup[cons_gn][1],'A')
-                if key not in simple_list:
-                    simple_list[key] = mut
-                else:
-                    if rule not in simple_list[key]['definitions']:
-                        # Do not add this rule if it is already there (From RF check)
-                        simple_list[key]['definitions'] += [rule]
+    if protein_class_slug in ['001','002','003']:
+        # Only perform the xtal cons rules for A, B1 and B2
+        xtals_conservation = cache.get("CD_xtal_cons_"+protein_class_slug)
+        if not xtals_conservation:
+            c_proteins = Construct.objects.filter(protein__family__slug__startswith = protein_class_slug).all().values_list('protein__pk', flat = True).distinct()
+            xtal_proteins = Protein.objects.filter(pk__in=c_proteins)
+            print(xtal_proteins)
+            xtals_conservation = calculate_conservation(proteins=xtal_proteins)
+            cache.set("CD_xtal_cons_"+protein_class_slug,xtals_conservation,60*60*24)
+
+        xtals_cutoff = 7
+        xtals_cutoff_pos = 4
+        xtals_conservation_priority = 3
+        definition_matches = [xtals_conservation_priority,'conservation_xtals']
+        for cons_gn, aa in class_conservation.items():
+            if cons_gn in wt_lookup and wt_lookup[cons_gn][0]!=aa[0] and aa[0]!="+":
+                # If cons_gn exist in target but AA is not the same
+                if (int(aa[1])>=xtals_cutoff and aa[0] in CONSERVED_RESIDUES) or  (int(aa[1])>=xtals_cutoff_pos and aa[0] in POS_RESIDUES):
+                    # differenciate between the two rules for pos or the other residues as they require different cons levels
+                    mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':aa[0], 'definitions' : [definition_matches], 'priority': xtals_conservation_priority}
+                    key = '%s%s%s' % (wt_lookup[cons_gn][0],wt_lookup[cons_gn][1],aa[0])
+                    if key not in simple_list:
+                        simple_list[key] = mut
+                    else:
+                        simple_list[key]['definitions'] += [definition_matches]
                         min_priority = min(x[0] for x in simple_list[key]['definitions'])
                         simple_list[key]['priority'] = min_priority
 
+    path = os.sep.join([settings.DATA_DIR, 'structure_data', 'Mutation_Rules.xlsx'])
+    d = parse_excel(path)
+    print(d)
 
-    xtals_conservation = cache.get("CD_xtal_cons_"+protein_class_slug)
-    if not xtals_conservation:
-        c_proteins = Construct.objects.filter(protein__family__slug__startswith = protein_class_slug).all().values_list('protein__pk', flat = True).distinct()
-        xtal_proteins = Protein.objects.filter(pk__in=c_proteins)
-        print(xtal_proteins)
-        xtals_conservation = calculate_conservation(proteins=xtal_proteins)
-        cache.set("CD_xtal_cons_"+protein_class_slug,xtals_conservation,60*60*24)
 
-    xtals_cutoff = 5
-    xtals_conservation_priority = 4
-    definition_matches = [xtals_conservation_priority,'conservation_xtals']
-    for cons_gn, aa in class_conservation.items():
-        if int(aa[1])>=xtals_cutoff and cons_gn in wt_lookup and wt_lookup[cons_gn][0]!=aa[0] and aa[0]!="+":
-            # If cons_gn exist in target but AA is not the same
-            mut = {'wt_aa': wt_lookup[cons_gn][0], 'segment': wt_lookup[cons_gn][2], 'pos': wt_lookup[cons_gn][1], 'gpcrdb':cons_gn, 'mut_aa':aa[0], 'definitions' : [definition_matches], 'priority': xtals_conservation_priority}
-            key = '%s%s%s' % (wt_lookup[cons_gn][0],wt_lookup[cons_gn][1],aa[0])
-            if key not in simple_list:
-                simple_list[key] = mut
-            else:
-                simple_list[key]['definitions'] += [definition_matches]
-                min_priority = min(x[0] for x in simple_list[key]['definitions'])
-                simple_list[key]['priority'] = min_priority
 
     simple_list = OrderedDict(sorted(simple_list.items(), key=lambda x: (x[1]['priority'],x[1]['pos']) ))
     for key, val in simple_list.items():
@@ -1507,7 +1572,10 @@ def calculate_conservation(proteins = None, slug = None):
             # Load alignment 
             alignment_consensus = AlignmentConsensus.objects.get(slug=slug)
             if alignment_consensus.gn_consensus:
-                return pickle.loads(alignment_consensus.gn_consensus)
+                alignment_consensus = pickle.loads(alignment_consensus.gn_consensus)
+                # make sure it has this value, so it's newest version
+                test = alignment_consensus['1x50'][2]
+                return alignment_consensus
             a = pickle.loads(alignment_consensus.alignment)
         except: 
             proteins = Protein.objects.filter(family__slug__startswith=slug, source__name='SWISSPROT',species__common_name='Human')
@@ -1527,12 +1595,18 @@ def calculate_conservation(proteins = None, slug = None):
         # calculate consensus sequence + amino acid and feature frequency
         a.calculate_statistics()
 
-
+    num_proteins = len(a.proteins)
+    # print(a.aa_count)
     consensus = {}
     for seg, aa_list in a.consensus.items():
-        for gn, aa in aa_list.items():
+        for gn, aal in aa_list.items():
+            print(gn)
+            aa_count_dict = {}
+            for aa, num in a.aa_count[seg][gn].items():
+                if num:
+                    aa_count_dict[aa] = (num,round(num/num_proteins,3))
             if 'x' in gn: # only takes those GN positions that are actual 1x50 etc
-                consensus[gn] = [aa[0],aa[1]]
+                consensus[gn] = [aal[0],aal[1],aa_count_dict]
     if slug and alignment_consensus:
         alignment_consensus.gn_consensus = pickle.dumps(consensus)
         alignment_consensus.save()
