@@ -315,11 +315,13 @@ class StructureStatistics(TemplateView):
         class_a_data = tree.get_tree_data(ProteinFamily.objects.get(name='Class A (Rhodopsin)'))
         context['class_a_options'] = deepcopy(tree.d3_options)
         context['class_a_options']['anchor'] = 'class_a'
+        context['class_a_options']['leaf_offset'] = 50
         context['class_a_options']['label_free'] = []
         context['class_a'] = json.dumps(class_a_data.get_nodes_dict('crystals'))
         class_b1_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B1 (Secretin)'))
         context['class_b1_options'] = deepcopy(tree.d3_options)
         context['class_b1_options']['anchor'] = 'class_b1'
+        context['class_b1_options']['branch_trunc'] = 60
         context['class_b1_options']['label_free'] = [1,]
         context['class_b1'] = json.dumps(class_b1_data.get_nodes_dict('crystals'))
         class_b2_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class B2 (Adhesion)'))
@@ -330,6 +332,7 @@ class StructureStatistics(TemplateView):
         class_c_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class C (Glutamate)'))
         context['class_c_options'] = deepcopy(tree.d3_options)
         context['class_c_options']['anchor'] = 'class_c'
+        context['class_c_options']['branch_trunc'] = 50
         context['class_c_options']['label_free'] = [1,]
         context['class_c'] = json.dumps(class_c_data.get_nodes_dict('crystals'))
         class_f_data = tree.get_tree_data(ProteinFamily.objects.get(name__startswith='Class F (Frizzled)'))

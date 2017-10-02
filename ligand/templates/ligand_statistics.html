@@ -38,17 +38,10 @@
             stroke-opacity: .25;
         }
 
-
         body {
             font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
             margin: 0;
         }
-
-        /*#show-length {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-    }*/
 
         .links {
             fill: none;
@@ -78,6 +71,38 @@
         .label--active {
             font-weight: bold;
         }
+    #circle_100 {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: LightGray;
+    }
+    #circle_500 {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: DarkGray;
+    }
+    #circle_1k {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: Gray;
+    }
+    #circle_2k {
+        width: 10px;
+        height: 10px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        background: Black;
+    }
 </style>
 {% endblock %}
 
@@ -86,11 +111,11 @@
 
 {% block content %}
 <h4>Number of unique ligands per receptor class</h4>
-<table style="width:75% !important" class="table table-stripped">
+<table style="width:85% !important" class="table table-stripped">
     <thead>
         <tr>
             <td><b>Class<br />(Family)</b></td>
-            <!--<td align="center"><b>Total</b></td>-->
+            <td align="center"><b>Total</b></td>
             {% for data in ligands_by_class %}
             <td align="center"><b>{% if data.name == "Taste 2" %}Taste&nbsp;2{% else %}{{ data.name }}{% endif %}</b></td>
             {% endfor %}
@@ -98,20 +123,22 @@
     </thead>
     <tbody>
         <tr>
-            <td>Number of ligands</td>
-            <!--            <td align="center" style="vertical-align:middle !important">{{ data.num_ligands }}</td>-->
+            <td>No. ligands</td>
+            <td align="center" style="vertical-align:middle !important">{{ ligands_total.num_ligands|floatformat:0|intcomma }}</td>
             {% for data in ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.num_ligands|floatformat:0|intcomma }}</td>
             {% endfor %}
         </tr>
         <tr>
-            <td>Average # of ligands per receptor</td>
+            <td nowrap>Average no. ligands/GPCR</td>
+            <td align="center" style="vertical-align:middle !important">{{ ligands_total.avg_num_ligands|floatformat:0|intcomma }}</td>
             {% for data in ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.avg_num_ligands|floatformat:0|intcomma }}</td>
             {% endfor %}
         </tr>
         <tr>
-            <td>Receptors with ligands (percentage)</td>
+            <td nowrap>No. GPCRs with ligand (%)</td>
+            <td align="center" style="vertical-align:middle !important"> {{ ligands_total.target_count|floatformat:0 }} ({{ ligands_total.target_percentage|floatformat:0 }})</td>
             {% for data in ligands_by_class %}
             <td align="center" style="vertical-align:middle !important">{{ data.target_count|floatformat:0 }} ({{ data.target_percentage|floatformat:0 }})</td>
             {% endfor %}
@@ -126,6 +153,20 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
 <br />
 <br />
 <h4>Ligand coverage of GPCR Classes</h4><br />
+
+Circle colors indicate a number of ligands: 
+<table style="width:30%">
+    <tr>
+        <td ><div id="circle_100"></div></td>
+        <td> < 100 </td>
+        <td ><div id="circle_500"></div></td>
+        <td> < 500 </td>
+        <td ><div id="circle_1k"></div></td>
+        <td> < 1000 </td>
+        <td ><div id="circle_2k"></div></td>
+        <td> 1000+</td>
+    </tr>
+</table><br />
 <script type="text/javascript" charset="utf-8">
     class_a = {{ class_a | safe }};
     class_a_options = {{ class_a_options | safe }};
@@ -140,7 +181,7 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
     class_t2 = {{ class_t2 | safe }};
     class_t2_options = {{ class_t2_options | safe }};
 </script>
-<h4>Class A</h4>
+<h4>  Class A<br />(Rhodopsin)</h4>
 <div id="class_a">
 </div>
 <div class="btn-group">
@@ -167,13 +208,13 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
 <table>
     <tr>
         <td align="center">
-            <h4>Class B1</h4>
+            <h4>Class B1<br />(Secretin)</h4>
         </td>
         <td align="center">
-            <h4>Class B2</h4>
+            <h4>Class B2<br />(Adhesion)</h4>
         </td>
         <td align="center">
-            <h4>Class C</h4>
+            <h4>Class C<br />(Glutamate)</h4>
         </td>
     </tr>
     <tr>
@@ -254,7 +295,7 @@ Structure statistics was last updated: <strong>{{ release_notes.date|date:"Y-m-d
 <table width="100%">
     <tr>
         <td width="50%" align="center">
-            <h4>Class F</h4>
+            <h4>Class F<br />(Frizzled)</h4>
         </td>
         <td width="50%" align="center">
             <h4>Taste 2</h4>
