@@ -59,7 +59,7 @@ class TargetSelectionGprotein(AbsTargetSelection):
     buttons = {
         'continue': {
             'label': 'Continue to next step',
-            'url': '/alignment/segmentselectionarrestin',
+            'url': '/alignment/segmentselectiongprot',
             'color': 'success',
         },
     }
@@ -92,7 +92,7 @@ class TargetSelectionArrestin(AbsTargetSelection):
     buttons = {
         'continue': {
             'label': 'Continue to next step',
-            'url': '/alignment/segmentselectiongprot',
+            'url': '/alignment/segmentselectionarrestin',
             'color': 'success',
         },
     }
@@ -152,7 +152,7 @@ class SegmentSelectionGprotein(AbsSegmentSelection):
     position_type = 'gprotein'
     rsets = ResiduePositionSet.objects.filter(name__in=['Gprotein Barcode', 'YM binding site']).prefetch_related('residue_position')
 
-    ss = ProteinSegment.objects.filter(name__regex = r'^[a-zA-Z0-9]{1,5}$', partial=False).prefetch_related('generic_numbers')
+    ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Gprotein').prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
 class SegmentSelectionArrestin(AbsSegmentSelection):
@@ -179,11 +179,13 @@ class SegmentSelectionArrestin(AbsSegmentSelection):
         },
     }
 
-    # position_type = 'gprotein'
-    # rsets = ResiduePositionSet.objects.filter(name__in=['Gprotein Barcode', 'YM binding site']).prefetch_related('residue_position')
+    position_type = 'arrestin'
+
+    ## Add some Arrestin specific positions
+    rsets = ResiduePositionSet.objects.filter(name__in=['Arrestin interface']).prefetch_related('residue_position')
 
     ## ProteinSegment for different proteins
-    ss = ProteinSegment.objects.filter(name__regex = r'^[a-zA-Z0-9]{1,5}$', partial=False).prefetch_related('generic_numbers')
+    ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Arrestin').prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
 class BlastSearchInput(AbsMiscSelection):
@@ -287,13 +289,13 @@ def render_family_alignment(request, slug):
         preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(gsegments['Full'])])
         segments = ProteinSegment.objects.filter(slug__in = gsegments['Full'], partial=False).order_by(preserved)
     else:
-        segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False)
+        segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR')
         if len(proteins)>50:
             # if a lot of proteins, exclude some segments
-            segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False).exclude(slug__in=['N-term','C-term'])
+            segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(slug__in=['N-term','C-term'])
         if len(proteins)>200:
             # if many more proteins exluclude more segments
-            segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False).exclude(slug__in=['N-term','C-term']).exclude(category='loop')
+            segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(slug__in=['N-term','C-term']).exclude(category='loop')
 
     protein_ids = []
     for p in proteins:
@@ -370,7 +372,6 @@ def render_fasta_family_alignment(request, slug):
     response = render(request, 'alignment/alignment_fasta.html', context={'a': a}, content_type='text/fasta')
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.fasta"
     return response
-
 
 def render_csv_alignment(request):
     # get the user selection from session
