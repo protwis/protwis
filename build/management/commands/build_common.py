@@ -90,13 +90,16 @@ class Command(BaseCommand):
                         'proteinfamily': split_row[4]
                     }
 
-                    s, created = ProteinSegment.objects.get_or_create(slug=split_row[0], proteinfamily=split_row[4], defaults=defaults)
+                    s, created = ProteinSegment.objects.get_or_create(slug=split_row[0], defaults=defaults)
+                    s.proteinfamily = split_row[4]
+                    s.save()
 
                     if created:
                         self.logger.info('Created protein segment ' + s.name)
                 except:
-                    self.logger.error('Failed creating protein segment {}'.format(split(row[0])))
-                    continue
+                    # print('Failed creating protein segment',row[0])
+                    self.logger.error('Failed creating protein segment',row[0])
+                    # continue
 
         self.logger.info('COMPLETED CREATING PROTEIN SEGMENTS')
 

@@ -5,7 +5,6 @@ from django.db import IntegrityError
 
 
 from common.models import WebResource, WebLink
-from common.definitions import G_PROTEIN_SEGMENTS
 
 from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
@@ -55,7 +54,6 @@ class Command(BaseCommand):
             self.purge_coupling_data()
             self.purge_cgn_residues()
             self.purge_cgn_proteins()
-            self.create_g_protein_segments()
 
             self.create_g_proteins(filenames)
             self.cgn_create_proteins_and_families()
@@ -124,27 +122,6 @@ class Command(BaseCommand):
                 except IntegrityError:
                     self.logger.error('Failed creating barcode for ' + CGN + ' for protein ' + p.name)
 
-    def create_g_protein_segments(self):
-        self.logger.info('CREATING G-PROTEIN SEGMENTS')
-
-        for s in G_PROTEIN_SEGMENTS['Full']:
-
-            if s.startswith('S') and len(s) == 2:
-                category = 'sheet'
-            elif s.startswith('H') and len(s) == 2:
-                category = 'helix'
-            else:
-                category = 'loop'
-
-            try:
-                ProteinSegment.objects.get_or_create(slug=s, name=s, category=category, fully_aligned=True)
-                self.logger.info('Created protein segment')
-
-            except:
-                self.logger.error('Failed to create protein segment')
-
-        self.logger.info('COMPLETED CREATING G-PROTEIN SEGMENTS')
-
     def create_g_proteins(self, filenames=False):
         self.logger.info('CREATING GPROTEINS')
 
@@ -206,7 +183,6 @@ class Command(BaseCommand):
     def purge_cgn_proteins(self):
         try:
             Protein.objects.filter(residue_numbering_scheme__slug='cgn').delete()
-            ProteinSegment.objects.filter(slug__in=list(G_PROTEIN_SEGMENTS['Full'])).delete()
         except:
             self.logger.info('Protein to delete not found')
 
@@ -236,7 +212,7 @@ class Command(BaseCommand):
                 rgn, c= ResidueGenericNumber.objects.get_or_create(label=row['CGN'])
 
             #fetch protein segment id
-            ps, c= ProteinSegment.objects.get_or_create(slug=row['CGN'].split(".")[1])
+            ps, c= ProteinSegment.objects.get_or_create(slug=row['CGN'].split(".")[1], proteinfamily='Gprotein')
 
             try:
                 Residue.objects.get_or_create(sequence_number=row['Position'], protein_conformation=pc, amino_acid=row['Residue'], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
@@ -287,35 +263,6 @@ class Command(BaseCommand):
         #filtering for human gproteins using list above
         residue_generic_numbers= residue_data['CGN']
 
-        #add protein segment entries:
-
-        segments =[]
-        cgns = residue_data['CGN'].unique()
-
-        for s in cgns:
-            segments.append(s.split(".")[1])
-
-        #Commit protein segments in db
-
-        #purge line
-        #ProteinSegment.objects.filter(slug__in=np.unique(segments)).delete()
-
-        # for s in np.unique(segments):
-
-        #     if s.startswith('S') and len(s) == 2:
-        #         category = 'sheet'
-        #     elif s.startswith('H') and len(s) == 2:
-        #         category = 'helix'
-        #     else:
-        #         category = 'loop'
-
-        #     try:
-        #         ProteinSegment.objects.get_or_create(slug=s, name=s, category=category, fully_aligned=True)
-        #         self.logger.info('Created protein segment')
-
-        #     except:
-        #         self.logger.error('Failed to create protein segment')
-
         #Residue numbering scheme is the same for all added residue generic numbers (CGN)
 
         cgn_scheme = ResidueNumberingScheme.objects.get(slug='cgn')
@@ -324,7 +271,7 @@ class Command(BaseCommand):
         #ResidueGenericNumber.objects.filter(scheme_id=12).delete()
 
         for rgn in residue_generic_numbers.unique():
-            ps, c= ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1])
+            ps, c= ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1], proteinfamily='Gprotein')
 
             rgnsp=[]
 
