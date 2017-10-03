@@ -16,21 +16,16 @@
 
 <script type="text/javascript" charset="utf-8">
     $(document).ready(function () {
-        ClearSelection('targets');
-        //ClearSelection('reference');
         var table = $('#proteins').DataTable({
             'scrollX': true,
-            'scrollY': $(window).height() - 300,
+            'scrollY': $(window).height() - 100,
             'bScrollCollapse': true,
             'paging': false,
             'orderCellsTop': true,
             'autoWidth': false,
             'dom': 'iTlfrt',
-            //'order': [[14, "asc"]], // order by date
             'aoColumnDefs': [
-                //{ 'bSortable': false, 'aTargets': [0] },
                 { 'sType': 'string', 'aTargets': [0] },
-                //{ 'sType': 'string', 'aTargets': [10] },
             ],
             'tableTools': {
                 "sRowSelect": "double",
@@ -41,7 +36,6 @@
                     sPlaceHolder: "head:after",
                     sRangeFormat: "{from}:{to}",
                     aoColumns: [
-                        //null,
                         { type: "select" },		//Protein Entry Name
                         { type: "select" },		//Receptor
                         { type: "select" },		//Rec family
@@ -52,12 +46,6 @@
                         { type: "number-range" },	//Minimal Measured Values
                         { type: "number-range" },	//Average Values
                         { type: "select" },		//Units
-                        //{ type: "text" },		//
-                        //{ type: "number-range" },//Rotatable Bonds
-                        //{ type: "number-range" },//Hydrogen Bond Donors
-                        //{ type: "number-range" },//Hydrogen Bond Acceptors
-                        //{ type: "number-range" },//LogP
-
                     ]
                 });
             }
@@ -71,24 +59,6 @@
 {% endblock %}
 
 {% block content %}
-
-
-<!--<div class="btn-group">-->
-<!--    <a id="align_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Align</a>-->
-<!--</div>-->
-<!--<div class="btn-group">
-    <a id="download_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Download</a>
-</div>-->
-<!--<div class="btn-group">-->
-<!--    <a id="concise_binding_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show Concise Binding Assay Information</a>-->
-<!--</div>-->
-<!--<div class="btn-group">-->
-<!--    <a id="concise_funtional_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Show Concise Functional Assay Information</a>-->
-<!--</div>-->
-<!--<div class="btn-group">-->
-<!--    <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>-->
-<!--</div>-->
-<!--<div style="font-size: 10px;">For superimposition: Select (tick box) ligands, and Highlight the reference template</div>-->
 <br />
 <br />
 <h3>Ligand information for {{ligand}}:</h3>
@@ -98,21 +68,19 @@
         <thead>
 
             <tr>
-                <!--<th><input class="select-all" type="checkbox"> Select all</th>-->
                 <th class="protein-th">Receptor name</th>
                 <th class="protein-th">Receptor family</th>
                 <th class="protein-th">Ligand type</th>
                 <th class="protein-th">Class</th>
                 <th class="ligand-th"> Num Records</th>
                 <th class="ligand-th"> Assay Type</th>
-                <th class="protein-th">Value Types</th>
-                <th class="protein-th">Minimal Measured Values</th>
-                <th class="protein-th">Average Values</th>
-                <th class="protein-th">Standarad Units</th>
+                <th class="chemical-th">Value Types</th>
+                <th class="chemical-th">Minimal Measured Values</th>
+                <th class="chemical-th">Average Values</th>
+                <th class="chemical-th">Standarad Units</th>
 
             </tr>
             <tr>
-                <!--<th></th>-->
                 <th></th>
                 <th></th>
                 <th></th>
@@ -130,8 +98,7 @@
             {% for record in ligand_data %}
 
             <tr>
-                <!--<td><input class="alt" type="checkbox"></td>-->
-                <td onclick="window.location='/ligand/target/{{record.protein_name}}'">{{record.protein_name}}</td>
+                <td onclick="window.location='/ligand/target/all/{{record.protein_name}}'">{{record.protein_name}}</td>
                 <td>{{record.receptor_family}}</td>
                 <td>{{record.ligand_type}}</td>
                 <td>{{record.class}}</a></td>
