@@ -230,7 +230,11 @@ def StructureDetails(request, pdbname):
     crystal = Structure.objects.get(pdb_code__index=pdbname)
     p = Protein.objects.get(protein=crystal.protein_conformation.protein)
     residues = ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure__pdb_code__index=pdbname, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
-    return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list, 'main_ligand': main_ligand})
+    try:
+        refined = Structure.objects.get(pdb_code__index=pdbname+'_refined')
+    except:
+        refined = False
+    return render(request,'structure_details.html',{'pdbname': pdbname, 'structures': structures, 'crystal': crystal, 'protein':p, 'residues':residues, 'annotated_resn': resn_list, 'main_ligand': main_ligand, 'refined': refined})
 
 def ServePdbDiagram(request, pdbname):
     structure=Structure.objects.filter(pdb_code__index=pdbname)
@@ -1760,7 +1764,7 @@ def SingleModelDownload(request, modelname, state, csv=False):
             text_out+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
         response = HttpResponse(text_out, content_type="homology_models/csv")
         if state=='refined':
-            file_name = 'Class{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein_conformation.protein.parent.family.slug[:3]], hommod.protein_conformation.protein.parent.entry_name,
+            file_name = 'Class{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
                                                                                hommod.pdb_code.index)
         else:
             file_name = 'Class{}_{}_{}_{}_{}_GPCRDB.templates.csv'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 
@@ -1771,7 +1775,7 @@ def SingleModelDownload(request, modelname, state, csv=False):
         else:
             response = HttpResponse(hommod.pdb, content_type="homology_models/model")
         if state=='refined':
-            file_name = 'Class{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein_conformation.protein.parent.family.slug[:3]], hommod.protein_conformation.protein.parent.entry_name,
+            file_name = 'Class{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein_conformation.protein.family.slug[:3]], hommod.protein_conformation.protein.entry_name,
                                                                      hommod.pdb_code.index)
         else:
             file_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.protein.family.slug[:3]], hommod.protein.entry_name, 

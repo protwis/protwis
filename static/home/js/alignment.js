@@ -13,6 +13,6 @@ $(function(){
     });
 });
 
-$(window).load(function () {
+$(window).on("load", function () {
     $('.internal-scroll-div').css('width', $('.dynamic-div').outerWidth() );
 });
