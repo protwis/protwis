@@ -38,6 +38,7 @@
                     aoColumns: [
                         null,
                         { type: "select" }, // receptor
+                        { type: "select" }, // Species
                         { type: "select" }, //protein family
                         { type: "select" }, // ligand type
                         { type: "select" }, // class
@@ -99,14 +100,15 @@
     </button>
     <ul class="dropdown-menu">
         <li>
-            <a id="compact_btn" href="javascript:void(0)">Concise</a>
+            <a id="compact_btn" href="javascript:void(0)">Ligand min, max & mean activities (1 row/ligand)</a>
         </li>
         <li>
-            <a id="all_ligs_btn" href="javascript:void(0)">All activities</a>
+            <a id="all_ligs_btn" href="javascript:void(0)">Ligand source activities (1 row/activity)</a>
         </li>
     </ul>
 </div>
-
+<!--Ligand min, max & mean activities (1 row/ligand)<br />
+Ligand source activities (1 row/activity)-->
 
 <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
     <table width="100%" class="display" id="ligands">
@@ -114,12 +116,14 @@
             <tr>
                 <th><input class="select-all" type="checkbox"> Select all</th>
                 <th class="general-th">Receptor</th>
+                <th class="general-th">Species</th>
                 <th class="general-th">Receptor family</th>
                 <th class="general-th">Ligand type</th>
                 <th class="general-th">Class</th>
                 <th class="activity-th">Ligand count</th>
             </tr>
             <tr>
+                <th></th>
                 <th></th>
                 <th></th>
                 <th></th>
@@ -133,10 +137,10 @@
             <tr>
                 <td><input class="alt" type="checkbox"></td>
                 <td>{{ligand.protein__entry_name}}</td>
+                <td>{{ligand.protein__species__common_name}}</td>
                 <td>{{ligand.protein__family__parent__name}}</td>
                 <td>{{ligand.protein__family__parent__parent__name}}</td>
                 <td>{{ligand.protein__family__parent__parent__parent__name}}</td>
-                <!--<td><a href="/ligand/target/{{ligand.protein__entry_name}}">{{ligand.num_ligands}}</a></td>-->
                 <td>{{ligand.num_ligands}}</td>
             </tr>
             {% endfor %}
