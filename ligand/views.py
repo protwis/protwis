@@ -158,9 +158,10 @@ def TargetDetailsCompact(request, **kwargs):
             ligand_data.append({
                 'ligand_id': lig.properities.web_links.get(web_resource__slug = 'chembl_ligand').index,
                 'protein_name': protein_details.entry_name,
-                'receptor_family': protein_details.species.common_name,
+                'species': protein_details.species.common_name,
                 'record_count': tmp_count,
                 'assay_type': ', '.join(tmp.keys()),
+                'purchasability': 'Yes' if len(LigandVendorLink.objects.filter(lp=lig.properities).exclude(vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem'])) > 0 else 'No',
                 #Flattened list of lists of dict keys:
                 'low_value': min(values),
                 'average_value': sum(values)/len(values),
@@ -230,6 +231,9 @@ def TargetDetails(request, **kwargs):
                 'ligand__properities__hdon',
                 'ligand__properities__hacc','protein'
                 ).annotate(num_targets = Count('protein__id', distinct=True))
+    for record in ps:
+        record['purchasability'] = 'Yes' if len(LigandVendorLink.objects.filter(lp=record['ligand__properities_id']).exclude(vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem'])) > 0 else 'No'
+
     context['proteins'] = ps
 
     return render(request, 'target_details.html', context)
@@ -243,7 +247,7 @@ def TargetPurchasabilityDetails(request, **kwargs):
         selection.importer(simple_selection)
     if selection.targets != []:
         prot_ids = [x.item.id for x in selection.targets]
-        ps = AssayExperiment.objects.filter(protein__in=prot_ids, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')#.exclude(ligand__properities__vendors__vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem'])
+        ps = AssayExperiment.objects.filter(protein__in=prot_ids, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
         context = {
             'target': ', '.join([x.item.entry_name for x in selection.targets])
             }
