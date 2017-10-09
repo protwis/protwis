@@ -23,3 +23,6 @@ input.number_range_filter, input.date_range_filter {
 .similarity-th {
     background-color: gold;
 }
+.toggled, .toggled:hover, .toggled:visited, .toggled:active, .toggled:link {
+    background-color: #134B7D;
+}
