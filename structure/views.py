@@ -59,7 +59,7 @@ class StructureBrowser(TemplateView):
 
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
-            context['structures'] = Structure.objects.all().select_related(
+            context['structures'] = Structure.objects.filter(refined=False).select_related(
                 "pdb_code__web_resource",
                 "protein_conformation__protein__species",
                 "protein_conformation__protein__source",
@@ -69,13 +69,12 @@ class StructureBrowser(TemplateView):
                 "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
                 Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
                 annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
+            context['refined'] = [i.pdb_code.index[:4] for i in Structure.objects.filter(refined=True)]
         except Structure.DoesNotExist as e:
             pass
 
         return context
 
-# def ServeHomologyModels(request):
-#     return render(request,"homology_models.html")
 
 class ServeHomologyModels(TemplateView):
 
