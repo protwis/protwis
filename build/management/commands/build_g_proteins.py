@@ -52,28 +52,18 @@ class Command(BaseCommand):
         #add gproteins from cgn db
         try:
             self.purge_coupling_data()
-            self.purge_cgn_residues()
-            self.purge_cgn_proteins()
+            # self.purge_cgn_residues()
+            # self.purge_cgn_proteins()
 
             self.create_g_proteins(filenames)
-            self.cgn_create_proteins_and_families()
+            # self.cgn_create_proteins_and_families()
+
+            # human_and_orths = self.cgn_add_proteins()
+            # self.update_protein_conformation(human_and_orths)
+            # self.create_barcode()
 
         except Exception as msg:
             print(msg)
-            self.logger.error(msg)
-
-        # add residues from cgn db
-        try:
-            human_and_orths = self.cgn_add_proteins()
-
-            self.update_protein_conformation(human_and_orths)
-        except Exception as msg:
-            self.logger.error(msg)
-
-        # add barcode data
-        try:
-            self.create_barcode()
-        except Exception as msg:
             self.logger.error(msg)
 
     def purge_coupling_data(self):
@@ -140,7 +130,7 @@ class Command(BaseCommand):
                 reader = csv.reader(f)
                 for row in reader:
 
-                    entry_name = row[4]
+                    entry_name = row[0]
                     primary = row[8]
                     secondary = row[9]
 
@@ -158,25 +148,27 @@ class Command(BaseCommand):
                     secondary = secondary.split(", ")
 
                     if primary=='None' and secondary=='None':
-                        print('no data for ',entry_name)
+                        print('no data for ', entry_name)
                         continue
 
-                    for gp in primary:
-                        if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
-                            continue
-                        g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
-                        gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary')
-                        gpair.save()
+                    try:
+                        for gp in primary:
+                            if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
+                                continue
+                            g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
+                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary')
+                            gpair.save()
 
-                    for gp in secondary:
-                        if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism', '']: #skip bad ones
-                            continue
-                        if gp in primary: #sip those that were already primary
-                             continue
-                        g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
-                        gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary')
-                        gpair.save()
-
+                        for gp in secondary:
+                            if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism', '']: #skip bad ones
+                                continue
+                            if gp in primary: #sip those that were already primary
+                                 continue
+                            g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
+                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary')
+                            gpair.save()
+                    except:
+                        print(row)
 
         self.logger.info('COMPLETED CREATING G PROTEINS')
 
