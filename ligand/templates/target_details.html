@@ -30,6 +30,9 @@
     .AssayCell:hover span.AssayDetail {
         display: block;
     }
+    .struct2d:hover span{
+        display:inline; position:absolute; 
+    }
 
 </style>
 {% endblock %}
@@ -253,7 +256,7 @@
                 {% for p in proteins %}
                 <tr>
                     <td><input class="alt" type="checkbox"></td>
-                    <td><a href="/ligand/{{p.ligand__properities__web_links__index}}">{{p.ligand__properities__web_links__index}}</a></td>
+                    <td class="struct_2d"><a href="/ligand/{{p.ligand__properities__web_links__index}}">{{p.ligand__properities__web_links__index}}</a><span><img src="'www.ebi.ac.uk/chembl/api/data/image/'{{p.ligand__properities__web_links__index}}"/></span></td>
                     <td>{{p.protein__entry_name}}</td>
                     <td>{{p.protein__species__common_name}}</td>
                     <td>{{p.purchasability}}</td>
