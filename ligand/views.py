@@ -281,6 +281,9 @@ def TargetPurchasabilityDetails(request, **kwargs):
             tmp = LigandVendorLink.objects.filter(vendor=record['ligand__properities__vendors__vendor__id'], lp=record['ligand__properities_id'])[0]
             record['vendor_id'] = tmp.vendor_external_id
             record['vendor_link'] = tmp.url
+            #Now the chembl_id
+            tmp = LigandVendorLink.objects.filter(vendor__name='ChEMBL', lp=record['ligand__properities_id'])[0]
+            record['chembl_id'] = tmp.vendor_external_id
             purchasable.append(record)
         except:
             continue
