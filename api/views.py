@@ -39,10 +39,11 @@ from rest_framework import response, schemas
 from rest_framework.routers import DefaultRouter
 from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
 
-router = DefaultRouter(
-    schema_title='GPCRdb API',
-    schema_renderers=[OpenAPIRenderer, SwaggerUIRenderer, renderers.CoreJSONRenderer]
-)
+# router = DefaultRouter(
+#     schema_title='GPCRdb API',
+#     schema_renderers=[OpenAPIRenderer, SwaggerUIRenderer, renderers.CoreJSONRenderer]
+# )
+router = DefaultRouter()
 
 @api_view()
 @renderer_classes([SwaggerUIRenderer, OpenAPIRenderer, renderers.CoreJSONRenderer])
