@@ -30,6 +30,7 @@ import math
 from copy import deepcopy
 from datetime import datetime, date
 import yaml
+import traceback
 
 
 startTime = datetime.now()
@@ -62,8 +63,11 @@ class Command(BaseBuild):
         parser.add_argument('--purge', help='Purge all existing records', default=False, action='store_true')
         parser.add_argument('-i', help='Number of MODELLER iterations for model building', default=1, type=int)
         parser.add_argument('--test_run', action='store_true', help='Build only a test set of homology models ', default=False)
+        parser.add_argument('--debug', help='Debugging mode', default=False, action='store_true')
+        parser.add_argument('--state', help='Specify state in debug mode', default=False, type=str, nargs='+')
         
     def handle(self, *args, **options):
+        self.debug = options['debug']
         if not os.path.exists('./structure/homology_models/'):
             os.mkdir('./structure/homology_models')
         if not os.path.exists('./structure/PIR/'):
@@ -91,7 +95,7 @@ class Command(BaseBuild):
         if options['r']:
             all_receptors = Protein.objects.filter(entry_name__in=options['r'])
         elif options['x']:
-            structs = Structure.objects.filter(refined=False).order_by('pdb_code__index')
+            structs = Structure.objects.filter(refined=False, annotated=True).order_by('pdb_code__index')
             all_receptors = [i.protein_conformation.protein for i in structs]
         elif options['c']==False:
             self.build_all = True
@@ -101,7 +105,7 @@ class Command(BaseBuild):
                                                                                                                                       Q(family__slug__istartswith='004') |
                                                                                                                                       Q(family__slug__istartswith='005') |
                                                                                                                                       Q(family__slug__istartswith='006')).order_by('entry_name')
-            structs = Structure.objects.filter(refined=False).order_by('pdb_code__index')
+            structs = Structure.objects.filter(refined=False, annotated=True).order_by('pdb_code__index')
             all_receptors = list(all_receptors)+[i.protein_conformation.protein for i in structs]
         elif options['c'].upper() not in GPCR_class_codes:
             raise AssertionError('Error: Incorrect class name given. Use argument -c with class name A, B1, B2, C, F or T')
@@ -144,6 +148,9 @@ class Command(BaseBuild):
                     for st in states_dic:
                         self.receptor_list.append([r, st])
 
+        if self.debug and options['state']:
+            self.receptor_list = [i for i in self.receptor_list if i[1] in options['state']]
+
         self.receptor_list_entry_names = [i[0].entry_name for i in self.receptor_list]
 
         # Test run, only 5 models
@@ -175,8 +182,9 @@ class Command(BaseBuild):
                 for f in files:
                     zipf.write(os.path.join(root, f))
             zipf.close()
-        shutil.rmtree('homology_models')
-        shutil.rmtree('PIR')
+        if not self.debug:
+            shutil.rmtree('homology_models')
+            shutil.rmtree('PIR')
 
     def main_func(self, positions, iteration, count, lock):
         processor_id = round(self.processors*positions[0]/len(self.receptor_list))+1
@@ -210,15 +218,17 @@ class Command(BaseBuild):
             seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX', '5JQH', '5TZY']
 
             ##### Ignore output from that can come from BioPDB! #####
-            _stdout = sys.stdout
-            sys.stdout = open(os.devnull, 'w')
-            Homology_model = HomologyModeling(receptor, state, [state], iterations=self.modeller_iterations)
+            if not self.debug:
+                _stdout = sys.stdout
+                sys.stdout = open(os.devnull, 'w')
+
+            Homology_model = HomologyModeling(receptor, state, [state], iterations=self.modeller_iterations, debug=self.debug)
             alignment = Homology_model.run_alignment([state])
             Homology_model.build_homology_model(alignment)
             formatted_model = Homology_model.format_final_model()
-            # if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
-            #     args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
-            #     subprocess.call(args)
+            if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
+                args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
+                subprocess.call(args)
             # Run clash and break test
             p = PDB.PDBParser()
             if Homology_model.revise_xtal==False:
@@ -248,35 +258,41 @@ class Command(BaseBuild):
 
 
             if residue_shift==True:
-                #TODO PUT IN LOGGER print('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
+                if self.debug:
+                    print('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
                 logger.warning('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
                 raise ValueError('Error: Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res)) 
             # Check for clashes in model
             if len(hse.clash_pairs)>0:
-                #TODO PUT IN LOGGER print('Remaining clashes in {}:'.format(Homology_model.reference_entry_name))
+                if self.debug:
+                    print('Remaining clashes in {}:'.format(Homology_model.reference_entry_name))
                 for i in hse.clash_pairs:
-                    #TODO PUT IN LOGGER print(i)
+                    if self.debug:
+                        print(i)
                     if i[0][1]==i[1][1]-1 or i[0][1]==i[1][1]:
                         hse.clash_pairs.remove(i)
                 logger.warning('Remaining clashes in {}\n{}'.format(Homology_model.reference_entry_name,hse.clash_pairs))
             # Check for chain breaks in model
             if len(hse.chain_breaks)>0:
-                #TODO PUT IN LOGGER print('Chain breaks in {}:'.format(Homology_model.reference_entry_name))
-                # for j in hse.chain_breaks:
-                    #TODO PUT IN LOGGER print(j)
+                if self.debug:
+                    print('Chain breaks in {}:'.format(Homology_model.reference_entry_name))
+                    for j in hse.chain_breaks:
+                        print(j)
                 logger.warning('Chain breaks in {}\n{}'.format(Homology_model.reference_entry_name,hse.chain_breaks))
 
 
             ##### Resume output #####
-            sys.stdout = _stdout
-            sys.stdout.close()
+            if not self.debug:
+                sys.stdout = _stdout
+                sys.stdout.close()
 
             
             # Upload to db
             if self.update and not residue_shift:
                 Homology_model.upload_to_db(formatted_model)
                 # logger.info('{} ({}) homology model uploaded to db'.format(Homology_model.reference_entry_name,state))
-                #TODO PUT IN LOGGER print('{} homology model uploaded to db'.format(Homology_model.reference_entry_name))
+                if self.debug:
+                    print('{} homology model uploaded to db'.format(Homology_model.reference_entry_name))
 
             with open('./structure/homology_models/done_models.txt','a') as f:
                 f.write(receptor+'\n')
@@ -285,13 +301,18 @@ class Command(BaseBuild):
         except Exception as msg:
             try:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
-                print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
-                                                                                        Homology_model.main_structure,msg))
+                if self.debug:
+                    print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
+                                                                                            Homology_model.main_structure,msg))
+                    print(''.join(traceback.format_tb(exc_tb)))
                 logger.error('Failed to build model {} {}\n    {}'.format(receptor, state, msg))
                 t = tests.HomologyModelsTests()
                 if 'Number of residues in the alignment and  pdb files are different' in str(msg):
                     t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
                                              Homology_model.main_structure)
+                elif 'No such residue:' in str(msg):
+                    if self.debug:
+                        t.pdb_pir_mismatch(Homology_model.main_pdb_array, Homology_model.model_sequence)
                 with open('./structure/homology_models/done_models.txt','a') as f:
                     f.write(receptor+'\n')
             except:
@@ -313,7 +334,8 @@ class HomologyModeling(object):
     segment_coding = {1:'TM1',2:'TM2',3:'TM3',4:'TM4',5:'TM5',6:'TM6',7:'TM7',8:'H8', 12:'ICL1', 23:'ECL1', 34:'ICL2', 
                       45:'ECL2'}
     
-    def __init__(self, reference_entry_name, state, query_states, iterations=1):
+    def __init__(self, reference_entry_name, state, query_states, iterations=1, debug=False):
+        self.debug = debug
         self.version = build_date
         self.reference_entry_name = reference_entry_name.lower()
         self.state = state
@@ -608,11 +630,15 @@ class HomologyModeling(object):
         self.changes_on_db = alignment.changes_on_db
         main_pdb_array = OrderedDict()
         if core_alignment==True:
-            #TODO PUT IN LOGGER print('Alignment: ',datetime.now() - startTime)
+            if self.debug:
+                print('Alignment: ',datetime.now() - startTime)
             alignment.enhance_alignment(alignment.reference_protein, alignment.main_template_protein)
-            #TODO PUT IN LOGGER print('Enhanced alignment: ',datetime.now() - startTime)
+            if self.debug:
+                print('Enhanced alignment: ',datetime.now() - startTime)
             self.segments = segments
-            self.main_structure = alignment.main_template_structure           
+            self.main_structure = alignment.main_template_structure
+            if self.debug:
+                print('Main structure: {}'.format(self.main_structure))
             self.similarity_table = alignment.similarity_table
             self.similarity_table_all = self.run_alignment(["Inactive","Intermediate","Active"], core_alignment=False)[0].similarity_table
             self.main_template_preferred_chain = str(self.main_structure.preferred_chain)[0]
@@ -744,7 +770,8 @@ class HomologyModeling(object):
 
             self.statistics.add_info('helix_end_mods',self.helix_end_mods)
 
-            #TODO PUT IN LOGGER print('Corrected helix ends: ',datetime.now() - startTime)
+            if self.debug:
+                print('Corrected helix ends: ',datetime.now() - startTime)
             
             main_pdb_array = helixends.main_pdb_array
             alignment = helixends.alignment
@@ -771,7 +798,8 @@ class HomologyModeling(object):
                     pass
             self.statistics.add_info('similarity_table', self.similarity_table)
             self.statistics.add_info('loops',self.loop_template_table)
-            #TODO PUT IN LOGGER print('Loop alignment: ',datetime.now() - startTime)
+            if self.debug:
+                print('Loop alignment: ',datetime.now() - startTime)
 
         return alignment, main_pdb_array
         
@@ -915,7 +943,9 @@ class HomologyModeling(object):
             self.statistics.add_info('loops', loop_stat)
             self.loops = loop_stat
 
-        #TODO PUT IN LOGGER print('Integrate loops: ',datetime.now() - startTime)
+        if self.debug:
+            print(loop_stat)
+            print('Integrate loops: ',datetime.now() - startTime)
 
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
@@ -1150,7 +1180,8 @@ class HomologyModeling(object):
                                 a.template_dict[seg_id] = OrderedDict([(g.replace('x','?'), v) if g==gn.replace('.','x') else (g, v) for g, v in a.template_dict[seg_id].items()])
                     out_pdb_array[seg_id] = seg
                 main_pdb_array = out_pdb_array
-        #TODO PUT IN LOGGER print('Integrate bulges/constrictions: ',datetime.now() - startTime)
+        if self.debug:
+            print('Integrate bulges/constrictions: ',datetime.now() - startTime)
 
         # check for inconsitencies with db
         pdb_db_inconsistencies = []
@@ -1206,8 +1237,9 @@ class HomologyModeling(object):
             for gn, atoms in main_pdb_array[seg].items():
                 try:
                     if atoms[0].get_parent().get_resname() in ['YCM','CSD']:
+                        if self.debug:
+                            print(gn, atoms[0].get_parent().get_resname(), atoms[0].get_parent().get_id())
                         a.alignment_dict[seg][gn.replace('.','x')] = '.'
-                        # a.template_dict[seg][gn.replace('.','x')] = '*'
                 except:
                     pass
 
@@ -1216,7 +1248,8 @@ class HomologyModeling(object):
         if not os.path.exists(path):
             os.mkdir(path)
   
-        #TODO PUT IN LOGGER print('Check inconsistencies: ',datetime.now() - startTime)
+        if self.debug:
+            print('Check inconsistencies: {}'.format(pdb_db_inconsistencies),datetime.now() - startTime)
 
         # inserting loops for free modeling
         for label, template in loop_stat.items():
@@ -1229,7 +1262,8 @@ class HomologyModeling(object):
                 a.reference_dict = modeling_loops.reference_dict
                 a.template_dict = modeling_loops.template_dict
                 a.alignment_dict = modeling_loops.alignment_dict
-        #TODO PUT IN LOGGER print('Free loops: ',datetime.now() - startTime)
+        if self.debug:
+            print('Free loops: ',datetime.now() - startTime)
 
         # Adjust H8 if needed
         if 'H8' in main_pdb_array and 'ICL4' not in main_pdb_array and len(self.helix_end_mods['removed']['TM7'][1])>0:
@@ -1521,7 +1555,8 @@ class HomologyModeling(object):
         if self.reference_entry_name.startswith('taar') and str(self.main_structure)=='4IAR':
             trimmed_residues.append('5.36')
         
-        #TODO PUT IN LOGGER print('Rotamer switching: ',datetime.now() - startTime)
+        if self.debug:
+            print('Rotamer switching: ',datetime.now() - startTime)
         
         for i in model_loops:
             for j in a.reference_dict[i]:
@@ -1694,17 +1729,20 @@ class HomologyModeling(object):
             os.remove('./pdb{}.ent'.format(self.reference_entry_name))
 
         # Ignore output from modeller!
-        _stdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w')
+        if not self.debug:
+            _stdout = sys.stdout
+            sys.stdout = open(os.devnull, 'w')
         
         self.run_MODELLER("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", path+self.reference_entry_name+'_'+self.state+"_post.pdb", 
                           self.uniprot_id, self.modeller_iterations, path+modelname+'.pdb', 
                           atom_dict=trimmed_res_nums, helix_restraints=helix_restraints, icl3_mid=icl3_mid, disulfide_nums=disulfide_nums)
         # Resume output
-        sys.stdout.close()
-        sys.stdout = _stdout
+        if not self.debug:
+            sys.stdout.close()
+            sys.stdout = _stdout
 
-        os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
+        if not self.debug:
+            os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
 
         # stat file
         with open(path+modelname+'.templates.csv','w') as s_file:
@@ -1780,7 +1818,6 @@ class HomologyModeling(object):
                         pass
                     else:
                         if int(sec[1])<=int(rot[1])<=int(sec[2]):
-                            # s_file.write(str(rot).replace("'","").replace(" ","")[1:-1]+"\n")
                             try:
                                 bb = rot[4].pdb_code.index
                             except:
@@ -1810,9 +1847,10 @@ class HomologyModeling(object):
                 s_file.write('{},{},{},{},{}\n'.format(t.pdb_code.index, s, t.resolution, t.representative, t.state.slug))
 
 
-        #TODO PUT IN LOGGER print('MODELLER build: ',datetime.now() - startTime)
-        pprint.pprint(self.statistics)
-        # print('################################')
+        if self.debug:
+            print('MODELLER build: ',datetime.now() - startTime)
+            pprint.pprint(self.statistics)
+            print('################################')
         return self
     
     def run_non_conserved_switcher(self, main_pdb_array, reference_dict, template_dict, alignment_dict):
@@ -2160,6 +2198,7 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
         for i in range(water_count):
             ref_sequence+='w'
             temp_sequence+='w'
+        self.model_sequence = temp_sequence
         with open("./structure/PIR/"+self.uniprot_id+"_"+self.state+".pir", 'w+') as output_file:
             template="""
 >P1;{temp_file}
@@ -2330,9 +2369,9 @@ class HomologyMODELLER(automodel):
             except:
                 pass
 
-    def make(self):
-        with SilentModeller():
-            super(HomologyMODELLER, self).make()
+    # def make(self):
+    #     with SilentModeller():
+    #         super(HomologyMODELLER, self).make()
 
 
 class SegmentEnds(object):

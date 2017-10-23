@@ -62,7 +62,7 @@
                             { type: "text" }, // reference
                             { type: "date-range" }, // publication date
                             { type: "select"}, // annotated
-                            { type: "select"} // refined
+                            { type: "text"} // refined
                         ]
                     });
                 }
@@ -117,6 +117,7 @@
             $('#representative_btn').click(function () {
                 //class 'active' is conflicting with something else o.O
                 $(this).toggleClass('toggled');
+                // $('#representative_btn').classList.toggle('pressed_btn');
                 table.draw();
             });
             $('#download_btn').click(function () {
@@ -230,23 +231,13 @@
                     <tr>
                 {% endif %}
                     <td><input class="alt" type="checkbox"></td>
-                    <td>
-                        {% if structure.refined %}
-                        {{ structure.protein_conformation.protein.family.name|safe }}_refined
-                        {% else %}
-                        {{ structure.protein_conformation.protein.family.name|safe }}
-                        {% endif %}
-                    </td>
+                    <td>{{ structure.protein_conformation.protein.family.name|safe }}</td>
                     <td>{{ structure.protein_conformation.protein.family.parent.name|safe }}</td>
                     <td>{{ structure.protein_conformation.protein.family.parent.parent.parent.name }}</td>
                     <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
                     <td class="text-center">
-                        {% if structure.refined %}
-                        <a href="homology_models/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a>
-                        {% else %}
-                        <a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}
-                        {% endif %}
-                    </a></td>
+                        <a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}</a>
+                    </td>
                     <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
                     <td class="text-center">{{ structure.preferred_chain }}</td>
                     <td class="text-center">{{ structure.state.name }}</td>
@@ -305,10 +296,10 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if structure.refined %}
-                        Yes
+                        {% if structure.pdb_code.index in refined %}
+                        <a href="homology_models/{{ structure.pdb_code.index }}_refined">{{structure.pdb_code.index}}_refined</a>
                         {% else %}
-                        No
+                        -
                         {% endif %}
                     </td>
                 </tr>

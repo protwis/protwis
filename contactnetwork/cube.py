@@ -24,7 +24,7 @@ def compute_interactions(pdb_name):
     s = pdb_get_structure(pdb_name)
 
     # Get all atoms
-    atom_list = Selection.unfold_entities(s.get_chains().__next__(), 'A')
+    atom_list = Selection.unfold_entities(s[0][preferred_chain], 'A')
 
     # Search for all neighbouring residues
     ns = NeighborSearch(atom_list)
