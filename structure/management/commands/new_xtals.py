@@ -116,8 +116,7 @@ class QueryPDB():
                 if not missing_from_db:
                     continue
                 try:
-                    print(s)
-                    pdb_data_dict = fetch_pdb_info(s, protein)
+                    pdb_data_dict = fetch_pdb_info(s, protein, new_xtal=True)
                     exp_method = pdb_data_dict['experimental_method']
                     if exp_method=='Electron Microscopy':
                         st_type, cr = StructureType.objects.get_or_create(slug='electron-microscopy', name=exp_method)
@@ -137,6 +136,7 @@ class QueryPDB():
                                     del self.yaml_list[self.yaml_list.index(s)]
                                 except:
                                     pass
+
                     if missing_from_db:
                         pref_chain = ''
                         resolution = pdb_data_dict['resolution']
