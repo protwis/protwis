@@ -30,6 +30,26 @@
     .AssayCell:hover span.AssayDetail {
         display: block;
     }
+    .struct_cell {
+        position: relative;
+    }
+
+        .struct_cell:hover span.struct_2d {
+            display: block;
+        }
+
+    .struct_2d {
+        display: none;
+        position: absolute;
+        z-index: 100;
+        border: 1px;
+        background-color: white;
+        border-style: solid;
+        border-width: 1px;
+        padding: 3px;
+        top: 100%;
+        left: 50%;
+    }
 
 </style>
 {% endblock %}
@@ -253,7 +273,7 @@
                     {% for record in ligand_data %}
                     <tr>
                         <td><input class="alt" type="checkbox"></td>
-                        <td><a href="/ligand/{{record.ligand_id}}">{{record.ligand_id}}</a></td>
+                        <td class="struct_cell"><div style="overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;"><a href="/ligand/{{record.ligand_id}}">{{record.ligand_id}}</a><span class="struct_2d"><img style="max-width: 200px; height:auto" src="http://www.ebi.ac.uk/chembl/api/data/image/{{record.ligand_id}}" /></span></div></td>
                         <td>{{record.protein_name}}</td>
                         <td>{{record.species}}</td>
                         <td>{{record.purchasability}}</td>

@@ -30,8 +30,23 @@
     .AssayCell:hover span.AssayDetail {
         display: block;
     }
-    .struct2d:hover span{
-        display:inline; position:absolute; 
+    .struct_cell {
+        position: relative;
+    }
+    .struct_cell:hover span.struct_2d {
+        display: block;
+    }
+    .struct_2d {
+        display: none;
+        position: absolute;
+        z-index: 100;
+        border: 1px;
+        background-color: white;
+        border-style: solid;
+        border-width: 1px;
+        padding: 3px;
+        top: 100%;
+        left: 50%;
     }
 
 </style>
@@ -256,7 +271,7 @@
                 {% for p in proteins %}
                 <tr>
                     <td><input class="alt" type="checkbox"></td>
-                    <td class="struct_2d"><a href="/ligand/{{p.ligand__properities__web_links__index}}">{{p.ligand__properities__web_links__index}}</a><span><img src="'www.ebi.ac.uk/chembl/api/data/image/'{{p.ligand__properities__web_links__index}}"/></span></td>
+                    <td class="struct_cell"><div style="overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;"><a href="/ligand/{{p.ligand__properities__web_links__index}}">{{p.ligand__properities__web_links__index}}</a><span class="struct_2d"><img style="max-width: 200px; height:auto" src="http://www.ebi.ac.uk/chembl/api/data/image/{{p.ligand__properities__web_links__index}}" /></span></div></td>
                     <td>{{p.protein__entry_name}}</td>
                     <td>{{p.protein__species__common_name}}</td>
                     <td>{{p.purchasability}}</td>

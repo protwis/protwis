@@ -156,7 +156,7 @@ def TargetDetailsCompact(request, **kwargs):
                 tmp_count += 1
             values = list(itertools.chain(*tmp.values()))
             ligand_data.append({
-                'ligand_id': lig.properities.web_links.get(web_resource__slug = 'chembl_ligand').index,
+                'ligand_id': lig.properities.web_links.filter(web_resource__slug = 'chembl_ligand')[0].index,
                 'protein_name': protein_details.entry_name,
                 'species': protein_details.species.common_name,
                 'record_count': tmp_count,

@@ -1,7 +1,7 @@
 from django.utils.text import slugify
 from django.db import IntegrityError
 
-from chembl_webresource_client import new_client
+#from chembl_webresource_client import new_client
 from common.models import WebResource
 from common.models import WebLink
 from ligand.models import Ligand, LigandType, LigandProperities
@@ -153,13 +153,13 @@ def get_or_make_ligand(ligand_id,type_id, name = None):
     
     return l
 
-def fetch_chembl_refs(lig_chembl_id, target_accesion):
+#def fetch_chembl_refs(lig_chembl_id, target_accesion):
 
-    target_id = new_client.target.filter(accession=target_accesion)
+#    target_id = new_client.target.filter(accession=target_accesion)
 
-    assay = new_client.assay.filter(target_id=target_id, compound=lig_chembl_id)
+#    assay = new_client.assay.filter(target_id=target_id, compound=lig_chembl_id)
     
-    refs = [x['document_chembl_id'] for x in assay]
-    #https://www.ebi.ac.uk/chembl/doc/inspect/CHEMBL2766014
+#    refs = [x['document_chembl_id'] for x in assay]
+#    #https://www.ebi.ac.uk/chembl/doc/inspect/CHEMBL2766014
 
-    return refs
+#    return refs
