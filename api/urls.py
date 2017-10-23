@@ -3,7 +3,7 @@ from api import views
 
 
 urlpatterns = [
-    url(r'^', include(views.router.urls, namespace='services')),
+    url(r'^$', views.schema_view),
     url(r'^reference/', views.schema_view),
     url(r'^protein/accession/(?P<accession>[^/].+)/$', views.ProteinByAccessionDetail.as_view(),
         name='proteinbyaccession'),
