@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/ligand_browser.css' %}" type="text/css" />
 <style>
+    /*Assay description tooltip*/
     .AssayCell {
         position: relative;
     }
@@ -30,15 +31,19 @@
     .AssayCell:hover span.AssayDetail {
         display: block;
     }
-    .struct_cell {
-        position: relative;
-    }
-
-    .struct_cell:hover span.struct_2d {
+    /*Structure preview in tooltip*/
+    pre {
         display: block;
+        font: 100% "Courier New", Courier, monospace;
+        padding: 10px;
+        border: 1px solid #bae2f0;
+        background: #e3f4f9;
+        margin: .5em 0;
+        overflow: auto;
+        width: 800px;
     }
 
-    .struct_2d {
+    #struct {
         display: none;
         position: absolute;
         z-index: 100;
@@ -47,8 +52,6 @@
         border-style: solid;
         border-width: 1px;
         padding: 3px;
-        top: 100%;
-        left: 50%;
     }
 
 </style>
@@ -61,6 +64,33 @@
 <script src="{% static 'home/js/selection.js' %}"> </script>
 
 <script type="text/javascript" charset="utf-8">
+    this.compoundPreview = function () {
+
+        //Define position of the tooltip in relation to the cursor
+        xOffset = 30;
+        yOffset = -10;
+
+        $("a.struct").hover(function (e) {
+            this.t = this.title;
+            this.title = "";
+            var c = (this.t != "") ? "<br/>" + this.t : "";
+            $("body").append("<p id='struct'><img style='max-width: 200px; height: auto' src='" + this.rel + "'/>" + c + "</p>");
+            $("#struct")
+                .css("top", (e.pageY - yOffset) + "px")
+                .css("left", (e.pageX + xOffset) + "px")
+                .fadeIn("fast");
+        },
+            function () {
+                this.title = this.t;
+                $("#struct").remove();
+            });
+        $("a.struct").mousemove(function (e) {
+            $("#struct")
+                .css("top", (e.pageY - yOffset) + "px")
+                .css("left", (e.pageX + xOffset) + "px");
+        });
+    };
+
     $(document).ready(function () {
         //ClearSelection('targets');
         var table = $('#proteins').DataTable({
@@ -95,8 +125,8 @@
                     sRangeFormat: "{from}:{to}",
                     aoColumns: [
                         null,
-                        null, //{ type: "select" },//Ligand Name
-                        null, //{ type: "select" },//Protein Entry Name
+                        null, //Ligand Name
+                        null, //Protein Entry Name
                         { type: "select" },//Species
                         { type: "select" },// Vendor
                         null,// Vendor ID
@@ -189,6 +219,11 @@
                 a.click();
             }
         });
+        compoundPreview();
+        setTimeout(function () {
+            table.columns.adjust().draw();
+        }, 10);
+
     })
 
 </script>
@@ -221,7 +256,7 @@
         <h3>Ligand purchasability</h3>
 
         <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
-            <table style="width:150%" class="display" id="proteins">
+            <table style="width:100%" class="display" id="proteins">
                 <thead>
                     <tr>
                         <th><input class="select-all" type="checkbox"> Select all</th>
@@ -242,7 +277,7 @@
                         <th class="chemical-th">H don</th>
                         <th class="chemical-th">H acc</th>
                         <th class="chemical-th">LogP</th>
-                        <th class="chemical-th">Smiles</th>
+                        <th class="chemical-th dt-left">Smiles</th>
                     </tr>
                     <tr>
                         <th></th>
@@ -270,7 +305,7 @@
                     {% for p in proteins %}
                     <tr>
                         <td><input class="alt" type="checkbox"></td>
-                        <td class="struct_cell"><div style="overflow: hidden; text-overflow: ellipsis; word-wrap: break-word; max-width: 350px;white-space: nowrap;"><a href="/ligand/{{p.ligand__properities__web_links__index}}">{{p.ligand__properities__web_links__index}}</a><span class="struct_2d"><img style="max-width: 200px; height:auto" src="http://www.ebi.ac.uk/chembl/api/data/image/{{p.chembl_id}}" /></span></div></td>
+                        <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{p.ligand__properities__web_links__index}}" href="/ligand/{{p.ligand__properities__web_links__index}}">{{p.ligand__properities__web_links__index}}</a></td>
                         <td>{{p.protein__entry_name}}</td>
                         <td>{{p.protein__species__common_name}}</td>
                         <td>{{p.ligand__properities__vendors__vendor__name}}</td>
@@ -287,7 +322,7 @@
                         <td>{{p.ligand__properities__hdon}}</td>
                         <td>{{p.ligand__properities__hacc}}</td>
                         <td>{{p.ligand__properities__logp|floatformat:1}}</td>
-                        <td>{{p.ligand__properities__smiles}}</td>
+                        <td class="dt-left">{{p.ligand__properities__smiles}}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

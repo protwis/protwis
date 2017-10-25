@@ -17,9 +17,12 @@ input.number_range_filter, input.date_range_filter {
 .chemical-th {
     background-color: #ff9896;
 }
-/*.pub-th {
-    background-color: #ffbb78;
+table {
+    min-width: 100%;
 }
-.similarity-th {
-    background-color: gold;
-}*/
+.display td,th {
+    text-align: center;
+}
+.dt-left {
+    text-align: left;
+}
