@@ -18,7 +18,6 @@ from contactnetwork.models import *
 import contactnetwork.interaction as ci
 from contactnetwork.cube import compute_interactions
 
-from structure.functions import IdentifySites
 from Bio.PDB import PDBParser,PPBuilder
 from Bio import pairwise2
 
@@ -1445,8 +1444,7 @@ class Command(BaseBuild):
                         self.logger.error('Error with rotamers for {}'.format(sd['pdb']))
 
                     try:
-                        id_sites = IdentifySites(s)
-                        id_sites.sodium_pocket()
+                        s.protein_conformation.generate_sites()
                     except:
                         pass
 
