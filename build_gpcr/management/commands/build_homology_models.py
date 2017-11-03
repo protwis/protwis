@@ -5,7 +5,7 @@ from protein.models import Protein, ProteinConformation, ProteinAnomaly, Protein
 from residue.models import Residue
 from residue.functions import dgn, ggn
 from structure.models import *
-from structure.functions import HSExposureCB, PdbStateIdentifier
+from structure.functions import HSExposureCB, PdbStateIdentifier, IdentifySites
 from common.alignment import AlignedReferenceTemplate
 from common.models import WebLink
 import structure.structural_superposition as sp
@@ -65,6 +65,7 @@ class Command(BaseBuild):
         parser.add_argument('--test_run', action='store_true', help='Build only a test set of homology models ', default=False)
         parser.add_argument('--debug', help='Debugging mode', default=False, action='store_true')
         parser.add_argument('--state', help='Specify state in debug mode', default=False, type=str, nargs='+')
+        parser.add_argument('--complex', help='Build GPCR complex', default=False, action='store_true')
         
     def handle(self, *args, **options):
         self.debug = options['debug']
@@ -75,10 +76,14 @@ class Command(BaseBuild):
         if not os.path.exists('./static/homology_models'):
             os.mkdir('./static/homology_models')
         open('./structure/homology_models/done_models.txt','w').close()
-        if options['update']==True:
+        if options['update']:
             self.update = True
         else:
             self.update = False
+        if options['complex']:
+            self.complex = True
+        else:
+            self.complex = False
 
         GPCR_class_codes = {'A':'001', 'B1':'002', 'B2':'003', 'C':'004', 'F':'005', 'T':'006'}
         self.modeller_iterations = options['i']
@@ -120,7 +125,7 @@ class Command(BaseBuild):
             if r.accession==None:
                 self.receptor_list.append([r, Structure.objects.get(pdb_code__index=r.entry_name.upper()).state.name])
                 continue
-            structs = Structure.objects.filter(protein_conformation__protein__parent=r, refined=False)
+            structs = Structure.objects.filter(protein_conformation__protein__parent=r, refined=False, annotated=True)
             if r.family.slug.startswith('001') or r.family.slug.startswith('002') or r.family.slug.startswith('003') or r.family.slug.startswith('006'):
                 states_dic = {'Inactive':0, 'Intermediate':0, 'Active':0}
                 if len(structs)==0:
@@ -222,7 +227,7 @@ class Command(BaseBuild):
                 _stdout = sys.stdout
                 sys.stdout = open(os.devnull, 'w')
 
-            Homology_model = HomologyModeling(receptor, state, [state], iterations=self.modeller_iterations, debug=self.debug)
+            Homology_model = HomologyModeling(receptor, state, [state], iterations=self.modeller_iterations, complex_model=self.complex, debug=self.debug)
             alignment = Homology_model.run_alignment([state])
             Homology_model.build_homology_model(alignment)
             formatted_model = Homology_model.format_final_model()
@@ -334,8 +339,9 @@ class HomologyModeling(object):
     segment_coding = {1:'TM1',2:'TM2',3:'TM3',4:'TM4',5:'TM5',6:'TM6',7:'TM7',8:'H8', 12:'ICL1', 23:'ECL1', 34:'ICL2', 
                       45:'ECL2'}
     
-    def __init__(self, reference_entry_name, state, query_states, iterations=1, debug=False):
+    def __init__(self, reference_entry_name, state, query_states, iterations=1, complex_model=False, debug=False):
         self.debug = debug
+        self.complex = complex_model
         self.version = build_date
         self.reference_entry_name = reference_entry_name.lower()
         self.state = state
@@ -626,7 +632,7 @@ class HomologyModeling(object):
             @param order_by: str, order results by identity, similarity or simscore
         '''
         alignment = AlignedReferenceTemplate()
-        alignment.run_hommod_alignment(self.reference_protein, segments, query_states, order_by)
+        alignment.run_hommod_alignment(self.reference_protein, segments, query_states, order_by, complex_model=self.complex)
         self.changes_on_db = alignment.changes_on_db
         main_pdb_array = OrderedDict()
         if core_alignment==True:
@@ -783,7 +789,7 @@ class HomologyModeling(object):
                                                     order_by='similarity', 
                                                     provide_main_template_structure=self.main_structure,
                                                     provide_similarity_table=self.similarity_table_all,
-                                                    main_pdb_array=main_pdb_array, provide_alignment=alignment)
+                                                    main_pdb_array=main_pdb_array, provide_alignment=alignment, complex_model=self.complex)
                 self.loop_template_table[loop] = loop_alignment.loop_table
                 try:
                     if loop in list(alignment.alignment_dict.keys()) and self.main_structure in loop_alignment.loop_table:
@@ -800,7 +806,7 @@ class HomologyModeling(object):
             self.statistics.add_info('loops',self.loop_template_table)
             if self.debug:
                 print('Loop alignment: ',datetime.now() - startTime)
-
+        
         return alignment, main_pdb_array
         
         
@@ -946,7 +952,7 @@ class HomologyModeling(object):
         if self.debug:
             print(loop_stat)
             print('Integrate loops: ',datetime.now() - startTime)
-
+        
         # bulges and constrictions
         if switch_bulges==True or switch_constrictions==True:
             delete_r = set()
@@ -2735,7 +2741,6 @@ class HelixEndsModeling(HomologyModeling):
                     del main_pdb_array[i][ii]
                 except:
                     pass
-            
             if ref_seg[0]=='T' or ref_seg=='H8':
                 if len(modifications['added'][ref_seg][0])>0:
                     self.helix_ends[ref_seg][0] = modifications['added'][ref_seg][0][0]
@@ -2892,7 +2897,7 @@ class Loops(object):
                     r_x50 = ref_res.get(display_generic_number__label='45.50x50').sequence_number
                 except:
                     pass
-
+            output = OrderedDict()
             if (self.loop_label=='ECL2' and 'ECL2_1' not in self.loop_template_structures) or self.loop_label!='ECL2' or superpose_modded_loop==True:
                 for template in self.loop_template_structures:
                     if self.loop_label=='ICL2' and template!='aligned' and template.pdb_code.index=='2RH1' and self.reference_protein.entry_name=='adrb2_human':
@@ -4054,6 +4059,10 @@ class GPCRDBParsingPDB(object):
                         gn = gn+'0'
                     if gn[0]=='-':
                         gn = gn[1:]+'1'
+                    # Exception for 3PBL 331, gn get's assigned wrong
+                    if structure.pdb_code.index=='3PBL' and residue.get_id()[1]==331:
+                        raise Exception()
+                    #################################################
                     if gn in gn_list:
                         if int(residue.get_id()[1])>1000:
                             if structure.pdb_code.index in seq_nums_overwrite_cutoff_dict and int(residue.get_id()[1])>=seq_nums_overwrite_cutoff_dict[structure.pdb_code.index]:
@@ -4101,11 +4110,13 @@ class GPCRDBParsingPDB(object):
                         if structure.pdb_code.index in ['5VEX','5VEW'] and gn=='317' and res[0].get_parent().get_resname()=='CYS':
                             found_res = Residue.objects.get(protein_conformation=parent_prot_conf,
                                                             sequence_number=gn)
+                        #####################################
                     found_gn = str(ggn(found_res.display_generic_number.label)).replace('x','.')
 
                     # Exception for res 318 in 5VEX, 5VEW
                     if structure.pdb_code.index in ['5VEX','5VEW'] and gn=='318' and res[0].get_parent().get_resname()=='ILE' and found_gn=='5.47':
                         found_gn = '5.48'
+                    #####################################
                     if -9.1 < float(found_gn) < 9.1:
                         if len(res)==1:
                             continue
@@ -4123,6 +4134,7 @@ class GPCRDBParsingPDB(object):
                         except:
                             found_gn = str(gn)
                         output[found_res.protein_segment.slug][found_gn] = res
+
         return output
    
    

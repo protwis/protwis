@@ -180,6 +180,17 @@ class PdbData(models.Model):
         db_table = "structure_pdb_data"
 
 
+class IdentifiedSites(models.Model):
+    protein_conformation = models.ForeignKey('protein.ProteinConformation')
+    site = models.ForeignKey('structure.Site')
+    residues = models.ManyToManyField('residue.Residue')
+
+
+class Site(models.Model):
+    slug = models.CharField(max_length=20)
+    name = models.CharField(max_length=30)
+
+
 class Rotamer(models.Model):
     residue = models.ForeignKey('residue.Residue')
     structure = models.ForeignKey('structure.Structure')
