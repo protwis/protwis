@@ -167,10 +167,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       Mutations:
       </div>
       <div class="col-sm-8">
-      <button type="button" id="mutations_mode" class="btn btn-primary" onclick='mutation_mode();'> Mutation Mode </button>
-        <button type="button" id="mutations_button" class="btn btn-primary" onclick='build_mutations();showModal("Thermostabilisation",tables["mutations"],"#mut_sug");'>
-          Thermostabilisation
-        </button>
         <button type="button" id="removals_button" class="btn btn-primary" onclick='build_site_removals();showModal("Site removals",tables["site_removals"],"#site_sug");'>
           Site Removal
         </button>
@@ -191,6 +187,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
         <button class="btn btn-info" onclick='exportToExcel();'>Export modifications</button>
         <button class="btn btn-warning" onclick='auto_generate();''>Auto</button>
+        <button class="btn btn-info" onclick='edit_mode();'>Edit Mode</button>
 
       </div>
     </div>
@@ -212,7 +209,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 <thead>
 <tr>
   <th rowspan="2">No</th>
-  <th rowspan="2">Display snake-plot <!-- / mut scan / ref constr --></th>
+  <th rowspan="2">Display snake-plot <br>
+    <button type="button" id="delete_other" class="btn btn-primary btn-xs" onclick='delete_other();'>
+          Delete other
+    </button>
+  <!-- / mut scan / ref constr --></th>
   <th rowspan="2">Add</th>
   <th rowspan="2">
   <button type="button" id="other_inserts_button" class="btn btn-primary btn-xs" onclick='showModal("Inserts",tables["other_inserts"],"");$("#fusion_where").val(icl_cut);inserts_helper("nterm");inserts_overview(true);'>
@@ -273,6 +274,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           C-term Inserts
   </button>
   </th>
+
+  <th colspan="2">
+    <button type="button" id="mutations_mode" class="btn btn-primary btn-xs" onclick='build_mutation_mode_table();showModal("Mutations",tables["mutations"],"#mutations");'> Mutations</button>
+  </th>
 </tr>
 <tr>
   <th rowspan="1" class='possiblities_nterm'>N-term fusion***</th>
@@ -300,29 +305,98 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
   <th>C-term res kept rel. to h8*</th>
   <th>Pos</th>
   <th>AA</th>
+  <th>Common</th>
+  <th>Unique</th>
 </tr>
 </thead>
 <tbody>
 </tbody>
 </table>
 
-<table width=100%  id='mutation_scan' class='table table-bordered table-condensed'>
+<table width=100%  id='edit_mode' class='table table-bordered table-condensed'>
 <thead>
 <tr>
-  <th> Prio </th>
-  <th> Segment </th>
-  <th> GPCRdb </th>
-  <th> Pos </th>
-  <th> Wt AA </th>
-  <th> Mut AA </th>
-  <th> Method </th>
-  <th> Selected </th>
-  <th> Fixed </th>
-</tr> 
+  <th rowspan="2">No</th>
+  <th rowspan="2">Display snake-plot
+  <!-- / mut scan / ref constr --></th>
+  <th rowspan="2">Add</th>
+  <th rowspan="2">
+  N-term Inserts
+  </th>
+  <th rowspan="1" colspan="1">
+  Fusion
+  </th>   
+  <th rowspan="1" colspan="3">
+      N-term truncation 
+    </th>
+  <th rowspan="1" colspan="3">
+    {% if class == 'A'  or class == 'F' %}
+        Fusion/Deletion site start (last kept Rec res)*
+      {% elif class == 'B' or class == 'C' %}
+        Fusion/Deletion site start (last kept Rec res)*
+      {% endif %}
+  
+  </th>
+  <th rowspan="1" colspan="1">
+    Fusion
+  
+  </th>      
+  <th rowspan="1" colspan="3">
+
+    {% if class == 'A'  or class == 'F' %}
+        Fusion/Deletion site end (first kept Rec res)*
+      {% elif class == 'B' or class == 'C' %}
+        Fusion/Deletion site end (first kept Rec res)*
+      {% endif %}
+
+
+    </th>
+  <th rowspan="1" colspan="3">
+  C-term truncation
+    </th>
+  <th rowspan="2">
+  C-term Inserts
+  </th>
+
+  <th colspan="1" rowspan="2">
+    Mutations
+  </th>
+</tr>
+<tr>
+  <th rowspan="1">N-term fusion***</th>
+  <!-- <th rowspan="1" class='possiblities_nterm'>N-term linker</th> -->
+  <th>N-term res kept rel. to TM1*</th>
+  <th>Pos</th>
+  <th>AA</th>
+  <th>BW**</th>
+  <th>Pos</th>
+  <th>AA</th>
+
+  {% if class == 'A'  or class == 'F' %}      
+    <!-- <th rowspan="1" class='possiblities_icl'>TM5-ICL3 linker (non-wt)</th> -->
+    <th rowspan="1">Fusion<!-- ICL3 modification (Fusion / Deletion / Wt) --></th>
+    <!-- <th rowspan="1" class='possiblities_icl'>ICL3-TM6 linker (non-wt)</th> -->
+  {% elif class == 'B' or class == 'C' %}      
+    <!-- <th rowspan="1" class='possiblities_icl'>TM3-ICL2 linker (non-wt)</th> -->
+    <th rowspan="1">Fusion<!-- ICL2 modification (Fusion / Deletion / Wt) --></th>
+    <!-- <th rowspan="1" class='possiblities_icl'>ICL2-TM4 linker (non-wt)</th> -->
+  {% endif %}
+
+  <th>BW**</th>
+  <th>Pos</th>
+  <th>AA</th>
+  <th>C-term res kept rel. to h8*</th>
+  <th>Pos</th>
+  <th>AA</th>
+</tr>
 </thead>
 <tbody>
 </tbody>
 </table>
+    <button type="button" id="add_manual" class="btn btn-primary btn-xs" onclick='add_manual_row()'>
+      Add
+    </button>
+
 
 <div class="row">
 </div>
@@ -461,6 +535,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     var possible = new Array; //track the actual combinations
     var ICL_min = {{ICL_min|safe}}; // array to track min values of ICL2 and ICL3
     var ICL_max = {{ICL_max|safe}}; // array to track max values of ICL2 and ICL3
+    var mutation_mode_on = false;
+    var edit_mode_on = false;
+
+    var manual_constructs = new Array;
+
     inserts['fusion'] = [];
     inserts['cterm'] = [];
     inserts['nterm'] = [];
@@ -473,7 +552,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     export_list['icl2_end'] = [];
     export_list['thermo'] = [];
     export_list['removals'] = [];  
-
+    export_list['sequences'] = [];
     var info_text = {};
 
     info_text['nterm'] = '<p class=info_text>Here you select the N-term truncation. The data comes from crystallized receptors and is grouped by the truncation\'s distance to TM1. It is possible to sort the data by occurrances (frequence) or by homology (Levels). Furthermore, it is possible to filter by fusion protein in N-term if it has interest.</p>';
@@ -640,6 +719,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     }
 
     function showModal(heading,content, datatable){
+
+      if (edit_mode_on) {
+
+      }
+
       $("#myModalLabel").html(heading);
       $("#ModalBody").html(content);
       $("#myModal").modal("show");
@@ -1368,136 +1452,136 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       // console.log(mutations_browser);
       // console.log(mutations_browser.length);
 
-      var state = $('input:radio[name=state]:checked').val();
-      var keys = Object.keys(mutations_browser);
-      export_list['thermo'] = [];
-      mutations_mode_suggestions = [];
-      muts = {}
-      $.each(keys, function( i,type ) {
-        if (type.substring(0, 11) == "struc_rules" && type.substring(12)!=state) {
-          return true; //loop away from these
-        }
-        $.each(mutations_browser[type], function(gn, values){
-          console.log(type,values);
-          full_mutation = gn + values[0] + values[2];
-          if(!muts[full_mutation]) { muts[full_mutation] = {'priority': 99, 'gn': gn, 'types': [], 'pretty_types': [], 'hits':0, 'details':[]}; }
+      // var state = $('input:radio[name=state]:checked').val();
+      // var keys = Object.keys(mutations_browser);
+      // export_list['thermo'] = [];
+      // mutations_mode_suggestions = [];
+      // muts = {}
+      // $.each(keys, function( i,type ) {
+      //   if (type.substring(0, 11) == "struc_rules" && type.substring(12)!=state) {
+      //     return true; //loop away from these
+      //   }
+      //   $.each(mutations_browser[type], function(gn, values){
+      //     console.log(type,values);
+      //     full_mutation = gn + values[0] + values[2];
+      //     if(!muts[full_mutation]) { muts[full_mutation] = {'priority': 99, 'gn': gn, 'types': [], 'pretty_types': [], 'hits':0, 'details':[]}; }
 
-          muts[full_mutation]['hits'] += 1;
+      //     muts[full_mutation]['hits'] += 1;
 
-          muts[full_mutation]['details'].push(values);
-          if (type.substring(0, 11) == "struc_rules") {
-            if (muts[full_mutation]['priority']>5) muts[full_mutation]['priority'] = 5;
-            pretty_type = 'State-stabilising'
-          } else if (type == "termo_From target recepter") {
-            if (muts[full_mutation]['priority']>1) muts[full_mutation]['priority'] = 1;
-            pretty_type = 'From Receptor'
-          } else if (type == "termo_Common mutation (Wt)") {
-            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
-            pretty_type = 'Observed (multiple)'
-          } else if (type == "termo_Common mutation (Mut)") {
-            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
-            pretty_type = 'Observed (multiple)'
-          } else if (type == "termo_Single common mutation (Wt)") {
-            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 3;
-            pretty_type = 'Observed (single)'
-          } else if (type == "cons_rm_conserved_G") {
-            if (muts[full_mutation]['priority']>4) muts[full_mutation]['priority'] = 4;
-            pretty_type = 'Conservation (remove Gly)'
-          } else if (type == "cons_rm_nonconserved_GP") {
-            if (muts[full_mutation]['priority']>4) muts[full_mutation]['priority'] = 2;
-            pretty_type = 'Conservation (remove Gly/Pro)'
-          } else if (type == "cons_rf_and_class") {
-            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
-            pretty_type = 'Conservation'
-          } else if (type == "cons_rf") {
-            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
-            pretty_type = 'Conservation'
-          } else if (type == "cons_strucs") {
-            if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
-            pretty_type = 'Conservation'
-          } else {
-            console.log(type);
-          }
+      //     muts[full_mutation]['details'].push(values);
+      //     if (type.substring(0, 11) == "struc_rules") {
+      //       if (muts[full_mutation]['priority']>5) muts[full_mutation]['priority'] = 5;
+      //       pretty_type = 'State-stabilising'
+      //     } else if (type == "termo_From target recepter") {
+      //       if (muts[full_mutation]['priority']>1) muts[full_mutation]['priority'] = 1;
+      //       pretty_type = 'From Receptor'
+      //     } else if (type == "termo_Common mutation (Wt)") {
+      //       if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
+      //       pretty_type = 'Observed (multiple)'
+      //     } else if (type == "termo_Common mutation (Mut)") {
+      //       if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
+      //       pretty_type = 'Observed (multiple)'
+      //     } else if (type == "termo_Single common mutation (Wt)") {
+      //       if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 3;
+      //       pretty_type = 'Observed (single)'
+      //     } else if (type == "cons_rm_conserved_G") {
+      //       if (muts[full_mutation]['priority']>4) muts[full_mutation]['priority'] = 4;
+      //       pretty_type = 'Conservation (remove Gly)'
+      //     } else if (type == "cons_rm_nonconserved_GP") {
+      //       if (muts[full_mutation]['priority']>4) muts[full_mutation]['priority'] = 2;
+      //       pretty_type = 'Conservation (remove Gly/Pro)'
+      //     } else if (type == "cons_rf_and_class") {
+      //       if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
+      //       pretty_type = 'Conservation'
+      //     } else if (type == "cons_rf") {
+      //       if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
+      //       pretty_type = 'Conservation'
+      //     } else if (type == "cons_strucs") {
+      //       if (muts[full_mutation]['priority']>2) muts[full_mutation]['priority'] = 2;
+      //       pretty_type = 'Conservation'
+      //     } else {
+      //       console.log(type);
+      //     }
 
-          muts[full_mutation]['types'].push(type);
-          muts[full_mutation]['pretty_types'].push(pretty_type);
-        });
-      });
-      // console.log(muts);
+      //     muts[full_mutation]['types'].push(type);
+      //     muts[full_mutation]['pretty_types'].push(pretty_type);
+      //   });
+      // });
+      // // console.log(muts);
 
-          prio_info = '<p class=info_text>Thermostabilising mutations have 5 priority levels based on method: <ol><li>From structure of this target ({{target.entry_name}})</li><li>Introducing conserved residue or observed in >2 structures</li><li>Observed in 1 structure</li><li>Increase helix propensity (Remove Gly)</li><li>State-stabilising interactions (e.g. ionic lock or sodium ion site)</li></ol></p>';
+      //     prio_info = '<p class=info_text>Thermostabilising mutations have 5 priority levels based on method: <ol><li>From structure of this target ({{target.entry_name}})</li><li>Introducing conserved residue or observed in >2 structures</li><li>Observed in 1 structure</li><li>Increase helix propensity (Remove Gly)</li><li>State-stabilising interactions (e.g. ionic lock or sodium ion site)</li></ol></p>';
 
-        var items_table = [info_text['termo']];
-        items_table.push("<table id='mut_sug' class='table-striped table table-bordered'><thead><tr><th>Prio <a class='prio_info' data-toggle='tooltip' data-html='true' data-placement='bottom' title='"+prio_info+"'><i class='glyphicon glyphicon-info-sign'></i></a></th><th>Pos</th><th>Mut</th><th>Methods <a class='prio_info' data-toggle='tooltip' data-html='true' data-placement='bottom' title='"+prio_info+"'><i class='glyphicon glyphicon-info-sign'></i></a></th></tr></thead><tbody>");
-      $.each( getSortedKeysPrio(muts), function( i, gn ) {
-        vals = muts[gn];
-        mut_suggestions = [];
-        check = []
-        label = []
-        $.each(vals['details'], function(i, val) {
-            // console.log(val);
-            if (vals['types'][i].substring(0, 5) == "cons_") {
-              label.push(val[0]+val[1]+val[2]);
-              if ($.inArray(val[0]+val[1]+val[2], check)==-1) {
-                mut_suggestions.push("<a onclick='mut(this)'  data-animation='false' data-toggle='tooltip' title='"+vals['types'][i]+"' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' >"+val[0]+val[1]+val[2]+"</a>");
-                check.push(val[0]+val[1]+val[2]);
-              }
-            } else if (vals['types'][i].substring(0, 5) == "termo") {
-              $.each( val, function( key, value ) {
-                if (vals['types'][i]=='termo_Common mutation (Wt)') {
-                  // console.log(key);
-                  // console.log(value);
-                  $.each(value['muts'], function(ii, mut_aa) {
-                    // console.log(mut_aa);
-                    label.push(value['wt'][0]+value['wt'][1]+mut_aa);
-                    if ($.inArray(value['wt'][0]+value['wt'][1]+mut_aa, check)==-1) {
-                      mut_suggestions.push("<a onclick='mut(this)'  data-animation='false' data-toggle='tooltip' title='"+vals['types'][i]+"' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+mut_aa+"'>"+value['wt'][0]+value['wt'][1]+mut_aa+"</a>");
-                      check.push(value['wt'][0]+value['wt'][1]+mut_aa);
-                    }
-                   });
-                } else if (vals['types'][i]=='termo_Single common mutation (Wt)') {
-                  // console.log(key);
-                  // console.log(value);
-                  $.each(value['muts'], function(ii, mut_aa) {
-                    // console.log(mut_aa);
-                    label.push(value['wt'][0]+value['wt'][1]+mut_aa);
-                    if ($.inArray(value['wt'][0]+value['wt'][1]+mut_aa, check)==-1) {
-                      mut_suggestions.push("<a onclick='mut(this)'  data-animation='false' data-toggle='tooltip' title='"+vals['types'][i]+"' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+mut_aa+"'>"+value['wt'][0]+value['wt'][1]+mut_aa+"</a>");
-                      check.push(value['wt'][0]+value['wt'][1]+mut_aa);
-                    }
-                   });
-                } else {
-                    // temp += "<li><a onclick='mut(this)' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+to+"'><strong>Mutate "+value['wt'][0]+value['wt'][1]+to+"</strong></a></li>";
+      //   var items_table = [info_text['termo']];
+      //   items_table.push("<table id='mut_sug' class='table-striped table table-bordered'><thead><tr><th>Prio <a class='prio_info' data-toggle='tooltip' data-html='true' data-placement='bottom' title='"+prio_info+"'><i class='glyphicon glyphicon-info-sign'></i></a></th><th>Pos</th><th>Mut</th><th>Methods <a class='prio_info' data-toggle='tooltip' data-html='true' data-placement='bottom' title='"+prio_info+"'><i class='glyphicon glyphicon-info-sign'></i></a></th></tr></thead><tbody>");
+      // $.each( getSortedKeysPrio(muts), function( i, gn ) {
+      //   vals = muts[gn];
+      //   mut_suggestions = [];
+      //   check = []
+      //   label = []
+      //   $.each(vals['details'], function(i, val) {
+      //       // console.log(val);
+      //       if (vals['types'][i].substring(0, 5) == "cons_") {
+      //         label.push(val[0]+val[1]+val[2]);
+      //         if ($.inArray(val[0]+val[1]+val[2], check)==-1) {
+      //           mut_suggestions.push("<a onclick='mut(this)'  data-animation='false' data-toggle='tooltip' title='"+vals['types'][i]+"' cons='"+val[3]+"' pos='"+val[1]+"' gn='"+gn+"' wt='"+val[0]+"' from='"+val[0]+"' to='"+val[2]+"' >"+val[0]+val[1]+val[2]+"</a>");
+      //           check.push(val[0]+val[1]+val[2]);
+      //         }
+      //       } else if (vals['types'][i].substring(0, 5) == "termo") {
+      //         $.each( val, function( key, value ) {
+      //           if (vals['types'][i]=='termo_Common mutation (Wt)') {
+      //             // console.log(key);
+      //             // console.log(value);
+      //             $.each(value['muts'], function(ii, mut_aa) {
+      //               // console.log(mut_aa);
+      //               label.push(value['wt'][0]+value['wt'][1]+mut_aa);
+      //               if ($.inArray(value['wt'][0]+value['wt'][1]+mut_aa, check)==-1) {
+      //                 mut_suggestions.push("<a onclick='mut(this)'  data-animation='false' data-toggle='tooltip' title='"+vals['types'][i]+"' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+mut_aa+"'>"+value['wt'][0]+value['wt'][1]+mut_aa+"</a>");
+      //                 check.push(value['wt'][0]+value['wt'][1]+mut_aa);
+      //               }
+      //              });
+      //           } else if (vals['types'][i]=='termo_Single common mutation (Wt)') {
+      //             // console.log(key);
+      //             // console.log(value);
+      //             $.each(value['muts'], function(ii, mut_aa) {
+      //               // console.log(mut_aa);
+      //               label.push(value['wt'][0]+value['wt'][1]+mut_aa);
+      //               if ($.inArray(value['wt'][0]+value['wt'][1]+mut_aa, check)==-1) {
+      //                 mut_suggestions.push("<a onclick='mut(this)'  data-animation='false' data-toggle='tooltip' title='"+vals['types'][i]+"' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+mut_aa+"'>"+value['wt'][0]+value['wt'][1]+mut_aa+"</a>");
+      //                 check.push(value['wt'][0]+value['wt'][1]+mut_aa);
+      //               }
+      //              });
+      //           } else {
+      //               // temp += "<li><a onclick='mut(this)' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+to+"'><strong>Mutate "+value['wt'][0]+value['wt'][1]+to+"</strong></a></li>";
 
-                  label.push(value['wt'][0]+value['wt'][1]+key);
-                  if ($.inArray(value['wt'][0]+value['wt'][1]+key, check)==-1) {
-                    mut_suggestions.push("<a onclick='mut(this)'  data-animation='false' data-toggle='tooltip' title='"+vals['types'][i]+"' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+key+"'>"+value['wt'][0]+value['wt'][1]+key+"</a>");
-                    check.push(value['wt'][0]+value['wt'][1]+key);
-                  }
-                }
-              });
+      //             label.push(value['wt'][0]+value['wt'][1]+key);
+      //             if ($.inArray(value['wt'][0]+value['wt'][1]+key, check)==-1) {
+      //               mut_suggestions.push("<a onclick='mut(this)'  data-animation='false' data-toggle='tooltip' title='"+vals['types'][i]+"' pos='"+value['wt'][1]+"' gn='"+gn+"' wt='"+value['wt'][0]+"' from='"+value['wt'][0]+"' to='"+key+"'>"+value['wt'][0]+value['wt'][1]+key+"</a>");
+      //               check.push(value['wt'][0]+value['wt'][1]+key);
+      //             }
+      //           }
+      //         });
 
-            } else if (vals['types'][i].substring(0, 11) == "struc_rules") {
-              vals['types'][i] += ":"+val[0]['definition'];
-              $.each( val, function( key, value ) {
-                label.push(value['wt']+value['pos']+value['mut']);
-                if ($.inArray(value['wt']+value['pos']+value['mut'], check)==-1) {
-                  mut_suggestions.push("<a onclick='mut(this)'  data-animation='false' data-toggle='tooltip' title='"+vals['types'][i]+"' pos='"+value['pos']+"' gn='"+gn+"' wt='"+value['wt']+"' from='"+value['wt']+"' to='"+value['mut']+"' >"+value['wt']+value['pos']+value['mut']+"</a>");
-                  check.push(value['wt']+value['pos']+value['mut']);
-                }
-              });
-            }
-        });
-        //<td>"+vals['hits']+"</td>
-        temp = "<tr><td align=center>"+vals['priority']+"</td><td>"+gn+"</td><td origin='"+vals['types']+"'>"+mut_suggestions.join(", ")+"</td><td>"+vals['pretty_types']+" <a class='methods_info' data-toggle='tooltip' data-html='true' data-placement='bottom' title='"+vals['types'].join("<br>")+"'><i class='glyphicon glyphicon-info-sign'></i></a></td></tr>";
-        items_table.push( temp );
-        export_list['thermo'].push([gn,label.join(", "),vals['hits'],vals['types']]);
-        mutations_mode_suggestions.push([gn,label,vals['types'],vals['priority']])
-      });
-      items_table.push( "</tbody></table>" );
-      result = items_table.join( "" );
-      tables['mutations'] = result;
-      $("#mutations_button").html("Thermostabilisation ("+Object.keys(muts).length+")");
+      //       } else if (vals['types'][i].substring(0, 11) == "struc_rules") {
+      //         vals['types'][i] += ":"+val[0]['definition'];
+      //         $.each( val, function( key, value ) {
+      //           label.push(value['wt']+value['pos']+value['mut']);
+      //           if ($.inArray(value['wt']+value['pos']+value['mut'], check)==-1) {
+      //             mut_suggestions.push("<a onclick='mut(this)'  data-animation='false' data-toggle='tooltip' title='"+vals['types'][i]+"' pos='"+value['pos']+"' gn='"+gn+"' wt='"+value['wt']+"' from='"+value['wt']+"' to='"+value['mut']+"' >"+value['wt']+value['pos']+value['mut']+"</a>");
+      //             check.push(value['wt']+value['pos']+value['mut']);
+      //           }
+      //         });
+      //       }
+      //   });
+      //   //<td>"+vals['hits']+"</td>
+      //   temp = "<tr><td align=center>"+vals['priority']+"</td><td>"+gn+"</td><td origin='"+vals['types']+"'>"+mut_suggestions.join(", ")+"</td><td>"+vals['pretty_types']+" <a class='methods_info' data-toggle='tooltip' data-html='true' data-placement='bottom' title='"+vals['types'].join("<br>")+"'><i class='glyphicon glyphicon-info-sign'></i></a></td></tr>";
+      //   items_table.push( temp );
+      //   export_list['thermo'].push([gn,label.join(", "),vals['hits'],vals['types']]);
+      //   mutations_mode_suggestions.push([gn,label,vals['types'],vals['priority']])
+      // });
+      // items_table.push( "</tbody></table>" );
+      // result = items_table.join( "" );
+      // tables['mutations'] = result;
+      // $("#mutations_button").html("Thermostabilisation ("+Object.keys(muts).length+")");
     }
 
     function build_site_removals() {
@@ -1630,35 +1714,318 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       modifications_overview();
     }
 
+    function edit_mode () {
+
+      edit_mode_on = true;
+
+      // create constructs with own "modifications"
+      $.each(possible, function(p_key,p_val) {
+        // ensure it is a string
+        pos_val = p_val.split(",");
+        c_modifications = [];
+        $.each(inserts["nterm"], function(n_key,n_val) {
+          val['method'] = 'nterm_insert';
+          c_modifications.push(n_val);
+        });
+        $.each(modifications, function(m_key,m_val) {
+          if ($.inArray(String(m_key), pos_val)==-1) { 
+            return true;
+          }
+          c_modifications.push(m_val);
+        });
+
+        $.each(inserts["cterm"], function(c_key,c_val) {
+          val['method'] = 'cterm_insert';
+          c_modifications.push(c_val);
+        });
+        console.log(c_modifications);
+        manual_constructs.push(c_modifications)
+      });
+
+      $("#possibilities").hide();
+      $("#edit_mode").show();
+      $("#add_manual").show();
+
+      // change table (probably new table)
+      build_edit_table();
+    }
+
+    function add_manual_row() {
+      manual_constructs.push([]);
+      build_edit_table();
+    }
+    function delete_manual_row(id) {
+      manual_constructs.splice(id, 1);
+      build_edit_table();
+    }
+
+    function manual_selected(elem) {
+      m_id = $(elem).closest('tr').attr("construct_id");
+      modifications = manual_constructs[m_id];
+      changesnakeplot($(elem).closest('tr').find( ".snakechoice" ));
+      $(elem).closest('tr').find( ".snakechoice" ).prop("checked", true);
+    }
+
+
+    function build_edit_table() {
+
+      table_rows = [];
+      $.each(manual_constructs, function(key,val) {
+        // ensure it is a string
+        modifications = val;
+        generate_sequence('','manual');
+      });
+
+      n_term_button = `<button type="button" id="nterm_button" class="btn btn-primary btn-xs" onclick='manual_selected(this);build_nterm_menu();showModal("N-term",tables["nterm"],"#nterm_sug");'>
+      +
+    </button>`;
+
+      c_term_button = `<button type="button" id="cterm_button" class="btn btn-primary btn-xs" onclick='manual_selected(this);build_cterm_menu();showModal("C-term",tables["cterm"],"#cterm_sug");'>
+      +
+    </button>`;
+
+      {% if class == 'A'  or class == 'F' %}
+      icl_start_button = `<button type="button" id="icl3_start_button" class="btn btn-primary btn-xs" onclick='build_icl3_menu();showModal("ICL3 (Start)",tables["icl3_start"],"#icl3_sug_start");'>+</button>`;
+      {% elif class == 'B' or class == 'C' %}
+        icl_start_button = `<button type="button" id="icl2_start_button" class="btn btn-primary btn-xs" onclick='build_icl2_menu();showModal("ICL2 (Start)",tables["icl2_start"],"#icl2_sug_start");'>+</button>`;
+      {% endif %}
+
+      {% if class == 'A'  or class == 'F' %}
+        icl_end_button = `<button type="button" id="icl3_end_button" class="btn btn-primary btn-xs" onclick='build_icl3_menu();showModal("ICL3 (End)",tables["icl3_end"],"#icl3_sug_end");'>+</button>`;
+      {% elif class == 'B' or class == 'C' %}
+       icl_end_button = `<button type="button" id="icl2_end_button" class="btn btn-primary btn-xs" onclick='build_icl2_menu();showModal("ICL2 (End)",tables["icl2_end"],"#icl2_sug_end");'>+</button>`;
+      {% endif %}
+
+      mutations_button = `<button type="button" id="mutations_mode" class="btn btn-primary" onclick='manual_selected(this);build_mutation_mode_table();showModal("Mutations",tables["mutations"],"#mutations");'>+</button>`;
+
+      prev_choice = $("#edit_mode .snakechoice:checked").val();
+
+      console.log('prevchoice',prev_choice);
+      if (!prev_choice) prev_choice = 0;
+
+      $("#edit_mode > tbody").html("");
+       // console.log('table rows',table_rows.length);
+       $.each(table_rows, function(key,val) {
+          console.log(val);
+            tr_class = '';
+          icl_end_pos = false;
+          icl_start_pos = false;
+          if (val["nterm_pos"]) {
+            n_val = val["nterm_pos"]
+            nterm_pos = {{residues.TM1.0.sequence_number}}-n_val;
+            if (nterm_pos>0) {
+              nterm_aa = residues_pos[nterm_pos][0];
+            } else {
+              nterm_aa = "N/A";
+            }
+            nterm_cols = "<td>"+n_val+n_term_button+"</td><td>"+nterm_pos+"</td><td>"+nterm_aa+"</td>";
+          } else {
+            nterm_cols = "<td>"+n_term_button+"</td><td></td><td></td>";
+          }
+
+          if (val["cterm_pos"]){
+            c_val = val["cterm_pos"]
+            cterm_pos = {{residues.Cterm.0.sequence_number}}+parseInt(c_val)-1;
+
+            if (cterm_pos-1>residues_pos.length) {
+              cterm_aa = "N/A";
+            } else {
+              cterm_aa = residues_pos[cterm_pos][0];
+            }
+
+            cterm_cols = "<td>"+c_val+c_term_button+"</td><td>"+cterm_pos+"</td><td>"+cterm_aa+"</td>";
+          } else {
+            cterm_cols = "<td>"+c_term_button+"</td><td></td><td></td>";
+          }
+
+          if (val["icl3_start_pos"]){
+            icl_start_pos = parseInt(val["icl3_start_pos"])-1
+            icl_start_val = "5."+(50+icl_start_pos-{{residues_gn.5x50.sequence_number}});
+            icl_start_aa = residues_pos[icl_start_pos][0];
+            icl_start_cols = "<td>"+icl_start_val+icl_start_button+"</td><td>"+icl_start_pos+"</td><td>"+icl_start_aa+"</td>";
+          } else if (val["icl2_start_pos"]){
+            icl_start_pos = parseInt(val["icl2_start_pos"])-1
+            console.log('icl2!',icl_start_pos);
+            icl_start_val = "3."+(50+icl_start_pos-{{residues_gn.3x50.sequence_number}});
+            icl_start_aa = residues_pos[icl_start_pos][0];
+            icl_start_cols = "<td>"+icl_start_val+icl_start_button+"</td><td>"+icl_start_pos+"</td><td>"+icl_start_aa+"</td>";
+          } else {
+            icl_start_cols = "<td>"+icl_start_button+"</td><td></td><td></td>";
+          }
+
+          if (val["icl3_end_pos"]){
+            icl_end_pos = parseInt(val["icl3_end_pos"])+1
+            icl_end_val = "6."+(50+parseInt(icl_end_pos)-{{residues_gn.6x50.sequence_number}});
+            icl_end_aa = residues_pos[icl_end_pos][0];
+            icl_end_cols = "<td>"+icl_end_val+icl_end_button+"</td><td>"+icl_end_pos+"</td><td>"+icl_end_aa+"</td>";
+          } else if (val["icl2_end_pos"]){
+            icl_end_pos = parseInt(val["icl2_end_pos"])+1
+            icl_end_val = "4."+(50+parseInt(icl_end_pos)-{{residues_gn.4x50.sequence_number}});
+            icl_end_aa = residues_pos[icl_end_pos][0];
+            icl_end_cols = "<td>"+icl_end_val+icl_end_button+"</td><td>"+icl_end_pos+"</td><td>"+icl_end_aa+"</td>";
+          } else {
+            icl_end_cols = "<td>"+icl_end_button+"</td><td></td><td></td>";
+          }
+
+          if (icl_end_pos && icl_start_pos && icl_end_pos<=icl_start_pos) {
+            tr_class = 'error';
+          } 
+
+          nfusion_cols = "<td class='possiblities_nterm'></td>";
+          icl_start_linker = "<td class='possiblities_icl'></td>";
+          icl_mod = "<td class='possiblities_icl'></td>";
+          icl_end_linker = "<td class='possiblities_icl'></td>";
+
+
+          checked = "";
+          if (key==prev_choice) checked = "checked";
+
+          if (val["fusion"]){
+            if (fusionpos == 'nterm') {
+                nfusion_cols = "<td class='possiblities_nterm'>"+val["fusion"]['name']+"</td>";
+
+
+            } else if (fusionpos =='None') {
+              // None
+
+            } else {
+              // ICL
+                      linker_count = 0;
+                      icl_mod = "<td>"+val["fusion"]['name']+"</td>";
+                      $.each(inserts["fusion"], function(key,val) {
+                        if (val['type']=='fusion') {
+                          linker_count += 1; // tracker to know when it is after
+                        } else if (val['type']=='linker') {
+                          if (linker_count==0) {
+                            icl_start_linker = "<td>"+val['sequence']+"</td>";
+                          } else{
+                            icl_end_linker = "<td>"+val['sequence']+"</td>";
+                          }
+                        }
+                      });
+            }
+          }
+
+          // ignore for now
+          icl_start_linker = '';
+          icl_end_linker = '';
+
+          icl_total_cols = icl_start_cols + icl_start_linker + icl_mod + icl_end_linker + icl_end_cols;
+
+          // if (val['mutations_combi'].length == 0) val['mutations_combi'] = 'None';
+          // if (val['mutations_fixed'].length == 0) val['mutations_fixed'] = 'None';
+          //val['mutations'] = val['mutations_combi']+val['mutations_fixed'];
+
+          row_html = "<tr class='"+tr_class+"' id='row_"+key+"' construct_id='"+key+"'><td>" + (key+1) + "</td><td style='cursor: pointer;' onclick='selectTD(this);'><input type='radio' onclick='changesnakeplot(this)' class='snakechoice' value='"+key+"' "+checked+"></td><td><input type='checkbox' onclick='toogle_keep(this)' value='"+key+"' checked><td>"+inserts['nterm'].length+"</td></td>"+nfusion_cols+nterm_cols+icl_total_cols+cterm_cols+"<td>"+inserts['cterm'].length+"</td><td>"+val['mutations']+mutations_button+"</td><td><input type=button class='btn btn-info' value=Delete onclick='delete_manual_row("+key+")'></td></tr>";
+          $('#edit_mode tbody').append(row_html);
+       });
+      console.log('prevchoice',prev_choice);
+
+    }
+
+
+    function delete_other() {
+          selected_construct = $('.snakechoice:checked').val();
+          include = possible[selected_construct];
+          console.log('TO KEEP '+include);
+          temp_modifications = [];
+          $.each(modifications, function(key,val) {
+
+            if ($.inArray(String(key), include)==-1) { //&& val['type']!="Insert"
+              return true;
+            }
+            temp_modifications.push(val)
+          });
+          modifications = temp_modifications;
+          modifications_overview();
+    }
+
+
     function mutation_mode() {
       console.log('mutation_mode');
-      if ($('.snakechoice:checked').length) 
+      if ($('.snakechoice:checked').length && mutation_mode_on==false) 
         {
+
+          mutation_mode_on = true;
           selected_construct = $('.snakechoice:checked').val();
-          $("#possibilities > tbody > tr").not( "#row_"+selected_construct).fadeOut("slow");
+          $("#possibilities > tbody > tr").not( "#row_"+selected_construct).css("background-color","#777777");
+          $("#row_"+selected_construct).css("background-color","#ffffff");
           $("#mutation_scan > tbody").html("");
           build_mutation_mode_table();
         } else {
-          console.log('No parent construct to do mutation on');
+          $("#possibilities > tbody > tr").css("background-color","#ffffff");
+          mutation_mode_on = false;
+          $("#mutation_scan > tbody").html("");
         }
 
     }
 
     function build_mutation_mode_table() {
-
+      var state = $('input:radio[name=state]:checked').val();
+      console.log(state);
+      var items_table = [info_text['mutations'] + "<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Method</th><th>Common</th><th>Unique</th></tr></thead><tbody>"];
+      if (edit_mode_on) {
+      var items_table = [info_text['mutations'] + "<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Method</th><th>Add</th></tr></thead><tbody>"];
+      }
       $.each(mutations_mode_suggestions, function(i, val) {
-        console.log(i,val);
-        row = `<tr>
+        if (i.split("_").length>1) {
+          // this has a active_ or inactive_ prefix
+          if (!i.startsWith(state)){
+            return true;
+          }
+        }
+        checked_fixed = '';
+        checked_combi = '';
+
+        $.each(modifications, function(key,val2) {
+            if (val2['type']=='mutation') {
+
+                gn = val["gpcrdb"];
+                pos = val["pos"];
+                to = val["mut_aa"];
+                wt = val["wt_aa"];
+                method = wt+pos+to+" "+gn
+                if (val2['full']==val || val2['method']==method) {
+                  console.log('already checked!',val);
+                  if (val2['fixed']=='yes') checked_fixed = 'checked';
+                  if (val2['fixed']=='no') checked_combi = 'checked';
+                  if (edit_mode_on && val2['fixed']=='no') checked_fixed = 'checked';
+                }
+            }
+          });
+
+        td_add_common = `<td><input class=mut_fixed mut_id=`+i+` type=checkbox  onclick='mut_new(this, "yes");'` +checked_fixed+`></td>`
+        td_add_unique = `<td><input class=mut_pick mut_id=`+i+` type=checkbox  onclick='mut_new(this, "no");'` +checked_combi+`></td>`
+        if (edit_mode_on) {td_add_unique = ''}
+
+        if (i.split("_").length>2) {
+          row = `<tr>
+                <td>`+val['priority']+`</td>
+                <td>`+val['segment1']+` & `+val['segment2']+`</td>
+                <td>`+val['gpcrdb1']+` & `+val['gpcrdb2']+`</td>
+                <td>`+val['wt_aa1']+val['pos']+val['mut_aa1']+` & `+val['wt_aa2']+val['pos2']+val['mut_aa2']+`</td>
+                <td>`+val['definitions']+`</td>
+                ` +td_add_common+`
+                ` +td_add_unique+`
+                </tr>`;
+
+        } else {
+          row = `<tr>
                 <td>`+val['priority']+`</td>
                 <td>`+val['segment']+`</td>
                 <td>`+val['gpcrdb']+`</td>
-                <td>`+val['pos']+`</td>
-                <td>`+val['wt_aa']+`</td>
-                <td>`+val['mut_aa']+`</td>
+                <td>`+val['wt_aa']+val['pos']+val['mut_aa']+`</td>
                 <td>`+val['definitions']+`</td>
+                ` +td_add_common+`
+                ` +td_add_unique+`
                 </tr>`;
-        $('#mutation_scan tbody').append(row);
+            }
+        items_table.push(row);
       });
+
+      items_table.push( "</tbody></table>" );
+      result = items_table.join( "" );
+      tables['mutations'] = result;
 
     }
 
@@ -1674,7 +2041,21 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
 
     function nterm_tm1(elem) {
+
       checked = $(elem).prop("checked");
+      if (edit_mode_on) {
+        // remove previous
+        id_to_remove = false;
+        $.each(modifications, function(key,val) {
+        if (val['method']=='n-term') {
+          id_to_remove = key;
+        }
+        });
+        if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
+
+        $(elem).closest("table").find("[type=checkbox]").prop("checked",false);
+        $(elem).prop("checked",checked);
+      }
       // console.log('checked',checked);
       n_val = $(elem).attr("value");
       if (checked) {
@@ -1702,8 +2083,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         });
         if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
       }
-      modifications_overview();
-      // overlay_modifications();
+      if (!edit_mode_on) {modifications_overview();} else {
+        build_edit_table();
+        overlay_modifications();
+      }
     }
 
 
@@ -1736,6 +2119,19 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     function cterm(elem) {
       checked = $(elem).prop("checked");
+      if (edit_mode_on) {
+        // remove previous
+        id_to_remove = false;
+        $.each(modifications, function(key,val) {
+        if (val['method']=='c-term') {
+          id_to_remove = key;
+        }
+        });
+        if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
+        
+        $(elem).closest("table").find("[type=checkbox]").prop("checked",false);
+        $(elem).prop("checked",checked);
+      }
       n_val = $(elem).attr("value");
       if (checked) {
         from = $(elem).attr("from").split(',');
@@ -1765,7 +2161,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
 
       }
-      modifications_overview();
+      if (!edit_mode_on) {modifications_overview();} else {
+        build_edit_table();
+        overlay_modifications();
+      }
       // overlay_modifications();
     }
 
@@ -1852,6 +2251,19 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     function icl3_start(elem) {
       checked = $(elem).prop("checked");
+      if (edit_mode_on) {
+        // remove previous
+        id_to_remove = false;
+        $.each(modifications, function(key,val) {
+        if (val['method']=='ICL3_start') {
+          id_to_remove = key;
+        }
+        });
+        if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
+        
+        $(elem).closest("table").find("[type=checkbox]").prop("checked",false);
+        $(elem).prop("checked",checked);
+      }
       if (checked) {
         icl_start_from = $(elem).attr("from");
         icl3_del_start = {{residues_gn.5x50.sequence_number}}-(-$(elem).attr("tm5"))+1;
@@ -1870,13 +2282,29 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
 
       }
-      modifications_overview();
+      if (!edit_mode_on) {modifications_overview();} else {
+        build_edit_table();
+        overlay_modifications();
+      }
       // overlay_modifications();
       // $('#myModal').modal('hide');
     }
 
     function icl3(elem) {
       checked = $(elem).prop("checked");
+      if (edit_mode_on) {
+        // remove previous
+        id_to_remove = false;
+        $.each(modifications, function(key,val) {
+        if (val['method']=='ICL3_end') {
+          id_to_remove = key;
+        }
+        });
+        if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
+        
+        $(elem).closest("table").find("[type=checkbox]").prop("checked",false);
+        $(elem).prop("checked",checked);
+      }
       if (checked) {
         // from = icl_start_from+","+$(elem).attr("from");
         // from = Array.from(new Set(from.split(',')));
@@ -1905,7 +2333,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
 
       }
-      modifications_overview();
+      if (!edit_mode_on) {modifications_overview();} else {
+        build_edit_table();
+        overlay_modifications();
+      }
       // overlay_modifications();
       // $('#myModal').modal('hide');
     }
@@ -1914,6 +2345,19 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     var icl2_del_start = 0;
     function icl2_start(elem) {
       checked = $(elem).prop("checked");
+      if (edit_mode_on) {
+        // remove previous
+        id_to_remove = false;
+        $.each(modifications, function(key,val) {
+        if (val['method']=='ICL2_start') {
+          id_to_remove = key;
+        }
+        });
+        if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
+        
+        $(elem).closest("table").find("[type=checkbox]").prop("checked",false);
+        $(elem).prop("checked",checked);
+      }
       if (checked) {
 
         icl2_del_start = {{residues_gn.3x50.sequence_number}}-(-$(elem).attr("tm3"))+1;
@@ -1933,7 +2377,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
 
       }
-      modifications_overview();
+      if (!edit_mode_on) {modifications_overview();} else {
+        build_edit_table();
+        overlay_modifications();
+      }
       // overlay_modifications();
       // $('#myModal').modal('hide');
 
@@ -1941,6 +2388,19 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     function icl2(elem) {
       checked = $(elem).prop("checked");
+      if (edit_mode_on) {
+        // remove previous
+        id_to_remove = false;
+        $.each(modifications, function(key,val) {
+        if (val['method']=='ICL2_end') {
+          id_to_remove = key;
+        }
+        });
+        if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
+        
+        $(elem).closest("table").find("[type=checkbox]").prop("checked",false);
+        $(elem).prop("checked",checked);
+      }
       if (checked) {
         // from = icl_start_from+$(elem).attr("from");
         // from = Array.from(new Set(from.split(',')));
@@ -1971,7 +2431,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         if (id_to_remove!==false) remove_mod_by_id(id_to_remove);
 
       }
-      modifications_overview();
+      if (!edit_mode_on) {modifications_overview();} else {
+        build_edit_table();
+        overlay_modifications();
+      }
       // overlay_modifications();
       // $('#myModal').modal('hide');
     }
@@ -2272,6 +2735,55 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       modifications_overview();
       // overlay_modifications();
       $(elem).parent().parent().delay(100).fadeOut().fadeIn();
+    }
+
+    function mut_new(elem, fixed) {
+
+      mut_id = $(elem).attr("mut_id");
+      checked = $(elem).prop("checked");
+
+      console.log(mut_id);
+      console.log(mutations_mode_suggestions[mut_id]);
+
+      mutation = mutations_mode_suggestions[mut_id];
+      gn = mutation["gpcrdb"];
+      pos = mutation["pos"];
+      to = mutation["mut_aa"];
+      wt = mutation["wt_aa"];
+      method = wt+pos+to+" "+gn
+      console.log(modifications);
+      $.each(modifications, function(key,val2) {
+          console.log(key,val2);
+          if (val2['type']=='mutation') {
+              if (val2['full']==mutation || val2['method']==method) {
+                console.log('already checked! remove',val);
+                remove_mod_by_id(key);
+                return false;
+              }
+          }
+        });
+
+        if (checked) {
+          gn = mutation["gpcrdb"];
+          pos = mutation["pos"];
+          to = mutation["mut_aa"];
+          wt = mutation["wt_aa"];
+
+          origin = mutation["definitions"]; 
+
+          range = new Array;
+          range.push(pos);
+
+          modi = {method: wt+pos+to+" "+gn, type: "mutation", to: to, range: range, info: "Based on: "+origin, fixed: fixed, full:mutation};
+          modifications.push(modi);
+        }
+        if (!edit_mode_on) {modifications_overview();} else {
+          build_edit_table();
+          overlay_modifications();
+        }
+
+        $(elem).parent().delay(100).fadeOut().fadeIn();
+      
     }
 
     function glyco(elem) {
@@ -2593,6 +3105,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
        $("#possibilities > tbody").html("");
        // console.log('table rows',table_rows.length);
        $.each(table_rows, function(key,val) {
+          console.log(val);
             tr_class = '';
           icl_end_pos = false;
           icl_start_pos = false;
@@ -2700,8 +3213,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
           icl_total_cols = icl_start_cols + icl_start_linker + icl_mod + icl_end_linker + icl_end_cols;
 
+          if (val['mutations_combi'].length == 0) val['mutations_combi'] = 'None';
+          if (val['mutations_fixed'].length == 0) val['mutations_fixed'] = 'None';
 
-          row_html = "<tr class='"+tr_class+"' id='row_"+key+"'><td>" + (key+1) + "</td><td style='cursor: pointer;' onclick='selectTD(this);'><input type='radio' onclick='changesnakeplot(this)' class='snakechoice' value='"+key+"' "+checked+"></td><td><input type='checkbox' onclick='toogle_keep(this)' value='"+key+"' checked><td>"+inserts['nterm'].length+"</td></td>"+nfusion_cols+nterm_cols+icl_total_cols+cterm_cols+"<td>"+inserts['cterm'].length+"</td></tr>";
+
+          row_html = "<tr class='"+tr_class+"' id='row_"+key+"'><td>" + (key+1) + "</td><td style='cursor: pointer;' onclick='selectTD(this);'><input type='radio' onclick='changesnakeplot(this)' class='snakechoice' value='"+key+"' "+checked+"></td><td><input type='checkbox' onclick='toogle_keep(this)' value='"+key+"' checked><td>"+inserts['nterm'].length+"</td></td>"+nfusion_cols+nterm_cols+icl_total_cols+cterm_cols+"<td>"+inserts['cterm'].length+"</td><td>"+val['mutations_fixed']+"</td><td>"+val['mutations_combi']+"</td></tr>";
           $('#possibilities tbody').append(row_html);
        });
         change_fusionpos();
@@ -2768,7 +3284,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     }
 
-    function generate_sequence(include) {
+    function generate_sequence(include,manual) {
       console.log("Start generating a sequence",include);
       // console.log(include);
       include = include.split(",");
@@ -2780,10 +3296,16 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       fusionpos = $('input:radio[name=fusionpos]:checked').val();
 
       fusion_in_sequence = false;
+
+      table_row['mutations_fixed'] = [];
+      table_row['mutations_combi'] = [];
+      table_row['mutations'] = [];
+
+      ICL_start = 0;
         
       $.each(modifications, function(key,val) {
 
-        if ($.inArray(String(key), include)==-1) { //&& val['type']!="Insert"
+        if ($.inArray(String(key), include)==-1 && manual!='manual') { //&& val['type']!="Insert"
           return true;
         }
         // console.log(val);
@@ -2812,6 +3334,12 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
         if (val['method']=='ICL2_end' && val['type']=='deletion') {
             table_row['icl2_end_pos'] = val['range'][0];
+        }
+
+        if (val['type']=='mutation') {
+          if (val['fixed']=='yes') table_row['mutations_fixed'].push(val['method'])
+          if (val['fixed']=='no') table_row['mutations_combi'].push(val['method'])
+          table_row['mutations'].push(val['method']);
         }
 
         if (type == 'fusion') {
@@ -3433,6 +3961,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
 
     function overlay_modifications(possible_id) {
+
+
       console.log("Start overlay_modifications");
       redraw_snake_after = false;
       if (typeof(possible_id)=='undefined'){
@@ -3442,6 +3972,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       }
       // console.log(possible_id)
       // console.log(possible[possible_id])
+
+      if (edit_mode_on) {
+        modifications = manual_constructs[possible_id];
+      }
 
       track_pos = {};
       fusion_site_location = -1;
@@ -3503,7 +4037,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
         console.log("key is " + key + " look in " + possible[possible_id]);
         //  && String(key)!=possible[possible_id]
-        if ($.inArray(String(key), String(possible[possible_id]).split(","))==-1 && String(key)!=possible[possible_id]) {
+        if ($.inArray(String(key), String(possible[possible_id]).split(","))==-1 && String(key)!=possible[possible_id] && !edit_mode_on) {
           return true;
         }
         // console.log("use it!");
@@ -3629,6 +4163,11 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
   // Make snake plot big
   $(document).ready(function() {
 
+
+    $("#edit_mode").hide();
+    $("#add_manual").hide();
+
+
     $('input[type=radio][name=state], input[type=radio][name=fusionpos]').change(function() {
           build_nterm_menu();
           build_cterm_menu();
@@ -3640,6 +4179,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           change_fusionpos();
           build_table_rows();
           modifications_overview();
+          mutation_mode();
     });
 
     $( "#overview" ).accordion({

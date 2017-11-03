@@ -9,7 +9,7 @@ from construct.models import *
 from structure.models import Structure
 from protein.models import ProteinConformation, Protein, ProteinSegment, ProteinFamily
 from alignment.models import AlignmentConsensus
-from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, STRUCTURAL_RULES
+from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, STRUCTURAL_RULES, STRUCTURAL_SWITCHES
 
 import json
 from collections import OrderedDict
@@ -1221,9 +1221,104 @@ def mutations(request, slug, **response_kwargs):
                         min_priority = min(x[0] for x in simple_list[key]['definitions'])
                         simple_list[key]['priority'] = min_priority
 
-    path = os.sep.join([settings.DATA_DIR, 'structure_data', 'Mutation_Rules.xlsx'])
-    d = parse_excel(path)
-    print(d)
+    # path = os.sep.join([settings.DATA_DIR, 'structure_data', 'Mutation_Rules.xlsx'])
+    # d = parse_excel(path)
+    # print(json.dumps(d,sort_keys=True, indent=4))
+    #print(wt_lookup)
+    for c, v in STRUCTURAL_SWITCHES.items():
+        match = False
+        if protein_class_slug in ['001'] and c=='A':
+            match = True
+        elif protein_class_slug in ['002','003'] and c=='B':
+            match = True
+        elif protein_class_slug in ['002'] and c=='B1':
+            match = True
+        elif protein_class_slug in ['003'] and c=='B2':
+            match = True
+        elif protein_class_slug in ['004'] and c=='C':
+            match = True
+
+        if match:
+            for r in v:
+                try:
+                    aa_1 = [r['AA1 Pos'],r['Match AA1'],r['Inactive1'],r['Active1']]
+                    aa_2 = [r['AA2 Pos'],r['Match AA2'],r['Inactive2'],r['Active2']]
+                    prio = r['Prio']
+                    motif = r['Motif']
+                    match_1 = False
+                    if r['Match AA1']=='X' or wt_lookup[aa_1[0]][0] in r['Match AA1']:
+                        match_1 = True
+                    match_2 = False
+                    if r['Match AA2']=='X' or wt_lookup[aa_2[0]][0] in r['Match AA2']:
+                        match_2 = True
+
+                    # Only of the two positions are matched perform mutation
+                    if match_1 and match_2:
+
+                        # Active state version
+                        # Is AA1 the same as WT?
+                        active = []
+                        if aa_1[3]!='Wt' and aa_1[3]!=wt_lookup[aa_1[0]][0]:
+                           active.append([wt_lookup[aa_1[0]][0],aa_1[3],wt_lookup[aa_1[0]][1],aa_1[0]])
+                        if aa_2[3]!='Wt' and aa_2[3]!=wt_lookup[aa_2[0]][0]:
+                           active.append([wt_lookup[aa_2[0]][0],aa_2[3],wt_lookup[aa_2[0]][1],aa_2[0]]) 
+
+                        inactive = []
+                        if aa_1[2]!='Wt' and aa_1[2]!=wt_lookup[aa_1[0]][0]:
+                           inactive.append([wt_lookup[aa_1[0]][0],aa_1[2],wt_lookup[aa_1[0]][1],aa_1[0]]) 
+                        if aa_2[2]!='Wt' and aa_2[2]!=wt_lookup[aa_2[0]][0]:
+                           inactive.append([wt_lookup[aa_2[0]][0],aa_2[2],wt_lookup[aa_2[0]][1],aa_2[0]]) 
+
+
+                        # print(aa_1,wt_lookup[aa_1[0]],match_1)
+                        # print(aa_2,wt_lookup[aa_2[0]],match_2)
+                        # print("inactive",inactive,len(inactive))
+
+
+                        definition_matches = [int(prio),motif]
+
+                        muts = []
+
+                        if len(active)==1:
+                            # print("active",active,len(active))
+                            active = active[0]
+                            mut = {'wt_aa': active[0], 'segment': wt_lookup[active[3]][2], 'pos': active[2], 'gpcrdb':active[3], 'mut_aa':active[1], 'definitions' : [definition_matches], 'priority': int(prio)}
+                            key = 'active_%s%s%s' % (active[0],active[2],active[1])
+                            #print(key,mut)
+                            muts.append([key,mut])
+                        elif len(active)==2:
+                            mut = {'wt_aa1': active[0][0], 'segment1': wt_lookup[active[0][3]][2], 'pos': active[0][2], 'gpcrdb1':active[0][3], 'mut_aa1':active[0][1],'wt_aa2': active[1][0], 'segment2': wt_lookup[active[1][3]][2], 'pos2': active[1][2], 'gpcrdb2':active[1][3], 'mut_aa2':active[1][1], 'definitions' : [definition_matches], 'priority': int(prio)}
+                            key = 'active_%s%s%s_%s%s%s' % (active[0][0],active[0][2],active[0][1],active[1][0],active[1][2],active[1][1])
+                            #print(key,mut)
+                            muts.append([key,mut])
+
+                        if len(inactive)==1:
+                            # print("active",inactive,len(inactive))
+                            inactive = inactive[0]
+                            mut = {'wt_aa': inactive[0], 'segment': wt_lookup[inactive[3]][2], 'pos': inactive[2], 'gpcrdb':inactive[3], 'mut_aa':inactive[1], 'definitions' : [definition_matches], 'priority': int(prio)}
+                            key = 'inactive_%s%s%s' % (inactive[0],inactive[2],inactive[1])
+                            #print(key,mut)
+                            muts.append([key,mut])
+                        elif len(inactive)==2:
+                            mut = {'wt_aa1': inactive[0][0], 'segment1': wt_lookup[inactive[0][3]][2], 'pos': inactive[0][2], 'gpcrdb1':inactive[0][3], 'mut_aa1':inactive[0][1],'wt_aa2': inactive[1][0], 'segment2': wt_lookup[inactive[1][3]][2], 'pos2': inactive[1][2], 'gpcrdb2':inactive[1][3], 'mut_aa2':inactive[1][1], 'definitions' : [definition_matches], 'priority': int(prio)}
+                            key = 'inactive_%s%s%s_%s%s%s' % (inactive[0][0],inactive[0][2],inactive[0][1],inactive[1][0],inactive[1][2],inactive[1][1])
+                            # print(key,mut)
+                            muts.append([key,mut])
+
+
+                        print(muts)
+                        for mut in muts:
+                            key = mut[0]
+                            mut = mut[1]
+                            if key not in simple_list:
+                                simple_list[key] = mut
+                            else:
+                                simple_list[key]['definitions'] += [definition_matches]
+                                min_priority = min(x[0] for x in simple_list[key]['definitions'])
+                                simple_list[key]['priority'] = min_priority
+
+                except Exception as e:
+                    print("problem with",r, e)
 
 
 

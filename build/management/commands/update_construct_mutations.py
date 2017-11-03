@@ -26,24 +26,337 @@ class Command(BaseCommand):
     logger = logging.getLogger(__name__)
 
     path = os.sep.join([settings.DATA_DIR, 'structure_data', 'construct_data', 'Stabilising_Mutations_In_Xtal_Constructs.xlsx'])
+    annotation_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'construct_data', 'construct_annotations.xlsx'])
 
     def handle(self, *args, **options):
-        self.excel_mutations = self.parse_excel(self.path)
+        # self.excel_mutations = self.parse_excel(self.path,'Mutation_Data')
 
-        self.check_mutations()
-        self.match_all_with_uniprot_mutations()
+        # self.check_mutations()
+        # self.match_all_with_uniprot_mutations()
 
-        # Simply check deletions on record vs newest pdb 
-        # self.check_deletions()
+        # # Simply check deletions on record vs newest pdb 
+        # # self.check_deletions()
 
-        # changes deletions to match PDB
-        # Custom rules exist in the function
-        self.replace_deletions()
+        # # changes deletions to match PDB
+        # # Custom rules exist in the function
+        # self.replace_deletions()
 
-        # Make sure json file is correct
-        # self.json_check_for_mutations_deletions()
+        # # Make sure json file is correct
+        # # self.json_check_for_mutations_deletions()
 
-    def parse_excel(self,path):
+        ### INSERTS ###
+        # # Export current inserts to file
+        # self.export_inserts()
+
+        self.import_inserts()
+
+        ### EXPRESSION ###
+
+
+
+    def import_inserts(self):
+
+        # Delete current
+        ConstructInsertion.objects.all().delete()
+
+        inserts = self.parse_excel(self.annotation_file,'inserts')
+        for i in inserts:
+            if i[2]=='NONE':
+                # SKip those that are entries just to show there is nothing
+                continue 
+            if i[3]=='?':
+                continue
+            print(i)
+            aux_type, created = ConstructInsertionType.objects.get_or_create(name=i[5],subtype=i[6])
+            for construct in Construct.objects.filter(structure__pdb_code__index=i[1]):
+                insert = ConstructInsertion.objects.create(construct=construct, insert_type=aux_type,presence=i[7],position=i[2]+"_"+str(int(i[3])))
+                if i[4]:
+                    i[4] = str(i[4])
+                    #if position information add that
+                    if len(i[4].split(":"))>1:
+                        insert.start = i[4].split(":")[0]
+                        insert.end = i[4].split(":")[1]
+                    else:
+                        insert.start = int(i[4].split('.')[0])
+                        insert.end = int(i[4].split('.')[0])
+                insert.save()
+                construct.invalidate_schematics()
+
+
+    def export_inserts(self):
+
+        checked_pdbcode_without_fusions = ['4AMI']
+        checked_pdb_code_with_fusions = {'3PDS' : 'icl3'}
+        # 3pds has P00720 LYS
+
+        constructs = Construct.objects.all().order_by('protein__entry_name')
+        list_of_comfirmed_fusion = ['C8TP59','Q0SXH8','Q9V2J8','Soluble cytochrome b562','Endolysin','Rubredoxin','Lysozyme','Flavodoxin','GlgA glycogen synthase']
+        csv_rows = []
+
+        csv_rows_expression = []
+        csv_rows_solub = []
+        csv_rows_puri = []
+        csv_rows_xtal = []
+        csv_rows_xtal_chems = []
+        csv_rows_xtal_ligands = []
+        for c in constructs:
+            pdbname = c.structure.pdb_code.index
+            fusion_position, fusions = c.fusion() 
+            protein = Protein.objects.filter(entry_name=pdbname.lower()).get()
+            uniprot = protein.parent.entry_name   
+            #print(c.name,fusion_position)
+
+            # if pdbname != '4UHR':
+            #     continue
+
+            d = json.loads(c.json)
+            # print(d)
+            # print(pdbname)
+
+            if c.crystallization:
+                if c.crystallization.crystal_type.sub_name == 'other [See next field]':
+                    print(pdbname,'Has other subname',c.crystallization.crystal_type.sub_name)
+                    print(d['crystallization']['lcp_lipid'],d['crystallization']['other_lcp_lipid'])
+                    c_type, created = CrystallizationTypes.objects.get_or_create(name=d['crystallization']['crystal_type'], sub_name=d['crystallization']['other_lcp_lipid'])    
+                    c.crystallization.crystal_type = c_type
+                    c.crystallization.save()
+
+            if 'crystallization' in d and 'crystal_type' in d['crystallization'] and (d['crystallization']['crystal_type']=='lipidic cubic phase' or d['crystallization']['crystal_type']=='lipidic cubic phase (LCP)'): #make list of LCP stuff
+                if not c.crystallization.chemical_lists.filter(name__name='LCP').exists() or (c.crystallization.chemical_lists.filter(name__name='LCP').exists() and c.crystallization.chemical_lists.filter(name__name='LCP').first().chemicals.count() == 0) :
+                    print(pdbname,"has LCP stuff to do!")
+                    if not 'lcp_add' in d['crystallization']:
+                        print('lcp_add missing')
+                    if not 'lcp_conc' in d['crystallization']:
+                        print('lcp_conc missing')
+                    if not 'lcp_conc_unit' in d['crystallization']:
+                        print('lcp_conc_unit missing')
+                    try:
+                        c.crystallization.chemical_lists.filter(name__name='LCP').delete()
+                        c_list = ChemicalList()
+                        # c_list.name = d['crystallization']['lcp_lipid']
+                        list_name,created  = ChemicalListName.objects.get_or_create(name='LCP')
+                        c_list.name = list_name
+                        c_list.save()
+                        ct, created = ChemicalType.objects.get_or_create(name='LCP Lipid additive')
+                        chem, created = Chemical.objects.get_or_create(name=d['crystallization']['lcp_add'], chemical_type=ct)
+                        cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['lcp_conc'], concentration_unit=d['crystallization']['lcp_conc_unit'], chemical=chem)
+                        c_list.chemicals.add(cc)
+                        c.crystallization.chemical_lists.add(c_list)
+                    except:
+                        print('error for ',pdbname)
+
+            if 'crystallization' in d and 'detergent' in d['crystallization']:
+                if d['crystallization']['detergent'] == 'other [See next field]':
+                    print(pdbname,'Has other detergent!',d['crystallization']['other_deterg'])
+                    c.crystallization.chemical_lists.filter(name__name='Detergent').delete()
+                    c_list = ChemicalList()
+                    list_name,created  = ChemicalListName.objects.get_or_create(name='Detergent')
+                    c_list.name = list_name
+                    c_list.save()
+                    ct, created = ChemicalType.objects.get_or_create(name='detergent')
+                    chem, created = Chemical.objects.get_or_create(name=d['crystallization']['other_deterg'], chemical_type=ct)
+                    cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['deterg_conc'], concentration_unit=d['crystallization']['deterg_conc_unit'], chemical=chem)
+                    c_list.chemicals.add(cc)
+                    c.crystallization.chemical_lists.add(c_list)
+
+            if 'crystallization' in d and 'lipid' in d['crystallization']:
+                if d['crystallization']['lipid'] == 'other [See next field]':
+                    print(pdbname,'Has other Lipid!',d['crystallization']['other_lipid'])
+                    c.crystallization.chemical_lists.filter(name__name='Lipid').delete()
+                    c_list = ChemicalList()
+                    list_name,created  = ChemicalListName.objects.get_or_create(name='Lipid')
+                    c_list.name = list_name
+                    c_list.save()
+                    ct, created = ChemicalType.objects.get_or_create(name='lipid')
+                    chem, created = Chemical.objects.get_or_create(name=d['crystallization']['other_lipid'], chemical_type=ct)
+                    cc, created = ChemicalConc.objects.get_or_create(concentration=d['crystallization']['lipid_concentr'], concentration_unit=d['crystallization']['lipid_concentr_unit'], chemical=chem)
+                    c_list.chemicals.add(cc)
+                    c.crystallization.chemical_lists.add(c_list)
+            # d = cache.get(pdbname+"_deletions")
+            # # d = None
+            # if not d:
+            #     d = fetch_pdb_info(pdbname,protein)
+            #     cache.set(pdbname+"_deletions",d,60*60*24)
+            # #print(d['auxiliary'])
+            # found = False
+            # found_where = None
+            # found_type = None
+            # for aux, v in d['auxiliary'].items():
+            #     # print(v['subtype'])
+            #     if v['subtype'] in list_of_comfirmed_fusion:
+            #         found = True
+            #         # print(v['subtype'],v['position'])
+            #         found_where = v['position']
+            #         found_type = v['subtype']
+            # # print(d['construct_sequences'])
+            # for aux, v in d['construct_sequences'].items():
+            #     if aux in list_of_comfirmed_fusion:
+            #         found = True
+            #         # print(aux,v['where'])
+            #         found_where = v['where']
+            #         found_type = aux
+
+            # if not found and fusion_position:
+            #     # print(fusion_position, "not found in", c.name)
+            #     #print(d['construct_sequences'])
+            #     pass
+
+
+            # for i in c.insertions.all().order_by('position'):
+            #     #print(i)
+            #     position = i.position.split("_")
+            #     seq_pos = ''
+            #     if i.start:
+            #         seq_pos = '%s:%s' % (i.start,i.end)
+            #     if i.insert_type.name=='fusion' or i.insert_type.subtype in list_of_comfirmed_fusion:
+            #         insert = [uniprot,pdbname,position[0],position[1],seq_pos,i.insert_type.name,i.insert_type.subtype,i.presence,found_where,found_type]
+            #     else:
+            #         insert = [uniprot,pdbname,position[0],position[1],seq_pos,i.insert_type.name,i.insert_type.subtype,i.presence]
+            #     #print(insert)
+            #     csv_rows.append(insert)
+
+            # if c.insertions.count()==0:
+            #     insert = [uniprot,pdbname,'NONE','','','','','',found_where,found_type]
+            #     #print(insert)
+            #     csv_rows.append(insert)
+
+            # # EXPRESSION #
+            # if c.expression:
+            #     csv_rows_expression.append([uniprot,pdbname,c.expression.host_cell_type,c.expression.host_cell,c.expression.expression_method,c.expression.expression_time,c.expression.remarks.strip()])
+            # else:
+            #     csv_rows_expression.append([uniprot,pdbname,'MISSING'])
+
+            # SOLUB #
+            if c.solubilization:
+                remarks = c.solubilization.remarks
+                for chem in c.solubilization.chemical_list.chemicals.all():
+                    chem_name = chem.chemical.name
+                    chem_type = chem.chemical.chemical_type.name
+                    chem_conc = chem.concentration
+                    chem_unit = chem.concentration_unit
+                    csv_rows_solub.append([uniprot,pdbname,chem_name,chem_type,chem_conc,chem_unit,remarks])
+                if c.solubilization.chemical_list.chemicals.count()==0:
+                    csv_rows_solub.append([uniprot,pdbname,'MISSING'])
+            else:
+                csv_rows_solub.append([uniprot,pdbname,'MISSING'])
+
+            # PURI #
+            if c.purification:
+                remarks = c.purification.remarks
+                for step in c.purification.steps.all():
+                    step_name = step.name
+                    step_description = step.description
+                    csv_rows_puri.append([uniprot,pdbname,step_name,step_description,remarks])
+                if c.solubilization.chemical_list.chemicals.count()==0:
+                    csv_rows_puri.append([uniprot,pdbname,'MISSING'])
+            else:
+                csv_rows_puri.append([uniprot,pdbname,'MISSING'])
+
+            # XTAL #
+            if c.crystallization:
+
+                crystal_type_name = c.crystallization.crystal_type.name
+                crystal_type_sub_name = c.crystallization.crystal_type.sub_name
+
+                crystal_method = c.crystallization.crystal_method.name
+
+                remarks = c.crystallization.remarks
+                if remarks:
+                    remars = remarks.encode('utf8')
+                    remarks = remarks.replace("\n","")
+                    remarks = remarks.replace("\r","")
+                    remarks = remarks.replace("\t","")
+                    import re
+                    remarks = re.sub(' +',' ',remarks)
+
+                protein_conc = c.crystallization.protein_conc
+                protein_conc_unit = c.crystallization.protein_conc_unit
+
+                temp = c.crystallization.temp
+
+                ph_start = c.crystallization.ph_start
+                ph_end = c.crystallization.ph_end
+                csv_rows_xtal.append([uniprot,pdbname,crystal_type_name,crystal_type_sub_name,crystal_method,protein_conc,protein_conc_unit,temp,ph_start,ph_end,remarks])
+
+                # XTAL CHEMS #
+                if c.crystallization.chemical_lists:
+                    for clist in c.crystallization.chemical_lists.all():
+                        list_name = clist.name
+                        for chem in clist.chemicals.all():
+                            chem_name = chem.chemical.name
+                            chem_type = chem.chemical.chemical_type.name
+                            chem_conc = chem.concentration
+                            chem_unit = chem.concentration_unit
+                            csv_rows_xtal_chems.append([uniprot,pdbname,list_name,chem_name,chem_type,chem_conc,chem_unit])
+                else:
+                    csv_rows_xtal_chems.append([uniprot,pdbname,'MISSING'])
+
+                # XTAL LIGAND #
+                if c.crystallization.ligands:
+                    for lig in c.crystallization.ligands.all():
+                        #print('ligand',lig)
+                        l = lig.ligand
+                        l_name = l.name
+                        smiles = l.properities.smiles
+                        inchi = l.properities.inchikey
+
+                        id_type = None
+                        id_index = None
+                        for links in l.properities.web_links.all():
+                            #Just use the first link
+                            id_type = links.web_resource.slug
+                            id_index = links.index
+                            break
+
+
+                        l_role = lig.ligand_role.name
+                        l_conc = lig.ligand_conc
+                        l_conc_unit = lig.ligand_conc_unit
+                        if not id_type:
+                            if inchi:
+                                id_type = 'inchikey'
+                                id_index = inchi
+                            elif smiles:
+                                id_type = 'smiles'
+                                id_index = smiles
+
+                        csv_rows_xtal_ligands.append([uniprot,pdbname,l_name,l_role,l_conc,l_conc_unit,id_type,id_index])
+                else:
+                    csv_rows_xtal_ligands.append([uniprot,pdbname,'MISSING'])
+
+
+            else:
+                csv_rows_xtal.append([uniprot,pdbname,'MISSING'])
+                csv_rows_xtal_chems.append([uniprot,pdbname,'MISSING'])
+                csv_rows_xtal_ligands.append([uniprot,pdbname,'MISSING'])
+
+
+
+
+        import csv
+        with open('construct_inserts.csv', 'w') as f:
+            writer = csv.writer(f, delimiter = '\t')
+            writer.writerows(csv_rows)
+        with open('construct_expression.csv', 'w') as f:
+            writer = csv.writer(f, delimiter = '\t')
+            writer.writerows(csv_rows_expression)
+        with open('construct_solub.csv', 'w') as f:
+            writer = csv.writer(f, delimiter = '\t')
+            writer.writerows(csv_rows_solub)
+        with open('construct_puri.csv', 'w') as f:
+            writer = csv.writer(f, delimiter = '\t')
+            writer.writerows(csv_rows_puri)
+        with open('construct_xtal.csv', 'w') as f:
+            writer = csv.writer(f, delimiter = '\t')
+            writer.writerows(csv_rows_xtal)
+        with open('construct_xtal_chems.csv', 'w') as f:
+            writer = csv.writer(f, delimiter = '\t')
+            writer.writerows(csv_rows_xtal_chems)
+        with open('construct_xtal_ligs.csv', 'w') as f:
+            writer = csv.writer(f, delimiter = '\t')
+            writer.writerows(csv_rows_xtal_ligands)
+
+    def parse_excel(self,path, sheet = None):
         workbook = xlrd.open_workbook(path)
         worksheets = workbook.sheet_names()
         d = []
@@ -51,7 +364,7 @@ class Command(BaseCommand):
             if worksheet_name in d:
                 print('Error, worksheet with this name already loaded')
                 continue
-            if worksheet_name != 'Mutation_Data':
+            if sheet and worksheet_name != sheet:
                 # Only run this sheet
                 continue
 
@@ -87,6 +400,7 @@ class Command(BaseCommand):
                     #     temprow[headers[curr_cell]] = cell_value
                 d.append(temprow)
         return d
+
 
 
     def fix_wrong_mutations(self):
@@ -144,13 +458,21 @@ class Command(BaseCommand):
 
     def replace_deletions(self):
         # delete alle deletions
-        ConstructDeletion.objects.all().delete()
+        # ConstructDeletion.objects.all().delete()
         for c in Construct.objects.all():
+
+            pdbname = c.structure.pdb_code.index
+
+            if not pdbname in ['4XEE','4XES']:
+                continue
+            print(pdbname)
 
             #reset caches
             c.schematics = None
             c.snakecache = None
             c.save()
+
+            c.deletions.all().delete()
 
             pdbname = c.structure.pdb_code.index
             cname = c.name
