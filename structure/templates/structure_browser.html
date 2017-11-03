@@ -62,7 +62,8 @@
                             { type: "text" }, // reference
                             { type: "date-range" }, // publication date
                             { type: "select"}, // annotated
-                            { type: "text"} // refined
+                            { type: "text"}, // refined
+                            { type: "select"} // sodium ion pocket
                         ]
                     });
                 }
@@ -199,8 +200,10 @@
                     <th class="pub-th">Date</th>
                     <th class="pub-th">Annotated</th>
                     <th class="pub-th">Refined</th>
+                    <th class="pub-th">Sodium ion pocket</th>
                 </tr>
                 <tr>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -300,6 +303,13 @@
                         <a href="homology_models/{{ structure.pdb_code.index }}_refined">{{structure.pdb_code.index}}_refined</a>
                         {% else %}
                         -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if structure.pdb_code.index in sodium_pocket %}
+                        Yes
+                        {% else %}
+                        No
                         {% endif %}
                     </td>
                 </tr>

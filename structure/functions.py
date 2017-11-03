@@ -12,7 +12,7 @@ from common.alignment import Alignment
 from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinState
 from residue.functions import dgn
 from residue.models import Residue
-from structure.models import Structure, Rotamer
+from structure.models import Structure, Rotamer, IdentifiedSites, Site
 
 from subprocess import Popen, PIPE
 from io import StringIO
@@ -814,7 +814,11 @@ class PdbChainSelector():
 
 class PdbStateIdentifier():
     def __init__(self, structure):
-        self.structure = structure
+        try:
+            structure.protein_conformation.protein.parent
+            self.structure = structure
+        except:
+            self.structure = Structure.objects.get(pdb_code__index=structure.upper())
         self.state = None
         self.activation_value = None
         self.line = False
@@ -910,6 +914,30 @@ class PdbStateIdentifier():
         diff_vector = residue1['CA'].get_coord()-residue2['CA'].get_coord()
         return numpy.sqrt(numpy.sum(diff_vector * diff_vector))
 
+
+class IdentifySites():
+    def __init__(self, structure):
+        self.structure = structure
+
+    def sodium_pocket(self):
+        try:
+            site = Site.objects.get(slug='sodium_pocket')
+        except:
+            site = Site.objects.create(slug='sodium_pocket', name='Sodium ion pocket')
+        try:
+            ex_site = IdentifiedSites.objects.get(protein_conformation=self.structure.protein_conformation)
+            if len(ex_site.residues.all())==2:
+                return
+        except:
+            resis = Residue.objects.filter(protein_conformation=self.structure.protein_conformation, display_generic_number__label__in=[dgn('2x50', self.structure.protein_conformation), 
+                                                                                                                                        dgn('3x39', self.structure.protein_conformation)])
+            parent_resis = Residue.objects.filter(protein_conformation__protein=self.structure.protein_conformation.protein.parent, display_generic_number__label__in=[dgn('2x50', self.structure.protein_conformation), 
+                                                                                                                                                                       dgn('3x39', self.structure.protein_conformation)])
+            if len(resis)==2:
+                if resis[0].amino_acid in ['D','E'] and resis[1].amino_acid in ['S','T']:
+                    istate = IdentifiedSites.objects.create(protein_conformation=self.structure.protein_conformation, site=site)
+                    istate.residues.add(resis[0], resis[1])
+                
 
 def right_rotamer_select(rotamer, chain=None):
     ''' Filter out compound rotamers.
