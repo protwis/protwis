@@ -146,6 +146,25 @@ def InteractionData(request):
         segment_filter_res1 & segment_filter_res2 & i_types_filter
     )
 
+    interactions = Interaction.objects.filter(
+        interacting_pair__referenced_structure__protein_conformation__protein__entry_name='4ldo'
+    ).values(
+        'interacting_pair__referenced_structure__protein_conformation__protein__entry_name',
+        'interacting_pair__res1__amino_acid',
+        'interacting_pair__res2__amino_acid',
+        'interacting_pair__res1__sequence_number',
+        'interacting_pair__res1__generic_number__label',
+        'interacting_pair__res1__protein_segment__slug',
+        'interacting_pair__res2__sequence_number',
+        'interacting_pair__res2__generic_number__label',
+        'interacting_pair__res2__protein_segment__slug',
+        'polymorphic_ctype__model',
+    ).filter(
+        segment_filter_res1 & segment_filter_res2 & i_types_filter
+    )
+
+
+
     # Initialize response dictionary
     data = {}
     data['interactions'] = {}
@@ -154,6 +173,11 @@ def InteractionData(request):
     data['segments'] = set()
     data['segment_map'] = {}
     data['aa_map'] = {}
+
+    for i in interactions:
+        pdb_name = i['interacting_pair__referenced_structure__protein_conformation__protein__entry_name']
+        if not pdb_name in data['pdbs']:
+            data['pdbs'].add(pdb_name)
 
     # Map from ordinary residue numbers to generic where available
     if (not generic):
