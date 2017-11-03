@@ -54,7 +54,6 @@ class Command(BaseBuild):
             self.filenames = options['filename']
 
         try:
-            self.purge_constructs()
             self.logger.info('CREATING CONSTRUCTS')
             self.prepare_input(options['proc'], self.filenames)
             self.logger.info('COMPLETED CREATING CONSTRUCTS')
@@ -145,7 +144,7 @@ class Command(BaseBuild):
                     else:
                         p = Protein.objects.get(name=sd['name'])
 
-                    
+
                     if not ProteinConformation.objects.filter(protein=p).exists():
                         # create protein conformation record
                         pc = ProteinConformation()
