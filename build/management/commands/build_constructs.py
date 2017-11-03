@@ -109,7 +109,7 @@ class Command(BaseCommand):
                     else:
                         p = Protein.objects.get(name=sd['name'])
 
-                    if not Protein.objects.filter(name=sd['name']).exists():
+                    if not ProteinConformation.objects.filter(protein=p).exists():
                         # create protein conformation record
                         pc = ProteinConformation()
                         pc.protein = p
