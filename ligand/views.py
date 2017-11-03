@@ -155,9 +155,8 @@ def TargetDetailsCompact(request, **kwargs):
                 tmp["Bind" if data_line.assay_type == 'b' else "Funct"].append(data_line.pchembl_value)
                 tmp_count += 1
             values = list(itertools.chain(*tmp.values()))
-
             ligand_data.append({
-                'ligand_id': lig.properities.web_links.filter(web_resource__slug = 'chembl_ligand').first().index,
+                'ligand_id': lig.properities.web_links.filter(web_resource__slug = 'chembl_ligand')[0].index,
                 'protein_name': protein_details.entry_name,
                 'species': protein_details.species.common_name,
                 'record_count': tmp_count,
@@ -277,7 +276,7 @@ def TargetPurchasabilityDetails(request, **kwargs):
     purchasable = []
     for record in ps:
         try:
-            if record['ligand__properities__vendors__vendor__name'] in ['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem']:
+            if record['ligand__properities__vendors__vendor__name'] in ['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem', 'IUPHAR/BPS Guide to PHARMACOLOGY']:
                 continue
             tmp = LigandVendorLink.objects.filter(vendor=record['ligand__properities__vendors__vendor__id'], lp=record['ligand__properities_id'])[0]
             record['vendor_id'] = tmp.vendor_external_id
