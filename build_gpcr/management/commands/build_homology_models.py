@@ -5,7 +5,7 @@ from protein.models import Protein, ProteinConformation, ProteinAnomaly, Protein
 from residue.models import Residue
 from residue.functions import dgn, ggn
 from structure.models import *
-from structure.functions import HSExposureCB, PdbStateIdentifier, IdentifySites
+from structure.functions import HSExposureCB, PdbStateIdentifier
 from common.alignment import AlignedReferenceTemplate
 from common.models import WebLink
 import structure.structural_superposition as sp

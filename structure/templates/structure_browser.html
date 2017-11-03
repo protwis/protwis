@@ -173,6 +173,7 @@
         <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
     </div>
     <div style="font-size: 10px;">For superimposition: Select (tick box) structures, and Highlight the reference template</div>
+    <div style="font-size: 10px;">For state identification and Δ distance (Å) refer to the <a href="http://docs.gpcrdb.org/tutorial_structures.html#structure-state">documentation</a></div>
     <br />
     <br />
 
@@ -299,14 +300,14 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if structure.pdb_code.index in refined %}
+                        {% if structure.is_refined %}
                         <a href="homology_models/{{ structure.pdb_code.index }}_refined">{{structure.pdb_code.index}}_refined</a>
                         {% else %}
                         -
                         {% endif %}
                     </td>
                     <td>
-                        {% if structure.pdb_code.index in sodium_pocket %}
+                        {% if structure.protein_conformation.is_sodium %}
                         Yes
                         {% else %}
                         No

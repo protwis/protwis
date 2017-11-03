@@ -8,8 +8,8 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
 from common.phylogenetic_tree import PhylogeneticTreeGenerator
-from protein.models import Gene, ProteinSegment
-from structure.models import Structure, StructureModel, StructureModelStatsRotamer, StructureModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim, IdentifiedSites
+from protein.models import Gene, ProteinSegment, IdentifiedSites
+from structure.models import Structure, StructureModel, StructureModelStatsRotamer, StructureModelSeqSim, StructureRefinedStatsRotamer, StructureRefinedSeqSim
 from structure.functions import CASelector, SelectionParser, GenericNumbersSelector, SubstructureSelector, check_gn
 from structure.assign_generic_numbers_gpcr import GenericNumbering
 from structure.structural_superposition import ProteinSuperpose,FragmentSuperpose
@@ -69,8 +69,6 @@ class StructureBrowser(TemplateView):
                 "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
                 Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
                 annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
-            context['refined'] = [i.pdb_code.index[:4] for i in Structure.objects.filter(refined=True)]
-            context['sodium_pocket'] = [i.protein_conformation.protein.entry_name.upper() for i in IdentifiedSites.objects.filter(site__slug='sodium_pocket')]
         except Structure.DoesNotExist as e:
             pass
 

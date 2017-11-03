@@ -22,8 +22,6 @@ class Structure(models.Model):
     refined = models.BooleanField(default=False)
     distance = models.DecimalField(max_digits=5, decimal_places=2, null=True)
 
-
-
     def __str__(self):
         return self.pdb_code.index
 
@@ -48,7 +46,6 @@ class Structure(models.Model):
                 tmp.append(line)
 
         return '\n'.join(tmp)
-
                         
     def get_preferred_chain_pdb(self):
 
@@ -58,6 +55,14 @@ class Structure(models.Model):
             if (line.startswith('ATOM') or line.startswith('HET')) and line[21] == self.preferred_chain[0]:
                 tmp.append(line)
         return '\n'.join(tmp)
+
+    @property
+    def is_refined(self):
+        s = Structure.objects.filter(refined=True, pdb_code__index=self.pdb_code.index+'_refined')
+        if len(s)>0:
+            return True
+        else:
+            return False
 
     class Meta():
         db_table = 'structure'
@@ -178,17 +183,6 @@ class PdbData(models.Model):
 
     class Meta():
         db_table = "structure_pdb_data"
-
-
-class IdentifiedSites(models.Model):
-    protein_conformation = models.ForeignKey('protein.ProteinConformation')
-    site = models.ForeignKey('structure.Site')
-    residues = models.ManyToManyField('residue.Residue')
-
-
-class Site(models.Model):
-    slug = models.CharField(max_length=20)
-    name = models.CharField(max_length=30)
 
 
 class Rotamer(models.Model):
