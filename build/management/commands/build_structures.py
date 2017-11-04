@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand, CommandError
+1from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
 from django.utils.text import slugify
@@ -793,7 +793,7 @@ class Command(BaseBuild):
                 res2 = Residue.objects.get(sequence_number=res2_seq_num, protein_conformation=conformation)
             except Residue.DoesNotExist:
                 self.logger.warning('Error with pair between %s and %s (%s)' % (res1_seq_num,res2_seq_num,conformation))
-                print('Error with pair between %s and %s (%s)' % (res1_seq_num,res2_seq_num,conformation))
+                # print('Error with pair between %s and %s (%s)' % (res1_seq_num,res2_seq_num,conformation))
                 continue
 
             # Save the pair
