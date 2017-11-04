@@ -108,7 +108,7 @@
 <div class="row">
   <div class="col-sm-8">
 <h1 class="display-4">Construct Design Tool </h1>
-<p> This is a tool to help aid crystallographers design crystal constructs.<a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool1.mp4" type="button" class="videoLink btn btn-xs btn-default">
+<p>This is a tool to design crystallisation constructs based on all published GPCR structures.<a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool1.mp4" type="button" class="videoLink btn btn-xs btn-default">
                           <span class="glyphicon glyphicon-film"></span>
                         </button></p>
 
@@ -160,20 +160,17 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 <span id=loadstatus>Please wait for the dataset to load</span>
 <span id='method_options' style='display: none;'>
     
-        <div class="row">
-      <div class="col-sm-1">
-      Excel:
+    <div class="row">
+      <div class="col-sm-2">
+      Work Mode:
       </div>
       <div class="col-sm-8">
-          <form action="/common/importexcel" style="display: inline;" method="post" id="file-upload-form" enctype="multipart/form-data">
-              <label class="btn btn-primary btn-file">
-                Upload<input  id="id_file_source" name="file_source" type="file" style="display: none;">
-              </label>
-          </form>
-        <button class="btn btn-info" onclick='exportToExcel();'>Download</button>
-
+        <button id=combi_mode_button class="btn btn-primary disabled" onclick='combi_mode();'>Automatic</button>
+        <button id=manual_mode_button class="btn btn-primary" onclick='edit_mode();'>Manual</button>
+        <button class="btn btn-warning" onclick='$( "#dialog" ).dialog( "open" )''>Reset</button>
       </div>
     </div>
+
 <!--     <div class="row">
       <div class="col-sm-2">
       Mutations:
@@ -184,33 +181,22 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         </button>
       </div>
     </div> -->
+
     <div class="row">
-      <div class="col-sm-1">
-      Custom:
+      <div class="col-sm-2">
+      Constructs (Excel):
       </div>
       <div class="col-sm-8">
-        <button type="button" id="mutations_button" class="btn btn-primary" onclick='showModal("Custom",tables["custom"]);'>
-          Custom Mutation or Deletion
-        </button>
-<!--         <button type="button" class="btn btn-primary" onclick='
-          modifications_overview("no refresh");showModal("Overview",tables["overview"]);'>
-          Current modifications
-        </button> -->
-
+        <button class="btn btn-info" onclick='exportToExcel();'>Save</button>
+          <form action="/common/importexcel" style="display: inline;" method="post" id="file-upload-form" enctype="multipart/form-data">
+              <label class="btn btn-primary btn-file">
+                Import<input  id="id_file_source" name="file_source" type="file" style="display: none;">
+              </label>
+          </form>
 
       </div>
     </div>
-    <div class="row">
-      <div class="col-sm-1">
-      Mode:
-      </div>
-      <div class="col-sm-8">
-        <button class="btn btn-warning" onclick='showModal("Auto Combination",tables["auto_combi"],"");''>Auto Combination</button>
-        <button id=combi_mode_button class="btn btn-primary disabled" onclick='combi_mode();'>Combination Mode</button>
-        <button id=manual_mode_button class="btn btn-primary" onclick='edit_mode();'>Manual Mode</button>
-        <button class="btn btn-warning" onclick='$( "#dialog" ).dialog( "open" )''>Reset</button>
-      </div>
-    </div>
+
   </div>
   <div class="col-sm-2" style="max-width: 300px;">
 
@@ -226,7 +212,12 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 <br><br>
 <div class="table-responsive">
 
-<h4 id='combi_mode'>Combination mode</h4>
+<h4 id='combi_mode'>Combination mode 
+        <button class="btn btn-warning btn-xs" onclick='showModal("Auto Combination",tables["auto_combi"],"");''>Automatic Construct Design</button>
+        <button type="button" id="mutations_button" class="btn btn-primary btn-xs" onclick='showModal("Custom",tables["custom"]);'>
+          User-defined mutation or deletion
+        </button>
+      </h4>
 <table width=100%  id='possibilities' class='table table-bordered table-condensed table-striped'>
 <thead>
 <tr>
@@ -327,8 +318,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
   <th>C-term res kept rel. to h8*</th>
   <th>Pos</th>
   <th>AA</th>
-  <th>Common</th>
-  <th>Unique</th>
+  <th>All constructs</th>
+  <th>One construct</th>
 </tr>
 </thead>
 <tbody>
@@ -339,7 +330,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
 <div class="table-responsive">
 
-<h4 id='manual_mode'>Manual mode</h4>
+<h4 id='manual_mode'>Manual mode
+    <button type="button" id="add_manual" class="btn btn-primary btn-xs" onclick='add_manual_row()'>
+      Add Construct (row)
+    </button></h4>
 <table width=100%  id='edit_mode' class='table table-bordered table-condensed table-striped'>
 <thead>
 <tr>
@@ -388,6 +382,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
   <th colspan="1" rowspan="2">
     Mutations
   </th>
+  <th colspan="1" rowspan="2">
+    
+  </th>
 </tr>
 <tr>
   <th rowspan="1" class='possiblities_nterm'>N-term fusion***</th>
@@ -420,9 +417,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 <tbody>
 </tbody>
 </table>
-    <button type="button" id="add_manual" class="btn btn-primary" onclick='add_manual_row()'>
-      Add
-    </button>
 </div>
 
 <div class="row">
@@ -598,7 +592,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     info_text['custom'] = '<p class=info_text>Use options below to insert custom mutations or truncations not suggested by tool. You will be asked to confirm modification.</p>';
     info_text['current'] = '<p class=info_text>See current modifications below. These will be included if you export to excel.<br> If there are several modfications chosen for the same form of deletion then you can either generate multiple construct sequences with combinations of the choices. Alternatively you can fix to a chosen modification by ticking the Fix box.<br> In the same fashion mutations can be fixed or used to make multiple sequences</p>';
     info_text['inserts_general'] = '<p class=info_text>See current inserts below. For inserts in N- or C-term you can change the order they come in. If you choose several fusion proteins, they will be used for combinations.</p>';
-    info_text['auto_combi'] = '<p class=info_text>Specify how many options of each type you want to combine.</p>';
+    info_text['auto_combi'] = '<p class=info_text>This will generate all possible combinations of your choice below.<br>You have the option to go to manual mode afterwards and delete unwanted ones.<br>Specify the number of:</p>';
+    info_text['mutations'] = '<p class=info_text>Below are all generated mutant suggestions based on rules and annotated thermostabilising mutants.<br></p>';
 
 
     tables["custom"] = [info_text['custom']]
@@ -1800,6 +1795,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
         });
 
+        if (manual_inserts.length==0) add_manual_row();
+
         $("#possibilities").hide();
         $("#combi_mode").hide();
         $("#edit_mode").show();
@@ -2050,10 +2047,25 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
     function build_mutation_mode_table() {
       var state = $('input:radio[name=state]:checked').val();
-      console.log(state);
-      var items_table = [info_text['mutations'] + "<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Method</th><th>Common</th><th>Unique</th></tr></thead><tbody>"];
+      combi_options = "<select id=combi_mutations class='form-control'>";
+      c = 0;
+      $.each(mutations_mode_suggestions, function(i, val) {
+        if (i.split("_").length>1) {
+          // this has a active_ or inactive_ prefix
+          if (!i.startsWith(state)){
+            return true;
+          }
+        } 
+          c += 1;
+          combi_options += "<option>"+c+"</option>";
+      });
+      combi_options += "</select>";
+      var items_table = [info_text['mutations'] + "<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Method</th><th>Use in all constructs</th><th>Use in one construct</th></tr></thead><tbody>"];
+      items_table.push('<p>Add top'+combi_options+" mutants to be used in <select id='mutant_where' class='form-control'><option>All constructs</option><option>In single constructs<input type=button value=Add onclick='auto_mutations()'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations()'></p>");
       if (edit_mode_on) {
       var items_table = [info_text['mutations'] + "<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Method</th><th>Add</th></tr></thead><tbody>"];
+
+      items_table.push('<p>Add top'+combi_options+" mutants<input type=hidden id='mutant_where' class='form-control' value='All constructs'> <input type=button value=Add onclick='auto_mutations()'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations()'></p>");
       }
       $.each(mutations_mode_suggestions, function(i, val) {
         if (i.split("_").length>1) {
@@ -2825,6 +2837,99 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       $(elem).parent().parent().delay(100).fadeOut().fadeIn();
     }
 
+    function uncheck_mutations() {
+      var state = $('input:radio[name=state]:checked').val();
+      $.each(mutations_mode_suggestions, function(i, val) {
+        if (i.split("_").length>1) {
+          // this has a active_ or inactive_ prefix
+          if (!i.startsWith(state)){
+            return true;
+          }
+        } 
+
+         mutation = val;
+          gn = mutation["gpcrdb"];
+          pos = mutation["pos"];
+          to = mutation["mut_aa"];
+          wt = mutation["wt_aa"];
+          method = wt+pos+to+" "+gn
+          $.each(modifications, function(key,val2) {
+              console.log(key,val2);
+              if (val2['type']=='mutation') {
+                  if (val2['full']==mutation || val2['method']==method) {
+                    console.log('already checked! remove',val);
+                    remove_mod_by_id(key);
+                    return false;
+                  }
+              }
+            });
+
+      });
+        build_mutation_mode_table();
+        showModal("Mutations",tables["mutations"],"#mutations");
+        if (!edit_mode_on) {modifications_overview();} else {
+          build_edit_table();
+          overlay_modifications();
+        }
+    }
+
+    function auto_mutations() {
+      amount = $("#combi_mutations").val();
+      where = $("#mutant_where").val();
+      var state = $('input:radio[name=state]:checked').val();
+      console.log(amount,where);
+      c = 0;
+      fixed = 'no';
+      if (where =='All constructs') fixed = 'yes';
+      $.each(mutations_mode_suggestions, function(i, val) {
+        if (i.split("_").length>1) {
+          // this has a active_ or inactive_ prefix
+          if (!i.startsWith(state)){
+            return true;
+          }
+        } 
+          c += 1;
+         if (c>amount) return false;
+         mutation = val;
+          gn = mutation["gpcrdb"];
+          pos = mutation["pos"];
+          to = mutation["mut_aa"];
+          wt = mutation["wt_aa"];
+          method = wt+pos+to+" "+gn
+          console.log(modifications);
+          $.each(modifications, function(key,val2) {
+              console.log(key,val2);
+              if (val2['type']=='mutation') {
+                  if (val2['full']==mutation || val2['method']==method) {
+                    console.log('already checked! remove',val);
+                    remove_mod_by_id(key);
+                    return false;
+                  }
+              }
+            });
+
+          gn = mutation["gpcrdb"];
+          pos = mutation["pos"];
+          to = mutation["mut_aa"];
+          wt = mutation["wt_aa"];
+
+          origin = mutation["definitions"]; 
+
+          range = new Array;
+          range.push(pos);
+
+          modi = {method: wt+pos+to+" "+gn, type: "mutation", to: to, range: range, info: "Based on: "+origin, fixed: fixed, full:mutation};
+          modifications.push(modi);
+
+      });
+        build_mutation_mode_table();
+        showModal("Mutations",tables["mutations"],"#mutations");
+        if (!edit_mode_on) {modifications_overview();} else {
+          build_edit_table();
+          overlay_modifications();
+        }
+    }
+
     function mut_new(elem, fixed) {
 
       mut_id = $(elem).attr("mut_id");
@@ -3523,6 +3628,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
              sequence_short += (key-1)+"]";
           }
           if (track_pos[key]['type']=='mutation') {
+            console.log(key);
+            console.log(track_pos[key]);
             sequence += track_pos[key]['to'];
             sequence_short += "[MUT:"+val[0]+key+""+track_pos[key]['to']+"]";
             sequence_short_2 += "[MUT:"+val[0]+key+""+track_pos[key]['to']+"]";
