@@ -105,19 +105,30 @@
   <p>You sure you want to reset this construct?</p>
 </div>
 
-<div class="row">
-  <div class="col-sm-8">
-<h1 class="display-4">Construct Design Tool </h1>
-<p>This is a tool to design crystallisation constructs based on all published GPCR structures.<a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool1.mp4" type="button" class="videoLink btn btn-xs btn-default">
-                          <span class="glyphicon glyphicon-film"></span>
-                        </button></p>
 
-Target: <strong>{{target.name|safe}} ({{target.entry_name}})</strong> | 
-Class: {{class}}<br><br>
+
 <div class="row">
+  <div class="col-sm-6">
+
+    <div class="row">
+      <div class="col-sm-12">
+        <h1 class="display-4">Construct Design Tool </h1>
+            <p>This is a tool to design crystallisation constructs based on all published GPCR structures.<br><a href=#  onclick='modifications_overview();showModal("Introduction",tables["help"]);'> Press here for an introduction.</a> <button id=toolvideo mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink btn btn-xs btn-default">
+                              <span class="glyphicon glyphicon-film"></span>
+                            </button></p>
+
+    Target: <strong>{{target.name|safe}} ({{target.entry_name}})</strong> | 
+    Class: {{class}}<br><br>
+    </div>
+  </div>
+
+    <div class="row">
+      <div class="col-sm-3">
+      State: 
+      </div>
       <div class="col-sm-9">
 {% if active_xtals  %}
-  State: <div class="btn-group" data-toggle="buttons">
+  <div class="btn-group" data-toggle="buttons">
     <label class="btn btn-default active">
       <input type="radio" name="state" value="inactive" checked=""> Inactive
     </label>
@@ -128,43 +139,48 @@ Class: {{class}}<br><br>
 {% else %}
   <input type="radio" class="hidden" name="state" value="inactive" checked="">
 {% endif %}
-
-Fusion Site: <div class="btn-group" data-toggle="buttons">
-  <label class="btn btn-default">
-    <input type="radio" name="fusionpos" value="nterm"> N-term
-  </label>
-
-    {% if class == 'A' or class == 'F' %}
-  <label class="btn btn-default active">
-    <input type="radio" name="fusionpos" value="icl3" checked=""> ICL3
-  </label>
-  {% elif class == 'B' or class == 'C' %}
-  <label class="btn btn-default active">
-    <input type="radio" name="fusionpos" value="icl3" checked=""> ICL2
-  </label>
-  {% endif %}
-  <!-- <label class="btn btn-default">
-    <input type="radio" name="fusionpos" value="both"> Both
-  </label> -->
-
-  <label class="btn btn-default">
-    <input type="radio" name="fusionpos" value="None"> None
-  </label>
-</div>
       </div>
-    </div>
-<br>
+      </div>
+<div class="row">
+      <div class="col-sm-3">
+      Fusion Site: 
+      </div>
+      <div class="col-sm-9">
+        <div class="btn-group" data-toggle="buttons">
+          <label class="btn btn-default">
+            <input type="radio" name="fusionpos" value="nterm"> N-term
+          </label>
+
+            {% if class == 'A' or class == 'F' %}
+          <label class="btn btn-default active">
+            <input type="radio" name="fusionpos" value="icl3" checked=""> ICL3
+          </label>
+          {% elif class == 'B' or class == 'C' %}
+          <label class="btn btn-default active">
+            <input type="radio" name="fusionpos" value="icl3" checked=""> ICL2
+          </label>
+          {% endif %}
+          <!-- <label class="btn btn-default">
+            <input type="radio" name="fusionpos" value="both"> Both
+          </label> -->
+
+          <label class="btn btn-default">
+            <input type="radio" name="fusionpos" value="None"> None
+          </label>
+        </div>
+      </div>
+</div>
 <!-- <button class="btn btn-info" onclick='exportCSVsuggestions();'>Export all suggestions</button> -->
 
 <span id='load'>
 <span id=loadstatus>Please wait for the dataset to load</span>
 <span id='method_options' style='display: none;'>
-    
+
     <div class="row">
-      <div class="col-sm-2">
+      <div class="col-sm-3">
       Work Mode:
       </div>
-      <div class="col-sm-8">
+      <div class="col-sm-9">
         <button id=combi_mode_button class="btn btn-primary disabled" onclick='combi_mode();'>Automatic</button>
         <button id=manual_mode_button class="btn btn-primary" onclick='edit_mode();'>Manual</button>
         <button class="btn btn-warning" onclick='$( "#dialog" ).dialog( "open" )''>Reset</button>
@@ -183,14 +199,14 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     </div> -->
 
     <div class="row">
-      <div class="col-sm-2">
-      Constructs (Excel):
+      <div class="col-sm-3">
+      File (Excel):
       </div>
-      <div class="col-sm-8">
+      <div class="col-sm-9">
         <button class="btn btn-info" onclick='exportToExcel();'>Save</button>
           <form action="/common/importexcel" style="display: inline;" method="post" id="file-upload-form" enctype="multipart/form-data">
               <label class="btn btn-primary btn-file">
-                Import<input  id="id_file_source" name="file_source" type="file" style="display: none;">
+                Open<input  id="id_file_source" name="file_source" type="file" style="display: none;">
               </label>
           </form>
 
@@ -198,7 +214,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     </div>
 
   </div>
-  <div class="col-sm-2" style="max-width: 300px;">
+  <div class="col-sm-6" style="">
 
     <div id="snakeplot_div">
   <!--   <span id='close' <button class="btn btn-info btn-xs" onclick='fullscreensvg();'><span class="glyphicon glyphicon-fullscreen"></span></button></span> -->
@@ -212,8 +228,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 <br><br>
 <div class="table-responsive">
 
-<h4 id='combi_mode'>Combination mode 
-        <button class="btn btn-warning btn-xs" onclick='showModal("Auto Combination",tables["auto_combi"],"");''>Automatic Construct Design</button>
+<h4 id='combi_mode'>Automatic Mode
+        <button class="btn btn-warning btn-xs" onclick='showModal("Automatic Construct Design",tables["auto_combi"],"");automatic_helper();''>Automatic Construct Design</button>
         <button type="button" id="mutations_button" class="btn btn-primary btn-xs" onclick='showModal("Custom",tables["custom"]);'>
           User-defined mutation or deletion
         </button>
@@ -381,9 +397,6 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
   <th colspan="1" rowspan="2">
     Mutations
-  </th>
-  <th colspan="1" rowspan="2">
-    
   </th>
 </tr>
 <tr>
@@ -591,8 +604,8 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     info_text['sites'] = '<p class=info_text>The tool recognizes possible site motifs. These can be attempted to be removed using the following mutations.</p>';
     info_text['custom'] = '<p class=info_text>Use options below to insert custom mutations or truncations not suggested by tool. You will be asked to confirm modification.</p>';
     info_text['current'] = '<p class=info_text>See current modifications below. These will be included if you export to excel.<br> If there are several modfications chosen for the same form of deletion then you can either generate multiple construct sequences with combinations of the choices. Alternatively you can fix to a chosen modification by ticking the Fix box.<br> In the same fashion mutations can be fixed or used to make multiple sequences</p>';
-    info_text['inserts_general'] = '<p class=info_text>See current inserts below. For inserts in N- or C-term you can change the order they come in. If you choose several fusion proteins, they will be used for combinations.</p>';
-    info_text['auto_combi'] = '<p class=info_text>This will generate all possible combinations of your choice below.<br>You have the option to go to manual mode afterwards and delete unwanted ones.<br>Specify the number of:</p>';
+    info_text['inserts_general'] = '<p class=info_text>See current inserts below. For inserts in N- or C-term you can change the order they come in.<br>If you choose several fusion proteins, they will be used for combinations.</p>';
+    info_text['auto_combi'] = '<p class=info_text>Automatic work mode generates all combinations of the selected truncation and fusion sites.<br>You have the option to delete specific combinations/constructs afterwards.<br>Specify the number of:</p>';
     info_text['mutations'] = '<p class=info_text>Below are all generated mutant suggestions based on rules and annotated thermostabilising mutants.<br></p>';
 
 
@@ -604,10 +617,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     combi_dropdown = "<option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>";
 
     tables["auto_combi"] = [info_text['auto_combi']]
-    tables["auto_combi"].push( "<table class='table'><tr><td>N-term truncation:</td><td><select id=combi_nterm class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td>ICL start cut:</td><td><select id=combi_icl_start class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td>ICL end cut:</td><td><select id=combi_icl_end class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td>C-term truncation:</td><td><select id=combi_cterm class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td></td><td><button type='submit class='btn btn-primary' onclick='auto_generate()'>Add</button></td></tr></table>");
+    tables["auto_combi"].push( "<table class='table combitable'><tr><td>N-term truncation:</td><td><select id=combi_nterm class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td>ICL start cut:</td><td><select id=combi_icl_start class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td>ICL end cut:</td><td><select id=combi_icl_end class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td>C-term truncation:</td><td><select id=combi_cterm class='form-control'>"+combi_dropdown+"</select></td></tr><tr><td></td><td><span id=combi_summary></span><button type='submit' class='btn btn-primary pull-right' onclick='auto_generate()'>Add</button></td></tr></table>");
     tables["auto_combi"] = tables["auto_combi"].join( "" );  
 
-    tables["help"] = ['See small movie with a sample usage of tool: <button onclick="$(\'#toolvideo\').click();" mp4="http://files.gpcrdb.org/video/constructtool1.mp4" type="button" class="videoLink btn btn-xs btn-default">' +
+    tables["help"] = ['See small movie with a sample usage of tool: <button onclick="$(\'#toolvideo\').click();" mp4="http://files.gpcrdb.org/video/constructtool2.mp4" type="button" class="videoLink btn btn-xs btn-default">' +
                         '<span class="glyphicon glyphicon-film"></span>' +
                         '</button>']  
   
@@ -756,6 +769,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       $("#myModalLabel").html(heading);
       $("#ModalBody").html(content);
       $("#myModal").modal("show");
+      $(".modal-footer").show();
       build_tooltips();
       if (typeof(datatable)!=='undefined'){
         default_sort["order"] = [];
@@ -811,6 +825,21 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
             $(this).next().css("fill", 'black');
           });
 
+    }
+
+    function automatic_helper() {
+      $(".modal-footer").hide();
+      $( ".combitable select" ).change(function() {
+        var n_terms = Math.max($("#combi_nterm").val(),1);
+        var icl_start = Math.max($("#combi_icl_start").val(),1);
+        var icl_end = Math.max($("#combi_icl_end").val(),1);
+        var c_terms = Math.max($("#combi_cterm").val(),1);
+        combinations = n_terms*icl_start*c_terms*icl_end;
+
+        $("#combi_summary").html(combinations+" construct");
+        if (combinations>1) $("#combi_summary").html(combinations+" constructs");
+      });
+        $("#combi_summary").html("0 construct");
     }
 
     function inserts_helper(position_insert) {
@@ -970,32 +999,57 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
   }
 
   function exportToExcel(){
+    if (!edit_mode_on) {
+      console.log('export auto!');
+      postData = JSON.stringify(modifications);
+      $.ajax({
+        type:    "POST",
+        url:     "/common/exportexcelmodifications",
+        data:    {"d":postData, "s":JSON.stringify(export_list['sequences'])},
+        success: function(data) {
+              $("body").append("<iframe src='/common/exportexceldownload/" + data+ "/{{target.entry_name}}' style='display: none;' ></iframe>");
+        },
+        // vvv---- This is the new bit
+        error:   function(jqXHR, textStatus, errorThrown) {
+              alert("Error, status = " + textStatus + ", " +
+                    "error thrown: " + errorThrown
+              );
+              console.log("Error, status = " + textStatus + ", " +
+                    "error thrown: " + errorThrown);
+        }
+      });
 
-    postData = JSON.stringify(modifications);
-    $.ajax({
-      type:    "POST",
-      url:     "/common/exportexcelmodifications",
-      data:    {"d":postData, "s":JSON.stringify(export_list['sequences'])},
-      success: function(data) {
-            $("body").append("<iframe src='/common/exportexceldownload/" + data+ "/{{target.entry_name}}' style='display: none;' ></iframe>");
-      },
-      // vvv---- This is the new bit
-      error:   function(jqXHR, textStatus, errorThrown) {
-            alert("Error, status = " + textStatus + ", " +
-                  "error thrown: " + errorThrown
-            );
-            console.log("Error, status = " + textStatus + ", " +
-                  "error thrown: " + errorThrown);
-      }
-    });
+    } else {
+      console.log('export manual!');
+      postData = JSON.stringify(manual_constructs);
+      $.ajax({
+        type:    "POST",
+        url:     "/common/exportexcelmodifications",
+        data:    {"m":postData, "s":JSON.stringify(export_list['sequences'])},
+        success: function(data) {
+              $("body").append("<iframe src='/common/exportexceldownload/" + data+ "/{{target.entry_name}}' style='display: none;' ></iframe>");
+        },
+        // vvv---- This is the new bit
+        error:   function(jqXHR, textStatus, errorThrown) {
+              alert("Error, status = " + textStatus + ", " +
+                    "error thrown: " + errorThrown
+              );
+              console.log("Error, status = " + textStatus + ", " +
+                    "error thrown: " + errorThrown);
+        }
+      });
+    }
   }
 
   function fullscreensvg() {
+
     if ($( "#snakeplot_div" ).hasClass( "fadeMe" )) {
         $("#snakeplot_div").removeClass("fadeMe");
         $("#fullscreenbutton").addClass("btn-xs");
         $("#close").hide();
+        fix_snake_plot();
     } else {
+        $("#snakeplot").height("100%")
         $("#snakeplot_div").addClass("fadeMe");
         $("#fullscreenbutton").removeClass("btn-xs");
         $("#close").show();
@@ -1008,6 +1062,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       if ($( "#snakeplot_div" ).hasClass( "fadeMe" )) {
         $("#snakeplot_div").removeClass("fadeMe");
         $("#close").hide();
+        fix_snake_plot();
       }
     }
 });
@@ -1091,9 +1146,9 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       var items_table = [info_text['nterm']];
       items_table.push( "Custom: <input type='text' id='custom_nterm' placeholder='From Helix 1'> or <input type='text' id='custom_nterm_pos' placeholder='Position'><input type=button value=Add onclick='custom_nterm()'>");
       if (fusionpos=='nterm') {
-        items_table.push( "<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>AA</th><th>Freq</th><th>Levels</th><th id=fusion_search>Fusion proteins</th><th>Use</th></tr></thead><tbody>");
+        items_table.push( "<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
       } else {
-        items_table.push( "<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>AA</th><th>Freq</th><th>Levels</th><th>Use</th></tr></thead><tbody>");
+        items_table.push( "<table id=nterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix 1</th><th>AA</th><th>Freq</th><th>From same</th><th>Add</th></tr></thead><tbody>");
       }
       $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
         val = show_table[pos];
@@ -1181,7 +1236,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       export_list['cterm'] = [];
       var items_table = [info_text['cterm']];
       items_table.push( "Custom: <input type='text' id='custom_cterm' placeholder='From Helix 8'> or <input type='text' id='custom_cterm_pos' placeholder='Position'><input type=button value=Add onclick='custom_cterm()'>");
-      items_table.push("<table id=cterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix8 End</th><th>AA</th><th>Freq</th><th>Levels</th><th>Use</th></tr></thead><tbody>");
+      items_table.push("<table id=cterm_sug class='table-striped table table-bordered'><thead><tr><th>From Helix8 End</th><th>AA</th><th>Freq</th><th>From same</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table), function( i, pos ) {
         val = show_table[pos];
         seq_pos = {{residues.Cterm.0.sequence_number}}+parseInt(pos)-1;
@@ -1303,7 +1358,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       export_list['icl3_end'] = [];
        var items_table = [info_text['icl3_start']];
       items_table.push( "Custom: 5.<input type='text' id='custom_icl' placeholder='Generic number'><input type=button value=Add onclick='custom_icl(3)'>");
-      items_table.push("<table id=icl3_sug_start class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>");
+      items_table.push("<table id=icl3_sug_start class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
         val = show_table_start[pos];
         t_fusion = [];
@@ -1324,7 +1379,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       tables['icl3_start'] = result;
       var items_table = [info_text['icl3_end']];
       items_table.push( "Custom: 6.<input type='text' id='custom_icl_end' placeholder='Generic number'><input type=button value=Add onclick='custom_icl_end(3)'>");
-      items_table.push( "<div id=icl3_start_info></div><table id=icl3_sug_end class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>Levels</th><th id=fusion_search>Fusion</th><th>Use</th></tr></thead><tbody>");
+      items_table.push( "<div id=icl3_start_info></div><table id=icl3_sug_end class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>From same</th><th id=fusion_search>Fusion</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
         val = show_table_end[pos];
         t_fusion = [];
@@ -1443,7 +1498,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       export_list['icl2_end'] = [];
        var items_table = [info_text['icl2_start']];
       items_table.push( "Custom: 3.<input type='text' id='custom_icl' placeholder='Generic number'><input type=button value=Add onclick='custom_icl(2)'>");
-      items_table.push("<table id=icl2_sug_start class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>");
+      items_table.push("<table id=icl2_sug_start class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>From same</th><th>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_start), function( i, pos ) {
         val = show_table_start[pos];
         t_fusion = [];
@@ -1463,7 +1518,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
 
        var items_table = [info_text['icl2_end']];
       items_table.push( "Custom: 4.<input type='text' id='custom_icl_end' placeholder='Generic number'><input type=button value=Add onclick='custom_icl_end(2)'>");
-      items_table.push("<div id=icl2_start_info></div><table  id=icl2_sug_end class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>Levels</th><th>Fusion proteins</th><th>Use</th></tr></thead><tbody>");
+      items_table.push("<div id=icl2_start_info></div><table  id=icl2_sug_end class='table-striped table table-bordered'><thead><tr><th>BW</th><th>AA</th><th>Freq</th><th>From same</th><th>Fusion proteins</th><th>Add</th></tr></thead><tbody>");
       $.each( getSortedKeys_advanced(show_table_end), function( i, pos ) {
         val = show_table_end[pos];
         t_fusion = [];
@@ -1837,6 +1892,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
     function build_edit_table() {
 
       table_rows = [];
+      export_list['sequences'] = [];
       $.each(manual_constructs, function(key,val) {
         // ensure it is a string
         modifications = val;
@@ -1998,7 +2054,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           //val['mutations'] = val['mutations_combi']+val['mutations_fixed'];
           // console.log(manual_inserts);
           // console.log(manual_inserts[key]);
-          row_html = "<tr class='"+tr_class+"' id='row_"+key+"' construct_id='"+key+"'><td>" + (key+1) + "</td><td style='cursor: pointer;' onclick='selectTD(this);'><input type='radio' onclick='changesnakeplot(this)' class='snakechoice' value='"+key+"' "+checked+"></td><td>"+manual_inserts[key]['nterm'].length+n_term_inserts_button+"</td></td>"+nfusion_cols+nterm_cols+icl_total_cols+cterm_cols+"<td>"+manual_inserts[key]['cterm'].length+c_term_inserts_button+"</td><td>"+val['mutations']+mutations_button+"</td><td><input type=button class='btn btn-info  btn-xs' value=Delete onclick='delete_manual_row("+key+")'>"+custom_button+"</td></tr>";
+          row_html = "<tr class='"+tr_class+"' id='row_"+key+"' construct_id='"+key+"'><td align=center>" + (key+1) + "<input type=button class='btn btn-info  btn-xs' value=Delete onclick='delete_manual_row("+key+")'>"+custom_button+"</td><td style='cursor: pointer;' onclick='selectTD(this);'><input type='radio' onclick='changesnakeplot(this)' class='snakechoice' value='"+key+"' "+checked+"></td><td>"+manual_inserts[key]['nterm'].length+n_term_inserts_button+"</td></td>"+nfusion_cols+nterm_cols+icl_total_cols+cterm_cols+"<td>"+manual_inserts[key]['cterm'].length+c_term_inserts_button+"</td><td>"+val['mutations']+mutations_button+"</td></tr>";
           $('#edit_mode tbody').append(row_html);
        });
       console.log('prevchoice',prev_choice);
@@ -2060,10 +2116,10 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
           combi_options += "<option>"+c+"</option>";
       });
       combi_options += "</select>";
-      var items_table = [info_text['mutations'] + "<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Method</th><th>Use in all constructs</th><th>Use in one construct</th></tr></thead><tbody>"];
+      var items_table = [info_text['mutations'] + "<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Rationale</th><th>Use in all constructs</th><th>Use in one construct</th></tr></thead><tbody>"];
       items_table.push('<p>Add top'+combi_options+" mutants to be used in <select id='mutant_where' class='form-control'><option>All constructs</option><option>In single constructs<input type=button value=Add onclick='auto_mutations()'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations()'></p>");
       if (edit_mode_on) {
-      var items_table = [info_text['mutations'] + "<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Method</th><th>Add</th></tr></thead><tbody>"];
+      var items_table = [info_text['mutations'] + "<table  id='mutations' class='table-striped table table-bordered'><thead><tr><th>Prio</th><th>Segment</th><th>GPCRdb</th><th>Mutation</th><th>Rationale</th><th>Add</th></tr></thead><tbody>"];
 
       items_table.push('<p>Add top'+combi_options+" mutants<input type=hidden id='mutant_where' class='form-control' value='All constructs'> <input type=button value=Add onclick='auto_mutations()'><input type=button value='Uncheck all mutants' onclick='uncheck_mutations()'></p>");
       }
@@ -4318,8 +4374,16 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
       }
 
       maxmin();
+      fix_snake_plot();
     }
-
+    function fix_snake_plot() {
+      $("#snakeplot").height("100%")
+      console.log('CHECKHEIGHT',$("#snakeplot").height());
+      if ($("#snakeplot").height()>350) {
+        $("#snakeplot").height(350);
+      }
+      console.log('CHECKHEIGHT',$("#snakeplot").height());
+    }
     function color_residue(pos, type) {
 
      if (type == 'deletion') {
@@ -4413,6 +4477,7 @@ Fusion Site: <div class="btn-group" data-toggle="buttons">
         $(".long").show();
         $(".short").hide();
         maxmin();
+        fix_snake_plot();
         change_fusionpos();
 
       // http://localhost:8000/construct/tool/json/nterm/adrb2_human/
