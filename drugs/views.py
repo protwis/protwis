@@ -26,7 +26,7 @@ def striphtml(data):
     p = re.compile(r'<.*?>')
     return p.sub('', data)
 
-@cache_page(60*60*24*15)
+@cache_page(60*60*24*30)
 def drugstatistics(request):
 
     # ===== drugtargets =====
@@ -228,7 +228,7 @@ def drugstatistics(request):
 
     return render(request, 'drugstatistics.html', {'drugtypes_approved':drugtypes_approved, 'drugtypes_trials':drugtypes_trials,  'drugtypes_estab':drugtypes_estab,  'drugtypes_not_estab':drugtypes_not_estab, 'drugindications_approved':drugindications_approved, 'drugindications_trials':drugindications_trials, 'drugtargets_approved':drugtargets_approved, 'drugtargets_trials':drugtargets_trials, 'phase_trials':phase_trials, 'phase_trials_inactive': phase_trials_inactive, 'moas_trials':moas_trials, 'moas_approved':moas_approved, 'drugfamilies_approved':drugfamilies_approved, 'drugfamilies_trials':drugfamilies_trials, 'drugClasses_approved':drugClasses_approved, 'drugClasses_trials':drugClasses_trials, 'drugs_over_time':drugs_over_time, 'in_trial':len(in_trial), 'not_targeted':not_targeted})
 
-@cache_page(60*60*24*15)
+@cache_page(60*60*24*30)
 def drugbrowser(request):
     # Get drugdata from here somehow
 
@@ -272,7 +272,7 @@ def drugbrowser(request):
 
     return render(request, 'drugbrowser.html', {'drugdata':context})
 
-@cache_page(60*60*24*15)
+@cache_page(60*60*24*30)
 def drugmapping(request):
     context = dict()
 
