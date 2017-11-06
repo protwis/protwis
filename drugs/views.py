@@ -406,3 +406,62 @@ def drugmapping(request):
     context["drugdata"] = jsontree
 
     return render(request, 'drugmapping.html', {'drugdata':context})
+
+@cache_page(60*60*24*15)
+def nhs_drug(request, slug):
+
+    nhs_data = NHSPrescribings.objects.filter(drugname__name=slug.lower()).order_by('date')
+
+    data_dic = {}
+    sections = []
+    query_translate = {}
+    for i in nhs_data:
+        prescription_name = i.op_name +' (' + i.drugCode + ')'
+        queryname = i.drugname.name
+
+        if not prescription_name in data_dic:
+            data_dic[prescription_name] = []
+            sections.append(i.bnf_section)
+        dic = {}
+        dic['x'] = str(i.date)
+        dic['y'] = int(i.actual_cost)
+        data_dic[prescription_name].append(dic)
+
+        if not prescription_name in query_translate:
+            query_translate[prescription_name] = queryname
+
+    data = []
+    for nhs_name in data_dic.keys():
+        data.append({'values': data_dic[nhs_name], 'query_key':str(query_translate[nhs_name]), 'key':nhs_name})
+
+    return render(request, 'nhs.html', {'data':data, 'drug':slug, 'section':list(set(sections))})
+
+@cache_page(60*60*24*15)
+def nhs_section(request, slug):
+
+    nhs_data = NHSPrescribings.objects.filter(bnf_section=slug).order_by('date')
+
+    data_dic = {}
+    sections = []
+    query_translate = {}
+    for i in nhs_data:
+        prescription_name = i.op_name +' (' + i.drugCode + ')'
+        queryname = i.drugname.name
+
+        if not prescription_name in data_dic:
+            data_dic[prescription_name] = []
+            sections.append(i.bnf_section)
+
+        dic = {}
+        dic['x'] = str(i.date)
+        dic['y'] = int(i.actual_cost)
+        data_dic[prescription_name].append(dic)
+
+        if not prescription_name in query_translate:
+            query_translate[prescription_name] = queryname
+
+    data = []
+    for nhs_name in data_dic.keys():
+        data.append({'values': data_dic[nhs_name], 'query_key':str(query_translate[nhs_name]), 'key':nhs_name})
+
+    return render(request, 'nhs.html', {'data':data, 'drug':slug, 'section':list(set(sections))})
