@@ -116,12 +116,14 @@ canvas {
 </div>
 
 <div class="row">
-    <div class="col-md-3 text-right text-info">
-        <h4>LINKS</h4>
-    </div>
-    <div class="col-md-9">
-    <a href="http://www.mrc-lmb.cam.ac.uk/rajini/redirect/{{pdbname}}"> Rajini</a>
-    </div>
+    {% if refined %}
+        <div class="col-md-3 text-right text-info">
+            <h4>REFINED STRUCTURE MODEL</h4>
+        </div>
+        <div class="col-md-9">
+            <p style="display: inline;"><a href="/structure/homology_models/{{ refined.pdb_code.index }}">{{ refined.pdb_code.index }}</a></p>
+        </div>
+    {% endif %}
 </div>
 
 {% endblock %}

@@ -42,3 +42,18 @@ class HomologyModelsTests(object):
                 temp[i] = j
         table = temp
         return table
+
+    def pdb_pir_mismatch(self, pdb_array, model_sequence):
+        count = 0
+        print(pbd_pir_mismatch)
+        for i,j in pdb_array.items():
+            for k,l in j.items():
+                try:
+                    print(k, l[0].get_parent().get_resname(), model_sequence[count])
+                except:
+                    try:
+                        print(k, l, model_sequence[count])
+                    except:
+                        pass
+                count+=1
+

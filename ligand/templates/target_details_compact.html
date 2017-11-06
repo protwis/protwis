@@ -7,28 +7,26 @@
 <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
 <link rel="stylesheet" href="{% static 'home/css/ligand_browser.css' %}" type="text/css" />
 <style>
-    .AssayCell {
-        position: relative;
+    /*Structure preview in tooltip*/
+    pre {
+        display: block;
+        font: 100% "Courier New", Courier, monospace;
+        padding: 10px;
+        border: 1px solid #bae2f0;
+        background: #e3f4f9;
+        margin: .5em 0;
+        overflow: auto;
+        width: 800px;
     }
-
-    .AssayDetail {
+    #struct {
         display: none;
         position: absolute;
         z-index: 100;
         border: 1px;
-        background-color: black;
+        background-color: white;
         border-style: solid;
         border-width: 1px;
         padding: 3px;
-        color: white;
-        top: 20px;
-        left: 20px;
-        width: 250px;
-        white-space: pre-wrap;
-    }
-
-    .AssayCell:hover span.AssayDetail {
-        display: block;
     }
 
 </style>
@@ -41,6 +39,33 @@
 <script src="{% static 'home/js/selection.js' %}"> </script>
 
 <script type="text/javascript" charset="utf-8">
+    this.compoundPreview = function () {
+
+        //Define position of the tooltip in relation to the cursor
+        xOffset = 30;
+        yOffset = -10;
+
+        $("a.struct").hover(function (e) {
+            this.t = this.title;
+            this.title = "";
+            var c = (this.t != "") ? "<br/>" + this.t : "";
+            $("body").append("<p id='struct'><img style='max-width: 200px; height: auto' src='" + this.rel + "'/>" + c + "</p>");
+            $("#struct")
+                .css("top", (e.pageY - yOffset) + "px")
+                .css("left", (e.pageX + xOffset) + "px")
+                .fadeIn("fast");
+        },
+            function () {
+                this.title = this.t;
+                $("#struct").remove();
+            });
+        $("a.struct").mousemove(function (e) {
+            $("#struct")
+                .css("top", (e.pageY - yOffset) + "px")
+                .css("left", (e.pageX + xOffset) + "px");
+        });
+    };
+
     $(document).ready(function () {
         //ClearSelection('targets');
         var table = $('#proteins').DataTable({
@@ -49,6 +74,7 @@
             'bScrollCollapse': true,
             'paging': true,
             'paging_type': 'full_numbers',
+            'iDisplayLength': 50,
             'orderCellsTop': true,
             'autoWidth': true,
             'dom': 'iTlfrtp',
@@ -78,20 +104,18 @@
                         { type: "select" },//Protein Entry Name
                         { type: "select" },//Species
                         { type: "select" },// purchasable
-                        { type: "select" },// vendor
                         { type: "number-range" },	//Num Records
                         { type: "select" },//Assay Type
                         { type: "number-range" },	//Minimal Measured Values
                         { type: "number-range" },	//Average Values
                         { type: "number-range" },	//Maximal Measured Values
                         { type: "select" },//Standard Units
-                        { type: "select" },//Assay Description
-                        { type: "text" },//Smiles
                         { type: "number-range" },//Mol. weight
                         { type: "number-range" },//Rotatable Bonds
                         { type: "number-range" },//Hydrogen Bond Donors
                         { type: "number-range" },//Hydrogen Bond Acceptors
                         { type: "number-range" },//LogP
+                        { type: "text" },//Smiles
 
                     ]
                 });
@@ -107,7 +131,7 @@
         $('#csv_btn').click(function () {
             var checked_data = table.rows('.alt_selected').data();
             var csv_data = [];
-            csv_data.push('ChEMBL ID;Receptor;Species;Purchasable;No. records;Assay type;Min.;Average;Max.;Unit;Smiles;Mol. weight;Rot. Bonds;H don;H acc;LogP')
+            csv_data.push('ChEMBL ID;Receptor;Species;Purchasable;No. records;Assay type;Min.;Average;Max.;Unit;Mol. weight;Rot. Bonds;H don;H acc;LogP;Smiles')
             for (i = 0; i < checked_data.length; i++) {
                 var csv_row = []
                 for (j = 1; j < checked_data[i].length; j++) {
@@ -141,7 +165,7 @@
                 var smi_row = []
                 for (j = 1; j < checked_data[i].length; j++) {
                     var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][12];
+                    div.innerHTML = checked_data[i][17];
                     if (typeof div.innerText !== "undefined") {
                         smi_row.push(div.innerText.replace(/\s+/g, ''));
                     } else {
@@ -172,8 +196,11 @@
         $('#purchasability-btn').click(function () {
             window.location.href = '/ligand/targets_purchasable';
         });
+        compoundPreview();
+        setTimeout(function () {
+            table.columns.adjust().draw();
+        }, 10);
     })
-
 </script>
 {% endblock %}
 
@@ -204,10 +231,10 @@
         <!--<div style="font-size: 10px;">For superimposition: Select (tick box) ligands, and Highlight the reference template</div>-->
         <br />
         <br />
-        <h3>Ligand information for {{target}}:</h3>
+        <h3>Ligand min, max & mean activities (1 row/ligand)</h3>
 
         <div style="padding-top: 0px; font-size: 10px; white-space: nowrap;">
-            <table style="width:150%" class="display" id="proteins">
+            <table style="width:100%" class="display" id="proteins">
                 <thead>
                     <tr>
                         <th><input class="select-all" type="checkbox"> Select all</th>
@@ -221,12 +248,12 @@
                         <th class="activity-th">Average</th>
                         <th class="activity-th">Max.</th>
                         <th class="activity-th">Unit</th>
-                        <th class="chemical-th">Smiles</th>
-                        <th class="chemical-th">Mol. weight</th>
-                        <th class="chemical-th">Rot. Bonds</th>
+                        <th class="chemical-th">Mol<br />weight</th>
+                        <th class="chemical-th">Rot<br />Bonds</th>
                         <th class="chemical-th">H don</th>
                         <th class="chemical-th">H acc</th>
                         <th class="chemical-th">LogP</th>
+                        <th class="chemical-th dt-left">Smiles</th>
                     </tr>
                     <tr>
                         <th></th>
@@ -252,22 +279,23 @@
                     {% for record in ligand_data %}
                     <tr>
                         <td><input class="alt" type="checkbox"></td>
-                        <td><a href="/ligand/{{record.ligand_id}}">{{record.ligand_id}}</a></td>
+                        <td><a class="struct" rel="http://www.ebi.ac.uk/chembl/api/data/image/{{record.ligand_id}}" href="/ligand/{{record.ligand_id}}">{{record.ligand_id}}</a></td>
                         <td>{{record.protein_name}}</td>
                         <td>{{record.species}}</td>
-                        <td> Yes</td>
+                        <td>{{record.purchasability}}</td>
                         <td>{{record.record_count}}</td>
                         <td>{{record.assay_type}}</td>
                         <td>{{record.low_value|floatformat:2}}</td>
                         <td>{{record.average_value|floatformat:2}}</td>
                         <td>{{record.high_value|floatformat:2}}</td>
-                        <td>{{record.standard_units}}</td>
-                        <td>{{record.smiles}}</td>
-                        <td>{{record.mw}}</td>
+                        <!--<td>{{record.standard_units}}</td>-->
+                        <td>p (-log)</td>
+                        <td>{{record.mw|floatformat:0}}</td>
                         <td>{{record.rotatable_bonds}}</td>
                         <td>{{record.hdon}}</td>
                         <td>{{record.hacc}}</td>
-                        <td>{{record.logp}}</td>
+                        <td>{{record.logp|floatformat:1}}</td>
+                        <td class="dt-left">{{record.smiles}}</td>
 
                     </tr>
 

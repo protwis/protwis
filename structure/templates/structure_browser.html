@@ -62,7 +62,8 @@
                             { type: "text" }, // reference
                             { type: "date-range" }, // publication date
                             { type: "select"}, // annotated
-                            { type: "select"} // refined
+                            { type: "text"}, // refined
+                            { type: "select"} // sodium ion pocket
                         ]
                     });
                 }
@@ -117,6 +118,7 @@
             $('#representative_btn').click(function () {
                 //class 'active' is conflicting with something else o.O
                 $(this).toggleClass('toggled');
+                // $('#representative_btn').classList.toggle('pressed_btn');
                 table.draw();
             });
             $('#download_btn').click(function () {
@@ -171,6 +173,7 @@
         <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
     </div>
     <div style="font-size: 10px;">For superimposition: Select (tick box) structures, and Highlight the reference template</div>
+    <div style="font-size: 10px;">For information on state identification and Δ distance (Å) please refer to the <a href="http://docs.gpcrdb.org/tutorial_structures.html#structure-state">documentation</a></div>
     <br />
     <br />
 
@@ -198,8 +201,10 @@
                     <th class="pub-th">Date</th>
                     <th class="pub-th">Annotated</th>
                     <th class="pub-th">Refined</th>
+                    <th class="pub-th">Sodium ion pocket</th>
                 </tr>
                 <tr>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -230,23 +235,13 @@
                     <tr>
                 {% endif %}
                     <td><input class="alt" type="checkbox"></td>
-                    <td>
-                        {% if structure.refined %}
-                        {{ structure.protein_conformation.protein.family.name|safe }}_refined
-                        {% else %}
-                        {{ structure.protein_conformation.protein.family.name|safe }}
-                        {% endif %}
-                    </td>
+                    <td>{{ structure.protein_conformation.protein.family.name|safe }}</td>
                     <td>{{ structure.protein_conformation.protein.family.parent.name|safe }}</td>
                     <td>{{ structure.protein_conformation.protein.family.parent.parent.parent.name }}</td>
                     <td>{{ structure.protein_conformation.protein.species.common_name }}</td>
                     <td class="text-center">
-                        {% if structure.refined %}
-                        <a href="homology_models/{{ structure.pdb_code.index }}">{{ structure.pdb_code.index }}</a>
-                        {% else %}
-                        <a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}
-                        {% endif %}
-                    </a></td>
+                        <a href="{{ structure.pdb_code.index}}">{{ structure.pdb_code.index}}</a>
+                    </td>
                     <td class="text-center">{{ structure.resolution|floatformat:"1" }}</td>
                     <td class="text-center">{{ structure.preferred_chain }}</td>
                     <td class="text-center">{{ structure.state.name }}</td>
@@ -305,7 +300,14 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if structure.refined %}
+                        {% if structure.is_refined %}
+                        <a href="homology_models/{{ structure.pdb_code.index }}_refined">{{structure.pdb_code.index}}_refined</a>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if structure.protein_conformation.is_sodium %}
                         Yes
                         {% else %}
                         No

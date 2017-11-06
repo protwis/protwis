@@ -104,5 +104,5 @@ class MutationSerializer(serializers.ModelSerializer):
             'ligand_name', 'ligand_idtype', 'ligand_id', 'ligand_class',
             'exp_type', 'exp_func',  'exp_wt_value',  'exp_wt_unit','exp_mu_effect_sign', 'exp_mu_effect_type', 'exp_mu_effect_value',
             'exp_fold_change',
-            'exp_mu_effect_qual', 'exp_mu_effect_ligand_prop',  'exp_mu_ligand_ref', 'opt_type', 'opt_wt',
-            'opt_mu', 'opt_sign', 'opt_percentage', 'opt_qual','opt_agonist')
+            'exp_mu_effect_qual', 'exp_mu_effect_ligand_prop',  'exp_mu_ligand_ref', 'opt_receptor_expression', 'opt_basal_activity',
+            'opt_gain_of_activity', 'opt_ligand_emax', 'opt_agonist')

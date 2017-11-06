@@ -36,19 +36,9 @@ from urllib.parse import urljoin
 from rest_framework import renderers, response, schemas
 from rest_framework.decorators import api_view, renderer_classes
 from rest_framework import response, schemas
-from rest_framework.routers import DefaultRouter
-from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
+from rest_framework_swagger.views import get_swagger_view
 
-router = DefaultRouter(
-    schema_title='GPCRdb API',
-    schema_renderers=[OpenAPIRenderer, SwaggerUIRenderer, renderers.CoreJSONRenderer]
-)
-
-@api_view()
-@renderer_classes([SwaggerUIRenderer, OpenAPIRenderer, renderers.CoreJSONRenderer])
-def schema_view(request):
-    generator = schemas.SchemaGenerator(title='GPCRdb API')
-    return response.Response(generator.get_schema(request=request))
+schema_view = get_swagger_view(title='GPCRdb API')
 
 class ProteinDetail(generics.RetrieveAPIView):
     """
@@ -232,7 +222,7 @@ class StructureList(views.APIView):
         else:
             structures = Structure.objects.all()
 
-        structures = structures.prefetch_related('protein_conformation__protein__parent__species', 'pdb_code',
+        structures = structures.exclude(refined=True).prefetch_related('protein_conformation__protein__parent__species', 'pdb_code',
             'protein_conformation__protein__parent__family', 'protein_conformation__protein__parent__species',
             'publication__web_link', 'structureligandinteraction_set__ligand__properities', 'structure_type',
             'structureligandinteraction_set__ligand__properities__ligand_type',

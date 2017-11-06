@@ -32,7 +32,7 @@ AA_three = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
 #     ### look for a value in dict if found, give back, otherwise None
 
 
-def fetch_pdb_info(pdbname,protein):
+def fetch_pdb_info(pdbname,protein,new_xtal=False):
     SIFT_exceptions = {'5GLI':[395,403], '5GLH':[395,401]}
     logger = logging.getLogger('build')
     #d = {}
@@ -68,21 +68,22 @@ def fetch_pdb_info(pdbname,protein):
     pos_in_wt = list(range(1,len(d['wt_seq'])+1))
 
     # GET PDB FILE TO GET INITIAL VALUES - remove known WT that do not exist
-    structure = Structure.objects.filter(pdb_code__index=d['construct_crystal']['pdb'].upper()).get()
+    pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
+    pdb_path = os.sep.join([pdb_data_dir, pdbname + '.pdb'])
+    url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
+    pdbdata_raw = urlopen(url).read().decode('utf-8')
+    with open(pdb_path, 'w') as f:
+        f.write(pdbdata_raw)
+    if new_xtal==False:
+        structure = Structure.objects.filter(pdb_code__index=d['construct_crystal']['pdb'].upper()).get()
 
-    if 1==1: #update pdbs
-        pdb_data_dir = os.sep.join([settings.DATA_DIR, 'structure_data', 'pdbs'])
-        pdb_path = os.sep.join([pdb_data_dir, pdbname + '.pdb'])
+        if 1==1: #update pdbs
+            structure.pdb_data.pdb = pdbdata_raw
 
-        url = 'http://www.rcsb.org/pdb/files/%s.pdb' % pdbname
-        pdbdata_raw = urlopen(url).read().decode('utf-8')
-        with open(pdb_path, 'w') as f:
-            f.write(pdbdata_raw)
-
-        structure.pdb_data.pdb = pdbdata_raw
-
-    pdb_file = structure.pdb_data.pdb
-    # print(pdb_file)
+        pdb_file = structure.pdb_data.pdb
+        # print(pdb_file)
+    else:
+        pdb_file = pdbdata_raw
     pdb_range = []
     uniprot_code = ''
 
@@ -197,6 +198,10 @@ def fetch_pdb_info(pdbname,protein):
     if pdbname.upper()=='4XT1' or pdbname.upper()=='4XT3':
         pdb_range = list(range(11,311))
 
+    # Uncertain about exact cut -- pdb/article do not compliment eachother.
+    if pdbname.upper()=='4XEE' or pdbname.upper()=='4XES':
+        pdb_range = list(range(43,269))+list(range(297,385))
+
     if pdb_range:
         dbref_found = True
         for pos in list(range(1,len(d['wt_seq'])+1)):
@@ -267,6 +272,9 @@ def fetch_pdb_info(pdbname,protein):
             # print(uniprot_seq)
     # print(variants_mapping)
     if len(uniprot_seq)!=len(d['wt_seq']): print("gpcrdb seq",len(d['wt_seq']),'uniport len',len(uniprot_seq))
+
+    # Parsing
+
     #ftp://ftp.ebi.ac.uk/pub/databases/msd/sifts/xml/1xyz.xml.gz
     # Alternative : url = 'http://www.rcsb.org/pdb/files/$index.sifts.xml'
     url = 'ftp://ftp.ebi.ac.uk/pub/databases/msd/sifts/xml/$index.xml.gz'
