@@ -814,7 +814,11 @@ class PdbChainSelector():
 
 class PdbStateIdentifier():
     def __init__(self, structure):
-        self.structure = structure
+        try:
+            structure.protein_conformation.protein.parent
+            self.structure = structure
+        except:
+            self.structure = Structure.objects.get(pdb_code__index=structure.upper())
         self.state = None
         self.activation_value = None
         self.line = False
@@ -909,7 +913,7 @@ class PdbStateIdentifier():
     def calculate_CA_distance(self, residue1, residue2):
         diff_vector = residue1['CA'].get_coord()-residue2['CA'].get_coord()
         return numpy.sqrt(numpy.sum(diff_vector * diff_vector))
-
+                
 
 def right_rotamer_select(rotamer, chain=None):
     ''' Filter out compound rotamers.

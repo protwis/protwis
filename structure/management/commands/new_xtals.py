@@ -10,7 +10,7 @@ from protein.models import Protein, ProteinConformation, ProteinSequenceType, Pr
 from residue.models import Residue
 from structure.models import Structure, PdbData, StructureType
 from structure.sequence_parser import SequenceParser
-from structure.functions import PdbChainSelector, PdbStateIdentifier
+from structure.functions import PdbChainSelector, PdbStateIdentifier, IdentifySites
 from construct.functions import *
 from common.models import WebResource, WebLink, Publication
 
@@ -210,7 +210,7 @@ class QueryPDB():
                                                 'ligand': {'name': 'None', 'pubchemId': 'None', 'title': 'None', 'role': '.nan', 'type': 'None'}, 'signaling_protein': 'None', 'state': 'Inactive'}
                             auxiliary_proteins, ligands = [], []
                             for key, values in pdb_data_dict['ligands'].items():
-                                if key in ['SO4','NA','CLR','OLA','OLC','TAR','NAG','EPE','BU1','ACM']:
+                                if key in ['SO4','NA','CLR','OLA','OLB','OLC','TAR','NAG','EPE','BU1','ACM','GOL','PEG','PO4']:
                                     continue
                                 else:
                                     ligands.append({'name': key, 'pubchemId': 'None', 'title': pdb_data_dict['ligands'][key]['comp_name'], 'role': '.nan', 'type': 'None'})
@@ -250,6 +250,10 @@ class QueryPDB():
                             with open('../../data/protwis/gpcr/structure_data/structures/{}.yaml'.format(pdb_code.index), 'w') as struct_yaml_file:
                                 yaml.dump(struct_yaml, struct_yaml_file, indent=4, default_flow_style=False)
                 
+                        # Check sodium pocket
+                        id_sites = IdentifySites(struct)
+                        id_sites.sodium_pocket()
+
                         print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
                 except Exception as msg:
                     print(s, msg)

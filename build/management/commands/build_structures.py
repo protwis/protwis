@@ -18,7 +18,6 @@ from contactnetwork.models import *
 import contactnetwork.interaction as ci
 from contactnetwork.cube import compute_interactions
 
-#from structure.functions import BlastSearch
 from Bio.PDB import PDBParser,PPBuilder
 from Bio import pairwise2
 
@@ -1444,6 +1443,10 @@ class Command(BaseBuild):
                         print('ERROR WITH ROTAMERS {}'.format(sd['pdb']))
                         self.logger.error('Error with rotamers for {}'.format(sd['pdb']))
 
+                    try:
+                        s.protein_conformation.generate_sites()
+                    except:
+                        pass
 
                     try:
                         current = time.time()
