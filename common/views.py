@@ -1391,36 +1391,70 @@ def ExportExcelModifications(request):
     """Convert json file to excel file"""
     headers = ['#','type', 'method', 'range', 'info','insert_location','order','from','to','sequence','fixed','extra']
 
-    data = request.POST['d']
-    data = json.loads(data)
-
     #EXCEL SOLUTION
     output = BytesIO()
     workbook = xlsxwriter.Workbook(output)
-    worksheet = workbook.add_worksheet("modifications")
 
-    row = 1
-    index = {}
-    col = 0
-    for h in headers:
-        worksheet.write(0, col, h)
-        index[h] = col
-        col += 1
-    number = 0
-    for mod in data:
-        worksheet.write(row, 0, str(number))
-        number += 1
-        for m,v in mod.items():
-            if isinstance(v, list) and m=='range' and len(v)>1:
-                #v = ",".join(str(x) for x in v)
-                v = str(v[0])+"-"+str(v[-1]) #first and last
-            elif isinstance(v, list):
-                v = ",".join(str(x) for x in v)
-            if m in index:
-                worksheet.write(row, index[m], str(v))
-            else:
-                print('No column for '+m)
-        row += 1
+    if 'd' in request.POST:
+        data = request.POST['d']
+        data = json.loads(data)
+
+        worksheet = workbook.add_worksheet("modifications")
+        row = 1
+        index = {}
+        col = 0
+        for h in headers:
+            worksheet.write(0, col, h)
+            index[h] = col
+            col += 1
+        number = 0
+        for mod in data:
+            worksheet.write(row, 0, str(number))
+            number += 1
+            for m,v in mod.items():
+                if isinstance(v, list) and m=='range' and len(v)>1:
+                    #v = ",".join(str(x) for x in v)
+                    v = str(v[0])+"-"+str(v[-1]) #first and last
+                elif isinstance(v, list):
+                    v = ",".join(str(x) for x in v)
+                if m in index:
+                    worksheet.write(row, index[m], str(v))
+                else:
+                    print('No column for '+m)
+            row += 1
+    elif 'm' in request.POST:
+        datas = request.POST['m']
+        datas = json.loads(datas)
+        worksheet = workbook.add_worksheet("modifications")
+        row = 0
+        for i, data in enumerate(datas):
+
+            worksheet.write(row, 0, "Construct Number #"+str(i+1))
+            row += 1
+            index = {}
+            col = 0
+            for h in headers:
+                worksheet.write(row, col, h)
+                index[h] = col
+                col += 1
+            number = 0
+            row += 1
+            for mod in data:
+                if len(mod)>0:
+                    worksheet.write(row, 0, str(number))
+                    number += 1
+                    for m,v in mod.items():
+                        if isinstance(v, list) and m=='range' and len(v)>1:
+                            #v = ",".join(str(x) for x in v)
+                            v = str(v[0])+"-"+str(v[-1]) #first and last
+                        elif isinstance(v, list):
+                            v = ",".join(str(x) for x in v)
+                        if m in index:
+                            worksheet.write(row, index[m], str(v))
+                        else:
+                            print('No column for '+m)
+                row += 1
+            row += 1
 
 
     worksheet2 = workbook.add_worksheet("FASTA SEQUENCES")

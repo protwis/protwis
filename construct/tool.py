@@ -1032,7 +1032,7 @@ def mutations(request, slug, **response_kwargs):
             if len(vals['protein_families'])>=2:
                 # If mutation is seen in >=2 receptor families
                 # Put this one outside the above logic, to allow multi definitions
-                definition_matches.append([4,'common_mutation'])
+                definition_matches.append([4,'hotspot_mut'])
 
             # # Check for membrane binding
             # if 'K' in vals['mutation'][1] or 'R' in vals['mutation'][1]:
@@ -1046,7 +1046,7 @@ def mutations(request, slug, **response_kwargs):
         else:
             # Below rules is for the common WT (But different mut AA)
             if len(vals['protein_families'])>=2:
-                definition_matches.append([2,'common_wt'])
+                definition_matches.append([2,'hotspot_wt'])
             elif protein_rf_name not in vals['protein_families']:
                 # if receptor family not the one, then check if it's a same wt match for B-F
                 if protein_class_slug!='001':
@@ -1136,7 +1136,6 @@ def mutations(request, slug, **response_kwargs):
     class_cutoff_pos = 4
     class_conservation_priority = 3
     definition_matches = [class_conservation_priority,'conservation_class']
-    print('class')
     for cons_gn, aa in class_conservation.items():
         if cons_gn in wt_lookup and wt_lookup[cons_gn][0]!=aa[0] and aa[0]!="+":
             # If cons_gn exist in target but AA is not the same
@@ -1279,6 +1278,8 @@ def mutations(request, slug, **response_kwargs):
 
                         muts = []
 
+                        disable_double = True
+
                         if len(active)==1:
                             # print("active",active,len(active))
                             active = active[0]
@@ -1290,7 +1291,7 @@ def mutations(request, slug, **response_kwargs):
                             mut = {'wt_aa1': active[0][0], 'segment1': wt_lookup[active[0][3]][2], 'pos': active[0][2], 'gpcrdb1':active[0][3], 'mut_aa1':active[0][1],'wt_aa2': active[1][0], 'segment2': wt_lookup[active[1][3]][2], 'pos2': active[1][2], 'gpcrdb2':active[1][3], 'mut_aa2':active[1][1], 'definitions' : [definition_matches], 'priority': int(prio)}
                             key = 'active_%s%s%s_%s%s%s' % (active[0][0],active[0][2],active[0][1],active[1][0],active[1][2],active[1][1])
                             #print(key,mut)
-                            muts.append([key,mut])
+                            if not disable_double: muts.append([key,mut])
 
                         if len(inactive)==1:
                             # print("active",inactive,len(inactive))
@@ -1303,10 +1304,8 @@ def mutations(request, slug, **response_kwargs):
                             mut = {'wt_aa1': inactive[0][0], 'segment1': wt_lookup[inactive[0][3]][2], 'pos': inactive[0][2], 'gpcrdb1':inactive[0][3], 'mut_aa1':inactive[0][1],'wt_aa2': inactive[1][0], 'segment2': wt_lookup[inactive[1][3]][2], 'pos2': inactive[1][2], 'gpcrdb2':inactive[1][3], 'mut_aa2':inactive[1][1], 'definitions' : [definition_matches], 'priority': int(prio)}
                             key = 'inactive_%s%s%s_%s%s%s' % (inactive[0][0],inactive[0][2],inactive[0][1],inactive[1][0],inactive[1][2],inactive[1][1])
                             # print(key,mut)
-                            muts.append([key,mut])
+                            if not disable_double: muts.append([key,mut])
 
-
-                        print(muts)
                         for mut in muts:
                             key = mut[0]
                             mut = mut[1]
