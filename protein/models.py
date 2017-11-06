@@ -1,7 +1,7 @@
 ﻿from django.db import models
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
-from residue.models import Residue
+from residue.models import Residue, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 
 class Protein(models.Model):
     parent = models.ForeignKey('self', null=True)
@@ -73,9 +73,53 @@ class ProteinConformation(models.Model):
     def __str__(self):
         return self.protein.entry_name + " (" + self.state.slug + ")"
 
+    def generate_sites(self):
+        self.sodium_pocket()
+
+    @property
+    def is_sodium(self):
+        sodium = IdentifiedSites.objects.filter(protein_conformation=self, site__slug='sodium_pocket')
+        if len(sodium)>0:
+            return True
+        else:
+            return False
+
+    def sodium_pocket(self):
+        try:
+            site = Site.objects.get(slug='sodium_pocket')
+        except:
+            site = Site.objects.create(slug='sodium_pocket', name='Sodium ion pocket')
+        try:
+            ex_site = IdentifiedSites.objects.get(protein_conformation=self)
+            if len(ex_site.residues.all())==2:
+                return
+            else:
+                raise Exception
+        except:
+            resis = Residue.objects.filter(protein_conformation=self, display_generic_number__label__in=[dgn('2x50', self), 
+                                                                                                         dgn('3x39', self)])
+            parent_resis = Residue.objects.filter(protein_conformation__protein=self.protein.parent, display_generic_number__label__in=[dgn('2x50', self), 
+                                                                                                                                        dgn('3x39', self)])
+            if len(resis)==2:
+                if resis[0].amino_acid in ['D','E'] and resis[1].amino_acid in ['S','T']:
+                    istate, created = IdentifiedSites.objects.get_or_create(protein_conformation=self, site=site)
+                    if created:
+                        istate.residues.add(resis[0], resis[1])
+
     class Meta():
         ordering = ('id', )
         db_table = "protein_conformation"
+
+
+class IdentifiedSites(models.Model):
+    protein_conformation = models.ForeignKey('protein.ProteinConformation', related_name='site_protein_conformation')
+    site = models.ForeignKey('Site')
+    residues = models.ManyToManyField('residue.Residue', related_name='site_residue')
+
+
+class Site(models.Model):
+    slug = models.CharField(max_length=20)
+    name = models.CharField(max_length=30)
 
 
 class ProteinState(models.Model):
@@ -296,3 +340,11 @@ class ProteinGProteinPair(models.Model):
 
     class Meta():
         db_table = 'protein_gprotein_pair'
+
+
+def dgn(gn, protein_conformation):
+    ''' Converts generic number to display generic number.
+    '''
+    scheme = ResidueNumberingScheme.objects.get(slug=protein_conformation.protein.residue_numbering_scheme.slug)
+    convert_gn = ResidueGenericNumberEquivalent.objects.get(label=gn, scheme=scheme).default_generic_number.label
+    return Residue.objects.get(protein_conformation=protein_conformation, generic_number__label=convert_gn).display_generic_number.label

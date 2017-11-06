@@ -26,6 +26,7 @@ class LigandBrowser(TemplateView):
 
         ligands = AssayExperiment.objects.values(
             'protein__entry_name', 
+            'protein__species__common_name',
             'protein__family__name',
             'protein__family__parent__name',
             'protein__family__parent__parent__name',
@@ -138,6 +139,8 @@ def TargetDetailsCompact(request, **kwargs):
             ).order_by('protein__entry_name')
         for record in record_count:
             per_target_data = ligand_records.filter(protein=record['protein'])
+            if list(per_target_data) == []:
+                continue
             protein_details = Protein.objects.get(pk=record['protein'])
 
             """
@@ -146,20 +149,19 @@ def TargetDetailsCompact(request, **kwargs):
             |
             ->  Standard_type [list of values]
             """
-            tmp = defaultdict(lambda: defaultdict(list))
+            tmp = defaultdict(list)
             tmp_count = 0
             for data_line in per_target_data:
-                tmp[data_line.assay_type][data_line.standard_type].append(data_line.standard_value)
+                tmp["Bind" if data_line.assay_type == 'b' else "Funct"].append(data_line.pchembl_value)
                 tmp_count += 1
-
-            #Flattened list of lists of dict values
-            values = list(itertools.chain(*[itertools.chain(*tmp[x].values()) for x in tmp.keys()]))
+            values = list(itertools.chain(*tmp.values()))
             ligand_data.append({
-                'ligand_id': lig.properities.web_links.get(web_resource__slug = 'chembl_ligand').index,
+                'ligand_id': lig.properities.web_links.filter(web_resource__slug = 'chembl_ligand')[0].index,
                 'protein_name': protein_details.entry_name,
-                'receptor_family': protein_details.species.common_name,
+                'species': protein_details.species.common_name,
                 'record_count': tmp_count,
                 'assay_type': ', '.join(tmp.keys()),
+                'purchasability': 'Yes' if len(LigandVendorLink.objects.filter(lp=lig.properities).exclude(vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem'])) > 0 else 'No',
                 #Flattened list of lists of dict keys:
                 'low_value': min(values),
                 'average_value': sum(values)/len(values),
@@ -214,7 +216,7 @@ def TargetDetails(request, **kwargs):
                 'standard_value',
                 'assay_description',
                 'assay_type',
-                'standard_units',
+                #'standard_units',
                 'pchembl_value',
                 'ligand__id',
                 'ligand__properities_id',
@@ -229,6 +231,9 @@ def TargetDetails(request, **kwargs):
                 'ligand__properities__hdon',
                 'ligand__properities__hacc','protein'
                 ).annotate(num_targets = Count('protein__id', distinct=True))
+    for record in ps:
+        record['purchasability'] = 'Yes' if len(LigandVendorLink.objects.filter(lp=record['ligand__properities_id']).exclude(vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem'])) > 0 else 'No'
+
     context['proteins'] = ps
 
     return render(request, 'target_details.html', context)
@@ -242,7 +247,7 @@ def TargetPurchasabilityDetails(request, **kwargs):
         selection.importer(simple_selection)
     if selection.targets != []:
         prot_ids = [x.item.id for x in selection.targets]
-        ps = AssayExperiment.objects.filter(protein__in=prot_ids, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')#.exclude(ligand__properities__vendors__vendor__name__in=['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem'])
+        ps = AssayExperiment.objects.filter(protein__in=prot_ids, ligand__properities__web_links__web_resource__slug = 'chembl_ligand')
         context = {
             'target': ', '.join([x.item.entry_name for x in selection.targets])
             }
@@ -271,6 +276,8 @@ def TargetPurchasabilityDetails(request, **kwargs):
     purchasable = []
     for record in ps:
         try:
+            if record['ligand__properities__vendors__vendor__name'] in ['ZINC', 'ChEMBL', 'BindingDB', 'SureChEMBL', 'eMolecules', 'MolPort', 'PubChem', 'IUPHAR/BPS Guide to PHARMACOLOGY']:
+                continue
             tmp = LigandVendorLink.objects.filter(vendor=record['ligand__properities__vendors__vendor__id'], lp=record['ligand__properities_id'])[0]
             record['vendor_id'] = tmp.vendor_external_id
             record['vendor_link'] = tmp.url

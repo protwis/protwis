@@ -984,9 +984,10 @@ class AlignedReferenceTemplate(Alignment):
         self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000}
         
     def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
-                             provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None):
+                             provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None, complex_model=False):
         self.logger = logging.getLogger('homology_modeling')
         self.segment_labels = segments
+        self.complex = complex_model
         if len(str(reference_protein))==4:
             self.reference_protein = Protein.objects.get(entry_name=reference_protein.parent)
             self.revise_xtal = str(reference_protein)
@@ -1056,7 +1057,9 @@ class AlignedReferenceTemplate(Alignment):
         self.structures_data = Structure.objects.filter(
             state__name__in=self.query_states, protein_conformation__protein__parent__family__parent__parent__parent=
             template_family).order_by('protein_conformation__protein__parent',
-            'resolution').filter(annotated=True).exclude(refined=True).exclude(protein_conformation__protein__parent__entry_name__in=['opsd_todpa', 'adrb1_melga'])
+            'resolution').filter(annotated=True).exclude(refined=True)
+        if self.revise_xtal==None:
+            self.structures_data = self.structures_data.exclude(protein_conformation__protein__parent__entry_name__in=['opsd_todpa', 'adrb1_melga'])
         self.load_proteins(
             [Protein.objects.get(id=target.protein_conformation.protein.parent.id) for target in self.structures_data])
   
@@ -1067,6 +1070,9 @@ class AlignedReferenceTemplate(Alignment):
         try:
             for st in self.similarity_table:
                 if st.pdb_code.index=='5LWE' and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
+                    i+=1
+                    continue
+                if self.complex and st.pdb_code.index not in ['3SN6', '5VAI', '5UZ7']:
                     i+=1
                     continue
                 if st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
@@ -1122,7 +1128,7 @@ class AlignedReferenceTemplate(Alignment):
         '''
         temp_list, temp_list1, temp_list2, temp_list_mid = [],[],[],[]
         similarity_table = OrderedDict()
-        self.main_template_protein = self.main_template_structure.protein_conformation.protein.parent        
+        self.main_template_protein = self.main_template_structure.protein_conformation.protein.parent
         ref_seq = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
                                          protein_segment__slug=self.segment_labels[0])
         x50_ref = False
@@ -1283,6 +1289,7 @@ class AlignedReferenceTemplate(Alignment):
                             alt_temps_gn.append(entry)
                     except:
                         pass
+
         alt_temps = [entry for entry in temp_list if entry[1]==len(ref_seq)]
         sorted_list_gn = sorted(alt_temps_gn, key=lambda x: (-x[2],-x[5],x[3]))
         sorted_list = sorted(alt_temps, key=lambda x: (-x[2],-x[5],x[3]))
@@ -1311,8 +1318,8 @@ class AlignedReferenceTemplate(Alignment):
         for i in combined:
             similarity_table[i[0]] = i[2]
         try:
-            self.main_template_protein = combined[0][4]
-            self.main_template_structure = combined[0][0]
+            # self.main_template_protein = combined[0][4]
+            # self.main_template_structure = combined[0][0]
             self.loop_table = similarity_table
         except:
             self.main_template_protein = None

@@ -161,7 +161,7 @@ var xlegend = 370;
 var ylegend = -520;
 
 var legend1 = svg_g.selectAll("circle")
-.data([ylegend-60, ylegend-30, ylegend]);
+.data([ylegend-60, ylegend-30]);
 
 var legendEnter = legend1.enter();
 
@@ -198,12 +198,12 @@ legendEnter.append("circle")
           .attr("r", 10)
           .style("fill", "#b0f2b2");
 
-legendEnter.append("text")
-            .attr("x", xlegend + 30)
-            .attr("y", ylegend + 5)
-            .style("font-family", "Palatino")
-            .style({"font": "15px sans-serif"})
-            .text("Approved and in trials");
+// legendEnter.append("text")
+//             .attr("x", xlegend + 30)
+//             .attr("y", ylegend + 5)
+//             .style("font-family", "Palatino")
+//             .style({"font": "15px sans-serif"})
+//             .text("Approved and in trials");
 
 legendEnter.append("text")
             .attr("x", 504)

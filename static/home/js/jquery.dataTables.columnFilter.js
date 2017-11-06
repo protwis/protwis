@@ -399,9 +399,9 @@
                         $(this).addClass("search_init");
                     }
                     if (bRegex)
-                        oTable.fnFilter($(this).val(), iColumn, bRegex); //Issue 41
+                        oTable.fnFilter($(this).val(), iColumn, bRegex, true, true, false); //Issue 41
                     else
-                        oTable.fnFilter(unescape($(this).val()), iColumn); //Issue 25
+                        oTable.fnFilter(unescape($(this).val()), iColumn, false, true, true, false); //Issue 25
                     fnOnFiltered();
                 });
                 if (currentFilter != null && currentFilter != "")//Issue 81
