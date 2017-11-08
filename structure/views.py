@@ -81,7 +81,7 @@ class ServeHomologyModels(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(ServeHomologyModels, self).get_context_data(**kwargs)
         try:
-            context['structure_model'] = StructureModel.objects.all().select_related(
+            context['structure_model'] = StructureModel.objects.all().defer('pdb').prefetch_related(
                 "protein__family",
                 "state",
                 "protein__family__parent__parent__parent",
