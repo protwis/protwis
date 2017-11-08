@@ -6,15 +6,15 @@ from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
 
 urlpatterns = [
-    url(r'^$', cache_page(60*60*24*7)(StructureBrowser.as_view()), name='structure_browser'),
+    url(r'^$', cache_page(60*60*24)(StructureBrowser.as_view()), name='structure_browser'),
     url(r'^selection_convert$', ConvertStructuresToProteins, name='convert'),
     url(r'^selection_convert_model$', ConvertStructureModelsToProteins, name='convert_mod'),
     url(r'^hommod_download$', HommodDownload, name='hommod_download'),
     url(r'^template_browser', TemplateBrowser.as_view(), name='structure_browser'),
     url(r'^template_selection', TemplateTargetSelection.as_view(), name='structure_browser'),
     url(r'^template_segment_selection', TemplateSegmentSelection.as_view(), name='structure_browser'),
-    url(r'^statistics$', cache_page(60*60*24*7)(StructureStatistics.as_view()), name='structure_statistics'),
-    url(r'^homology_models$', cache_page(60*60*24*7)(ServeHomologyModels.as_view()), name='homology_models'),
+    url(r'^statistics$', cache_page(60*60*24)(StructureStatistics.as_view()), name='structure_statistics'),
+    url(r'^homology_models$', cache_page(60*60*24)(ServeHomologyModels.as_view()), name='homology_models'),
     url(r'^pdb_download_index$', PDBClean.as_view(), name='pdb_download'),
     url(r'pdb_segment_selection', PDBSegmentSelection.as_view(), name='pdb_download'),
     url(r'^pdb_download$', PDBClean.as_view(), name='pdb_download'),
@@ -40,7 +40,7 @@ urlpatterns = [
     url(r'^webform/(?P<slug>[\w_]+)$', views.webform_download, name='webform_download'),
     url(r'^(?P<pdbname>\w+)$', StructureDetails, name='structure_details'),
     url(r'^pdb/(?P<pdbname>\w+)$', ServePdbDiagram, name='structure_serve_pdb'),
-    url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)$', cache_page(60*60*24*7)(HomologyModelDetails), name='homology_model_details'),
+    url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)$', cache_page(60*60*24)(HomologyModelDetails), name='homology_model_details'),
     url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)/download_pdb$', SingleModelDownload, name='single_model_download'),
     url(r'^homology_models/(?P<modelname>\w+)_(?P<state>\w+)/download_csv$', SingleModelDownload, {'csv':True}, name='single_model_download'),
     url(r'^homology_models/view/(?P<modelname>\w+)_(?P<state>\w+)$', ServeHomModDiagram, name='hommod_serve_view'),
