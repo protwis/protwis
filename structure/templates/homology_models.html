@@ -208,7 +208,7 @@
                 </tr>
             </thead>
             <tbody>
-            {% for model in structure_model.all %}
+            {% for model in structure_model %}
                 <tr>
                     <td><input class="alt" type="checkbox"></td>
                     <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>
