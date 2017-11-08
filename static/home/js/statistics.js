@@ -9,10 +9,10 @@
      SVG.setAttribute('height', (h + h2));
      if (w2 > w) {
          SVG.setAttribute('width', (w2));
-         leg_w = 0 
+         leg_w = 0
          svg_w = Math.abs(w-w2)/2
      } else {
-         leg_w = Math.abs(w-w2)/2 
+         leg_w = Math.abs(w-w2)/2
          svg_w = 0
      };
      for (i = 0; i < legend.children.length; i++) {
@@ -185,8 +185,8 @@
             }
         });
     };
-    
- 
+
+
     $(document).ready(function () {
         $('#phylo_1.Class_phylo').css("fill", '#000000');
         $('#phylo_1.container').css("display", '');
@@ -195,5 +195,5 @@
         draw('1');
 
     });
-        
+
 };

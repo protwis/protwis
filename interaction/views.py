@@ -137,7 +137,6 @@ def StructureDetails(request, pdbname):
             resn_list += ",\"" + \
                 structure['structure_ligand_pair__pdb_reference'] + "\""
             main_ligand = structure['structure_ligand_pair__pdb_reference']
-    print(resn_list)
 
 
 
@@ -971,7 +970,6 @@ def calculate(request, redirect=None):
                             continue
 
                         # get residue number equivalent object
-                        print(gn)
                         rne = ResidueGenericNumberEquivalent.objects.get(label=gn, scheme__slug='gpcrdba')
 
                         # create a selection item
@@ -1066,7 +1064,6 @@ def excel(request, slug, **response_kwargs):
 
         interactions = ResidueFragmentInteraction.objects.filter(
             structure_ligand_pair__structure__pdb_code__index=slug, structure_ligand_pair__annotated=True).order_by('rotamer__residue__sequence_number')
-        print(interactions)
         # return HttpResponse("Hello, world. You're at the polls index. "+slug)
         data = []
         for interaction in interactions:
@@ -1123,7 +1120,6 @@ def ajax(request, slug, **response_kwargs):
 
     interactions = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name=slug, structure_ligand_pair__annotated=True).exclude(interaction_type__type ='hidden').order_by('rotamer__residue__sequence_number')
-    print(interactions)
     # return HttpResponse("Hello, world. You're at the polls index. "+slug)
     jsondata = {}
     for interaction in interactions:
@@ -1154,7 +1150,6 @@ def ajaxLigand(request, slug, ligand, **response_kwargs):
 
     interactions = ResidueFragmentInteraction.objects.filter(
         structure_ligand_pair__structure__protein_conformation__protein__parent__entry_name=slug, structure_ligand_pair__ligand__name=ligand).exclude(interaction_type__type ='hidden').order_by('rotamer__residue__sequence_number')
-    print(interactions)
     # return HttpResponse("Hello, world. You're at the polls index. "+slug)
     jsondata = {}
     for interaction in interactions:

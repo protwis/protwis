@@ -1990,3 +1990,17 @@ G_PROTEIN_SEGMENTS = OrderedDict([
         ('Full', ['HN','hns1','S1','s1h1','H1','h1ha','HA','hahb','HB','hbhc','HC','hchd','HD','hdhe','HE','hehf','HF','hfs2','S2','s2s3','S3','s3h2','H2','h2s4','S4','s4h3','H3','h3s5','S5','s5hg','HG','hgh4','H4','h4s6','S6','s6h5','H5']),
         ('Structured', ['HN','S1','H1','HA','HB','HC','HD','HE','HF','S2','S3','H2','S4','H3','S5','HG','H4','S6','H5']),
     ])
+
+ARRESTIN_SEGMENTS = OrderedDict([
+        ('Full', ['ns1', 'S1', 's1s2', 'S2', 's2s3', 'S3',
+       's3s4', 'S4', 's4s5', 'S5', 's5s6', 'S6',
+       's6h1', 'H1', 'h1s7', 'S7', 's7s8', 'S8',
+       's8s9', 'S9', 's9s10', 'S10', 's10s11', 'S11',
+       's11s12', 'S12', 's12s13', 'S13', 's13s14', 'S14',
+       's14s15', 'S15', 's15s16', 'S16', 's16s17', 'S17',
+       's17s18', 'S18', 's18s19', 'S19', 's19c']),
+        ('Structured', ['S1', 'S2', 'S3',
+       'S4', 'S5', 'S6', 'H1', 'S7', 'S8',
+       'S9', 'S10', 'S11', 'S12', 'S13', 'S14',
+       'S15', 'S16', 'S17', 'S18', 'S19']),
+    ])
