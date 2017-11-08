@@ -6,6 +6,7 @@ from Bio.PDB import *
 from Bio.PDB.PDBIO import Select
 from residue.models import Residue
 from structure.functions import BlastSearch, MappedResidue
+from structure.sequence_parser import *
 
 import Bio.PDB.Polypeptide as polypeptide
 import os,logging
@@ -19,12 +20,15 @@ class GenericNumbering(object):
     
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
   
-    def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, blast_path='blastp',
+    def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, pdb_code=None, blast_path='blastp',
         blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']),top_results=1):
     
         # pdb_file can be either a name/path or a handle to an open file
         self.pdb_file = pdb_file
         self.pdb_filename = pdb_filename
+
+        # if pdb 4 letter code is specified
+        self.pdb_code = pdb_code
         
         # dictionary of 'MappedResidue' object storing information about alignments and bw numbers
         self.residues = {}
@@ -34,15 +38,22 @@ class GenericNumbering(object):
         #setup for local blast search
         self.blast = BlastSearch(blast_path=blast_path, blastdb=blastdb,top_results=top_results)
         
-        if self.pdb_file:
-            self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_file)[0]
-        elif self.pdb_filename:
-            self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_filename)[0]
-        else:
-            self.pdb_structure = structure
+        # calling sequence parser
+        struct = Structure.objects.get(pdb_code__index=self.pdb_code)
+        s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=struct.protein_conformation.protein.parent.id)
+        # s.get_report()
+        #
+        import pprint
+        pprint.pprint(s.mapping)
+        # if self.pdb_file:
+        #     self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_file)[0]
+        # elif self.pdb_filename:
+        #     self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_filename)[0]
+        # else:
+        #     self.pdb_structure = structure
 
-        self.parse_structure(self.pdb_structure)
-
+        # self.parse_structure(self.pdb_structure)
+        
 
     def parse_structure(self, pdb_struct):
         """
@@ -193,4 +204,6 @@ class GenericNumbering(object):
                     continue
                 for hsps in alignment[1].hsps:
                     self.map_blast_seq(alignment[0], hsps, chain)
+        import pprint
+        pprint.pprint(self.residues)
         return self.get_annotated_structure()

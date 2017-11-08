@@ -182,16 +182,16 @@ class SequenceParser(object):
         self.segments = {}
         self.blast = BlastSearch(blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_human_blastdb']))
         
-
         if pdb_file is not None:
             self.pdb_struct = PDBParser(QUIET=True).get_structure('pdb', pdb_file)[0]
             # a list of SeqRecord objects retrived from the pdb SEQRES section
             try:
                 self.seqres = list(SeqIO.parse(pdb_file, 'pdb-seqres'))
+                self.struct_id = self.seqres[0].id.split(':')[0]
             except:
                 self.seqres = None
-            # SeqRecord id is a pdb_code:chain 
-            self.struct_id = self.seqres[0].id.split(':')[0]
+                self.struct_id = None
+            # SeqRecord id is a pdb_code:chain
 
         self.sequence = sequence
         if type(sequence) == "string":
@@ -199,9 +199,12 @@ class SequenceParser(object):
 
 
         # If not specified, attempt to get wildtype from pdb.
-        if not wt_protein_id and pdb_file is not None:
-            self.wt = Structure.objects.get(pdb_code__index=self.struct_id).protein_conformation.protein.parent
-        else:
+        try:
+            if not wt_protein_id and pdb_file is not None:
+                self.wt = Structure.objects.get(pdb_code__index=self.struct_id).protein_conformation.protein.parent
+            else:
+                raise Exception()
+        except:
             self.wt = Protein.objects.get(id=wt_protein_id)
         self.wt_seq = str(self.wt.sequence)
         self.fusions = []
@@ -233,6 +236,7 @@ class SequenceParser(object):
             for peptide in poly:
                 #print("Start: {} Stop: {} Len: {}".format(peptide[0].id[1], peptide[-1].id[1], len(peptide)))
                 self.map_to_wt_blast(chain.id, peptide, None, int(peptide[0].id[1]))
+
 
     def get_segments(self):
 
@@ -315,10 +319,12 @@ class SequenceParser(object):
             seq = sequence
         else:
             seq = self.get_chain_sequence(chain_id)
-
+        print(chain_id)
+        print(seq)
         alignments = self.blast.run(seq)
 
         for alignment in alignments:
+            print(alignment[1].hsps[0].expect)
             if alignment[1].hsps[0].expect > .5 and residues:
                 self.fusions.append(AuxProtein(residues))
                 #The case when auxiliary protein is in a separate chain
@@ -340,7 +346,7 @@ class SequenceParser(object):
         sbjct = hsps.sbjct
         sbjct_counter = hsps.sbjct_start	
         q_counter = hsps.query_start
-
+        
         for s, q in zip(sbjct, q):
             
             if s == q:

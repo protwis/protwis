@@ -219,7 +219,7 @@ class Command(BaseBuild):
             logger.info('Model finished for  \'{}\' ({})... (processor:{} count:{}) (Time: {})'.format(receptor[0].entry_name, receptor[1],processor_id,i,datetime.now() - mod_startTime))
         
     def run_HomologyModeling(self, receptor, state):
-        try:
+        # try:
             seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX', '5JQH', '5TZY']
 
             ##### Ignore output from that can come from BioPDB! #####
@@ -303,29 +303,29 @@ class Command(BaseBuild):
                 f.write(receptor+'\n')
 
 
-        except Exception as msg:
-            try:
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                if self.debug:
-                    print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
-                                                                                            Homology_model.main_structure,msg))
-                    print(''.join(traceback.format_tb(exc_tb)))
-                logger.error('Failed to build model {} {}\n    {}'.format(receptor, state, msg))
-                t = tests.HomologyModelsTests()
-                if 'Number of residues in the alignment and  pdb files are different' in str(msg):
-                    t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
-                                             Homology_model.main_structure)
-                elif 'No such residue:' in str(msg):
-                    if self.debug:
-                        t.pdb_pir_mismatch(Homology_model.main_pdb_array, Homology_model.model_sequence)
-                with open('./structure/homology_models/done_models.txt','a') as f:
-                    f.write(receptor+'\n')
-            except:
-                try:
-                    Protein.objects.get(entry_name=receptor)
-                except:
-                    logger.error('Invalid receptor name: {}'.format(receptor))
-                    print('Invalid receptor name: {}'.format(receptor))
+        # except Exception as msg:
+        #     try:
+        #         exc_type, exc_obj, exc_tb = sys.exc_info()
+        #         if self.debug:
+        #             print('Error on line {}: Failed to build model {} (main structure: {})\n{}'.format(exc_tb.tb_lineno, receptor,
+        #                                                                                     Homology_model.main_structure,msg))
+        #             print(''.join(traceback.format_tb(exc_tb)))
+        #         logger.error('Failed to build model {} {}\n    {}'.format(receptor, state, msg))
+        #         t = tests.HomologyModelsTests()
+        #         if 'Number of residues in the alignment and  pdb files are different' in str(msg):
+        #             t.pdb_alignment_mismatch(Homology_model.alignment, Homology_model.main_pdb_array,
+        #                                      Homology_model.main_structure)
+        #         elif 'No such residue:' in str(msg):
+        #             if self.debug:
+        #                 t.pdb_pir_mismatch(Homology_model.main_pdb_array, Homology_model.model_sequence)
+        #         with open('./structure/homology_models/done_models.txt','a') as f:
+        #             f.write(receptor+'\n')
+        #     except:
+        #         try:
+        #             Protein.objects.get(entry_name=receptor)
+        #         except:
+        #             logger.error('Invalid receptor name: {}'.format(receptor))
+        #             print('Invalid receptor name: {}'.format(receptor))
         
 
 class HomologyModeling(object):
@@ -4033,7 +4033,7 @@ class GPCRDBParsingPDB(object):
             io = filename
         gn_array = []
         residue_array = []
-        pdb_struct = PDB.PDBParser(QUIET=True).get_structure('structure', io)[0]
+        # pdb_struct = PDB.PDBParser(QUIET=True).get_structure(structure.pdb_code.index, io)[0]
         
         residues = Residue.objects.filter(protein_conformation=structure.protein_conformation)
         gn_list = []
@@ -4042,9 +4042,10 @@ class GPCRDBParsingPDB(object):
                 gn_list.append(ggn(i.display_generic_number.label).replace('x','.'))
             except:
                 pass
-        
-        assign_gn = as_gn.GenericNumbering(structure=pdb_struct)
+
+        assign_gn = as_gn.GenericNumbering(pdb_file=io, pdb_code=structure.pdb_code.index)#structure=pdb_struct)
         pdb_struct = assign_gn.assign_generic_numbers()
+        raise AssertionError
         pref_chain = structure.preferred_chain
         parent_prot_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
         parent_residues = Residue.objects.filter(protein_conformation=parent_prot_conf)
