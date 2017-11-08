@@ -104,12 +104,20 @@ def HomologyModelDetails(request, modelname, state):
     if state=='refined':
         model = Structure.objects.get(pdb_code__index=modelname+'_refined')
         model_main_template = Structure.objects.get(pdb_code__index=modelname)
-        rotamers = StructureRefinedStatsRotamer.objects.filter(structure=model).prefetch_related("structure", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
+        rotamers = StructureRefinedStatsRotamer.objects.filter(structure=model).prefetch_related(
+            "structure", "residue__generic_number","rotamer_template__protein_conformation__protein__parent__family",
+            "residue__protein_segment", "backbone_template__pdb_code", "rotamer_template",
+            "backbone_template__protein_conformation__protein__parent", "rotamer_template__pdb_code"
+            ).order_by('residue__sequence_number').all()
         main_template_seqsim = StructureRefinedSeqSim.objects.get(structure=model, template=model_main_template).similarity
     else:
         model = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
         model_main_template = model.main_template
-        rotamers = StructureModelStatsRotamer.objects.filter(homology_model=model).prefetch_related("homology_model", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
+        rotamers = StructureModelStatsRotamer.objects.filter(homology_model=model).prefetch_related(
+            "homology_model", "residue__generic_number","rotamer_template__protein_conformation__protein__parent__family",
+            "residue__protein_segment", "backbone_template__pdb_code", "rotamer_template",
+            "backbone_template__protein_conformation__protein__parent", "rotamer_template__pdb_code"
+            ).order_by('residue__sequence_number').all()
         main_template_seqsim = StructureModelSeqSim.objects.get(homology_model=model, template=model_main_template).similarity
 
     backbone_templates, rotamer_templates = [],[]
@@ -188,7 +196,7 @@ def HomologyModelDetails(request, modelname, state):
             t.color = colors[t]
             bb_temps[b][i] = t
             template_list.append(t.pdb_code.index)
-
+            
     return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
                                                           'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(rotamers)*100, 1),
                                                           'bb_alt': round(bb_alt/len(rotamers)*100, 1), 'bb_none': round(bb_none/len(rotamers)*100, 1), 'sc_main': round(sc_main/len(rotamers)*100, 1), 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
