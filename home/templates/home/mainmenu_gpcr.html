@@ -114,7 +114,7 @@
                 <li><a href="/structure">Structure browser</a></li>
                 <li><a href="/structure/homology_models">Homology model browser</a></li>
 
-                
+
                 <li class="divider"></li>
                 <!-- STRUCTURAL TOOLS -->
                 <li class="nav-header disabled text-left"><a>STRUCTURAL TOOLS</a></li>
@@ -188,6 +188,12 @@
 
                   </ul>
                 </li>
+
+                <!-- <li class="divider"></li>
+                <li class="nav-header disabled text-left"><a>Genetic variation</a></li>
+                  <li><a href="/mutational_landscape/statistics">Variation statistics</a></li>
+                  <li><a href="/mutational_landscape">Receptor variant browser</a></li>
+                  <li><a href="/mutational_landscape/economicburden">Estimated economic burden</a></li> -->
             </ul>
         </li>
 
@@ -203,6 +209,7 @@
                 <li class="divider"></li>
                 <li class="nav-header disabled text-left"><a>Sequences</a></li>
                 <li><a href="/alignment/gproteinselection">G protein alignments</a></li>
+                <li><a href="/alignment/arrestinselection">Arrestin alignments</a></li>
                 <li class="divider"></li>
                 <li class="nav-header disabled text-left"><a>Structure sites</a></li>
                 <li><a href="/signprot/ginterface">Interface mapping</a></li>
@@ -292,6 +299,25 @@
             </ul>
         </li>
 
+        <!-- DRUGS -->
+        <li>
+          <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+            Drugs<span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu" role="menu">
+            <li class="nav-header disabled"><a>DATA
+            <button
+            url='http://doi:10.1038/nrd.2017.178'
+            class="refLink pull-right btn btn-xs btn-default"
+             data-toggle="tooltip" data-placement="right" title="Nat Rev Drug Discov">
+                      <span class="glyphicon glyphicon-book"></span>
+            </button></a></li>
+            <li><a href="/drugs/drugstatistics">Drug statistics</a></li>
+            <li><a href="/drugs/drugmapping">Drug target mapping</a></li>
+            <li><a href="/drugs/drugbrowser">Drug browser</a></li>
+          </ul>
+        </li>
+
         <!-- Crystal Constructs -->
         <li>
             <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
@@ -312,18 +338,6 @@
             </ul>
         </li>
 
-        <!-- DRUGS -->
-        <li>
-            <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                Drugs<span class="caret"></span>
-            </a>
-            <ul class="dropdown-menu" role="menu">
-                <li class="nav-header disabled"><a>DATA</a></li>
-                <li><a href="/drugs/drugstatistics">Drug statistics</a></li>
-                <li><a href="/drugs/drugmapping">Drug target overview</a></li>
-                <li><a href="/drugs/drugbrowser">Drug browser</a></li>
-            </ul>
-        </li>
 
         <!-- RESIDUE NUMBERES -->
 <!--         <li>

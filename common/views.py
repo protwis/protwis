@@ -23,7 +23,7 @@ import json
 
 
 class AbsTargetSelection(TemplateView):
-    """An abstract class for the target selection page used in many apps. To use it in another app, create a class 
+    """An abstract class for the target selection page used in many apps. To use it in another app, create a class
     based view for that app that extends this class"""
     template_name = 'common/targetselection.html'
 
@@ -61,7 +61,7 @@ class AbsTargetSelection(TemplateView):
     ])
 
     # proteins and families
-    #try - except block prevents manage.py from crashing - circular dependencies between protein - common 
+    #try - except block prevents manage.py from crashing - circular dependencies between protein - common
     try:
         ppf = ProteinFamily.objects.get(slug=default_slug)
         pfs = ProteinFamily.objects.filter(parent=ppf.id)
@@ -91,7 +91,7 @@ class AbsTargetSelection(TemplateView):
         # get selection from session and add to context
         # get simple selection from session
         simple_selection = self.request.session.get('selection', False)
-        
+
         # create full selection and import simple selection (if it exists)
         selection = Selection()
 
@@ -151,7 +151,7 @@ class AbsBrowseSelection(AbsTargetSelection):
     psets = [] # protein sets not applicable for this selection
 
 class AbsSegmentSelection(TemplateView):
-    """An abstract class for the segment selection page used in many apps. To use it in another app, create a class 
+    """An abstract class for the segment selection page used in many apps. To use it in another app, create a class
     based view for that app that extends this class"""
     template_name = 'common/segmentselection.html'
 
@@ -187,7 +187,7 @@ class AbsSegmentSelection(TemplateView):
     except Exception as e:
         pass
 
-    ss = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False).prefetch_related('generic_numbers') 
+    ss = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
     action = 'expand'
 
@@ -277,10 +277,10 @@ def AddToSelection(request):
     selection_type = request.GET['selection_type']
     selection_subtype = request.GET['selection_subtype']
     selection_id = request.GET['selection_id']
-    
+
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -294,19 +294,19 @@ def AddToSelection(request):
         if selection_subtype == 'protein_entry':
             o.append(Protein.objects.get(entry_name=selection_id))
             print("Added {}".format(Protein.objects.get(entry_name=selection_id).name))
-        
+
         elif selection_subtype == 'protein_set':
             selection_subtype = 'protein'
             pset = ProteinSet.objects.get(pk=selection_id)
             for protein in pset.proteins.all():
                 o.append(protein)
-        
+
         elif selection_subtype == 'family':
             o.append(ProteinFamily.objects.get(pk=selection_id))
-        
+
         elif selection_subtype == 'set':
             o.append(ProteinSet.objects.get(pk=selection_id))
-        
+
         elif selection_subtype == 'structure':
             if 'refined' in selection_id:
                 sel1, sel2 = selection_id.split('_')
@@ -325,7 +325,7 @@ def AddToSelection(request):
 
         elif selection_subtype == 'structure_model_Active':
             o.append(StructureModel.objects.get(protein__entry_name=selection_id, state__name='Active'))
-    
+
     elif selection_type == 'segments':
         if selection_subtype == 'residue':
             o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
@@ -336,7 +336,7 @@ def AddToSelection(request):
                 o.append(residue)
         elif selection_subtype == 'site_residue': # used in site search
             o.append(ResidueGenericNumberEquivalent.objects.get(pk=selection_id))
-        
+
         else:
             o.append(ProteinSegment.objects.get(pk=selection_id))
 
@@ -351,7 +351,7 @@ def AddToSelection(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
 
-    # context 
+    # context
     context = selection.dict(selection_type)
 
     # template to load
@@ -363,7 +363,7 @@ def AddToSelection(request):
         context.update(amino_acid_groups)
     else:
         template = 'common/selection_lists.html'
-    
+
     # amino acid groups
     return render(request, template, context)
 
@@ -372,10 +372,10 @@ def RemoveFromSelection(request):
     selection_type = request.GET['selection_type']
     selection_subtype = request.GET['selection_subtype']
     selection_id = request.GET['selection_id']
-    
+
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -390,9 +390,9 @@ def RemoveFromSelection(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
 
-    # context 
+    # context
     context = selection.dict(selection_type)
-    
+
     # template to load
     if selection_subtype == 'site_residue':
         template = 'common/selection_lists_sitesearch.html'
@@ -408,10 +408,10 @@ def RemoveFromSelection(request):
 def ClearSelection(request):
     """Clears all selected items of the selected type from the session"""
     selection_type = request.GET['selection_type']
-    
+
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -425,7 +425,7 @@ def ClearSelection(request):
 
     # add simple selection to session
     request.session['selection'] = simple_selection
-    
+
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
 def SelectRange(request):
@@ -438,7 +438,7 @@ def SelectRange(request):
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -458,7 +458,7 @@ def SelectFullSequence(request):
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -466,14 +466,17 @@ def SelectFullSequence(request):
 
     # get all segments
     if "protein_type" in request.GET:
-        gsegments = definitions.G_PROTEIN_SEGMENTS
+        if request.GET['protein_type'] == 'gprotein':
+            segmentlist = definitions.G_PROTEIN_SEGMENTS
+        else:
+            segmentlist = definitions.ARRESTIN_SEGMENTS
 
-        preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(gsegments['Full'])])
-        segments = ProteinSegment.objects.filter(slug__in = gsegments['Full'], partial=False).order_by(preserved)
+        preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(segmentlist['Full'])])
+        segments = ProteinSegment.objects.filter(slug__in = segmentlist['Full'], partial=False).order_by(preserved)
 
 
     else:
-        segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False)
+        segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR')
 
 
     for segment in segments:
@@ -486,7 +489,7 @@ def SelectFullSequence(request):
 
     # add simple selection to session
     request.session['selection'] = simple_selection
-    
+
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
 def SetTreeSelection(request):
@@ -511,19 +514,21 @@ def SelectAlignableSegments(request):
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
 
-    # get all segments
-        # get all segments
+    # get specific segments
     if "protein_type" in request.GET:
-        gsegments = definitions.G_PROTEIN_SEGMENTS
+        if request.GET['protein_type'] == 'gprotein':
+            segmentlist = definitions.G_PROTEIN_SEGMENTS
+        else:
+            segmentlist = definitions.ARRESTIN_SEGMENTS
 
-        preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(gsegments['Structured'])])
-        segments = ProteinSegment.objects.filter(slug__in = gsegments['Structured'], partial=False).order_by(preserved)
+        preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(segmentlist['Structured'])])
+        segments = ProteinSegment.objects.filter(slug__in = segmentlist['Structured'], partial=False).order_by(preserved)
     else:
         segments = ProteinSegment.objects.filter(partial=False, slug__startswith='TM')
 
@@ -537,7 +542,7 @@ def SelectAlignableSegments(request):
 
     # add simple selection to session
     request.session['selection'] = simple_selection
-    
+
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
 def ToggleFamilyTreeNode(request):
@@ -592,18 +597,18 @@ def ToggleFamilyTreeNode(request):
             ps = Protein.objects.order_by('id').filter(family=ppf,
                 source__in=(protein_source_list)).order_by('source_id', 'id')
         if pref_g_proteins_list:
-            proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list, transduction='primary')]             
+            proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list, transduction='primary')]
             ps = Protein.objects.order_by('id').filter(pk__in=proteins).filter(pk__in=ps)
 
         if g_proteins_list:
-            proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list)]  
+            proteins = [x.protein_id for x in ProteinGProteinPair.objects.filter(g_protein__in=g_proteins_list)]
             ps = Protein.objects.order_by('id').filter(pk__in=proteins).filter(pk__in=ps)
 
         action = 'collapse'
     else:
         pfs = ps = {}
         action = 'expand'
-    
+
     return render(request, 'common/selection_tree.html', {
         'action': action,
         'type_of_selection': type_of_selection,
@@ -617,7 +622,7 @@ def ToggleFamilyTreeNode(request):
 def SelectionAnnotation(request):
     """Updates the selected level of annotation"""
     protein_source = request.GET['protein_source']
-    
+
     if protein_source == 'All':
         pss = ProteinSource.objects.all()
     else:
@@ -625,7 +630,7 @@ def SelectionAnnotation(request):
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -652,12 +657,12 @@ def SelectionSpeciesPredefined(request):
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
-    
+
     all_sps = Species.objects.all()
     sps = False
     if species == 'All':
@@ -683,7 +688,7 @@ def SelectionSpeciesPredefined(request):
     # add all species objects to context (for comparison to selected species)
     context = selection.dict('species')
     context['sps'] = all_sps
-    
+
     return render(request, 'common/selection_filters_species.html', context)
 
 def SelectionSpeciesToggle(request):
@@ -695,7 +700,7 @@ def SelectionSpeciesToggle(request):
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -717,7 +722,7 @@ def SelectionSpeciesToggle(request):
     # add all species objects to context (for comparison to selected species)
     context = selection.dict('species')
     context['sps'] = Species.objects.all()
-    
+
     return render(request, 'common/selection_filters_species_selector.html', context)
 
 def SelectionGproteinPredefined(request):
@@ -727,12 +732,12 @@ def SelectionGproteinPredefined(request):
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
-    
+
     all_gprots = ProteinGProtein.objects.all()
     gprots = False
     if g_protein == 'All':
@@ -767,7 +772,7 @@ def SelectionGproteinPredefined(request):
     else:
         context = selection.dict('g_proteins')
     context['gprots'] = ProteinGProtein.objects.all()
-    
+
     if preferred == 'true':
         return render(request, 'common/selection_filters_pref_gproteins.html', context)
     else:
@@ -784,7 +789,7 @@ def SelectionGproteinToggle(request):
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -816,7 +821,7 @@ def SelectionGproteinToggle(request):
         context = selection.dict('g_proteins')
 
     context['gprots'] = ProteinGProtein.objects.all()
-    
+
     if preferred == 'true':
         print(request.session['selection'])
         return render(request, 'common/selection_filters_pref_gproteins_selector.html', context)
@@ -870,7 +875,7 @@ def ExpandSegment(request):
         context['schemes'] = ResidueNumberingScheme.objects.filter(parent__isnull=False)
         context['segment_id'] = segment_id
         print(context['scheme'], context['schemes'])
-    
+
     return render(request, 'common/segment_generic_numbers.html', context)
 
 def SelectionSchemesPredefined(request):
@@ -879,12 +884,12 @@ def SelectionSchemesPredefined(request):
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
-    
+
     all_gns = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug='cgn')
     gns = False
     if numbering_schemes == 'All':
@@ -893,7 +898,7 @@ def SelectionSchemesPredefined(request):
             gns = []
         else:
             gns = all_gns
-    
+
     # reset the species selection
     selection.clear('numbering_schemes')
 
@@ -911,7 +916,7 @@ def SelectionSchemesPredefined(request):
     # add all species objects to context (for comparison to selected species)
     context = selection.dict('numbering_schemes')
     context['gns'] = all_gns
-    
+
     return render(request, 'common/selection_filters_numbering_schemes.html', context)
 
 def SelectionSchemesToggle(request):
@@ -921,7 +926,7 @@ def SelectionSchemesToggle(request):
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -943,7 +948,7 @@ def SelectionSchemesToggle(request):
     # add all species objects to context (for comparison to selected species)
     context = selection.dict('numbering_schemes')
     context['gns'] = ResidueNumberingScheme.objects.exclude(slug=settings.DEFAULT_NUMBERING_SCHEME).exclude(slug='cgn')
-    
+
     return render(request, 'common/selection_filters_numbering_schemes.html', context)
 
 def UpdateSiteResidueFeatures(request):
@@ -951,7 +956,7 @@ def UpdateSiteResidueFeatures(request):
     selection_type = request.GET['selection_type']
     selection_subtype = request.GET['selection_subtype']
     selection_id = request.GET['selection_id']
-    
+
     o = []
     if selection_type == 'reference' or selection_type == 'targets':
         if selection_subtype == 'protein':
@@ -977,7 +982,7 @@ def UpdateSiteResidueFeatures(request):
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -993,7 +998,7 @@ def UpdateSiteResidueFeatures(request):
 
     # add simple selection to session
     request.session['selection'] = simple_selection
-    
+
     return render(request, 'common/selection_lists.html', selection.dict(selection_type))
 
 def SelectResidueFeature(request):
@@ -1002,10 +1007,10 @@ def SelectResidueFeature(request):
     selection_subtype = request.GET['selection_subtype']
     selection_id = int(request.GET['selection_id'])
     feature = request.GET['feature']
-    
+
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -1025,9 +1030,9 @@ def SelectResidueFeature(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
 
-    # context 
+    # context
     context = selection.dict(selection_type)
-    
+
     # amino acid groups
     amino_acid_groups = {
         'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
@@ -1042,10 +1047,10 @@ def SelectResidueFeature(request):
 def AddResidueGroup(request):
     """Receives a selection request, creates a new residue group, and returns the updated selection"""
     selection_type = request.GET['selection_type']
-    
+
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -1064,9 +1069,9 @@ def AddResidueGroup(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
 
-    # context 
+    # context
     context = selection.dict(selection_type)
-    
+
     # amino acid groups
     amino_acid_groups = {
         'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
@@ -1082,10 +1087,10 @@ def SelectResidueGroup(request):
     """Receives a selection request, updates the active residue group, and returns the updated selection"""
     selection_type = request.GET['selection_type']
     group_id = int(request.GET['group_id'])
-    
+
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -1100,9 +1105,9 @@ def SelectResidueGroup(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
 
-    # context 
+    # context
     context = selection.dict(selection_type)
-    
+
     # amino acid groups
     amino_acid_groups = {
         'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
@@ -1118,10 +1123,10 @@ def RemoveResidueGroup(request):
     """Receives a selection request, removes a residue group, and returns the updated selection"""
     selection_type = request.GET['selection_type']
     group_id = int(request.GET['group_id'])
-    
+
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -1144,7 +1149,7 @@ def RemoveResidueGroup(request):
 
     # context
     context = selection.dict(selection_type)
-    
+
     # amino acid groups
     amino_acid_groups = {
         'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
@@ -1161,10 +1166,10 @@ def SetGroupMinMatch(request):
     selection_type = request.GET['selection_type']
     group_id = int(request.GET['group_id'])
     min_match = int(request.GET['min_match'])
-    
+
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -1181,7 +1186,7 @@ def SetGroupMinMatch(request):
 
     # context
     context = selection.dict(selection_type)
-    
+
     # amino acid groups
     amino_acid_groups = {
         'amino_acid_groups': definitions.AMINO_ACID_GROUPS,
@@ -1192,7 +1197,6 @@ def SetGroupMinMatch(request):
     template = 'common/selection_lists_sitesearch.html'
 
     return render(request, template, context)
-
 
 def ResiduesDownload(request):
 
@@ -1217,13 +1221,12 @@ def ResiduesDownload(request):
 
     return response
 
-
 def ResiduesUpload(request):
     """Receives a file containing generic residue positions along with numbering scheme and adds those to the selection."""
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -1258,7 +1261,7 @@ def ResiduesUpload(request):
         # add the selected item to the selection
         if obj.__class__.__name__ == 'ResidueGenericNumberEquivalent':
             selection_subtype = 'residue'
-        else: 
+        else:
             selection_subtype = 'helix'
         selection_object = SelectionItem(selection_subtype, obj)
         selection.add(selection_type, selection_subtype, selection_object)
@@ -1277,7 +1280,7 @@ def ReadTargetInput(request):
 
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create full selection and import simple selection (if it exists)
     selection = Selection()
     if simple_selection:
@@ -1308,7 +1311,7 @@ def ReadTargetInput(request):
     # add simple selection to session
     request.session['selection'] = simple_selection
 
-    # context 
+    # context
     context = selection.dict(selection_type)
 
     return render(request, 'common/selection_lists.html', context)

@@ -18,7 +18,7 @@
 
     function clear_select_segmentselection(form) {
 
-    ClearSelection('targets')      
+    ClearSelection('targets')
     //Dealing with csrf token
     function getCookie(c_name) {
         if (document.cookie.length > 0) {
@@ -53,7 +53,7 @@
     });
     return false;
 }
-    $(document).ready(function () {     
+    $(document).ready(function () {
 
       var colorDefault = ["#5a9bd4", "#f15a60", "#808080", "#006600"],
         gprotein_ID = ["Gs family", "Gi/Go family", "Gq/G11 family", "G12/G13 family"],
@@ -94,7 +94,7 @@
         }
         return (table);
       }
-    
+
       function updateJvenn() {
         var seriesTable = new Array();
         var num = 0;
@@ -112,13 +112,13 @@
             // data: getArrayFromData(gprotein_ID[i-1])
           });
         }
-           
+
             var colorsTable = new Array();
           colorsTable.push($('#name1').css("color"));
           colorsTable.push($('#name2').css("color"));
           colorsTable.push($('#name3').css("color"));
           colorsTable.push($('#name4').css("color"));
-          
+
           $("#jvenn-container").jvenn({
           series: seriesTable,
           colors: colorsTable,
@@ -148,7 +148,7 @@
           }
         });
       }
-      
+
       $("#ClassA").click(function() {
           gdata = {{ ClassA|safe }}
           $("#name1").val("Gs Family");
@@ -239,7 +239,7 @@
         $("#name" + index).val("List " + index);
         updateJvenn();
       });
-      
+
       $('#clear-all').click(function() {
         $('[id^="clear"]').each(function() {
           var index = $(this).attr("id").split("_")[1];
@@ -251,7 +251,7 @@
         $('#venn-type').val("classic");
         updateJvenn();
       });
-      
+
       // update the view when any fields change
       $("[id^=name]").change(function() {
         updateJvenn();
@@ -259,20 +259,20 @@
       $("[id^=area]").change(function() {
         updateJvenn();
       });
-      
+
       $("#venn-type").change(function() {
         updateJvenn();
       });
-      
+
       $('[id^="colorp"]').colorpicker().on('changeColor.colorpicker', function(event) {
         var index = $(this).attr("id").split("_")[1];
         $("#name" + index).css("color",        event.color.toHex());
           $("#name" + index).css("border-color", event.color.toHex());
         $("#area" + index).css("color",        event.color.toHex());
           $("#area" + index).css("border-color", event.color.toHex());
-          updateJvenn();        
+          updateJvenn();
       });
-      
+
       $('[id^="colord"]').click(function() {
         var index = $(this).attr("id").split("_")[1];
         $("#name" + index).css("color",        colorDefault[index-1]);
@@ -280,44 +280,44 @@
         $("#area" + index).css("color",        colorDefault[index-1]);
           $("#area" + index).css("border-color", colorDefault[index-1]);
           $("#colorp_" + index).colorpicker('setValue', colorDefault[index-1]);
-        updateJvenn();        
+        updateJvenn();
       });
-      
+
       $("#qm_yes").click(function() {
         shortNumber = true;
-        updateJvenn();        
+        updateJvenn();
       });
       $("#qm_no").click(function() {
         shortNumber = false;
-        updateJvenn();        
+        updateJvenn();
       });
-      
+
       $("#ds_yes").click(function() {
         displayStat = true;
-        updateJvenn();        
+        updateJvenn();
       });
       $("#ds_no").click(function() {
         displayStat = false;
-        updateJvenn();        
+        updateJvenn();
       });
-      
+
       $("#dm_classic").click(function() {
         displayMode = "classic";
-        updateJvenn();        
+        updateJvenn();
       });
       $("#dm_edwards").click(function() {
         displayMode = "edwards";
-        updateJvenn();        
+        updateJvenn();
       });
       $('[id^="ff"]').click(function() {
         fontFamily = $(this).html();
-        updateJvenn();        
+        updateJvenn();
       });
       $('[id^="fs"]').click(function() {
         fontSize = $(this).html();
-        updateJvenn();        
+        updateJvenn();
       });
-      
+
       // first init of the jvenn plugin
       $('#colorp_1').children("span").children("i").css("background-color", colorDefault[0]);
       $('#colorp_2').children("span").children("i").css("background-color", colorDefault[1]);
@@ -342,7 +342,7 @@
          -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #5a9bd4;
               box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #5a9bd4;
     }
-    
+
     .control-group.color2 input,
     .control-group.color2 textarea {
       color: #f15a60;
@@ -356,7 +356,7 @@
          -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #f15a60;
               box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #f15a60;
     }
-    
+
     .control-group.color3 input,
     .control-group.color3 textarea {
       color: #808080;
@@ -370,7 +370,7 @@
          -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #808080;
               box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #808080;
     }
-    
+
     .control-group.color4 input,
     .control-group.color4 textarea {
       color: #006600;
@@ -384,11 +384,11 @@
          -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #006600;
               box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #006600;
     }
-    
+
     .add-on {
       margin-left: -10px !important;
     }
-    
+
     .colorpicker {
       min-width:100px;
     }
@@ -423,19 +423,19 @@
               <div>
                 <p> Click on an area of the venn diagram or a receptor clade on the phylogenetic G-protein selectivity tree to display the respective receptor sets: </p>
               </div>
-              <form id='target-input-form' method="post" enctype="multipart/form-data"> 
+              <form id='target-input-form' method="post" enctype="multipart/form-data">
                 <textarea name="input-targets" id="input-targets" style="width: 100%;" wrap="off" rows="10"></textarea>
             </form>
             <button onclick="clear_select_segmentselection(document.getElementById('target-input-form'))" type="button" class="btn btn-success" style="float: right;"> Make sequence alignment </button>
 <!--             <button onclick="location.href='/alignment/segmentselection'" type="button" class="btn btn-success"> Make sequence alignment </button> -->
             </div>
           </div>
-          
+
           <div class="span6">
-            
+
             </div>
-            
-          <div class="span6"> 
+
+          <div class="span6">
             <div class="row-fluid">
               <div class="span6">
                 <div class="control-group color1">
@@ -459,7 +459,7 @@
                   <div id="colorp_2" class="input-append colorpicker-component colorpicker-element">
                       <input type="text" value="#5a9bd4" class="form-control" style="display:none"/>
                                   <span class="add-on"><i></i></span>
-                              </div>  
+                              </div>
                               <div class="btn-group" style="margin-left:15px">
                                <!--  <button id="colord_2" style="margin-bottom:10px" class="btn btn-mini"><i class="icon-refresh"></i></button> -->
                                 <button id="clear_2"  style="margin-left:10px;margin-bottom:10px;margin-top:-12px;padding: 4px 8px" class="btn btn-mini"><i class="icon-trash"></i></button>
@@ -470,7 +470,7 @@
                 </div>
               </div>
             </div>
-            
+
             <div class="row-fluid">
               <div class="span6">
                  <div class="control-group color3">
@@ -498,7 +498,7 @@
                               <div class="btn-group" style="margin-left:15px">
                                 <!-- <button id="colord_4" style="margin-bottom:10px" class="btn btn-mini"><i class="icon-refresh"></i></button> -->
                                 <button id="clear_4"  style="margin-left:10px;margin-bottom:10px;margin-top:-12px;padding: 4px 8px" class="btn btn-mini"><i class="icon-trash"></i></button>
-                              </div>              
+                              </div>
                   <div class="controls controls-row">
                     <textarea class="span11" id="area4" wrap="off" rows="4" style="resize:none"></textarea>
                   </div>
@@ -506,7 +506,7 @@
               </div>
             </div>
           </div>
-        </div> 
+        </div>
       </div>
     </div>
     <hr>
@@ -515,7 +515,7 @@
 <script>
     !function ($) {
       $(function(){
-      window.prettyPrint && prettyPrint()   
+      window.prettyPrint && prettyPrint()
     })
   }(window.jQuery)
 </script>

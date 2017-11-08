@@ -28,8 +28,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         functions = [
-            'create_resources',
             'create_protein_segments',
+            'create_resources',
             'create_residue_numbering_schemes',
             'create_anomalies',
         ]
@@ -61,7 +61,7 @@ class Command(BaseCommand):
 
                     if created:
                         self.logger.info('Created resource ' + wr.slug)
-                    
+
                 except:
                     self.logger.error('Failed creating resource ' + split_row[0])
                     continue
@@ -86,16 +86,20 @@ class Command(BaseCommand):
                     defaults={
                         'category': split_row[1],
                         'fully_aligned': fully_aligned,
-                        'name': split_row[3]
+                        'name': split_row[3],
+                        'proteinfamily': split_row[4]
                     }
 
                     s, created = ProteinSegment.objects.get_or_create(slug=split_row[0], defaults=defaults)
+                    s.proteinfamily = split_row[4]
+                    s.save()
 
                     if created:
                         self.logger.info('Created protein segment ' + s.name)
                 except:
-                    self.logger.error('Failed creating protein segment {}'.format(split(row[0])))
-                    continue
+                    # print('Failed creating protein segment',row[0])
+                    self.logger.error('Failed creating protein segment',row[0])
+                    # continue
 
         self.logger.info('COMPLETED CREATING PROTEIN SEGMENTS')
 
@@ -122,7 +126,7 @@ class Command(BaseCommand):
                         defaults['parent'] = parent
 
                     s, created = ResidueNumberingScheme.objects.get_or_create(slug=split_row[0], defaults=defaults)
-                    
+
                     if created:
                         self.logger.info('Created residue numbering scheme ' + s.short_name)
                 except:
@@ -133,7 +137,7 @@ class Command(BaseCommand):
 
     def create_anomalies(self):
         self.logger.info('CREATING PROTEIN ANOMALIES')
-        
+
         filenames = os.listdir(self.anomaly_source_dir)
         for source_file in filenames:
             source_file_path = os.sep.join([self.anomaly_source_dir, source_file])
@@ -187,14 +191,14 @@ class Command(BaseCommand):
                         exclusive = False
                         if 'exclusive' in rule_set and rule_set['exclusive']:
                             exclusive = True
-                        
+
                         # rules in this rule set
                         if 'rules' in rule_set and rule_set['rules']:
                             pars = ProteinAnomalyRuleSet.objects.create(protein_anomaly=pa, exclusive=exclusive)
                             self.logger.info('Created protein anomaly rule set')
                             for rule in rule_set['rules']:
                                 exp_keys = ['generic_number', 'amino_acid']
-                                
+
                                 # are all expected values specified for this rule
                                 if all(x in rule for x in exp_keys) and all(rule[x] for x in exp_keys):
                                     # is this a negative rule (!= instead of ==)
@@ -212,5 +216,5 @@ class Command(BaseCommand):
                                 else:
                                     self.logger.error('Missing values for rule {:d} in file {}'.format((i+1),
                                         source_file))
-        
+
         self.logger.info('COMPLETED CREATING PROTEIN ANOMALIES')

@@ -83,12 +83,12 @@ function SelectFullSequence(selection_type) {
     });
 }
 
-function SelectFullSequenceGprotein(selection_type) {
+function SelectFullSequenceGprotein(selection_type, protein_type) {
     $.ajax({
         'url': '/common/selectfullsequence',
         'data': {
             selection_type: selection_type,
-            protein_type: 'gprotein'
+            protein_type: protein_type
         },
         'type': 'GET',
         'success': function(data) {
@@ -97,12 +97,12 @@ function SelectFullSequenceGprotein(selection_type) {
     });
 }
 
-function SelectStructuredGprotein(selection_type) {
+function SelectStructuredGprotein(selection_type, protein_type) {
     $.ajax({
         'url': '/common/selectalignablesegments',
         'data': {
             selection_type: selection_type,
-            protein_type: 'gprotein'
+            protein_type: protein_type
         },
         'type': 'GET',
         'success': function(data) {

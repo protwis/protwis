@@ -1,4 +1,4 @@
-1from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import connection
 from django.utils.text import slugify

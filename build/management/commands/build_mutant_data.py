@@ -454,6 +454,8 @@ class Command(BaseBuild):
             # print(r['review'],r['reference'])
             if r['review'].isdigit(): #assume pubmed
                 pub_type = 'pubmed'
+            elif r['review'].startswith('http'):
+                pub_type = 'raw_link'
             else: #assume doi
                 pub_type = 'doi'
 

@@ -29,9 +29,9 @@ class Command(BaseCommand):
     annotation_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'construct_data', 'construct_annotations.xlsx'])
 
     def handle(self, *args, **options):
-        # self.excel_mutations = self.parse_excel(self.path,'Mutation_Data')
+        self.excel_mutations = self.parse_excel(self.path,'Mutation_Data')
 
-        # self.check_mutations()
+        self.check_mutations()
         # self.match_all_with_uniprot_mutations()
 
         # # Simply check deletions on record vs newest pdb 

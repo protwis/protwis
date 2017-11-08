@@ -184,11 +184,12 @@ class ProteinSet(models.Model):
 
 
 class ProteinSegment(models.Model):
-    slug = models.SlugField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100)
     name = models.CharField(max_length=50)
     category = models.CharField(max_length=50)
     fully_aligned = models.BooleanField(default=False)
     partial = models.BooleanField(default=False)
+    proteinfamily = models.CharField(max_length=20)
 
     def __str__(self):
         return self.slug
@@ -196,6 +197,7 @@ class ProteinSegment(models.Model):
     class Meta():
         ordering = ('id', )
         db_table = 'protein_segment'
+        unique_together = ('slug', 'proteinfamily')
 
 
 class ProteinSource(models.Model):
