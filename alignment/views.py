@@ -67,6 +67,40 @@ class TargetSelectionGprotein(AbsTargetSelection):
         ppf = ProteinFamily.objects.get(slug="100_000")
         pfs = ProteinFamily.objects.filter(parent=ppf.id)
         ps = Protein.objects.filter(family=ppf)
+
+        tree_indent_level = []
+        action = 'expand'
+        # remove the parent family (for all other families than the root of the tree, the parent should be shown)
+        del ppf
+    except Exception as e:
+        pass
+
+class TargetSelectionArrestin(AbsTargetSelection):
+    step = 1
+    number_of_steps = 2
+    psets = False
+    filters = True
+    filter_gprotein = True
+
+    docs = 'sequences.html#structure-based-alignments'
+
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', False),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Continue to next step',
+            'url': '/alignment/segmentselectionarrestin',
+            'color': 'success',
+        },
+    }
+    try:
+        ppf = ProteinFamily.objects.get(slug="200_000")
+        pfs = ProteinFamily.objects.filter(parent=ppf.id)
+        ps = Protein.objects.filter(family=ppf)
+
         tree_indent_level = []
         action = 'expand'
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
@@ -99,7 +133,7 @@ class SegmentSelectionGprotein(AbsSegmentSelection):
         + ' residues by clicking on the down arrows next to each helix, sheet or loop.\n\n You can select the full sequence or show all structured regions at the same time.\n\nSelected segments will appear in the' \
         + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
         + ' button.'
-    
+
     template_name = 'common/segmentselection.html'
 
     selection_boxes = OrderedDict([
@@ -118,9 +152,41 @@ class SegmentSelectionGprotein(AbsSegmentSelection):
     position_type = 'gprotein'
     rsets = ResiduePositionSet.objects.filter(name__in=['Gprotein Barcode', 'YM binding site']).prefetch_related('residue_position')
 
-    ss = ProteinSegment.objects.filter(name__regex = r'^[a-zA-Z0-9]{1,5}$', partial=False).prefetch_related('generic_numbers')
+    ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Gprotein').prefetch_related('generic_numbers')
     ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
+class SegmentSelectionArrestin(AbsSegmentSelection):
+    step = 2
+    number_of_steps = 2
+    docs = 'sequences.html#structure-based-alignments'
+    description = 'Select sequence segments in the middle column for beta and visual arrestins. You can expand every structural element and select individual' \
+        + ' residues by clicking on the down arrows next to each helix, sheet or loop.\n\n You can select the full sequence or show all structured regions at the same time.\n\nSelected segments will appear in the' \
+        + ' right column, where you can edit the list.\n\nOnce you have selected all your segments, click the green' \
+        + ' button.'
+
+    template_name = 'common/segmentselection.html'
+
+    selection_boxes = OrderedDict([
+        ('reference', False),
+        ('targets', True),
+        ('segments', True),
+    ])
+    buttons = {
+        'continue': {
+            'label': 'Show alignment',
+            'url': '/alignment/render',
+            'color': 'success',
+        },
+    }
+
+    position_type = 'arrestin'
+
+    ## Add some Arrestin specific positions
+    rsets = ResiduePositionSet.objects.filter(name__in=['Arrestin interface']).prefetch_related('residue_position')
+
+    ## ProteinSegment for different proteins
+    ss = ProteinSegment.objects.filter(partial=False, proteinfamily='Arrestin').prefetch_related('generic_numbers')
+    ss_cats = ss.values_list('category').order_by('category').distinct('category')
 
 class BlastSearchInput(AbsMiscSelection):
     step = 1
@@ -137,7 +203,6 @@ class BlastSearchInput(AbsMiscSelection):
     }
     selection_boxes = {}
     blast_input = True
-
 
 class BlastSearchResults(TemplateView):
     """
@@ -160,11 +225,10 @@ class BlastSearchResults(TemplateView):
 
         return render(request, self.template_name, context)
 
-
 def render_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create an alignment object
     a = Alignment()
 
@@ -225,13 +289,13 @@ def render_family_alignment(request, slug):
         preserved = Case(*[When(slug=pk, then=pos) for pos, pk in enumerate(gsegments['Full'])])
         segments = ProteinSegment.objects.filter(slug__in = gsegments['Full'], partial=False).order_by(preserved)
     else:
-        segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False)
+        segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR')
         if len(proteins)>50:
             # if a lot of proteins, exclude some segments
-            segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False).exclude(slug__in=['N-term','C-term'])
+            segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(slug__in=['N-term','C-term'])
         if len(proteins)>200:
             # if many more proteins exluclude more segments
-            segments = ProteinSegment.objects.filter(name__regex = r'.{5}.*', partial=False).exclude(slug__in=['N-term','C-term']).exclude(category='loop')
+            segments = ProteinSegment.objects.filter(partial=False, proteinfamily='GPCR').exclude(slug__in=['N-term','C-term']).exclude(category='loop')
 
     protein_ids = []
     for p in proteins:
@@ -273,7 +337,7 @@ def render_family_alignment(request, slug):
 def render_fasta_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create an alignment object
     a = Alignment()
     a.show_padding = False
@@ -284,7 +348,7 @@ def render_fasta_alignment(request):
 
     # build the alignment data matrix
     a.build_alignment()
-    
+
     response = render(request, 'alignment/alignment_fasta.html', context={'a': a}, content_type='text/fasta')
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.fasta"
     return response
@@ -297,23 +361,22 @@ def render_fasta_family_alignment(request, slug):
     # fetch proteins and segments
     proteins = Protein.objects.filter(family__slug__startswith=slug, sequence_type__slug='wt')
     segments = ProteinSegment.objects.filter(partial=False)
-    
+
     # load data into the alignment
     a.load_proteins(proteins)
     a.load_segments(segments)
-    
+
     # build the alignment data matrix
     a.build_alignment()
-    
+
     response = render(request, 'alignment/alignment_fasta.html', context={'a': a}, content_type='text/fasta')
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.fasta"
     return response
 
-
 def render_csv_alignment(request):
     # get the user selection from session
     simple_selection = request.session.get('selection', False)
-    
+
     # create an alignment object
     a = Alignment()
     a.show_padding = False
@@ -327,7 +390,7 @@ def render_csv_alignment(request):
 
     # calculate consensus sequence + amino acid and feature frequency
     a.calculate_statistics()
-    
+
     response = render(request, 'alignment/alignment_csv.html', context={'a': a}, content_type='text/csv')
     response['Content-Disposition'] = "attachment; filename=" + settings.SITE_TITLE + "_alignment.csv"
     return response

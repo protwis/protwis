@@ -47,15 +47,16 @@ class Command(BaseCommand):
 
         # read source files
         if not filenames:
-            filenames = os.listdir(self.drugdata_data_dir)
+            filenames = [fn for fn in os.listdir(self.drugdata_data_dir) if fn.endswith('drug_data.csv')]
 
         for filename in filenames:
 
             filepath = os.sep.join([self.drugdata_data_dir, filename])
 
-            data = pd.read_csv(filepath, header=0, encoding = "ISO-8859-1")
+            data = pd.read_csv(filepath, low_memory=False, encoding = "ISO-8859-1")
 
             for index, row in enumerate(data.iterrows()):
+
                 drugname = data[index:index+1]['Drug Name'].values[0]
                 trialname = data[index:index+1]['Trial name'].values[0]
                 drugalias_raw = data[index:index+1]['DrugAliases'].values[0]
@@ -83,6 +84,7 @@ class Command(BaseCommand):
                 try:
                     p = Protein.objects.get(entry_name=entry_name)
                 except Protein.DoesNotExist:
+
                     self.logger.error('Protein not found for entry_name {}'.format(entry_name))
                     continue
 

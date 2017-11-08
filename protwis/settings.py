@@ -52,6 +52,7 @@ INSTALLED_APPS = (
     'tools',
     'drugs',
     'signprot',
+    'mutational_landscape',
     'contactnetwork',
 )
 

@@ -849,11 +849,34 @@ function ajaxBarcode(plotid,protein) {
         } else  {
             color = "#4dc7e6";
             extra = "\n" + String(val[1]);
-        }                       
-         
+        }
 
          original_title = $('#'+plotid).find("#"+key).attr('original_title')
 
+         $('#'+plotid).find("#"+key).css("fill", color);
+         $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+         $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+      });
+    $("circle").tooltip('fixTitle');
+    $("text").tooltip('fixTitle');
+
+    });
+}
+function ajaxCancerMutation(plotid, protein) {
+
+  resetColors(plotid);
+
+    $.getJSON( '/mutational_landscape/ajax/CancerMutation/'+protein+'/', function( data ) {
+      $.each( data, function( key, val ) {
+        // NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes
+         extra = "\nAAchange: " + "-->" + String(val[0]);
+
+         color = "#7572b1";
+         color_letter = "#fefdfd";
+         $('#'+plotid).find("#"+key).next().css("fill", color_letter);
+
+         original_title = $('#'+plotid).find("#"+key).attr('original_title')
          $('#'+plotid).find("#"+key).css("fill", color);
          $('#'+plotid).find("#"+key).attr('title',original_title+extra);
          $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
@@ -864,6 +887,201 @@ function ajaxBarcode(plotid,protein) {
     $("text").tooltip('fixTitle');
 
     });
+}
+
+function ajaxDiseaseMutation(plotid, protein) {
+
+  resetColors(plotid);
+
+    $.getJSON( '/mutational_landscape/ajax/DiseaseMutation/'+protein+'/', function( data ) {
+      $.each( data, function( key, val ) {
+        // NM.allele_frequency, NM.allele_count, NM.allele_number, NM.number_homozygotes
+         extra = "\nAAchange: " + "-->" + String(val[0]);
+
+         color = "#52133b";
+         color_letter = "#fefdfd";
+         $('#'+plotid).find("#"+key).next().css("fill", color_letter);
+
+         original_title = $('#'+plotid).find("#"+key).attr('original_title')
+         $('#'+plotid).find("#"+key).css("fill", color);
+         $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+         $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+      });
+    $("circle").tooltip('fixTitle');
+    $("text").tooltip('fixTitle');
+
+    });
+}
+function ajaxNaturalMutation(plotid, protein) {
+
+  resetColors(plotid);
+
+    $.getJSON( '/mutational_landscape/ajax/NaturalMutation/'+protein+'/', function( data ) {
+      $.each( data, function( key, val ) {
+         extra = "\nType: " + "-->" + String(val[5]) +
+         "\nAAchange: " + "-->" + String(val[0]) +
+         "\nAllele Frequency: " + String(val[1]) +
+         "\nAllele Count: " + String(val[2]) +
+         "\nAllele Number: " + String(val[3]) +
+        "\nNumber of Homozygotes: " + String(val[4]) +
+        "\nFunctional Annotation: " + String(val[8]) +
+        "\nPredicted effect (SIFT/PolyPhen): <span style='color:"+String(val[7])+"'> "+ String(val[6]);
+
+        //  color = "#c40100";
+         $('#'+plotid).find("#"+key).next().css("fill", "#fefdfd");
+         original_title = $('#'+plotid).find("#"+key).attr('original_title')
+         $('#'+plotid).find("#"+key).css("fill", String(val[7]));
+         $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+         $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+      });
+    $("circle").tooltip('fixTitle');
+    $("text").tooltip('fixTitle');
+
+    });
+}
+
+function ajaxNaturalMutationPos(plotid) {
+
+  resetColors(plotid);
+
+    var pos = jQuery.parseJSON(natural_mutations_json);
+
+    var color_code = pos['color']
+
+      $.each(pos, function( key, val ) {
+
+         extra = "\nAAchanges: " + "-->" + String(val['AA']) +
+        "\nNumber of Proteins: " + String(val['val']);
+
+         if (val['val']==0) {
+            color_letter = "#000000"
+         } else  {
+            color_letter = "#fefdfd";
+         }
+
+         color = color_code[val['val']-1];
+         $('#'+plotid).find("#"+key).next().css("fill", color_letter);
+
+         original_title = $('#'+plotid).find("#"+key).attr('original_title')
+         $('#'+plotid).find("#"+key).css("fill", color);
+         $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+         $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+      });
+    $("circle").tooltip('fixTitle');
+    $("text").tooltip('fixTitle');
+}
+
+function ajaxPTMs(plotid, protein) {
+
+  resetColors(plotid);
+
+    $.getJSON( '/mutational_landscape/ajax/PTM/'+protein+'/', function( data ) {
+      $.each( data, function( key, val ) {
+         extra = "\nModification: " + String(val[0]);
+
+         $('#'+plotid).find("#"+key).next().css("fill", "#fefdfd");
+         original_title = $('#'+plotid).find("#"+key).attr('original_title')
+         $('#'+plotid).find("#"+key).css("fill", "#000000");
+         $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+         $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+      });
+    $("circle").tooltip('fixTitle');
+    $("text").tooltip('fixTitle');
+
+    });
+}
+
+function ajaxPTMPos(plotid) {
+
+  resetColors(plotid);
+
+    var pos = jQuery.parseJSON(ptms_json);
+
+    var color_code = pos['color']
+
+      $.each(pos, function( key, val ) {
+
+         extra = "\nModifications: " + String(val['mod']);
+
+         $('#'+plotid).find("#"+key).next().css("fill", "#fefdfd");
+
+         original_title = $('#'+plotid).find("#"+key).attr('original_title')
+         $('#'+plotid).find("#"+key).css("fill", "#000000");
+         $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+         $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+      });
+    $("circle").tooltip('fixTitle');
+    $("text").tooltip('fixTitle');
+}
+
+function ajaxCancerMutationPos(plotid) {
+
+  resetColors(plotid);
+
+    var pos = jQuery.parseJSON(cancer_mutations_json);
+
+    var color_code = pos['color']
+
+      $.each(pos, function( key, val ) {
+
+         extra = "\nAAchanges: " + "-->" + String(val['AA']) +
+        "\nNumber of Proteins: " + String(val['val']);
+
+         if (val['val']==0) {
+            color_letter = "#000000"
+         } else  {
+            color_letter = "#fefdfd";
+         }
+
+         color = color_code[val['val']-1];
+         $('#'+plotid).find("#"+key).next().css("fill", color_letter);
+
+         original_title = $('#'+plotid).find("#"+key).attr('original_title')
+         $('#'+plotid).find("#"+key).css("fill", color);
+         $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+         $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+      });
+    $("circle").tooltip('fixTitle');
+    $("text").tooltip('fixTitle');
+
+}
+
+function ajaxDiseaseMutationPos(plotid) {
+
+  resetColors(plotid);
+
+    var pos = jQuery.parseJSON(disease_mutations_json);
+
+    var color_code = pos['color']
+
+      $.each(pos, function( key, val ) {
+
+         extra = "\nAAchanges: " + "-->" + String(val['AA']) +
+        "\nNumber of Proteins: " + String(val['val']);
+
+         color_letter = "#fefdfd";
+         color = color_code[val['val']-1];
+         $('#'+plotid).find("#"+key).next().css("fill", color_letter);
+
+         original_title = $('#'+plotid).find("#"+key).attr('original_title')
+         $('#'+plotid).find("#"+key).css("fill", color);
+         $('#'+plotid).find("#"+key).attr('title',original_title+extra);
+         $('#'+plotid).find("#"+key+"t").attr('title',original_title+extra);
+
+
+      });
+    $("circle").tooltip('fixTitle');
+    $("text").tooltip('fixTitle');
 }
 
 function ajaxInterface(plotid,protein) {
