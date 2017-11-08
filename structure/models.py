@@ -77,6 +77,9 @@ class StructureModel(models.Model):
     
     def __repr__(self):
         return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
+        
+    def __str__(self):
+        return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
 
     class Meta():
         db_table = 'structure_model'
