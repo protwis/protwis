@@ -7,6 +7,7 @@ from django.views.decorators.cache import cache_page
 
 from drugs.models import Drugs
 from protein.models import Protein, ProteinFamily
+from mutational_landscape.models import NHSPrescribings
 
 import re
 import json
