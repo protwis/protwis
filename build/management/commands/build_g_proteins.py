@@ -139,6 +139,7 @@ class Command(BaseCommand):
                         p = Protein.objects.get(entry_name=entry_name)
                     except Protein.DoesNotExist:
                         self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
+                        print("protein not found", entry_name)
                         continue
 
                     primary = primary.replace("G protein (identity unknown)","None") #replace none
@@ -151,14 +152,20 @@ class Command(BaseCommand):
                         print('no data for ', entry_name)
                         continue
 
+                    # print(primary,secondary)
+
                     try:
                         for gp in primary:
-                            if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
+                            if gp in ['','None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
                                 continue
                             g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
+                            # print(p, g)
                             gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary')
                             gpair.save()
+                    except:
+                        print("error in primary assignment", p, gp)
 
+                    try:
                         for gp in secondary:
                             if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism', '']: #skip bad ones
                                 continue
@@ -168,7 +175,7 @@ class Command(BaseCommand):
                             gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary')
                             gpair.save()
                     except:
-                        print(row)
+                        print("error in secondary assignment", p, gp)
 
         self.logger.info('COMPLETED CREATING G PROTEINS')
 
