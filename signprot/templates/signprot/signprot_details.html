@@ -80,6 +80,46 @@
     <br>
     <br>
     <br>
+    {% else %}
+      {{ p.get_arrestin_plot }}
+      <p><div class="btn-group ">
+          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+          aria-haspopup="true" aria-expanded="false">
+          <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+          <li>
+              <a href="javascript:saveSvgAsPng(document.getElementById('ArrestinPlot'), 'plot_{{ p.entry_name }}.png',
+              {scale: 3});">PNG</a>
+          </li>
+          <li>
+              <a href="javascript:saveSvgAsJpg(document.getElementById('ArrestinPlot'), 'plot_{{ p.entry_name }}.jpg',
+              {scale: 3});">JPG</a>
+          </li>
+          <li>
+              <a href="javascript:saveSvgAsTiff(document.getElementById('ArrestinPlot'), 'plot_{{ p.entry_name }}.tiff',
+              {scale: 3});">TIFF</a>
+              </a>
+          </li>
+          <li>
+          <a id=snake_svg_link href-lang="image/svg+xml" href="" download="plot_{{ p.entry_name }}">SVG</a>
+          </li>
+          </ul>
+
+      </div></p>
+      </div>
+  </div>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
     {% endif %}
 <div class="row">
     <div class="col-md-2 text-right text-info">
