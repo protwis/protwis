@@ -11,10 +11,10 @@ from math import cos, sin, pi, floor,sqrt
 from datetime import datetime
 from collections import OrderedDict
 
-class DrawGproteinPlot(Diagram):
+class DrawArrestinPlot(Diagram):
 
     def __init__(self, residue_list, protein_class, protein_name, nobuttons = None):
-        self.nobuttons = 'gprotein'
+        self.nobuttons = 'arrestin'
         self.type = 'snakeplot'
         plot_data = {}
         plot_data['direction'] = [0,0, 1, 0, 1, 0, 1, 0]; # 0: EC->IC, 1: IC->EC
@@ -30,7 +30,6 @@ class DrawGproteinPlot(Diagram):
         #$pureImage = isset($_GET['pureimage']) && $_GET['pureimage'] == 'TRUE' ? TRUE : FALSE;
 
         # get sequence, baldwin, and bw information of this receptor
-
         self.sequence = residue_list
         self.segments = {}
         self.segments_full = OrderedDict();
@@ -67,7 +66,7 @@ class DrawGproteinPlot(Diagram):
         #                     rs[i][2] = str(helix_num) + "x" + number
         #                     print(rs[i][2])
 
-        self.helixWidth = 85           # Width of helix
+        self.helixWidth = 70           # Width of helix
         self.resNumPerRow = 4          # Residue number per row in helix
         self.angleDeg = 22.0           # Angle size of each helix turn
         self.residue_radius = 12     # Radius of the residue circle
@@ -111,16 +110,17 @@ class DrawGproteinPlot(Diagram):
         for s in ARRESTIN_SEGMENTS['Full']:
             if self.segments_full[s].category=='loop':
                 #pass
-                self.drawSnakePlotLoop(s)
+                try:
+                    self.drawSnakePlotLoop(s)
+                except:
+                    print(s)
             else:
                 self.count += 1
-
-
 
     def __str__(self):
 
         self.output = "<g id=snake transform='translate(0, " + str(-self.low+ self.offsetY) + ")'>" + self.traceoutput+self.output+self.helixoutput+self.drawToolTip() + "</g>"; #for resizing height
-        return mark_safe(self.create(self.output,self.maxX['right']+30,self.high-self.low+self.offsetY*2,"snakeplot", self.nobuttons))
+        return mark_safe(self.create(self.output,self.maxX['right']+40,self.high-self.low+self.offsetY*2,"snakeplot", self.nobuttons))
 
     def drawSnakePlotHelix(self, segment):
         rs = self.segments[segment]
@@ -257,7 +257,7 @@ class DrawGproteinPlot(Diagram):
         output_residue_out = ''
         output_trace = ''
 
-        startX = 50+self.offsetX+(self.margin+self.helixWidth)*(helix_num-1)-(self.count_sheet*20)
+        startX = 10+self.offsetX+(self.margin+self.helixWidth)*(helix_num-1)-(self.count_sheet*10)
         startY = self.offsetY
 
         row_length = 3
@@ -490,5 +490,5 @@ class DrawGproteinPlot(Diagram):
             max_y = max_y+25
         else:
             max_y = max_y-20
-        self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+"' x="+str(x_at_max_y-18)+" y="+str(max_y-13)+" rx=5 ry=5 width='35' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
+        self.output += "<rect onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+"' x="+str(x_at_max_y-24)+" y="+str(max_y-13)+" rx=5 ry=5 width='55' height='20' stroke='black' fill='white' stroke-width='1' style2='fill:red;stroke:black;stroke-width:5;opacity:0.5'/>"
         self.output += str("<text  onclick='toggleLoop(\"."+name+"\",\"long\");' class='"+name+"' x="+str(x_at_max_y)+" y="+str(max_y)+" text-anchor='middle' font-size="+str(font_size)+" font-family='"+font_family+"'>"+name+"</text>")

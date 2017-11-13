@@ -1,6 +1,8 @@
 ﻿from django.db import models
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
+from common.diagrams_arrestin import DrawArrestinPlot
+
 from residue.models import Residue, ResidueNumberingScheme, ResidueGenericNumberEquivalent
 
 class Protein(models.Model):
@@ -50,6 +52,10 @@ class Protein(models.Model):
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         return DrawGproteinPlot(residuelist,self.get_protein_class(),str(self))
 
+    def get_arrestin_plot(self):
+        residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
+        return DrawArrestinPlot(residuelist,self.get_protein_class(),str(self))
+
     def get_protein_family(self):
         tmp = self.family
         while tmp.parent.parent.parent is not None:
@@ -96,9 +102,9 @@ class ProteinConformation(models.Model):
             else:
                 raise Exception
         except:
-            resis = Residue.objects.filter(protein_conformation=self, display_generic_number__label__in=[dgn('2x50', self), 
+            resis = Residue.objects.filter(protein_conformation=self, display_generic_number__label__in=[dgn('2x50', self),
                                                                                                          dgn('3x39', self)])
-            parent_resis = Residue.objects.filter(protein_conformation__protein=self.protein.parent, display_generic_number__label__in=[dgn('2x50', self), 
+            parent_resis = Residue.objects.filter(protein_conformation__protein=self.protein.parent, display_generic_number__label__in=[dgn('2x50', self),
                                                                                                                                         dgn('3x39', self)])
             if len(resis)==2:
                 if resis[0].amino_acid in ['D','E'] and resis[1].amino_acid in ['S','T']:

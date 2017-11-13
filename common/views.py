@@ -823,7 +823,7 @@ def SelectionGproteinToggle(request):
     context['gprots'] = ProteinGProtein.objects.all()
 
     if preferred == 'true':
-        print(request.session['selection'])
+        # print(request.session['selection'])
         return render(request, 'common/selection_filters_pref_gproteins_selector.html', context)
     else:
         return render(request, 'common/selection_filters_gproteins_selector.html', context)
