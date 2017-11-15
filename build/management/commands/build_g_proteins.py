@@ -56,11 +56,11 @@ class Command(BaseCommand):
             # self.purge_cgn_proteins()
 
             self.create_g_proteins(filenames)
-            # self.cgn_create_proteins_and_families()
+            self.cgn_create_proteins_and_families()
 
-            # human_and_orths = self.cgn_add_proteins()
-            # self.update_protein_conformation(human_and_orths)
-            # self.create_barcode()
+            human_and_orths = self.cgn_add_proteins()
+            self.update_protein_conformation(human_and_orths)
+            self.create_barcode()
 
         except Exception as msg:
             print(msg)
@@ -139,7 +139,7 @@ class Command(BaseCommand):
                         p = Protein.objects.get(entry_name=entry_name)
                     except Protein.DoesNotExist:
                         self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
-                        print("protein not found", entry_name)
+                        print("protein not found for ", entry_name)
                         continue
 
                     primary = primary.replace("G protein (identity unknown)","None") #replace none
@@ -223,7 +223,7 @@ class Command(BaseCommand):
 
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
-                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme_id=12)
+                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme_slug='cgn')
                 # self.logger.info("Residues added to ResidueGenericNumberEquivalent")
 
             except:

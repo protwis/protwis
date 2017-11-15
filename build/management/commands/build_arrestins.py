@@ -71,7 +71,7 @@ class Command(BaseCommand):
 
     def purge_can_proteins(self):
         try:
-            Protein.objects.filter(residue_numbering_scheme_id=13).delete()
+            Protein.objects.filter(residue_numbering_scheme_slug='can').delete()
         except:
             self.logger.info('Protein to delete not found')
 
@@ -113,7 +113,7 @@ class Command(BaseCommand):
 
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
-                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme_id=13) ## Update scheme_id
+                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme_slug="can") ## Update scheme_id
 
             except:
                 self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
