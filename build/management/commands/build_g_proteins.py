@@ -223,7 +223,7 @@ class Command(BaseCommand):
 
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
-                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme_slug='cgn')
+                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme__slug='cgn')
                 # self.logger.info("Residues added to ResidueGenericNumberEquivalent")
 
             except:
