@@ -70,13 +70,13 @@ class Command(BaseBuild):
 
     def main_func(self, positions, iteration,count,lock):
 
-        print(positions,iteration,count,lock)
+        # print(positions,iteration,count,lock)
         ligands = self.ligand_dump
         while count.value<len(ligands):
             with lock:
                 l = ligands[count.value]
                 count.value +=1 
-                if count.value % 1000 == 0:
+                if count.value % 10000 == 0:
                     print('{} Status {} out of {}'.format(
                     datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S'), count.value, len(ligands)))
 

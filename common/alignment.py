@@ -1458,7 +1458,7 @@ class ClosestReceptorHomolog():
     def find_closest_receptor_homolog(self):
         a = Alignment()
         p = Protein.objects.get(entry_name=self.protein)
-        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva']
+        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva', 'q08bg4_danre']
         if self.protein in exclusion_list:
             exclusion_list.remove(self.protein)
         if p.family.slug[:3]=='007':
