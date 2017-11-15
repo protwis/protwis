@@ -193,6 +193,8 @@ class Command(BaseCommand):
         self.logger.info('Parsing file ' + self.gprotein_data_file)
         residue_data =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
         residue_data = residue_data.loc[residue_data['Uniprot_ACC'].isin(gprotein_list)]
+        cgn_scheme = ResidueNumberingScheme.objects.get(slug='cgn')
+
 
         for index, row in residue_data.iterrows():
             #fetch protein for protein conformation
@@ -224,7 +226,7 @@ class Command(BaseCommand):
 
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
-                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme__slug='cgn')
+                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme=cgn_scheme)
                 # self.logger.info("Residues added to ResidueGenericNumberEquivalent")
 
             except:
