@@ -86,6 +86,8 @@ class Command(BaseCommand):
         ## Example data to populate a table for further infrastructure work
         residue_data = residue_data[residue_data['pdb_id']=='1ayr']
 
+        can_scheme = ResidueNumberingScheme.objects.get(slug='can')
+
         for index, row in residue_data.iterrows():
             # fetch protein for protein conformation
             pr, c = Protein.objects.get_or_create(accession='P10523')
@@ -113,7 +115,7 @@ class Command(BaseCommand):
 
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
-                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme__slug="can") ## Update scheme_id
+                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme=can_scheme) ## Update scheme_id
 
             except:
                 self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
