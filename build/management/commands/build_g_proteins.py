@@ -15,6 +15,7 @@ from signprot.models import SignprotStructure, SignprotBarcode
 import pandas as pd
 
 from optparse import make_option
+from itertools import islice
 
 import pandas as pd
 import math
@@ -128,7 +129,7 @@ class Command(BaseCommand):
 
             with open(filepath, 'r') as f:
                 reader = csv.reader(f)
-                for row in reader:
+                for row in islice(reader, 1, None): # skip first line
 
                     entry_name = row[0]
                     primary = row[8]
@@ -223,7 +224,7 @@ class Command(BaseCommand):
 
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
-                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme_slug='cgn')
+                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme__slug='cgn')
                 # self.logger.info("Residues added to ResidueGenericNumberEquivalent")
 
             except:
