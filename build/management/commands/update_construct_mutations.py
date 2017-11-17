@@ -34,12 +34,12 @@ class Command(BaseCommand):
         self.check_mutations()
         # self.match_all_with_uniprot_mutations()
 
-        # # Simply check deletions on record vs newest pdb 
-        # # self.check_deletions()
+        # Simply check deletions on record vs newest pdb 
+        # self.check_deletions()
 
         # # changes deletions to match PDB
         # # Custom rules exist in the function
-        # self.replace_deletions()
+        self.replace_deletions()
 
         # # Make sure json file is correct
         # # self.json_check_for_mutations_deletions()
@@ -463,9 +463,9 @@ class Command(BaseCommand):
 
             pdbname = c.structure.pdb_code.index
 
-            if not pdbname in ['4XEE','4XES']:
-                continue
-            print(pdbname)
+            # if not pdbname in ['5F8U','2VT4']:
+            #     continue
+            # print(pdbname)
 
             #reset caches
             c.schematics = None
