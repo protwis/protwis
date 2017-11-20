@@ -10,7 +10,7 @@ from protein.models import Protein, ProteinConformation, ProteinSequenceType, Pr
 from residue.models import Residue
 from structure.models import Structure, PdbData, StructureType
 from structure.sequence_parser import SequenceParser
-from structure.functions import PdbChainSelector, PdbStateIdentifier, IdentifySites
+from structure.functions import PdbChainSelector, PdbStateIdentifier
 from construct.functions import *
 from common.models import WebResource, WebLink, Publication
 
@@ -251,8 +251,8 @@ class QueryPDB():
                                 yaml.dump(struct_yaml, struct_yaml_file, indent=4, default_flow_style=False)
                 
                         # Check sodium pocket
-                        id_sites = IdentifySites(struct)
-                        id_sites.sodium_pocket()
+                        prot_conf = ProteinConformation.objects.get(protein__entry_name=struct.pdb_code.index.lower())
+                        prot_conf.sodium_pocket()
 
                         print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
                 except Exception as msg:
