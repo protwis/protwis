@@ -978,7 +978,6 @@ class AlignedReferenceTemplate(Alignment):
         self.template_dict = OrderedDict()
         self.alignment_dict = OrderedDict()
         self.code_dict = {'ICL1':'12x50','ECL1':'23x50','ICL2':'34x50'}
-        self.changes_on_db = []
         self.loop_partial_except_list = {'ICL1':[],'ECL1':[],'ICL2':[],'ECL2':[],'ECL2_1':['3UZA','3UZC','3RFM'],
                                          'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':[],'ICL4':[]}
         self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000}
@@ -1030,6 +1029,7 @@ class AlignedReferenceTemplate(Alignment):
             self.loop_table = OrderedDict()            
             self.similarity_table = self.create_loop_similarity_table()
         if self.main_template_structure==None:
+            self.changes_on_db = []
             self.main_template_structure = self.get_main_template()
         
     def local_pairwise_alignment(self, reference, template, segment):
@@ -1087,9 +1087,9 @@ class AlignedReferenceTemplate(Alignment):
         resis = Residue.objects.filter(protein_conformation=structure.protein_conformation, 
                                        sequence_number__gte=cutoff)
         for r in resis:
+            self.changes_on_db.append(r.sequence_number)
             r.sequence_number = int(str(r.sequence_number)[1:])
             r.save()
-            self.changes_on_db.append(r.sequence_number)
 
     def create_helix_similarity_table(self):
         ''' Creates an ordered dictionary of structure objects, where templates are sorted by similarity and resolution.

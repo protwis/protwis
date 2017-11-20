@@ -221,7 +221,7 @@ class Command(BaseBuild):
         
     def run_HomologyModeling(self, receptor, state):
         try:
-            seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX', '5JQH', '5TZY']
+            seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000}
 
             ##### Ignore output from that can come from BioPDB! #####
             if not self.debug:
@@ -232,9 +232,16 @@ class Command(BaseBuild):
             alignment = Homology_model.run_alignment([state])
             Homology_model.build_homology_model(alignment)
             formatted_model = Homology_model.format_final_model()
-            if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
-                args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
-                subprocess.call(args)
+
+            if Homology_model.changes_on_db!=[]:
+                cutoff = seq_nums_overwrite_cutoff_dict[Homology_model.main_structure.pdb_code.index]
+                mod_resis = [x.sequence_number for x in Residue.objects.filter(protein_conformation=Homology_model.main_structure.protein_conformation)]
+                for r in Homology_model.changes_on_db:
+                    if int(str(r)[1:]) in mod_resis:
+                        res = Residue.objects.get(protein_conformation=Homology_model.main_structure.protein_conformation, sequence_number=int(str(r)[1:]))
+                        res.sequence_number = r
+                        res.save()
+            
             # Run clash and break test
             p = PDB.PDBParser()
             if Homology_model.revise_xtal==False:
@@ -245,7 +252,6 @@ class Command(BaseBuild):
                 post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_refined_{}_GPCRdb.pdb'.format(
                                 Homology_model.class_name, Homology_model.reference_protein.parent.entry_name, Homology_model.main_structure, Homology_model.main_structure.state.name))
             hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True)
-
 
             # Check for residue shifts in model
             residue_shift = False
@@ -262,12 +268,12 @@ class Command(BaseBuild):
                 except:
                     pass
 
-
             if residue_shift==True:
                 if self.debug:
                     print('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
                 logger.warning('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
-                raise ValueError('Error: Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res)) 
+                raise ValueError('Error: Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
+
             # Check for clashes in model
             if len(hse.clash_pairs)>0:
                 if self.debug:
@@ -278,6 +284,7 @@ class Command(BaseBuild):
                     if i[0][1]==i[1][1]-1 or i[0][1]==i[1][1]:
                         hse.clash_pairs.remove(i)
                 logger.warning('Remaining clashes in {}\n{}'.format(Homology_model.reference_entry_name,hse.clash_pairs))
+
             # Check for chain breaks in model
             if len(hse.chain_breaks)>0:
                 if self.debug:
@@ -303,6 +310,9 @@ class Command(BaseBuild):
             with open('./structure/homology_models/done_models.txt','a') as f:
                 f.write(receptor+'\n')
 
+            # if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
+            #     args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
+            #     subprocess.call(args)
 
         except Exception as msg:
             try:
@@ -634,11 +644,11 @@ class HomologyModeling(object):
         '''
         alignment = AlignedReferenceTemplate()
         alignment.run_hommod_alignment(self.reference_protein, segments, query_states, order_by, complex_model=self.complex)
-        self.changes_on_db = alignment.changes_on_db
         main_pdb_array = OrderedDict()
         if core_alignment==True:
             if self.debug:
                 print('Alignment: ',datetime.now() - startTime)
+            self.changes_on_db = alignment.changes_on_db
             alignment.enhance_alignment(alignment.reference_protein, alignment.main_template_protein)
             if self.debug:
                 print('Enhanced alignment: ',datetime.now() - startTime)

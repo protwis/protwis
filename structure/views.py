@@ -1523,8 +1523,8 @@ class PDBClean(TemplateView):
                     del gn_assigner, tmp
                 for struct in selection.targets:
                     selection.remove('targets', 'structure', struct.item.id)
-            elif selection.targets != [] and selection.targets[0].type == 'structure_model':
-                for hommod in [x for x in selection.targets if x.type == 'structure_model']:
+            elif selection.targets != [] and selection.targets[0].type in ['structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']:
+                for hommod in [x for x in selection.targets if x.type in ['structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]:
                     mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.item.protein.family.slug[:3]], hommod.item.protein.entry_name, 
                                                                                   hommod.item.state.name, hommod.item.main_template.pdb_code.index, hommod.item.version)
                     tmp = StringIO(hommod.item.pdb)
