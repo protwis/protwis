@@ -156,26 +156,7 @@ input.form-control {
                         <th>Review</th>
                     </tr>
                 </tfoot>
-                {% for mutation in mutations.select_related.all %}
-                <tr>
-                <td><a href="/protein/{{mutation.protein.entry_name}}">{{mutation.protein.entry_name}}</a></td>
-                <td>{{mutation.residue.display_generic_number.label}}</td>
-                <td>{{mutation.residue.sequence_number}}</td>
-                <td>{{mutation.residue.protein_segment.slug}}</td>
-                <td>{{mutation.residue.amino_acid}} => {{mutation.mutation.amino_acid}}</td>
-
-                <td><a class="foldchange" href="#" data-toogle="tooltip"  data-html="true" data-original-title="{{mutation.getCalculation}}" data-placement="top"> {{mutation.getFoldorQual|safe}}</a></td>
-
-                <td>{% if mutation.exp_func.func %} {{mutation.exp_type.type}} ({{mutation.exp_func.func}}) {% else %} N/A {% endif %}</td>
-                <td>
-                <a class="smiles-tooltip" data-toggle="tooltip"  data-html="true" data-original-title="<img src='http://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/{{mutation.ligand.properities.smiles|urlencode}}/PNG'><br>{{mutation.ligand.name}}<br>{{mutation.ligand_role.name}}" data-placement="right">{{mutation.ligand.name}}</a></td>
-               <!--  <td>{{mutation.ligand_class.classname}}</td> -->
-                <td>
-                <a class="citation-tooltip" target="_blank" href="{{mutation.refs.web_link}}" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="{{mutation.refs.title}}" data-placement="left" >{{mutation.citation}}</a></td>
-                <td>
-                <a class="citation-tooltip" target="_blank" href="{{mutation.review.web_link}}" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="{{mutation.review.title}}" data-placement="left" >{{mutation.review_citation}}</a></td>
-                </tr>
-                {% endfor %}
+                {{mutation_tables|safe}}
             </table>
         </div>
         <br><br>
