@@ -56,11 +56,11 @@ class Command(BaseCommand):
             # self.purge_cgn_proteins()
 
             self.create_g_proteins(filenames)
-            # self.cgn_create_proteins_and_families()
+            self.cgn_create_proteins_and_families()
 
-            # human_and_orths = self.cgn_add_proteins()
-            # self.update_protein_conformation(human_and_orths)
-            # self.create_barcode()
+            human_and_orths = self.cgn_add_proteins()
+            self.update_protein_conformation(human_and_orths)
+            self.create_barcode()
 
         except Exception as msg:
             print(msg)
@@ -139,6 +139,7 @@ class Command(BaseCommand):
                         p = Protein.objects.get(entry_name=entry_name)
                     except Protein.DoesNotExist:
                         self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
+                        print("protein not found for ", entry_name)
                         continue
 
                     primary = primary.replace("G protein (identity unknown)","None") #replace none
@@ -151,14 +152,20 @@ class Command(BaseCommand):
                         print('no data for ', entry_name)
                         continue
 
+                    # print(primary,secondary)
+
                     try:
                         for gp in primary:
-                            if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
+                            if gp in ['','None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
                                 continue
                             g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
+                            # print(p, g)
                             gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary')
                             gpair.save()
+                    except:
+                        print("error in primary assignment", p, gp)
 
+                    try:
                         for gp in secondary:
                             if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism', '']: #skip bad ones
                                 continue
@@ -168,7 +175,7 @@ class Command(BaseCommand):
                             gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary')
                             gpair.save()
                     except:
-                        print(row)
+                        print("error in secondary assignment", p, gp)
 
         self.logger.info('COMPLETED CREATING G PROTEINS')
 
@@ -185,6 +192,8 @@ class Command(BaseCommand):
         self.logger.info('Parsing file ' + self.gprotein_data_file)
         residue_data =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
         residue_data = residue_data.loc[residue_data['Uniprot_ACC'].isin(gprotein_list)]
+        cgn_scheme = ResidueNumberingScheme.objects.get(slug='cgn')
+
 
         for index, row in residue_data.iterrows():
             #fetch protein for protein conformation
@@ -216,7 +225,7 @@ class Command(BaseCommand):
 
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
-                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme_id=12)
+                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme=cgn_scheme)
                 # self.logger.info("Residues added to ResidueGenericNumberEquivalent")
 
             except:

@@ -29,17 +29,17 @@ class Command(BaseCommand):
     annotation_file = os.sep.join([settings.DATA_DIR, 'structure_data', 'construct_data', 'construct_annotations.xlsx'])
 
     def handle(self, *args, **options):
-        # self.excel_mutations = self.parse_excel(self.path,'Mutation_Data')
+        self.excel_mutations = self.parse_excel(self.path,'Mutation_Data')
 
-        # self.check_mutations()
+        self.check_mutations()
         # self.match_all_with_uniprot_mutations()
 
-        # # Simply check deletions on record vs newest pdb 
-        # # self.check_deletions()
+        # Simply check deletions on record vs newest pdb 
+        # self.check_deletions()
 
         # # changes deletions to match PDB
         # # Custom rules exist in the function
-        # self.replace_deletions()
+        self.replace_deletions()
 
         # # Make sure json file is correct
         # # self.json_check_for_mutations_deletions()
@@ -66,7 +66,7 @@ class Command(BaseCommand):
                 continue 
             if i[3]=='?':
                 continue
-            print(i)
+            # print(i)
             aux_type, created = ConstructInsertionType.objects.get_or_create(name=i[5],subtype=i[6])
             for construct in Construct.objects.filter(structure__pdb_code__index=i[1]):
                 insert = ConstructInsertion.objects.create(construct=construct, insert_type=aux_type,presence=i[7],position=i[2]+"_"+str(int(i[3])))
@@ -463,9 +463,9 @@ class Command(BaseCommand):
 
             pdbname = c.structure.pdb_code.index
 
-            if not pdbname in ['4XEE','4XES']:
-                continue
-            print(pdbname)
+            # if not pdbname in ['5F8U','2VT4']:
+            #     continue
+            # print(pdbname)
 
             #reset caches
             c.schematics = None
@@ -625,7 +625,7 @@ class Command(BaseCommand):
         track_annotated_mutations = []
         cached_mutations = {}
         for i,mut in enumerate(self.excel_mutations):
-            print("Progress ",i,len(self.excel_mutations))
+            # print("Progress ",i,len(self.excel_mutations))
             # continue
             #print(mut)
             m = {}
@@ -680,19 +680,19 @@ class Command(BaseCommand):
 
                 if not cons_muts.exists() and m['other_effect']!='Non-receptor' and m['other_effect']!='Wrong annotation - remove!':
                     # If no hits something is odd
-                    print(c.structure.pdb_code.index,' do not have following mutation:',mut)
+                    # print(c.structure.pdb_code.index,' do not have following mutation:',mut)
                     found = False
                     for pdb_m in d['mutations']:
                         if int(pdb_m['pos']) == m['pos']:
                             found = True
                             break
                     if found:
-                        print('It was however found in pdb! ADDING')
+                        # print('It was however found in pdb! ADDING')
                         res_wt = Residue.objects.get(protein_conformation__protein=protein.parent, sequence_number=m['pos'])
                         mut = ConstructMutation.objects.create(construct=c, sequence_number=m['pos'],wild_type_amino_acid= m['wt_aa'],mutated_amino_acid=m['mut_aa'], residue=res_wt)
                         pdbs_has.append(c_pdb)
                     else:
-                        print('Was also not found in pdb!')
+                        # print('Was also not found in pdb!')
                         pdbs_hasnot.append("%"+c_pdb)
                         cons_muts_odd = ConstructMutation.objects.filter(construct=c, sequence_number = m['pos'])
                         for cons_mut in cons_muts_odd:
@@ -704,7 +704,7 @@ class Command(BaseCommand):
                 cons_muts = ConstructMutation.objects.filter(construct=c, sequence_number = m['pos'], mutated_amino_acid = m['mut_aa'], wild_type_amino_acid = m['wt_aa'])
                 for cons_mut in cons_muts:
                     if m['other_effect']=='Non-receptor' or m['other_effect']=='Wrong annotation - remove!':
-                        print('Delete!',cons_mut.construct.structure.pdb_code.index,cons_mut)
+                        # print('Delete!',cons_mut.construct.structure.pdb_code.index,cons_mut)
                         cons_mut.delete()
                         continue
                     # Clear existing to replace with current
@@ -728,12 +728,12 @@ class Command(BaseCommand):
                         cons_mut.effects.add(mutation_type)
 
                     track_annotated_mutations.append(cons_mut.pk)
-            if not m['pdb'] and len(pdbs_hasnot) and len(pdbs_has):
-                print(m['entry_name'],m['wt_aa']+str(m['pos'])+m['mut_aa'])
-                print("has",",".join(pdbs_has))
-                print("hasnot",",".join(pdbs_hasnot))
-            if not len(pdbs_has):
-                print('NOONE HAS',m['entry_name'],m['wt_aa']+str(m['pos'])+m['mut_aa'])
+            # if not m['pdb'] and len(pdbs_hasnot) and len(pdbs_has):
+            #     print(m['entry_name'],m['wt_aa']+str(m['pos'])+m['mut_aa'])
+            #     print("has",",".join(pdbs_has))
+            #     print("hasnot",",".join(pdbs_hasnot))
+            # if not len(pdbs_has):
+            #     print('NOONE HAS',m['entry_name'],m['wt_aa']+str(m['pos'])+m['mut_aa'])
         print(len(track_annotated_mutations),'annotated mutations')
 
         non_annotated_muts = ConstructMutation.objects.all().exclude(pk__in=track_annotated_mutations).order_by('construct__protein__entry_name','sequence_number')

@@ -81,7 +81,7 @@ class ServeHomologyModels(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(ServeHomologyModels, self).get_context_data(**kwargs)
         try:
-            context['structure_model'] = StructureModel.objects.all().select_related(
+            context['structure_model'] = StructureModel.objects.all().defer('pdb').prefetch_related(
                 "protein__family",
                 "state",
                 "protein__family__parent__parent__parent",
@@ -104,12 +104,20 @@ def HomologyModelDetails(request, modelname, state):
     if state=='refined':
         model = Structure.objects.get(pdb_code__index=modelname+'_refined')
         model_main_template = Structure.objects.get(pdb_code__index=modelname)
-        rotamers = StructureRefinedStatsRotamer.objects.filter(structure=model).prefetch_related("structure", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
+        rotamers = StructureRefinedStatsRotamer.objects.filter(structure=model).prefetch_related(
+            "structure", "residue__generic_number","rotamer_template__protein_conformation__protein__parent__family",
+            "residue__protein_segment", "backbone_template__pdb_code", "rotamer_template",
+            "backbone_template__protein_conformation__protein__parent", "rotamer_template__pdb_code"
+            ).order_by('residue__sequence_number').all()
         main_template_seqsim = StructureRefinedSeqSim.objects.get(structure=model, template=model_main_template).similarity
     else:
         model = StructureModel.objects.get(protein__entry_name=modelname, state__slug=state)
         model_main_template = model.main_template
-        rotamers = StructureModelStatsRotamer.objects.filter(homology_model=model).prefetch_related("homology_model", "residue", "backbone_template", "rotamer_template").order_by('residue__sequence_number')
+        rotamers = StructureModelStatsRotamer.objects.filter(homology_model=model).prefetch_related(
+            "homology_model", "residue__generic_number","rotamer_template__protein_conformation__protein__parent__family",
+            "residue__protein_segment", "backbone_template__pdb_code", "rotamer_template",
+            "backbone_template__protein_conformation__protein__parent", "rotamer_template__pdb_code"
+            ).order_by('residue__sequence_number').all()
         main_template_seqsim = StructureModelSeqSim.objects.get(homology_model=model, template=model_main_template).similarity
 
     backbone_templates, rotamer_templates = [],[]
@@ -188,7 +196,7 @@ def HomologyModelDetails(request, modelname, state):
             t.color = colors[t]
             bb_temps[b][i] = t
             template_list.append(t.pdb_code.index)
-
+            
     return render(request,'homology_models_details.html',{'model': model, 'modelname': modelname, 'rotamers': rotamers, 'backbone_templates': bb_temps, 'backbone_templates_number': len(backbone_templates),
                                                           'rotamer_templates': r_temps, 'rotamer_templates_number': len(rotamer_templates), 'color_residues': segments_out, 'bb_main': round(bb_main/len(rotamers)*100, 1),
                                                           'bb_alt': round(bb_alt/len(rotamers)*100, 1), 'bb_none': round(bb_none/len(rotamers)*100, 1), 'sc_main': round(sc_main/len(rotamers)*100, 1), 'sc_alt': round(sc_alt/len(rotamers)*100, 1),
@@ -1515,8 +1523,8 @@ class PDBClean(TemplateView):
                     del gn_assigner, tmp
                 for struct in selection.targets:
                     selection.remove('targets', 'structure', struct.item.id)
-            elif selection.targets != [] and selection.targets[0].type == 'structure_model':
-                for hommod in [x for x in selection.targets if x.type == 'structure_model']:
+            elif selection.targets != [] and selection.targets[0].type in ['structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']:
+                for hommod in [x for x in selection.targets if x.type in ['structure_model', 'structure_model_Inactive', 'structure_model_Intermediate', 'structure_model_Active']]:
                     mod_name = 'Class{}_{}_{}_{}_{}_GPCRDB.pdb'.format(class_dict[hommod.item.protein.family.slug[:3]], hommod.item.protein.entry_name, 
                                                                                   hommod.item.state.name, hommod.item.main_template.pdb_code.index, hommod.item.version)
                     tmp = StringIO(hommod.item.pdb)

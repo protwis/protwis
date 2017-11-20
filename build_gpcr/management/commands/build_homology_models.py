@@ -185,7 +185,8 @@ class Command(BaseBuild):
             zipf = zipfile.ZipFile('../static/homology_models/GPCRdb_homology_models_{}.zip'.format(str(build_date)),'w',zipfile.ZIP_DEFLATED)
             for root, dirs, files in os.walk('homology_models'):
                 for f in files:
-                    zipf.write(os.path.join(root, f))
+                    if 'post' not in f:
+                        zipf.write(os.path.join(root, f))
             zipf.close()
         if not self.debug:
             shutil.rmtree('homology_models')
@@ -219,8 +220,8 @@ class Command(BaseBuild):
             logger.info('Model finished for  \'{}\' ({})... (processor:{} count:{}) (Time: {})'.format(receptor[0].entry_name, receptor[1],processor_id,i,datetime.now() - mod_startTime))
         
     def run_HomologyModeling(self, receptor, state):
-        # try:
-            seq_nums_overwrite_cutoff_list = ['4PHU', '4LDL', '4LDO', '4QKX', '5JQH', '5TZY']
+        try:
+            seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000}
 
             ##### Ignore output from that can come from BioPDB! #####
             if not self.debug:
@@ -231,9 +232,16 @@ class Command(BaseBuild):
             alignment = Homology_model.run_alignment([state])
             Homology_model.build_homology_model(alignment)
             formatted_model = Homology_model.format_final_model()
-            if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
-                args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
-                subprocess.call(args)
+
+            if Homology_model.changes_on_db!=[]:
+                cutoff = seq_nums_overwrite_cutoff_dict[Homology_model.main_structure.pdb_code.index]
+                mod_resis = [x.sequence_number for x in Residue.objects.filter(protein_conformation=Homology_model.main_structure.protein_conformation)]
+                for r in Homology_model.changes_on_db:
+                    if int(str(r)[1:]) in mod_resis:
+                        res = Residue.objects.get(protein_conformation=Homology_model.main_structure.protein_conformation, sequence_number=int(str(r)[1:]))
+                        res.sequence_number = r
+                        res.save()
+            
             # Run clash and break test
             p = PDB.PDBParser()
             if Homology_model.revise_xtal==False:
@@ -244,7 +252,6 @@ class Command(BaseBuild):
                 post_model = p.get_structure('model','./structure/homology_models/{}_{}_{}_refined_{}_GPCRdb.pdb'.format(
                                 Homology_model.class_name, Homology_model.reference_protein.parent.entry_name, Homology_model.main_structure, Homology_model.main_structure.state.name))
             hse = HSExposureCB(post_model, radius=11, check_chain_breaks=True)
-
 
             # Check for residue shifts in model
             residue_shift = False
@@ -261,12 +268,12 @@ class Command(BaseBuild):
                 except:
                     pass
 
-
             if residue_shift==True:
                 if self.debug:
                     print('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
                 logger.warning('Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
-                raise ValueError('Error: Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res)) 
+                raise ValueError('Error: Residue shift in model {} at {}'.format(Homology_model.reference_entry_name, db_res))
+
             # Check for clashes in model
             if len(hse.clash_pairs)>0:
                 if self.debug:
@@ -277,6 +284,7 @@ class Command(BaseBuild):
                     if i[0][1]==i[1][1]-1 or i[0][1]==i[1][1]:
                         hse.clash_pairs.remove(i)
                 logger.warning('Remaining clashes in {}\n{}'.format(Homology_model.reference_entry_name,hse.clash_pairs))
+
             # Check for chain breaks in model
             if len(hse.chain_breaks)>0:
                 if self.debug:
@@ -302,6 +310,9 @@ class Command(BaseBuild):
             with open('./structure/homology_models/done_models.txt','a') as f:
                 f.write(receptor+'\n')
 
+            # if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
+            #     args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
+            #     subprocess.call(args)
 
         # except Exception as msg:
         #     try:
@@ -633,11 +644,11 @@ class HomologyModeling(object):
         '''
         alignment = AlignedReferenceTemplate()
         alignment.run_hommod_alignment(self.reference_protein, segments, query_states, order_by, complex_model=self.complex)
-        self.changes_on_db = alignment.changes_on_db
         main_pdb_array = OrderedDict()
         if core_alignment==True:
             if self.debug:
                 print('Alignment: ',datetime.now() - startTime)
+            self.changes_on_db = alignment.changes_on_db
             alignment.enhance_alignment(alignment.reference_protein, alignment.main_template_protein)
             if self.debug:
                 print('Enhanced alignment: ',datetime.now() - startTime)
@@ -671,7 +682,8 @@ class HomologyModeling(object):
             
             try:
                 if (len(main_pdb_array['H8'])==0 and len(list(Residue.objects.filter(protein_conformation=self.prot_conf, protein_segment__slug='H8')))>0 or 
-                   (self.reference_protein.family.slug.startswith('004') and self.main_structure.pdb_code.index!='4OO9')):
+                   (self.reference_protein.family.slug.startswith('004') and self.main_structure.pdb_code.index!='4OO9') or 
+                   (self.main_structure.pdb_code.index in ['5UNF','5UNG','5UNH'] and self.revise_xtal==False)):
                     helixends.correct_helix_ends(self.main_structure, main_pdb_array, alignment, 
                                                  self.template_source, separate_H8=True)
                     main_pdb_array = helixends.main_pdb_array
@@ -687,6 +699,8 @@ class HomologyModeling(object):
                     else:
                         alt_simtable = self.similarity_table_all
                         for struct in alt_simtable:
+                            if struct.pdb_code.index in ['5UNF','5UNG','5UNH']:
+                                continue
                             try:
                                 gn_list = list(Residue.objects.filter(protein_conformation=struct.protein_conformation, 
                                                                       protein_segment__slug='H8'))
@@ -694,7 +708,6 @@ class HomologyModeling(object):
                                     break
                             except:
                                 pass
-
                     for i in alignment.ordered_proteins:
                         if i.protein.entry_name==struct.protein_conformation.protein.parent.entry_name:
                             break
@@ -2401,6 +2414,8 @@ class HelixEndsModeling(HomologyModeling):
         self.similarity_table = similarity_table
         self.template_source = template_source
         self.main_structure = main_structure
+        self.templates_to_skip = OrderedDict([('TM1',[[],[]]),('TM2',[[],[]]),('TM3',[[],[]]),('TM4',[[],[]]),
+                                              ('TM5',[[],[]]),('TM6',[[],[]]),('TM7',[[],['5UNF','5UNG','5UNH']]),('H8',[[],[]])])
     
     def find_ends(self, structure, protein_conformation):
         raw_res = Residue.objects.filter(protein_conformation=protein_conformation).exclude(
@@ -2565,6 +2580,12 @@ class HelixEndsModeling(HomologyModeling):
         raw_helix_ends = self.fetch_struct_helix_ends_from_array(main_pdb_array)
         anno_helix_ends = self.fetch_struct_helix_ends_from_db(main_structure, H8_alt)
 
+        # Force active state with main template 5UNF, 5UNG or 5UNH to get new TM7 end
+        skip_template = False
+        if separate_H8 and main_structure.pdb_code.index in ['5UNF','5UNG','5UNH']:
+            anno_helix_ends['TM7'][1] = '7x48'
+            skip_template = True
+
         for lab,seg in a.template_dict.items():
             if separate_H8==True:
                 if lab=='H8':
@@ -2640,7 +2661,7 @@ class HelixEndsModeling(HomologyModeling):
                                    int(raw_helix_ends[raw_seg][1].split('x')[1])+1):
                         a.template_dict[raw_seg]['8x{}'.format(str(i))]='x'
                         a.alignment_dict[raw_seg]['8x{}'.format(str(i))]='x'
-                    e_dif = 0            
+                    e_dif = 0
             if e_dif>0:
                 e_gn = Residue.objects.get(protein_conformation=protein_conf, 
                                            display_generic_number__label=dgn(raw_helix_ends[raw_seg][1],
@@ -2656,7 +2677,7 @@ class HelixEndsModeling(HomologyModeling):
                     except:
                         a.reference_dict[raw_seg][gn]='x'
         self.helix_ends = raw_helix_ends
-
+        
         for ref_seg, temp_seg, align_seg in zip(a.reference_dict, a.template_dict, a.alignment_dict):
             if separate_H8==True:
                 if ref_seg=='H8':
@@ -2741,6 +2762,7 @@ class HelixEndsModeling(HomologyModeling):
                     del main_pdb_array[i][ii]
                 except:
                     pass
+            
             if ref_seg[0]=='T' or ref_seg=='H8':
                 if len(modifications['added'][ref_seg][0])>0:
                     self.helix_ends[ref_seg][0] = modifications['added'][ref_seg][0][0]
@@ -2755,6 +2777,8 @@ class HelixEndsModeling(HomologyModeling):
                     for struct in self.similarity_table:
                         if struct!=main_structure:
                             try:
+                                if skip_template and struct.pdb_code.index in self.templates_to_skip[ref_seg][0]:
+                                    continue
                                 alt_helix_ends = self.fetch_struct_helix_ends_from_db(struct)
                                 protein_conf = ProteinConformation.objects.get(protein=struct.protein_conformation.protein.parent)
                                 if parser.gn_comparer(alt_helix_ends[ref_seg][0],self.helix_ends[ref_seg][0],
@@ -2799,6 +2823,8 @@ class HelixEndsModeling(HomologyModeling):
                     for struct in self.similarity_table:
                         if struct!=main_structure:
                             try:
+                                if skip_template and struct.pdb_code.index in self.templates_to_skip[ref_seg][1]:
+                                    continue
                                 protein_conf = ProteinConformation.objects.get(protein=struct.protein_conformation.protein.parent)
                                 alt_helix_ends = self.fetch_struct_helix_ends_from_db(struct)
                                 if parser.gn_comparer(alt_helix_ends[ref_seg][1],self.helix_ends[ref_seg][1],

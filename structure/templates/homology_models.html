@@ -80,10 +80,11 @@
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
                     div.innerHTML = checked_data[i][9];
+                    var state = checked_data[i][3];
                     if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure_model',  div.innerText.replace(/\s+/g, '') );
+                        AddToSelection('targets', 'structure_model_'.concat(state),  div.innerText.replace(/\s+/g, '') );
                     } else {
-                        AddToSelection('targets', 'structure_model', div.textContent.replace(/\s+/g, ''));
+                        AddToSelection('targets', 'structure_model_'.concat(state), div.textContent.replace(/\s+/g, ''));
                     }
                 }
                 
@@ -162,17 +163,20 @@
         </button>
         <ul class="dropdown-menu">
                 <li>
-                    <a href="http://files.gpcrdb.org/homology_models_v1.0.zip"> 2016-06-12 models </a>
+                    <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2016-06-12.zip"> 2016-06-12 models </a>
                 </li>
                 <li>
-                    <a href="http://files.gpcrdb.org/homology_models_v2.0.zip"> 2017-04-10 models </a>
+                    <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2017-04-10.zip"> 2017-04-10 models </a>
+                </li>
+                <li>
+                    <a href="http://files.gpcrdb.org/GPCRdb_homology_models_2017-09-27.zip"> 2017-09-27 models </a>
                 </li>
             </ul>
     </div>
     
     <div style="font-size: 10px; padding: 3px 0px 0px 0px;">PDB files contain GPCRdb generic numbers in the B-factor field of CA atoms</div>
     <div style="font-size: 10px;">For superimposition: Select (tick box) structures, and Highlight the reference template</div>
-    <div style="font-size: 10px;">For information on state identification and Δ distance (Å) please refer to the <a href="http://docs.gpcrdb.org/tutorial_structures.html#structure-state">documentation</a></div>
+    <div style="font-size: 10px;">For information on state identification and Δ distance (Å) please refer to the <a href="http://docs.gpcrdb.org/structures.html#structure-state">documentation</a></div>
 
     <div style="padding-top: 0px; font-size: 10px; white-space: nowrap; width: 100%;">
         <table class="display" id="structure_model">
@@ -205,7 +209,7 @@
                 </tr>
             </thead>
             <tbody>
-            {% for model in structure_model.all %}
+            {% for model in structure_model %}
                 <tr>
                     <td><input class="alt" type="checkbox"></td>
                     <td><a href="homology_models/{{ model.protein.entry_name }}_{{ model.state.slug }}">{{ model.protein.family.name|safe }}</a></td>

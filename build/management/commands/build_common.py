@@ -28,8 +28,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         functions = [
-            'create_protein_segments',
             'create_resources',
+            'create_protein_segments',
             'create_residue_numbering_schemes',
             'create_anomalies',
         ]
