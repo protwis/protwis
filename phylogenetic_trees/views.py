@@ -325,3 +325,21 @@ def render_tree(request):
     return render(request, 'phylogenetic_trees/alignment.html', {'phylo': phylogeny_input, 'branch':branches, 'ttype': ttype, 'count':count, 'leg':legend, 'b':box, 'add':Additional_info, 'but':buttons, 'phylip':Tree_class.phylip, 'outtree':Tree_class.outtree })
 
 
+def render_tree_new(request):
+    Tree_class=Treeclass()
+    phylogeny_input, branches, ttype, total, legend, box, Additional_info, buttons=Tree_class.Prepare_file(request)
+    if phylogeny_input == 'too big':
+        return render(request, 'phylogenetic_trees/too_big.html')
+
+    if phylogeny_input == 'More_prots':
+        return render(request, 'phylogenetic_trees/warning.html')
+    
+    if ttype == '1':
+        float(total)/4*100
+    else:
+        count = 1900 - 1400/math.sqrt(float(total))
+    
+    request.session['Tree']=Tree_class
+    return render(request, 'phylogenetic_trees/display.html', {'phylip':Tree_class.phylip.replace('\n', '')})
+
+

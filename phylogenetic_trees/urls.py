@@ -7,7 +7,7 @@ urlpatterns = [
     url(r'^targetselection', views.TargetSelection.as_view(), name='targetselection'),
     url(r'^segmentselection', views.SegmentSelection.as_view(), name='segmentselection'),
     url(r'^treesettings', views.TreeSettings.as_view(), name='treesettings'),
-    url(r'^render', views.render_tree, name='render'),
+    url(r'^render', views.render_tree_new, name='render'),
     url(r'^showrings', views.modify_tree, name='render'),
     url(r'^get_buttons', views.get_buttons, name='render'),
 
