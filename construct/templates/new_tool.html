@@ -1097,7 +1097,7 @@
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
-            if (state==vals[3]) {
+            if (state==vals[3] || 1==1) { // ignore state
               if (fusionpos==vals[4] || (fusionpos=='None' && vals[4]!='nterm') || (fusionpos!='nterm' && vals[4]=='None') ) { //|| 1==1 include NOT all data regardless of fusion
                 // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
                 // TABLE
@@ -1195,7 +1195,7 @@
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
-            if (state==vals[3]) {
+            if (state==vals[3] || 1==1) {
                 find = 1;
                 // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
                 if(!show_cterm[level]) { show_cterm[level] = {}; } 
@@ -1272,7 +1272,7 @@
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
-            if (state==vals[2]) {
+            if (state==vals[2] || 1==1) {
               if (fusionpos==vals[3] || (fusionpos=='None' && vals[3]!='icl3') || (fusionpos!='icl3' && vals[3]=='None')) {
                 find = 1;
                 range = "5."+(50+vals[0])+"-"+"6."+(50-vals[1]);
@@ -1423,7 +1423,7 @@
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
-            if (state==vals[2]) {
+            if (state==vals[2] || 1==1) {
               if (fusionpos==vals[3] || (fusionpos=='None' && vals[3]!='icl3') || (fusionpos!='icl3' && vals[3]=='None')) { //use icl3 cos thats how it is
                 find = 1;
                 range = "3."+(50+vals[0])+"-"+"4."+(50-vals[1]);
