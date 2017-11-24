@@ -447,6 +447,12 @@
 <script src="{% static 'home/js/diagrams.js' %}"></script> 
 <script type="text/javascript" charset="utf-8">
 
+if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
+
+  $("#content").prepend('<div class="alert alert-warning"><strong>Warning!</strong> <p>Safari browser has compability issues with the snakeplot display. The export results will be correct, but the diagram will have errors. To prevent these issues, use Firefox or Chrome.</div>');
+
+}
+
   function upload() {
       event.preventDefault();
       var data = new FormData($('#file-upload-form').get(0));
@@ -3933,6 +3939,17 @@
             //   // do not do stuff if it's short
             //   return
             // }
+
+            // Safari fix where :visible is not working
+            $.each($( "circle."+term+"-term.long" ), function(key,val) {
+            
+              if ($(val).css('display') != 'none') {
+                first_visible_residue = parseInt($(val).attr('id'));
+                if (term=='N') {return false;}
+              }
+
+            });
+
 
             if (isNaN(first_visible_residue)) {
               // $("."+term+"-term").hide();
