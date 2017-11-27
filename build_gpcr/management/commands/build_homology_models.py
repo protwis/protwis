@@ -1,12 +1,12 @@
 from build.management.commands.base_build import Command as BaseBuild
 from django.db.models import Q
 
-from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState
+from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState, ProteinSegment
 from residue.models import Residue
 from residue.functions import dgn, ggn
 from structure.models import *
 from structure.functions import HSExposureCB, PdbStateIdentifier
-from common.alignment import AlignedReferenceTemplate
+from common.alignment import AlignedReferenceTemplate, GProteinAlignment
 from common.models import WebLink
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
@@ -220,7 +220,7 @@ class Command(BaseBuild):
             logger.info('Model finished for  \'{}\' ({})... (processor:{} count:{}) (Time: {})'.format(receptor[0].entry_name, receptor[1],processor_id,i,datetime.now() - mod_startTime))
         
     def run_HomologyModeling(self, receptor, state):
-        try:
+        # try:
             seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000}
 
             ##### Ignore output from that can come from BioPDB! #####
@@ -4069,8 +4069,10 @@ class GPCRDBParsingPDB(object):
             except:
                 pass
 
-        assign_gn = as_gn.GenericNumbering(pdb_file=io, pdb_code=structure.pdb_code.index)#structure=pdb_struct)
-        pdb_struct = assign_gn.assign_generic_numbers()
+        assign_gn = as_gn.GenericNumbering(pdb_file=io, pdb_code=structure.pdb_code.index, sequence_parser=True)#structure=pdb_struct)
+        pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
+        a = GProteinAlignment()
+        a.run_alignment(Protein.objects.get(entry_name='gnal_human'))
         raise AssertionError
         pref_chain = structure.preferred_chain
         parent_prot_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
@@ -4161,7 +4163,6 @@ class GPCRDBParsingPDB(object):
                         except:
                             found_gn = str(gn)
                         output[found_res.protein_segment.slug][found_gn] = res
-
         return output
    
    

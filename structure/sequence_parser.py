@@ -319,11 +319,10 @@ class SequenceParser(object):
             seq = sequence
         else:
             seq = self.get_chain_sequence(chain_id)
-        print(chain_id)
-        print(seq)
         alignments = self.blast.run(seq)
-
+        print(chain_id)
         for alignment in alignments:
+            print(alignment[1])
             print(alignment[1].hsps[0].expect)
             if alignment[1].hsps[0].expect > .5 and residues:
                 self.fusions.append(AuxProtein(residues))
@@ -395,7 +394,6 @@ class SequenceParser(object):
                     self.mapping[chain_id][starting_aa + offset].add_gpcrdb(r.display_generic_number)
                 offset += 1
             elif c == '-' and w != '-':
-                print(offset)
                 self.mapping[chain_id][starting_aa + offset].add_deletion()
             elif w != '-' and c != '-' and w != c:
                 self.mapping[chain_id][starting_aa + offset].add_mutation(c)
@@ -543,7 +541,7 @@ class SequenceParserPW(object):
         self.wt = Structure.objects.get(pdb_code__index=self.struct_id).protein_conformation.protein.parent
         self.wt_seq = str(self.wt.sequence)
         self.wt_seq_start = Residue.objects.filter(protein_conformation__protein=self.wt.id).order_by("sequence_number")[0].sequence_number
-        print(self.wt_seq_start)
+
         # a dictionary of per chain lists of peptides found in the pdb
         self.pdb_seq = {}
         for chain in self.pdb_struct:
@@ -579,8 +577,6 @@ class SequenceParserPW(object):
             query = sequence
 
         wt, chain_seq, score, start, end = self.align_to_wt(query)
-        print(wt)
-        print(chain_seq)
         offset = 0
         for w, c in zip(wt, chain_seq):
             if w == c:
@@ -591,7 +587,6 @@ class SequenceParserPW(object):
                     self.mapping[chain.id][offset+self.wt_seq_start].add_gpcrdb(r.display_generic_number)
                 offset += 1
             elif c == '-' and w != '-':
-                print(offset+self.wt_seq_start)
                 self.mapping[chain.id][offset+self.wt_seq_start].add_deletion()
                 offset += 1
             elif w != '-' and c != '-' and w != c:

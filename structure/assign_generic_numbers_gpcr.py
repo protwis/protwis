@@ -21,7 +21,7 @@ class GenericNumbering(object):
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
   
     def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, pdb_code=None, blast_path='blastp',
-        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']),top_results=1):
+        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']),top_results=1, sequence_parser=False):
     
         # pdb_file can be either a name/path or a handle to an open file
         self.pdb_file = pdb_file
@@ -39,20 +39,20 @@ class GenericNumbering(object):
         self.blast = BlastSearch(blast_path=blast_path, blastdb=blastdb,top_results=top_results)
         
         # calling sequence parser
-        struct = Structure.objects.get(pdb_code__index=self.pdb_code)
-        s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=struct.protein_conformation.protein.parent.id)
-        # s.get_report()
-        #
-        import pprint
-        pprint.pprint(s.mapping)
-        # if self.pdb_file:
-        #     self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_file)[0]
-        # elif self.pdb_filename:
-        #     self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_filename)[0]
-        # else:
-        #     self.pdb_structure = structure
+        if sequence_parser:
+            struct = Structure.objects.get(pdb_code__index=self.pdb_code)
+            s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=struct.protein_conformation.protein.parent.id)
+            self.pdb_structure = s.pdb_struct
+            self.mapping = s.mapping
+        else:
+            if self.pdb_file:
+                self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_file)[0]
+            elif self.pdb_filename:
+                self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_filename)[0]
+            else:
+                self.pdb_structure = structure
 
-        # self.parse_structure(self.pdb_structure)
+            self.parse_structure(self.pdb_structure)
         
 
     def parse_structure(self, pdb_struct):
@@ -204,6 +204,20 @@ class GenericNumbering(object):
                     continue
                 for hsps in alignment[1].hsps:
                     self.map_blast_seq(alignment[0], hsps, chain)
-        import pprint
-        pprint.pprint(self.residues)
+
         return self.get_annotated_structure()
+
+    def assign_generic_numbers_with_sequence_parser(self):
+        for chain in self.pdb_structure:
+            for residue in chain:
+                if chain.id in self.mapping:
+                    if residue.id[1] in self.mapping[chain.id].keys():
+                        gpcrdb_num = self.mapping[chain.id][residue.id[1]].gpcrdb
+                        if gpcrdb_num != '':
+                            bw, gn = gpcrdb_num.split('x')
+                            gn = "{}.{}".format(bw.split('.')[0], gn)
+                            if len(gn.split('.')[1])==3:
+                                gn = '-'+gn[:-1]
+                            residue["CA"].set_bfactor(float(gn))
+                            residue["N"].set_bfactor(float(bw))
+        return self.pdb_structure
