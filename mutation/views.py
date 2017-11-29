@@ -267,6 +267,12 @@ def render_mutations(request, protein = None, family = None, download = None, re
             lig_name = mutation.ligand.name
             lig_role_name = mutation.ligand_role.name
 
+        if not mutation.review_title:
+            mutation.review_title = ''
+
+        if not mutation.refs_title:
+            mutation.refs_title = ''
+
         row = '''
                 <tr>
                 <td><a href="/protein/%s">%s</a></td>
