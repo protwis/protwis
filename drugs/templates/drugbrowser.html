@@ -51,7 +51,7 @@
                 {% for row in drugdata %}
                 <tr>
                 {% if row.NHS == 'yes' %}
-                  <td style="text-align:center"><a href='/drugs/nhs/{{row.name|safe}} '> {{row.name|safe}}</a></td>
+                  <td style="text-align:center"><a href='/drugs/nhs/{{row.name|safe}} ' target="_blank"> {{row.name|safe}}</a></td>
                 {% else %}
                   <td style="text-align:center">{{row.name|safe}}</a></td>
                 {% endif %}
@@ -85,7 +85,7 @@
 </div>
 <br>
 <br>
-<p>Hauser, A. S., Misty, A., Mathias, R.-A., Schiöth, H. B. & Gloriam, D. E. Trends in GPCR drug discovery: new agents, targets and indications.<i> Nat Rev Drug Discov</i>, (2017).</p>
+<p>Hauser, A. S., Misty, A., Mathias, R.-A., Schiöth, H. B. & Gloriam, D. E. Trends in GPCR drug discovery: new agents, targets and indications.<i> Nat Rev Drug Discov</i> (2017).</p>
 <br>
 <br>
 {% endblock %}
