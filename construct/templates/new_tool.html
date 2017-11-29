@@ -106,6 +106,12 @@
 </div>
 
 
+<div id="dialogauto" title="Switch Mode">
+  <p>You sure you want to go back to automatic mode -- all current changes will be deleted</p>
+</div>
+
+
+
 
 <div class="row">
   <div class="col-sm-6">
@@ -181,7 +187,7 @@
       Work Mode:
       </div>
       <div class="col-sm-9">
-        <button id=combi_mode_button class="btn btn-primary disabled" onclick='combi_mode();'>Automatic</button>
+        <button id=combi_mode_button class="btn btn-primary disabled" onclick='$( "#dialogauto" ).dialog( "open" )'>Automatic</button>
         <button id=manual_mode_button class="btn btn-primary" onclick='edit_mode();'>Manual</button>
         <button class="btn btn-warning" onclick='$( "#dialog" ).dialog( "open" )''>Reset</button>
       </div>
@@ -447,6 +453,12 @@
 <script src="{% static 'home/js/diagrams.js' %}"></script> 
 <script type="text/javascript" charset="utf-8">
 
+if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
+
+  $("#content").prepend('<div class="alert alert-warning"><strong>Warning!</strong> <p>Safari browser has compability issues with the snakeplot display. The export results will be correct, but the diagram will have errors. To prevent these issues, use Firefox or Chrome.</div>');
+
+}
+
   function upload() {
       event.preventDefault();
       var data = new FormData($('#file-upload-form').get(0));
@@ -475,7 +487,7 @@
                   // }
                   start = parseInt(range_match[1]);
                   end = parseInt(range_match[2]);
-                  for (var i = start; 1 > 0 ? i < end : i > end; i += 1) {
+                  for (var i = start; 1 > 0 ? i <= end : i > end; i += 1) {
                       range.push(i);
                   }
                 } else {
@@ -1097,7 +1109,7 @@
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
-            if (state==vals[3]) {
+            if (state==vals[3] || 1==1) { // ignore state
               if (fusionpos==vals[4] || (fusionpos=='None' && vals[4]!='nterm') || (fusionpos!='nterm' && vals[4]=='None') ) { //|| 1==1 include NOT all data regardless of fusion
                 // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
                 // TABLE
@@ -1195,7 +1207,7 @@
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
-            if (state==vals[3]) {
+            if (state==vals[3] || 1==1) {
                 find = 1;
                 // console.log(state +" "+fusionpos+" "+level+" "+protein+" "+pdb+" "+vals);
                 if(!show_cterm[level]) { show_cterm[level] = {}; } 
@@ -1272,7 +1284,7 @@
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
-            if (state==vals[2]) {
+            if (state==vals[2] || 1==1) {
               if (fusionpos==vals[3] || (fusionpos=='None' && vals[3]!='icl3') || (fusionpos!='icl3' && vals[3]=='None')) {
                 find = 1;
                 range = "5."+(50+vals[0])+"-"+"6."+(50-vals[1]);
@@ -1423,7 +1435,7 @@
         $.each(proteins, function(protein, pdbs){
           $.each(pdbs, function(pdb, vals){
             // Do checks!
-            if (state==vals[2]) {
+            if (state==vals[2] || 1==1) {
               if (fusionpos==vals[3] || (fusionpos=='None' && vals[3]!='icl3') || (fusionpos!='icl3' && vals[3]=='None')) { //use icl3 cos thats how it is
                 find = 1;
                 range = "3."+(50+vals[0])+"-"+"4."+(50-vals[1]);
@@ -3934,6 +3946,17 @@
             //   return
             // }
 
+            // Safari fix where :visible is not working
+            $.each($( "circle."+term+"-term.long" ), function(key,val) {
+            
+              if ($(val).css('display') != 'none') {
+                first_visible_residue = parseInt($(val).attr('id'));
+                if (term=='N') {return false;}
+              }
+
+            });
+
+
             if (isNaN(first_visible_residue)) {
               // $("."+term+"-term").hide();
               $("line."+term+"-term.long:visible").addClass('svg_construct_hidden');
@@ -4467,6 +4490,27 @@
         "Reset": function() {
           $( this ).dialog( "close" );
           resetAll();
+        },
+        Cancel: function() {
+          $( this ).dialog( "close" );
+        }
+      }
+    });
+
+    $( "#dialogauto" ).dialog({
+      autoOpen: false,
+      show: {
+        effect: "blind",
+        duration: 200
+      },
+      hide: {
+        effect: "explode",
+        duration: 200
+      },
+      buttons: {
+        "Automatic mode": function() {
+          $( this ).dialog( "close" );
+          combi_mode();
         },
         Cancel: function() {
           $( this ).dialog( "close" );
