@@ -136,6 +136,8 @@ class Diagram:
         id = residue_number
         idtext = str(id) + 't'
         tfill = 'black'
+        x = round(x)
+        y = round(y)
         #if (isset(_GET['precolor']) && _GET['precolor'] == 'TRUE') precolor = TRUE
         # if (precolor) {
         #     iid = str_replace('.', '_', id)
