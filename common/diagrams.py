@@ -16,7 +16,7 @@ def uniqid(prefix='', more_entropy=False):
 class Diagram:
     def create(self, content,sizex,sizey,name, nobuttons):
         #diagram_js = self.diagramJS()
-        if nobuttons=='gprotein':
+        if nobuttons=='gprotein' or nobuttons=='arrestin':
             return ("<svg id=\""+name+"\" " +
             "xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\""+str(sizex)+"\" height=\""+str(sizey)+"\" " +
             "style='stroke-width: 0px; background-color: white;'>\n"+content+"</svg>" +
@@ -98,8 +98,6 @@ class Diagram:
         output = ("<br>Pick color:" +
             colors +
             "</div>")
-
-        #print(str(self.receptorId))
 
         output += '<br><button style="width:120px;" onclick="applyPresentColors(\''+self.type+'\')">Properties</button> <button style="width:120px;" onclick="resetColors(\''+self.type+'\')">Clear</button>'
         if str(self.receptorId)=='family_diagram_preloaded_data':
