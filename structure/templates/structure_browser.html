@@ -90,16 +90,20 @@
 
                 }
                 var checked_data = table.rows('.alt_selected').data();
+                var selected_ids = []
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
                     div.innerHTML = checked_data[i][5];
                     if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                        // AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                        selected_ids.push(div.innerText.replace(/\s+/g, ''));
                     } else {
-                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                        // AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                        selected_ids.push(div.textContent.replace(/\s+/g, ''));
                     }
 
                 }
+                AddToSelection('targets', 'structure_many', selected_ids.join(","));
                 window.location.href = '/structure/superposition_workflow_index';
             });
             $.fn.dataTable.ext.search.push(
