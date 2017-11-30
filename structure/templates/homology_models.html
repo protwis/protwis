@@ -77,23 +77,18 @@
             $('#download_btn').click(function () {
                 ClearSelection('targets');
                 var checked_data = table.rows('.alt_selected').data();
-                if (checked_data.length > 20) {
-                    window.alert('Please select max 20 entries');
-                }
-                else {
-                    for (i = 0; i < checked_data.length; i++) {
-                        var div = document.createElement("div");
-                        div.innerHTML = checked_data[i][9];
-                        var state = checked_data[i][3];
-                        if (typeof div.innerText !== "undefined") {
-                            AddToSelection('targets', 'structure_model_'.concat(state),  div.innerText.replace(/\s+/g, '') );
-                        } else {
-                            AddToSelection('targets', 'structure_model_'.concat(state), div.textContent.replace(/\s+/g, ''));
-                        }
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][9];
+                    var state = checked_data[i][3];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure_model_'.concat(state),  div.innerText.replace(/\s+/g, '') );
+                    } else {
+                        AddToSelection('targets', 'structure_model_'.concat(state), div.textContent.replace(/\s+/g, ''));
                     }
-                    
-                    window.location.href = '/structure/hommod_download';
                 }
+                
+                window.location.href = '/structure/hommod_download';
 
             });
             $('#align_btn').click(function () {
@@ -131,23 +126,18 @@
 
                 }
                 var checked_data = table.rows('.alt_selected').data();
-                if (checked_data.length > 20) {
-                    window.alert('Please select max 20 entries');
-                }
-                else {
-                    for (i = 0; i < checked_data.length; i++) {
-                        var div = document.createElement("div");
-                        div.innerHTML = checked_data[i][9];
-                        var state2 = checked_data[i][3];
-                        if (typeof div.innerText !== "undefined") {
-                            AddToSelection('targets', 'structure_model_'.concat(state2), div.innerText.replace(/\s+/g, ''));
-                        } else {
-                            AddToSelection('targets', 'structure_model_'.concat(state2), div.textContent.replace(/\s+/g, ''));
-                        }
-
+                for (i = 0; i < checked_data.length; i++) {
+                    var div = document.createElement("div");
+                    div.innerHTML = checked_data[i][9];
+                    var state2 = checked_data[i][3];
+                    if (typeof div.innerText !== "undefined") {
+                        AddToSelection('targets', 'structure_model_'.concat(state2), div.innerText.replace(/\s+/g, ''));
+                    } else {
+                        AddToSelection('targets', 'structure_model_'.concat(state2), div.textContent.replace(/\s+/g, ''));
                     }
-                    window.location.href = '/structure/superposition_workflow_index';
+
                 }
+                window.location.href = '/structure/superposition_workflow_index';
             });
 
             
