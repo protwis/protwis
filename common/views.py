@@ -314,6 +314,7 @@ def AddToSelection(request):
                 o.append(Structure.objects.get(pdb_code__index=selection_id.upper()))
 
         elif selection_subtype == 'structure_many':
+            selection_subtype = 'structure'
             for pdb_code in selection_id.split(","):
                 print(pdb_code)
                 if 'refined' in pdb_code:
