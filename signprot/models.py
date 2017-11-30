@@ -35,3 +35,9 @@ class SignprotComplex(models.Model):
     protein = models.ForeignKey('protein.Protein')
     structure = models.ForeignKey('structure.Structure')
     chain = models.CharField(max_length=1)
+
+    def __str__(self):
+        return '<SignprotComplex: {} {}>'.format(self.protein.entry_name, self.structure.pdb_code.index)
+
+    class Meta():
+        db_table = 'signprot_complex'

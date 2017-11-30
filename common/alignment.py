@@ -8,6 +8,7 @@ from residue.models import ResidueGenericNumber, ResidueGenericNumberEquivalent
 from residue.models import ResidueNumberingScheme
 from residue.functions import dgn, ggn
 from structure.models import Structure, Rotamer
+from signprot.models import SignprotComplex
 
 from collections import OrderedDict
 from copy import deepcopy
@@ -1072,7 +1073,8 @@ class AlignedReferenceTemplate(Alignment):
                 if st.pdb_code.index=='5LWE' and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
                     i+=1
                     continue
-                if self.complex and st.pdb_code.index not in ['3SN6', '5VAI', '5UZ7']:
+                # only use complex main template ['3SN6', '5VAI', '5UZ7']
+                if self.complex and st.pdb_code.index not in [x.structure.pdb_code.index for x in SignprotComplex.objects.all()]:
                     i+=1
                     continue
                 if st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
@@ -1469,7 +1471,6 @@ class GProteinAlignment(Alignment):
                 continue
             ref_segment_dict, temp_segment_dict, align_segment_dict = OrderedDict(), OrderedDict(), OrderedDict()
             for ref_pos, temp_pos in zip(reference.alignment[ref_seg], template.alignment[temp_seg]):
-                print(ref_pos, temp_pos)
                 if ref_pos[1] and temp_pos[1] and ref_pos[1]==temp_pos[1]:
                     ref_segment_dict[ref_pos[0]] = ref_pos[2]
                     temp_segment_dict[temp_pos[0]] = temp_pos[2]

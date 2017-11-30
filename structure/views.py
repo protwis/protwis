@@ -1214,7 +1214,6 @@ class SuperpositionWorkflowDownload(View):
         if 'alt_files' in request.FILES:
             request.session['alt_files'] = request.FILES.getlist('alt_files')
 
-
         return response
 
 

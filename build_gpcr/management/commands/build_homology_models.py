@@ -1,5 +1,6 @@
 from build.management.commands.base_build import Command as BaseBuild
 from django.db.models import Q
+from django.conf import settings
 
 from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState, ProteinSegment
 from residue.models import Residue
@@ -8,6 +9,7 @@ from structure.models import *
 from structure.functions import HSExposureCB, PdbStateIdentifier
 from common.alignment import AlignedReferenceTemplate, GProteinAlignment
 from common.models import WebLink
+from signprot.models import SignprotComplex
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
 import structure.homology_models_tests as tests
@@ -679,7 +681,7 @@ class HomologyModeling(object):
                     self.update_template_source([gn.replace('.','x')],self.main_structure,seg_l)
             
             helixends = HelixEndsModeling(self.similarity_table_all, self.template_source, self.main_structure)
-            
+
             try:
                 if (len(main_pdb_array['H8'])==0 and len(list(Residue.objects.filter(protein_conformation=self.prot_conf, protein_segment__slug='H8')))>0 or 
                    (self.reference_protein.family.slug.startswith('004') and self.main_structure.pdb_code.index!='4OO9') or 
@@ -791,7 +793,7 @@ class HomologyModeling(object):
 
             if self.debug:
                 print('Corrected helix ends: ',datetime.now() - startTime)
-            
+
             main_pdb_array = helixends.main_pdb_array
             alignment = helixends.alignment
 
@@ -1588,6 +1590,26 @@ class HomologyModeling(object):
 
         # check if ECL3 might have a disulfide bridge
         self.disulfide_pairs.append(self.ECL3_disulfide(a.reference_dict))
+
+
+        # if complex
+        if self.complex:
+            signprot_complex = SignprotComplex.objects.get(structure=self.main_structure)
+            print('fetch signprot complex: ',datetime.now() - startTime)
+            target_signprot = signprot_complex.protein
+            print('target_signprot: ',datetime.now() - startTime)
+            sign_a = GProteinAlignment()
+            print('GProteinAlignment: ',datetime.now() - startTime)
+            sign_a.run_alignment(signprot_complex.protein)
+            print('run alignment: ',datetime.now() - startTime)
+            io = StringIO(self.main_structure.pdb_data.pdb)
+            print('string io: ',datetime.now() - startTime)
+            assign_cgn = as_gn.GenericNumbering(pdb_file=io, pdb_code=self.main_structure.pdb_code.index, sequence_parser=True, signprot=target_signprot)
+            print('assign init: ',datetime.now() - startTime)
+            assign_cgn.assign_cgn_with_sequence_parser(signprot_complex.chain)
+            print('assign cgn: ',datetime.now() - startTime)
+        raise AssertionError
+
 
         # write to file
         trimmed_res_nums, helix_restraints, icl3_mid, disulfide_nums = self.write_homology_model_pdb(path+self.reference_entry_name+'_'+self.state+"_post.pdb", 
@@ -4069,11 +4091,8 @@ class GPCRDBParsingPDB(object):
             except:
                 pass
 
-        assign_gn = as_gn.GenericNumbering(pdb_file=io, pdb_code=structure.pdb_code.index, sequence_parser=True)#structure=pdb_struct)
+        assign_gn = as_gn.GenericNumbering(pdb_file=io, pdb_code=structure.pdb_code.index, sequence_parser=True)
         pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
-        a = GProteinAlignment()
-        a.run_alignment(Protein.objects.get(entry_name='gnal_human'))
-        raise AssertionError
         pref_chain = structure.preferred_chain
         parent_prot_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
         parent_residues = Residue.objects.filter(protein_conformation=parent_prot_conf)
@@ -4163,6 +4182,7 @@ class GPCRDBParsingPDB(object):
                         except:
                             found_gn = str(gn)
                         output[found_res.protein_segment.slug][found_gn] = res
+
         return output
    
    

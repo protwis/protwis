@@ -49,6 +49,7 @@ class Command(BaseCommand):
             ['build_consensus_sequences', {'proc': options['proc']}],
             ['build_g_proteins'],
             ['build_arrestins'],
+            ['build_signprot_complex'],
             ['build_drugs'],
             ['build_nhs'],
             ['build_mutational_landscape'],

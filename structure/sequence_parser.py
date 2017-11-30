@@ -205,27 +205,30 @@ class SequenceParser(object):
             else:
                 raise Exception()
         except:
-            self.wt = Protein.objects.get(id=wt_protein_id)
-        self.wt_seq = str(self.wt.sequence)
+            if not wt_protein_id:
+                self.wt = None
+                self.wt_seq = ''
+            else:
+                self.wt = Protein.objects.get(id=wt_protein_id)
+                self.wt_seq = str(self.wt.sequence)
         self.fusions = []
 
-
+        print('before inner seq parse')
         self.parse_pdb(self.pdb_struct)
         #if self.seqres:
         #    self.map_seqres()
         
         self.mark_deletions()
-
+        print('after inner seq parse')
 
     def parse_pdb(self, pdb_struct):
         """
         extracting sequence and preparing dictionary of residues
         bio.pdb reads pdb in the following cascade: model->chain->residue->atom
         """
-        wt_resi = list(Residue.objects.filter(protein_conformation__protein=self.wt.id))
+        
         for chain in pdb_struct:
             self.residues[chain.id] = []
-            self.mapping[chain.id] = {x.sequence_number: ParsedResidue(x.amino_acid, x.sequence_number, str(x.display_generic_number) if x.display_generic_number else None, x.protein_segment) for x in wt_resi}
             
             for res in chain:
             #in bio.pdb the residue's id is a tuple of (hetatm flag, residue number, insertion code)
@@ -320,14 +323,21 @@ class SequenceParser(object):
         else:
             seq = self.get_chain_sequence(chain_id)
         alignments = self.blast.run(seq)
-        print(chain_id)
         for alignment in alignments:
-            print(alignment[1])
-            print(alignment[1].hsps[0].expect)
+            if self.wt==None:
+                try:
+                    self.wt = Protein.objects.get(entry_name=str(alignment[1].hit_def))
+                    wt_resi = list(Residue.objects.filter(protein_conformation__protein=self.wt.id))
+                    self.mapping[chain_id] = {x.sequence_number: ParsedResidue(x.amino_acid, x.sequence_number, str(x.display_generic_number) if x.display_generic_number else None, x.protein_segment) for x in wt_resi}
+                except:
+                    pass
+            else:
+                wt_resi = list(Residue.objects.filter(protein_conformation__protein=self.wt.id))
+                self.mapping[chain_id] = {x.sequence_number: ParsedResidue(x.amino_acid, x.sequence_number, str(x.display_generic_number) if x.display_generic_number else None, x.protein_segment) for x in wt_resi}
             if alignment[1].hsps[0].expect > .5 and residues:
                 self.fusions.append(AuxProtein(residues))
                 #The case when auxiliary protein is in a separate chain
-                if self.get_chain_sequence(chain_id) == self.get_peptide_sequence(residues):
+                if self.get_chain_sequence(chain_id) == self.get_peptide_sequence(residues) and chain_id in self.mapping:
                     del self.mapping[chain_id]
                 continue
 
