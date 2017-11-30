@@ -90,17 +90,23 @@
 
                 }
                 var checked_data = table.rows('.alt_selected').data();
-                for (i = 0; i < checked_data.length; i++) {
-                    var div = document.createElement("div");
-                    div.innerHTML = checked_data[i][5];
-                    if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
-                    } else {
-                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
-                    }
-
+                
+                if (checked_data.length > 20) {
+                    window.alert('Please only select max 20 entries');
                 }
-                window.location.href = '/structure/superposition_workflow_index';
+                else {
+                    for (i = 0; i < checked_data.length; i++) {
+                        var div = document.createElement("div");
+                        div.innerHTML = checked_data[i][5];
+                        if (typeof div.innerText !== "undefined") {
+                            AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                        } else {
+                            AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                        }
+
+                    }
+                    window.location.href = '/structure/superposition_workflow_index';
+                }
             });
             $.fn.dataTable.ext.search.push(
                 function (settings, data, dataIndex) {
