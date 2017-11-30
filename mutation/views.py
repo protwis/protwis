@@ -161,7 +161,6 @@ def render_mutations(request, protein = None, family = None, download = None, re
             alignment_proteins = proteins
 
         used_scheme = max(used_schemes, key=used_schemes.get)
-
         mutations = MutationExperiment.objects.filter(
                                 Q(protein__in=proteins),
                                 Q(residue__protein_segment__in=original_segments) | Q(residue__generic_number__label__in=original_positions)
@@ -186,6 +185,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
 
 
     mutations_list = {}
+    mutations_list_seq = {}
     mutations_generic_number = {}
     mutations_display_generic_number = {}
     mutations_class_generic_number = {}
@@ -207,8 +207,9 @@ def render_mutations(request, protein = None, family = None, download = None, re
     mutation_tables = ''
     for mutation in mutations:
         residue_table_list.append(mutation.residue.generic_number)
-        if not mutation.residue.generic_number: continue #cant map those without display numbers
-        if mutation.residue.generic_number.label not in mutations_list: mutations_list[mutation.residue.generic_number.label] = []
+        # if not mutation.residue.generic_number: continue #cant map those without display numbers
+        if mutation.residue.generic_number and mutation.residue.generic_number.label not in mutations_list: mutations_list[mutation.residue.generic_number.label] = []
+        if mutation.residue.sequence_number not in mutations_list_seq: mutations_list_seq[mutation.residue.sequence_number] = [[]]
 
         exp_type = "N/A"
         if mutation.exp_func:
@@ -226,15 +227,21 @@ def render_mutations(request, protein = None, family = None, download = None, re
             qual = mutation.exp_qual.qual
         else:
             qual = ''
-        mutations_list[mutation.residue.generic_number.label].append([mutation.foldchange,ligand.replace('\xe2', "").replace('\'', ""),qual])
-        if mutation.residue.generic_number not in gn_lookup:
-            class_gn = ResidueGenericNumberEquivalent.objects.filter(default_generic_number = mutation.residue.generic_number, scheme__slug = used_scheme).get()
-            gn_lookup[mutation.residue.generic_number] = class_gn
+
+        mutations_list_seq[mutation.residue.sequence_number][0].append([mutation.foldchange,ligand.replace('\xe2', "").replace('\'', ""),qual])
+        if mutation.residue.generic_number:
+            mutations_list[mutation.residue.generic_number.label].append([mutation.foldchange,ligand.replace('\xe2', "").replace('\'', ""),qual])
+            if mutation.residue.generic_number not in gn_lookup:
+                class_gn = ResidueGenericNumberEquivalent.objects.filter(default_generic_number = mutation.residue.generic_number, scheme__slug = used_scheme).get()
+                gn_lookup[mutation.residue.generic_number] = class_gn
+            else:
+                class_gn = gn_lookup[mutation.residue.generic_number]
+            mutations_display_generic_number[mutation.raw.id] = mutation.residue.display_generic_number.label
+            mutations_generic_number[mutation.raw.id] = mutation.residue.generic_number.label
+            mutations_class_generic_number[mutation.raw.id] = class_gn.label
+            gn_display = mutation.residue.display_generic_number.label
         else:
-            class_gn = gn_lookup[mutation.residue.generic_number]
-        mutations_generic_number[mutation.raw.id] = mutation.residue.generic_number.label
-        mutations_display_generic_number[mutation.raw.id] = mutation.residue.display_generic_number.label
-        mutations_class_generic_number[mutation.raw.id] = class_gn.label
+            gn_display = ''
         mutation.refs_link = ""
         mutation.refs_title = ""
         mutation.refs_main = ""
@@ -260,6 +267,12 @@ def render_mutations(request, protein = None, family = None, download = None, re
             lig_name = mutation.ligand.name
             lig_role_name = mutation.ligand_role.name
 
+        if not mutation.review_title:
+            mutation.review_title = ''
+
+        if not mutation.refs_title:
+            mutation.refs_title = ''
+
         row = '''
                 <tr>
                 <td><a href="/protein/%s">%s</a></td>
@@ -278,7 +291,7 @@ def render_mutations(request, protein = None, family = None, download = None, re
                 <td>
                 <a class="citation-tooltip" target="_blank" href="%s" data-toggle="tooltip"  data-container="body" data-html="true" data-original-title="%s" data-placement="left" >%s</a></td>
                  </tr>
-        ''' % (mutation.protein.entry_name,mutation.protein.entry_name,mutation.residue.display_generic_number.label,mutation.residue.sequence_number,mutation.residue.protein_segment.slug,
+        ''' % (mutation.protein.entry_name,mutation.protein.entry_name,gn_display,mutation.residue.sequence_number,mutation.residue.protein_segment.slug,
                mutation.residue.amino_acid, mutation.mutation.amino_acid,mutation.getCalculation(),mutation.getFoldorQual(),exp_type,smiles,lig_name,
                lig_role_name,lig_name,mutation.refs_link,mutation.refs_title,mutation.refs_main,mutation.review_link,mutation.review_title,mutation.review_main)
         mutation_tables += row
@@ -342,11 +355,16 @@ def render_mutations(request, protein = None, family = None, download = None, re
             residue_list.append(r)
 
             count += 1
-
         protein_ids = list(set([x.id for x in proteins]))
-        HelixBox = DrawHelixBox(consensus,'Class A',str(protein_ids), nobuttons = 1)
-        SnakePlot = DrawSnakePlot(consensus,'Class A',str(protein_ids), nobuttons = 1)
+        if protein:
+            #if protein do something else
+            SnakePlot = proteins[0].get_snake_plot_no_buttons()
+            HelixBox = proteins[0].get_helical_box_no_buttons()
 
+            mutations_pos_list = mutations_list_seq
+        else:
+            HelixBox = DrawHelixBox(consensus,'Class A',str(protein_ids), nobuttons = 1)
+            SnakePlot = DrawSnakePlot(consensus,'Class A',str(protein_ids), nobuttons = 1)
 
         numbering_schemes_selection = ['gpcrdba','gpcrdbb','gpcrdbc','gpcrdbf'] #there is a residue_numbering_scheme attribute on the protein model, so it's easy to find out
         numbering_schemes_selection = list(used_schemes.keys())

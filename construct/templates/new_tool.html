@@ -106,6 +106,12 @@
 </div>
 
 
+<div id="dialogauto" title="Switch Mode">
+  <p>You sure you want to go back to automatic mode -- all current changes will be deleted</p>
+</div>
+
+
+
 
 <div class="row">
   <div class="col-sm-6">
@@ -181,7 +187,7 @@
       Work Mode:
       </div>
       <div class="col-sm-9">
-        <button id=combi_mode_button class="btn btn-primary disabled" onclick='combi_mode();'>Automatic</button>
+        <button id=combi_mode_button class="btn btn-primary disabled" onclick='$( "#dialogauto" ).dialog( "open" )'>Automatic</button>
         <button id=manual_mode_button class="btn btn-primary" onclick='edit_mode();'>Manual</button>
         <button class="btn btn-warning" onclick='$( "#dialog" ).dialog( "open" )''>Reset</button>
       </div>
@@ -481,7 +487,7 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
                   // }
                   start = parseInt(range_match[1]);
                   end = parseInt(range_match[2]);
-                  for (var i = start; 1 > 0 ? i < end : i > end; i += 1) {
+                  for (var i = start; 1 > 0 ? i <= end : i > end; i += 1) {
                       range.push(i);
                   }
                 } else {
@@ -4484,6 +4490,27 @@ if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('
         "Reset": function() {
           $( this ).dialog( "close" );
           resetAll();
+        },
+        Cancel: function() {
+          $( this ).dialog( "close" );
+        }
+      }
+    });
+
+    $( "#dialogauto" ).dialog({
+      autoOpen: false,
+      show: {
+        effect: "blind",
+        duration: 200
+      },
+      hide: {
+        effect: "explode",
+        duration: 200
+      },
+      buttons: {
+        "Automatic mode": function() {
+          $( this ).dialog( "close" );
+          combi_mode();
         },
         Cancel: function() {
           $( this ).dialog( "close" );

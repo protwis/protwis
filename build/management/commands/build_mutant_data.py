@@ -674,16 +674,16 @@ class Command(BaseBuild):
             foldchange = 0
             typefold = ''
             if r['exp_wt_value']!=0 and r['exp_mu_value_raw']!=0: #fix for new format
-
                 if re.match("(" + ")|(".join(logtypes) + ")", r['exp_type']):  #-log values!
                     foldchange = round(math.pow(10,-r['exp_mu_value_raw'])/pow(10,-r['exp_wt_value']),3);
                     typefold = r['exp_type']+"_log"
+                elif "%"==r['exp_wt_unit']:
+                    # if % then it's a difference case, then lower value is bad. Otherwise it's conc and lower is better
+                    foldchange = round(r['exp_wt_value']/r['exp_mu_value_raw'],3);
                 else:
                     foldchange = round(r['exp_mu_value_raw']/r['exp_wt_value'],3);
                     typefold = r['exp_type']+"_not_log"
-
-
-                if foldchange<1 and foldchange!=0:
+                if foldchange>0 and foldchange<1 and foldchange!=0:
                     foldchange = -round((1/foldchange),3)
             elif r['fold_effect']!=0:
                     foldchange = round(r['fold_effect'],3);
