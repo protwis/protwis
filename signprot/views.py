@@ -37,8 +37,7 @@ class BrowseSelection(AbsTargetSelection):
     target_input=False
 
     selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
+        ('reference', False), ('targets', True),
         ('segments', False),
     ])
     try:
@@ -305,7 +304,11 @@ def ajaxInterface(request, slug, **response_kwargs):
     jsondata = cache.get(name_of_cache)
 
     if jsondata == None:
-        rsets = ResiduePositionSet.objects.get(name="Gprotein Barcode")
+
+        if slug == "arrs_human":
+            rsets = ResiduePositionSet.objects.get(name="Arrestin interface")
+        else:
+            rsets = ResiduePositionSet.objects.get(name="Gprotein Barcode")
         # residues = Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label)
 
         jsondata = {}
