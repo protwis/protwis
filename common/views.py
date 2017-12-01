@@ -277,7 +277,6 @@ def AddToSelection(request):
     selection_type = request.GET['selection_type']
     selection_subtype = request.GET['selection_subtype']
     selection_id = request.GET['selection_id']
-
     # get simple selection from session
     simple_selection = request.session.get('selection', False)
 
@@ -314,17 +313,25 @@ def AddToSelection(request):
             else:
                 o.append(Structure.objects.get(pdb_code__index=selection_id.upper()))
 
+        elif selection_subtype == 'structure_many':
+            selection_subtype = 'structure'
+            for pdb_code in selection_id.split(","):
+                if 'refined' in pdb_code:
+                    sel1, sel2 = pdb_code.split('_')
+                    o.append(Structure.objects.get(pdb_code__index=sel1.upper()+'_refined'))
+                else:
+                    o.append(Structure.objects.get(pdb_code__index=pdb_code.upper()))
+
         elif selection_subtype == 'structure_model':
-            o.append(StructureModel.objects.filter(protein__entry_name=selection_id)[0])
+            o.append(StructureModel.objects.defer('pdb').filter(protein__entry_name=selection_id)[0])
 
-        elif selection_subtype == 'structure_model_Inactive':
-            o.append(StructureModel.objects.get(protein__entry_name=selection_id, state__name='Inactive'))
+        elif selection_subtype == 'structure_models_many':
+            selection_subtype = 'structure_model'
+            for model in selection_id.split(","):
+                state = model.split('_')[-1]
+                entry_name = '_'.join(model.split('_')[:-1])
+                o.append(StructureModel.objects.defer('pdb').get(protein__entry_name=entry_name, state__name=state))
 
-        elif selection_subtype == 'structure_model_Intermediate':
-            o.append(StructureModel.objects.get(protein__entry_name=selection_id, state__name='Intermediate'))
-
-        elif selection_subtype == 'structure_model_Active':
-            o.append(StructureModel.objects.get(protein__entry_name=selection_id, state__name='Active'))
 
     elif selection_type == 'segments':
         if selection_subtype == 'residue':
@@ -347,7 +354,6 @@ def AddToSelection(request):
 
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
-
     # add simple selection to session
     request.session['selection'] = simple_selection
 
