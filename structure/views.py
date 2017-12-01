@@ -1214,14 +1214,6 @@ class SuperpositionWorkflowDownload(View):
         if 'alt_files' in request.FILES:
             request.session['alt_files'] = request.FILES.getlist('alt_files')
 
-        selection.clear('reference')
-        selection.clear('targets')
-        selection.clear('segments')
-        selection.clear('annotation')
-        selection.clear('numbering_schemes')
-        del request.session['selection']
-        del request.session['alt_structs']
-
         return response
 
 
@@ -1685,9 +1677,6 @@ class PDBDownload(View):
                 response['Content-Disposition'] = 'attachment; filename="GPCRDB_homology_models.zip"'
             response.write(out_stream.getvalue())
 
-        del request.session['selection']
-        del request.session['cleaned_structures']
-        del request.session['substructure_mapping']
         return response
 
 #==============================================================================
@@ -1801,7 +1790,6 @@ def SingleModelDownload(request, modelname, state, csv=False):
                                                                            hommod.state.name, hommod.main_template.pdb_code.index, hommod.version)
     response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
 
-    del request.session['selection']
     return response
 
 def ServePdbOutfile (request, outfile, replacement_tag):
