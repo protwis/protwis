@@ -132,15 +132,12 @@
                     div.innerHTML = checked_data[i][9];
                     var state2 = checked_data[i][3];
                     if (typeof div.innerText !== "undefined") {
-                        // AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
                         selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state2);
                     } else {
-                        // AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
                         selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state2);
                     }
 
                 }
-                console.log(selected_ids)
                 AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
                 window.location.href = '/structure/superposition_workflow_index';
             });
