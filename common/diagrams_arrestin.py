@@ -23,8 +23,7 @@ class DrawArrestinPlot(Diagram):
         # residueType = 'sp'
 
         # FIXME DO PUREIMAGE
-        pureImage = False
-        #$pureImage = isset($_GET['pureimage']) && $_GET['pureimage'] == 'TRUE' ? TRUE : FALSE;
+        # $pureImage = isset($_GET['pureimage']) && $_GET['pureimage'] == 'TRUE' ? TRUE : FALSE;
 
         # get sequence, baldwin, and bw information of this receptor
 
@@ -36,7 +35,7 @@ class DrawArrestinPlot(Diagram):
         for r in self.sequence:
             if r.protein_segment:
                 segment = str(r.protein_segment.slug)
-            elif r.segment_slug:  #from family aligment
+            elif r.segment_slug:  # from family aligment
                 segment = str(r.segment_slug)
 
             if segment not in self.segments:
@@ -65,25 +64,25 @@ class DrawArrestinPlot(Diagram):
         #                     rs[i][2] = str(helix_num) + "x" + number
         #                     print(rs[i][2])
 
-        self.helixWidth = 70         # Width of helix
+        self.helixWidth = 75         # Width of helix
         self.resNumPerRow = 4        # Residue number per row in helix
         self.angleDeg = 22.0         # Angle size of each helix turn
         self.residue_radius = 12     # Radius of the residue circle
 
         # svg image padding offset
-        self.offsetX = 0  # -200
+        self.offsetX = -40  # -200
         self.offsetY = 0  # -50
 
         # margin between two helixes
-        self.margin = 10
+        self.margin = 0
 
         # highest and lowest bound of this svg
         self.high = 0
         self.low = 0
 
         # keep track of max Y positions of intra/extra loops
-        self.maxY = {'bottom':0, 'top':0}
-        self.maxX = {'left':0, 'right':0}
+        self.maxY = {'bottom': 0, 'top': 0}
+        self.maxX = {'left': 0, 'right': 0}
 
         # helices length
         # helicesLength = Svg::getSnakePlotHelicesLength($baldwin, $helixWidth, $angleDeg) #FIXME
@@ -129,7 +128,7 @@ class DrawArrestinPlot(Diagram):
         helix_num = self.count
         self.TBCoords[helix_num] = {}
 
-        if helix_num%2!=0: rs.reverse() # reverse direction for even helix because they go from inside to outside
+        if helix_num % 2 != 0: rs.reverse()  # reverse direction for even helix because they go from inside to outside
 
         output_residues = []
 
@@ -138,7 +137,7 @@ class DrawArrestinPlot(Diagram):
         output_residue_out = ''
         output_trace = ''
 
-        startX = self.helixWidth+self.offsetX+(self.margin+self.helixWidth)*(helix_num-1)-(self.count_sheet*20)
+        startX = self.helixWidth + 40 + self.offsetX + (self.margin + self.helixWidth) * (helix_num - 1) - (self.count_sheet*20)
         startY = self.offsetY
 
         row_length = 3
