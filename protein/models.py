@@ -66,7 +66,6 @@ class Protein(models.Model):
             tmp = tmp.parent
         return tmp.name
 
-
 class ProteinConformation(models.Model):
     protein = models.ForeignKey('Protein')
     state = models.ForeignKey('ProteinState')
@@ -88,11 +87,11 @@ class ProteinConformation(models.Model):
 
     @property
     def is_sodium(self):
-        sodium = IdentifiedSites.objects.filter(protein_conformation=self, site__slug='sodium_pocket')
-        if len(sodium)>0:
-            return True
-        else:
-            return False
+        # Avoid filter, to utilise if site_protein_conformation is prefetched, otherwise it generates a DB call
+        for s in self.site_protein_conformation.all():
+            if s.site.slug=='sodium_pocket':
+                return True
+        return False
 
     def sodium_pocket(self):
         try:
