@@ -323,14 +323,14 @@ def AddToSelection(request):
                     o.append(Structure.objects.get(pdb_code__index=pdb_code.upper()))
 
         elif selection_subtype == 'structure_model':
-            o.append(StructureModel.objects.filter(protein__entry_name=selection_id)[0])
+            o.append(StructureModel.objects.defer('pdb').filter(protein__entry_name=selection_id)[0])
 
         elif selection_subtype == 'structure_models_many':
             selection_subtype = 'structure_model'
             for model in selection_id.split(","):
                 state = model.split('_')[-1]
                 entry_name = '_'.join(model.split('_')[:-1])
-                o.append(StructureModel.objects.get(protein__entry_name=entry_name, state__name=state))
+                o.append(StructureModel.objects.defer('pdb').get(protein__entry_name=entry_name, state__name=state))
 
 
     elif selection_type == 'segments':
