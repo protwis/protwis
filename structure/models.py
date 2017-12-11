@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.cache import cache
 
 from io import StringIO
 from Bio.PDB import PDBIO
@@ -21,8 +22,6 @@ class Structure(models.Model):
     annotated = models.BooleanField(default=True)
     refined = models.BooleanField(default=False)
     distance = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-
-
 
     def __str__(self):
         return self.pdb_code.index
@@ -48,7 +47,6 @@ class Structure(models.Model):
                 tmp.append(line)
 
         return '\n'.join(tmp)
-
                         
     def get_preferred_chain_pdb(self):
 
@@ -58,6 +56,19 @@ class Structure(models.Model):
             if (line.startswith('ATOM') or line.startswith('HET')) and line[21] == self.preferred_chain[0]:
                 tmp.append(line)
         return '\n'.join(tmp)
+
+    @property
+    def is_refined(self):
+        # Ugly way of speeding up -- preferable the DB should create a relationship between the entries.
+        refined = cache.get(self.pdb_code.index+'_refined')
+        if refined == None:
+            s = Structure.objects.filter(refined=True, pdb_code__index=self.pdb_code.index+'_refined')
+            if len(s)>0:
+                refined = True
+            else:
+                refined = False
+            cache.set(self.pdb_code.index+'_refined',refined, 24*60*60)
+        return refined
 
     class Meta():
         db_table = 'structure'
@@ -71,6 +82,9 @@ class StructureModel(models.Model):
     version = models.DateField()
     
     def __repr__(self):
+        return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
+        
+    def __str__(self):
         return '<HomologyModel: '+str(self.protein.entry_name)+' '+str(self.state)+'>'
 
     class Meta():

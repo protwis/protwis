@@ -11,6 +11,7 @@ from mutation.models import MutationExperiment
 from common.selection import Selection
 from common.diagrams_gpcr import DrawSnakePlot
 from common.diagrams_gprotein import DrawGproteinPlot
+from common.diagrams_arrestin import DrawArrestinPlot
 
 from signprot.models import SignprotStructure, SignprotBarcode
 
@@ -41,14 +42,18 @@ class BrowseSelection(AbsTargetSelection):
         ('segments', False),
     ])
     try:
-        ppf = ProteinFamily.objects.get(slug="100_000")
-        pfs = ProteinFamily.objects.filter(parent=ppf.id)
-        ps = Protein.objects.filter(family=ppf)
+        ppf_g = ProteinFamily.objects.get(slug="100_000")
+        ppf_a = ProteinFamily.objects.get(slug="200_000")
+        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id,ppf_a.id])
+        # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])
+        ps = Protein.objects.filter(family__in=[ppf_g,ppf_a]) #
         tree_indent_level = []
-        action = 'expand'
+        # action = 'expand'
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
-        del ppf
+        del ppf_g
+        del ppf_a
     except Exception as e:
+        print("selection error")
         pass
 
 @cache_page(60*60*24*2) # 2 days caching
@@ -88,9 +93,9 @@ def GProtein(request):
 
         context["selectivitydata"] = selectivitydata
 
-        
 
-    return render(request, 'signprot/gprotein.html', context)        
+
+    return render(request, 'signprot/gprotein.html', context)
 
 @cache_page(60*60*24*2)
 def familyDetail(request, slug):
@@ -365,7 +370,7 @@ def StructureInfo(request, pdbname):
 
     return render(request,'signprot/structure_info.html',{'pdbname': pdbname, 'protein': protein, 'crystal': crystal})
 
-@cache_page(60*60*24*2)
+# @cache_page(60*60*24*2)
 def signprotdetail(request, slug):
     # get protein
 
@@ -435,7 +440,6 @@ def signprotdetail(request, slug):
             title_cell_skip -= 1
     if r_buffer:
         r_chunks.append(r_buffer)
-
     context = {'p': p, 'families': families, 'r_chunks': r_chunks, 'chunk_size': chunk_size, 'aliases': aliases,
         'gene': gene, 'alt_genes': alt_genes, 'structures': structures, 'mutations': mutations}
 

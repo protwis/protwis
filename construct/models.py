@@ -43,23 +43,31 @@ class Construct(models.Model):
         # Q0SXH8 Cytochrome b(562)
         result = []
         position = None
-        for insert in self.insertions.all():
+        for insert in self.insertions.filter(presence='YES').all():
             if insert.insert_type.subtype in list_of_none_fusion:
                 continue
             if insert.insert_type.name!='fusion' and insert.insert_type.name!='auto':
                 continue
             #print(insert.insert_type.name, insert.insert_type.subtype)
-            #print(insert.position, self.name)
             confirmed = False
             if insert.insert_type.name=='fusion' or insert.insert_type.subtype in list_of_comfirmed_fusion:
                 confirmed = True
-                if position != None:
-                    print("new fusion??",position,insert.position,self.name)
+                # if position != None:
+                #     print("new fusion??",position,insert.position,self.name)
                 if insert.position.startswith('N-term'):
                     position = 'nterm'
                 else:
                     position = 'icl3'
-            result.append([confirmed,insert.insert_type.name, insert.insert_type.subtype,insert.position])
+            result.append([confirmed,insert.insert_type.name, insert.insert_type.subtype,insert.position,insert.start,insert.end,'',''])
+        
+        if position:
+            for insert in self.insertions.filter(presence='YES').all():
+                if insert.insert_type.name=='linker':
+                    if result[0][3].split("_")[0] == insert.position.split("_")[0]:
+                        if result[0][4] is None or insert.start is None or abs(result[0][4]-insert.start)<len(insert.insert_type.subtype)+5:
+                            print("LINKER around fusion",self.structure, self.protein.entry_name,insert.position,insert.insert_type.subtype,result)
+
+
         return position,result
 
     def cons_schematic(self):
@@ -94,6 +102,8 @@ class Construct(models.Model):
 
     def invalidate_schematics(self):
         cache.delete_many([self.name + "_cons_schematic",self.name + "_wt_schematic",self.name + "_chem_summary"])
+        self.schematics = None
+        self.save()
 
 
     def schematic(self):
@@ -110,14 +120,19 @@ class Construct(models.Model):
                 print('schematics failed for ',self.name)
         else:
             # print(self.name+'_schematics used cache')
-            temp = pickle.loads(temp)
+            try:
+                temp = pickle.loads(temp)
+            except:
+                temp = generate_schematic(self)
+                self.schematics = pickle.dumps(temp)
+                self.save()
         return temp
 
     def snake(self):
         ## Use cache if possible
         temp = self.snakecache
-        if temp==None:
-            # print(self.name+'_snake no cache')
+        if temp==None or 1==1:
+            print(self.name+'_snake no cache')
             residues = Residue.objects.filter(protein_conformation__protein=self.protein).order_by('sequence_number').prefetch_related(
                 'protein_segment', 'generic_number', 'display_generic_number')
             temp = DrawSnakePlot(residues,self.protein.get_protein_class(),str(self.protein),nobuttons = True)
@@ -166,7 +181,8 @@ class ConstructMutation(models.Model):
             # res_cons = Residue.objects.get(protein_conformation__protein=construct, sequence_number=seq_no)
             res_wt = Residue.objects.get(protein_conformation__protein=self.construct.structure.protein_conformation.protein.parent, sequence_number=seq_no)
             if res_wt.amino_acid != self.wild_type_amino_acid:
-                print('aa dont match',construct.name,seq_no,"annotated wt:", self.wild_type_amino_acid, "DB wt:",res_wt.amino_acid, "Annotated Mut",self.mutated_amino_acid)
+                pass
+                # print('aa dont match',construct.name,seq_no,"annotated wt:", self.wild_type_amino_acid, "DB wt:",res_wt.amino_acid, "Annotated Mut",self.mutated_amino_acid)
             #     print('records wt',res_wt.amino_acid,'construct res',res_cons.amino_acid)
             return res_wt
         except Residue.DoesNotExist:
@@ -327,6 +343,7 @@ class ExpressionSystem (models.Model):
     expression_method = models.CharField(max_length=100)
     host_cell_type = models.CharField(max_length=100)
     host_cell = models.CharField(max_length=100)
+    expression_time = models.CharField(max_length=100,null=True)
     remarks = models.TextField(null=True)
 
     def __str__(self):

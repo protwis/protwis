@@ -198,6 +198,10 @@ def fetch_pdb_info(pdbname,protein,new_xtal=False):
     if pdbname.upper()=='4XT1' or pdbname.upper()=='4XT3':
         pdb_range = list(range(11,311))
 
+    # Uncertain about exact cut -- pdb/article do not compliment eachother.
+    if pdbname.upper()=='4XEE' or pdbname.upper()=='4XES':
+        pdb_range = list(range(43,269))+list(range(297,385))
+
     if pdb_range:
         dbref_found = True
         for pos in list(range(1,len(d['wt_seq'])+1)):
@@ -959,8 +963,8 @@ def add_construct(d):
             mutation['remark'] = ''
 
         res_wt = Residue.objects.get(protein_conformation__protein=protein_conformation.protein.parent, sequence_number=mutation['pos'])
-        if res_wt.amino_acid != mutation['wt']:
-            print('aa dont match',construct,mutation['pos'],"annotated wt:", mutation['wt'], "DB wt:",res_wt.amino_acid, "Annotated Mut",mutation['mut'])
+        # if res_wt.amino_acid != mutation['wt']:
+        #     print('aa dont match',construct,mutation['pos'],"annotated wt:", mutation['wt'], "DB wt:",res_wt.amino_acid, "Annotated Mut",mutation['mut'])
 
         mutation_type, created = ConstructMutationType.objects.get_or_create(slug=slugify(mutation['type']),name=mutation['type'], effect=None)
 

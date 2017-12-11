@@ -52,6 +52,7 @@ INSTALLED_APPS = (
     'tools',
     'drugs',
     'signprot',
+    'mutational_landscape',
     'contactnetwork',
 )
 
@@ -96,6 +97,7 @@ MEDIA_ROOT = '/protwis/media/protwis'
 # Serializer
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+SESSION_COOKIE_AGE = 86400 #Expire cookies and session after 24 hrs
 
 SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH' : False,

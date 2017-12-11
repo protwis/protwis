@@ -227,7 +227,7 @@ canvas {
                 </tr>
             </thead>
             <tbody>
-            {% for rota in rotamers.all %}
+            {% for rota in rotamers %}
                 <tr>
                     <td>{{ rota.residue.protein_segment.slug }}</td>
                     <td>{{ rota.residue.sequence_number }}</td>

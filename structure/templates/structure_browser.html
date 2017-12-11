@@ -62,7 +62,8 @@
                             { type: "text" }, // reference
                             { type: "date-range" }, // publication date
                             { type: "select"}, // annotated
-                            { type: "text"} // refined
+                            { type: "text"}, // refined
+                            { type: "select"} // sodium ion pocket
                         ]
                     });
                 }
@@ -89,16 +90,20 @@
 
                 }
                 var checked_data = table.rows('.alt_selected').data();
+                var selected_ids = []
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
                     div.innerHTML = checked_data[i][5];
                     if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                        // AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
+                        selected_ids.push(div.innerText.replace(/\s+/g, ''));
                     } else {
-                        AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                        // AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
+                        selected_ids.push(div.textContent.replace(/\s+/g, ''));
                     }
 
                 }
+                AddToSelection('targets', 'structure_many', selected_ids.join(","));
                 window.location.href = '/structure/superposition_workflow_index';
             });
             $.fn.dataTable.ext.search.push(
@@ -172,6 +177,7 @@
         <a id="superpose_btn" class="btn btn-primary btn-mini " href="javascript:void(0)">Superposition</a>
     </div>
     <div style="font-size: 10px;">For superimposition: Select (tick box) structures, and Highlight the reference template</div>
+    <div style="font-size: 10px;">For information on state identification and Δ distance (Å) please refer to the <a href="http://docs.gpcrdb.org/tutorial_structures.html#structure-state">documentation</a></div>
     <br />
     <br />
 
@@ -199,8 +205,10 @@
                     <th class="pub-th">Date</th>
                     <th class="pub-th">Annotated</th>
                     <th class="pub-th">Refined</th>
+                    <th class="pub-th">Sodium ion pocket</th>
                 </tr>
                 <tr>
+                    <th></th>
                     <th></th>
                     <th></th>
                     <th></th>
@@ -296,10 +304,17 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if structure.pdb_code.index in refined %}
+                        {% if structure.is_refined %}
                         <a href="homology_models/{{ structure.pdb_code.index }}_refined">{{structure.pdb_code.index}}_refined</a>
                         {% else %}
                         -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if structure.protein_conformation.is_sodium %}
+                        Yes
+                        {% else %}
+                        No
                         {% endif %}
                     </td>
                 </tr>

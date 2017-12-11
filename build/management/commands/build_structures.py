@@ -18,7 +18,6 @@ from contactnetwork.models import *
 import contactnetwork.interaction as ci
 from contactnetwork.cube import compute_interactions
 
-#from structure.functions import BlastSearch
 from Bio.PDB import PDBParser,PPBuilder
 from Bio import pairwise2
 
@@ -793,6 +792,7 @@ class Command(BaseBuild):
                 res2 = Residue.objects.get(sequence_number=res2_seq_num, protein_conformation=conformation)
             except Residue.DoesNotExist:
                 self.logger.warning('Error with pair between %s and %s (%s)' % (res1_seq_num,res2_seq_num,conformation))
+                # print('Error with pair between %s and %s (%s)' % (res1_seq_num,res2_seq_num,conformation))
                 continue
 
             # Save the pair
@@ -1443,6 +1443,10 @@ class Command(BaseBuild):
                         print('ERROR WITH ROTAMERS {}'.format(sd['pdb']))
                         self.logger.error('Error with rotamers for {}'.format(sd['pdb']))
 
+                    try:
+                        s.protein_conformation.generate_sites()
+                    except:
+                        pass
 
                     try:
                         current = time.time()
