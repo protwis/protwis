@@ -278,7 +278,7 @@ class StructureStatistics(TemplateView):
         
         unique_structs = Structure.objects.order_by('protein_conformation__protein__family__name', 'state',
             'publication_date', 'resolution').distinct('protein_conformation__protein__family__name').prefetch_related('protein_conformation__protein__family')
-        unique_complexes = unique_structs.exclude(ligands=None)
+        unique_complexes = all_complexes.distinct('ligands', 'protein_conformation__protein__family__name')
         #FIXME G protein list is hard-coded for now. Table structure needs to be expanded for fully automatic approach.
         unique_gprots = unique_structs.filter(stabilizing_agents__slug='gs')
         unique_active = unique_structs.filter(protein_conformation__state__slug = 'active')
