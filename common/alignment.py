@@ -978,15 +978,15 @@ class AlignedReferenceTemplate(Alignment):
         self.template_dict = OrderedDict()
         self.alignment_dict = OrderedDict()
         self.code_dict = {'ICL1':'12x50','ECL1':'23x50','ICL2':'34x50'}
-        self.changes_on_db = []
         self.loop_partial_except_list = {'ICL1':[],'ECL1':[],'ICL2':[],'ECL2':[],'ECL2_1':['3UZA','3UZC','3RFM'],
                                          'ECL2_mid':[],'ECL2_2':[],'ICL3':['3VW7'],'ECL3':[],'ICL4':[]}
         self.seq_nums_overwrite_cutoff_dict = {'4PHU':2000, '4LDL':1000, '4LDO':1000, '4QKX':1000, '5JQH':1000, '5TZY':2000}
         
     def run_hommod_alignment(self, reference_protein, segments, query_states, order_by, provide_main_template_structure=None,
-                             provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None):
+                             provide_similarity_table=None, main_pdb_array=None, provide_alignment=None, only_output_alignment=None, complex_model=False):
         self.logger = logging.getLogger('homology_modeling')
         self.segment_labels = segments
+        self.complex = complex_model
         if len(str(reference_protein))==4:
             self.reference_protein = Protein.objects.get(entry_name=reference_protein.parent)
             self.revise_xtal = str(reference_protein)
@@ -1029,6 +1029,7 @@ class AlignedReferenceTemplate(Alignment):
             self.loop_table = OrderedDict()            
             self.similarity_table = self.create_loop_similarity_table()
         if self.main_template_structure==None:
+            self.changes_on_db = []
             self.main_template_structure = self.get_main_template()
         
     def local_pairwise_alignment(self, reference, template, segment):
@@ -1071,6 +1072,9 @@ class AlignedReferenceTemplate(Alignment):
                 if st.pdb_code.index=='5LWE' and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
                     i+=1
                     continue
+                if self.complex and st.pdb_code.index not in ['3SN6', '5VAI', '5UZ7']:
+                    i+=1
+                    continue
                 if st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
                     self.main_template_protein = self.ordered_proteins[i]
                     if st.pdb_code.index in self.seq_nums_overwrite_cutoff_dict:
@@ -1083,9 +1087,9 @@ class AlignedReferenceTemplate(Alignment):
         resis = Residue.objects.filter(protein_conformation=structure.protein_conformation, 
                                        sequence_number__gte=cutoff)
         for r in resis:
+            self.changes_on_db.append(r.sequence_number)
             r.sequence_number = int(str(r.sequence_number)[1:])
             r.save()
-            self.changes_on_db.append(r.sequence_number)
 
     def create_helix_similarity_table(self):
         ''' Creates an ordered dictionary of structure objects, where templates are sorted by similarity and resolution.
@@ -1124,7 +1128,7 @@ class AlignedReferenceTemplate(Alignment):
         '''
         temp_list, temp_list1, temp_list2, temp_list_mid = [],[],[],[]
         similarity_table = OrderedDict()
-        self.main_template_protein = self.main_template_structure.protein_conformation.protein.parent        
+        self.main_template_protein = self.main_template_structure.protein_conformation.protein.parent
         ref_seq = Residue.objects.filter(protein_conformation__protein=self.reference_protein, 
                                          protein_segment__slug=self.segment_labels[0])
         x50_ref = False
@@ -1285,6 +1289,7 @@ class AlignedReferenceTemplate(Alignment):
                             alt_temps_gn.append(entry)
                     except:
                         pass
+
         alt_temps = [entry for entry in temp_list if entry[1]==len(ref_seq)]
         sorted_list_gn = sorted(alt_temps_gn, key=lambda x: (-x[2],-x[5],x[3]))
         sorted_list = sorted(alt_temps, key=lambda x: (-x[2],-x[5],x[3]))
@@ -1313,8 +1318,8 @@ class AlignedReferenceTemplate(Alignment):
         for i in combined:
             similarity_table[i[0]] = i[2]
         try:
-            self.main_template_protein = combined[0][4]
-            self.main_template_structure = combined[0][0]
+            # self.main_template_protein = combined[0][4]
+            # self.main_template_structure = combined[0][0]
             self.loop_table = similarity_table
         except:
             self.main_template_protein = None
@@ -1453,7 +1458,7 @@ class ClosestReceptorHomolog():
     def find_closest_receptor_homolog(self):
         a = Alignment()
         p = Protein.objects.get(entry_name=self.protein)
-        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva']
+        exclusion_list = ['opsd_todpa', 'adrb1_melga', 'g1sgd4_rabit', 'us28_hcmva', 'q08bg4_danre']
         if self.protein in exclusion_list:
             exclusion_list.remove(self.protein)
         if p.family.slug[:3]=='007':

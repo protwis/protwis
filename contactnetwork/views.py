@@ -146,6 +146,7 @@ def InteractionData(request):
         segment_filter_res1 & segment_filter_res2 & i_types_filter
     )
 
+
     # Initialize response dictionary
     data = {}
     data['interactions'] = {}
@@ -154,6 +155,11 @@ def InteractionData(request):
     data['segments'] = set()
     data['segment_map'] = {}
     data['aa_map'] = {}
+
+    for i in interactions:
+        pdb_name = i['interacting_pair__referenced_structure__protein_conformation__protein__entry_name']
+        if not pdb_name in data['pdbs']:
+            data['pdbs'].add(pdb_name)
 
     # Map from ordinary residue numbers to generic where available
     if (not generic):

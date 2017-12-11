@@ -31,54 +31,96 @@
         <h4>DIAGRAMS</h4>
     </div>
     <div class="col-md-10" style="height:500px">
-    {{ p.get_gprotein_plot }}
-    <p><div class="btn-group ">
-        <div class="col-md-6 col-md-offset-12">
-            <input type="range" class="range-slider vertical-range" id="fader" value="0.80" min="0.01" max="0.99" step="0.05" oninput="outputUpdate(value)">
-            <input type="text" maxlength="4" size="3" value="0.80" name="cutoff" title="A bold text""/>
-            <span class="tooltip">Info</span>
-        <script type="text/javascript">
-        function outputUpdate(vol) {
-                document.querySelector('input[name=cutoff]').value = vol;
-        }</script>
-        </div>
-        <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
-        aria-haspopup="true" aria-expanded="false">
-        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu">
-        <li>
-            <a href="javascript:saveSvgAsPng(document.getElementById('GproteinPlot'), 'plot_{{ p.entry_name }}.png',
-            {scale: 3});">PNG</a>
-        </li>
-        <li>
-            <a href="javascript:saveSvgAsJpg(document.getElementById('GproteinPlot'), 'plot_{{ p.entry_name }}.jpg',
-            {scale: 3});">JPG</a>
-        </li>
-        <li>
-            <a href="javascript:saveSvgAsTiff(document.getElementById('GproteinPlot'), 'plot_{{ p.entry_name }}.tiff',
-            {scale: 3});">TIFF</a>
-            </a>
-        </li>
-        <li>
-        <a id=snake_svg_link href-lang="image/svg+xml" href="" download="plot_{{ p.entry_name }}">SVG</a>
-        </li>
-        </ul>
+      {% if 'Gprotein' in families %}
+        {{ p.get_gprotein_plot }}
+        <p><div class="btn-group ">
+            <div class="col-md-6">
+                <input type="range" class="range-slider vertical-range" id="fader" value="0.80" min="0.01" max="0.99" step="0.05" oninput="outputUpdate(value)">
+                <input type="text" maxlength="4" size="3" value="0.80" name="cutoff" title="A bold text""/>
+                <span class="tooltip">Info</span>
+            <script type="text/javascript">
+            function outputUpdate(vol) {
+                    document.querySelector('input[name=cutoff]').value = vol;
+            }</script>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+            aria-haspopup="true" aria-expanded="false">
+            <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+            <li>
+                <a href="javascript:saveSvgAsPng(document.getElementById('GproteinPlot'), 'plot_{{ p.entry_name }}.png',
+                {scale: 3});">PNG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsJpg(document.getElementById('GproteinPlot'), 'plot_{{ p.entry_name }}.jpg',
+                {scale: 3});">JPG</a>
+            </li>
+            <li>
+                <a href="javascript:saveSvgAsTiff(document.getElementById('GproteinPlot'), 'plot_{{ p.entry_name }}.tiff',
+                {scale: 3});">TIFF</a>
+                </a>
+            </li>
+            <li>
+            <a id=snake_svg_link href-lang="image/svg+xml" href="" download="plot_{{ p.entry_name }}">SVG</a>
+            </li>
+            </ul>
 
-    </div></p>
+        </div></p>
+        </div>
     </div>
-</div>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    {% else %}
+      {{ p.get_arrestin_plot }}
+      <p><div class="btn-group ">
+          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown"
+          aria-haspopup="true" aria-expanded="false">
+          <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+          <li>
+              <a href="javascript:saveSvgAsPng(document.getElementById('ArrestinPlot'), 'plot_{{ p.entry_name }}.png',
+              {scale: 3});">PNG</a>
+          </li>
+          <li>
+              <a href="javascript:saveSvgAsJpg(document.getElementById('ArrestinPlot'), 'plot_{{ p.entry_name }}.jpg',
+              {scale: 3});">JPG</a>
+          </li>
+          <li>
+              <a href="javascript:saveSvgAsTiff(document.getElementById('ArrestinPlot'), 'plot_{{ p.entry_name }}.tiff',
+              {scale: 3});">TIFF</a>
+              </a>
+          </li>
+          <li>
+          <a id=snake_svg_link href-lang="image/svg+xml" href="" download="plot_{{ p.entry_name }}">SVG</a>
+          </li>
+          </ul>
+
+      </div></p>
+      </div>
+  </div>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+    {% endif %}
 <div class="row">
     <div class="col-md-2 text-right text-info">
         <h4>MUTATIONS</h4>

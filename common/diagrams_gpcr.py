@@ -131,8 +131,8 @@ class DrawSnakePlot(Diagram):
 
     def __str__(self):
 
-        self.output = "<g id=snake transform='translate(0, " + str(-self.low+ self.offsetY) + ")'>" + self.traceoutput+self.output+self.helixoutput+self.drawToolTip() + "</g>"; #for resizing height
-        return mark_safe(self.create(self.output,self.maxX['right']+30,self.high-self.low+self.offsetY*2,"snakeplot", self.nobuttons))
+        self.output_final = "<g id=snake transform='translate(0, " + str(-self.low+ self.offsetY) + ")'>" + self.traceoutput+self.output+self.helixoutput+self.drawToolTip() + "</g>"; #for resizing height
+        return mark_safe(self.create(self.output_final,self.maxX['right']+30,self.high-self.low+self.offsetY*2,"snakeplot", self.nobuttons))
 
     def drawSnakePlotHelix(self, helix_num):
         rs = self.segments['TM'+str(helix_num)]

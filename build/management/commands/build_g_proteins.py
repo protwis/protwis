@@ -5,7 +5,6 @@ from django.db import IntegrityError
 
 
 from common.models import WebResource, WebLink
-from common.definitions import G_PROTEIN_SEGMENTS
 
 from protein.models import (Protein, ProteinGProtein,ProteinGProteinPair, ProteinConformation, ProteinState, ProteinFamily, ProteinAlias,
         ProteinSequenceType, Species, Gene, ProteinSource, ProteinSegment)
@@ -49,33 +48,22 @@ class Command(BaseCommand):
             filenames = options['filename']
         else:
             filenames = False
-        
+
         #add gproteins from cgn db
         try:
             self.purge_coupling_data()
-            self.purge_cgn_residues()
-            self.purge_cgn_proteins()
-            self.create_g_protein_segments()
+            # self.purge_cgn_residues()
+            # self.purge_cgn_proteins()
 
             self.create_g_proteins(filenames)
             self.cgn_create_proteins_and_families()
 
+            human_and_orths = self.cgn_add_proteins()
+            self.update_protein_conformation(human_and_orths)
+            self.create_barcode()
+
         except Exception as msg:
             print(msg)
-            self.logger.error(msg)
-
-        # add residues from cgn db
-        try:
-            human_and_orths = self.cgn_add_proteins()
-
-            self.update_protein_conformation(human_and_orths)
-        except Exception as msg:
-            self.logger.error(msg)
-
-        # add barcode data
-        try:
-            self.create_barcode()
-        except Exception as msg:
             self.logger.error(msg)
 
     def purge_coupling_data(self):
@@ -94,7 +82,7 @@ class Command(BaseCommand):
 
     def create_barcode(self):
 
-        barcode_data =  pd.read_csv(self.barcode_data_file)
+        barcode_data =  pd.read_csv(self.barcode_data_file, low_memory=False)
 
         for index, entry in enumerate(barcode_data.iterrows()):
 
@@ -124,27 +112,6 @@ class Command(BaseCommand):
                 except IntegrityError:
                     self.logger.error('Failed creating barcode for ' + CGN + ' for protein ' + p.name)
 
-    def create_g_protein_segments(self):
-        self.logger.info('CREATING G-PROTEIN SEGMENTS')
-
-        for s in G_PROTEIN_SEGMENTS['Full']:
-
-            if s.startswith('S') and len(s) == 2:
-                category = 'sheet'
-            elif s.startswith('H') and len(s) == 2:
-                category = 'helix'
-            else:
-                category = 'loop'
-
-            try:
-                ProteinSegment.objects.get_or_create(slug=s, name=s, category=category, fully_aligned=True)
-                self.logger.info('Created protein segment')
-
-            except:
-                self.logger.error('Failed to create protein segment')
-
-        self.logger.info('COMPLETED CREATING G-PROTEIN SEGMENTS')
-
     def create_g_proteins(self, filenames=False):
         self.logger.info('CREATING GPROTEINS')
 
@@ -163,7 +130,7 @@ class Command(BaseCommand):
                 reader = csv.reader(f)
                 for row in reader:
 
-                    entry_name = row[4]
+                    entry_name = row[0]
                     primary = row[8]
                     secondary = row[9]
 
@@ -172,6 +139,7 @@ class Command(BaseCommand):
                         p = Protein.objects.get(entry_name=entry_name)
                     except Protein.DoesNotExist:
                         self.logger.warning('Protein not found for entry_name {}'.format(entry_name))
+                        print("protein not found for ", entry_name)
                         continue
 
                     primary = primary.replace("G protein (identity unknown)","None") #replace none
@@ -181,32 +149,39 @@ class Command(BaseCommand):
                     secondary = secondary.split(", ")
 
                     if primary=='None' and secondary=='None':
-                        print('no data for ',entry_name)
+                        print('no data for ', entry_name)
                         continue
 
-                    for gp in primary:
-                        if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
-                            continue
-                        g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
-                        gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary')
-                        gpair.save()
+                    # print(primary,secondary)
 
-                    for gp in secondary:
-                        if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism', '']: #skip bad ones
-                            continue
-                        if gp in primary: #sip those that were already primary
-                             continue 
-                        g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
-                        gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary')
-                        gpair.save()
+                    try:
+                        for gp in primary:
+                            if gp in ['','None','_-arrestin','Arrestin','G protein independent mechanism']: #skip bad ones
+                                continue
+                            g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
+                            # print(p, g)
+                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='primary')
+                            gpair.save()
+                    except:
+                        print("error in primary assignment", p, gp)
 
+                    try:
+                        for gp in secondary:
+                            if gp in ['None','_-arrestin','Arrestin','G protein independent mechanism', '']: #skip bad ones
+                                continue
+                            if gp in primary: #sip those that were already primary
+                                 continue
+                            g = ProteinGProtein.objects.get_or_create(name=gp, slug=translation[gp])[0]
+                            gpair = ProteinGProteinPair(protein=p, g_protein=g, transduction='secondary')
+                            gpair.save()
+                    except:
+                        print("error in secondary assignment", p, gp)
 
         self.logger.info('COMPLETED CREATING G PROTEINS')
 
     def purge_cgn_proteins(self):
         try:
             Protein.objects.filter(residue_numbering_scheme__slug='cgn').delete()
-            ProteinSegment.objects.filter(slug__in=list(G_PROTEIN_SEGMENTS['Full'])).delete()
         except:
             self.logger.info('Protein to delete not found')
 
@@ -215,8 +190,9 @@ class Command(BaseCommand):
         #Parsing pdb uniprot file for residues
         self.logger.info('Start parsing PDB_UNIPROT_ENSEMBLE_ALL')
         self.logger.info('Parsing file ' + self.gprotein_data_file)
-        residue_data =  pd.read_table(self.gprotein_data_file, sep="\t")
+        residue_data =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
         residue_data = residue_data.loc[residue_data['Uniprot_ACC'].isin(gprotein_list)]
+        cgn_scheme = ResidueNumberingScheme.objects.get(slug='cgn')
 
 
         for index, row in residue_data.iterrows():
@@ -237,7 +213,7 @@ class Command(BaseCommand):
                 rgn, c= ResidueGenericNumber.objects.get_or_create(label=row['CGN'])
 
             #fetch protein segment id
-            ps, c= ProteinSegment.objects.get_or_create(slug=row['CGN'].split(".")[1])
+            ps, c= ProteinSegment.objects.get_or_create(slug=row['CGN'].split(".")[1], proteinfamily='Gprotein')
 
             try:
                 Residue.objects.get_or_create(sequence_number=row['Position'], protein_conformation=pc, amino_acid=row['Residue'], generic_number=rgn, display_generic_number=rgn, protein_segment=ps)
@@ -245,16 +221,16 @@ class Command(BaseCommand):
 
             except:
                 self.logger.error("Failed to add residues")
-                
+
 
              # Add also to the ResidueGenericNumberEquivalent table needed for single residue selection
             try:
-                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme_id=12)
+                ResidueGenericNumberEquivalent.objects.get_or_create(label=rgn.label,default_generic_number=rgn, scheme=cgn_scheme)
                 # self.logger.info("Residues added to ResidueGenericNumberEquivalent")
 
             except:
                 self.logger.error("Failed to add residues to ResidueGenericNumberEquivalent")
-            
+
     def update_protein_conformation(self, gprotein_list):
         #gprotein_list=['gnaz_human','gnat3_human', 'gnat2_human', 'gnat1_human', 'gnas2_human', 'gnaq_human', 'gnao_human', 'gnal_human', 'gnai3_human', 'gnai2_human','gnai1_human', 'gna15_human', 'gna14_human', 'gna12_human', 'gna11_human', 'gna13_human']
         state = ProteinState.objects.get(slug='active')
@@ -276,7 +252,7 @@ class Command(BaseCommand):
         #Parsing pdb uniprot file for generic residue numbers
         self.logger.info('Start parsing PDB_UNIPROT_ENSEMBLE_ALL')
         self.logger.info('Parsing file ' + self.gprotein_data_file)
-        residue_data =  pd.read_table(self.gprotein_data_file, sep="\t")
+        residue_data =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
 
 
         residue_data = residue_data[residue_data.Uniprot_ID.notnull()]
@@ -288,35 +264,6 @@ class Command(BaseCommand):
         #filtering for human gproteins using list above
         residue_generic_numbers= residue_data['CGN']
 
-        #add protein segment entries:
-
-        segments =[]
-        cgns = residue_data['CGN'].unique()
-
-        for s in cgns:
-            segments.append(s.split(".")[1])
-
-        #Commit protein segments in db
-
-        #purge line
-        #ProteinSegment.objects.filter(slug__in=np.unique(segments)).delete()
-
-        # for s in np.unique(segments):
-
-        #     if s.startswith('S') and len(s) == 2:
-        #         category = 'sheet'
-        #     elif s.startswith('H') and len(s) == 2:
-        #         category = 'helix'
-        #     else:
-        #         category = 'loop'
-
-        #     try:
-        #         ProteinSegment.objects.get_or_create(slug=s, name=s, category=category, fully_aligned=True)
-        #         self.logger.info('Created protein segment')
-
-        #     except:
-        #         self.logger.error('Failed to create protein segment')
-
         #Residue numbering scheme is the same for all added residue generic numbers (CGN)
 
         cgn_scheme = ResidueNumberingScheme.objects.get(slug='cgn')
@@ -325,7 +272,7 @@ class Command(BaseCommand):
         #ResidueGenericNumber.objects.filter(scheme_id=12).delete()
 
         for rgn in residue_generic_numbers.unique():
-            ps, c= ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1])
+            ps, c= ProteinSegment.objects.get_or_create(slug=rgn.split('.')[1], proteinfamily='Gprotein')
 
             rgnsp=[]
 
@@ -351,7 +298,7 @@ class Command(BaseCommand):
         self.logger.info('Parsing file ' + self.gprotein_data_file)
 
         #parsing file for accessions
-        df =  pd.read_table(self.gprotein_data_file, sep="\t")
+        df =  pd.read_table(self.gprotein_data_file, sep="\t", low_memory=False)
         prot_type = 'purge'
         pfm = ProteinFamily()
 
@@ -531,7 +478,7 @@ class Command(BaseCommand):
                 res = structure[1]
                 if res == '-':
                     res = 0
-    
+
                 structure, created = SignprotStructure.objects.get_or_create(PDB_code=structure[0], resolution=res)
                 if created:
                     self.logger.info('Created structure ' + structure.PDB_code + ' for protein ' + p.name)
@@ -574,7 +521,7 @@ class Command(BaseCommand):
 
         cgn_dict['Gprotein']=['000']
         cgn_dict['000']=['Gs', 'Gi/o', 'Gq/11', 'G12/13']
-        
+
         #Protein families to be added
         #Key of dictionary is level in hierarchy
         cgn_dict['1']=['Gprotein']
@@ -611,7 +558,7 @@ class Command(BaseCommand):
         up = {}
         up['genes'] = []
         up['names'] = []
-        up['structures'] = []  
+        up['structures'] = []
 
         read_sequence = False
         remote = False

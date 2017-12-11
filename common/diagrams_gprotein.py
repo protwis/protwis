@@ -390,6 +390,9 @@ class DrawGproteinPlot(Diagram):
         if self.count not in self.TBCoords:
             return 0
 
+        if self.count+1 not in self.TBCoords:
+            return 0
+
         # Get positions of two  linking residues from each helix
         x1 = self.TBCoords[self.count][position][0]
         y1 = self.TBCoords[self.count][position][1]
