@@ -4,6 +4,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.PDB import *
 from Bio.PDB.PDBIO import Select
+from common.definitions import *
 from protein.models import Protein, ProteinSegment
 from residue.models import Residue
 from structure.functions import BlastSearch, MappedResidue
@@ -43,12 +44,10 @@ class GenericNumbering(object):
         # calling sequence parser
         if sequence_parser:
             struct = Structure.objects.get(pdb_code__index=self.pdb_code)
-            print('before seq pars')
             if not signprot:
                 s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=struct.protein_conformation.protein.parent.id)
             else:
                 s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=signprot.id)
-            print('after seq pars')
             self.pdb_structure = s.pdb_struct
             self.mapping = s.mapping
             self.wt = s.wt
@@ -231,17 +230,14 @@ class GenericNumbering(object):
         return self.pdb_structure
 
     def assign_cgn_with_sequence_parser(self, target_chain):
-        import pprint
-        segments = ProteinSegment.objects.filter(partial=False, proteinfamily=self.wt.family.parent.name)
-        segments = segments.values_list('category').order_by('category').distinct('category')
         pdb_array = OrderedDict()
-        for s in segments:
-            print(s)
+        for s in G_PROTEIN_SEGMENTS['Full']:
+            pdb_array[s] = OrderedDict()
         for key, vals in self.mapping[target_chain].items():
-            print(vals.gpcrdb)
-            # try:
-            #     pdb_array[key] = self.pdb_structure[target_chain][key].get_list()
-            # except:
-            #     pdb_array[key] = '-'
-            
+            category, segment, num = vals.gpcrdb.split('.')
+            try:
+                pdb_array[segment][vals.gpcrdb] = self.pdb_structure[target_chain][key].get_list()
+            except:
+                pdb_array[segment][vals.gpcrdb] = 'x'
+        return pdb_array
 

@@ -8,6 +8,7 @@ from residue.functions import dgn, ggn
 from structure.models import *
 from structure.functions import HSExposureCB, PdbStateIdentifier
 from common.alignment import AlignedReferenceTemplate, GProteinAlignment
+from common.definitions import *
 from common.models import WebLink
 from signprot.models import SignprotComplex
 import structure.structural_superposition as sp
@@ -259,6 +260,7 @@ class Command(BaseBuild):
             residue_shift = False
             db_res = ''
             for res in post_model[0][' ']:
+                print(res)
                 try:
                     if Homology_model.revise_xtal==False:
                         db_res = Residue.objects.get(protein_conformation__protein=Homology_model.reference_protein, sequence_number=int(res.get_id()[1]))
@@ -367,6 +369,7 @@ class HomologyModeling(object):
         self.similarity_table = OrderedDict()
         self.similarity_table_z = OrderedDict()
         self.main_structure = None
+        self.signprot_complex = None
         self.main_template_preferred_chain = ''
         self.loop_template_table = OrderedDict()
         self.loops = OrderedDict()
@@ -492,14 +495,23 @@ class HomologyModeling(object):
             except:
                 pass
         pos_list = []
+        if self.complex:
+            first_signprot_res = False
         for seg in self.template_source:
             for num in self.template_source[seg]:
                 try:
                     num = str(Residue.objects.get(protein_conformation=self.prot_conf,
                                                   display_generic_number__label=dgn(num,self.prot_conf)).sequence_number)
                 except:
-                    pass
+                    if self.complex:
+                        try:
+                            num = str(Residue.objects.get(protein_conformation=self.signprot_protconf,
+                                                          display_generic_number__label=num).sequence_number)
+                            first_signprot_res = num
+                        except:
+                            pass
                 pos_list.append(num)
+
         i = 0
         path = './structure/homology_models/'
         if self.revise_xtal==False:
@@ -513,8 +525,12 @@ class HomologyModeling(object):
             prev_num = None
             first_hetatm = False
             water_count = 0
+            first_signprot_res_found = False
             for line in pdblines:
-                try:
+                # try:
+                    if not line.startswith('ATOM'):
+                        continue
+                    print(line)
                     if prev_num==None:
                         pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sAB]+)(\d+)([A-Z\s\d.-]{49,53})',line)
                         prev_num = int(pdb_re.group(3))
@@ -531,75 +547,86 @@ class HomologyModeling(object):
                         whitespace = (whitespace-2)*' '
                     else:
                         whitespace = (whitespace-3)*' '
-                    out_line = pdb_re.group(1)+whitespace+pos_list[i]+pdb_re.group(4)
-                    out_list.append(out_line)
-                except:
-                    try:
-                        if line.startswith('TER'):
-                            pdb_re = re.search('(TER\s+\d+\s+\S{3})([\sAB]+)(\d+)',line)
-                            out_list.append(pdb_re.group(1)+len(pdb_re.group(2))*' '+pos_list[i]+"\n")
+                    group1 = pdb_re.group(1)
+                    if self.complex:
+                        print(pos_list[i], pdb_re.group(3), prev_num)
+                        if i<pos_list.index(first_signprot_res):
+                            if first_signprot_res_found==False:
+                                out_list.append('TER\n')
+                                first_signprot_res_found = True
+                            group1 = group1[-1]+'R'
                         else:
-                            raise Exception()
-                    except:
-                        try:
-                            pref_chain = str(self.main_structure.preferred_chain)
-                            if len(pref_chain)>1:
-                                pref_chain = pref_chain[0]
-                            pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sAB]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
+                            group1 = group1[-1]+'A'
+                    out_line = group1+whitespace+pos_list[i]+pdb_re.group(4)
+                    print(out_line)
+                    out_list.append(out_line)
+                # except:
+                #     try:
+                #         if line.startswith('TER'):
+                #             pdb_re = re.search('(TER\s+\d+\s+\S{3})([\sAB]+)(\d+)',line)
+                #             out_list.append(pdb_re.group(1)+len(pdb_re.group(2))*' '+pos_list[i]+"\n")
+                #         else:
+                #             raise Exception()
+                #     except:
+                #         try:
+                #             pref_chain = str(self.main_structure.preferred_chain)
+                #             if len(pref_chain)>1:
+                #                 pref_chain = pref_chain[0]
+                #             pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sAB]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
                             
-                            alternate_water = False 
-                            whitespace3 = len(pdb_re.group(3))*' '
-                            if first_hetatm==False:
-                                prev_hetnum = int(pdb_re.group(4))
-                                first_hetatm = True
-                                atom_num = int(pdb_re.group(1)[7:11])
-                                num = int(pos_list[i])+1
-                                if 'HOH' in pdb_re.group(2):
-                                    water_count+=1
-                                    if water_count in self.alternate_water_positions:
-                                        if len(str(num))==3:
-                                            whitespace1 = ' '
-                                            whitespace2 = 5*' '
-                                        else:
-                                            whitespace1 = ''
-                                            whitespace2 = 4*' '
-                                        bwater = 'HETATM {}  O  BHOH  {}{}{}'.format(str(atom_num+1), whitespace1, num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
-                                        alternate_water = True
-                                if alternate_water==True:
-                                    out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+whitespace3+str(int(pos_list[i])+1)+pdb_re.group(5))                                
-                                    out_list.append(bwater)
-                                    atom_num+=2
-                                else:
-                                    out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+whitespace3+str(int(pos_list[i])+1)+pdb_re.group(5))                                
-                                    atom_num+=1
-                            else:
-                                if int(pdb_re.group(4))!=prev_hetnum:
-                                    if 'HOH' in pdb_re.group(2):
-                                        water_count+=1
-                                        if water_count in self.alternate_water_positions:
-                                            if len(str(num))==3:
-                                                whitespace1 = ' '
-                                                whitespace2 = 5*' '
-                                            else:
-                                                whitespace1 = ''
-                                                whitespace2 = 4*' '
-                                            bwater = 'HETATM {}  O  BHOH  {}{}{}'.format(str(atom_num+1), whitespace1, num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
-                                            alternate_water = True
-                                    if alternate_water==True:
-                                        out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+whitespace3+str(num+1)+pdb_re.group(5))
-                                        out_list.append(bwater)
-                                        atom_num+=2
-                                    else:
-                                        out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+whitespace3+str(num+1)+pdb_re.group(5))
-                                        atom_num+=1
-                                    prev_hetnum+=1
-                                    num+=1
+                #             alternate_water = False 
+                #             whitespace3 = len(pdb_re.group(3))*' '
+                #             if first_hetatm==False:
+                #                 prev_hetnum = int(pdb_re.group(4))
+                #                 first_hetatm = True
+                #                 atom_num = int(pdb_re.group(1)[7:11])
+                #                 num = int(pos_list[i])+1
+                #                 if 'HOH' in pdb_re.group(2):
+                #                     water_count+=1
+                #                     if water_count in self.alternate_water_positions:
+                #                         if len(str(num))==3:
+                #                             whitespace1 = ' '
+                #                             whitespace2 = 5*' '
+                #                         else:
+                #                             whitespace1 = ''
+                #                             whitespace2 = 4*' '
+                #                         bwater = 'HETATM {}  O  BHOH  {}{}{}'.format(str(atom_num+1), whitespace1, num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
+                #                         alternate_water = True
+                #                 if alternate_water==True:
+                #                     out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+whitespace3+str(int(pos_list[i])+1)+pdb_re.group(5))                                
+                #                     out_list.append(bwater)
+                #                     atom_num+=2
+                #                 else:
+                #                     out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+whitespace3+str(int(pos_list[i])+1)+pdb_re.group(5))                                
+                #                     atom_num+=1
+                #             else:
+                #                 if int(pdb_re.group(4))!=prev_hetnum:
+                #                     if 'HOH' in pdb_re.group(2):
+                #                         water_count+=1
+                #                         if water_count in self.alternate_water_positions:
+                #                             if len(str(num))==3:
+                #                                 whitespace1 = ' '
+                #                                 whitespace2 = 5*' '
+                #                             else:
+                #                                 whitespace1 = ''
+                #                                 whitespace2 = 4*' '
+                #                             bwater = 'HETATM {}  O  BHOH  {}{}{}'.format(str(atom_num+1), whitespace1, num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
+                #                             alternate_water = True
+                #                     if alternate_water==True:
+                #                         out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+whitespace3+str(num+1)+pdb_re.group(5))
+                #                         out_list.append(bwater)
+                #                         atom_num+=2
+                #                     else:
+                #                         out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+whitespace3+str(num+1)+pdb_re.group(5))
+                #                         atom_num+=1
+                #                     prev_hetnum+=1
+                #                     num+=1
                                     
-                                else:
-                                    out_list.append(pdb_re.group(1)+pdb_re.group(2)+whitespace3+str(num)+pdb_re.group(5))
-                                    atom_num+=1
-                        except:
-                            out_list.append(line)
+                #                 else:
+                #                     out_list.append(pdb_re.group(1)+pdb_re.group(2)+whitespace3+str(num)+pdb_re.group(5))
+                #                     atom_num+=1
+                #         except:
+                #             out_list.append(line)
         
         with open (path+modelname+'.pdb', 'w') as f:   
             f.write(''.join(out_list))
@@ -619,7 +646,7 @@ class HomologyModeling(object):
         return first_line+second_line+content
         
     def update_template_source(self, keys, struct, segment, just_rot=False):
-        ''' Update the tempalte_source dictionary with structure info for backbone and rotamers.
+        ''' Update the template_source dictionary with structure info for backbone and rotamers.
         '''
         for k in keys:
             if just_rot==True:
@@ -1594,22 +1621,35 @@ class HomologyModeling(object):
 
         # if complex
         if self.complex:
-            signprot_complex = SignprotComplex.objects.get(structure=self.main_structure)
-            print('fetch signprot complex: ',datetime.now() - startTime)
-            target_signprot = signprot_complex.protein
-            print('target_signprot: ',datetime.now() - startTime)
+            self.signprot_complex = SignprotComplex.objects.get(structure=self.main_structure)
+            target_signprot = self.signprot_complex.protein
+            self.signprot_protconf = ProteinConformation.objects.get(protein=target_signprot)
             sign_a = GProteinAlignment()
-            print('GProteinAlignment: ',datetime.now() - startTime)
-            sign_a.run_alignment(signprot_complex.protein)
-            print('run alignment: ',datetime.now() - startTime)
+            sign_a.run_alignment(self.signprot_complex.protein)
             io = StringIO(self.main_structure.pdb_data.pdb)
-            print('string io: ',datetime.now() - startTime)
             assign_cgn = as_gn.GenericNumbering(pdb_file=io, pdb_code=self.main_structure.pdb_code.index, sequence_parser=True, signprot=target_signprot)
-            print('assign init: ',datetime.now() - startTime)
-            assign_cgn.assign_cgn_with_sequence_parser(signprot_complex.chain)
-            print('assign cgn: ',datetime.now() - startTime)
-        raise AssertionError
-
+            signprot_pdb_array = assign_cgn.assign_cgn_with_sequence_parser(self.signprot_complex.chain)
+            for seg, values in signprot_pdb_array.items():
+                main_pdb_array[seg] = values
+                self.template_source[seg] = OrderedDict()
+                for key in values:
+                    self.template_source[seg][key] = [self.main_structure, self.main_structure]
+            for seg, values in sign_a.reference_dict.items():
+                for key, res in values.items():
+                    if signprot_pdb_array[seg][key] == 'x':
+                        values[key] = 'x'
+                        del self.template_source[seg][key]
+                a.reference_dict[seg] = values
+            for seg, values in sign_a.template_dict.items():
+                for key, res in values.items():
+                    if signprot_pdb_array[seg][key] == 'x':
+                        values[key] = 'x'
+                a.template_dict[seg] = values
+            for seg, values in sign_a.alignment_dict.items():
+                for key, res in values.items():
+                    if signprot_pdb_array[seg][key] == 'x':
+                        values[key] = 'x'
+                a.alignment_dict[seg] = values
 
         # write to file
         trimmed_res_nums, helix_restraints, icl3_mid, disulfide_nums = self.write_homology_model_pdb(path+self.reference_entry_name+'_'+self.state+"_post.pdb", 
@@ -1781,7 +1821,7 @@ class HomologyModeling(object):
         if not self.debug:
             sys.stdout.close()
             sys.stdout = _stdout
-
+        
         if not self.debug:
             os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
 
@@ -1804,6 +1844,8 @@ class HomologyModeling(object):
                             first_seqnum = int(list_keys[0])
                         except:
                             continue
+                elif self.complex and first_gn!=None and len(first_gn.split('.'))==3:
+                    first_seqnum = Residue.objects.get(protein_conformation=self.signprot_protconf,display_generic_number__label=list_keys[0]).sequence_number
                 else:
                     first_seqnum = int(first_gn)
                     first_gn = None
@@ -1811,6 +1853,9 @@ class HomologyModeling(object):
                     key = gn
                     if 'x' in gn:
                         seq_num = Residue.objects.get(protein_conformation=self.prot_conf,display_generic_number__label=dgn(gn,self.prot_conf)).sequence_number
+                        curr_seqnum = seq_num
+                    elif self.complex and first_gn!=None and len(first_gn.split('.'))==3:
+                        seq_num = Residue.objects.get(protein_conformation=self.signprot_protconf,display_generic_number__label=gn).sequence_number
                         curr_seqnum = seq_num
                     else:
                         seq_num = int(gn)
@@ -2131,7 +2176,7 @@ class HomologyModeling(object):
                             except:
                                 pass
                     try:
-                        if alignment.reference_dict[seg_id][key.replace('.','x')] in ['-','x']:
+                        if alignment.reference_dict[seg_id][key.replace('.','x')] in ['-','x'] or alignment.reference_dict[seg_id][key] in ['-','x']:
                             counter_num-=1
                             res_num-=1
                             continue
@@ -2172,8 +2217,11 @@ class HomologyModeling(object):
                             elif '.' not in key:
                                 bfact = "%6.2f"% (float(atom.get_bfactor()))
                             else:
-                                if '.' in key and len(key.split('.')[1])==3:
+                                key_split = key.split('.')
+                                if '.' in key and len(key_split[1])==3:
                                     bfact = " -%4.2f"% (float(key))
+                                elif len(key_split)==3:
+                                    bfact = "%6.2f"% (float(atom.get_bfactor()))
                                 else:
                                     bfact = " %5.2f"% (float(key))
                         else:
@@ -2372,7 +2420,7 @@ class HomologyMODELLER(automodel):
         if len(self.helix_restraints)>0:
             out.append([start,prev])
         return out
-                        
+
     def select_atoms(self):
         selection_out = []
         for seg_id, segment in self.atom_dict.items():

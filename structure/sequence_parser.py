@@ -12,6 +12,9 @@ import Bio.PDB.Polypeptide as polypeptide
 from collections import OrderedDict
 import os, xlsxwriter
 
+from datetime import datetime, date
+startTime = datetime.now()
+
 #Number of heavy atoms in each residue
 atom_count = {
     "ALA": 5,
@@ -120,8 +123,9 @@ class AuxProtein(object):
         return "".join([polypeptide.three_to_one(x.resname.replace('HID', 'HIS')) for x in residues if x.resname in self.residue_list])
 
     def map_aux(self):
-
+        print('aux1',datetime.now() - startTime)
         alignments = self.blast_online.run(self.seq)
+        print('aux2',datetime.now() - startTime)
 
         for alignment in alignments:
             self.id = alignment[0]
@@ -213,13 +217,12 @@ class SequenceParser(object):
                 self.wt_seq = str(self.wt.sequence)
         self.fusions = []
 
-        print('before inner seq parse')
         self.parse_pdb(self.pdb_struct)
         #if self.seqres:
         #    self.map_seqres()
         
         self.mark_deletions()
-        print('after inner seq parse')
+
 
     def parse_pdb(self, pdb_struct):
         """
@@ -323,6 +326,7 @@ class SequenceParser(object):
         else:
             seq = self.get_chain_sequence(chain_id)
         alignments = self.blast.run(seq)
+        
         for alignment in alignments:
             if self.wt==None:
                 try:
@@ -334,13 +338,13 @@ class SequenceParser(object):
             else:
                 wt_resi = list(Residue.objects.filter(protein_conformation__protein=self.wt.id))
                 self.mapping[chain_id] = {x.sequence_number: ParsedResidue(x.amino_acid, x.sequence_number, str(x.display_generic_number) if x.display_generic_number else None, x.protein_segment) for x in wt_resi}
+            print(alignment[1].hit_def, alignment[1].hsps[0].expect)
             if alignment[1].hsps[0].expect > .5 and residues:
-                self.fusions.append(AuxProtein(residues))
+                # self.fusions.append(AuxProtein(residues))
                 #The case when auxiliary protein is in a separate chain
                 if self.get_chain_sequence(chain_id) == self.get_peptide_sequence(residues) and chain_id in self.mapping:
                     del self.mapping[chain_id]
                 continue
-
             if self.wt.id != int(alignment[0]):
                 continue
             for hsps in alignment[1].hsps:
