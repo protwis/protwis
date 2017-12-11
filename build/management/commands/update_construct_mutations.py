@@ -1048,7 +1048,7 @@ class Command(BaseCommand):
                 cache.set(c_pdb+"_auto_d",d,60*60*24)
             if len(d['mutations']):
                 missing2.append(c_pdb)
-        print(sorted(missing)," do not have any mutations annotated (but auto has them having) -- add them to sheet with NONE if they have none")
+        print(sorted(missing2)," do not have any mutations annotated (but auto has them having) -- add them to sheet with NONE if they have none")
 
         for mut in non_annotated_muts:
             pdb = mut.construct.structure.pdb_code.index 
