@@ -77,17 +77,18 @@
             $('#download_btn').click(function () {
                 ClearSelection('targets');
                 var checked_data = table.rows('.alt_selected').data();
+                var selected_ids = [];
                 for (i = 0; i < checked_data.length; i++) {
                     var div = document.createElement("div");
                     div.innerHTML = checked_data[i][9];
                     var state = checked_data[i][3];
                     if (typeof div.innerText !== "undefined") {
-                        AddToSelection('targets', 'structure_model_'.concat(state),  div.innerText.replace(/\s+/g, '') );
+                        selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state);
                     } else {
-                        AddToSelection('targets', 'structure_model_'.concat(state), div.textContent.replace(/\s+/g, ''));
+                        selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state);
                     }
                 }
-                
+                AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
                 window.location.href = '/structure/hommod_download';
 
             });
@@ -104,6 +105,7 @@
                         AddToSelection('targets', 'structure_model', div.textContent.replace(/\s+/g, ''));
                     }
                 }
+                
                 window.location.href = '/structure/selection_convert_model';
             });
             $('.select-all').change(function () {
@@ -132,15 +134,12 @@
                     div.innerHTML = checked_data[i][9];
                     var state2 = checked_data[i][3];
                     if (typeof div.innerText !== "undefined") {
-                        // AddToSelection('targets', 'structure', div.innerText.replace(/\s+/g, ''));
                         selected_ids.push(div.innerText.replace(/\s+/g, '')+"_"+state2);
                     } else {
-                        // AddToSelection('targets', 'structure', div.textContent.replace(/\s+/g, ''));
                         selected_ids.push(div.textContent.replace(/\s+/g, '')+"_"+state2);
                     }
 
                 }
-                console.log(selected_ids)
                 AddToSelection('targets', 'structure_models_many', selected_ids.join(","));
                 window.location.href = '/structure/superposition_workflow_index';
             });
@@ -226,6 +225,15 @@
                     <td><a href="{{ model.main_template.pdb_code.index }}">{{ model.main_template.pdb_code.index}}</a></td>
                     <td>{{ model.version|date:"Y-m-d" }}</td>
                     <td style="display:none;">{{ model.protein.entry_name }}</td>
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+{% endblock %}
+    <td style="display:none;">{{ model.protein.entry_name }}</td>
 
                 </tr>
                 {% endfor %}
