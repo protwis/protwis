@@ -104,7 +104,7 @@ presetColors = {'D': ['#E60A0A', '#FDFF7B'],'E': ['#E60A0A', '#FDFF7B'],
                 'H': ['#0093DD', '#000000'],'P': ['#CC0099', '#FDFF7B'],
                 'C': ['#B2B548', '#000000'],'G': ['#FF00F2', '#000000'],
                 '-': ['#FFFFFF', '#000000'],
-                '+': ['#FFFFFF', '#000000']        
+                '+': ['#FFFFFF', '#000000']
                 };
 
 var translateOffset = 0;
@@ -122,7 +122,7 @@ function showToolTip(x, y, str,rid,plotid) {
     while (text.lastChild) {
        text.removeChild(text.lastChild);
     }
-    
+
     // var NS = "http://www.w3.org/2000/svg";
 
 
@@ -147,7 +147,7 @@ function showToolTip(x, y, str,rid,plotid) {
         rect.setAttribute('height', 25);
         rect.setAttribute('y', -40);
     }
-    
+
     var bbox = text.getBBox();
     rect.setAttribute('width', bbox.width + 8);
     rect.setAttribute('x', -bbox.width/2 - 4);
@@ -233,11 +233,11 @@ function redraw_terminus(term) {
   }
     // console.log('maxmin found');
 
-  // var x1 = 
+  // var x1 =
   var residues = [];
   // generate list of positions to move
   $( "circle."+term+"-term:visible" ).each(function() {
-      id = $(this).attr('id'); 
+      id = $(this).attr('id');
       residues.push(parseInt(id));
       // this_y = $(this).attr('y');
       // console.log('touching pos id',id);
@@ -354,9 +354,9 @@ function redraw_terminus(term) {
         // console.log('delay!',key*100,animation_delay,key*animation_delay,delay);
       }
       // $("#"+val).delay( key*100 ).queue(function() {$(this).attr('cx',where[0]).dequeue(); });
-      // $("#"+val).delay( key*100 ).queue(function() { $(this).attr('y',where[1]).dequeue(); }); 
-      // $("#"+val+"t").delay( key*100 ).queue(function() { $(this).attr('x',where[0]).dequeue(); }); 
-      // $("#"+val+"t").delay( key*100 ).queue(function() { $(this).attr('y',where[1]+6).dequeue(); }); 
+      // $("#"+val).delay( key*100 ).queue(function() { $(this).attr('y',where[1]).dequeue(); });
+      // $("#"+val+"t").delay( key*100 ).queue(function() { $(this).attr('x',where[0]).dequeue(); });
+      // $("#"+val+"t").delay( key*100 ).queue(function() { $(this).attr('y',where[1]+6).dequeue(); });
 
     pos += between_residues;
 
@@ -430,23 +430,23 @@ function maxmin() {
         if ($(this).css("display")!='none') {
             count = count +1;
             if (y<svgmin) {
-                svgmin = y; 
+                svgmin = y;
                 classmin = classtext;
                 }
             if (y>svgmax) {
                 classmax = classtext;
-                svgmax= y; 
+                svgmax= y;
              }
             if (x>x_svgmax) x_svgmax = x;
 
-        }   
+        }
     });
 
     // if (svgmin>y_min) svgmin = y_min;
     // if (svgmax<y_max) svgmax = y_max;
 
     // console.log('max '+svgmax+' '+classmax+' min'+svgmin+' '+classmin+' count'+count);
-    
+
     var svg = $('#snake').closest('svg')[0];
 
     check = document.getElementById("snakeplot").getAttribute('viewBox');
@@ -467,7 +467,7 @@ function maxmin() {
     if (newheight!=oldheight) {
         svg.setAttribute('height', (svgmax-svgmin+margin*2));
         $('#snake').attr("transform", "translate(0," + (-svgmin+margin) + ")");
-        
+
         // $('#snakeplot')[0].attr("viewBox", "0 0 " + width + " " + newheight);
         document.getElementById("snakeplot").setAttribute("viewBox", "0 0 " + width + " " + newheight);
 
@@ -480,7 +480,7 @@ function maxmin() {
     // console.log('maxmin done');
 }
 
-$( document ).ready(function() {    
+$( document ).ready(function() {
     // var elements = document.getElementsByClassName('long')
 
     // for (var i = 0; i < elements.length; i++){
@@ -493,7 +493,7 @@ $( document ).ready(function() {
 
 
     $('rect').each(function(){
-        
+
         rectclass = $(this).attr('class');
         if (rectclass) {
             if (rectclass.indexOf("CL") >= 0 && rectclass.indexOf("long") >= 0) {
@@ -585,8 +585,8 @@ function ajaxMutants(plotid,protein) {
       $.each( data, function( key, val ) {
 
          var ligands = [], bigincreases=0, increases = 0, bigdecreases=0, decreases = 0, unchanged=0, unspecified = 0;
-         
-         
+
+
          $.each( val, function( key, v ) {
           if( !(ligands[v[1]]) ) ligands[v[1]] = [];
           ligands[v[1]].push(v[0])
@@ -620,7 +620,7 @@ function ajaxMutants(plotid,protein) {
             unspecified ++;
           }
          });
-         
+
          extra = "\n" + String(val[0].length) + " mutations: " +
           (decreases+bigdecreases) +" increases | " +
          (increases+bigincreases) +" decreases  |  " +
@@ -650,7 +650,7 @@ function ajaxMutants(plotid,protein) {
         //   color = "#F7DA00";
         //   color_letter = "#000";
         // }
-        
+
         if (bigincreases>0) {
             color = "#FF7373";
             color_letter = "#FFF";
@@ -692,8 +692,8 @@ function ajaxMutantsPos(plotid) {
 
     $.each( pos, function( key, val ) {
          var ligands = [], bigincreases=0, increases = 0, bigdecreases=0, decreases = 0, unchanged=0, unspecified = 0;
-         
-         
+
+
          $.each( val[0], function( key, v ) {
           if( !(ligands[v[1]]) ) ligands[v[1]] = [];
           ligands[v[1]].push(v[0])
@@ -727,7 +727,7 @@ function ajaxMutantsPos(plotid) {
             unspecified ++;
           }
          });
-         
+
          extra = "\n" + String(val[0].length) + " mutations: " +
           (decreases+bigdecreases) +" increases | " +
          (increases+bigincreases) +" decreases  |  " +
@@ -788,7 +788,7 @@ function ajaxMutantsPos(plotid) {
     $("circle").tooltip('fixTitle');
     $("text").tooltip('fixTitle');
 
-    
+
 }
 
 function ajaxInteractions(plotid,protein) {
@@ -809,7 +809,7 @@ function ajaxInteractions(plotid,protein) {
             flags[val[i][0]] = true;
             outputAA.push(val[i][0]);
         }
-         
+
          extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
 
 
@@ -1107,6 +1107,7 @@ function ajaxInterface(plotid,protein) {
 
     });
 }
+
 function ajaxInteractionsPos(plotid) {
 
   resetColors(plotid);
@@ -1127,7 +1128,7 @@ function ajaxInteractionsPos(plotid) {
             flags[val[i][0]] = true;
             outputAA.push(val[i][0]);
         }
-         
+
          extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
 
 
@@ -1166,7 +1167,7 @@ function construct_annotations(plotid) {
         //     flags[val[i][0]] = true;
         //     outputAA.push(val[i][0]);
         // }
-         
+
         //  extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
          extra = "<br>"+val[1]; //.replace(/<br>/g, '&#013;');
 
@@ -1205,7 +1206,7 @@ function ajaxInteractionsLigand(protein,ligand) {
             flags[val[i][0]] = true;
             outputAA.push(val[i][0]);
         }
-         
+
          extra = "\n" + String(val.length) + " interactions | Type: "+ output +" | Residue in crystal:"+ outputAA;
 
 
@@ -1228,7 +1229,7 @@ function ajaxInteractionsLigand(protein,ligand) {
 
 $(".pick-color").click(function() {
     plottype = $(this).attr('class').split(' ')[1];
-    
+
     console.log($(this).attr('id'));
     $(".pick-color."+plottype).css('borderWidth','2px');
     $(".pick-color."+plottype).css('height','20px');
@@ -1236,7 +1237,7 @@ $(".pick-color").click(function() {
     $(this).css('borderWidth','3px');
     $(this).css('height','22px');
     $(this).addClass('selected');
-    
+
 });
 
 $( document ).ready(function() {
