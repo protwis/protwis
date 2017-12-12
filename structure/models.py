@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.cache import cache
 
 from io import StringIO
 from Bio.PDB import PDBIO
@@ -58,11 +59,16 @@ class Structure(models.Model):
 
     @property
     def is_refined(self):
-        s = Structure.objects.filter(refined=True, pdb_code__index=self.pdb_code.index+'_refined')
-        if len(s)>0:
-            return True
-        else:
-            return False
+        # Ugly way of speeding up -- preferable the DB should create a relationship between the entries.
+        refined = cache.get(self.pdb_code.index+'_refined')
+        if refined == None:
+            s = Structure.objects.filter(refined=True, pdb_code__index=self.pdb_code.index+'_refined')
+            if len(s)>0:
+                refined = True
+            else:
+                refined = False
+            cache.set(self.pdb_code.index+'_refined',refined, 24*60*60)
+        return refined
 
     class Meta():
         db_table = 'structure'

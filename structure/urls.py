@@ -6,7 +6,7 @@ from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_page
 
 urlpatterns = [
-    url(r'^$', StructureBrowser.as_view(), name='structure_browser'),
+    url(r'^$', cache_page(60*60*24)(StructureBrowser.as_view()), name='structure_browser'),
     url(r'^selection_convert$', ConvertStructuresToProteins, name='convert'),
     url(r'^selection_convert_model$', ConvertStructureModelsToProteins, name='convert_mod'),
     url(r'^hommod_download$', HommodDownload, name='hommod_download'),
@@ -14,7 +14,7 @@ urlpatterns = [
     url(r'^template_selection', TemplateTargetSelection.as_view(), name='structure_browser'),
     url(r'^template_segment_selection', TemplateSegmentSelection.as_view(), name='structure_browser'),
     url(r'^statistics$', cache_page(60*60*24)(StructureStatistics.as_view()), name='structure_statistics'),
-    url(r'^homology_models$', ServeHomologyModels.as_view(), name='homology_models'),
+    url(r'^homology_models$', cache_page(60*60*24)(ServeHomologyModels.as_view()), name='homology_models'),
     url(r'^pdb_download_index$', PDBClean.as_view(), name='pdb_download'),
     url(r'pdb_segment_selection', PDBSegmentSelection.as_view(), name='pdb_download'),
     url(r'^pdb_download$', PDBClean.as_view(), name='pdb_download'),
