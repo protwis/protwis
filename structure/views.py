@@ -52,7 +52,6 @@ class StructureBrowser(TemplateView):
     """
     Fetching Structure data for browser
     """
-
     template_name = "structure_browser.html"
 
     def get_context_data (self, **kwargs):
@@ -60,6 +59,7 @@ class StructureBrowser(TemplateView):
         context = super(StructureBrowser, self).get_context_data(**kwargs)
         try:
             context['structures'] = Structure.objects.filter(refined=False).select_related(
+                "state",
                 "pdb_code__web_resource",
                 "protein_conformation__protein__species",
                 "protein_conformation__protein__source",
@@ -67,8 +67,9 @@ class StructureBrowser(TemplateView):
                 "publication__web_link__web_resource").prefetch_related(
                 "stabilizing_agents",
                 "protein_conformation__protein__parent__endogenous_ligands__properities__ligand_type",
+                "protein_conformation__site_protein_conformation__site",
                 Prefetch("ligands", queryset=StructureLigandInteraction.objects.filter(
-                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role')))
+                annotated=True).prefetch_related('ligand__properities__ligand_type', 'ligand_role','ligand__properities__web_links__web_resource')))
         except Structure.DoesNotExist as e:
             pass
 
@@ -1505,6 +1506,7 @@ class PDBClean(TemplateView):
         out_stream = BytesIO()
         io = PDBIO()
         zipf = zipfile.ZipFile(out_stream, 'w', zipfile.ZIP_DEFLATED)
+        print(selection.targets)
         if selection.targets != []:
             if selection.targets != [] and selection.targets[0].type == 'structure':
                 for selected_struct in [x for x in selection.targets if x.type == 'structure']:
@@ -1530,25 +1532,28 @@ class PDBClean(TemplateView):
                     request.session['substructure_mapping'] = 'full'
                     zipf.writestr(mod_name, tmp.getvalue())
                     del tmp
-                    rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod.item).prefetch_related('residue','backbone_template','rotamer_template').order_by('residue__sequence_number')
-                    stats_data = 'Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n'
-                    for r in rotamers:
-                        try:
-                            gn = r.residue.generic_number.label
-                        except:
-                            gn = '-'
-                        if r.backbone_template:
-                            bt = r.backbone_template.pdb_code.index
-                        else:
-                            bt = '-'
-                        if r.rotamer_template:
-                            rt = r.rotamer_template.pdb_code.index
-                        else:
-                            rt = '-'
-                        stats_data+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
-                    stats_name = mod_name[:-3]+'templates.csv'
-                    zipf.writestr(stats_name, stats_data)
-                    del stats_data
+
+                    # stat file
+                    # rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod.item).prefetch_related('residue','backbone_template','rotamer_template').order_by('residue__sequence_number')
+                    # stats_data = 'Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n'
+                    # for r in rotamers:
+                    #     try:
+                    #         gn = r.residue.generic_number.label
+                    #     except:
+                    #         gn = '-'
+                    #     if r.backbone_template:
+                    #         bt = r.backbone_template.pdb_code.index
+                    #     else:
+                    #         bt = '-'
+                    #     if r.rotamer_template:
+                    #         rt = r.rotamer_template.pdb_code.index
+                    #     else:
+                    #         rt = '-'
+                    #     stats_data+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
+                    # stats_name = mod_name[:-3]+'templates.csv'
+                    # zipf.writestr(stats_name, stats_data)
+                    # del stats_data
+
                 for mod in selection.targets:
                     selection.remove('targets', 'structure_model', mod.item.id)
 
@@ -1649,6 +1654,7 @@ class PDBDownload(View):
             return HttpResponseRedirect('/structure/pdb_segment_selection')
 
         if self.kwargs['substructure'] == 'full':
+            print(request.session['selection'])
             out_stream = request.session['cleaned_structures']
 
         elif self.kwargs['substructure'] == 'custom':
