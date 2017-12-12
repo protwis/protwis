@@ -507,7 +507,8 @@ class HomologyModeling(object):
                         try:
                             num = str(Residue.objects.get(protein_conformation=self.signprot_protconf,
                                                           display_generic_number__label=num).sequence_number)
-                            first_signprot_res = num
+                            if not first_signprot_res:
+                                first_signprot_res = num
                         except:
                             pass
                 pos_list.append(num)
@@ -525,12 +526,9 @@ class HomologyModeling(object):
             prev_num = None
             first_hetatm = False
             water_count = 0
-            first_signprot_res_found = False
+            # first_signprot_res_found = False
             for line in pdblines:
-                # try:
-                    if not line.startswith('ATOM'):
-                        continue
-                    print(line)
+                try:
                     if prev_num==None:
                         pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sAB]+)(\d+)([A-Z\s\d.-]{49,53})',line)
                         prev_num = int(pdb_re.group(3))
@@ -545,95 +543,103 @@ class HomologyModeling(object):
                         whitespace = (whitespace-1)*' '
                     elif len(pos_list[i])-len(pdb_re.group(3))==2:
                         whitespace = (whitespace-2)*' '
+                    elif len(pos_list[i])-len(pdb_re.group(3))==-1:
+                        whitespace = (whitespace+1)*' '
+                    elif len(pos_list[i])-len(pdb_re.group(3))==-2:
+                        whitespace = (whitespace+2)*' '
                     else:
                         whitespace = (whitespace-3)*' '
                     group1 = pdb_re.group(1)
                     if self.complex:
-                        print(pos_list[i], pdb_re.group(3), prev_num)
                         if i<pos_list.index(first_signprot_res):
-                            if first_signprot_res_found==False:
-                                out_list.append('TER\n')
-                                first_signprot_res_found = True
-                            group1 = group1[-1]+'R'
+                            # if first_signprot_res_found==False:
+                            #     out_list.append('TER\n')
+                            #     first_signprot_res_found = True
+                            if len(whitespace)==2:
+                                whitespace = whitespace[0]+'R'
+                            else:
+                                whitespace = whitespace[0]+'R'+whitespace[2:]
                         else:
-                            group1 = group1[-1]+'A'
+                            if len(whitespace)==2:
+                                whitespace = whitespace[0]+'A'
+                            else:
+                                whitespace = whitespace[0]+'A'+whitespace[2:]
                     out_line = group1+whitespace+pos_list[i]+pdb_re.group(4)
-                    print(out_line)
                     out_list.append(out_line)
-                # except:
-                #     try:
-                #         if line.startswith('TER'):
-                #             pdb_re = re.search('(TER\s+\d+\s+\S{3})([\sAB]+)(\d+)',line)
-                #             out_list.append(pdb_re.group(1)+len(pdb_re.group(2))*' '+pos_list[i]+"\n")
-                #         else:
-                #             raise Exception()
-                #     except:
-                #         try:
-                #             pref_chain = str(self.main_structure.preferred_chain)
-                #             if len(pref_chain)>1:
-                #                 pref_chain = pref_chain[0]
-                #             pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sAB]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
+                except:
+                    try:
+                        if line.startswith('TER'):
+                            pdb_re = re.search('(TER\s+\d+\s+\S{3})([\sAB]+)(\d+)',line)
+                            out_list.append(pdb_re.group(1)+len(pdb_re.group(2))*' '+pos_list[i]+"\n")
+                        else:
+                            raise Exception()
+                    except:
+                        try:
+                            pref_chain = str(self.main_structure.preferred_chain)
+                            if len(pref_chain)>1:
+                                pref_chain = pref_chain[0]
+                            pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sAB]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
                             
-                #             alternate_water = False 
-                #             whitespace3 = len(pdb_re.group(3))*' '
-                #             if first_hetatm==False:
-                #                 prev_hetnum = int(pdb_re.group(4))
-                #                 first_hetatm = True
-                #                 atom_num = int(pdb_re.group(1)[7:11])
-                #                 num = int(pos_list[i])+1
-                #                 if 'HOH' in pdb_re.group(2):
-                #                     water_count+=1
-                #                     if water_count in self.alternate_water_positions:
-                #                         if len(str(num))==3:
-                #                             whitespace1 = ' '
-                #                             whitespace2 = 5*' '
-                #                         else:
-                #                             whitespace1 = ''
-                #                             whitespace2 = 4*' '
-                #                         bwater = 'HETATM {}  O  BHOH  {}{}{}'.format(str(atom_num+1), whitespace1, num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
-                #                         alternate_water = True
-                #                 if alternate_water==True:
-                #                     out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+whitespace3+str(int(pos_list[i])+1)+pdb_re.group(5))                                
-                #                     out_list.append(bwater)
-                #                     atom_num+=2
-                #                 else:
-                #                     out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+whitespace3+str(int(pos_list[i])+1)+pdb_re.group(5))                                
-                #                     atom_num+=1
-                #             else:
-                #                 if int(pdb_re.group(4))!=prev_hetnum:
-                #                     if 'HOH' in pdb_re.group(2):
-                #                         water_count+=1
-                #                         if water_count in self.alternate_water_positions:
-                #                             if len(str(num))==3:
-                #                                 whitespace1 = ' '
-                #                                 whitespace2 = 5*' '
-                #                             else:
-                #                                 whitespace1 = ''
-                #                                 whitespace2 = 4*' '
-                #                             bwater = 'HETATM {}  O  BHOH  {}{}{}'.format(str(atom_num+1), whitespace1, num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
-                #                             alternate_water = True
-                #                     if alternate_water==True:
-                #                         out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+whitespace3+str(num+1)+pdb_re.group(5))
-                #                         out_list.append(bwater)
-                #                         atom_num+=2
-                #                     else:
-                #                         out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+whitespace3+str(num+1)+pdb_re.group(5))
-                #                         atom_num+=1
-                #                     prev_hetnum+=1
-                #                     num+=1
+                            alternate_water = False 
+                            whitespace3 = len(pdb_re.group(3))*' '
+                            if first_hetatm==False:
+                                prev_hetnum = int(pdb_re.group(4))
+                                first_hetatm = True
+                                atom_num = int(pdb_re.group(1)[7:11])
+                                num = int(pos_list[i])+1
+                                if 'HOH' in pdb_re.group(2):
+                                    water_count+=1
+                                    if water_count in self.alternate_water_positions:
+                                        if len(str(num))==3:
+                                            whitespace1 = ' '
+                                            whitespace2 = 5*' '
+                                        else:
+                                            whitespace1 = ''
+                                            whitespace2 = 4*' '
+                                        bwater = 'HETATM {}  O  BHOH  {}{}{}'.format(str(atom_num+1), whitespace1, num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
+                                        alternate_water = True
+                                if alternate_water==True:
+                                    out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+whitespace3+str(int(pos_list[i])+1)+pdb_re.group(5))                                
+                                    out_list.append(bwater)
+                                    atom_num+=2
+                                else:
+                                    out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+whitespace3+str(int(pos_list[i])+1)+pdb_re.group(5))                                
+                                    atom_num+=1
+                            else:
+                                if int(pdb_re.group(4))!=prev_hetnum:
+                                    if 'HOH' in pdb_re.group(2):
+                                        water_count+=1
+                                        if water_count in self.alternate_water_positions:
+                                            if len(str(num))==3:
+                                                whitespace1 = ' '
+                                                whitespace2 = 5*' '
+                                            else:
+                                                whitespace1 = ''
+                                                whitespace2 = 4*' '
+                                            bwater = 'HETATM {}  O  BHOH  {}{}{}'.format(str(atom_num+1), whitespace1, num+1, whitespace2)+self.alternate_water_positions[water_count][31:]
+                                            alternate_water = True
+                                    if alternate_water==True:
+                                        out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:-1]+'A'+pdb_re.group(2)+whitespace3+str(num+1)+pdb_re.group(5))
+                                        out_list.append(bwater)
+                                        atom_num+=2
+                                    else:
+                                        out_list.append(pdb_re.group(1)[:7]+str(atom_num)+pdb_re.group(1)[11:]+pdb_re.group(2)+whitespace3+str(num+1)+pdb_re.group(5))
+                                        atom_num+=1
+                                    prev_hetnum+=1
+                                    num+=1
                                     
-                #                 else:
-                #                     out_list.append(pdb_re.group(1)+pdb_re.group(2)+whitespace3+str(num)+pdb_re.group(5))
-                #                     atom_num+=1
-                #         except:
-                #             out_list.append(line)
+                                else:
+                                    out_list.append(pdb_re.group(1)+pdb_re.group(2)+whitespace3+str(num)+pdb_re.group(5))
+                                    atom_num+=1
+                        except:
+                            out_list.append(line)
         
         with open (path+modelname+'.pdb', 'w') as f:   
             f.write(''.join(out_list))
 
         pdb_struct = PDB.PDBParser(QUIET=True).get_structure('model', path+modelname+'.pdb')[0]
-        assign_gn = as_gn.GenericNumbering(structure=pdb_struct)
-        pdb_struct = assign_gn.assign_generic_numbers()
+        assign_gn = as_gn.GenericNumbering(structure=pdb_struct, sequence_parser=True)
+        pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
         io = PDB.PDBIO()
         io.set_structure(pdb_struct)
         io.save(path+modelname+'.pdb')
@@ -2271,6 +2277,9 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
                     except:
                         pass
         for ref_seg, temp_seg in zip(reference_dict, template_dict):
+            if ref_seg=='HN':
+                ref_sequence+='/'
+                temp_sequence+='/'
             for ref_res, temp_res in zip(reference_dict[ref_seg], template_dict[temp_seg]):
                 if reference_dict[ref_seg][ref_res] in ['-','x']: 
                     continue
@@ -2395,7 +2404,9 @@ class HomologyMODELLER(automodel):
     
     def identify_chain(self, seq_num):
         if len(self.chains)==2:
-            if seq_num<self.icl3_mid:
+            if self.icl3_mid==None:
+                return 'A'
+            elif seq_num<self.icl3_mid:
                 return 'A'
             elif seq_num>=self.icl3_mid:
                 return 'B'

@@ -1506,6 +1506,7 @@ class PDBClean(TemplateView):
         out_stream = BytesIO()
         io = PDBIO()
         zipf = zipfile.ZipFile(out_stream, 'w', zipfile.ZIP_DEFLATED)
+        print(selection.targets)
         if selection.targets != []:
             if selection.targets != [] and selection.targets[0].type == 'structure':
                 for selected_struct in [x for x in selection.targets if x.type == 'structure']:
@@ -1531,25 +1532,28 @@ class PDBClean(TemplateView):
                     request.session['substructure_mapping'] = 'full'
                     zipf.writestr(mod_name, tmp.getvalue())
                     del tmp
-                    rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod.item).prefetch_related('residue','backbone_template','rotamer_template').order_by('residue__sequence_number')
-                    stats_data = 'Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n'
-                    for r in rotamers:
-                        try:
-                            gn = r.residue.generic_number.label
-                        except:
-                            gn = '-'
-                        if r.backbone_template:
-                            bt = r.backbone_template.pdb_code.index
-                        else:
-                            bt = '-'
-                        if r.rotamer_template:
-                            rt = r.rotamer_template.pdb_code.index
-                        else:
-                            rt = '-'
-                        stats_data+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
-                    stats_name = mod_name[:-3]+'templates.csv'
-                    zipf.writestr(stats_name, stats_data)
-                    del stats_data
+
+                    # stat file
+                    # rotamers = StructureModelStatsRotamer.objects.filter(homology_model=hommod.item).prefetch_related('residue','backbone_template','rotamer_template').order_by('residue__sequence_number')
+                    # stats_data = 'Segment,Sequence_number,Generic_number,Backbone_template,Rotamer_template\n'
+                    # for r in rotamers:
+                    #     try:
+                    #         gn = r.residue.generic_number.label
+                    #     except:
+                    #         gn = '-'
+                    #     if r.backbone_template:
+                    #         bt = r.backbone_template.pdb_code.index
+                    #     else:
+                    #         bt = '-'
+                    #     if r.rotamer_template:
+                    #         rt = r.rotamer_template.pdb_code.index
+                    #     else:
+                    #         rt = '-'
+                    #     stats_data+='{},{},{},{},{}\n'.format(r.residue.protein_segment.slug, r.residue.sequence_number, gn, bt, rt)
+                    # stats_name = mod_name[:-3]+'templates.csv'
+                    # zipf.writestr(stats_name, stats_data)
+                    # del stats_data
+
                 for mod in selection.targets:
                     selection.remove('targets', 'structure_model', mod.item.id)
 
@@ -1650,6 +1654,7 @@ class PDBDownload(View):
             return HttpResponseRedirect('/structure/pdb_segment_selection')
 
         if self.kwargs['substructure'] == 'full':
+            print(request.session['selection'])
             out_stream = request.session['cleaned_structures']
 
         elif self.kwargs['substructure'] == 'custom':
