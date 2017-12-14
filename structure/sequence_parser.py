@@ -327,6 +327,7 @@ class SequenceParser(object):
             seq = self.get_chain_sequence(chain_id)
         alignments = self.blast.run(seq)
         
+        self.wt = None
         for alignment in alignments:
             if self.wt==None:
                 try:
@@ -338,7 +339,6 @@ class SequenceParser(object):
             else:
                 wt_resi = list(Residue.objects.filter(protein_conformation__protein=self.wt.id))
                 self.mapping[chain_id] = {x.sequence_number: ParsedResidue(x.amino_acid, x.sequence_number, str(x.display_generic_number) if x.display_generic_number else None, x.protein_segment) for x in wt_resi}
-            print(alignment[1].hit_def, alignment[1].hsps[0].expect)
             if alignment[1].hsps[0].expect > .5 and residues:
                 # self.fusions.append(AuxProtein(residues))
                 #The case when auxiliary protein is in a separate chain

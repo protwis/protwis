@@ -43,11 +43,11 @@ class GenericNumbering(object):
         
         # calling sequence parser
         if sequence_parser:
-            struct = Structure.objects.get(pdb_code__index=self.pdb_code)
+            # struct = Structure.objects.get(pdb_code__index=self.pdb_code)
             if not signprot:
-                s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=struct.protein_conformation.protein.parent.id)
+                s = SequenceParser(pdb_file=self.pdb_file)#, wt_protein_id=struct.protein_conformation.protein.parent.id)
             else:
-                s = SequenceParser(pdb_file=self.pdb_file, wt_protein_id=signprot.id)
+                s = SequenceParser(pdb_file=self.pdb_file)#, wt_protein_id=signprot.id)
             self.pdb_structure = s.pdb_struct
             self.mapping = s.mapping
             self.wt = s.wt
@@ -220,7 +220,7 @@ class GenericNumbering(object):
                 if chain.id in self.mapping:
                     if residue.id[1] in self.mapping[chain.id].keys():
                         gpcrdb_num = self.mapping[chain.id][residue.id[1]].gpcrdb
-                        if gpcrdb_num != '':
+                        if gpcrdb_num != '' and len(gpcrdb_num.split('x'))==2:
                             bw, gn = gpcrdb_num.split('x')
                             gn = "{}.{}".format(bw.split('.')[0], gn)
                             if len(gn.split('.')[1])==3:
