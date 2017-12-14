@@ -1,0 +1,66 @@
+path.arc {
+    fill: #fff;
+}
+
+.node {
+    font-size: 10px;
+    fill:#888;
+    cursor: pointer;
+}
+
+.nodeBar > path:hover {
+    stroke: black;
+    stroke-width: 1px;
+}
+
+.node:hover {
+    fill: #1f77b4;
+}
+
+.toggledNode {
+    font-size: 10px;
+    fill: black !important;
+    font-weight: bold !important;
+    cursor: pointer;
+}
+
+.link {
+    stroke: #000;
+    stroke-opacity: .05;
+    /*pointer-events: none;*/
+}
+
+.link.source, .link.target {
+    stroke-opacity: 1;
+}
+
+.node.target {
+    font-weight: bold;
+}
+
+.node.source {
+    font-weight: bold;
+}
+
+.link.target, .link.source {
+    opacity: 1;
+}
+
+.link.toggled{
+    stroke-opacity: 1;
+}
+
+.trackElement{
+    cursor: pointer;
+}
+
+svg text {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+svg text::selection {
+    background: none;
+}
+
