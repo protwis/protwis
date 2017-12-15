@@ -37,23 +37,22 @@ class BrowseSelection(AbsTargetSelection):
     target_input=False
 
     selection_boxes = OrderedDict([
-        ('reference', False),
-        ('targets', True),
+        ('reference', False), ('targets', True),
         ('segments', False),
     ])
     try:
         ppf_g = ProteinFamily.objects.get(slug="100_000")
-        ppf_a = ProteinFamily.objects.get(slug="200_000")
-        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id,ppf_a.id])
-        # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])
-        ps = Protein.objects.filter(family__in=[ppf_g,ppf_a]) #
+        # ppf_a = ProteinFamily.objects.get(slug="200_000")
+        # pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id,ppf_a.id])
+        pfs = ProteinFamily.objects.filter(parent__in=[ppf_g.id])
+        ps = Protein.objects.filter(family__in=[ppf_g]) # ,ppf_a
         tree_indent_level = []
         # action = 'expand'
         # remove the parent family (for all other families than the root of the tree, the parent should be shown)
-        del ppf_g
-        del ppf_a
+        # del ppf_g
+        # del ppf_a
     except Exception as e:
-        print("selection error")
+        print("selection error", e)
         pass
 
 @cache_page(60*60*24*2) # 2 days caching
@@ -305,7 +304,11 @@ def ajaxInterface(request, slug, **response_kwargs):
     jsondata = cache.get(name_of_cache)
 
     if jsondata == None:
-        rsets = ResiduePositionSet.objects.get(name="Gprotein Barcode")
+
+        if slug == "arrs_human":
+            rsets = ResiduePositionSet.objects.get(name="Arrestin interface")
+        else:
+            rsets = ResiduePositionSet.objects.get(name="Gprotein Barcode")
         # residues = Residue.objects.filter(protein_conformation__protein__entry_name=slug, display_generic_number__label=residue.label)
 
         jsondata = {}
