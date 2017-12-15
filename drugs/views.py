@@ -237,10 +237,12 @@ def drugbrowser(request):
 
     context = cache.get(name_of_cache)
 
-    if context==None:
+    if context == None:
         context = list()
 
         drugs = Drugs.objects.all().prefetch_related('target__family__parent__parent__parent')
+
+        drugs_NHS_names = NHSPrescribings.objects.values_list('drugname__name', flat=True).distinct()
 
         for drug in drugs:
             drugname = drug.name
@@ -255,23 +257,23 @@ def drugbrowser(request):
             clinicalstatus = drug.clinicalstatus
             references = [i for i in drug.references.split('|')]
 
+            if drugname in drugs_NHS_names:
+                NHS = 'yes'
+            else:
+                NHS = 'no'
+
             target_list = drug.target.all()
-            targets = []
             for protein in target_list:
-                # targets.append(str(protein))
-                # jsondata = {'name':drugname, 'target': str(protein), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
 
                 clas = str(protein.family.parent.parent.parent.name)
                 family = str(protein.family.parent.name)
 
-                jsondata = {'name':drugname, 'target': str(protein), 'phase': phase, 'approval': approval, 'class':clas, 'family':family, 'indication': indication, 'status':status, 'drugtype':drugtype, 'moa':moa,'novelty': novelty, 'targetlevel': targetlevel, 'clinicalstatus': clinicalstatus, 'references':references}
+                jsondata = {'name': drugname, 'target': str(protein), 'phase': phase, 'approval': approval, 'class': clas, 'family': family, 'indication': indication, 'status': status, 'drugtype': drugtype, 'moa': moa, 'novelty': novelty, 'targetlevel': targetlevel, 'clinicalstatus': clinicalstatus, 'references': references, 'NHS': NHS}
                 context.append(jsondata)
 
-            # jsondata = {'name':drugname, 'target': ', '.join(set(targets)), 'approval': approval, 'indication': indication, 'status':status, 'drugtype':drugtype, 'novelty': novelty}
-            # context.append(jsondata)
-        # cache.set(name_of_cache, context, 60*60*24*1) # two days timeout on cache
+            cache.set(name_of_cache, context, 60*60*24*25)   # two days timeout on cache
 
-    return render(request, 'drugbrowser.html', {'drugdata':context})
+    return render(request, 'drugbrowser.html', {'drugdata': context})
 
 @cache_page(60*60*24*30)
 def drugmapping(request):

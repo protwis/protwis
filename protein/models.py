@@ -158,7 +158,8 @@ class ProteinConformation(models.Model):
             site = Site.objects.create(slug='sodium_pocket', name='Sodium ion pocket')
         try:
             ex_site = IdentifiedSites.objects.get(protein_conformation=self)
-            if len(ex_site.residues.all())==2:
+
+            if len(ex_site.residues.all())==2 and ex_site.site==site:
                 return
             else:
                 raise Exception
