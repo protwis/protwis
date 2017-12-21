@@ -25,7 +25,8 @@ class Command(BaseBuild):
 
         # All human proteins and xtaled
         self.proteins = list(set(list(Protein.objects.filter(sequence_type__slug='wt',species__common_name="Human").all())+list(ProteinSet.objects.get(name='All').proteins.all())))
-
+        # self.proteins = list(set(list(ProteinSet.objects.get(name='All').proteins.all())))
+        print(self.proteins)
 
         self.prepare_input(options['proc'], self.proteins)
         # self.logger.info('Finishing adding dynamine annotations')
@@ -75,13 +76,23 @@ class Command(BaseBuild):
     def save_dynamine_prediction(self,protein):
         r = self.get_dynamine_prediction(protein)
         dynamine, created = ResidueDataType.objects.get_or_create(slug=slugify('dynamine'), name='Dynamine Prediction')
-        residues = Residue.objects.filter(protein_conformation__protein=protein)
+        residues = Residue.objects.filter(protein_conformation__protein=protein).all()
+        c = r['status']
         if r['status'] == 'completed':
             predictions = r['results']['predictions'][protein.entry_name]
+            # print(predictions)
+            c = 0
             for i, p in enumerate(predictions):
                 # fetch residue
-                r = residues.filter(sequence_number=i+1).get()
-                point, created = ResidueDataPoint.objects.get_or_create(data_type=dynamine, residue=r, value=p[1])
+                try:
+                    r = residues.filter(sequence_number=i+1).get()
+                    # print(protein,r,p[1],r.pk,i)
+                    point, created = ResidueDataPoint.objects.get_or_create(data_type=dynamine, residue=r, value=p[1])
+                    if created:
+                        c += 1
+                except:
+                    print("Missing residue for",protein.entry_name,i+1)
+        return c
 
 
     # @transaction.atomic
@@ -91,6 +102,8 @@ class Command(BaseBuild):
                 p = self.proteins[count.value]
                 count.value +=1 
                 self.logger.info('Generating dynamine data for \'{}\'... ({} out of {})'.format(p, count.value, len(self.proteins)))
-            print(p)
-            self.save_dynamine_prediction(p)
+            # if 'opsd_bovin'!=str(p):
+            #     continue
+            dynamine = self.save_dynamine_prediction(p)
+            print(p,dynamine)
 
