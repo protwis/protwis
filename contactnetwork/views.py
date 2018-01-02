@@ -2,14 +2,19 @@ from django.shortcuts import render
 from django.db.models import Q
 
 from collections import defaultdict
+from django.conf import settings
 
 import json
 import functools
 
 from contactnetwork.models import *
 from structure.models import Structure
+from protein.models import Protein, ProteinSegment
+
+Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 from django.http import JsonResponse
+from collections import OrderedDict
 
 
 def Interactions(request):
@@ -155,6 +160,28 @@ def InteractionData(request):
     data['segments'] = set()
     data['segment_map'] = {}
     data['aa_map'] = {}
+
+    # Create a consensus sequence.
+
+    excluded_segment = ['C-term','N-term']
+    segments = ProteinSegment.objects.all().exclude(slug__in = excluded_segment)
+    proteins =  Protein.objects.filter(protein__entry_name__in=pdbs).all()
+
+    a = Alignment()
+    a.load_proteins(proteins)
+    a.load_segments(segments) #get all segments to make correct diagrams
+    # build the alignment data matrix
+    a.build_alignment()
+    # calculate consensus sequence + amino acid and feature frequency
+    a.calculate_statistics()
+    consensus = a.full_consensus
+
+    data['gn_map'] = OrderedDict()
+    data['pos_map'] = OrderedDict()
+    for aa in consensus:
+        if 'x' in aa.family_generic_number:
+            data['gn_map'][aa.family_generic_number] = aa.amino_acid
+            data['pos_map'][aa.sequence_number] = aa.amino_acid
 
     for i in interactions:
         pdb_name = i['interacting_pair__referenced_structure__protein_conformation__protein__entry_name']
