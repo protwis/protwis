@@ -539,7 +539,7 @@ def get_atom_line(atom, hetfield, segid, atom_number, resname, resseq, icode, ch
 #==============================================================================
 class HSExposureCB(AbstractPropertyMap):
     """
-    Abstract class to calculate Half-Sphere Exposure (HSE).
+    Abstract class to calculate Half-Sphere Exposure (HSE). #GP: Biopython class repurposed
     
     The HSE can be calculated based on the CA-CB vector, or the pseudo CB-CA
     vector based on three consecutive CA atoms. This is done by two separate
