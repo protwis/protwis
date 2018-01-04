@@ -1,13 +1,16 @@
 from build.management.commands.base_build import Command as BaseBuild
 from django.db.models import Q
+from django.conf import settings
 
-from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState
+from protein.models import Protein, ProteinConformation, ProteinAnomaly, ProteinState, ProteinSegment
 from residue.models import Residue
 from residue.functions import dgn, ggn
 from structure.models import *
 from structure.functions import HSExposureCB, PdbStateIdentifier
-from common.alignment import AlignedReferenceTemplate
+from common.alignment import AlignedReferenceTemplate, GProteinAlignment
+from common.definitions import *
 from common.models import WebLink
+from signprot.models import SignprotComplex
 import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
 import structure.homology_models_tests as tests
@@ -256,17 +259,20 @@ class Command(BaseBuild):
             # Check for residue shifts in model
             residue_shift = False
             db_res = ''
-            for res in post_model[0][' ']:
-                try:
-                    if Homology_model.revise_xtal==False:
-                        db_res = Residue.objects.get(protein_conformation__protein=Homology_model.reference_protein, sequence_number=int(res.get_id()[1]))
-                    else:
-                        db_res = Residue.objects.get(protein_conformation__protein=Homology_model.reference_protein.parent, sequence_number=int(res.get_id()[1]))
-                    if PDB.Polypeptide.three_to_one(res.get_resname())!=db_res.amino_acid:
-                        residue_shift = True
-                        break
-                except:
-                    pass
+            for chain in post_model[0]:
+                if self.complex and chain.id=='A':
+                    continue
+                for res in chain:
+                    try:
+                        if Homology_model.revise_xtal==False:
+                            db_res = Residue.objects.get(protein_conformation__protein=Homology_model.reference_protein, sequence_number=int(res.get_id()[1]))
+                        else:
+                            db_res = Residue.objects.get(protein_conformation__protein=Homology_model.reference_protein.parent, sequence_number=int(res.get_id()[1]))
+                        if PDB.Polypeptide.three_to_one(res.get_resname())!=db_res.amino_acid:
+                            residue_shift = True
+                            break
+                    except:
+                        pass
 
             if residue_shift==True:
                 if self.debug:
@@ -309,10 +315,6 @@ class Command(BaseBuild):
 
             with open('./structure/homology_models/done_models.txt','a') as f:
                 f.write(receptor+'\n')
-
-            # if Homology_model.main_structure.pdb_code.index in seq_nums_overwrite_cutoff_list:
-            #     args = shlex.split("/env/bin/python3 manage.py build_structures -f {}.yaml".format(Homology_model.main_structure.pdb_code.index))
-            #     subprocess.call(args)
 
         except Exception as msg:
             try:
@@ -365,6 +367,7 @@ class HomologyModeling(object):
         self.similarity_table = OrderedDict()
         self.similarity_table_z = OrderedDict()
         self.main_structure = None
+        self.signprot_complex = None
         self.main_template_preferred_chain = ''
         self.loop_template_table = OrderedDict()
         self.loops = OrderedDict()
@@ -490,14 +493,24 @@ class HomologyModeling(object):
             except:
                 pass
         pos_list = []
+        if self.complex:
+            first_signprot_res = False
         for seg in self.template_source:
             for num in self.template_source[seg]:
                 try:
                     num = str(Residue.objects.get(protein_conformation=self.prot_conf,
                                                   display_generic_number__label=dgn(num,self.prot_conf)).sequence_number)
                 except:
-                    pass
+                    if self.complex:
+                        try:
+                            num = str(Residue.objects.get(protein_conformation=self.signprot_protconf,
+                                                          display_generic_number__label=num).sequence_number)
+                            if not first_signprot_res:
+                                first_signprot_res = num
+                        except:
+                            pass
                 pos_list.append(num)
+
         i = 0
         path = './structure/homology_models/'
         if self.revise_xtal==False:
@@ -511,6 +524,7 @@ class HomologyModeling(object):
             prev_num = None
             first_hetatm = False
             water_count = 0
+            # first_signprot_res_found = False
             for line in pdblines:
                 try:
                     if prev_num==None:
@@ -527,15 +541,35 @@ class HomologyModeling(object):
                         whitespace = (whitespace-1)*' '
                     elif len(pos_list[i])-len(pdb_re.group(3))==2:
                         whitespace = (whitespace-2)*' '
+                    elif len(pos_list[i])-len(pdb_re.group(3))==-1:
+                        whitespace = (whitespace+1)*' '
+                    elif len(pos_list[i])-len(pdb_re.group(3))==-2:
+                        whitespace = (whitespace+2)*' '
                     else:
                         whitespace = (whitespace-3)*' '
-                    out_line = pdb_re.group(1)+whitespace+pos_list[i]+pdb_re.group(4)
+                    group1 = pdb_re.group(1)
+                    if self.complex:
+                        if i<pos_list.index(first_signprot_res):
+                            # if first_signprot_res_found==False:
+                            #     out_list.append('TER\n')
+                            #     first_signprot_res_found = True
+                            if len(whitespace)==2:
+                                whitespace = whitespace[0]+'R'
+                            else:
+                                whitespace = whitespace[0]+'R'+whitespace[2:]
+                        else:
+                            if len(whitespace)==2:
+                                whitespace = whitespace[0]+'A'
+                            else:
+                                whitespace = whitespace[0]+'A'+whitespace[2:]
+                    out_line = group1+whitespace+pos_list[i]+pdb_re.group(4)
                     out_list.append(out_line)
                 except:
                     try:
                         if line.startswith('TER'):
                             pdb_re = re.search('(TER\s+\d+\s+\S{3})([\sAB]+)(\d+)',line)
                             out_list.append(pdb_re.group(1)+len(pdb_re.group(2))*' '+pos_list[i]+"\n")
+                            atom_num+=1
                         else:
                             raise Exception()
                     except:
@@ -602,9 +636,12 @@ class HomologyModeling(object):
         with open (path+modelname+'.pdb', 'w') as f:   
             f.write(''.join(out_list))
 
-        pdb_struct = PDB.PDBParser(QUIET=True).get_structure('model', path+modelname+'.pdb')[0]
-        assign_gn = as_gn.GenericNumbering(structure=pdb_struct)
-        pdb_struct = assign_gn.assign_generic_numbers()
+        # pdb_struct = PDB.PDBParser(QUIET=True).get_structure('model', path+modelname+'.pdb')[0]
+        with open (path+modelname+'.pdb', 'r') as f:
+            pdb_struct = f.read()
+        pdb_struct = StringIO(pdb_struct)
+        assign_gn = as_gn.GenericNumbering(pdb_file=pdb_struct, sequence_parser=True)
+        pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
         io = PDB.PDBIO()
         io.set_structure(pdb_struct)
         io.save(path+modelname+'.pdb')
@@ -617,7 +654,7 @@ class HomologyModeling(object):
         return first_line+second_line+content
         
     def update_template_source(self, keys, struct, segment, just_rot=False):
-        ''' Update the tempalte_source dictionary with structure info for backbone and rotamers.
+        ''' Update the template_source dictionary with structure info for backbone and rotamers.
         '''
         for k in keys:
             if just_rot==True:
@@ -679,7 +716,7 @@ class HomologyModeling(object):
                     self.update_template_source([gn.replace('.','x')],self.main_structure,seg_l)
             
             helixends = HelixEndsModeling(self.similarity_table_all, self.template_source, self.main_structure)
-            
+
             try:
                 if (len(main_pdb_array['H8'])==0 and len(list(Residue.objects.filter(protein_conformation=self.prot_conf, protein_segment__slug='H8')))>0 or 
                    (self.reference_protein.family.slug.startswith('004') and self.main_structure.pdb_code.index!='4OO9') or 
@@ -791,7 +828,7 @@ class HomologyModeling(object):
 
             if self.debug:
                 print('Corrected helix ends: ',datetime.now() - startTime)
-            
+
             main_pdb_array = helixends.main_pdb_array
             alignment = helixends.alignment
 
@@ -1589,6 +1626,39 @@ class HomologyModeling(object):
         # check if ECL3 might have a disulfide bridge
         self.disulfide_pairs.append(self.ECL3_disulfide(a.reference_dict))
 
+
+        # if complex
+        if self.complex:
+            self.signprot_complex = SignprotComplex.objects.get(structure=self.main_structure)
+            target_signprot = self.signprot_complex.protein
+            self.signprot_protconf = ProteinConformation.objects.get(protein=target_signprot)
+            sign_a = GProteinAlignment()
+            sign_a.run_alignment(self.signprot_complex.protein)
+            io = StringIO(self.main_structure.pdb_data.pdb)
+            assign_cgn = as_gn.GenericNumbering(pdb_file=io, pdb_code=self.main_structure.pdb_code.index, sequence_parser=True, signprot=target_signprot)
+            signprot_pdb_array = assign_cgn.assign_cgn_with_sequence_parser(self.signprot_complex.chain)
+            for seg, values in signprot_pdb_array.items():
+                main_pdb_array[seg] = values
+                self.template_source[seg] = OrderedDict()
+                for key in values:
+                    self.template_source[seg][key] = [self.main_structure, self.main_structure]
+            for seg, values in sign_a.reference_dict.items():
+                for key, res in values.items():
+                    if signprot_pdb_array[seg][key] == 'x':
+                        values[key] = 'x'
+                        del self.template_source[seg][key]
+                a.reference_dict[seg] = values
+            for seg, values in sign_a.template_dict.items():
+                for key, res in values.items():
+                    if signprot_pdb_array[seg][key] == 'x':
+                        values[key] = 'x'
+                a.template_dict[seg] = values
+            for seg, values in sign_a.alignment_dict.items():
+                for key, res in values.items():
+                    if signprot_pdb_array[seg][key] == 'x':
+                        values[key] = 'x'
+                a.alignment_dict[seg] = values
+
         # write to file
         trimmed_res_nums, helix_restraints, icl3_mid, disulfide_nums = self.write_homology_model_pdb(path+self.reference_entry_name+'_'+self.state+"_post.pdb", 
                                                                                                      main_pdb_array, a, 
@@ -1759,7 +1829,7 @@ class HomologyModeling(object):
         if not self.debug:
             sys.stdout.close()
             sys.stdout = _stdout
-
+        
         if not self.debug:
             os.remove(path+self.reference_entry_name+'_'+self.state+"_post.pdb")
 
@@ -1782,6 +1852,8 @@ class HomologyModeling(object):
                             first_seqnum = int(list_keys[0])
                         except:
                             continue
+                elif self.complex and first_gn!=None and len(first_gn.split('.'))==3:
+                    first_seqnum = Residue.objects.get(protein_conformation=self.signprot_protconf,display_generic_number__label=list_keys[0]).sequence_number
                 else:
                     first_seqnum = int(first_gn)
                     first_gn = None
@@ -1789,6 +1861,9 @@ class HomologyModeling(object):
                     key = gn
                     if 'x' in gn:
                         seq_num = Residue.objects.get(protein_conformation=self.prot_conf,display_generic_number__label=dgn(gn,self.prot_conf)).sequence_number
+                        curr_seqnum = seq_num
+                    elif self.complex and first_gn!=None and len(first_gn.split('.'))==3:
+                        seq_num = Residue.objects.get(protein_conformation=self.signprot_protconf,display_generic_number__label=gn).sequence_number
                         curr_seqnum = seq_num
                     else:
                         seq_num = int(gn)
@@ -2109,7 +2184,7 @@ class HomologyModeling(object):
                             except:
                                 pass
                     try:
-                        if alignment.reference_dict[seg_id][key.replace('.','x')] in ['-','x']:
+                        if alignment.reference_dict[seg_id][key.replace('.','x')] in ['-','x'] or alignment.reference_dict[seg_id][key] in ['-','x']:
                             counter_num-=1
                             res_num-=1
                             continue
@@ -2150,8 +2225,11 @@ class HomologyModeling(object):
                             elif '.' not in key:
                                 bfact = "%6.2f"% (float(atom.get_bfactor()))
                             else:
-                                if '.' in key and len(key.split('.')[1])==3:
+                                key_split = key.split('.')
+                                if '.' in key and len(key_split[1])==3:
                                     bfact = " -%4.2f"% (float(key))
+                                elif len(key_split)==3:
+                                    bfact = "%6.2f"% (float(atom.get_bfactor()))
                                 else:
                                     bfact = " %5.2f"% (float(key))
                         else:
@@ -2201,6 +2279,9 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
                     except:
                         pass
         for ref_seg, temp_seg in zip(reference_dict, template_dict):
+            if ref_seg=='HN':
+                ref_sequence+='/'
+                temp_sequence+='/'
             for ref_res, temp_res in zip(reference_dict[ref_seg], template_dict[temp_seg]):
                 if reference_dict[ref_seg][ref_res] in ['-','x']: 
                     continue
@@ -2324,8 +2405,11 @@ class HomologyMODELLER(automodel):
         self.disulfide_nums = disulfide_nums
     
     def identify_chain(self, seq_num):
+        print(self.chains)
         if len(self.chains)==2:
-            if seq_num<self.icl3_mid:
+            if self.icl3_mid==None:
+                return 'A'
+            elif seq_num<self.icl3_mid:
                 return 'A'
             elif seq_num>=self.icl3_mid:
                 return 'B'
@@ -2350,7 +2434,7 @@ class HomologyMODELLER(automodel):
         if len(self.helix_restraints)>0:
             out.append([start,prev])
         return out
-                        
+
     def select_atoms(self):
         selection_out = []
         for seg_id, segment in self.atom_dict.items():
@@ -4059,7 +4143,7 @@ class GPCRDBParsingPDB(object):
             io = filename
         gn_array = []
         residue_array = []
-        pdb_struct = PDB.PDBParser(QUIET=True).get_structure('structure', io)[0]
+        # pdb_struct = PDB.PDBParser(QUIET=True).get_structure(structure.pdb_code.index, io)[0]
         
         residues = Residue.objects.filter(protein_conformation=structure.protein_conformation)
         gn_list = []
@@ -4068,9 +4152,9 @@ class GPCRDBParsingPDB(object):
                 gn_list.append(ggn(i.display_generic_number.label).replace('x','.'))
             except:
                 pass
-        
-        assign_gn = as_gn.GenericNumbering(structure=pdb_struct)
-        pdb_struct = assign_gn.assign_generic_numbers()
+
+        assign_gn = as_gn.GenericNumbering(pdb_file=io, pdb_code=structure.pdb_code.index, sequence_parser=True)
+        pdb_struct = assign_gn.assign_generic_numbers_with_sequence_parser()
         pref_chain = structure.preferred_chain
         parent_prot_conf = ProteinConformation.objects.get(protein=structure.protein_conformation.protein.parent)
         parent_residues = Residue.objects.filter(protein_conformation=parent_prot_conf)

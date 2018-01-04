@@ -67,6 +67,7 @@ class BlastSearch(object):
             blast = Popen('%s -db %s -outfmt 5' % (self.blast_path, self.blastdb), universal_newlines=True, shell=True,
                 stdin=PIPE, stdout=PIPE, stderr=PIPE)
             (blast_out, blast_err) = blast.communicate(input=str(input_seq))
+
         if len(blast_err) != 0:
             logger.debug(blast_err)
         if blast_out!='\n':

@@ -251,8 +251,7 @@ class QueryPDB():
                                 yaml.dump(struct_yaml, struct_yaml_file, indent=4, default_flow_style=False)
                 
                         # Check sodium pocket
-                        prot_conf = ProteinConformation.objects.get(protein__entry_name=struct.pdb_code.index.lower())
-                        prot_conf.sodium_pocket()
+                        new_prot_conf.sodium_pocket()
 
                         print('{} added to db (preferred_chain chain: {})'.format(s, preferred_chain))
                 except Exception as msg:

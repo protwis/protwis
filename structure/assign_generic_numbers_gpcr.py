@@ -4,11 +4,15 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.PDB import *
 from Bio.PDB.PDBIO import Select
+from common.definitions import *
+from protein.models import Protein, ProteinSegment
 from residue.models import Residue
 from structure.functions import BlastSearch, MappedResidue
+from structure.sequence_parser import *
 
 import Bio.PDB.Polypeptide as polypeptide
 import os,logging
+from collections import OrderedDict
 
 logger = logging.getLogger("protwis")
 
@@ -19,12 +23,15 @@ class GenericNumbering(object):
     
     residue_list = ["ARG","ASP","GLU","HIS","ASN","GLN","LYS","SER","THR","HID","PHE","LEU","ILE","TYR","TRP","VAL","MET","PRO","CYS","ALA","GLY"]
   
-    def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, blast_path='blastp',
-        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']),top_results=1):
+    def __init__ (self, pdb_file=None, pdb_filename=None, structure=None, pdb_code=None, blast_path='blastp',
+        blastdb=os.sep.join([settings.STATICFILES_DIRS[0], 'blast', 'protwis_blastdb']),top_results=1, sequence_parser=False, signprot=False):
     
         # pdb_file can be either a name/path or a handle to an open file
         self.pdb_file = pdb_file
         self.pdb_filename = pdb_filename
+
+        # if pdb 4 letter code is specified
+        self.pdb_code = pdb_code
         
         # dictionary of 'MappedResidue' object storing information about alignments and bw numbers
         self.residues = {}
@@ -34,15 +41,26 @@ class GenericNumbering(object):
         #setup for local blast search
         self.blast = BlastSearch(blast_path=blast_path, blastdb=blastdb,top_results=top_results)
         
-        if self.pdb_file:
-            self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_file)[0]
-        elif self.pdb_filename:
-            self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_filename)[0]
+        # calling sequence parser
+        if sequence_parser:
+            # struct = Structure.objects.get(pdb_code__index=self.pdb_code)
+            if not signprot:
+                s = SequenceParser(pdb_file=self.pdb_file)#, wt_protein_id=struct.protein_conformation.protein.parent.id)
+            else:
+                s = SequenceParser(pdb_file=self.pdb_file)#, wt_protein_id=signprot.id)
+            self.pdb_structure = s.pdb_struct
+            self.mapping = s.mapping
+            self.wt = s.wt
         else:
-            self.pdb_structure = structure
+            if self.pdb_file:
+                self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_file)[0]
+            elif self.pdb_filename:
+                self.pdb_structure = PDBParser(PERMISSIVE=True, QUIET=True).get_structure('ref', self.pdb_filename)[0]
+            else:
+                self.pdb_structure = structure
 
-        self.parse_structure(self.pdb_structure)
-
+            self.parse_structure(self.pdb_structure)
+        
 
     def parse_structure(self, pdb_struct):
         """
@@ -193,4 +211,33 @@ class GenericNumbering(object):
                     continue
                 for hsps in alignment[1].hsps:
                     self.map_blast_seq(alignment[0], hsps, chain)
+
         return self.get_annotated_structure()
+
+    def assign_generic_numbers_with_sequence_parser(self):
+        for chain in self.pdb_structure:
+            for residue in chain:
+                if chain.id in self.mapping:
+                    if residue.id[1] in self.mapping[chain.id].keys():
+                        gpcrdb_num = self.mapping[chain.id][residue.id[1]].gpcrdb
+                        if gpcrdb_num != '' and len(gpcrdb_num.split('x'))==2:
+                            bw, gn = gpcrdb_num.split('x')
+                            gn = "{}.{}".format(bw.split('.')[0], gn)
+                            if len(gn.split('.')[1])==3:
+                                gn = '-'+gn[:-1]
+                            residue["CA"].set_bfactor(float(gn))
+                            residue["N"].set_bfactor(float(bw))
+        return self.pdb_structure
+
+    def assign_cgn_with_sequence_parser(self, target_chain):
+        pdb_array = OrderedDict()
+        for s in G_PROTEIN_SEGMENTS['Full']:
+            pdb_array[s] = OrderedDict()
+        for key, vals in self.mapping[target_chain].items():
+            category, segment, num = vals.gpcrdb.split('.')
+            try:
+                pdb_array[segment][vals.gpcrdb] = self.pdb_structure[target_chain][key].get_list()
+            except:
+                pdb_array[segment][vals.gpcrdb] = 'x'
+        return pdb_array
+

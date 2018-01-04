@@ -8,6 +8,7 @@ from residue.models import ResidueGenericNumber, ResidueGenericNumberEquivalent
 from residue.models import ResidueNumberingScheme
 from residue.functions import dgn, ggn
 from structure.models import Structure, Rotamer
+from signprot.models import SignprotComplex
 
 from collections import OrderedDict
 from copy import deepcopy
@@ -1072,7 +1073,8 @@ class AlignedReferenceTemplate(Alignment):
                 if st.pdb_code.index=='5LWE' and st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
                     i+=1
                     continue
-                if self.complex and st.pdb_code.index not in ['3SN6', '5VAI', '5UZ7']:
+                # only use complex main template ['3SN6', '5VAI', '5UZ7']
+                if self.complex and st.pdb_code.index not in [x.structure.pdb_code.index for x in SignprotComplex.objects.all()]:
                     i+=1
                     continue
                 if st.protein_conformation.protein.parent==self.ordered_proteins[i].protein:
@@ -1442,6 +1444,55 @@ class AlignedReferenceTemplate(Alignment):
                 del self.alignment_dict[i]
 
 
+        return self
+
+
+class GProteinAlignment(Alignment):
+    def __init__(self):
+        super(GProteinAlignment, self).__init__()
+        self.reference_dict = OrderedDict()
+        self.template_dict = OrderedDict()
+        self.alignment_dict = OrderedDict()
+
+    def run_alignment(self, reference_protein):
+        self.load_reference_protein(reference_protein)
+        self.load_templates()
+        gprotein_segments = ProteinSegment.objects.filter(proteinfamily='Gprotein')
+        self.load_segments(gprotein_segments)
+        self.build_alignment()
+        self.enhance_alignment(self.proteins[0], self.proteins[1])
+
+    def load_templates(self):
+        self.load_proteins([Protein.objects.get(entry_name='gnas2_human')])
+
+    def enhance_alignment(self, reference, template):
+        for ref_seg, temp_seg in zip(reference.alignment, template.alignment):
+            if ref_seg in ['S10','S11','S12','S13','S14','S15','S16','S17','S18','S19']:
+                continue
+            ref_segment_dict, temp_segment_dict, align_segment_dict = OrderedDict(), OrderedDict(), OrderedDict()
+            for ref_pos, temp_pos in zip(reference.alignment[ref_seg], template.alignment[temp_seg]):
+                if ref_pos[1] and temp_pos[1] and ref_pos[1]==temp_pos[1]:
+                    ref_segment_dict[ref_pos[0]] = ref_pos[2]
+                    temp_segment_dict[temp_pos[0]] = temp_pos[2]
+                    if ref_pos[2]==temp_pos[2]:
+                        align_segment_dict[ref_pos[0]] = ref_pos[2]
+                    else:
+                        align_segment_dict[ref_pos[0]] = '.'
+                elif not ref_pos[1] and temp_pos[1]:
+                    ref_segment_dict[ref_pos[0]] = '-'
+                    temp_segment_dict[temp_pos[0]] = temp_pos[2]
+                    align_segment_dict[ref_pos[0]] = '-'
+                elif ref_pos[1] and not temp_pos[1]:
+                    ref_segment_dict[ref_pos[0]] = ref_pos[2]
+                    temp_segment_dict[temp_pos[0]] = '-'
+                    align_segment_dict[ref_pos[0]] = '-'
+                elif not ref_pos[1] and not temp_pos[1]:
+                    ref_segment_dict[ref_pos[0]] = '-'
+                    temp_segment_dict[temp_pos[0]] = '-'
+                    align_segment_dict[ref_pos[0]] = '-'
+            self.reference_dict[ref_seg] = ref_segment_dict
+            self.template_dict[temp_seg] = temp_segment_dict
+            self.alignment_dict[ref_seg] = align_segment_dict
         return self
 
 
